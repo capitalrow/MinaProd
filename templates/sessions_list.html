@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Sessions - Mina{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-0">Meeting Sessions</h2>
+            <p class="text-muted">View and manage your transcription sessions</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('transcription.live') }}" class="btn btn-primary">
+                <i class="fas fa-microphone"></i> Start Live Session
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <form method="GET" class="d-flex">
+                <input type="text" 
+                       name="q" 
+                       value="{{ query or '' }}" 
+                       class="form-control me-2" 
+                       placeholder="Search sessions..."
+                       aria-label="Search sessions">
+                <input type="hidden" name="status" value="{{ status or '' }}">
+                <button class="btn btn-outline-secondary" type="submit">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <div class="btn-group w-100" role="group">
+                <a href="{{ url_for('sessions.list_sessions') }}" 
+                   class="btn btn-outline-secondary {{ 'active' if not status }}">
+                    All Sessions
+                </a>
+                <a href="{{ url_for('sessions.list_sessions', status='active') }}" 
+                   class="btn btn-outline-secondary {{ 'active' if status == 'active' }}">
+                    Active
+                </a>
+                <a href="{{ url_for('sessions.list_sessions', status='completed') }}" 
+                   class="btn btn-outline-secondary {{ 'active' if status == 'completed' }}">
+                    Completed
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sessions Table -->
+    {% if sessions %}
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col">Title</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Started</th>
+                        <th scope="col">Completed</th>
+                        <th scope="col">Segments</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in sessions %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div>
+                                    <strong>{{ session.title }}</strong>
+                                    <br>
+                                    <small class="text-muted">ID: {{ session.external_id[:8] }}...</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if session.status == 'active' %}
+                                <span class="badge bg-success">Active</span>
+                            {% elif session.status == 'completed' %}
+                                <span class="badge bg-primary">Completed</span>
+                            {% elif session.status == 'error' %}
+                                <span class="badge bg-danger">Error</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ session.status.title() }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>
+                                {{ session.started_at[:16].replace('T', ' ') if session.started_at else 'N/A' }}
+                            </small>
+                        </td>
+                        <td>
+                            <small>
+                                {{ session.completed_at[:16].replace('T', ' ') if session.completed_at else '-' }}
+                            </small>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ session.segments_count }}</span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('sessions.get_session_detail', session_id=session.id) }}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                {% if session.status == 'completed' %}
+                                <a href="{{ url_for('sessions.get_session_detail', session_id=session.id) }}#export" 
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-download"></i> Export
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination Placeholder -->
+    {% if sessions|length >= limit %}
+    <div class="row mt-3">
+        <div class="col-12 text-center">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Showing {{ sessions|length }} sessions. Use the API for pagination.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="fas fa-microphone-slash fa-3x text-muted"></i>
+        </div>
+        <h4 class="text-muted">No Sessions Found</h4>
+        <p class="text-muted">
+            {% if query %}
+                No sessions match your search "{{ query }}"
+            {% elif status %}
+                No {{ status }} sessions found
+            {% else %}
+                You haven't created any transcription sessions yet
+            {% endif %}
+        </p>
+        <a href="{{ url_for('transcription.live') }}" class="btn btn-primary">
+            <i class="fas fa-microphone"></i> Start Your First Session
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Session Stats (Optional) -->
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <strong id="stats-total">-</strong><br>
+                        <small class="text-muted">Total Sessions</small>
+                    </div>
+                    <div class="col-md-3">
+                        <strong id="stats-active">-</strong><br>
+                        <small class="text-muted">Active</small>
+                    </div>
+                    <div class="col-md-3">
+                        <strong id="stats-completed">-</strong><br>
+                        <small class="text-muted">Completed</small>
+                    </div>
+                    <div class="col-md-3">
+                        <strong id="stats-segments">-</strong><br>
+                        <small class="text-muted">Total Segments</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load session statistics
+fetch('/sessions/stats')
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('stats-total').textContent = data.total_sessions || 0;
+        document.getElementById('stats-active').textContent = data.active_sessions || 0;
+        document.getElementById('stats-completed').textContent = data.completed_sessions || 0;
+        document.getElementById('stats-segments').textContent = data.total_segments || 0;
+    })
+    .catch(error => console.error('Error loading stats:', error));
+</script>
+{% endblock %}
