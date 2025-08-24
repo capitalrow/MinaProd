@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}{{ session.title }} - Mina{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Session Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('sessions.list_sessions') }}">Sessions</a></li>
+                    <li class="breadcrumb-item active">{{ session.title }}</li>
+                </ol>
+            </nav>
+            
+            <h2 class="mb-2">{{ session.title }}</h2>
+            <div class="d-flex align-items-center gap-3">
+                {% if session.status == 'active' %}
+                    <span class="badge bg-success fs-6">Active</span>
+                {% elif session.status == 'completed' %}
+                    <span class="badge bg-primary fs-6">Completed</span>
+                {% elif session.status == 'error' %}
+                    <span class="badge bg-danger fs-6">Error</span>
+                {% else %}
+                    <span class="badge bg-secondary fs-6">{{ session.status.title() }}</span>
+                {% endif %}
+                
+                <small class="text-muted">
+                    ID: <code>{{ session.external_id }}</code>
+                </small>
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <!-- Export Toolbar (M2.5) -->
+            <div id="export" class="btn-group">
+                {% if session.status == 'completed' %}
+                <a href="/sessions/{{ session.id }}/export.md" 
+                   class="btn btn-outline-primary"
+                   download="mina-session-{{ session.id }}.md">
+                    <i class="fas fa-download"></i> Export Markdown
+                </a>
+                {% endif %}
+                <a href="{{ url_for('transcription.live') }}" class="btn btn-primary">
+                    <i class="fas fa-microphone"></i> New Session
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Metadata -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Started:</strong><br>
+                            <small class="text-muted">
+                                {{ session.started_at[:16].replace('T', ' ') if session.started_at else 'N/A' }}
+                            </small>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Completed:</strong><br>
+                            <small class="text-muted">
+                                {{ session.completed_at[:16].replace('T', ' ') if session.completed_at else 'Not completed' }}
+                            </small>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Segments:</strong><br>
+                            <small class="text-muted">{{ segments|length }} total</small>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Locale:</strong><br>
+                            <small class="text-muted">{{ session.locale or 'Not specified' }}</small>
+                        </div>
+                    </div>
+                    
+                    {% if session.device_info %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <strong>Device Info:</strong>
+                            <div class="mt-2">
+                                {% for key, value in session.device_info.items() %}
+                                <span class="badge bg-light text-dark me-2">{{ key }}: {{ value }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transcript Timeline -->
+    <div class="row">
+        <div class="col-12">
+            <h4 class="mb-3">Transcript Timeline</h4>
+            
+            {% if segments %}
+            <div class="card">
+                <div class="card-body">
+                    <!-- Segment Filter Tabs -->
+                    <ul class="nav nav-pills mb-3" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#all-segments">
+                                All Segments ({{ segments|length }})
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#final-segments">
+                                Final Only ({{ segments|selectattr('is_final')|list|length }})
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- All Segments Tab -->
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="all-segments">
+                            <div class="transcript-timeline">
+                                {% for segment in segments %}
+                                <div class="segment-item mb-3 p-3 border rounded {{ 'bg-light' if segment.is_final else 'bg-light bg-opacity-50' }}">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="segment-meta">
+                                            <span class="badge {{ 'bg-primary' if segment.is_final else 'bg-secondary' }}">
+                                                {{ segment.kind.title() }}
+                                            </span>
+                                            {% if segment.start_time_formatted %}
+                                            <small class="text-muted ms-2">
+                                                <i class="fas fa-clock"></i> {{ segment.start_time_formatted }}
+                                            </small>
+                                            {% endif %}
+                                            {% if segment.avg_confidence %}
+                                            <small class="text-muted ms-2">
+                                                <i class="fas fa-signal"></i> {{ (segment.avg_confidence * 100)|round(1) }}%
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                        <small class="text-muted">
+                                            {{ segment.created_at[:16].replace('T', ' ') }}
+                                        </small>
+                                    </div>
+                                    <div class="segment-text">
+                                        {{ segment.text }}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Final Segments Tab -->
+                        <div class="tab-pane fade" id="final-segments">
+                            <div class="transcript-timeline">
+                                {% set final_segments = segments|selectattr('is_final')|list %}
+                                {% if final_segments %}
+                                    {% for segment in final_segments %}
+                                    <div class="segment-item mb-3 p-3 border rounded bg-light">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="segment-meta">
+                                                {% if segment.start_time_formatted %}
+                                                <small class="text-primary fw-bold">
+                                                    <i class="fas fa-clock"></i> {{ segment.start_time_formatted }}
+                                                </small>
+                                                {% endif %}
+                                                {% if segment.avg_confidence %}
+                                                <small class="text-muted ms-2">
+                                                    <i class="fas fa-signal"></i> {{ (segment.avg_confidence * 100)|round(1) }}%
+                                                </small>
+                                                {% endif %}
+                                            </div>
+                                            <small class="text-muted">
+                                                {{ segment.created_at[:16].replace('T', ' ') }}
+                                            </small>
+                                        </div>
+                                        <div class="segment-text">
+                                            {{ segment.text }}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-info-circle fa-2x text-muted mb-3"></i>
+                                        <h5 class="text-muted">No Final Segments</h5>
+                                        <p class="text-muted">This session only contains interim transcription results.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <!-- Empty Transcript State -->
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Transcript Available</h5>
+                    <p class="text-muted">
+                        {% if session.status == 'active' %}
+                            This session is active but no segments have been transcribed yet.
+                        {% else %}
+                            This session completed without generating any transcript segments.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.segment-item {
+    transition: all 0.2s ease;
+}
+
+.segment-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.segment-text {
+    font-size: 1.1em;
+    line-height: 1.6;
+    color: var(--bs-body-color);
+}
+
+.transcript-timeline {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--bs-primary);
+}
+
+.badge {
+    font-size: 0.85em;
+}
+</style>
+
+<script>
+// Auto-scroll to export section if linked
+if (window.location.hash === '#export') {
+    document.getElementById('export').scrollIntoView();
+}
+
+// Real-time updates for active sessions
+{% if session.status == 'active' %}
+setInterval(() => {
+    fetch(window.location.pathname + '?format=json')
+        .then(response => response.json())
+        .then(data => {
+            if (data.segments && data.segments.length > {{ segments|length }}) {
+                window.location.reload();
+            }
+        })
+        .catch(error => console.error('Error checking for updates:', error));
+}, 10000); // Check every 10 seconds
+{% endif %}
+</script>
+{% endblock %}

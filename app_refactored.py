@@ -17,11 +17,8 @@ from config import Config
 # Configure logging
 logger = logging.getLogger(__name__)
 
-class Base(DeclarativeBase):
-    pass
-
-# Initialize extensions
-db = SQLAlchemy(model_class=Base)
+# Initialize extensions - Base will be imported from models
+db = SQLAlchemy()
 socketio = SocketIO(
     cors_allowed_origins="*",
     async_mode='eventlet',  # Use eventlet for production compatibility
@@ -60,21 +57,26 @@ def create_app(config_class=Config):
     # Register blueprints
     from routes.health import health_bp
     from routes.transcription import transcription_bp
+    from routes.sessions import sessions_bp
     from routes.websocket import register_websocket_handlers
     
     app.register_blueprint(health_bp)
     app.register_blueprint(transcription_bp)
+    app.register_blueprint(sessions_bp)
     
     # Register Socket.IO handlers
     register_websocket_handlers(socketio)
     
     # Initialize database
     with app.app_context():
-        # Import models to ensure they are registered
-        from models.session import Session
-        from models.segment import Segment
+        # Import M2 models with new SQLAlchemy 2.0 Base
+        from models.base import Base
+        from models import Session, Segment  # noqa: F401
         
-        db.create_all()
+        # Create tables if they don't exist (for development)
+        if app.config.get('DEVELOPMENT', True):
+            Base.metadata.create_all(bind=db.engine)
+        
         logger.info("Database initialized successfully")
     
     # Configure CORS for development
