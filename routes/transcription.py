@@ -12,6 +12,7 @@ from sqlalchemy import desc
 from models.session import Session
 from models.segment import Segment
 from services.transcription_service import TranscriptionService, TranscriptionServiceConfig
+from services.session_service import SessionService
 from app_refactored import db
 
 logger = logging.getLogger(__name__)
@@ -36,26 +37,12 @@ def index():
     Main dashboard showing recent sessions and system status.
     """
     try:
-        # Get recent sessions
-        recent_sessions = Session.query.order_by(desc(Session.created_at)).limit(10).all()
+        # Get recent sessions using SessionService
+        recent_sessions = SessionService.list_sessions(limit=10)
         
-        # Get global statistics
-        total_sessions = Session.query.count()
-        total_segments = Segment.query.count()
-        
-        # Active sessions count
-        active_sessions = Session.query.filter_by(status='active').count()
-        
-        # Calculate total transcription time
-        total_duration = db.session.query(db.func.sum(Session.total_duration)).scalar() or 0.0
-        
-        stats = {
-            'total_sessions': total_sessions,
-            'total_segments': total_segments,
-            'active_sessions': active_sessions,
-            'total_duration': total_duration,
-            'total_duration_hours': total_duration / 3600.0
-        }
+        # Get global statistics using SessionService
+        stats = SessionService.get_session_stats()
+        stats['total_duration_hours'] = 0.0  # Placeholder for now
         
         return render_template('index.html', 
                              recent_sessions=recent_sessions,
@@ -372,9 +359,11 @@ def get_global_stats():
     """
     try:
         # Database statistics
-        total_sessions = Session.query.count()
-        total_segments = Segment.query.count()
-        active_sessions = Session.query.filter_by(status='active').count()
+        # Use SessionService for stats
+        stats_data = SessionService.get_session_stats()
+        total_sessions = stats_data['total_sessions']
+        total_segments = stats_data['total_segments'] 
+        active_sessions = stats_data['active_sessions']
         
         # Service statistics
         service = get_transcription_service()
