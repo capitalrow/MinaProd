@@ -59,6 +59,11 @@ class Config:
     SOCKETIO_PING_TIMEOUT = int(os.environ.get('SOCKETIO_PING_TIMEOUT', '60'))
     SOCKETIO_PING_INTERVAL = int(os.environ.get('SOCKETIO_PING_INTERVAL', '25'))
     
+    # M3: Analysis and Summary settings
+    ANALYSIS_ENGINE = os.environ.get('ANALYSIS_ENGINE', 'mock')
+    AUTO_SUMMARY_ON_FINALIZE = os.environ.get('AUTO_SUMMARY_ON_FINALIZE', 'false').lower() == 'true'
+    SUMMARY_CONTEXT_CHARS = int(os.environ.get('SUMMARY_CONTEXT_CHARS', '12000'))
+    
     # Application metadata
     APP_VERSION = os.environ.get('APP_VERSION', '0.1.0')
     GIT_SHA = os.environ.get('GIT_SHA', 'dev')

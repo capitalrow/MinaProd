@@ -255,3 +255,54 @@ class SessionService:
         
         db.session.commit()
         return finalized_count
+
+    @staticmethod
+    def finalize_session(session_id: int, final_text: Optional[str] = None, trigger_summary: bool = None) -> Dict[str, any]:
+        """
+        Complete a session by finalizing segments and updating status.
+        
+        M3: Includes auto-summary generation if enabled.
+        
+        Args:
+            session_id: Database session ID
+            final_text: Optional final transcript text
+            trigger_summary: Override auto-summary setting (for testing)
+            
+        Returns:
+            Session finalization result
+        """
+        session = db.session.get(Session, session_id)
+        if not session:
+            raise ValueError(f"Session {session_id} not found")
+        
+        # Finalize segments
+        finalized_count = SessionService.finalize_session_segments(session_id, final_text)
+        
+        # Update session status
+        session.status = 'completed'
+        session.completed_at = datetime.utcnow()
+        db.session.commit()
+        
+        # M3: Trigger auto-summary if enabled
+        from flask import current_app
+        should_trigger = trigger_summary if trigger_summary is not None else current_app.config.get('AUTO_SUMMARY_ON_FINALIZE', False)
+        
+        if should_trigger:
+            try:
+                from app_refactored import socketio
+                from routes.summary import trigger_auto_summary
+                
+                # Start background task for summary generation
+                socketio.start_background_task(trigger_auto_summary, session_id)
+                logger.info(f"Auto-summary triggered for session {session_id}")
+                
+            except Exception as e:
+                logger.warning(f"Failed to trigger auto-summary for session {session_id}: {e}")
+        
+        logger.info(f"Session {session_id} finalized with {finalized_count} segments")
+        return {
+            'status': 'completed',
+            'finalized_segments': finalized_count,
+            'message': f'Session {session_id} completed',
+            'auto_summary_triggered': should_trigger
+        }

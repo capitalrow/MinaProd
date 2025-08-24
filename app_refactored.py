@@ -58,20 +58,22 @@ def create_app(config_class=Config):
     from routes.health import health_bp
     from routes.transcription import transcription_bp
     from routes.sessions import sessions_bp
+    from routes.summary import summary_bp
     from routes.websocket import register_websocket_handlers
     
     app.register_blueprint(health_bp)
     app.register_blueprint(transcription_bp)
     app.register_blueprint(sessions_bp)
+    app.register_blueprint(summary_bp)
     
     # Register Socket.IO handlers
     register_websocket_handlers(socketio)
     
     # Initialize database
     with app.app_context():
-        # Import M2 models with new SQLAlchemy 2.0 Base
+        # Import M2 + M3 models with new SQLAlchemy 2.0 Base
         from models.base import Base
-        from models import Session, Segment  # noqa: F401
+        from models import Session, Segment, Summary  # noqa: F401
         
         # Create tables if they don't exist (for development)
         if app.config.get('DEVELOPMENT', True):
