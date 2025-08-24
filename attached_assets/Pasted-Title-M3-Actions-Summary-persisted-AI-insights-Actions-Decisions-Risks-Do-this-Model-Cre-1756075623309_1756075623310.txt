@@ -1,0 +1,98 @@
+Title: M3 — Actions & Summary: persisted AI insights (Actions/Decisions/Risks)
+
+Do this:
+
+Model
+
+Create models/summary.py (SQLAlchemy 2.0):
+
+id (pk), session_id (fk), summary_md (Text), actions (JSON), decisions (JSON), risks (JSON), engine (String), created_at (DateTime).
+
+Add relationship from Session → Summary (one‑to‑one or one‑to‑many; use one‑to‑one for now).
+
+Service
+
+New services/analysis_service.py:
+
+generate_summary(session_id:int) -> dict:
+
+Load final Segments (ordered).
+
+Build a bounded context string (e.g., last 8–12k chars).
+
+Call LLM (engine from env: ANALYSIS_ENGINE=openai_gpt|mock).
+
+Guardrails in prompt: no fabrication; if info missing, say “unknown”; concise; British English; return strict JSON:
+
+{ "summary_md": "...", "actions": [{"text":"","owner":"","due":""}], "decisions":[{"text":""}], "risks":[{"text":"","mitigation":""}] }
+
+
+Validate JSON; if parse fails, retry once with “respond valid JSON only.”
+
+Persist to Summary; return dict.
+
+Add a lightweight MockAnalysis path if ANALYSIS_ENGINE=mock.
+
+Routes
+
+POST /sessions/<id>/summarise → calls AnalysisService.generate_summary, returns persisted object.
+
+GET /sessions/<id>/summary → returns latest summary JSON.
+
+Optionally: if AUTO_SUMMARY_ON_FINALIZE=true, call on final flush in streaming finalize hook (non‑blocking via socketio.start_background_task).
+
+Templates (sessions_detail.html)
+
+Add a “Generate Summary” button. On click, POST to /sessions/<id>/summarise, then render:
+
+A Summary panel (render summary_md).
+
+Actions list (text, optional owner/due, “Copy” button).
+
+Decisions + Risks sections.
+
+Add a subtle badge if auto‑generated.
+
+Config
+
+In .env.example add:
+
+ANALYSIS_ENGINE=mock
+OPENAI_API_KEY=
+AUTO_SUMMARY_ON_FINALIZE=false
+SUMMARY_CONTEXT_CHARS=12000
+
+
+In config.py wire these up.
+
+Tests
+
+tests/test_summary_api.py:
+
+Create session + a couple of final segments.
+
+Set ANALYSIS_ENGINE=mock.
+
+Call /sessions/<id>/summarise → expect JSON with keys and a persisted row.
+
+tests/test_finalize_triggers_summary.py:
+
+With AUTO_SUMMARY_ON_FINALIZE=true, send WS final + end_of_stream → summary exists.
+
+Acceptance:
+
+API returns Actions/Decisions/Risks + Summary MD and saves it.
+
+Session detail page shows the sections and a generate button.
+
+Optional auto‑summary works when enabled (non‑blocking).
+
+Tests pass with ANALYSIS_ENGINE=mock.
+
+After M3 (preview)
+
+M4 — Sharing: view‑only token link + Markdown/PDF export.
+
+M5 — Sentiment & speaker labels (if you want diarization).
+
+M6 — Deploy: simple Dockerfile, gunicorn -k eventlet run, health checks.

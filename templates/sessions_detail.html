@@ -208,6 +208,101 @@
             {% endif %}
         </div>
     </div>
+
+    <!-- M3: AI Summary Section -->
+    {% if session.status == 'completed' %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-brain me-2"></i>
+                        AI Summary & Insights
+                    </h5>
+                    <div>
+                        <button id="generateSummaryBtn" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-magic me-1"></i>
+                            Generate Summary
+                        </button>
+                        <div id="summaryLoading" class="spinner-border spinner-border-sm text-primary ms-2" role="status" style="display:none;">
+                            <span class="visually-hidden">Generating...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body" id="summaryContent">
+                    <!-- Summary content will be loaded here -->
+                    <div id="noSummary" class="text-muted text-center py-4">
+                        <i class="fas fa-lightbulb fa-2x mb-3"></i>
+                        <p class="mb-0">No summary generated yet. Click "Generate Summary" to analyse this session.</p>
+                    </div>
+                    
+                    <!-- Summary Display -->
+                    <div id="summaryDisplay" style="display:none;">
+                        <!-- Summary Markdown -->
+                        <div id="summaryMd" class="mb-4"></div>
+                        
+                        <!-- Actions, Decisions, Risks Tabs -->
+                        <ul class="nav nav-tabs mb-3" id="insightsTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="actions-tab" data-bs-toggle="tab" data-bs-target="#actions" type="button" role="tab">
+                                    <i class="fas fa-tasks me-1"></i>
+                                    Actions (<span id="actionsCount">0</span>)
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="decisions-tab" data-bs-toggle="tab" data-bs-target="#decisions" type="button" role="tab">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    Decisions (<span id="decisionsCount">0</span>)
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="risks-tab" data-bs-toggle="tab" data-bs-target="#risks" type="button" role="tab">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Risks (<span id="risksCount">0</span>)
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="insightsTabContent">
+                            <!-- Actions Tab -->
+                            <div class="tab-pane fade show active" id="actions" role="tabpanel">
+                                <div id="actionsList">
+                                    <!-- Actions will be populated here -->
+                                </div>
+                            </div>
+                            
+                            <!-- Decisions Tab -->
+                            <div class="tab-pane fade" id="decisions" role="tabpanel">
+                                <div id="decisionsList">
+                                    <!-- Decisions will be populated here -->
+                                </div>
+                            </div>
+                            
+                            <!-- Risks Tab -->
+                            <div class="tab-pane fade" id="risks" role="tabpanel">
+                                <div id="risksList">
+                                    <!-- Risks will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Auto-generated badge -->
+                        <div class="mt-3">
+                            <span class="badge bg-info">
+                                <i class="fas fa-robot me-1"></i>
+                                Auto-generated insights
+                            </span>
+                            <small class="text-muted ms-2" id="summaryMeta">
+                                <!-- Summary metadata will be shown here -->
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <style>
@@ -258,5 +353,273 @@ setInterval(() => {
         .catch(error => console.error('Error checking for updates:', error));
 }, 10000); // Check every 10 seconds
 {% endif %}
+
+// M3: Summary functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const generateBtn = document.getElementById('generateSummaryBtn');
+    const summaryLoading = document.getElementById('summaryLoading');
+    const sessionId = {{ session.id }};
+    
+    // Only initialize if elements exist (completed sessions only)
+    if (!generateBtn) return;
+    
+    // Load existing summary on page load
+    loadExistingSummary();
+    
+    // Generate summary button handler
+    generateBtn.addEventListener('click', function() {
+        generateSummary();
+    });
+    
+    function loadExistingSummary() {
+        fetch(`/sessions/${sessionId}/summary`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.summary) {
+                    displaySummary(data.summary);
+                }
+            })
+            .catch(error => {
+                console.log('No existing summary found');
+            });
+    }
+    
+    function generateSummary() {
+        generateBtn.disabled = true;
+        summaryLoading.style.display = 'inline-block';
+        generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating...';
+        
+        fetch(`/sessions/${sessionId}/summarise`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displaySummary(data.summary);
+            } else {
+                showError('Failed to generate summary: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error generating summary:', error);
+            showError('Failed to generate summary. Please try again.');
+        })
+        .finally(() => {
+            generateBtn.disabled = false;
+            summaryLoading.style.display = 'none';
+            generateBtn.innerHTML = '<i class="fas fa-magic me-1"></i>Generate Summary';
+        });
+    }
+    
+    function displaySummary(summary) {
+        // Hide no summary message
+        document.getElementById('noSummary').style.display = 'none';
+        document.getElementById('summaryDisplay').style.display = 'block';
+        
+        // Update summary markdown (basic parsing)
+        const summaryMd = document.getElementById('summaryMd');
+        summaryMd.innerHTML = formatMarkdown(summary.summary_md || 'No summary available');
+        
+        // Update counts and populate tabs
+        updateActionsTab(summary.actions || []);
+        updateDecisionsTab(summary.decisions || []);
+        updateRisksTab(summary.risks || []);
+        
+        // Update metadata
+        const meta = document.getElementById('summaryMeta');
+        const createdDate = summary.created_at ? new Date(summary.created_at).toLocaleString() : 'Unknown';
+        meta.textContent = `Generated ${createdDate} using ${summary.engine || 'unknown'} engine`;
+        
+        // Update generate button
+        generateBtn.innerHTML = '<i class="fas fa-sync me-1"></i>Regenerate';
+    }
+    
+    function updateActionsTab(actions) {
+        const count = document.getElementById('actionsCount');
+        const list = document.getElementById('actionsList');
+        
+        count.textContent = actions.length;
+        
+        if (actions.length === 0) {
+            list.innerHTML = '<p class="text-muted">No actions identified.</p>';
+            return;
+        }
+        
+        let html = '';
+        actions.forEach((action, index) => {
+            const escapedText = escapeHtml(action.text || 'No description');
+            html += `
+                <div class="border rounded p-3 mb-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <strong>${escapedText}</strong>
+                            <div class="mt-1 text-muted small">
+                                <i class="fas fa-user me-1"></i>Owner: ${escapeHtml(action.owner || 'Unknown')}
+                                <i class="fas fa-calendar ms-3 me-1"></i>Due: ${escapeHtml(action.due || 'Unknown')}
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="copyToClipboard('${escapedText}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        list.innerHTML = html;
+    }
+    
+    function updateDecisionsTab(decisions) {
+        const count = document.getElementById('decisionsCount');
+        const list = document.getElementById('decisionsList');
+        
+        count.textContent = decisions.length;
+        
+        if (decisions.length === 0) {
+            list.innerHTML = '<p class="text-muted">No decisions identified.</p>';
+            return;
+        }
+        
+        let html = '';
+        decisions.forEach((decision, index) => {
+            const escapedText = escapeHtml(decision.text || 'No description');
+            html += `
+                <div class="border rounded p-3 mb-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            ${escapedText}
+                        </div>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="copyToClipboard('${escapedText}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        list.innerHTML = html;
+    }
+    
+    function updateRisksTab(risks) {
+        const count = document.getElementById('risksCount');
+        const list = document.getElementById('risksList');
+        
+        count.textContent = risks.length;
+        
+        if (risks.length === 0) {
+            list.innerHTML = '<p class="text-muted">No risks identified.</p>';
+            return;
+        }
+        
+        let html = '';
+        risks.forEach((risk, index) => {
+            const escapedText = escapeHtml(risk.text || 'No description');
+            const escapedMitigation = escapeHtml(risk.mitigation || '');
+            html += `
+                <div class="border rounded p-3 mb-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-exclamation-triangle text-warning me-2 mt-1"></i>
+                                <div>
+                                    <strong>${escapedText}</strong>
+                                    ${risk.mitigation ? `<div class="mt-2 text-muted small">
+                                        <i class="fas fa-shield-alt me-1"></i>
+                                        <strong>Mitigation:</strong> ${escapedMitigation}
+                                    </div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="copyToClipboard('${escapedText}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        list.innerHTML = html;
+    }
+    
+    function formatMarkdown(md) {
+        // Basic markdown parsing for display
+        return md
+            .replace(/^### (.*$)/gim, '<h5>$1</h5>')
+            .replace(/^## (.*$)/gim, '<h4>$1</h4>')
+            .replace(/^# (.*$)/gim, '<h3>$1</h3>')
+            .replace(/^\- (.*$)/gim, '<li>$1</li>')
+            .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+            .replace(/\n/gim, '<br>');
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+    
+    function showError(message) {
+        // Create toast notification for error
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification error';
+        toast.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>${message}`;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                document.body.removeChild(toast);
+            }
+        }, 5000);
+    }
+});
+
+// Copy to clipboard functionality
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Show success feedback
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.innerHTML = '<i class="fas fa-check me-2"></i>Copied to clipboard!';
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                document.body.removeChild(toast);
+            }
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+    });
+}
 </script>
+
+<style>
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #28a745;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 5px;
+    z-index: 1050;
+    animation: fadeInOut 2s ease-in-out;
+}
+
+.toast-notification.error {
+    background: #dc3545;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0; transform: translateY(-20px); }
+    10%, 90% { opacity: 1; transform: translateY(0); }
+}
+</style>
 {% endblock %}

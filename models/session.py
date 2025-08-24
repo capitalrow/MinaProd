@@ -30,6 +30,9 @@ class Session(Base):
         back_populates="session", cascade="all, delete-orphan"
     )
     
+    # M3: Summary relationship - accessed via backref from Summary model
+    # Note: Relationship defined in Summary model to avoid circular imports
+    
     def __repr__(self):
         return f'<Session {self.external_id}: {self.title}>'
     
