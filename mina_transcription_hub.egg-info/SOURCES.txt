@@ -21,3 +21,4 @@ services/transcription_service.py
 services/vad_service.py
 services/whisper_streaming.py
 tests/test_health.py
+tests/test_ws_smoke.py

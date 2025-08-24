@@ -34,7 +34,8 @@ def health_check():
         try:
             from app_refactored import db
             # Simple query to check database connectivity
-            db.session.execute('SELECT 1').fetchone()
+            from sqlalchemy import text
+            db.session.execute(text('SELECT 1')).fetchone()
             status["database"] = "connected"
         except Exception as e:
             logger.error(f"Database health check failed: {e}")
