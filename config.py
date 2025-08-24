@@ -29,10 +29,17 @@ class Config:
     
     # Real-time transcription settings
     ENABLE_REALTIME = os.environ.get('ENABLE_REALTIME', 'true').lower() == 'true'
-    MAX_CHUNK_MS = int(os.environ.get('MAX_CHUNK_MS', '1000'))
+    MAX_CHUNK_MS = int(os.environ.get('MAX_CHUNK_MS', '640'))
     MIN_CHUNK_MS = int(os.environ.get('MIN_CHUNK_MS', '100'))
     LANGUAGE_HINT = os.environ.get('LANGUAGE_HINT', 'en')
-    MIN_CONFIDENCE = float(os.environ.get('MIN_CONFIDENCE', '0.7'))
+    MIN_CONFIDENCE = float(os.environ.get('MIN_CONFIDENCE', '0.6'))
+    
+    # M1 Quality Settings
+    MAX_QUEUE_LEN = int(os.environ.get('MAX_QUEUE_LEN', '8'))
+    VOICE_TAIL_MS = int(os.environ.get('VOICE_TAIL_MS', '300'))
+    METRICS_SAMPLE_RATE = float(os.environ.get('METRICS_SAMPLE_RATE', '1.0'))
+    DEDUP_OVERLAP_THRESHOLD = float(os.environ.get('DEDUP_OVERLAP_THRESHOLD', '0.9'))
+    TRANSCRIPTION_ENGINE = os.environ.get('TRANSCRIPTION_ENGINE', 'mock')
     
     # VAD (Voice Activity Detection) settings
     VAD_SENSITIVITY = float(os.environ.get('VAD_SENSITIVITY', '0.5'))
