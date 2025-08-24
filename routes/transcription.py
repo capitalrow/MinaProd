@@ -183,7 +183,7 @@ def create_session():
         service = get_transcription_service()
         
         # Create session with service
-        session_id = asyncio.run(service.start_session(
+        session_id = service.start_session_sync(
             user_config={
                 'title': title,
                 'description': description,
@@ -191,7 +191,7 @@ def create_session():
                 'enable_speaker_detection': enable_speaker_detection,
                 'enable_sentiment_analysis': enable_sentiment_analysis
             }
-        ))
+        )
         
         # Get the created session from database
         session = Session.query.filter_by(session_id=session_id).first()
@@ -347,7 +347,7 @@ def end_session_api(session_id):
         # End session via service
         service = get_transcription_service()
         if session_id in service.active_sessions:
-            final_stats = asyncio.run(service.end_session(session_id))
+            final_stats = service.end_session_sync(session_id)
         else:
             # End session directly in database
             session.end_session()

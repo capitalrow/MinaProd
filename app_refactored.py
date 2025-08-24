@@ -10,7 +10,7 @@ from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
-from whitenoise import WhiteNoise
+# from whitenoise import WhiteNoise  # Disabled to avoid Socket.IO conflicts
 
 from config import Config
 
@@ -24,12 +24,10 @@ class Base(DeclarativeBase):
 db = SQLAlchemy(model_class=Base)
 socketio = SocketIO(
     cors_allowed_origins="*",
-    async_mode='threading',  # Use threading for Flask compatibility
+    async_mode='eventlet',  # Use eventlet for production compatibility
     ping_timeout=60,
     ping_interval=25,
-    transport=['websocket', 'polling'],
-    logger=True,
-    engineio_logger=True
+    transport=['websocket', 'polling']
 )
 
 def create_app(config_class=Config):
@@ -52,13 +50,8 @@ def create_app(config_class=Config):
         x_port=1
     )
     
-    # Configure WhiteNoise for static file serving
-    app.wsgi_app = WhiteNoise(
-        app.wsgi_app,
-        root=os.path.join(os.path.dirname(__file__), 'static'),
-        prefix='/static/',
-        max_age=31536000,  # 1 year cache for static assets
-    )
+    # Serve static files via Flask for now to avoid Socket.IO conflicts
+    # WhiteNoise can interfere with Socket.IO upgrades, so we'll use Flask's built-in static serving
     
     # Initialize extensions
     db.init_app(app)

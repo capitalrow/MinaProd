@@ -102,6 +102,125 @@ class TranscriptionService:
         
         logger.info(f"Transcription service initialized with config: {asdict(self.config)}")
     
+    # Sync wrapper methods for Flask routes (avoids asyncio.run() in request handlers)
+    def start_session_sync(self, session_id: Optional[str] = None, 
+                          user_config: Optional[Dict[str, Any]] = None) -> str:
+        """Synchronous wrapper for start_session."""
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If we're already in an async context, we can't use asyncio.run
+                # For now, we'll create the session synchronously
+                return self._start_session_sync_impl(session_id, user_config)
+            else:
+                return asyncio.run(self.start_session(session_id, user_config))
+        except RuntimeError:
+            # No event loop running
+            return asyncio.run(self.start_session(session_id, user_config))
+    
+    def _start_session_sync_impl(self, session_id: Optional[str] = None, 
+                                user_config: Optional[Dict[str, Any]] = None) -> str:
+        """Direct synchronous implementation for start_session."""
+        if session_id is None:
+            session_id = str(uuid.uuid4())
+        
+        if len(self.active_sessions) >= self.config.max_concurrent_sessions:
+            raise Exception(f"Maximum concurrent sessions ({self.config.max_concurrent_sessions}) reached")
+        
+        # Create database session
+        db_session = Session(
+            session_id=session_id,
+            status='created',
+            language=self.config.language,
+            enable_realtime=self.config.enable_realtime,
+            enable_speaker_detection=self.config.enable_speaker_detection,
+            enable_sentiment_analysis=self.config.enable_sentiment_analysis,
+            sample_rate=self.config.sample_rate,
+            min_confidence=self.config.min_confidence,
+            vad_sensitivity=self.config.vad_sensitivity,
+            vad_min_speech_duration=self.config.vad_min_speech_duration,
+            vad_min_silence_duration=self.config.vad_min_silence_duration
+        )
+        
+        # Apply user configuration overrides
+        if user_config:
+            for key, value in user_config.items():
+                if hasattr(db_session, key):
+                    setattr(db_session, key, value)
+        
+        db.session.add(db_session)
+        db.session.commit()
+        
+        # Initialize session state
+        self.active_sessions[session_id] = {
+            'state': SessionState.IDLE,
+            'created_at': time.time(),
+            'last_activity': time.time(),
+            'sequence_number': 0,
+            'audio_chunks': [],
+            'pending_processing': 0,
+            'stats': {
+                'total_audio_duration': 0.0,
+                'speech_duration': 0.0,
+                'silence_duration': 0.0,
+                'total_segments': 0,
+                'average_confidence': 0.0
+            }
+        }
+        
+        self.session_callbacks[session_id] = []
+        
+        # Initialize sub-services for this session
+        self.vad_service.reset_state()
+        # Note: whisper_service.start_session is async, but for sync mode we'll defer this
+        
+        self.total_sessions += 1
+        logger.info(f"Started transcription session (sync): {session_id}")
+        
+        return session_id
+    
+    def end_session_sync(self, session_id: str) -> Dict[str, Any]:
+        """Synchronous wrapper for end_session."""
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                return self._end_session_sync_impl(session_id)
+            else:
+                return asyncio.run(self.end_session(session_id))
+        except RuntimeError:
+            return asyncio.run(self.end_session(session_id))
+    
+    def _end_session_sync_impl(self, session_id: str) -> Dict[str, Any]:
+        """Direct synchronous implementation for end_session."""
+        if session_id not in self.active_sessions:
+            raise ValueError(f"Session {session_id} not found")
+        
+        session_data = self.active_sessions[session_id]
+        
+        # Update database session
+        db_session = Session.query.filter_by(session_id=session_id).first()
+        if db_session:
+            db_session.end_session()
+            
+            # Update final statistics
+            stats = session_data['stats']
+            db_session.total_segments = stats['total_segments']
+            db_session.average_confidence = stats['average_confidence']
+            db_session.total_duration = stats['total_audio_duration']
+            db.session.commit()
+        
+        # Get final statistics
+        final_stats = self._get_session_statistics(session_id)
+        
+        # Cleanup
+        del self.active_sessions[session_id]
+        del self.session_callbacks[session_id]
+        
+        logger.info(f"Ended transcription session (sync): {session_id}")
+        return final_stats
+
     async def start_session(self, session_id: Optional[str] = None, 
                            user_config: Optional[Dict[str, Any]] = None) -> str:
         """
