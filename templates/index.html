@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Mina{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-tachometer-alt me-2"></i>
+                Dashboard
+            </h1>
+            <a href="{{ url_for('transcription.live_transcription') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>
+                New Session
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="text-primary mb-2">
+                    <i class="fas fa-calendar-alt fa-2x"></i>
+                </div>
+                <h3 class="card-title">{{ stats.get('total_sessions', 0) }}</h3>
+                <p class="card-text text-muted">Total Sessions</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="text-success mb-2">
+                    <i class="fas fa-comments fa-2x"></i>
+                </div>
+                <h3 class="card-title">{{ stats.get('total_segments', 0) }}</h3>
+                <p class="card-text text-muted">Transcribed Segments</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="text-warning mb-2">
+                    <i class="fas fa-broadcast-tower fa-2x"></i>
+                </div>
+                <h3 class="card-title">{{ stats.get('active_sessions', 0) }}</h3>
+                <p class="card-text text-muted">Active Sessions</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="text-info mb-2">
+                    <i class="fas fa-clock fa-2x"></i>
+                </div>
+                <h3 class="card-title">{{ "%.1f"|format(stats.get('total_duration_hours', 0)) }}h</h3>
+                <p class="card-text text-muted">Total Time</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ url_for('transcription.live_transcription') }}" class="btn btn-primary w-100 py-3">
+                            <i class="fas fa-microphone fa-lg d-block mb-2"></i>
+                            Start Live Transcription
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ url_for('transcription.list_sessions') }}" class="btn btn-outline-secondary w-100 py-3">
+                            <i class="fas fa-list fa-lg d-block mb-2"></i>
+                            View All Sessions
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <button class="btn btn-outline-info w-100 py-3" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                            <i class="fas fa-upload fa-lg d-block mb-2"></i>
+                            Upload Audio File
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Sessions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-history me-2"></i>
+                    Recent Sessions
+                </h5>
+                <a href="{{ url_for('transcription.list_sessions') }}" class="btn btn-sm btn-outline-primary">
+                    View All
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_sessions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Status</th>
+                                    <th>Duration</th>
+                                    <th>Segments</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in recent_sessions %}
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>{{ session.title }}</strong>
+                                            {% if session.description %}
+                                                <br><small class="text-muted">{{ session.description[:50] }}{% if session.description|length > 50 %}...{% endif %}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if session.status == 'completed' %}success{% elif session.status == 'active' %}primary{% elif session.status == 'error' %}danger{% else %}secondary{% endif %}">
+                                            {{ session.status.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if session.total_duration %}
+                                            {{ "%.1f"|format(session.total_duration / 60) }}m
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ session.total_segments or 0 }}</td>
+                                    <td>
+                                        <span title="{{ session.created_at.strftime('%Y-%m-%d %H:%M:%S') }}">
+                                            {{ session.created_at.strftime('%m/%d %H:%M') }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('transcription.view_session', session_id=session.session_id) }}" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if session.status == 'completed' %}
+                                                <a href="{{ url_for('transcription.export_session', session_id=session.session_id, format='txt') }}" 
+                                                   class="btn btn-outline-success btn-sm">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-microphone-slash fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No sessions yet</h5>
+                        <p class="text-muted">Start your first transcription session to see it here.</p>
+                        <a href="{{ url_for('transcription.live_transcription') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>
+                            Create Session
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-upload me-2"></i>
+                    Upload Audio File
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="audioFile" class="form-label">Audio File</label>
+                        <input type="file" class="form-control" id="audioFile" 
+                               accept="audio/*,.webm,.mp3,.wav,.ogg" required>
+                        <div class="form-text">
+                            Supported formats: WebM, MP3, WAV, OGG (Max 100MB)
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="uploadTitle" class="form-label">Session Title</label>
+                        <input type="text" class="form-control" id="uploadTitle" 
+                               placeholder="Enter session title" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="uploadLanguage" class="form-label">Language</label>
+                        <select class="form-select" id="uploadLanguage">
+                            <option value="en" selected>English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="zh">Chinese</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="startUpload">
+                    <i class="fas fa-upload me-2"></i>
+                    Upload & Transcribe
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Upload functionality
+    document.getElementById('startUpload')?.addEventListener('click', function() {
+        const fileInput = document.getElementById('audioFile');
+        const titleInput = document.getElementById('uploadTitle');
+        const languageSelect = document.getElementById('uploadLanguage');
+        
+        if (!fileInput.files[0]) {
+            alert('Please select an audio file');
+            return;
+        }
+        
+        if (!titleInput.value.trim()) {
+            alert('Please enter a session title');
+            return;
+        }
+        
+        // Show loading state
+        const button = this;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
+        button.disabled = true;
+        
+        // In a real implementation, you would upload the file here
+        // For now, we'll simulate the process
+        setTimeout(() => {
+            alert('File upload functionality will be implemented in the next phase');
+            button.innerHTML = originalText;
+            button.disabled = false;
+            bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
+        }, 2000);
+    });
+    
+    // Auto-refresh active sessions count every 30 seconds
+    setInterval(function() {
+        fetch('/api/stats')
+            .then(response => response.json())
+            .then(data => {
+                if (data.database && data.database.active_sessions !== undefined) {
+                    const activeElement = document.querySelector('.text-warning').parentElement.nextElementSibling;
+                    if (activeElement) {
+                        activeElement.textContent = data.database.active_sessions;
+                    }
+                }
+            })
+            .catch(error => console.log('Stats update failed:', error));
+    }, 30000);
+});
+</script>
+{% endblock %}

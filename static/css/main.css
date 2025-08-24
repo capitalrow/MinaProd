@@ -1,0 +1,361 @@
+/* Mina Platform Custom Styles */
+/* Following Bootstrap dark theme guidelines */
+
+:root {
+  --mina-primary: #0d6efd;
+  --mina-secondary: #6c757d;
+  --mina-success: #198754;
+  --mina-warning: #ffc107;
+  --mina-danger: #dc3545;
+  --mina-info: #0dcaf0;
+  --mina-dark: #212529;
+  --mina-light: #f8f9fa;
+}
+
+/* Base overrides for dark theme consistency */
+body {
+  background-color: var(--bs-dark);
+  color: var(--bs-light);
+}
+
+/* Custom components */
+.transcription-container {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+}
+
+.card {
+  background-color: var(--bs-gray-900);
+  border-color: var(--bs-gray-700);
+}
+
+.card-header {
+  background-color: var(--bs-gray-800);
+  border-bottom-color: var(--bs-gray-700);
+}
+
+/* Audio visualizer enhancements */
+.audio-visualizer {
+  background: linear-gradient(45deg, var(--bs-gray-900), var(--bs-gray-800));
+}
+
+/* Transcription segment styles */
+.transcription-segment {
+  border-radius: 8px;
+  position: relative;
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.transcription-segment::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--bs-primary), transparent);
+  border-radius: 8px 8px 0 0;
+  opacity: 0;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+.transcription-segment.interim::before {
+  opacity: 1;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.7; }
+}
+
+/* Speaker colors */
+.speaker-1 { color: var(--bs-primary); }
+.speaker-2 { color: var(--bs-success); }
+.speaker-3 { color: var(--bs-warning); }
+.speaker-4 { color: var(--bs-info); }
+.speaker-5 { color: var(--bs-light); }
+
+/* Status indicators */
+.status-indicator {
+  box-shadow: 0 0 8px currentColor;
+}
+
+.status-connecting {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+/* Wave animation for audio bars */
+.wave-bar {
+  animation: waveAnimation 1s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+.wave-bar:nth-child(2n) { animation-delay: 0.1s; }
+.wave-bar:nth-child(3n) { animation-delay: 0.2s; }
+.wave-bar:nth-child(4n) { animation-delay: 0.3s; }
+.wave-bar:nth-child(5n) { animation-delay: 0.4s; }
+
+@keyframes waveAnimation {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.3);
+  }
+}
+
+.wave-bar.active {
+  animation: activeWave 0.1s ease-out;
+}
+
+@keyframes activeWave {
+  from {
+    transform: scaleY(1);
+    background-color: var(--bs-primary);
+  }
+  to {
+    transform: scaleY(var(--wave-height, 1));
+    background-color: var(--bs-success);
+  }
+}
+
+/* Confidence indicators */
+.confidence-indicator {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.confidence-bar {
+  border-radius: 2px;
+  position: relative;
+}
+
+.confidence-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: confidenceShimmer 2s ease-in-out infinite;
+}
+
+@keyframes confidenceShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Button enhancements */
+.btn {
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transition: width 0.6s, height 0.6s, top 0.6s, left 0.6s;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+}
+
+.btn:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.btn > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Recording button pulse effect */
+.btn-success.recording {
+  animation: recordingPulse 1s ease-in-out infinite;
+  box-shadow: 0 0 20px rgba(25, 135, 84, 0.5);
+}
+
+@keyframes recordingPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 20px rgba(25, 135, 84, 0.5);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(25, 135, 84, 0.8);
+  }
+}
+
+/* Scrollbar styling for transcription container */
+.transcription-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.transcription-container::-webkit-scrollbar-track {
+  background: var(--bs-gray-800);
+  border-radius: 4px;
+}
+
+.transcription-container::-webkit-scrollbar-thumb {
+  background: var(--bs-gray-600);
+  border-radius: 4px;
+}
+
+.transcription-container::-webkit-scrollbar-thumb:hover {
+  background: var(--bs-gray-500);
+}
+
+/* Form control dark theme consistency */
+.form-control, .form-select {
+  background-color: var(--bs-gray-800);
+  border-color: var(--bs-gray-600);
+  color: var(--bs-light);
+}
+
+.form-control:focus, .form-select:focus {
+  background-color: var(--bs-gray-800);
+  border-color: var(--bs-primary);
+  color: var(--bs-light);
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Modal dark theme */
+.modal-content {
+  background-color: var(--bs-gray-900);
+  border-color: var(--bs-gray-700);
+}
+
+.modal-header {
+  border-bottom-color: var(--bs-gray-700);
+}
+
+.modal-footer {
+  border-top-color: var(--bs-gray-700);
+}
+
+/* Table dark theme consistency */
+.table-dark {
+  --bs-table-bg: var(--bs-gray-900);
+  --bs-table-border-color: var(--bs-gray-700);
+}
+
+/* Loading states */
+.loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid transparent;
+  border-top: 2px solid var(--bs-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .transcription-container {
+    max-height: 400px;
+  }
+  
+  .audio-visualizer {
+    height: 40px;
+  }
+  
+  .wave-bar {
+    width: 2px;
+  }
+  
+  .btn-group .btn {
+    padding: 0.375rem 0.5rem;
+  }
+  
+  .card-body {
+    padding: 0.75rem;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .transcription-segment {
+    border: 2px solid currentColor;
+  }
+  
+  .confidence-bar {
+    border: 1px solid currentColor;
+  }
+  
+  .status-indicator {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Print styles */
+@media print {
+  .navbar, .btn, .modal, .audio-visualizer {
+    display: none !important;
+  }
+  
+  .transcription-container {
+    max-height: none !important;
+    overflow: visible !important;
+    border: 1px solid #000 !important;
+  }
+  
+  .transcription-segment {
+    break-inside: avoid;
+    margin-bottom: 0.5rem;
+    border: 1px solid #ccc;
+  }
+}
