@@ -86,7 +86,7 @@ def register_websocket_handlers(socketio):
             # If session is not active in service, start it
             if session_id not in service.active_sessions:
                 try:
-                    asyncio.create_task(service.start_session(session_id))
+                    service.start_session_sync(session_id)
                 except Exception as e:
                     logger.error(f"Error starting service session: {e}")
             
@@ -119,6 +119,128 @@ def register_websocket_handlers(socketio):
             
         except Exception as e:
             logger.error(f"Error joining session: {e}")
+            emit('error', {'message': str(e)})
+    
+    @socketio.on('audio_chunk')
+    def handle_audio_chunk(data):
+        """
+        Handle M1 audio chunk with VAD gating and backpressure.
+        
+        Args:
+            data: Dictionary containing session_id, audio_data, timestamp, is_voiced
+        """
+        try:
+            session_id = data.get('session_id')
+            audio_data_hex = data.get('audio_data')
+            timestamp = data.get('timestamp', time.time())
+            is_voiced = data.get('is_voiced', True)  # Assume voiced if not specified
+            
+            if not session_id or not audio_data_hex:
+                emit('error', {'message': 'session_id and audio_data are required'})
+                return
+            
+            # Convert hex string back to bytes
+            try:
+                audio_data = bytes.fromhex(audio_data_hex)
+            except ValueError:
+                emit('error', {'message': 'Invalid audio_data format'})
+                return
+            
+            # Get transcription service
+            service = get_transcription_service()
+            
+            # Enqueue chunk with VAD gating and backpressure handling
+            success = service.enqueue_audio_chunk(session_id, audio_data, timestamp, is_voiced)
+            
+            if not success:
+                logger.warning(f"Audio chunk dropped due to backpressure for session {session_id}")
+                emit('chunk_dropped', {
+                    'session_id': session_id,
+                    'timestamp': timestamp,
+                    'reason': 'backpressure'
+                })
+            
+            # Process queue (non-blocking)
+            def emit_result(result):
+                """Callback to emit transcription results."""
+                socketio.emit('interim_transcription' if not result.is_final else 'transcription_result', {
+                    'session_id': session_id,
+                    'text': result.text,
+                    'avg_confidence': result.avg_confidence,
+                    'is_final': result.is_final,
+                    'latency_ms': result.latency_ms,
+                    'chunk_index': result.chunk_index,
+                    'timestamp': result.timestamp,
+                    'words': result.words,
+                    'metadata': result.metadata
+                }, room=session_id)
+            
+            service.process_queue(emit_result)
+            
+        except Exception as e:
+            logger.error(f"Error handling audio chunk: {e}")
+            emit('error', {'message': str(e)})
+    
+    @socketio.on('end_of_stream')
+    def handle_end_of_stream(data):
+        """
+        Handle M1 end of stream with final transcript finalization.
+        
+        Args:
+            data: Dictionary containing session_id
+        """
+        try:
+            session_id = data.get('session_id')
+            if not session_id:
+                emit('error', {'message': 'session_id is required'})
+                return
+            
+            logger.info(f"End of stream requested for session: {session_id}")
+            
+            # Get transcription service
+            service = get_transcription_service()
+            
+            def emit_final_result(result):
+                """Callback for final transcript."""
+                socketio.emit('final_transcript', {
+                    'session_id': session_id,
+                    'text': result.text,
+                    'avg_confidence': result.avg_confidence,
+                    'latency_ms': result.latency_ms,
+                    'segments_count': len(result.words),
+                    'words': result.words,
+                    'metadata': result.metadata,
+                    'timestamp': result.timestamp
+                }, room=session_id)
+            
+            # Finalize session and get metrics
+            metrics = service.finalize_session(session_id, emit_final_result)
+            
+            if metrics:
+                # Emit session metrics
+                socketio.emit('session_metrics', {
+                    'session_id': session_id,
+                    'chunks_received': metrics.chunks_received,
+                    'chunks_processed': metrics.chunks_processed,
+                    'chunks_dropped': metrics.chunks_dropped,
+                    'interim_events': metrics.interim_events,
+                    'final_events': metrics.final_events,
+                    'latency_avg_ms': metrics.latency_avg_ms,
+                    'latency_p95_ms': metrics.latency_p95_ms,
+                    'retries': metrics.retries,
+                    'ws_disconnects': metrics.ws_disconnects
+                }, room=session_id)
+            
+            # End session in transcription service
+            service.end_session_sync(session_id)
+            
+            emit('session_finalized', {
+                'session_id': session_id,
+                'timestamp': time.time()
+            })
+            
+        except Exception as e:
+            logger.error(f"Error handling end of stream: {e}")
             emit('error', {'message': str(e)})
     
     @socketio.on('leave_session')

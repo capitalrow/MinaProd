@@ -33,9 +33,14 @@ class TranscriptionConfig:
     max_chunk_duration: float = 30.0  # seconds
     min_chunk_duration: float = 0.1   # seconds
     buffer_size: int = 10  # number of audio chunks to buffer
-    confidence_threshold: float = 0.7
+    confidence_threshold: float = 0.6
     enable_word_timestamps: bool = True
     enable_vad_filtering: bool = True
+    # M1 Quality settings
+    max_chunk_ms: int = 640
+    max_queue_len: int = 8
+    voice_tail_ms: int = 300
+    dedup_overlap_threshold: float = 0.9
 
 @dataclass
 class TranscriptionResult:
@@ -123,6 +128,24 @@ class WhisperStreamingService:
         self.successful_requests = 0
         self.average_latency = 0.0
         self.error_count = 0
+        
+        # M1 Quality tracking
+        self.chunks_received = 0
+        self.chunks_processed = 0
+        self.chunks_dropped = 0
+        self.interim_events = 0
+        self.final_events = 0
+        self.retries = 0
+        self.ws_disconnects = 0
+        self.latency_samples = deque(maxlen=100)
+        
+        # Bounded queue for backpressure
+        from queue import Queue
+        self.processing_queue = Queue(maxsize=config.max_queue_len if config else 8)
+        
+        # Deduplication buffer
+        self.last_text_buffer = ""
+        self.buffer_size_chars = 80
         
         # Callback for real-time results
         self.result_callback: Optional[Callable[[TranscriptionResult], None]] = None

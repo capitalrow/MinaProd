@@ -60,7 +60,38 @@ class VADService:
         self.speech_frames_count = 0
         self.false_positives = 0
         
+        # M1 Voice gating
+        self.last_voice_time = 0
+        self.voice_tail_ms = 300  # Will be configurable from config
+        
         logger.info(f"VAD Service initialized with config: {self.config}")
+    
+    def is_voiced(self, audio_data: bytes, timestamp: Optional[float] = None) -> bool:
+        """
+        Check if audio chunk contains voice or is within voice tail period.
+        
+        Args:
+            audio_data: Raw audio bytes
+            timestamp: Optional timestamp, uses current time if None
+            
+        Returns:
+            bool: True if chunk should be processed (contains voice or in voice tail)
+        """
+        if timestamp is None:
+            timestamp = time.time()
+            
+        # Process the chunk to detect voice
+        result = self.process_audio_chunk(audio_data, timestamp)
+        
+        # Allow chunk if it contains voice OR within voice tail period
+        time_since_last_voice = (timestamp - self.last_voice_time) * 1000  # Convert to ms
+        is_in_voice_tail = time_since_last_voice <= self.voice_tail_ms
+        
+        return result.is_speech or is_in_voice_tail
+    
+    def set_voice_tail_ms(self, voice_tail_ms: int):
+        """Set voice tail duration in milliseconds."""
+        self.voice_tail_ms = voice_tail_ms
     
     def process_audio_chunk(self, audio_data: bytes, timestamp: Optional[float] = None) -> VADResult:
         """
@@ -102,6 +133,10 @@ class VADService:
             
             # Apply temporal smoothing
             is_speech = self._apply_temporal_logic(speech_probability, timestamp)
+            
+            # Update last voice time for gating
+            if is_speech:
+                self.last_voice_time = timestamp
             
             # Update statistics
             self._update_statistics(is_speech)
