@@ -10,7 +10,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_socketio import emit
 
 from services.analysis_service import AnalysisService
-from app_refactored import socketio
+from app import socketio
 
 logger = logging.getLogger(__name__)
 
