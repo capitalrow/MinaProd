@@ -51,6 +51,8 @@ dependencies = [
     "python-docx>=1.2.0",
     "reportlab>=4.4.3",
     "gunicorn[eventlet]>=23.0.0",
+    "psutil>=7.0.0",
+    "websocket>=0.2.1",
 ]
 
 [project.optional-dependencies]

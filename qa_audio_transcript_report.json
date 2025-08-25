@@ -1,0 +1,57 @@
+{
+  "timestamp": "2025-08-25T18:21:16.163761",
+  "qa_summary": {
+    "overall_quality_score": 48.0,
+    "wer_score": 1.0,
+    "confidence_reliability": "reliable",
+    "real_time_performance": "excellent"
+  },
+  "detailed_metrics": {
+    "wer_score": 1.0,
+    "substitution_errors": 0,
+    "insertion_errors": 0,
+    "deletion_errors": 30,
+    "time_drift_ms": [],
+    "avg_time_drift_ms": 0.0,
+    "max_time_drift_ms": 0.0,
+    "dropped_words": [],
+    "duplicate_words": [
+      "you"
+    ],
+    "hallucination_count": 0,
+    "confidence_distribution": {
+      "high": 3,
+      "medium": 0,
+      "low": 0
+    },
+    "interim_accuracy": 0.75,
+    "final_accuracy": 0.85,
+    "interim_final_consistency": 0.8,
+    "repeated_patterns": [],
+    "filler_word_ratio": 1.0,
+    "silence_handling": {
+      "gaps_detected": 0,
+      "proper_handling": 0
+    }
+  },
+  "quality_analysis": {
+    "accuracy_assessment": "poor",
+    "consistency_assessment": "consistent",
+    "robustness_assessment": "robust"
+  },
+  "issue_identification": {
+    "critical_issues": [
+      "CRITICAL: Word Error Rate exceeds 50%"
+    ],
+    "performance_issues": [],
+    "quality_issues": [
+      "MEDIUM: High filler word ratio"
+    ]
+  },
+  "recommendations": [
+    "Improve audio preprocessing and noise reduction",
+    "Enhance acoustic model training with domain-specific data",
+    "Implement automated quality monitoring and alerting",
+    "Add user feedback mechanisms for quality improvement"
+  ]
+}

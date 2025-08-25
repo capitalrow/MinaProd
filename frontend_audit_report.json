@@ -1,0 +1,112 @@
+{
+  "timestamp": "2025-08-25T18:21:15.280497",
+  "audit_summary": {
+    "core_functionality_score": 25.0,
+    "accessibility_score": 0.0,
+    "responsive_design_score": 25.0,
+    "error_handling_score": 66.7,
+    "total_ui_states": 1,
+    "aria_implementation_count": 1
+  },
+  "detailed_results": {
+    "start_stop_buttons": {
+      "start_button_present": false,
+      "stop_button_present": false,
+      "button_ids_unique": false,
+      "event_handlers_attached": true
+    },
+    "microphone_permissions": {
+      "navigator_getusermedia": false,
+      "permission_error_handling": false,
+      "fallback_messaging": true
+    },
+    "websocket_reconnect": {
+      "reconnect_logic_present": false,
+      "connection_retry": false,
+      "backoff_strategy": true
+    },
+    "error_handling": {
+      "try_catch_blocks": false,
+      "error_display": true,
+      "user_notifications": true
+    },
+    "connection_states": [],
+    "recording_states": [
+      "Recording"
+    ],
+    "error_states": [],
+    "interim_update_latency": {
+      "page_load_ms": 203.66899999999998,
+      "html_size_kb": 38.6044921875,
+      "dom_ready_optimized": true
+    },
+    "ui_responsiveness": {
+      "async_loading": false,
+      "lazy_loading": false,
+      "debounced_inputs": false,
+      "throttled_events": false
+    },
+    "aria_labels": {
+      "aria_label_count": 0,
+      "aria_live_regions": 0,
+      "aria_describedby": 0,
+      "role_attributes": 1
+    },
+    "keyboard_navigation": {
+      "tabindex_present": true,
+      "focus_management": false,
+      "keyboard_event_handlers": false,
+      "skip_links": false
+    },
+    "color_contrast": {
+      "css_contrast_keywords": false,
+      "dark_theme_support": true,
+      "high_contrast_mode": false
+    },
+    "screen_reader_support": {
+      "alt_text_present": false,
+      "semantic_html": false,
+      "live_announcements": false,
+      "focus_indicators": false
+    },
+    "mobile_compatibility": {
+      "viewport_meta": true,
+      "responsive_css": false,
+      "touch_events": false,
+      "mobile_first_design": false
+    },
+    "desktop_compatibility": {
+      "large_screen_support": false,
+      "keyboard_shortcuts": false,
+      "mouse_events": true,
+      "print_styles": false
+    },
+    "error_toast_system": {
+      "toast_component_present": false,
+      "error_notifications": false,
+      "success_notifications": true,
+      "auto_dismiss": true
+    },
+    "user_feedback": {
+      "loading_indicators": true,
+      "progress_bars": false,
+      "status_messages": true,
+      "help_text": false
+    }
+  },
+  "compliance_score": 29.2,
+  "priority_issues": [
+    "CRITICAL: Start Recording button not found",
+    "CRITICAL: Microphone access API not implemented",
+    "HIGH: WebSocket reconnection logic missing",
+    "MEDIUM: Insufficient ARIA labels for accessibility"
+  ],
+  "recommendations": [
+    "Implement comprehensive error handling with user-friendly messages",
+    "Enhance accessibility with proper ARIA labels and semantic HTML",
+    "Add toast notification system for better user feedback",
+    "Implement clear UI states for all connection scenarios",
+    "Add comprehensive keyboard navigation support",
+    "Implement loading states and progress indicators"
+  ]
+}
