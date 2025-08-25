@@ -3,19 +3,12 @@ Mina - Meeting Insights & Action Platform
 EVENTLET WEBSOCKET FIX: Stable WebSocket server with no worker crashes.
 """
 
+# CRITICAL: Eventlet monkey patching MUST be first
+import eventlet
+eventlet.monkey_patch()
+
 import os
 import logging
-
-# Conditional Eventlet support - only when running directly
-import_eventlet = os.environ.get('USE_EVENTLET', 'false').lower() == 'true'
-if import_eventlet or __name__ == '__main__':
-    try:
-        import eventlet
-        eventlet.monkey_patch()
-        print("✅ Eventlet monkey patching applied")
-    except ImportError:
-        print("⚠️  Eventlet not available - using standard mode")
-
 from app_refactored import create_app, socketio
 
 # Configure logging
