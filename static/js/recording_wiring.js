@@ -90,6 +90,24 @@ if (!window._minaHandlersBound) {
                 interimDiv.textContent = '';
                 interimDiv.style.display = 'none';
             }
+            
+            // Update quality monitoring with enhanced data
+            if (window.qualityMonitor && payload.confidence !== undefined) {
+                window.qualityMonitor.handleQualityUpdate({
+                    type: 'final_processed',
+                    confidence: payload.confidence || 0,
+                    text_quality: payload.quality_status || 'good',
+                    timestamp: payload.timestamp
+                });
+            }
+        });
+        
+        // Enhanced Quality Monitoring Event Handlers
+        socket.on('quality_update', (data) => {
+            console.log('Quality update received:', data);
+            if (window.qualityMonitor) {
+                window.qualityMonitor.handleQualityUpdate(data);
+            }
         });
         
         // Session management

@@ -573,7 +573,7 @@ def register_websocket_handlers(socketio):
                 
                 logger.info(f"Audio processing result: {result is not None}")
                 
-                # Emit results if available
+                # Emit results if available with enhanced quality metrics
                 if result:
                     if result.get('transcription'):
                         text = result['transcription'].get('text', '')
@@ -582,21 +582,34 @@ def register_websocket_handlers(socketio):
                         
                         logger.info(f"Transcription result - Text: '{text}', Confidence: {confidence}, Final: {is_final}")
                         
+                        # Enhanced transcription event with quality metrics
+                        transcript_data = {
+                            'session_id': session_id,
+                            'text': text,
+                            'confidence': confidence,
+                            'timestamp': result.get('timestamp', timestamp),
+                            'quality_status': 'good' if confidence >= 0.7 else 'warning' if confidence >= 0.5 else 'poor',
+                            'word_count': len(text.split()) if text else 0,
+                            'text_length': len(text)
+                        }
+                        
                         if is_final and text.strip():
-                            socketio.emit('final_transcript', {
+                            transcript_data['segment_type'] = 'final'
+                            socketio.emit('final_transcript', transcript_data, room=session_id)
+                            
+                            # Update session quality metrics
+                            socketio.emit('quality_update', {
                                 'session_id': session_id,
-                                'text': text,
+                                'type': 'final_processed',
                                 'confidence': confidence,
-                                'timestamp': result.get('timestamp', timestamp)
+                                'text_quality': transcript_data['quality_status'],
+                                'timestamp': timestamp
                             }, room=session_id)
+                            
                         elif text.strip():
-                            # INT-LIVE-I1: Emit interim transcript 
-                            socketio.emit('interim_transcript', {
-                                'session_id': session_id,
-                                'text': text,
-                                'confidence': confidence,
-                                'timestamp': result.get('timestamp', timestamp)
-                            }, room=session_id)
+                            # INT-LIVE-I1: Emit interim transcript with quality info
+                            transcript_data['segment_type'] = 'interim'
+                            socketio.emit('interim_transcript', transcript_data, room=session_id)
                             
                             logger.info(f"INTERIM result: {text[:50]}... (confidence: {confidence})")
                         
@@ -606,16 +619,32 @@ def register_websocket_handlers(socketio):
                                 'is_speech': result['vad'].get('is_speech', False),
                                 'confidence': result['vad'].get('confidence', 0.0)
                             }, room=session_id)
-                
+                            
                 else:
+                    # Emit quality warning when no results are produced
                     logger.debug(f"No transcription result for session {session_id}")
+                    socketio.emit('quality_update', {
+                        'session_id': session_id,
+                        'type': 'no_transcription',
+                        'message': 'Audio processed but no transcription generated (quality filtering may have rejected it)',
+                        'timestamp': timestamp
+                    }, room=session_id)
                 
             except Exception as e:
                 logger.error(f"Error processing audio for session {session_id}: {e}")
                 socketio.emit('processing_error', {
                     'session_id': session_id,
                     'error': str(e),
-                    'timestamp': datetime.utcnow().isoformat()
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'error_type': 'audio_processing_failed'
+                })
+                
+                # Emit quality degradation warning
+                socketio.emit('quality_update', {
+                    'session_id': session_id,
+                    'type': 'error',
+                    'message': f'Audio processing error: {str(e)}',
+                    'timestamp': timestamp
                 })
             
             logger.debug(f"Audio chunk processed for session {session_id}")
