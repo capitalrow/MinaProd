@@ -21,10 +21,12 @@ logger = logging.getLogger(__name__)
 db = SQLAlchemy()
 socketio = SocketIO(
     cors_allowed_origins="*",
-    async_mode='eventlet',  # Use eventlet for production compatibility
+    async_mode='threading',  # FIXED: Match actual server setup instead of eventlet
     ping_timeout=60,
     ping_interval=25,
-    transport=['websocket', 'polling']
+    transports=['websocket', 'polling'],  # FIXED: Use 'transports' not 'transport'  
+    engineio_logger=False,
+    socketio_logger=False
 )
 
 def create_app(config_class=Config):
