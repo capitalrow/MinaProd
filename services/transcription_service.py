@@ -643,7 +643,7 @@ class TranscriptionService:
                 if text:
                     # Create segment in database
                     from models.segment import Segment
-                    from main import db
+                    from app import db
                     
                     # Get database session
                     db_session = SessionService.get_session_by_external(session_id)
