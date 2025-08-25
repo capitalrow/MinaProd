@@ -108,7 +108,7 @@ def register_websocket_handlers(socketio):
         try:
             service = get_transcription_service()
             # In a real implementation, we'd track client-session mappings
-            logger.info(f"Cleaned up resources for client: {client_id}")
+            logger.info(f"Cleaned up resources for disconnected client")
         except Exception as e:
             logger.error(f"Error during disconnect cleanup: {e}")
     
@@ -170,8 +170,7 @@ def register_websocket_handlers(socketio):
                 'timestamp': datetime.utcnow().isoformat()
             })
             
-            from flask import request
-            logger.info(f"Client {request.sid} joined session {session_id}")
+            logger.info(f"Client joined session {session_id}")
             
         except Exception as e:
             logger.error(f"Error joining session: {e}")
@@ -289,7 +288,7 @@ def register_websocket_handlers(socketio):
                 db_session_id = SessionService.create_session(title=title)
                 # Get the session to get its external_id
                 session = db.session.get(Session, db_session_id)
-                session_id = session.external_id
+                session_id = getattr(session, 'external_id', None) if session else None
                 logger.info(f"Created new session with ID: {session_id}")
             else:
                 # Check if session exists, create if not
@@ -356,7 +355,8 @@ def register_websocket_handlers(socketio):
             if session and getattr(session, 'is_active', False):
                 # End session manually since model may not have end_session method
                 session.status = 'completed'
-                session.ended_at = datetime.utcnow()
+                if hasattr(session, 'ended_at'):
+                    session.ended_at = datetime.utcnow()
                 db.session.commit()
             
             # Notify room
@@ -519,10 +519,8 @@ def register_websocket_handlers(socketio):
     @socketio.on('ping')
     def handle_ping(data):
         """Handle ping for connection health check."""
-        from flask import request
         emit('pong', {
-            'timestamp': datetime.utcnow().isoformat(),
-            'client_id': request.sid
+            'timestamp': datetime.utcnow().isoformat()
         })
     
     @socketio.on('get_session_status')
