@@ -1,36 +1,33 @@
-# Production-ready Gunicorn configuration for Flask-SocketIO
-# Based on industry best practices from research
+# Gunicorn configuration file
+# This fixes the eventlet conflicts by using sync workers instead
 
-import eventlet
-eventlet.monkey_patch()
+import multiprocessing
 
 # Server socket
 bind = "0.0.0.0:5000"
+backlog = 2048
 
-# Worker configuration - CRITICAL: Single worker required for Flask-SocketIO
-worker_class = "eventlet"
-workers = 1  # MUST be 1 for Flask-SocketIO
+# Worker processes
+workers = 1
+worker_class = "sync"  # Use sync instead of eventlet to avoid conflicts
 worker_connections = 1000
+timeout = 30
+keepalive = 2
 
-# Timeout settings optimized for WebSocket connections
-timeout = 300  # 5 minutes for long-running connections
-keepalive = 5  # Keep connections alive
-graceful_timeout = 60
-
-# Request limits
+# Restart workers after this many requests
 max_requests = 1000
-max_requests_jitter = 100
-
-# Process management
-preload_app = True
-reload = True
+max_requests_jitter = 50
 
 # Logging
-loglevel = 'info'
-accesslog = '-'
-errorlog = '-'
+accesslog = "-"
+errorlog = "-"
+loglevel = "info"
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
 
-# SSL (if needed)
-# keyfile = '/path/to/keyfile'
-# certfile = '/path/to/certfile'
+# Process naming
+proc_name = "mina_app"
+
+# Server mechanics
+preload_app = True
+reload = True
+reuse_port = True

@@ -19,15 +19,15 @@ logger = logging.getLogger(__name__)
 
 # Initialize extensions - Base will be imported from models
 db = SQLAlchemy()
-# Optimized Socket.IO configuration based on production best practices
+# Socket.IO configuration compatible with both Gunicorn and direct execution
 socketio = SocketIO(
     cors_allowed_origins="*",
     async_mode='eventlet',  # Required for stable WebSocket connections
-    ping_timeout=120,  # Extended timeout to prevent Chrome tab throttling issues
+    ping_timeout=60,  # Reduced timeout for better compatibility
     ping_interval=25,   # Regular ping to keep connection alive
     transports=['websocket', 'polling'],  # WebSocket first, polling fallback
-    engineio_logger=True,   # Enable for debugging connection issues
-    socketio_logger=True,   # Enable for comprehensive logging
+    engineio_logger=False,   # Disabled for better Gunicorn compatibility
+    socketio_logger=False,   # Disabled for better Gunicorn compatibility
     max_http_buffer_size=1000000  # 1MB buffer for audio data
 )
 
