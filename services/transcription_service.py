@@ -681,6 +681,27 @@ class TranscriptionService:
         except Exception as e:
             logger.error(f"Error persisting segment for session {session_id}: {e}")
     
+    def _cleanup_stale_sessions(self):
+        """Clean up stale sessions that may have been left orphaned."""
+        current_time = time.time()
+        stale_sessions = []
+        
+        for session_id, session_data in list(self.active_sessions.items()):
+            last_activity = session_data.get('last_activity', 0)
+            # Consider sessions stale if no activity for 30 minutes
+            if current_time - last_activity > 1800:  # 30 minutes
+                stale_sessions.append(session_id)
+        
+        for session_id in stale_sessions:
+            try:
+                logger.info(f"Cleaning up stale session: {session_id}")
+                self.end_session_sync(session_id)
+            except Exception as e:
+                logger.error(f"Error cleaning up stale session {session_id}: {e}")
+        
+        if stale_sessions:
+            logger.info(f"Cleaned up {len(stale_sessions)} stale sessions")
+
     def end_session_sync(self, session_id: str) -> None:
         """
         INT-LIVE-I1: End session with final flush of any remaining buffer.
