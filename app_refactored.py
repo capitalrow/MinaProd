@@ -19,14 +19,16 @@ logger = logging.getLogger(__name__)
 
 # Initialize extensions - Base will be imported from models
 db = SQLAlchemy()
+# Optimized Socket.IO configuration based on production best practices
 socketio = SocketIO(
     cors_allowed_origins="*",
-    async_mode='eventlet',  # Use eventlet for stable WebSocket support
-    ping_timeout=60,
-    ping_interval=25,
-    transports=['websocket', 'polling'],
-    engineio_logger=False,
-    socketio_logger=False
+    async_mode='eventlet',  # Required for stable WebSocket connections
+    ping_timeout=120,  # Extended timeout to prevent Chrome tab throttling issues
+    ping_interval=25,   # Regular ping to keep connection alive
+    transports=['websocket', 'polling'],  # WebSocket first, polling fallback
+    engineio_logger=True,   # Enable for debugging connection issues
+    socketio_logger=True,   # Enable for comprehensive logging
+    max_http_buffer_size=1000000  # 1MB buffer for audio data
 )
 
 def create_app(config_class=Config):
