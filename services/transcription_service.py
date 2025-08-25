@@ -703,21 +703,23 @@ class TranscriptionService:
         if not rolling_text or not text:
             return False
             
-        # Simple similarity check using common words
-        text_words = set(text.lower().split())
-        rolling_words = set(rolling_text.lower().split())
+        # 🔥 INT-LIVE-I2: Rolling Jaccard similarity on last ~80 chars with character n-grams
+        WINDOW_SIZE = 80
+        JACCARD_THRESHOLD = 0.85
         
-        if not text_words or not rolling_words:
+        # Take last 80 chars of rolling buffer for comparison
+        rolling_window = rolling_text[-WINDOW_SIZE:].lower().strip()
+        text_lower = text.lower().strip()
+        
+        if not rolling_window or not text_lower:
             return False
-            
-        # Calculate Jaccard similarity
-        intersection = text_words.intersection(rolling_words)
-        union = text_words.union(rolling_words)
-        similarity = len(intersection) / len(union) if union else 0
         
-        # Flag as duplicate if >80% similarity
-        if similarity > 0.8:
-            logger.debug(f"Rejected duplicate text: '{text}' (similarity: {similarity:.2f})")
+        # Compute Jaccard similarity using character bigrams (more precise than word-level)
+        jaccard_sim = self._jaccard_similarity_ngrams(text_lower, rolling_window, n=2)
+        
+        # Flag as duplicate if >85% similarity  
+        if jaccard_sim > JACCARD_THRESHOLD:
+            logger.debug(f"Rejected duplicate text: '{text}' (Jaccard similarity: {jaccard_sim:.3f})")
             return True
             
         return False
@@ -734,6 +736,37 @@ class TranscriptionService:
             'words': result.words,
             'metadata': result.metadata
         }
+    
+    def _jaccard_similarity_ngrams(self, text1: str, text2: str, n: int = 2) -> float:
+        """
+        🔥 INT-LIVE-I2: Compute Jaccard similarity using character n-grams.
+        
+        Args:
+            text1: First text string
+            text2: Second text string  
+            n: N-gram size (default 2 for bigrams)
+            
+        Returns:
+            Jaccard similarity coefficient (0.0 to 1.0)
+        """
+        def get_ngrams(text: str, n: int) -> set:
+            """Extract character n-grams from text."""
+            if len(text) < n:
+                return {text}  # If text shorter than n, use whole text
+            return {text[i:i+n] for i in range(len(text) - n + 1)}
+        
+        ngrams1 = get_ngrams(text1, n)
+        ngrams2 = get_ngrams(text2, n)
+        
+        if not ngrams1 and not ngrams2:
+            return 1.0  # Both empty
+        if not ngrams1 or not ngrams2:
+            return 0.0  # One empty
+            
+        intersection = len(ngrams1.intersection(ngrams2))
+        union = len(ngrams1.union(ngrams2))
+        
+        return intersection / union if union > 0 else 0.0
     
     def _on_transcription_result(self, result: TranscriptionResult):
         """Handle transcription result callback with critical quality filtering."""
@@ -871,35 +904,37 @@ class TranscriptionService:
             True if should finalize, False for interim
         """
         try:
-            # 1) End of stream flag
+            # 🔥 INT-LIVE-I2: Proper endpointing logic as specified
+            # 1) Explicit finalization signal (is_final_chunk=True from Stop button)
             if state.get('end_of_stream', False):
+                logger.debug("🔥 Finalizing on explicit end_of_stream (is_final_chunk=True)")
                 return True
                 
-            # 2) Silence boundary detection (VAD tail)
+            # 2) VAD tail - PRIMARY trigger (300-500ms silence)
             if not vad_result.is_speech and len(state.get('rolling_text', '')) > 0:
                 # Check if we've had silence for long enough
                 last_speech_time = state.get('last_speech_time', now)
                 silence_duration = (now - last_speech_time) * 1000  # ms
-                if silence_duration > self.config.vad_min_silence_duration:
-                    logger.debug(f"Finalizing due to silence boundary: {silence_duration}ms")
+                VOICE_TAIL_MS = 400  # 300-500ms range, use 400ms as specified
+                if silence_duration >= VOICE_TAIL_MS:
+                    logger.debug(f"🔥 Finalizing on VAD tail: {silence_duration}ms silence ≥ {VOICE_TAIL_MS}ms")
                     return True
             else:
                 # Update last speech time
                 state['last_speech_time'] = now
                 
-            # 3) Phrase length/timeout boundary (2-3 seconds of voiced audio)
-            buffer_start_time = state.get('buffer_start_time', now)
-            buffer_duration = now - buffer_start_time
-            if buffer_duration >= 3.0:  # 3 seconds
-                logger.debug(f"Finalizing due to timeout boundary: {buffer_duration}s")
-                return True
-                
-            # 4) Token count threshold (rough estimate: 5+ words)
+            # 3) Punctuation boundary with minimum token count - SECONDARY trigger
             rolling_text = state.get('rolling_text', '')
-            word_count = len(rolling_text.split()) if rolling_text else 0
-            if word_count >= 8:  # ~8 words for natural phrase boundary
-                logger.debug(f"Finalizing due to word count: {word_count} words")
-                return True
+            if rolling_text:
+                tokens = rolling_text.split()
+                has_punctuation = any(rolling_text.rstrip().endswith(p) for p in ['.', '!', '?', ';'])
+                MIN_TOKENS_FOR_PUNCTUATION = 12  # As specified in requirements
+                
+                if has_punctuation and len(tokens) >= MIN_TOKENS_FOR_PUNCTUATION:
+                    logger.debug(f"🔥 Finalizing on punctuation boundary: {len(tokens)} tokens with punctuation")
+                    # Track punctuation boundary metric
+                    state.get('stats', {})['punctuation_boundaries'] = state.get('stats', {}).get('punctuation_boundaries', 0) + 1
+                    return True
                 
             return False
             
