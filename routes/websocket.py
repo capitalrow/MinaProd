@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 from flask_socketio import emit, join_room, leave_room, disconnect
 
-from services.transcription_service import TranscriptionService, TranscriptionServiceConfig
+from services.transcription_service import TranscriptionService, TranscriptionServiceConfig, SessionState
 from models.session import Session
 from services.session_service import SessionService
 from app_refactored import db
