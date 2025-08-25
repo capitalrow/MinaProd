@@ -50,12 +50,26 @@ if (!window._minaHandlersBound) {
             document.getElementById('wsStatus').textContent = 'Connection Error';
         });
         
-        // Transcription result handlers
+        // Transcription result handlers - INT-LIVE-I1: Enhanced interim handling
         socket.on('interim_transcript', (payload) => {
+            console.log('Interim transcript received:', payload);
+            
+            // Check if interim updates are enabled
+            const showInterimToggle = document.getElementById('showInterim');
+            if (showInterimToggle && !showInterimToggle.checked) {
+                return; // Skip interim updates if disabled
+            }
+            
             const interimText = document.getElementById('interimText');
             if (interimText) {
                 interimText.textContent = payload.text || '';
                 interimText.style.display = payload.text ? 'block' : 'none';
+                
+                // Hide initial message when interim text appears
+                const initialMessage = document.getElementById('initialMessage');
+                if (initialMessage && payload.text) {
+                    initialMessage.style.display = 'none';
+                }
             }
         });
         
@@ -82,6 +96,10 @@ if (!window._minaHandlersBound) {
         socket.on('session_created', (data) => {
             CURRENT_SESSION_ID = data.session_id;
             console.log('Session created:', CURRENT_SESSION_ID);
+            
+            // INT-LIVE-I1: Explicitly join the WebSocket room
+            socket.emit('join_session', { session_id: CURRENT_SESSION_ID });
+            console.log('Explicitly joined session room:', CURRENT_SESSION_ID);
             
             // Update UI to show session is ready
             const sessionInfo = document.getElementById('sessionInfo');
