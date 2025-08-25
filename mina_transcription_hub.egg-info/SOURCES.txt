@@ -12,10 +12,13 @@ models/__init__.py
 models/base.py
 models/segment.py
 models/session.py
+models/shared_link.py
 models/summary.py
 routes/__init__.py
+routes/export.py
 routes/health.py
 routes/sessions.py
+routes/sharing.py
 routes/summary.py
 routes/transcription.py
 routes/websocket.py
@@ -24,6 +27,7 @@ services/analysis_service.py
 services/audio_processor.py
 services/export_service.py
 services/session_service.py
+services/share_service.py
 services/transcription_service.py
 services/vad_service.py
 services/whisper_streaming.py
@@ -31,6 +35,7 @@ services/whisper_streaming_enhanced.py
 tests/test_export_service.py
 tests/test_finalize_triggers_summary.py
 tests/test_health.py
+tests/test_m4_sharing.py
 tests/test_sessions_crud.py
 tests/test_summary_api.py
 tests/test_vad_gate.py
