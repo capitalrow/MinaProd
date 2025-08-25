@@ -53,18 +53,23 @@ def list_sessions():
                          offset=offset)
 
 
-@sessions_bp.route('/<int:session_id>', methods=['GET'])
-def get_session_detail(session_id):
+@sessions_bp.route('/<session_identifier>', methods=['GET'])
+def get_session_detail(session_identifier):
     """
-    GET /sessions/<id> - Get session detail with segments
+    GET /sessions/<id_or_external_id> - Get session detail with segments
     
     Query parameters:
     - format: Response format ('json' or 'html', default: 'html')
     """
     response_format = request.args.get('format', 'html')
     
-    # Get session detail from service
-    session_detail = SessionService.get_session_detail(session_id)
+    # Try to get session by database ID first (if it's numeric), then by external_id
+    session_detail = None
+    if session_identifier.isdigit():
+        session_detail = SessionService.get_session_detail(int(session_identifier))
+    else:
+        session_detail = SessionService.get_session_detail_by_external(session_identifier)
+    
     if not session_detail:
         if response_format == 'json':
             return jsonify({'error': 'Session not found'}), 404
