@@ -417,13 +417,39 @@ def register_websocket_handlers(socketio):
             
             # Check if session exists in service
             if session_id not in service.active_sessions:
-                logger.warning(f"Session {session_id} not found in active sessions - creating now")
+                logger.info(f"Session {session_id} not found in active sessions - checking database first")
                 try:
-                    service.start_session_sync(session_id)
+                    # Check if session exists in database first
+                    from services.session_service import SessionService
+                    existing_session = SessionService.get_session_by_external(session_id)
+                    
+                    if existing_session:
+                        # Session exists in database, just start service session
+                        logger.info(f"Found existing database session {session_id}, starting service session")
+                        service.active_sessions[session_id] = {
+                            'state': SessionState.IDLE,
+                            'created_at': time.time(),
+                            'last_activity': time.time(),
+                            'sequence_number': 0,
+                            'audio_chunks': [],
+                            'pending_processing': 0,
+                            'stats': {
+                                'total_audio_duration': 0.0,
+                                'speech_duration': 0.0,
+                                'silence_duration': 0.0,
+                                'total_segments': 0,
+                                'average_confidence': 0.0
+                            }
+                        }
+                        service.session_callbacks[session_id] = []
+                    else:
+                        # Create new session completely
+                        service.start_session_sync(session_id)
+                        
                 except Exception as e:
-                    logger.error(f"Failed to create session {session_id}: {e}")
-                    emit('error', {'message': f'Failed to create session: {str(e)}'})
-                    return
+                    logger.error(f"Failed to initialize session {session_id}: {e}")
+                    # Continue processing anyway - don't block audio processing
+                    logger.info(f"Continuing with audio processing despite session error")
             
             # Process audio synchronously with proper error handling
             try:
