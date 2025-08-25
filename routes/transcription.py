@@ -82,7 +82,7 @@ def list_sessions():
             query = query.filter(Session.status == status)
         
         if language:
-            query = query.filter(Session.language == language)
+            query = query.filter(Session.locale == language)
         
         if date_from:
             try:
@@ -98,10 +98,27 @@ def list_sessions():
             except ValueError:
                 flash('Invalid date format for date_to', 'warning')
         
-        # Paginate results
-        sessions = query.order_by(desc(Session.started_at)).paginate(
-            page=page, per_page=per_page, error_out=False
-        )
+        # Get results with pagination manually for SQLAlchemy 2.0
+        from sqlalchemy import func
+        offset = (page - 1) * per_page
+        sessions_query = query.order_by(desc(Session.started_at))
+        sessions_list = sessions_query.offset(offset).limit(per_page).all()
+        total = sessions_query.count()
+        
+        # Create pagination-like object
+        class SessionsPagination:
+            def __init__(self, items, page, per_page, total):
+                self.items = items
+                self.page = page
+                self.per_page = per_page
+                self.total = total
+                self.pages = (total + per_page - 1) // per_page if per_page > 0 else 0
+                self.has_prev = page > 1
+                self.has_next = page < self.pages
+                self.prev_num = page - 1 if self.has_prev else None
+                self.next_num = page + 1 if self.has_next else None
+        
+        sessions = SessionsPagination(sessions_list, page, per_page, total)
         
         return render_template('sessions_list.html', 
                              sessions=sessions,
@@ -173,24 +190,29 @@ def create_session():
         # Get transcription service
         service = get_transcription_service()
         
-        # Create session with service
-        session_id = service.start_session_sync(
-            user_config={
-                'title': title,
-                'description': description,
-                'language': language,
-                'enable_speaker_detection': enable_speaker_detection,
-                'enable_sentiment_analysis': enable_sentiment_analysis
-            }
+        # Create session using SessionService instead
+        from services.session_service import SessionService
+        import uuid
+        
+        # Generate external_id
+        external_id = str(uuid.uuid4())[:8]
+        
+        # Create session in database
+        session_id = SessionService.create_session(
+            external_id=external_id,
+            title=title,
+            locale=language
         )
         
-        # Get the created session from database
-        session = db.session.query(Session).filter_by(external_id=session_id).first()
+        # Get the created session
+        from sqlalchemy import select
+        stmt = select(Session).where(Session.id == session_id)
+        session = db.session.scalars(stmt).first()
         
         return jsonify({
             'success': True,
-            'session_id': session_id,
-            'session': session.to_dict() if session else None
+            'session_id': session.external_id,
+            'session': session.to_dict()
         }), 201
     
     except Exception as e:
