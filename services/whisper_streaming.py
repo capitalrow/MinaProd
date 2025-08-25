@@ -33,7 +33,7 @@ class TranscriptionConfig:
     max_chunk_duration: float = 30.0  # seconds
     min_chunk_duration: float = 0.1   # seconds
     buffer_size: int = 10  # number of audio chunks to buffer
-    confidence_threshold: float = 0.6
+    confidence_threshold: float = 0.4  # 🔥 CRITICAL FIX: Reduced from 0.6 to 0.4
     enable_word_timestamps: bool = True
     enable_vad_filtering: bool = True
     # M1 Quality settings

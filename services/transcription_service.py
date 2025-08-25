@@ -48,7 +48,7 @@ class TranscriptionServiceConfig:
     
     # Transcription settings
     language: str = "en"
-    min_confidence: float = 0.7
+    min_confidence: float = 0.4  # 🔥 CRITICAL FIX: Reduced from 0.7 to 0.4 - less aggressive filtering
     enable_speaker_detection: bool = True
     enable_sentiment_analysis: bool = False
     
@@ -103,11 +103,11 @@ class TranscriptionService:
         # Set up Whisper service callback
         self.whisper_service.set_result_callback(self._on_transcription_result)
         
-        # 🎯 OPTIMIZED: Quality control parameters (reduced false positives)
+        # 🔥 CRITICAL FIX: Much less aggressive quality control to fix 92.3% WER
         self.dedup_buffer_size = 200  # Characters
-        self.min_word_variety_ratio = 0.2  # Reduced from 0.3 - less aggressive
-        self.max_repetition_threshold = 4  # Increased from 3 - allow more natural repetition
-        self.min_meaningful_length = 1  # Reduced from 2 - allow single words
+        self.min_word_variety_ratio = 0.1  # 🔥 REDUCED: Much less aggressive - was 0.2
+        self.max_repetition_threshold = 6  # 🔥 INCREASED: Allow more repetition - was 4
+        self.min_meaningful_length = 1  # Allow single words
         
         logger.info(f"Transcription service initialized with config: {asdict(self.config)}")
     
@@ -520,11 +520,16 @@ class TranscriptionService:
         if len(words) < 1:
             return True
             
-        # CRITICAL FIX: Detect consecutive word repetitions (You You, You You You)
+        # 🔥 CRITICAL FIX: Only block if 3+ consecutive identical words (was blocking after 2)
+        consecutive_count = 1
         for i in range(len(words) - 1):
             if words[i] == words[i + 1] and len(words[i]) > 1:
-                logger.warning(f"BLOCKED consecutive repetition: '{text}' ('{words[i]}' repeated)")
-                return True
+                consecutive_count += 1
+                if consecutive_count >= 3:  # 🔥 Changed from 2 to 3 - less aggressive
+                    logger.warning(f"BLOCKED excessive repetition: '{text}' ({consecutive_count} consecutive '{words[i]}')")
+                    return True
+            else:
+                consecutive_count = 1
         
         # Enhanced repetition detection for edge cases
         if len(words) >= 2:
@@ -533,9 +538,9 @@ class TranscriptionService:
             for word in words:
                 word_counts[word] = word_counts.get(word, 0) + 1
                 
-            # Flag if any word appears more than once in short texts (2-3 words)
+            # 🔥 CRITICAL FIX: Only flag if word appears 3+ times in short texts
             max_word_count = max(word_counts.values())
-            if len(words) <= 3 and max_word_count > 1:
+            if len(words) <= 3 and max_word_count >= 3:  # 🔥 Changed from >1 to >=3
                 most_common_word = max(word_counts, key=word_counts.get)
                 logger.warning(f"BLOCKED short repetitive text: '{text}' ('{most_common_word}' appears {max_word_count} times)")
                 return True
