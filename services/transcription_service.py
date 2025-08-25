@@ -609,9 +609,9 @@ class TranscriptionService:
             
             session = self.active_sessions[session_id]
             
-            # Simple VAD check
-            vad_result = self.vad_service.process_chunk(audio_data)
-            if not vad_result.get('contains_speech', False):
+            # Simple VAD check using correct method
+            vad_result = self.vad_service.process_audio_chunk(audio_data, timestamp)
+            if not vad_result.is_speech:
                 logger.debug(f"No speech detected in audio chunk for session {session_id}")
                 return None
             
