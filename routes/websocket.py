@@ -49,6 +49,54 @@ def register_websocket_handlers(socketio):
             'timestamp': datetime.utcnow().isoformat()
         })
     
+    @socketio.on('create_session')
+    def handle_create_session(data):
+        """
+        Handle session creation request from frontend.
+        FIXED: Added missing handler for frontend session creation.
+        
+        Args:
+            data: Dictionary with title, language, etc.
+        """
+        try:
+            title = data.get('title', 'Live Recording Session')
+            language = data.get('language', 'en')
+            
+            # Create database session
+            from services.session_service import SessionService
+            db_session_id = SessionService.create_session(title=title, locale=language)
+            
+            # Get the created session to return external_id
+            session = db.session.get(Session, db_session_id)
+            session_id = session.external_id
+            
+            # Start transcription service session
+            service = get_transcription_service()
+            try:
+                service.start_session_sync(session_id, {'language': language})
+                logger.info(f"Created and started transcription service for session: {session_id}")
+            except Exception as e:
+                logger.error(f"Failed to start transcription service: {e}")
+                # Continue - database session exists
+            
+            # Join session room  
+            join_room(session_id)
+            
+            # Emit session created
+            emit('session_created', {
+                'session_id': session_id,
+                'title': title,
+                'language': language,
+                'timestamp': datetime.utcnow().isoformat(),
+                'status': 'created'
+            })
+            
+            logger.info(f"Successfully created session {session_id}")
+            
+        except Exception as e:
+            logger.error(f"Error creating session: {e}")
+            emit('error', {'message': f'Failed to create session: {str(e)}'})
+    
     @socketio.on('disconnect')
     def handle_disconnect():
         """Handle client disconnection."""
@@ -129,66 +177,7 @@ def register_websocket_handlers(socketio):
             logger.error(f"Error joining session: {e}")
             emit('error', {'message': str(e)})
     
-    @socketio.on('audio_chunk')
-    def handle_audio_chunk(data):
-        """
-        Handle M1 audio chunk with VAD gating and backpressure.
-        
-        Args:
-            data: Dictionary containing session_id, audio_data, timestamp, is_voiced
-        """
-        try:
-            session_id = data.get('session_id')
-            audio_data_hex = data.get('audio_data')
-            timestamp = data.get('timestamp', time.time())
-            is_voiced = data.get('is_voiced', True)  # Assume voiced if not specified
-            
-            if not session_id or not audio_data_hex:
-                emit('error', {'message': 'session_id and audio_data are required'})
-                return
-            
-            # Convert hex string back to bytes
-            try:
-                audio_data = bytes.fromhex(audio_data_hex)
-            except ValueError:
-                emit('error', {'message': 'Invalid audio_data format'})
-                return
-            
-            # Get transcription service
-            service = get_transcription_service()
-            
-            # Process audio chunk directly (simplified for now)
-            try:
-                # Mock processing for now - emit interim transcript
-                if is_voiced:  # Only process if VAD detected voice
-                    emit('interim_transcript', {
-                        'session_id': session_id,
-                        'text': 'Processing audio...',
-                        'confidence': 0.8,
-                        'timestamp': timestamp
-                    }, room=session_id)
-                
-                success = True
-                logger.debug(f"Processing audio chunk for session {session_id}, size: {len(audio_data)} bytes")
-                
-            except Exception as e:
-                logger.error(f"Error processing audio chunk: {e}")
-                success = False
-            
-            if not success:
-                logger.warning(f"Audio chunk dropped due to backpressure for session {session_id}")
-                emit('chunk_dropped', {
-                    'session_id': session_id,
-                    'timestamp': timestamp,
-                    'reason': 'backpressure'
-                })
-            
-            # For now, skip queue processing until service methods are implemented
-            logger.debug(f"Audio chunk processed for session {session_id}")
-            
-        except Exception as e:
-            logger.error(f"Error handling audio chunk: {e}")
-            emit('error', {'message': str(e)})
+# REMOVED: Duplicate handler causing conflicts - using real implementation below
     
     @socketio.on('end_of_stream')
     def handle_end_of_stream(data):
@@ -283,36 +272,66 @@ def register_websocket_handlers(socketio):
             logger.error(f"Error leaving session: {e}")
             emit('error', {'message': str(e)})
     
-    @socketio.on('start_transcription')
+    @socketio.on('start_transcription') 
     def handle_start_transcription(data):
         """
-        Handle start transcription request.
+        Handle start transcription request - FIXED to create sessions properly.
         
         Args:
-            data: Dictionary with session configuration
+            data: Dictionary with session configuration  
         """
         try:
             session_id = data.get('session_id')
+            title = data.get('title', 'Live Recording Session')
+            
+            # Create session if none provided
             if not session_id:
-                emit('error', {'message': 'session_id is required'})
-                return
+                from services.session_service import SessionService
+                db_session_id = SessionService.create_session(title=title)
+                # Get the session to get its external_id
+                session = db.session.get(Session, db_session_id)
+                session_id = session.external_id
+                logger.info(f"Created new session with ID: {session_id}")
+            else:
+                # Check if session exists, create if not
+                from services.session_service import SessionService
+                session = SessionService.get_session_by_external(session_id)
+                if not session:
+                    db_session_id = SessionService.create_session(external_id=session_id, title=title)
+                    session = db.session.get(Session, db_session_id)
+                    logger.info(f"Created session for external ID: {session_id}")
             
-            # Update session status
-            session = SessionService.get_session_by_external(session_id)
-            if session:
-                session.start_session()
+            # Start transcription service session
+            service = get_transcription_service()
+            try:
+                service.start_session_sync(session_id)
+                logger.info(f"Started transcription service for session: {session_id}")
+            except Exception as e:
+                logger.error(f"Failed to start transcription service: {e}")
+                # Continue anyway - session exists in database
             
-            # Notify room
-            socketio.emit('transcription_started', {
+            # Join the session room
+            join_room(session_id)
+            
+            # Emit success with session details
+            emit('transcription_started', {
+                'session_id': session_id,
+                'title': title,
+                'timestamp': datetime.utcnow().isoformat(),
+                'status': 'active'
+            })
+            
+            # Also broadcast to room
+            socketio.emit('session_ready', {
                 'session_id': session_id,
                 'timestamp': datetime.utcnow().isoformat()
             }, room=session_id)
             
-            logger.info(f"Started transcription for session {session_id}")
+            logger.info(f"Successfully started transcription for session {session_id}")
             
         except Exception as e:
             logger.error(f"Error starting transcription: {e}")
-            emit('error', {'message': str(e)})
+            emit('error', {'message': f'Failed to start transcription: {str(e)}'})
     
     @socketio.on('stop_transcription')
     def handle_stop_transcription(data):
@@ -354,6 +373,7 @@ def register_websocket_handlers(socketio):
     def handle_audio_chunk(data):
         """
         Handle incoming audio chunk for real-time transcription.
+        FIXED: Removed duplicate handler, fixed asyncio execution, added session validation.
         
         Args:
             data: Dictionary containing session_id and audio data
@@ -361,58 +381,135 @@ def register_websocket_handlers(socketio):
         try:
             session_id = data.get('session_id')
             audio_data = data.get('audio_data')
-            timestamp = data.get('timestamp')
+            timestamp = data.get('timestamp', time.time())
             
             if not session_id or not audio_data:
                 emit('error', {'message': 'session_id and audio_data are required'})
                 return
             
-            # Convert base64 audio data to bytes if needed
-            if isinstance(audio_data, str):
-                import base64
-                try:
-                    audio_bytes = base64.b64decode(audio_data)
-                except Exception as e:
-                    emit('error', {'message': f'Invalid audio data format: {str(e)}'})
-                    return
-            else:
-                audio_bytes = audio_data
+            logger.debug(f"Received audio chunk for session {session_id}, size: {len(str(audio_data))} chars")
             
-            # Process audio through transcription service
+            # Convert audio data to bytes - support multiple formats including ArrayBuffer
+            audio_bytes = None
+            try:
+                if isinstance(audio_data, str):
+                    # Try base64 first, then hex
+                    try:
+                        import base64
+                        audio_bytes = base64.b64decode(audio_data)
+                    except:
+                        audio_bytes = bytes.fromhex(audio_data)
+                elif isinstance(audio_data, list):
+                    # Array of bytes from ArrayBuffer
+                    audio_bytes = bytes(audio_data)
+                elif isinstance(audio_data, dict) and 'type' in audio_data and audio_data['type'] == 'Buffer':
+                    # Node.js Buffer object
+                    audio_bytes = bytes(audio_data['data'])
+                else:
+                    # Direct bytes or other format
+                    audio_bytes = bytes(audio_data) if audio_data else b''
+            except Exception as e:
+                emit('error', {'message': f'Invalid audio data format: {str(e)}'})
+                return
+            
+            # Get transcription service
             service = get_transcription_service()
             
-            # Use asyncio to handle the async service call
-            async def process_audio():
+            # Check if session exists in service
+            if session_id not in service.active_sessions:
+                logger.warning(f"Session {session_id} not found in active sessions - creating now")
                 try:
-                    result = await service.process_audio(
-                        session_id=session_id,
-                        audio_data=audio_bytes,
-                        timestamp=timestamp
-                    )
-                    
-                    if result and result.get('transcription'):
-                        # Emit interim result immediately
-                        socketio.emit('interim_result', {
-                            'session_id': session_id,
-                            'vad': result.get('vad', {}),
-                            'transcription': result['transcription'],
-                            'timestamp': result['timestamp']
-                        }, room=session_id)
-                
+                    service.start_session_sync(session_id)
                 except Exception as e:
-                    logger.error(f"Error processing audio for session {session_id}: {e}")
-                    socketio.emit('processing_error', {
-                        'session_id': session_id,
-                        'error': str(e),
-                        'timestamp': datetime.utcnow().isoformat()
-                    }, room=session_id)
+                    logger.error(f"Failed to create session {session_id}: {e}")
+                    emit('error', {'message': f'Failed to create session: {str(e)}'})
+                    return
             
-            # Schedule the coroutine
-            asyncio.create_task(process_audio())
+            # Process audio synchronously with proper error handling
+            try:
+                # Create a thread to run the async processing
+                import threading
+                import queue
+                result_queue = queue.Queue()
+                
+                def run_async_processing():
+                    try:
+                        import asyncio
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        
+                        async def process_audio():
+                            return await service.process_audio(
+                                session_id=session_id,
+                                audio_data=audio_bytes,
+                                timestamp=timestamp
+                            )
+                        
+                        result = loop.run_until_complete(process_audio())
+                        result_queue.put(('success', result))
+                        loop.close()
+                    except Exception as e:
+                        result_queue.put(('error', str(e)))
+                
+                # Start processing thread
+                processing_thread = threading.Thread(target=run_async_processing)
+                processing_thread.daemon = True
+                processing_thread.start()
+                processing_thread.join(timeout=5.0)  # 5 second timeout
+                
+                # Get result
+                try:
+                    status, result = result_queue.get_nowait()
+                    if status == 'error':
+                        raise Exception(result)
+                    
+                    # Emit results if available
+                    if result:
+                        if result.get('transcription'):
+                            text = result['transcription'].get('text', '')
+                            confidence = result['transcription'].get('confidence', 0.0)
+                            is_final = result['transcription'].get('is_final', False)
+                            
+                            if is_final:
+                                socketio.emit('final_transcript', {
+                                    'session_id': session_id,
+                                    'text': text,
+                                    'confidence': confidence,
+                                    'timestamp': result.get('timestamp', timestamp)
+                                }, room=session_id)
+                            else:
+                                socketio.emit('interim_transcript', {
+                                    'session_id': session_id,
+                                    'text': text,
+                                    'confidence': confidence,
+                                    'timestamp': result.get('timestamp', timestamp)
+                                }, room=session_id)
+                            
+                            logger.info(f"Transcription result: {text[:50]}... (confidence: {confidence})")
+                        
+                        if result.get('vad'):
+                            socketio.emit('vad_result', {
+                                'session_id': session_id,
+                                'is_speech': result['vad'].get('is_speech', False),
+                                'confidence': result['vad'].get('confidence', 0.0)
+                            }, room=session_id)
+                
+                except queue.Empty:
+                    logger.warning(f"Audio processing timeout for session {session_id}")
+                
+            except Exception as e:
+                logger.error(f"Error processing audio for session {session_id}: {e}")
+                socketio.emit('processing_error', {
+                    'session_id': session_id,
+                    'error': str(e),
+                    'timestamp': datetime.utcnow().isoformat()
+                })
+            
+            logger.debug(f"Audio chunk processed for session {session_id}")
             
         except Exception as e:
-            logger.error(f"Error handling audio chunk: {e}")
-            emit('error', {'message': str(e)})
+            logger.error(f"Critical error handling audio chunk: {e}")
+            emit('error', {'message': f'Audio processing failed: {str(e)}'})
     
     @socketio.on('ping')
     def handle_ping(data):

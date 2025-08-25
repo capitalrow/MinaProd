@@ -128,19 +128,22 @@ class TranscriptionService:
         if len(self.active_sessions) >= self.config.max_concurrent_sessions:
             raise Exception(f"Maximum concurrent sessions ({self.config.max_concurrent_sessions}) reached")
         
-        # Create database session
+        # Create database session - FIXED model fields
         db_session = Session(
-            session_id=session_id,
-            status='created',
-            language=self.config.language,
-            enable_realtime=self.config.enable_realtime,
-            enable_speaker_detection=self.config.enable_speaker_detection,
-            enable_sentiment_analysis=self.config.enable_sentiment_analysis,
-            sample_rate=self.config.sample_rate,
-            min_confidence=self.config.min_confidence,
-            vad_sensitivity=self.config.vad_sensitivity,
-            vad_min_speech_duration=self.config.vad_min_speech_duration,
-            vad_min_silence_duration=self.config.vad_min_silence_duration
+            external_id=session_id,  # FIXED: Use external_id instead of session_id
+            title="Transcription Session",
+            status='active',  # FIXED: Use 'active' instead of 'created'  
+            locale=self.config.language,
+            meta={
+                'enable_realtime': self.config.enable_realtime,
+                'enable_speaker_detection': self.config.enable_speaker_detection,
+                'enable_sentiment_analysis': self.config.enable_sentiment_analysis,
+                'sample_rate': self.config.sample_rate,
+                'min_confidence': self.config.min_confidence,
+                'vad_sensitivity': self.config.vad_sensitivity,
+                'vad_min_speech_duration': self.config.vad_min_speech_duration,
+                'vad_min_silence_duration': self.config.vad_min_silence_duration
+            }
         )
         
         # Apply user configuration overrides
@@ -239,19 +242,22 @@ class TranscriptionService:
         if len(self.active_sessions) >= self.config.max_concurrent_sessions:
             raise Exception(f"Maximum concurrent sessions ({self.config.max_concurrent_sessions}) reached")
         
-        # Create database session
+        # Create database session - FIXED model fields
         db_session = Session(
-            session_id=session_id,
-            status='created',
-            language=self.config.language,
-            enable_realtime=self.config.enable_realtime,
-            enable_speaker_detection=self.config.enable_speaker_detection,
-            enable_sentiment_analysis=self.config.enable_sentiment_analysis,
-            sample_rate=self.config.sample_rate,
-            min_confidence=self.config.min_confidence,
-            vad_sensitivity=self.config.vad_sensitivity,
-            vad_min_speech_duration=self.config.vad_min_speech_duration,
-            vad_min_silence_duration=self.config.vad_min_silence_duration
+            external_id=session_id,  # FIXED: Use external_id instead of session_id
+            title="Transcription Session",
+            status='active',  # FIXED: Use 'active' instead of 'created'  
+            locale=self.config.language,
+            meta={
+                'enable_realtime': self.config.enable_realtime,
+                'enable_speaker_detection': self.config.enable_speaker_detection,
+                'enable_sentiment_analysis': self.config.enable_sentiment_analysis,
+                'sample_rate': self.config.sample_rate,
+                'min_confidence': self.config.min_confidence,
+                'vad_sensitivity': self.config.vad_sensitivity,
+                'vad_min_speech_duration': self.config.vad_min_speech_duration,
+                'vad_min_silence_duration': self.config.vad_min_silence_duration
+            }
         )
         
         # Apply user configuration overrides
