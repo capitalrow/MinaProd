@@ -103,10 +103,11 @@ class TranscriptionService:
         # Set up Whisper service callback
         self.whisper_service.set_result_callback(self._on_transcription_result)
         
-        # Critical quality control parameters
+        # 🎯 OPTIMIZED: Quality control parameters (reduced false positives)
         self.dedup_buffer_size = 200  # Characters
-        self.min_word_variety_ratio = 0.3  # Minimum unique words ratio
-        self.max_repetition_threshold = 3  # Max consecutive identical words
+        self.min_word_variety_ratio = 0.2  # Reduced from 0.3 - less aggressive
+        self.max_repetition_threshold = 4  # Increased from 3 - allow more natural repetition
+        self.min_meaningful_length = 1  # Reduced from 2 - allow single words
         
         logger.info(f"Transcription service initialized with config: {asdict(self.config)}")
     
@@ -957,22 +958,27 @@ class TranscriptionService:
             if text:
                 # Filter 1: Check for repetitive patterns like "You You You" 
                 if self._is_repetitive_text(text):
-                    logger.warning(f"SYNC QUALITY FILTER: Rejected repetitive text for session {session_id}: '{text}'")
+                    # 🔇 REDUCED NOISE: Only log repetitive text warnings for debugging
+                    if len(text.split()) > 2:  # Only log significant repetitions
+                        logger.debug(f"Quality: Filtered repetitive text ({len(text.split())} words)")
                     return None
                 
                 # Filter 2: Check for duplicates of recent text
                 if self._is_duplicate_of_recent(text, session_id):
-                    logger.debug(f"SYNC QUALITY FILTER: Rejected duplicate text for session {session_id}: '{text}'")
+                    # 🔇 REDUCED NOISE: Minimal duplicate logging
+                    pass  # Duplicates are expected, no need to log each one
                     return None
                 
                 # Filter 3: Minimum confidence threshold 
                 if conf < self.config.min_confidence:
-                    logger.debug(f"SYNC QUALITY FILTER: Rejected low confidence for session {session_id}: {conf:.2f} < {self.config.min_confidence}")
+                    # 🔇 REDUCED NOISE: Only log low confidence when significant
+                    if conf < 0.3:  # Only log very low confidence
+                        logger.debug(f"Quality: Low confidence {conf:.2f}")
                     return None
                 
-                # Filter 4: Minimum meaningful length
-                if len(text) < 2:
-                    logger.debug(f"SYNC QUALITY FILTER: Rejected too short for session {session_id}: '{text}'")
+                # Filter 4: Minimum meaningful length (more permissive)
+                if len(text.strip()) < 1:
+                    logger.debug(f"SYNC QUALITY FILTER: Rejected empty text for session {session_id}: '{text}'")
                     return None
                 
                 logger.info(f"SYNC QUALITY CHECK PASSED for session {session_id}: '{text}' (confidence: {conf:.2f})")

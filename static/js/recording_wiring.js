@@ -353,31 +353,76 @@ if (!window._minaHandlersBound) {
         const interimDiv = document.getElementById('interimText');
         const initialMessage = document.getElementById('initialMessage');
         
+        // 🎯 ENHANCED: Better real-time transcription display
         if (data.is_final && finalDiv) {
-            // Add final transcription text
+            // Add final transcription text with smooth transition
             const currentText = finalDiv.textContent || '';
-            finalDiv.textContent = (currentText + ' ' + data.text).trim();
+            const newText = (currentText + ' ' + data.text).trim();
+            finalDiv.textContent = newText;
+            
+            // Add visual feedback for new content
+            finalDiv.style.backgroundColor = '#1a472a';  // Green flash
+            setTimeout(() => {
+                finalDiv.style.backgroundColor = '';
+            }, 150);
             
             // Hide initial message
             if (initialMessage) {
                 initialMessage.style.display = 'none';
             }
             
-            // Clear interim text
+            // Clear interim text with fade
             if (interimDiv) {
-                interimDiv.textContent = '';
-                interimDiv.style.display = 'none';
+                interimDiv.style.opacity = '0.3';
+                setTimeout(() => {
+                    interimDiv.textContent = '';
+                    interimDiv.style.display = 'none';
+                    interimDiv.style.opacity = '';
+                }, 100);
             }
-        } else if (!data.is_final && interimDiv) {
-            // Show interim transcription
-            interimDiv.textContent = data.text || '';
-            interimDiv.style.display = data.text ? 'block' : 'none';
+            
+            // Auto-scroll to show new content
+            finalDiv.scrollTop = finalDiv.scrollHeight;
+            
+        } else if (!data.is_final && interimDiv && data.text) {
+            // 🎯 ENHANCED: Show interim transcription with typing effect
+            interimDiv.textContent = data.text;
+            interimDiv.style.display = 'block';
+            interimDiv.style.opacity = '0.7';  // Distinguish from final text
+            interimDiv.style.fontStyle = 'italic';
+            
+            // Confidence indicator
+            if (data.confidence !== undefined) {
+                const confidence = Math.round(data.confidence * 100);
+                interimDiv.style.borderLeft = confidence > 70 ? '3px solid #4ade80' : 
+                                            confidence > 50 ? '3px solid #fbbf24' : 
+                                            '3px solid #f87171';
+            }
+            
+            // Hide initial message
+            if (initialMessage) {
+                initialMessage.style.display = 'none';
+            }
         }
         
-        // Update segment counter
+        // 🎯 ENHANCED: Update statistics with visual feedback
         const segmentCounter = document.querySelector('[data-segment-count]');
         if (segmentCounter && data.segment_count !== undefined) {
             segmentCounter.textContent = `Segments: ${data.segment_count}`;
+            if (data.is_final) {
+                segmentCounter.style.color = '#4ade80';  // Green flash for new segments
+                setTimeout(() => segmentCounter.style.color = '', 300);
+            }
+        }
+        
+        // Update confidence display
+        const confidenceDisplay = document.querySelector('[data-confidence]');
+        if (confidenceDisplay && data.confidence !== undefined) {
+            const confidence = Math.round(data.confidence * 100);
+            confidenceDisplay.textContent = `Confidence: ${confidence}%`;
+            confidenceDisplay.style.color = confidence > 70 ? '#4ade80' : 
+                                          confidence > 50 ? '#fbbf24' : 
+                                          '#f87171';
         }
     }
 
