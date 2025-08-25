@@ -7,7 +7,7 @@ from flask import Blueprint, send_file, abort
 from services.export_service import ExportService
 from models.session import Session
 from services.session_service import SessionService
-from app_refactored import db
+from app import db
 
 
 export_bp = Blueprint('export', __name__)
