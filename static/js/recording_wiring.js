@@ -16,7 +16,12 @@ if (!window._minaHandlersBound) {
             transports: ['websocket', 'polling'],
             upgrade: true,
             rememberUpgrade: true,
-            timeout: 5000
+            timeout: 20000,  // FIXED: Increased timeout for better connection stability
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionAttempts: 5,
+            autoConnect: true,
+            forceNew: false
         });
         
         // Connection status handlers
