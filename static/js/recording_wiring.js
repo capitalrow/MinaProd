@@ -146,11 +146,15 @@ if (!window._minaHandlersBound) {
                 
                 mediaRecorder.addEventListener('dataavailable', event => {
                     if (event.data.size > 0 && CURRENT_SESSION_ID) {
-                        // Convert blob to ArrayBuffer
+                        // Convert blob to ArrayBuffer and then to base64
                         event.data.arrayBuffer().then(arrayBuffer => {
+                            // Convert ArrayBuffer to Uint8Array then to base64
+                            const uint8Array = new Uint8Array(arrayBuffer);
+                            const base64 = btoa(String.fromCharCode.apply(null, uint8Array));
+                            
                             socket.emit('audio_chunk', {
                                 session_id: CURRENT_SESSION_ID,
-                                audio_data: arrayBuffer,
+                                audio_data: base64,
                                 timestamp: Date.now()
                             });
                         });
