@@ -618,17 +618,25 @@ class TranscriptionService:
             
             session = self.active_sessions[session_id]
             
-            # Simple VAD check using correct method
+            # ENHANCED: VAD check with comprehensive debugging and bypass option
             vad_result = self.vad_service.process_audio_chunk(audio_data, timestamp)
-            if not vad_result.is_speech:
-                logger.debug(f"No speech detected in audio chunk for session {session_id}")
+            logger.info(f"VAD Result for session {session_id}: is_speech={vad_result.is_speech}, confidence={vad_result.confidence}, energy={getattr(vad_result, 'energy', 'N/A')}")
+            
+            # TEMPORARY: Skip VAD filtering for testing (remove when working)
+            should_process = True  # Always process for now
+            # should_process = vad_result.is_speech  # Enable this line when VAD is working properly
+            
+            if not should_process:
+                logger.info(f"VAD filtered out audio chunk for session {session_id} - no speech detected")
                 return None
             
-            # Process with Whisper (synchronous call)
+            # ENHANCED: Process with Whisper with comprehensive logging
+            logger.info(f"Sending audio to Whisper API for session {session_id}, chunk size: {len(audio_data)} bytes")
             transcription_result = self.whisper_service.transcribe_chunk_sync(
                 audio_data=audio_data,
                 session_id=session_id
             )
+            logger.info(f"Whisper API response for session {session_id}: {transcription_result}")
             
             if transcription_result and transcription_result.get('text'):
                 text = transcription_result['text'].strip()
@@ -653,7 +661,7 @@ class TranscriptionService:
                         
                         logger.info(f"Created segment: {text} (confidence: {segment.confidence})")
                     
-                    return {
+                    result_data = {
                         'transcription': {
                             'text': text,
                             'confidence': transcription_result.get('confidence', 0.8),
@@ -662,9 +670,13 @@ class TranscriptionService:
                         'timestamp': timestamp or time.time(),
                         'session_id': session_id
                     }
+                    
+                    logger.info(f"SUCCESS: Returning transcription result for session {session_id}: '{text}' (confidence: {result_data['transcription']['confidence']})")
+                    return result_data
             
+            logger.warning(f"No transcription result for session {session_id} - Whisper returned empty or invalid result")
             return None
             
         except Exception as e:
-            logger.error(f"Error in synchronous audio processing: {e}")
+            logger.error(f"CRITICAL ERROR in synchronous audio processing for session {session_id}: {e}", exc_info=True)
             return None
