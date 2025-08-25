@@ -504,7 +504,7 @@ class TranscriptionService:
     
     def _is_repetitive_text(self, text: str) -> bool:
         """
-        Critical quality filter: Detect repetitive text patterns like 'You You You'.
+        Enhanced quality filter: Detect repetitive text patterns like 'You You You'.
         
         Args:
             text: Text to analyze
@@ -512,31 +512,48 @@ class TranscriptionService:
         Returns:
             True if text appears to be repetitive garbage
         """
-        if not text or len(text.strip()) < 3:
+        if not text or len(text.strip()) < 1:
             return True
             
         words = text.strip().lower().split()
-        if len(words) < 2:
-            return False
-            
-        # Check for excessive repetition of same word
-        word_counts = {}
-        for word in words:
-            word_counts[word] = word_counts.get(word, 0) + 1
-            
-        # Flag if any word appears more than max_repetition_threshold times
-        max_word_count = max(word_counts.values())
-        if max_word_count > self.max_repetition_threshold:
-            logger.warning(f"Rejected repetitive text: '{text}' (word '{max(word_counts, key=word_counts.get)}' appears {max_word_count} times)")
+        if len(words) < 1:
             return True
             
-        # Check word variety ratio
-        unique_words = len(set(words))
-        variety_ratio = unique_words / len(words)
+        # CRITICAL FIX: Detect consecutive word repetitions (You You, You You You)
+        for i in range(len(words) - 1):
+            if words[i] == words[i + 1] and len(words[i]) > 1:
+                logger.warning(f"BLOCKED consecutive repetition: '{text}' ('{words[i]}' repeated)")
+                return True
         
-        if variety_ratio < self.min_word_variety_ratio:
-            logger.warning(f"Rejected low variety text: '{text}' (variety ratio: {variety_ratio:.2f})")
-            return True
+        # Enhanced repetition detection for edge cases
+        if len(words) >= 2:
+            # Check for excessive repetition of same word
+            word_counts = {}
+            for word in words:
+                word_counts[word] = word_counts.get(word, 0) + 1
+                
+            # Flag if any word appears more than once in short texts (2-3 words)
+            max_word_count = max(word_counts.values())
+            if len(words) <= 3 and max_word_count > 1:
+                most_common_word = max(word_counts, key=word_counts.get)
+                logger.warning(f"BLOCKED short repetitive text: '{text}' ('{most_common_word}' appears {max_word_count} times)")
+                return True
+                
+            # For longer texts, use threshold
+            if len(words) > 3 and max_word_count > getattr(self, 'max_repetition_threshold', 2):
+                most_common_word = max(word_counts, key=word_counts.get)
+                logger.warning(f"BLOCKED repetitive text: '{text}' ('{most_common_word}' appears {max_word_count} times)")
+                return True
+                
+            # Check word variety ratio for longer texts
+            if len(words) > 3:
+                unique_words = len(set(words))
+                variety_ratio = unique_words / len(words)
+                min_variety = getattr(self, 'min_word_variety_ratio', 0.6)
+                
+                if variety_ratio < min_variety:
+                    logger.warning(f"BLOCKED low variety text: '{text}' (variety ratio: {variety_ratio:.2f})")
+                    return True
             
         return False
     
