@@ -173,12 +173,12 @@
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <div class="d-flex gap-2">
-                            <button class="btn btn-success" id="startRecordingBtn">
-                                <i class="fas fa-play me-2"></i>
+                            <button class="btn btn-success" id="startRecordingBtn" aria-label="Start recording audio for transcription">
+                                <i class="fas fa-play me-2" aria-hidden="true"></i>
                                 Start Recording
                             </button>
-                            <button class="btn btn-danger" id="stopRecordingBtn" disabled>
-                                <i class="fas fa-stop me-2"></i>
+                            <button class="btn btn-danger" id="stopRecordingBtn" disabled aria-label="Stop recording audio">
+                                <i class="fas fa-stop me-2" aria-hidden="true"></i>
                                 Stop
                             </button>
                         </div>
@@ -252,9 +252,9 @@
                 </div>
             </div>
             <div class="card-body p-0">
-                <div class="transcription-container" id="transcriptionContainer">
-                    <div id="interimText" class="transcription-segment interim" style="display: none;"></div>
-                    <div id="finalText" class="transcription-segment final"></div>
+                <div class="transcription-container" id="transcriptionContainer" aria-live="polite" aria-label="Live transcription results">
+                    <div id="interimText" class="transcription-segment interim" style="display: none;" aria-live="polite" aria-label="Interim transcription text"></div>
+                    <div id="finalText" class="transcription-segment final" aria-live="assertive" aria-label="Final transcription text"></div>
                     <div class="text-center text-muted py-5" id="initialMessage">
                         <i class="fas fa-microphone-slash fa-3x mb-3"></i>
                         <h5>Ready to transcribe</h5>
