@@ -26,13 +26,8 @@ class Summary(db.Model):
     # Primary key
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     
-    # Foreign key to session
-    session_id: Mapped[int] = mapped_column(
-        Integer, 
-        ForeignKey('sessions.id', ondelete='CASCADE'),
-        nullable=False,
-        index=True
-    )
+    # Foreign key to session (removed FK constraint to avoid circular import issues)
+    session_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     
     # AI-generated content
     summary_md: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

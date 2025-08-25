@@ -76,7 +76,7 @@ def list_sessions():
         date_to = request.args.get('date_to')
         
         # Build query
-        query = Session.query
+        query = db.session.query(Session)
         
         if status:
             query = query.filter(Session.status == status)
@@ -87,23 +87,23 @@ def list_sessions():
         if date_from:
             try:
                 date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
-                query = query.filter(Session.created_at >= date_from_obj)
+                query = query.filter(Session.started_at >= date_from_obj)
             except ValueError:
                 flash('Invalid date format for date_from', 'warning')
         
         if date_to:
             try:
                 date_to_obj = datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
-                query = query.filter(Session.created_at < date_to_obj)
+                query = query.filter(Session.started_at < date_to_obj)
             except ValueError:
                 flash('Invalid date format for date_to', 'warning')
         
         # Paginate results
-        sessions = query.order_by(desc(Session.created_at)).paginate(
+        sessions = query.order_by(desc(Session.started_at)).paginate(
             page=page, per_page=per_page, error_out=False
         )
         
-        return render_template('sessions.html', 
+        return render_template('sessions_list.html', 
                              sessions=sessions,
                              current_filters={
                                  'status': status,
@@ -123,22 +123,26 @@ def view_session(session_id):
     View detailed transcription session with segments.
     """
     try:
-        session = Session.query.filter_by(session_id=session_id).first_or_404()
+        session = db.session.query(Session).filter_by(external_id=session_id).first_or_404()
         
         # Get segments with pagination
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 50, type=int)
         
-        segments = Segment.query.filter_by(session_id=session_id).order_by(
-            Segment.sequence_number
+        segments = db.session.query(Segment).filter_by(session_id=session.id).order_by(
+            Segment.created_at
         ).paginate(page=page, per_page=per_page, error_out=False)
         
-        # Get session statistics
+        # Get session statistics  
+        segments_count = db.session.query(Segment).filter_by(session_id=session.id).count()
+        final_segments = db.session.query(Segment).filter_by(session_id=session.id, kind='final').all()
+        avg_confidence = sum(s.avg_confidence or 0 for s in final_segments) / len(final_segments) if final_segments else 0
+        
         session_stats = {
-            'total_segments': session.total_segments,
-            'average_confidence': session.average_confidence,
-            'duration_minutes': session.duration_minutes,
-            'speakers_count': session.total_speakers or 0
+            'total_segments': segments_count,
+            'average_confidence': round(avg_confidence, 2),
+            'duration_minutes': 0,  # TODO: Calculate from segments
+            'speakers_count': 0     # TODO: Speaker detection
         }
         
         return render_template('session_detail.html',
@@ -181,7 +185,7 @@ def create_session():
         )
         
         # Get the created session from database
-        session = Session.query.filter_by(session_id=session_id).first()
+        session = db.session.query(Session).filter_by(external_id=session_id).first()
         
         return jsonify({
             'success': True,
@@ -202,7 +206,7 @@ def get_session_api(session_id):
     API endpoint to get session details.
     """
     try:
-        session = Session.query.filter_by(session_id=session_id).first_or_404()
+        session = db.session.query(Session).filter_by(external_id=session_id).first_or_404()
         
         # Get service status if session is active
         service_status = None
@@ -232,7 +236,7 @@ def get_session_segments(session_id):
     """
     try:
         # Verify session exists
-        session = Session.query.filter_by(session_id=session_id).first_or_404()
+        session = db.session.query(Session).filter_by(external_id=session_id).first_or_404()
         
         # Get query parameters
         limit = request.args.get('limit', 100, type=int)
@@ -240,12 +244,12 @@ def get_session_segments(session_id):
         final_only = request.args.get('final_only', 'false').lower() == 'true'
         
         # Build query
-        query = Segment.query.filter_by(session_id=session_id)
+        query = db.session.query(Segment).filter_by(session_id=session.id)
         
         if final_only:
             query = query.filter_by(is_final=True)
         
-        segments = query.order_by(Segment.sequence_number).offset(offset).limit(limit).all()
+        segments = query.order_by(Segment.created_at).offset(offset).limit(limit).all()
         
         return jsonify({
             'session_id': session_id,
@@ -266,7 +270,7 @@ def export_session(session_id):
     Export session transcript in various formats.
     """
     try:
-        session = Session.query.filter_by(session_id=session_id).first_or_404()
+        session = db.session.query(Session).filter_by(external_id=session_id).first_or_404()
         segments = Segment.get_final_segments(session_id)
         
         export_format = request.args.get('format', 'txt').lower()
@@ -323,7 +327,7 @@ def end_session_api(session_id):
     API endpoint to end a transcription session.
     """
     try:
-        session = Session.query.filter_by(session_id=session_id).first_or_404()
+        session = db.session.query(Session).filter_by(external_id=session_id).first_or_404()
         
         if session.status == 'completed':
             return jsonify({
