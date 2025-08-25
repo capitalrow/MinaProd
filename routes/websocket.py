@@ -40,10 +40,10 @@ def on_connect():
     emit('connected', {'status': 'Connected to Mina transcription service'})
 
 @socketio.on('disconnect')
-def on_disconnect():
+def on_disconnect(disconnect_reason=None):
     """Handle client disconnection."""
     client_id = request.sid
-    logger.info(f"Client disconnected: {client_id}")
+    logger.info(f"Client disconnected: {client_id} (reason: {disconnect_reason})")
 
 @socketio.on('create_session')
 def create_session(data):

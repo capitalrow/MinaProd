@@ -218,6 +218,9 @@
         });
       }
 
+      // 🔥 CRITICAL FIX: Create session before recording
+      await createSessionAndWait();
+
       // Request microphone access
       console.log('🎤 Requesting microphone access...');
       mediaStream = await navigator.mediaDevices.getUserMedia({ 
@@ -415,16 +418,61 @@
     }
   }
 
+  // 🔥 CRITICAL FIX: Session creation with proper async handling
+  function createSessionAndWait() {
+    return new Promise((resolve, reject) => {
+      if (CURRENT_SESSION_ID) {
+        console.log('📋 Using existing session:', CURRENT_SESSION_ID);
+        resolve();
+        return;
+      }
+      
+      if (!socket || !socket.connected) {
+        reject(new Error('Socket not connected'));
+        return;
+      }
+      
+      // Listen for session creation response
+      const sessionCreatedHandler = (data) => {
+        console.log('🆕 Session created successfully:', data.session_id);
+        CURRENT_SESSION_ID = data.session_id;
+        socket.off('session_created', sessionCreatedHandler);
+        socket.off('error', errorHandler);
+        resolve();
+      };
+      
+      const errorHandler = (error) => {
+        console.error('🚨 Session creation failed:', error);
+        socket.off('session_created', sessionCreatedHandler);
+        socket.off('error', errorHandler);
+        reject(new Error(`Session creation failed: ${error.message || 'Unknown error'}`));
+      };
+      
+      // Set up listeners
+      socket.once('session_created', sessionCreatedHandler);
+      socket.once('error', errorHandler);
+      
+      // Request session creation
+      console.log('📋 Creating new session...');
+      socket.emit('create_session', {
+        title: `Live Session ${new Date().toISOString()}`,
+        language: document.getElementById('sessionLanguage')?.value || 'en'
+      });
+      
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        socket.off('session_created', sessionCreatedHandler);
+        socket.off('error', errorHandler);
+        reject(new Error('Session creation timeout'));
+      }, 10000);
+    });
+  }
+
+  // Legacy function for compatibility
   function createSession() {
-    if (!socket || !socket.connected) {
-      console.warn('⚠️ Cannot create session - socket not connected');
-      return;
-    }
-    
-    console.log('🆕 Creating new session...');
-    socket.emit('create_session', {
-      title: 'Live Recording Session',
-      language: document.getElementById('sessionLanguage')?.value || 'en'
+    createSessionAndWait().catch(error => {
+      console.error('🚨 Session creation failed:', error);
+      showError(`Session creation failed: ${error.message}`);
     });
   }
 
@@ -441,14 +489,14 @@
     const stop = stopBtn();
     
     if (start) {
-      start.addEventListener('click', () => {
-        // Create session first if needed
-        if (!CURRENT_SESSION_ID) {
-          createSession();
-          // Wait a moment for session creation, then start
-          setTimeout(startRecording, 500);
-        } else {
-          startRecording();
+      start.addEventListener('click', async () => {
+        // 🔥 CRITICAL FIX: Proper async session creation
+        try {
+          await startRecording(); // Session creation is now handled inside startRecording
+        } catch (error) {
+          console.error('🚨 Failed to start recording:', error);
+          if (micStatus()) micStatus().textContent = 'Error';
+          showError(`Failed to start recording: ${error.message}`);
         }
       });
     }
