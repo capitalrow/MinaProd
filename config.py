@@ -60,7 +60,7 @@ class Config:
     SOCKETIO_PING_INTERVAL = int(os.environ.get('SOCKETIO_PING_INTERVAL', '25'))
     
     # M3: Analysis and Summary settings
-    ANALYSIS_ENGINE = os.environ.get('ANALYSIS_ENGINE', 'mock')
+    ANALYSIS_ENGINE = os.environ.get('ANALYSIS_ENGINE', 'openai_gpt')
     AUTO_SUMMARY_ON_FINALIZE = os.environ.get('AUTO_SUMMARY_ON_FINALIZE', 'false').lower() == 'true'
     SUMMARY_CONTEXT_CHARS = int(os.environ.get('SUMMARY_CONTEXT_CHARS', '12000'))
     
