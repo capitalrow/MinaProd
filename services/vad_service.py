@@ -141,7 +141,7 @@ class VADService:
             # Update statistics
             self._update_statistics(is_speech)
             
-            return VADResult(is_speech, speech_probability, energy, timestamp)
+            return VADResult(is_speech, float(speech_probability), float(energy), timestamp)
             
         except Exception as e:
             logger.error(f"Error processing audio chunk: {e}")

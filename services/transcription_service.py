@@ -18,6 +18,7 @@ from .audio_processor import AudioProcessor
 from models.session import Session
 from models.segment import Segment
 from app import db
+from services.session_service import SessionService
 from datetime import datetime
 import numpy as np
 
@@ -651,7 +652,7 @@ class TranscriptionService:
                         segment = Segment(
                             session_id=db_session.id,
                             text=text,
-                            confidence=transcription_result.get('confidence', 0.8),
+                            confidence=float(transcription_result.get('confidence', 0.8)),
                             start_time=timestamp or time.time(),
                             end_time=(timestamp or time.time()) + 1.0,
                             language='en'
@@ -664,7 +665,7 @@ class TranscriptionService:
                     result_data = {
                         'transcription': {
                             'text': text,
-                            'confidence': transcription_result.get('confidence', 0.8),
+                            'confidence': float(transcription_result.get('confidence', 0.8)),
                             'is_final': True
                         },
                         'timestamp': timestamp or time.time(),

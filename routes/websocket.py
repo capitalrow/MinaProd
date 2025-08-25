@@ -479,7 +479,7 @@ def register_websocket_handlers(socketio):
                     if len(audio_array) > 0:
                         rms = np.sqrt(np.mean(audio_array.astype(np.float32) ** 2))
                         max_val = np.iinfo(np.int16).max
-                        input_level = min(rms / max_val, 1.0)
+                        input_level = float(min(rms / max_val, 1.0))
                     else:
                         input_level = 0.0
                 except Exception as e:
