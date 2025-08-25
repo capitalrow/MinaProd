@@ -378,7 +378,7 @@ def register_websocket_handlers(socketio):
     def handle_audio_chunk(data):
         """
         Handle incoming audio chunk for real-time transcription.
-        FIXED: Removed duplicate handler, fixed asyncio execution, added session validation.
+        Enhanced with comprehensive logging and chunking support.
         
         Args:
             data: Dictionary containing session_id and audio data
@@ -387,12 +387,23 @@ def register_websocket_handlers(socketio):
             session_id = data.get('session_id')
             audio_data = data.get('audio_data')
             timestamp = data.get('timestamp', time.time())
+            chunk_index = data.get('chunk_index', 0)
+            is_final_chunk = data.get('is_final_chunk', True)
             
             if not session_id or not audio_data:
+                logger.error(f"Missing required data: session_id={bool(session_id)}, audio_data={bool(audio_data)}")
                 emit('error', {'message': 'session_id and audio_data are required'})
                 return
             
-            logger.debug(f"Received audio chunk for session {session_id}, size: {len(str(audio_data))} chars")
+            logger.info(f"Received audio chunk for session {session_id}, size: {len(str(audio_data))} chars, chunk: {chunk_index}, final: {is_final_chunk}")
+            
+            # Send confirmation that audio was received
+            emit('audio_received', {
+                'session_id': session_id,
+                'chunk_index': chunk_index,
+                'size': len(str(audio_data)),
+                'timestamp': timestamp
+            })
             
             # Convert audio data to bytes - support multiple formats including ArrayBuffer
             audio_bytes = None
@@ -456,9 +467,34 @@ def register_websocket_handlers(socketio):
                     # Continue processing anyway - don't block audio processing
                     logger.info(f"Continuing with audio processing despite session error")
             
-            # SIMPLIFIED: Direct synchronous processing - FIXED server stability
+            # ENHANCED: Direct synchronous processing with real-time feedback
             try:
                 logger.info(f"Processing audio chunk for session {session_id}, size: {len(audio_bytes)} bytes")
+                
+                # Calculate input level for UI feedback
+                import numpy as np
+                try:
+                    # Simple RMS calculation for input level
+                    audio_array = np.frombuffer(audio_bytes, dtype=np.int16)
+                    if len(audio_array) > 0:
+                        rms = np.sqrt(np.mean(audio_array.astype(np.float32) ** 2))
+                        max_val = np.iinfo(np.int16).max
+                        input_level = min(rms / max_val, 1.0)
+                    else:
+                        input_level = 0.0
+                except Exception as e:
+                    logger.warning(f"Could not calculate input level: {e}")
+                    input_level = 0.1  # Default to show some activity
+                
+                # Send real-time audio stats to UI
+                emit('audio_received', {
+                    'session_id': session_id,
+                    'chunk_index': chunk_index,
+                    'size': len(audio_bytes),
+                    'timestamp': timestamp,
+                    'input_level': input_level,
+                    'vad_status': 'Processing'
+                })
                 
                 # Use synchronous processing method instead of complex threading
                 result = service.process_audio_sync(
