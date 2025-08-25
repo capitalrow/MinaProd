@@ -75,26 +75,27 @@ def list_sessions():
         date_from = request.args.get('date_from')
         date_to = request.args.get('date_to')
         
-        # Build query
-        query = db.session.query(Session)
+        # Build query using SQLAlchemy 2.0
+        from sqlalchemy import select
+        query = select(Session)
         
         if status:
-            query = query.filter(Session.status == status)
+            query = query.where(Session.status == status)
         
         if language:
-            query = query.filter(Session.locale == language)
+            query = query.where(Session.locale == language)
         
         if date_from:
             try:
                 date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
-                query = query.filter(Session.started_at >= date_from_obj)
+                query = query.where(Session.started_at >= date_from_obj)
             except ValueError:
                 flash('Invalid date format for date_from', 'warning')
         
         if date_to:
             try:
                 date_to_obj = datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
-                query = query.filter(Session.started_at < date_to_obj)
+                query = query.where(Session.started_at < date_to_obj)
             except ValueError:
                 flash('Invalid date format for date_to', 'warning')
         
@@ -102,8 +103,8 @@ def list_sessions():
         from sqlalchemy import func
         offset = (page - 1) * per_page
         sessions_query = query.order_by(desc(Session.started_at))
-        sessions_list = sessions_query.offset(offset).limit(per_page).all()
-        total = sessions_query.count()
+        sessions_list = db.session.scalars(sessions_query.offset(offset).limit(per_page)).all()
+        total = db.session.scalars(select(func.count()).select_from(Session)).one()
         
         # Create pagination-like object
         class SessionsPagination:
@@ -134,43 +135,7 @@ def list_sessions():
         flash(f"Error loading sessions: {str(e)}", 'error')
         return redirect(url_for('transcription.index'))
 
-@transcription_bp.route('/sessions/<session_id>')
-def view_session(session_id):
-    """
-    View detailed transcription session with segments.
-    """
-    try:
-        session = db.session.query(Session).filter_by(external_id=session_id).first_or_404()
-        
-        # Get segments with pagination
-        page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 50, type=int)
-        
-        segments = db.session.query(Segment).filter_by(session_id=session.id).order_by(
-            Segment.created_at
-        ).paginate(page=page, per_page=per_page, error_out=False)
-        
-        # Get session statistics  
-        segments_count = db.session.query(Segment).filter_by(session_id=session.id).count()
-        final_segments = db.session.query(Segment).filter_by(session_id=session.id, kind='final').all()
-        avg_confidence = sum(s.avg_confidence or 0 for s in final_segments) / len(final_segments) if final_segments else 0
-        
-        session_stats = {
-            'total_segments': segments_count,
-            'average_confidence': round(avg_confidence, 2),
-            'duration_minutes': 0,  # TODO: Calculate from segments
-            'speakers_count': 0     # TODO: Speaker detection
-        }
-        
-        return render_template('sessions_detail.html',
-                             session=session,
-                             segments=segments,
-                             stats=session_stats)
-    
-    except Exception as e:
-        logger.error(f"Error viewing session {session_id}: {e}")
-        flash(f"Error loading session: {str(e)}", 'error')
-        return redirect(url_for('transcription.list_sessions'))
+# Removed duplicate route - session details are handled by sessions blueprint
 
 @transcription_bp.route('/api/sessions', methods=['POST'])
 def create_session():
@@ -190,7 +155,7 @@ def create_session():
         # Get transcription service
         service = get_transcription_service()
         
-        # Create session using SessionService instead
+        # Create session using SessionService
         from services.session_service import SessionService
         import uuid
         
@@ -208,6 +173,21 @@ def create_session():
         from sqlalchemy import select
         stmt = select(Session).where(Session.id == session_id)
         session = db.session.scalars(stmt).first()
+        
+        # Register session with transcription service for real-time processing
+        try:
+            service = get_transcription_service()
+            service.start_session_sync(
+                external_id,  # session_id should be the external_id
+                user_config={
+                    'title': title,
+                    'language': language,
+                    'enable_speaker_detection': enable_speaker_detection,
+                    'enable_sentiment_analysis': enable_sentiment_analysis
+                }
+            )
+        except Exception as e:
+            logger.warning(f"Failed to register session {external_id} with transcription service: {e}")
         
         return jsonify({
             'success': True,
@@ -228,7 +208,11 @@ def get_session_api(session_id):
     API endpoint to get session details.
     """
     try:
-        session = db.session.query(Session).filter_by(external_id=session_id).first_or_404()
+        from sqlalchemy import select
+        stmt = select(Session).where(Session.external_id == session_id)
+        session = db.session.scalars(stmt).first()
+        if not session:
+            abort(404)
         
         # Get service status if session is active
         service_status = None
@@ -258,20 +242,24 @@ def get_session_segments(session_id):
     """
     try:
         # Verify session exists
-        session = db.session.query(Session).filter_by(external_id=session_id).first_or_404()
+        from sqlalchemy import select
+        stmt = select(Session).where(Session.external_id == session_id)
+        session = db.session.scalars(stmt).first()
+        if not session:
+            abort(404)
         
         # Get query parameters
         limit = request.args.get('limit', 100, type=int)
         offset = request.args.get('offset', 0, type=int)
         final_only = request.args.get('final_only', 'false').lower() == 'true'
         
-        # Build query
-        query = db.session.query(Segment).filter_by(session_id=session.id)
+        # Build query using SQLAlchemy 2.0
+        segments_stmt = select(Segment).where(Segment.session_id == session.id)
         
         if final_only:
-            query = query.filter_by(is_final=True)
+            segments_stmt = segments_stmt.where(Segment.is_final == True)
         
-        segments = query.order_by(Segment.created_at).offset(offset).limit(limit).all()
+        segments = db.session.scalars(segments_stmt.order_by(Segment.created_at).offset(offset).limit(limit)).all()
         
         return jsonify({
             'session_id': session_id,
@@ -292,8 +280,15 @@ def export_session(session_id):
     Export session transcript in various formats.
     """
     try:
-        session = db.session.query(Session).filter_by(external_id=session_id).first_or_404()
-        segments = Segment.get_final_segments(session_id)
+        from sqlalchemy import select
+        stmt = select(Session).where(Session.external_id == session_id)
+        session = db.session.scalars(stmt).first()
+        if not session:
+            abort(404)
+        
+        # Get final segments using SQLAlchemy 2.0
+        segments_stmt = select(Segment).where(Segment.session_id == session.id, Segment.kind == 'final')
+        segments = db.session.scalars(segments_stmt).all()
         
         export_format = request.args.get('format', 'txt').lower()
         include_timestamps = request.args.get('timestamps', 'false').lower() == 'true'
@@ -349,7 +344,11 @@ def end_session_api(session_id):
     API endpoint to end a transcription session.
     """
     try:
-        session = db.session.query(Session).filter_by(external_id=session_id).first_or_404()
+        from sqlalchemy import select
+        stmt = select(Session).where(Session.external_id == session_id)
+        session = db.session.scalars(stmt).first()
+        if not session:
+            abort(404)
         
         if session.status == 'completed':
             return jsonify({

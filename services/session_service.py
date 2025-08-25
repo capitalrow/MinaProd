@@ -62,7 +62,8 @@ class SessionService:
         Returns:
             Session instance or None
         """
-        return db.session.query(Session).filter(Session.external_id == external_id).first()
+        stmt = select(Session).where(Session.external_id == external_id)
+        return db.session.scalars(stmt).first()
     
     @staticmethod
     def get_session_by_id(session_id: int) -> Optional[Session]:
@@ -75,7 +76,8 @@ class SessionService:
         Returns:
             Session instance or None
         """
-        return db.session.query(Session).filter(Session.id == session_id).first()
+        stmt = select(Session).where(Session.id == session_id)
+        return db.session.scalars(stmt).first()
     
     @staticmethod
     def complete_session(session_id: int) -> bool:
@@ -110,21 +112,21 @@ class SessionService:
         Returns:
             List of Session instances
         """
-        query = db.session.query(Session)
+        stmt = select(Session)
         
         # Apply search filter
         if q:
-            query = query.filter(Session.title.ilike(f'%{q}%'))
+            stmt = stmt.where(Session.title.ilike(f'%{q}%'))
         
         # Apply status filter
         if status:
-            query = query.filter(Session.status == status)
+            stmt = stmt.where(Session.status == status)
         
         # Apply ordering and pagination
-        query = query.order_by(Session.started_at.desc())
-        query = query.offset(offset).limit(limit)
+        stmt = stmt.order_by(Session.started_at.desc())
+        stmt = stmt.offset(offset).limit(limit)
         
-        return query.all()
+        return db.session.scalars(stmt).all()
     
     @staticmethod
     def get_session_detail(session_id: int) -> Optional[Dict[str, Any]]:
@@ -137,21 +139,43 @@ class SessionService:
         Returns:
             Dictionary with session and segments data, or None
         """
-        session = db.session.query(Session).options(
-            selectinload(Session.segments)
-        ).filter(Session.id == session_id).first()
-        
+        session = SessionService.get_session_by_id(session_id)
         if not session:
             return None
         
-        # Get segments ordered by creation time
-        segments = db.session.query(Segment).filter(
-            Segment.session_id == session_id
-        ).order_by(Segment.created_at).all()
+        # Get session segments using SQLAlchemy 2.0
+        segments_stmt = select(Segment).where(Segment.session_id == session_id).order_by(Segment.created_at)
+        segments = db.session.scalars(segments_stmt).all()
         
         return {
             'session': session.to_dict(),
-            'segments': [segment.to_dict() for segment in segments]
+            'segments': [segment.to_dict() for segment in segments],
+            'total_segments': len(segments)
+        }
+    
+    @staticmethod
+    def get_session_detail_by_external(external_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get detailed session information including segments by external ID.
+        
+        Args:
+            external_id: External session identifier
+            
+        Returns:
+            Dictionary with session and segments data, or None
+        """
+        session = SessionService.get_session_by_external(external_id)
+        if not session:
+            return None
+        
+        # Get session segments using SQLAlchemy 2.0
+        segments_stmt = select(Segment).where(Segment.session_id == session.id).order_by(Segment.created_at)
+        segments = db.session.scalars(segments_stmt).all()
+        
+        return {
+            'session': session.to_dict(),
+            'segments': [segment.to_dict() for segment in segments],
+            'total_segments': len(segments)
         }
     
     @staticmethod
@@ -195,14 +219,14 @@ class SessionService:
             Dictionary with session counts by status
         """
         try:
-            # Count sessions by status
-            active_count = db.session.query(Session).filter(Session.status == 'active').count()
-            completed_count = db.session.query(Session).filter(Session.status == 'completed').count()
-            error_count = db.session.query(Session).filter(Session.status == 'error').count()
-            total_count = db.session.query(Session).count()
+            # Count sessions by status using SQLAlchemy 2.0
+            active_count = db.session.scalars(select(func.count()).select_from(Session).where(Session.status == 'active')).one()
+            completed_count = db.session.scalars(select(func.count()).select_from(Session).where(Session.status == 'completed')).one()
+            error_count = db.session.scalars(select(func.count()).select_from(Session).where(Session.status == 'error')).one()
+            total_count = db.session.scalars(select(func.count()).select_from(Session)).one()
             
             # Count total segments
-            segments_count = db.session.query(Segment).count()
+            segments_count = db.session.scalars(select(func.count()).select_from(Segment)).one()
             
             return {
                 'active_sessions': active_count,
