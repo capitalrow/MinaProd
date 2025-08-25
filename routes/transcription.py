@@ -7,7 +7,7 @@ import logging
 import asyncio
 import os
 import tempfile
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, abort
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from sqlalchemy import desc
@@ -17,7 +17,7 @@ from models.segment import Segment
 from services.transcription_service import TranscriptionService, TranscriptionServiceConfig
 from services.session_service import SessionService
 from services.whisper_streaming import WhisperStreamingService, TranscriptionConfig
-from app_refactored import db
+from app import db
 
 logger = logging.getLogger(__name__)
 
