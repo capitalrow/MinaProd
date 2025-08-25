@@ -22,11 +22,21 @@ class RealTimeTranscription {
             lastUpdate: null
         };
         
+        // Enhanced error handling and retry system
+        this.retryAttempts = 0;
+        this.maxRetries = 3;
+        this.retryDelay = 1000; // Start with 1 second
+        this.lastAction = null;
+        this.reconnectAttempts = 0;
+        this.maxReconnectAttempts = 5;
+        this.reconnectDelay = 2000;
+        
         // DOM elements
         this.elements = {};
         
         // Initialize
         this.initializeElements();
+        this.addAccessibilityAttributes();
         this.initializeSocket();
         this.initializeAudioProcessor();
         this.setupEventListeners();
@@ -772,33 +782,424 @@ class RealTimeTranscription {
         console.log('Configuration applied:', this.currentSessionConfig);
     }
     
-    showError(message) {
-        this.showAlert(message, 'danger');
+    showError(message, options = {}) {
+        this.showToast(message, 'danger', options);
     }
     
-    showSuccess(message) {
-        this.showAlert(message, 'success');
+    showSuccess(message, options = {}) {
+        this.showToast(message, 'success', options);
+    }
+    
+    showWarning(message, options = {}) {
+        this.showToast(message, 'warning', options);
+    }
+    
+    showInfo(message, options = {}) {
+        this.showToast(message, 'info', options);
     }
     
     showAlert(message, type) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        // Legacy method - now uses enhanced toast system
+        this.showToast(message, type);
+    }
+    
+    showToast(message, type = 'info', options = {}) {
+        const {
+            duration = 5000,
+            persistent = false,
+            action = null,
+            priority = 'normal',
+            errorCode = null,
+            retry = false
+        } = options;
+        
+        // Generate unique ID for toast
+        const toastId = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Create toast container if it doesn't exist
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            toastContainer.style.zIndex = '9999';
+            toastContainer.setAttribute('aria-live', 'polite');
+            toastContainer.setAttribute('aria-atomic', 'true');
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Map alert types to Bootstrap toast types
+        const typeMap = {
+            'danger': 'text-bg-danger',
+            'success': 'text-bg-success', 
+            'warning': 'text-bg-warning',
+            'info': 'text-bg-info',
+            'secondary': 'text-bg-secondary'
+        };
+        
+        const bgClass = typeMap[type] || 'text-bg-info';
+        
+        // Create toast element
+        const toastDiv = document.createElement('div');
+        toastDiv.id = toastId;
+        toastDiv.className = `toast ${bgClass}`;
+        toastDiv.setAttribute('role', priority === 'urgent' ? 'alert' : 'status');
+        toastDiv.setAttribute('aria-live', priority === 'urgent' ? 'assertive' : 'polite');
+        toastDiv.setAttribute('aria-atomic', 'true');
+        
+        // Build toast content
+        let actionButton = '';
+        if (action) {
+            actionButton = `<button type="button" class="btn btn-sm btn-outline-light ms-2" 
+                           onclick="${action.callback}">${action.label}</button>`;
+        } else if (retry) {
+            actionButton = `<button type="button" class="btn btn-sm btn-outline-light ms-2" 
+                           onclick="window.minaTranscription.retryLastAction()">Retry</button>`;
+        }
+        
+        let errorCodeInfo = errorCode ? `<small class="d-block mt-1 opacity-75">Error: ${errorCode}</small>` : '';
+        
+        toastDiv.innerHTML = `
+            <div class="toast-header ${bgClass}">
+                <i class="fas ${this.getIconForType(type)} me-2"></i>
+                <strong class="me-auto">${this.getTitleForType(type)}</strong>
+                <small class="text-light opacity-75">${new Date().toLocaleTimeString()}</small>
+                ${!persistent ? '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>' : ''}
+            </div>
+            <div class="toast-body">
+                ${message}
+                ${errorCodeInfo}
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <div></div>
+                    <div>${actionButton}</div>
+                </div>
+            </div>
         `;
         
-        const container = document.querySelector('main');
-        if (container) {
-            container.insertBefore(alertDiv, container.firstChild);
-            
-            // Auto-remove after 5 seconds
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 5000);
+        // Insert toast with priority handling
+        if (priority === 'urgent') {
+            toastContainer.insertBefore(toastDiv, toastContainer.firstChild);
+        } else {
+            toastContainer.appendChild(toastDiv);
         }
+        
+        // Initialize Bootstrap toast
+        const toast = new bootstrap.Toast(toastDiv, {
+            autohide: !persistent,
+            delay: duration
+        });
+        
+        // Show toast
+        toast.show();
+        
+        // Auto-cleanup for non-persistent toasts
+        if (!persistent) {
+            setTimeout(() => {
+                if (toastDiv.parentNode) {
+                    toastDiv.remove();
+                }
+            }, duration + 1000);
+        }
+        
+        // Accessibility: announce to screen readers for urgent messages
+        if (priority === 'urgent') {
+            this.announceToScreenReader(message);
+        }
+        
+        // Log for debugging
+        console.log(`Toast [${type}]: ${message}`, options);
+        
+        return toastId;
+    }
+    
+    getIconForType(type) {
+        const icons = {
+            'danger': 'fa-exclamation-triangle',
+            'success': 'fa-check-circle',
+            'warning': 'fa-exclamation-circle',
+            'info': 'fa-info-circle',
+            'secondary': 'fa-bell'
+        };
+        return icons[type] || 'fa-info-circle';
+    }
+    
+    getTitleForType(type) {
+        const titles = {
+            'danger': 'Error',
+            'success': 'Success',
+            'warning': 'Warning',
+            'info': 'Information',
+            'secondary': 'Notice'
+        };
+        return titles[type] || 'Notice';
+    }
+    
+    announceToScreenReader(message) {
+        const announcement = document.createElement('div');
+        announcement.setAttribute('aria-live', 'assertive');
+        announcement.setAttribute('aria-atomic', 'true');
+        announcement.className = 'sr-only';
+        announcement.textContent = message;
+        document.body.appendChild(announcement);
+        
+        setTimeout(() => {
+            document.body.removeChild(announcement);
+        }, 1000);
+    }
+    
+    dismissAllToasts() {
+        const toasts = document.querySelectorAll('.toast');
+        toasts.forEach(toast => {
+            const bsToast = bootstrap.Toast.getInstance(toast);
+            if (bsToast) {
+                bsToast.hide();
+            }
+        });
+    }
+    
+    showConnectionStatus(status, message) {
+        const statusElement = this.elements.connectionStatus;
+        const textElement = document.getElementById('wsStatus');
+        
+        if (statusElement && textElement) {
+            // Remove existing status classes
+            statusElement.classList.remove('status-connected', 'status-connecting', 'status-disconnected');
+            
+            // Add appropriate status class
+            statusElement.classList.add(`status-${status}`);
+            textElement.textContent = message;
+            
+            // Show appropriate toast based on status
+            switch (status) {
+                case 'connected':
+                    this.showSuccess('Connected successfully');
+                    break;
+                case 'connecting':
+                    this.showInfo('Connecting...', { duration: 2000 });
+                    break;
+                case 'disconnected':
+                    this.showError('Connection lost. Attempting to reconnect...', { 
+                        retry: true, 
+                        persistent: true,
+                        priority: 'urgent'
+                    });
+                    break;
+            }
+        }
+    }
+    
+    // Enhanced retry and reconnection system
+    retryLastAction() {
+        if (this.lastAction && this.retryAttempts < this.maxRetries) {
+            this.retryAttempts++;
+            const delay = Math.min(this.retryDelay * Math.pow(2, this.retryAttempts - 1), 30000);
+            
+            this.showInfo(`Retrying... (Attempt ${this.retryAttempts}/${this.maxRetries})`, {
+                duration: 2000
+            });
+            
+            setTimeout(() => {
+                try {
+                    this.lastAction();
+                } catch (error) {
+                    this.handleRetryFailure(error);
+                }
+            }, delay);
+        } else {
+            this.showError('Maximum retry attempts reached. Please refresh the page.', {
+                persistent: true,
+                priority: 'urgent',
+                action: {
+                    label: 'Refresh',
+                    callback: 'location.reload()'
+                }
+            });
+        }
+    }
+    
+    setLastAction(action) {
+        this.lastAction = action;
+        this.retryAttempts = 0;
+    }
+    
+    handleRetryFailure(error) {
+        console.error('Retry failed:', error);
+        if (this.retryAttempts >= this.maxRetries) {
+            this.showError('All retry attempts failed. Please check your connection.', {
+                persistent: true,
+                priority: 'urgent',
+                errorCode: error.message || 'RETRY_EXHAUSTED'
+            });
+        } else {
+            this.retryLastAction();
+        }
+    }
+    
+    attemptReconnection() {
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+            this.showError('Unable to reconnect. Please refresh the page.', {
+                persistent: true,
+                priority: 'urgent',
+                action: {
+                    label: 'Refresh',
+                    callback: 'location.reload()'
+                }
+            });
+            return;
+        }
+        
+        this.reconnectAttempts++;
+        const delay = Math.min(this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1), 10000);
+        
+        this.showInfo(`Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`, {
+            duration: delay
+        });
+        
+        setTimeout(() => {
+            this.initializeWebSocket();
+        }, delay);
+    }
+    
+    resetRetryCounters() {
+        this.retryAttempts = 0;
+        this.reconnectAttempts = 0;
+    }
+    
+    // Enhanced error handling with categorization
+    handleWebSocketError(error, context = '') {
+        console.error('WebSocket error:', error, context);
+        this.showError(`Connection error: ${error.message || 'Unknown error'}`, {
+            errorCode: `WS_ERROR_${context}`,
+            retry: true,
+            priority: 'urgent'
+        });
+        
+        this.setLastAction(() => this.attemptReconnection());
+    }
+    
+    handleAudioError(error, context = '') {
+        console.error('Audio error:', error, context);
+        this.showError(`Audio processing error: ${error.message || 'Unknown error'}`, {
+            errorCode: `AUDIO_ERROR_${context}`,
+            action: {
+                label: 'Check Permissions',
+                callback: 'window.minaTranscription.checkMicrophonePermissions()'
+            }
+        });
+    }
+    
+    handleAPIError(error, context = '') {
+        console.error('API error:', error, context);
+        this.showError(`API error: ${error.message || 'Service temporarily unavailable'}`, {
+            errorCode: `API_ERROR_${context}`,
+            retry: true
+        });
+        
+        this.setLastAction(() => {
+            // Retry the specific API call based on context
+            if (context.includes('transcription')) {
+                this.initializeWebSocket();
+            }
+        });
+    }
+    
+    async checkMicrophonePermissions() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach(track => track.stop());
+            this.showSuccess('Microphone permissions are working correctly');
+        } catch (error) {
+            this.showError('Microphone access denied. Please enable microphone permissions.', {
+                persistent: true,
+                action: {
+                    label: 'Help',
+                    callback: 'window.open("https://support.google.com/chrome/answer/2693767", "_blank")'
+                }
+            });
+        }
+    }
+    
+    // Enhanced accessibility features
+    addAccessibilityAttributes() {
+        // Add ARIA labels and descriptions to key elements
+        const elements = {
+            startRecordingBtn: 'Start recording audio for live transcription',
+            stopRecordingBtn: 'Stop recording and end transcription session',
+            transcriptionContainer: 'Live transcription results will appear here',
+            audioVisualizer: 'Audio input level visualization',
+            sessionTitle: 'Enter a title for this transcription session',
+            sessionLanguage: 'Select the primary language for transcription',
+            vadSensitivityConfig: 'Adjust voice activity detection sensitivity',
+            minConfidenceConfig: 'Set minimum confidence threshold for transcription results'
+        };
+        
+        Object.entries(elements).forEach(([id, description]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.setAttribute('aria-label', description);
+                if (element.tagName.toLowerCase() === 'input' || element.tagName.toLowerCase() === 'textarea') {
+                    element.setAttribute('aria-describedby', `${id}-description`);
+                }
+            }
+        });
+        
+        // Add focus management for modals
+        const modal = document.getElementById('sessionConfigModal');
+        if (modal) {
+            modal.addEventListener('shown.bs.modal', () => {
+                const firstInput = modal.querySelector('input, select, textarea');
+                if (firstInput) firstInput.focus();
+            });
+        }
+        
+        // Add keyboard navigation support
+        document.addEventListener('keydown', (e) => {
+            // Escape key to dismiss toasts
+            if (e.key === 'Escape') {
+                this.dismissAllToasts();
+            }
+            
+            // Ctrl+R to retry last action
+            if (e.ctrlKey && e.key === 'r' && this.lastAction) {
+                e.preventDefault();
+                this.retryLastAction();
+            }
+            
+            // Space to start/stop recording (when not in input field)
+            if (e.code === 'Space' && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+                e.preventDefault();
+                if (this.isRecording) {
+                    this.stopRecording();
+                } else {
+                    this.startRecording();
+                }
+            }
+        });
+        
+        // Add screen reader announcements for dynamic content
+        this.addScreenReaderRegion();
+    }
+    
+    addScreenReaderRegion() {
+        // Create a live region for screen reader announcements
+        const liveRegion = document.createElement('div');
+        liveRegion.id = 'live-announcements';
+        liveRegion.setAttribute('aria-live', 'polite');
+        liveRegion.setAttribute('aria-atomic', 'false');
+        liveRegion.className = 'sr-only';
+        document.body.appendChild(liveRegion);
+        
+        // Track recording state for announcements
+        this.announceRecordingState = (state) => {
+            const messages = {
+                'started': 'Recording started. Speak clearly for best transcription results.',
+                'stopped': 'Recording stopped. Processing final transcription.',
+                'paused': 'Recording paused. Click start to resume.',
+                'error': 'Recording error occurred. Check microphone permissions.'
+            };
+            
+            liveRegion.textContent = messages[state] || state;
+        };
     }
 }
 

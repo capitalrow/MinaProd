@@ -98,6 +98,18 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
 }
+
+.sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
 </style>
 {% endblock %}
 
@@ -387,4 +399,5 @@
 {% block scripts %}
 <script src="/static/js/websocket_streaming.js"></script>
 <script src="/static/js/recording_wiring.js"></script>
+<script src="/static/js/real_time_transcription.js"></script>
 {% endblock %}

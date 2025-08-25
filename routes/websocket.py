@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 # Global transcription service instance
 _transcription_service = None
 
+# Client-session mapping for proper cleanup
+_client_sessions = {}  # {client_id: set(session_ids)}
+
 def get_transcription_service():
     """Get or create the global transcription service instance."""
     global _transcription_service
@@ -28,6 +31,53 @@ def get_transcription_service():
         config = TranscriptionServiceConfig()
         _transcription_service = TranscriptionService(config)
     return _transcription_service
+
+def get_client_id():
+    """Get unique client identifier for session tracking."""
+    from flask import request
+    return request.sid
+
+def track_client_session(session_id):
+    """Track session for current client."""
+    client_id = get_client_id()
+    if client_id not in _client_sessions:
+        _client_sessions[client_id] = set()
+    _client_sessions[client_id].add(session_id)
+    logger.info(f"Tracking session {session_id} for client {client_id}")
+
+def cleanup_client_sessions(client_id):
+    """Clean up all sessions for a disconnected client."""
+    if client_id not in _client_sessions:
+        return []
+    
+    cleaned_sessions = []
+    service = get_transcription_service()
+    
+    for session_id in _client_sessions[client_id]:
+        try:
+            # End service session if active
+            if session_id in service.active_sessions:
+                service.end_session_sync(session_id)
+                cleaned_sessions.append(session_id)
+                logger.info(f"Cleaned up service session: {session_id}")
+            
+            # Update database session status
+            session = SessionService.get_session_by_external(session_id)
+            if session and getattr(session, 'status', '') != 'completed':
+                session.status = 'completed'
+                try:
+                    session.ended_at = datetime.utcnow()
+                except AttributeError:
+                    pass  # Model doesn't have ended_at field
+                db.session.commit()
+                logger.info(f"Updated database session status: {session_id}")
+                
+        except Exception as e:
+            logger.error(f"Error cleaning up session {session_id}: {e}")
+    
+    # Remove client tracking
+    del _client_sessions[client_id]
+    return cleaned_sessions
 
 def register_websocket_handlers(socketio):
     """
@@ -80,6 +130,9 @@ def register_websocket_handlers(socketio):
                 logger.error(f"Failed to start transcription service: {e}")
                 # Continue - database session exists
             
+            # Track session for this client
+            track_client_session(session_id)
+            
             # Join session room  
             join_room(session_id)
             
@@ -100,17 +153,26 @@ def register_websocket_handlers(socketio):
     
     @socketio.on('disconnect')
     def handle_disconnect(reason=None):
-        """Handle client disconnection."""
-        # Simple disconnection logging
-        logger.info(f"Client disconnected: {reason}")
+        """Handle client disconnection with comprehensive session cleanup."""
+        client_id = get_client_id()
+        logger.info(f"Client {client_id} disconnected: {reason}")
         
-        # Clean up any active sessions for this client
+        # Clean up all active sessions for this client
         try:
+            cleaned_sessions = cleanup_client_sessions(client_id)
+            if cleaned_sessions:
+                logger.info(f"Cleaned up {len(cleaned_sessions)} sessions for client {client_id}: {cleaned_sessions}")
+            else:
+                logger.info(f"No sessions to clean up for client {client_id}")
+                
+            # Initialize the transcription service to run cleanup
             service = get_transcription_service()
-            # In a real implementation, we'd track client-session mappings
-            logger.info(f"Cleaned up resources for disconnected client")
+            service._cleanup_stale_sessions()
+            
+            logger.info(f"Successfully cleaned up resources for disconnected client {client_id}")
+            
         except Exception as e:
-            logger.error(f"Error during disconnect cleanup: {e}")
+            logger.error(f"Error during disconnect cleanup for client {client_id}: {e}")
     
     @socketio.on('join_session')
     def handle_join_session(data):
@@ -131,6 +193,9 @@ def register_websocket_handlers(socketio):
             if not session:
                 emit('error', {'message': f'Session {session_id} not found'})
                 return
+            
+            # Track session for this client
+            track_client_session(session_id)
             
             # Join Socket.IO room
             join_room(session_id)
@@ -307,6 +372,9 @@ def register_websocket_handlers(socketio):
             except Exception as e:
                 logger.error(f"Failed to start transcription service: {e}")
                 # Continue anyway - session exists in database
+            
+            # Track session for this client
+            track_client_session(session_id)
             
             # Join the session room
             join_room(session_id)
