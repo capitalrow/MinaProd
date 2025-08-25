@@ -548,17 +548,15 @@ class WhisperStreamingService:
             import tempfile
             import os
             
-            # CRITICAL FIX: Convert webm to WAV for Whisper API compatibility
-            try:
-                from .audio_processor import AudioProcessor
-                audio_processor = AudioProcessor()
-                wav_audio = audio_processor.convert_to_wav(audio_data, 'webm', 16000, 1)
-                logger.info(f"Audio format conversion: {len(audio_data)} webm -> {len(wav_audio)} wav bytes")
-            except Exception as e:
-                logger.warning(f"Audio conversion failed: {e}, using raw data")
-                wav_audio = audio_data
+            # 🔥 CRITICAL FIX: Use raw WebM data directly - Whisper supports WebM/Opus
+            # Skip fake conversion that was corrupting audio
+            logger.info(f"Using raw audio format for Whisper API: {len(audio_data)} bytes")
             
-            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+            # Use original audio data directly (WebM/Opus format)
+            wav_audio = audio_data
+            file_suffix = '.webm'  # Match the actual audio format
+            
+            with tempfile.NamedTemporaryFile(suffix=file_suffix, delete=False) as temp_file:
                 temp_file.write(wav_audio)
                 temp_file.flush()
                 temp_path = temp_file.name
