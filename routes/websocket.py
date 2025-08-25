@@ -99,10 +99,10 @@ def register_websocket_handlers(socketio):
             emit('error', {'message': f'Failed to create session: {str(e)}'})
     
     @socketio.on('disconnect')
-    def handle_disconnect():
+    def handle_disconnect(reason=None):
         """Handle client disconnection."""
         # Simple disconnection logging
-        logger.info(f"Client disconnected")
+        logger.info(f"Client disconnected: {reason}")
         
         # Clean up any active sessions for this client
         try:

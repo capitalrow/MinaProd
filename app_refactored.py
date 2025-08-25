@@ -21,10 +21,10 @@ logger = logging.getLogger(__name__)
 db = SQLAlchemy()
 socketio = SocketIO(
     cors_allowed_origins="*",
-    async_mode='threading',  # FIXED: Match actual server setup instead of eventlet
-    ping_timeout=60,
-    ping_interval=25,
-    transports=['websocket', 'polling'],  # FIXED: Use 'transports' not 'transport'  
+    async_mode='threading',  # Stable threading mode compatible with both sync workers and eventlet
+    ping_timeout=30,
+    ping_interval=10,
+    transports=['websocket', 'polling'],
     engineio_logger=False,
     socketio_logger=False
 )
