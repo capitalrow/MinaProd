@@ -76,6 +76,9 @@ class AnalysisService:
             .all()
         )
         
+        # Determine analysis engine from configuration
+        engine = current_app.config.get('ANALYSIS_ENGINE', 'mock')
+        
         if not final_segments:
             logger.warning(f"No final segments found for session {session_id}")
             # Create empty summary for sessions without transcript
@@ -91,7 +94,6 @@ class AnalysisService:
             logger.info(f"Built context with {len(context)} characters for session {session_id}")
             
             # Generate insights using configured engine
-            engine = current_app.config.get('ANALYSIS_ENGINE', 'mock')
             if engine == 'openai_gpt':
                 summary_data = AnalysisService._analyse_with_openai(context)
             else:
@@ -170,7 +172,8 @@ class AnalysisService:
         try:
             from openai import OpenAI
             
-            api_key = current_app.config.get('OPENAI_API_KEY')
+            import os
+            api_key = os.environ.get('OPENAI_API_KEY')
             if not api_key:
                 logger.warning("OpenAI API key not found, falling back to mock analysis")
                 return AnalysisService._analyse_with_mock(context, [])

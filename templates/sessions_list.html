@@ -104,12 +104,12 @@
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="{{ url_for('sessions.get_session_detail', session_id=session.id) }}" 
+                                <a href="{{ url_for('sessions.get_session_detail', session_identifier=session.external_id) }}" 
                                    class="btn btn-outline-primary btn-sm">
                                     <i class="fas fa-eye"></i> View
                                 </a>
                                 {% if session.status == 'completed' %}
-                                <a href="{{ url_for('sessions.get_session_detail', session_id=session.id) }}#export" 
+                                <a href="{{ url_for('sessions.get_session_detail', session_identifier=session.external_id) }}#export" 
                                    class="btn btn-outline-secondary btn-sm">
                                     <i class="fas fa-download"></i> Export
                                 </a>

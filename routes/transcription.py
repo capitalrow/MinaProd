@@ -5,7 +5,10 @@ HTTP endpoints for managing transcription sessions and retrieving transcripts.
 
 import logging
 import asyncio
+import os
+import tempfile
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
+from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from sqlalchemy import desc
 
@@ -13,11 +16,20 @@ from models.session import Session
 from models.segment import Segment
 from services.transcription_service import TranscriptionService, TranscriptionServiceConfig
 from services.session_service import SessionService
+from services.whisper_streaming import WhisperStreamingService, TranscriptionConfig
 from app_refactored import db
 
 logger = logging.getLogger(__name__)
 
 transcription_bp = Blueprint('transcription', __name__)
+
+# Configuration for file uploads
+ALLOWED_EXTENSIONS = {'wav', 'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'ogg', 'webm'}
+MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB max file size
+
+def allowed_file(filename):
+    """Check if the file extension is allowed for audio transcription."""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Global transcription service instance
 # In production, this might be managed by a service container
@@ -408,6 +420,146 @@ def get_global_stats():
         logger.error(f"Error getting global stats: {e}")
         return jsonify({
             'error': str(e)
+        }), 500
+
+@transcription_bp.route('/transcribe', methods=['POST'])
+def transcribe_file():
+    """
+    Batch audio file transcription endpoint.
+    
+    Accepts audio file uploads and returns a session ID for the transcribed content.
+    Supports common audio formats: wav, mp3, mp4, m4a, ogg, webm.
+    
+    Returns:
+        JSON response with session_id on success, error message on failure
+    """
+    try:
+        # Check if file is present in request
+        if 'file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No file provided. Please upload an audio file.'
+            }), 400
+        
+        file = request.files['file']
+        
+        # Check if file was selected
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No file selected for upload.'
+            }), 400
+        
+        # Validate file type
+        if not allowed_file(file.filename):
+            return jsonify({
+                'success': False,
+                'error': f'Unsupported file type. Allowed formats: {", ".join(ALLOWED_EXTENSIONS)}'
+            }), 400
+        
+        # Secure the filename
+        filename = secure_filename(file.filename)
+        
+        # Create a new session for this transcription
+        session_title = request.form.get('title', f'Uploaded File: {filename}')
+        session_id = SessionService.create_session(
+            title=session_title,
+            locale=request.form.get('language', 'en')
+        )
+        
+        # Get the session to get external_id
+        session = SessionService.get_session_by_id(session_id)
+        if not session:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to create transcription session.'
+            }), 500
+        
+        # Save file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(filename)[1]) as temp_file:
+            file.save(temp_file.name)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Initialize Whisper service for batch processing
+            config = TranscriptionConfig(
+                language=request.form.get('language', 'en'),
+                model='whisper-1'
+            )
+            whisper_service = WhisperStreamingService(config)
+            
+            # Process the audio file
+            logger.info(f"Starting batch transcription for file: {filename}, session: {session.external_id}")
+            
+            # Read the audio file and transcribe
+            with open(temp_file_path, 'rb') as audio_file:
+                # Use OpenAI Whisper API for transcription
+                transcription_result = whisper_service.transcribe_file(audio_file)
+                
+                if transcription_result and transcription_result.text:
+                    # Create a transcript segment
+                    from models.segment import Segment
+                    
+                    segment = Segment(
+                        session_id=session_id,
+                        text=transcription_result.text,
+                        avg_confidence=transcription_result.confidence,
+                        start_ms=0,
+                        end_ms=int(transcription_result.duration * 1000),
+                        kind='final'
+                    )
+                    
+                    db.session.add(segment)
+                    
+                    # Mark session as completed
+                    session.status = 'completed'
+                    session.ended_at = datetime.utcnow()
+                    
+                    db.session.commit()
+                    
+                    logger.info(f"Batch transcription completed for session: {session.external_id}")
+                    
+                    return jsonify({
+                        'success': True,
+                        'session_id': session.external_id,
+                        'message': 'File transcribed successfully',
+                        'text_preview': transcription_result.text[:200] + '...' if len(transcription_result.text) > 200 else transcription_result.text,
+                        'duration': transcription_result.duration,
+                        'language': transcription_result.language
+                    })
+                else:
+                    # Mark session as error
+                    session.status = 'error'
+                    db.session.commit()
+                    
+                    return jsonify({
+                        'success': False,
+                        'error': 'Failed to transcribe audio. The file may be corrupted or contain no speech.'
+                    }), 422
+                    
+        except Exception as e:
+            logger.error(f"Transcription processing error: {e}")
+            # Mark session as error
+            session.status = 'error'
+            db.session.commit()
+            
+            return jsonify({
+                'success': False,
+                'error': f'Transcription failed: {str(e)}'
+            }), 500
+            
+        finally:
+            # Clean up temporary file
+            try:
+                os.unlink(temp_file_path)
+            except OSError:
+                logger.warning(f"Could not delete temporary file: {temp_file_path}")
+        
+    except Exception as e:
+        logger.error(f"File upload error: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Upload failed: {str(e)}'
         }), 500
 
 # Error handlers for the blueprint
