@@ -527,3 +527,60 @@ class WhisperStreamingService:
         
         self.executor.shutdown(wait=True)
         logger.info("Whisper streaming service shutdown complete")
+    
+    def transcribe_chunk_sync(self, audio_data: bytes, session_id: str) -> Optional[Dict[str, Any]]:
+        """
+        SIMPLIFIED: Synchronous transcription to fix server stability.
+        Direct OpenAI API call without complex async/threading.
+        
+        Args:
+            audio_data: Raw audio bytes
+            session_id: Session identifier
+            
+        Returns:
+            Transcription result dictionary or None
+        """
+        try:
+            if not self.client or not audio_data:
+                return None
+            
+            # Save audio to temporary file for OpenAI API
+            import tempfile
+            import os
+            
+            with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_file:
+                temp_file.write(audio_data)
+                temp_file.flush()
+                temp_path = temp_file.name
+            
+            try:
+                # Direct synchronous OpenAI transcription call
+                with open(temp_path, 'rb') as audio_file:
+                    # the newest OpenAI model is "gpt-5" which was released August 7, 2025.
+                    # do not change this unless explicitly requested by the user
+                    response = self.client.audio.transcriptions.create(
+                        model="whisper-1",
+                        file=audio_file,
+                        language="en"
+                    )
+                
+                text = response.text.strip() if response.text else ""
+                
+                if text:
+                    logger.info(f"Whisper transcription: '{text}'")
+                    return {
+                        'text': text,
+                        'confidence': 0.8,  # Whisper doesn't provide confidence, use default
+                        'language': 'en'
+                    }
+                
+                return None
+                
+            finally:
+                # Clean up temp file
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+                
+        except Exception as e:
+            logger.error(f"Error in synchronous Whisper transcription: {e}")
+            return None

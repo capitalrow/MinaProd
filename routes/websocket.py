@@ -451,62 +451,39 @@ def register_websocket_handlers(socketio):
                     # Continue processing anyway - don't block audio processing
                     logger.info(f"Continuing with audio processing despite session error")
             
-            # Process audio synchronously with proper error handling
+            # SIMPLIFIED: Direct synchronous processing - FIXED server stability
             try:
-                # Create a thread to run the async processing
-                import threading
-                import queue
-                result_queue = queue.Queue()
+                logger.info(f"Processing audio chunk for session {session_id}, size: {len(audio_bytes)} bytes")
                 
-                def run_async_processing():
-                    try:
-                        import asyncio
-                        loop = asyncio.new_event_loop()
-                        asyncio.set_event_loop(loop)
+                # Use synchronous processing method instead of complex threading
+                result = service.process_audio_sync(
+                    session_id=session_id,
+                    audio_data=audio_bytes,
+                    timestamp=timestamp
+                )
+                
+                logger.info(f"Audio processing result: {result is not None}")
+                
+                # Emit results if available
+                if result:
+                    if result.get('transcription'):
+                        text = result['transcription'].get('text', '')
+                        confidence = result['transcription'].get('confidence', 0.0)
+                        is_final = result['transcription'].get('is_final', False)
                         
-                        async def process_audio():
-                            return await service.process_audio(
-                                session_id=session_id,
-                                audio_data=audio_bytes,
-                                timestamp=timestamp
-                            )
+                        logger.info(f"Transcription result - Text: '{text}', Confidence: {confidence}, Final: {is_final}")
                         
-                        result = loop.run_until_complete(process_audio())
-                        result_queue.put(('success', result))
-                        loop.close()
-                    except Exception as e:
-                        result_queue.put(('error', str(e)))
-                
-                # Start processing thread
-                processing_thread = threading.Thread(target=run_async_processing)
-                processing_thread.daemon = True
-                processing_thread.start()
-                processing_thread.join(timeout=5.0)  # 5 second timeout
-                
-                # Get result
-                try:
-                    status, result = result_queue.get_nowait()
-                    if status == 'error':
-                        raise Exception(result)
-                    
-                    # Emit results if available
-                    if result:
-                        if result.get('transcription'):
-                            text = result['transcription'].get('text', '')
-                            confidence = result['transcription'].get('confidence', 0.0)
-                            is_final = result['transcription'].get('is_final', False)
-                            
-                            if is_final:
-                                socketio.emit('final_transcript', {
-                                    'session_id': session_id,
-                                    'text': text,
-                                    'confidence': confidence,
-                                    'timestamp': result.get('timestamp', timestamp)
-                                }, room=session_id)
-                            else:
-                                socketio.emit('interim_transcript', {
-                                    'session_id': session_id,
-                                    'text': text,
+                        if is_final and text.strip():
+                            socketio.emit('final_transcript', {
+                                'session_id': session_id,
+                                'text': text,
+                                'confidence': confidence,
+                                'timestamp': result.get('timestamp', timestamp)
+                            }, room=session_id)
+                        elif text.strip():
+                            socketio.emit('interim_transcript', {
+                                'session_id': session_id,
+                                'text': text,
                                     'confidence': confidence,
                                     'timestamp': result.get('timestamp', timestamp)
                                 }, room=session_id)
@@ -520,8 +497,8 @@ def register_websocket_handlers(socketio):
                                 'confidence': result['vad'].get('confidence', 0.0)
                             }, room=session_id)
                 
-                except queue.Empty:
-                    logger.warning(f"Audio processing timeout for session {session_id}")
+                else:
+                    logger.debug(f"No transcription result for session {session_id}")
                 
             except Exception as e:
                 logger.error(f"Error processing audio for session {session_id}: {e}")

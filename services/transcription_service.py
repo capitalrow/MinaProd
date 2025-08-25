@@ -583,3 +583,77 @@ class TranscriptionService:
         self.whisper_service.shutdown()
         
         logger.info("Transcription service shutdown complete")
+    
+    def process_audio_sync(self, session_id: str, audio_data: bytes, timestamp: Optional[float] = None) -> Optional[Dict[str, Any]]:
+        """
+        SIMPLIFIED: Synchronous audio processing to fix server stability issues.
+        Replaces complex async threading that was causing process conflicts.
+        
+        Args:
+            session_id: Session identifier
+            audio_data: Raw audio bytes
+            timestamp: Optional timestamp
+            
+        Returns:
+            Processing result dictionary or None
+        """
+        try:
+            if not audio_data or len(audio_data) == 0:
+                return None
+                
+            if session_id not in self.active_sessions:
+                logger.warning(f"Session {session_id} not found for audio processing")
+                return None
+            
+            session = self.active_sessions[session_id]
+            
+            # Simple VAD check
+            vad_result = self.vad_service.process_chunk(audio_data)
+            if not vad_result.get('contains_speech', False):
+                logger.debug(f"No speech detected in audio chunk for session {session_id}")
+                return None
+            
+            # Process with Whisper (synchronous call)
+            transcription_result = self.whisper_service.transcribe_chunk_sync(
+                audio_data=audio_data,
+                session_id=session_id
+            )
+            
+            if transcription_result and transcription_result.get('text'):
+                text = transcription_result['text'].strip()
+                if text:
+                    # Create segment in database
+                    from models.segment import Segment
+                    from main import db
+                    
+                    # Get database session
+                    db_session = SessionService.get_session_by_external(session_id)
+                    if db_session:
+                        segment = Segment(
+                            session_id=db_session.id,
+                            text=text,
+                            confidence=transcription_result.get('confidence', 0.8),
+                            start_time=timestamp or time.time(),
+                            end_time=(timestamp or time.time()) + 1.0,
+                            language='en'
+                        )
+                        db.session.add(segment)
+                        db.session.commit()
+                        
+                        logger.info(f"Created segment: {text} (confidence: {segment.confidence})")
+                    
+                    return {
+                        'transcription': {
+                            'text': text,
+                            'confidence': transcription_result.get('confidence', 0.8),
+                            'is_final': True
+                        },
+                        'timestamp': timestamp or time.time(),
+                        'session_id': session_id
+                    }
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error in synchronous audio processing: {e}")
+            return None
