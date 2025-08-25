@@ -205,9 +205,12 @@ class TranscriptionService:
         session_data = self.active_sessions[session_id]
         
         # Update database session
-        db_session = Session.query.filter_by(session_id=session_id).first()
+        from sqlalchemy import select
+        stmt = select(Session).filter_by(external_id=session_id)
+        db_session = db.session.execute(stmt).scalar_one_or_none()
         if db_session:
-            db_session.end_session()
+            db_session.status = 'completed'
+            db.session.commit()
             
             # Update final statistics
             stats = session_data['stats']
@@ -319,9 +322,12 @@ class TranscriptionService:
             await self._process_pending_audio(session_id, final=True)
         
         # Update database session
-        db_session = Session.query.filter_by(session_id=session_id).first()
+        from sqlalchemy import select
+        stmt = select(Session).filter_by(external_id=session_id)
+        db_session = db.session.execute(stmt).scalar_one_or_none()
         if db_session:
-            db_session.end_session()
+            db_session.status = 'completed'
+            db.session.commit()
             
             # Update final statistics
             stats = session_data['stats']
@@ -476,11 +482,14 @@ class TranscriptionService:
         new_avg = (current_avg * (total_segments - 1) + transcription_result.confidence) / total_segments
         session_data['stats']['average_confidence'] = new_avg
         
-        # Update database session
-        db_session = Session.query.filter_by(session_id=session_id).first()
+        # Update database session  
+        from sqlalchemy import select
+        stmt = select(Session).filter_by(external_id=session_id)
+        db_session = db.session.execute(stmt).scalar_one_or_none()
         if db_session:
-            db_session.add_segment()
-            db_session.update_stats(confidence=transcription_result.confidence)
+            # Update session stats
+            db_session.total_segments = (db_session.total_segments or 0) + 1
+            db.session.commit()
         
         logger.debug(f"Stored segment {sequence_number} for session {session_id}")
     

@@ -257,10 +257,12 @@ class SessionService:
             Number of segments finalized
         """
         # Mark all interim segments as final
-        interim_segments = db.session.query(Segment).filter(
+        from sqlalchemy import select
+        stmt = select(Segment).filter(
             Segment.session_id == session_id,
             Segment.kind == 'interim'
-        ).all()
+        )
+        interim_segments = db.session.execute(stmt).scalars().all()
         
         for segment in interim_segments:
             segment.finalize()

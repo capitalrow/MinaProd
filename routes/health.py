@@ -101,9 +101,16 @@ def detailed_health_check():
             from models.session import Session
             from models.segment import Segment
             
+            from sqlalchemy import select, func
+            from models.session import Session
+            from models.segment import Segment
+            
+            sessions_count = db.session.execute(select(func.count(Session.id))).scalar()
+            segments_count = db.session.execute(select(func.count(Segment.id))).scalar()
+            
             db_stats = {
-                "sessions_count": Session.query.count(),
-                "segments_count": Segment.query.count(),
+                "sessions_count": sessions_count,
+                "segments_count": segments_count,
                 "connection_pool": {
                     "size": db.engine.pool.size(),
                     "checked_in": db.engine.pool.checkedin(),

@@ -69,12 +69,12 @@ class AnalysisService:
             raise ValueError(f"Session {session_id} not found")
         
         # Load final segments ordered by timestamp
-        final_segments = (
-            db.session.query(Segment)
-            .filter(Segment.session_id == session_id, Segment.kind == 'final')
-            .order_by(Segment.start_ms)
-            .all()
-        )
+        from sqlalchemy import select
+        stmt = select(Segment).filter(
+            Segment.session_id == session_id, 
+            Segment.kind == 'final'
+        ).order_by(Segment.start_ms)
+        final_segments = db.session.execute(stmt).scalars().all()
         
         # Determine analysis engine from configuration
         engine = current_app.config.get('ANALYSIS_ENGINE', 'mock')
@@ -116,12 +116,11 @@ class AnalysisService:
         Returns:
             Summary dictionary or None if not found
         """
-        summary = (
-            db.session.query(Summary)
-            .filter(Summary.session_id == session_id)
-            .order_by(Summary.created_at.desc())
-            .first()
-        )
+        from sqlalchemy import select
+        stmt = select(Summary).filter(
+            Summary.session_id == session_id
+        ).order_by(Summary.created_at.desc())
+        summary = db.session.execute(stmt).scalar_one_or_none()
         
         return summary.to_dict() if summary else None
     
@@ -307,7 +306,9 @@ This meeting covered {word_count} words of discussion. Key topics discussed incl
             Persisted Summary object
         """
         # Create new summary (replace existing if any for one-to-one relationship)
-        existing_summary = db.session.query(Summary).filter(Summary.session_id == session_id).first()
+        from sqlalchemy import select
+        stmt = select(Summary).filter(Summary.session_id == session_id)
+        existing_summary = db.session.execute(stmt).scalar_one_or_none()
         if existing_summary:
             db.session.delete(existing_summary)
             db.session.flush()  # Ensure deletion is processed
