@@ -843,6 +843,3 @@ class TranscriptionService:
         except Exception as e:
             logger.error(f"CRITICAL ERROR in synchronous audio processing for session {session_id}: {e}", exc_info=True)
             return None
-                        'session_id': session_id
-                    }
-            
