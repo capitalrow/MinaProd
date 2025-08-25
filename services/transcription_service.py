@@ -712,10 +712,51 @@ class TranscriptionService:
         """
         FIXED: Add missing start_session_sync method that was being called everywhere.
         Synchronous session startup for immediate session registration.
+        """
+        try:
+            if session_id in self.active_sessions:
+                logger.info(f"Session {session_id} already active")
+                return
+            
+            # Initialize session data structure
+            self.active_sessions[session_id] = {
+                'state': SessionState.IDLE,
+                'created_at': time.time(),
+                'last_activity': time.time(),
+                'sequence_number': 0,
+                'audio_chunks': [],
+                'pending_processing': 0,
+                'user_config': user_config or {},
+                'rolling_text': '',  # Interim text buffer
+                'last_interim_emit_ts': 0.0,  # Throttling timestamp
+                'end_of_stream': False,  # Finalization trigger
+                'stats': {
+                    'total_audio_duration': 0.0,
+                    'speech_duration': 0.0,
+                    'silence_duration': 0.0,
+                    'total_segments': 0,
+                    'interim_events': 0,  # Track interim events
+                    'final_events': 0,   # Track final events
+                    'average_confidence': 0.0
+                }
+            }
+            
+            # Initialize callback list
+            if session_id not in self.session_callbacks:
+                self.session_callbacks[session_id] = []
+            
+            logger.info(f"Started transcription session: {session_id}")
+            
+        except Exception as e:
+            logger.error(f"Error starting session {session_id}: {e}")
+    
+    def process_audio_sync(self, session_id: str, audio_data: bytes, timestamp: Optional[float] = None) -> Optional[Dict[str, Any]]:
+        """
+        INT-LIVE-I1: INTERIM UPDATES - Process audio with interim and final transcription support.
+        Implements rolling buffer for interim results and proper finalization logic.
         
         Args:
             session_id: Session identifier
-            user_config: Optional user configuration
             audio_data: Raw audio bytes
             timestamp: Optional timestamp
             
@@ -802,48 +843,6 @@ class TranscriptionService:
         except Exception as e:
             logger.error(f"CRITICAL ERROR in synchronous audio processing for session {session_id}: {e}", exc_info=True)
             return None
-    
-    def start_session_sync(self, session_id: str, user_config: Optional[Dict[str, Any]] = None) -> None:
-        """
-        FIXED: Add missing start_session_sync method that was being called everywhere.
-        Synchronous session startup for immediate session registration.
-        """
-        try:
-            if session_id in self.active_sessions:
-                logger.info(f"Session {session_id} already active")
-                return
+                        'session_id': session_id
+                    }
             
-            # Initialize session data structure
-            self.active_sessions[session_id] = {
-                'state': SessionState.IDLE,
-                'created_at': time.time(),
-                'last_activity': time.time(),
-                'sequence_number': 0,
-                'audio_chunks': [],
-                'pending_processing': 0,
-                'user_config': user_config or {},
-                'rolling_text': '',  # Interim text buffer
-                'last_interim_emit_ts': 0.0,  # Throttling timestamp
-                'end_of_stream': False,  # Finalization trigger
-                'stats': {
-                    'total_audio_duration': 0.0,
-                    'speech_duration': 0.0,
-                    'silence_duration': 0.0,
-                    'total_segments': 0,
-                    'interim_events': 0,  # Track interim events
-                    'final_events': 0,   # Track final events
-                    'average_confidence': 0.0
-                }
-            }
-            
-            # Initialize callback list
-            self.session_callbacks[session_id] = []
-            
-            # Update service stats
-            self.total_sessions += 1
-            
-            logger.info(f"SUCCESSFULLY started session {session_id} in transcription service (total: {len(self.active_sessions)} active)")
-            
-        except Exception as e:
-            logger.error(f"FAILED to start session {session_id}: {e}", exc_info=True)
-            raise
