@@ -1,17 +1,17 @@
-# Gunicorn configuration file
-# This fixes the eventlet conflicts by using sync workers instead
+# Gunicorn configuration file for Mina with Socket.IO support
+# Uses eventlet workers with proper configuration
 
-import multiprocessing
+import os
 
 # Server socket
 bind = "0.0.0.0:5000"
 backlog = 2048
 
-# Worker processes
+# Worker processes - use 1 worker for Socket.IO compatibility
 workers = 1
-worker_class = "sync"  # Use sync instead of eventlet to avoid conflicts
+worker_class = "eventlet"
 worker_connections = 1000
-timeout = 30
+timeout = 60
 keepalive = 2
 
 # Restart workers after this many requests
@@ -27,7 +27,11 @@ access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
 # Process naming
 proc_name = "mina_app"
 
-# Server mechanics
-preload_app = True
+# Server mechanics  
+preload_app = False  # IMPORTANT: Set to False for Socket.IO
 reload = True
 reuse_port = True
+
+# Environment variable to detect we're running under Gunicorn
+def when_ready(server):
+    os.environ['SERVER_SOFTWARE'] = 'gunicorn'
