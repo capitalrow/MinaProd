@@ -82,6 +82,30 @@ if (!window._minaHandlersBound) {
         socket.on('session_created', (data) => {
             CURRENT_SESSION_ID = data.session_id;
             console.log('Session created:', CURRENT_SESSION_ID);
+            
+            // Update UI to show session is ready
+            const sessionInfo = document.getElementById('sessionInfo');
+            if (sessionInfo) {
+                sessionInfo.textContent = `Session: ${CURRENT_SESSION_ID.substring(0, 8)}...`;
+            }
+        });
+        
+        // Audio processing confirmation
+        socket.on('audio_received', (data) => {
+            console.log('Audio processing confirmed:', data);
+            updateAudioStats(data);
+        });
+        
+        // Transcription result handlers - enhanced logging
+        socket.on('transcription_segment', (data) => {
+            console.log('Transcription segment received:', data);
+            displayTranscriptionSegment(data);
+        });
+        
+        // Error handling
+        socket.on('error', (error) => {
+            console.error('Socket error:', error);
+            showError('Transcription error: ' + error.message);
         });
     }
 
@@ -145,18 +169,57 @@ if (!window._minaHandlersBound) {
                 mediaRecorder = new MediaRecorder(stream, options);
                 
                 mediaRecorder.addEventListener('dataavailable', event => {
+                    console.log('MediaRecorder data available:', {
+                        size: event.data.size,
+                        type: event.data.type,
+                        sessionId: CURRENT_SESSION_ID,
+                        socketConnected: socket?.connected
+                    });
+                    
                     if (event.data.size > 0 && CURRENT_SESSION_ID) {
                         // Convert blob to ArrayBuffer and then to base64
                         event.data.arrayBuffer().then(arrayBuffer => {
-                            // Convert ArrayBuffer to Uint8Array then to base64
-                            const uint8Array = new Uint8Array(arrayBuffer);
-                            const base64 = btoa(String.fromCharCode.apply(null, uint8Array));
+                            console.log('Audio ArrayBuffer size:', arrayBuffer.byteLength);
                             
-                            socket.emit('audio_chunk', {
-                                session_id: CURRENT_SESSION_ID,
-                                audio_data: base64,
-                                timestamp: Date.now()
-                            });
+                            // Split large chunks to avoid transmission issues
+                            const MAX_CHUNK_SIZE = 32768; // 32KB chunks
+                            const uint8Array = new Uint8Array(arrayBuffer);
+                            
+                            if (uint8Array.length > MAX_CHUNK_SIZE) {
+                                // Split into smaller chunks
+                                for (let i = 0; i < uint8Array.length; i += MAX_CHUNK_SIZE) {
+                                    const chunk = uint8Array.slice(i, i + MAX_CHUNK_SIZE);
+                                    const chunkBase64 = btoa(String.fromCharCode.apply(null, chunk));
+                                    
+                                    console.log(`Sending audio chunk ${i / MAX_CHUNK_SIZE + 1}, size: ${chunk.length}`);
+                                    socket.emit('audio_chunk', {
+                                        session_id: CURRENT_SESSION_ID,
+                                        audio_data: chunkBase64,
+                                        timestamp: Date.now(),
+                                        chunk_index: i / MAX_CHUNK_SIZE,
+                                        is_final_chunk: i + MAX_CHUNK_SIZE >= uint8Array.length
+                                    });
+                                }
+                            } else {
+                                // Send as single chunk
+                                const base64 = btoa(String.fromCharCode.apply(null, uint8Array));
+                                console.log('Sending single audio chunk, size:', uint8Array.length);
+                                
+                                socket.emit('audio_chunk', {
+                                    session_id: CURRENT_SESSION_ID,
+                                    audio_data: base64,
+                                    timestamp: Date.now(),
+                                    chunk_index: 0,
+                                    is_final_chunk: true
+                                });
+                            }
+                        }).catch(error => {
+                            console.error('Error processing audio data:', error);
+                        });
+                    } else {
+                        console.warn('Skipping audio chunk:', {
+                            dataSize: event.data.size,
+                            hasSessionId: !!CURRENT_SESSION_ID
                         });
                     }
                 });
@@ -233,6 +296,53 @@ if (!window._minaHandlersBound) {
         // Simple error display - could be enhanced with toast notifications
         console.error('Recording error:', message);
         alert(message); // Replace with better UI later
+    }
+    
+    // Helper functions for enhanced UI feedback
+    function updateAudioStats(data) {
+        const inputLevel = document.getElementById('inputLevel');
+        const vadStatus = document.getElementById('vadStatus');
+        
+        if (inputLevel && data.input_level !== undefined) {
+            inputLevel.textContent = `Input Level: ${Math.round(data.input_level * 100)}%`;
+        }
+        
+        if (vadStatus && data.vad_status) {
+            vadStatus.textContent = `VAD: ${data.vad_status}`;
+        }
+    }
+    
+    function displayTranscriptionSegment(data) {
+        const finalDiv = document.getElementById('finalText');
+        const interimDiv = document.getElementById('interimText');
+        const initialMessage = document.getElementById('initialMessage');
+        
+        if (data.is_final && finalDiv) {
+            // Add final transcription text
+            const currentText = finalDiv.textContent || '';
+            finalDiv.textContent = (currentText + ' ' + data.text).trim();
+            
+            // Hide initial message
+            if (initialMessage) {
+                initialMessage.style.display = 'none';
+            }
+            
+            // Clear interim text
+            if (interimDiv) {
+                interimDiv.textContent = '';
+                interimDiv.style.display = 'none';
+            }
+        } else if (!data.is_final && interimDiv) {
+            // Show interim transcription
+            interimDiv.textContent = data.text || '';
+            interimDiv.style.display = data.text ? 'block' : 'none';
+        }
+        
+        // Update segment counter
+        const segmentCounter = document.querySelector('[data-segment-count]');
+        if (segmentCounter && data.segment_count !== undefined) {
+            segmentCounter.textContent = `Segments: ${data.segment_count}`;
+        }
     }
 
     // DOM ready handler
