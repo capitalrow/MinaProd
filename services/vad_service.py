@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class VADConfig:
     """Configuration for Voice Activity Detection."""
     sensitivity: float = 0.5
-    min_speech_duration: int = 300  # ms
+    min_speech_duration: int = 10000  # ms
     min_silence_duration: int = 500  # ms
     sample_rate: int = 16000
     frame_duration: int = 20  # ms
