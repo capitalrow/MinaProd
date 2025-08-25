@@ -355,8 +355,11 @@ def register_websocket_handlers(socketio):
             if session and getattr(session, 'is_active', False):
                 # End session manually since model may not have end_session method
                 session.status = 'completed'
-                if hasattr(session, 'ended_at'):
+                # Set end time if model supports it
+                try:
                     session.ended_at = datetime.utcnow()
+                except AttributeError:
+                    pass  # Model doesn't have ended_at field
                 db.session.commit()
             
             # Notify room
@@ -591,9 +594,11 @@ def register_websocket_handlers(socketio):
                 if hasattr(session, key):
                     setattr(session, key, value)
             
-            # Update timestamp manually since model may not have these fields
-            if hasattr(session, 'updated_at'):
+            # Update timestamp if model supports it
+            try:
                 session.updated_at = datetime.utcnow()
+            except AttributeError:
+                pass  # Model doesn't have updated_at field
             db.session.commit()
             
             # Update service configuration if session is active
