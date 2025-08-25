@@ -109,7 +109,127 @@ class TranscriptionService:
         self.max_repetition_threshold = 6  # 🔥 INCREASED: Allow more repetition - was 4
         self.min_meaningful_length = 1  # Allow single words
         
+        # 🔥 INT-LIVE-I2: Adaptive confidence gating with hysteresis
+        import os
+        self.base_confidence = float(os.environ.get('MIN_CONFIDENCE', '0.6'))
+        self.hysteresis_window = []  # Track recent confidence decisions
+        self.hysteresis_size = 2  # Require 2 consecutive frames for state change
+        self.suppression_active = False  # Current suppression state
+        
+        # 🔥 INT-LIVE-I2: Interim throttling and punctuation boundary detection
+        self.interim_throttle_ms = 400  # 300-500ms range per specification
+        self.min_interim_diff_chars = 5  # Minimum character difference for interim emit
+        self.punctuation_marks = {'.', '!', '?', ';', ':'}  # Marks that trigger boundaries
+        
         logger.info(f"Transcription service initialized with config: {asdict(self.config)}")
+    
+    def _compute_adaptive_confidence(self, vad_result: Optional[Dict[str, Any]]) -> float:
+        """
+        🔥 INT-LIVE-I2: Compute adaptive confidence threshold based on VAD quality.
+        
+        Args:
+            vad_result: VAD analysis result with confidence/SNR metrics
+            
+        Returns:
+            Adaptive confidence threshold (0.4 to 0.8 range)
+        """
+        # Start with base confidence from config
+        base = self.base_confidence
+        
+        # Adjust based on VAD confidence if available
+        if vad_result and 'confidence' in vad_result:
+            vad_conf = vad_result['confidence']
+            # If VAD confidence is low (poor signal), raise the threshold
+            # If VAD confidence is high (clear signal), lower the threshold
+            adjustment = 0.15 * (0.6 - vad_conf)
+            adaptive = base + adjustment
+        else:
+            # No VAD info, use base threshold
+            adaptive = base
+        
+        # Clamp to reasonable range
+        return max(0.4, min(0.8, adaptive))
+    
+    def _apply_hysteresis_gating(self, confidence: float, threshold: float) -> bool:
+        """
+        🔥 INT-LIVE-I2: Apply hysteresis gating - require 2 consecutive frames for state change.
+        
+        Args:
+            confidence: Current transcription confidence
+            threshold: Adaptive confidence threshold
+            
+        Returns:
+            True if should suppress, False if should allow
+        """
+        # Determine if this frame would be suppressed based on confidence
+        would_suppress = confidence < threshold
+        
+        # Add to hysteresis window
+        self.hysteresis_window.append(would_suppress)
+        
+        # Keep only recent decisions
+        if len(self.hysteresis_window) > self.hysteresis_size:
+            self.hysteresis_window.pop(0)
+        
+        # Need at least 2 frames to make a decision
+        if len(self.hysteresis_window) < self.hysteresis_size:
+            return self.suppression_active  # Use current state
+        
+        # Check if all recent frames agree on the decision
+        all_suppress = all(self.hysteresis_window)
+        all_allow = not any(self.hysteresis_window)
+        
+        if all_suppress and not self.suppression_active:
+            # Switch to suppression mode
+            self.suppression_active = True
+            return True
+        elif all_allow and self.suppression_active:
+            # Switch to allow mode
+            self.suppression_active = False
+            return False
+        else:
+            # No consensus or no change needed, maintain current state
+            return self.suppression_active
+    
+    def _should_emit_interim(self, text: str, now: float, last_emit: float, state: Dict[str, Any]) -> bool:
+        """
+        🔥 INT-LIVE-I2: Intelligent interim emission with throttling and punctuation boundaries.
+        
+        Args:
+            text: Current transcription text buffer
+            now: Current timestamp
+            last_emit: Last interim emission timestamp  
+            state: Session state
+            
+        Returns:
+            True if should emit interim transcript
+        """
+        if not text or len(text.strip()) == 0:
+            return False
+        
+        # Get last emitted text for diff comparison
+        last_text = state.get('last_interim_text', '')
+        
+        # Check time-based throttling (300-500ms range)
+        time_threshold = (now - last_emit) >= (self.interim_throttle_ms / 1000.0)
+        
+        # Check if there's meaningful new content (≥5 chars or punctuation)
+        char_diff = len(text) - len(last_text)
+        has_meaningful_diff = char_diff >= self.min_interim_diff_chars
+        
+        # Check if punctuation boundary was hit
+        has_punctuation = any(p in text[-10:] for p in self.punctuation_marks)  # Check last 10 chars
+        
+        # Emit if time passed AND (meaningful diff OR punctuation boundary)
+        should_emit = time_threshold and (has_meaningful_diff or has_punctuation)
+        
+        if should_emit:
+            state['last_interim_text'] = text  # Update for next diff
+            # 🔥 INT-LIVE-I2: Track punctuation boundaries
+            if has_punctuation:
+                state.get('stats', {})['punctuation_boundaries'] = state.get('stats', {}).get('punctuation_boundaries', 0) + 1
+        
+        return should_emit
     
     # Sync wrapper methods for Flask routes (avoids asyncio.run() in request handlers)
     def start_session_sync(self, session_id: Optional[str] = None, 
@@ -893,6 +1013,7 @@ class TranscriptionService:
                 'user_config': user_config or {},
                 'rolling_text': '',  # Interim text buffer
                 'last_interim_emit_ts': 0.0,  # Throttling timestamp
+                'last_interim_text': '',  # Last interim text for diff comparison
                 'end_of_stream': False,  # Finalization trigger
                 'stats': {
                     'total_audio_duration': 0.0,
@@ -901,7 +1022,16 @@ class TranscriptionService:
                     'total_segments': 0,
                     'interim_events': 0,  # Track interim events
                     'final_events': 0,   # Track final events
-                    'average_confidence': 0.0
+                    'average_confidence': 0.0,
+                    # 🔥 INT-LIVE-I2: Enhanced metrics for quality monitoring
+                    'dedupe_hits': 0,  # Count of duplicate text filtered
+                    'low_conf_suppressed': 0,  # Count of low confidence rejections
+                    'chunks_dropped': 0,  # Count of dropped audio chunks
+                    'latency_samples': [],  # Rolling latency measurements (keep last 50)
+                    'queue_len_samples': [],  # Queue length for p95 calculation
+                    'adaptive_conf_adjustments': 0,  # Count of confidence adjustments
+                    'punctuation_boundaries': 0,  # Count of punctuation-triggered boundaries
+                    'interim_intervals': []  # Track interim emission intervals (ms)
                 }
             }
             
@@ -970,15 +1100,24 @@ class TranscriptionService:
                 
                 # Filter 2: Check for duplicates of recent text
                 if self._is_duplicate_of_recent(text, session_id):
+                    # 🔥 INT-LIVE-I2: Track deduplication metrics
+                    state['stats']['dedupe_hits'] += 1
                     # 🔇 REDUCED NOISE: Minimal duplicate logging
-                    pass  # Duplicates are expected, no need to log each one
                     return None
                 
-                # Filter 3: Minimum confidence threshold 
-                if conf < self.config.min_confidence:
+                # Filter 3: 🔥 INT-LIVE-I2 Adaptive confidence threshold with hysteresis
+                adaptive_conf = self._compute_adaptive_confidence(vad_result)
+                should_suppress = self._apply_hysteresis_gating(conf, adaptive_conf)
+                
+                if should_suppress:
+                    # 🔥 INT-LIVE-I2: Track suppression metrics
+                    state['stats']['low_conf_suppressed'] += 1
+                    if adaptive_conf != self.base_confidence:
+                        state['stats']['adaptive_conf_adjustments'] += 1
+                    
                     # 🔇 REDUCED NOISE: Only log low confidence when significant
                     if conf < 0.3:  # Only log very low confidence
-                        logger.debug(f"Quality: Low confidence {conf:.2f}")
+                        logger.debug(f"Quality: Adaptive confidence filter {conf:.2f} < {adaptive_conf:.2f}")
                     return None
                 
                 # Filter 4: Minimum meaningful length (more permissive)
@@ -999,8 +1138,8 @@ class TranscriptionService:
                     state['rolling_text'] = text  # Keep only the latest valid chunk
                     buf = text
                 
-                # 3) Decide interim vs final
-                emit_interim = (now - last_emit) >= 0.4 and len(text) > 0  # 400ms throttle
+                # 3) 🔥 INT-LIVE-I2: Smart interim vs final decision with punctuation & throttling
+                emit_interim = self._should_emit_interim(buf, now, last_emit, state)
                 finalize = self._should_finalize(session_id, vad_result, now, state)
                 
                 if finalize:
@@ -1032,6 +1171,14 @@ class TranscriptionService:
                         return None
                     
                     logger.info(f"INTERIM transcription for session {session_id}: '{buf}' (confidence: {conf})")
+                    
+                    # 🔥 INT-LIVE-I2: Track interim metrics
+                    interval_ms = int((now - state['last_interim_emit_ts']) * 1000)
+                    state['stats']['interim_intervals'].append(interval_ms)
+                    # Keep only last 50 intervals for rolling average
+                    if len(state['stats']['interim_intervals']) > 50:
+                        state['stats']['interim_intervals'].pop(0)
+                    
                     state['last_interim_emit_ts'] = now
                     state['stats']['interim_events'] += 1
                     
