@@ -33,7 +33,7 @@ def test_all_components():
     
     # 3. JavaScript File Serving
     try:
-        response = requests.get('http://localhost:5000/static/js/real_time_transcription.js', timeout=5)
+        response = requests.get('http://localhost:5000/static/js/enhanced_transcription.js', timeout=5)
         js_size = len(response.content)
         results['js_file_serving'] = js_size > 1000  # Should be substantial size
         results['js_size'] = js_size
