@@ -8,7 +8,6 @@ import asyncio
 import json
 import time
 from datetime import datetime
-from flask import request
 from flask_socketio import emit, join_room, leave_room, disconnect
 
 from services.transcription_service import TranscriptionService, TranscriptionServiceConfig
@@ -41,8 +40,8 @@ def register_websocket_handlers(socketio):
     @socketio.on('connect')
     def handle_connect():
         """Handle client connection."""
-        from flask_socketio import request as socketio_request
-        client_id = socketio_request.sid
+        from flask import request
+        client_id = request.sid
         logger.info(f"Client connected: {client_id}")
         emit('connected', {
             'status': 'connected',
@@ -53,8 +52,8 @@ def register_websocket_handlers(socketio):
     @socketio.on('disconnect')
     def handle_disconnect():
         """Handle client disconnection."""
-        from flask_socketio import request as socketio_request
-        client_id = socketio_request.sid
+        from flask import request
+        client_id = request.sid
         logger.info(f"Client disconnected: {client_id}")
         
         # Clean up any active sessions for this client
@@ -123,8 +122,8 @@ def register_websocket_handlers(socketio):
                 'timestamp': datetime.utcnow().isoformat()
             })
             
-            from flask_socketio import request as socketio_request
-            logger.info(f"Client {socketio_request.sid} joined session {session_id}")
+            from flask import request
+            logger.info(f"Client {request.sid} joined session {session_id}")
             
         except Exception as e:
             logger.error(f"Error joining session: {e}")
@@ -277,8 +276,8 @@ def register_websocket_handlers(socketio):
                 'timestamp': datetime.utcnow().isoformat()
             })
             
-            from flask_socketio import request as socketio_request
-            logger.info(f"Client {socketio_request.sid} left session {session_id}")
+            from flask import request
+            logger.info(f"Client {request.sid} left session {session_id}")
             
         except Exception as e:
             logger.error(f"Error leaving session: {e}")
@@ -418,10 +417,10 @@ def register_websocket_handlers(socketio):
     @socketio.on('ping')
     def handle_ping(data):
         """Handle ping for connection health check."""
-        from flask_socketio import request as socketio_request
+        from flask import request
         emit('pong', {
             'timestamp': datetime.utcnow().isoformat(),
-            'client_id': socketio_request.sid
+            'client_id': request.sid
         })
     
     @socketio.on('get_session_status')
