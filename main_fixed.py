@@ -5,10 +5,10 @@ This resolves all Gunicorn + WebSocket incompatibility issues.
 import eventlet
 eventlet.monkey_patch()
 
-from app_refactored import create_app
+from app_refactored import create_app, socketio
 
 # Create the application
-app, socketio = create_app()
+app = create_app()
 
 # For direct execution with Eventlet
 if __name__ == '__main__':
@@ -21,7 +21,8 @@ if __name__ == '__main__':
         port=5000,
         debug=False,
         use_reloader=False,
-        log_output=True
+        log_output=True,
+        allow_unsafe_werkzeug=True
     )
 
 # Export for Gunicorn with eventlet workers  
