@@ -12,17 +12,37 @@ if (!window._minaHandlersBound) {
 
     // Initialize Socket.IO connection
     function initializeSocket() {
-        socket = io();
+        socket = io({
+            transports: ['websocket', 'polling'],
+            upgrade: true,
+            rememberUpgrade: true,
+            timeout: 5000
+        });
         
         // Connection status handlers
         socket.on('connect', () => {
             document.getElementById('wsStatus').textContent = 'Connected';
             console.log('Socket connected');
+            // Enable recording button when connected
+            const startBtn = document.getElementById('startRecordingBtn');
+            if (startBtn) {
+                startBtn.disabled = false;
+            }
         });
         
         socket.on('disconnect', () => {
             document.getElementById('wsStatus').textContent = 'Disconnected';
             console.log('Socket disconnected');
+            // Disable recording button when disconnected
+            const startBtn = document.getElementById('startRecordingBtn');
+            if (startBtn) {
+                startBtn.disabled = true;
+            }
+        });
+        
+        socket.on('connect_error', (error) => {
+            console.error('Socket connection error:', error);
+            document.getElementById('wsStatus').textContent = 'Connection Error';
         });
         
         // Transcription result handlers
@@ -63,13 +83,36 @@ if (!window._minaHandlersBound) {
     function startRecording() {
         console.log('Starting recording...');
         
-        // Check WebSocket connection
+        // Check WebSocket connection with retry
         if (!socket || !socket.connected) {
-            document.getElementById('wsStatus').textContent = 'Not connected';
-            showError('WebSocket not connected. Please refresh the page.');
+            console.log('Socket not connected, attempting to reconnect...');
+            document.getElementById('wsStatus').textContent = 'Connecting...';
+            
+            // Try to reconnect
+            if (socket) {
+                socket.connect();
+            } else {
+                initializeSocket();
+            }
+            
+            // Wait a moment and try again
+            setTimeout(() => {
+                if (!socket || !socket.connected) {
+                    document.getElementById('wsStatus').textContent = 'Not connected';
+                    showError('WebSocket connection failed. Please check your internet connection and try again.');
+                    return;
+                } else {
+                    // Connection succeeded, proceed with recording
+                    proceedWithRecording();
+                }
+            }, 2000);
             return;
         }
-
+        
+        proceedWithRecording();
+    }
+    
+    function proceedWithRecording() {
         // Request microphone access
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(stream => {
@@ -195,6 +238,10 @@ if (!window._minaHandlersBound) {
             console.error('Required buttons not found:', { startBtn: !!startBtn, stopBtn: !!stopBtn });
             return;
         }
+        
+        // Disable start button until WebSocket connects
+        startBtn.disabled = true;
+        stopBtn.disabled = true;
         
         // Bind event listeners
         startBtn.addEventListener('click', startRecording);
