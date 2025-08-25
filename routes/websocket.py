@@ -40,12 +40,10 @@ def register_websocket_handlers(socketio):
     @socketio.on('connect')
     def handle_connect():
         """Handle client connection."""
-        from flask import request
-        client_id = request.sid
-        logger.info(f"Client connected: {client_id}")
+        # Simple connection acknowledgment without client_id
+        logger.info(f"Client connected")
         emit('connected', {
             'status': 'connected',
-            'client_id': client_id,
             'timestamp': datetime.utcnow().isoformat()
         })
     
@@ -68,7 +66,10 @@ def register_websocket_handlers(socketio):
             
             # Get the created session to return external_id
             session = db.session.get(Session, db_session_id)
-            session_id = session.external_id
+            session_id = session.external_id if session else None
+            if not session_id:
+                emit('error', {'message': 'Failed to create session'})
+                return
             
             # Start transcription service session
             service = get_transcription_service()
@@ -100,9 +101,8 @@ def register_websocket_handlers(socketio):
     @socketio.on('disconnect')
     def handle_disconnect():
         """Handle client disconnection."""
-        from flask import request
-        client_id = request.sid
-        logger.info(f"Client disconnected: {client_id}")
+        # Simple disconnection logging
+        logger.info(f"Client disconnected")
         
         # Clean up any active sessions for this client
         try:
@@ -220,15 +220,15 @@ def register_websocket_handlers(socketio):
                 # Emit session metrics
                 socketio.emit('session_metrics', {
                     'session_id': session_id,
-                    'chunks_received': metrics.chunks_received,
-                    'chunks_processed': metrics.chunks_processed,
-                    'chunks_dropped': metrics.chunks_dropped,
-                    'interim_events': metrics.interim_events,
-                    'final_events': metrics.final_events,
-                    'latency_avg_ms': metrics.latency_avg_ms,
-                    'latency_p95_ms': metrics.latency_p95_ms,
-                    'retries': metrics.retries,
-                    'ws_disconnects': metrics.ws_disconnects
+                    'chunks_received': metrics.get('chunks_received', 0),
+                    'chunks_processed': metrics.get('chunks_processed', 0),
+                    'chunks_dropped': metrics.get('chunks_dropped', 0),
+                    'interim_events': metrics.get('interim_events', 0),
+                    'final_events': metrics.get('final_events', 0),
+                    'latency_avg_ms': metrics.get('latency_avg_ms', 0),
+                    'latency_p95_ms': metrics.get('latency_p95_ms', 0),
+                    'retries': metrics.get('retries', 0),
+                    'ws_disconnects': metrics.get('ws_disconnects', 0)
                 }, room=session_id)
             
             # End session in transcription service
@@ -265,8 +265,7 @@ def register_websocket_handlers(socketio):
                 'timestamp': datetime.utcnow().isoformat()
             })
             
-            from flask import request
-            logger.info(f"Client {request.sid} left session {session_id}")
+            logger.info(f"Client left session {session_id}")
             
         except Exception as e:
             logger.error(f"Error leaving session: {e}")
@@ -354,8 +353,11 @@ def register_websocket_handlers(socketio):
             
             # Update database session
             session = SessionService.get_session_by_external(session_id)
-            if session and session.is_active:
-                session.end_session()
+            if session and getattr(session, 'is_active', False):
+                # End session manually since model may not have end_session method
+                session.status = 'completed'
+                session.ended_at = datetime.utcnow()
+                db.session.commit()
             
             # Notify room
             socketio.emit('transcription_stopped', {
@@ -591,8 +593,10 @@ def register_websocket_handlers(socketio):
                 if hasattr(session, key):
                     setattr(session, key, value)
             
-            session.updated_at = datetime.utcnow()
-            session.save()
+            # Update timestamp manually since model may not have these fields
+            if hasattr(session, 'updated_at'):
+                session.updated_at = datetime.utcnow()
+            db.session.commit()
             
             # Update service configuration if session is active
             service = get_transcription_service()
