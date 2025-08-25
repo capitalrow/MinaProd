@@ -64,6 +64,9 @@ class Config:
     AUTO_SUMMARY_ON_FINALIZE = os.environ.get('AUTO_SUMMARY_ON_FINALIZE', 'false').lower() == 'true'
     SUMMARY_CONTEXT_CHARS = int(os.environ.get('SUMMARY_CONTEXT_CHARS', '12000'))
     
+    # Debug Configuration
+    SHOW_DEBUG_PANEL = os.environ.get('SHOW_DEBUG_PANEL', 'false').lower() == 'true'
+    
     # Application metadata
     APP_VERSION = os.environ.get('APP_VERSION', '0.1.0')
     GIT_SHA = os.environ.get('GIT_SHA', 'dev')

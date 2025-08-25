@@ -145,7 +145,7 @@ def view_session(session_id):
             'speakers_count': 0     # TODO: Speaker detection
         }
         
-        return render_template('session_detail.html',
+        return render_template('sessions_detail.html',
                              session=session,
                              segments=segments,
                              stats=session_stats)

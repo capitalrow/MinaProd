@@ -131,7 +131,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <span class="status-indicator status-disconnected" id="connectionStatus"></span>
-                        <span id="connectionText">Initializing...</span>
+                        <span id="wsStatus">Initializing...</span>
                     </div>
                     <div class="d-flex gap-3">
                         <small class="text-muted">
@@ -161,15 +161,11 @@
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <div class="d-flex gap-2">
-                            <button class="btn btn-success" id="startButton">
+                            <button class="btn btn-success" id="startRecordingBtn">
                                 <i class="fas fa-play me-2"></i>
                                 Start Recording
                             </button>
-                            <button class="btn btn-warning" id="pauseButton" disabled>
-                                <i class="fas fa-pause me-2"></i>
-                                Pause
-                            </button>
-                            <button class="btn btn-danger" id="stopButton" disabled>
+                            <button class="btn btn-danger" id="stopRecordingBtn" disabled>
                                 <i class="fas fa-stop me-2"></i>
                                 Stop
                             </button>
@@ -245,7 +241,9 @@
             </div>
             <div class="card-body p-0">
                 <div class="transcription-container" id="transcriptionContainer">
-                    <div class="text-center text-muted py-5">
+                    <div id="interimText" class="transcription-segment interim" style="display: none;"></div>
+                    <div id="finalText" class="transcription-segment final"></div>
+                    <div class="text-center text-muted py-5" id="initialMessage">
                         <i class="fas fa-microphone-slash fa-3x mb-3"></i>
                         <h5>Ready to transcribe</h5>
                         <p>Click "Start Recording" to begin live transcription</p>
@@ -383,10 +381,10 @@
         </div>
     </div>
 </div>
+{% include 'debug_panel.html' %}
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/vad_processor_advanced.js') }}"></script>
-<script src="{{ url_for('static', filename='js/websocket_streaming.js') }}"></script>
-<script src="{{ url_for('static', filename='js/real_time_transcription.js') }}"></script>
+<script src="/static/js/websocket_streaming.js"></script>
+<script src="/static/js/recording_wiring.js"></script>
 {% endblock %}
