@@ -596,18 +596,131 @@ class TranscriptionService:
         
         logger.info("Transcription service shutdown complete")
     
-    def process_audio_sync(self, session_id: str, audio_data: bytes, timestamp: Optional[float] = None) -> Optional[Dict[str, Any]]:
+    def _should_finalize(self, session_id: str, vad_result: Any, now: float, state: Dict[str, Any]) -> bool:
         """
-        SIMPLIFIED: Synchronous audio processing to fix server stability issues.
-        Replaces complex async threading that was causing process conflicts.
+        Determine if current audio chunk should trigger finalization.
         
         Args:
             session_id: Session identifier
+            vad_result: VAD processing result
+            now: Current timestamp
+            state: Session state dictionary
+            
+        Returns:
+            True if should finalize, False for interim
+        """
+        try:
+            # 1) End of stream flag
+            if state.get('end_of_stream', False):
+                return True
+                
+            # 2) Silence boundary detection (VAD tail)
+            if not vad_result.is_speech and len(state.get('rolling_text', '')) > 0:
+                # Check if we've had silence for long enough
+                last_speech_time = state.get('last_speech_time', now)
+                silence_duration = (now - last_speech_time) * 1000  # ms
+                if silence_duration > self.config.vad_min_silence_duration:
+                    logger.debug(f"Finalizing due to silence boundary: {silence_duration}ms")
+                    return True
+            else:
+                # Update last speech time
+                state['last_speech_time'] = now
+                
+            # 3) Phrase length/timeout boundary (2-3 seconds of voiced audio)
+            buffer_start_time = state.get('buffer_start_time', now)
+            buffer_duration = now - buffer_start_time
+            if buffer_duration >= 3.0:  # 3 seconds
+                logger.debug(f"Finalizing due to timeout boundary: {buffer_duration}s")
+                return True
+                
+            # 4) Token count threshold (rough estimate: 5+ words)
+            rolling_text = state.get('rolling_text', '')
+            word_count = len(rolling_text.split()) if rolling_text else 0
+            if word_count >= 8:  # ~8 words for natural phrase boundary
+                logger.debug(f"Finalizing due to word count: {word_count} words")
+                return True
+                
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error in finalization logic for session {session_id}: {e}")
+            return False
+    
+    def _persist_segment(self, session_id: str, text: str, confidence: float, timestamp: float) -> None:
+        """
+        Persist final segment to database.
+        
+        Args:
+            session_id: Session identifier
+            text: Final transcription text
+            confidence: Transcription confidence
+            timestamp: Timestamp
+        """
+        try:
+            from models.segment import Segment
+            from app import db
+            
+            # Get database session
+            db_session = SessionService.get_session_by_external(session_id)
+            if db_session:
+                segment = Segment(
+                    session_id=db_session.id,
+                    text=text,
+                    confidence=confidence,
+                    start_time=timestamp,
+                    end_time=timestamp + 1.0,
+                    language='en'
+                )
+                db.session.add(segment)
+                db.session.commit()
+                
+                logger.info(f"Persisted final segment: '{text}' (confidence: {confidence})")
+            else:
+                logger.warning(f"Could not find database session for {session_id}")
+                
+        except Exception as e:
+            logger.error(f"Error persisting segment for session {session_id}: {e}")
+    
+    def end_session_sync(self, session_id: str) -> None:
+        """
+        INT-LIVE-I1: End session with final flush of any remaining buffer.
+        """
+        try:
+            if session_id in self.active_sessions:
+                state = self.active_sessions[session_id]
+                
+                # Flush any remaining rolling text as final
+                rolling_text = state.get('rolling_text', '').strip()
+                if rolling_text:
+                    logger.info(f"Flushing final buffer for session {session_id}: '{rolling_text}'")
+                    self._persist_segment(session_id, rolling_text, 0.8, time.time())
+                    state['stats']['final_events'] += 1
+                
+                # Log session stats
+                stats = state.get('stats', {})
+                logger.info(f"Session {session_id} ended - Interim events: {stats.get('interim_events', 0)}, Final events: {stats.get('final_events', 0)}")
+                
+                # Clean up session
+                del self.active_sessions[session_id]
+                if session_id in self.session_callbacks:
+                    del self.session_callbacks[session_id]
+                    
+        except Exception as e:
+            logger.error(f"Error ending session {session_id}: {e}")
+    
+    def start_session_sync(self, session_id: str, user_config: Optional[Dict[str, Any]] = None) -> None:
+        """
+        FIXED: Add missing start_session_sync method that was being called everywhere.
+        Synchronous session startup for immediate session registration.
+        
+        Args:
+            session_id: Session identifier
+            user_config: Optional user configuration
             audio_data: Raw audio bytes
             timestamp: Optional timestamp
             
         Returns:
-            Processing result dictionary or None
+            Processing result dictionary with interim/final transcription or None
         """
         try:
             if not audio_data or len(audio_data) == 0:
@@ -617,65 +730,73 @@ class TranscriptionService:
                 logger.warning(f"Session {session_id} not found for audio processing")
                 return None
             
-            session = self.active_sessions[session_id]
+            state = self.active_sessions[session_id]
+            now = timestamp or time.time()
             
-            # ENHANCED: VAD check with comprehensive debugging and bypass option
+            # 1) Get rolling buffer and timestamps
+            buf = state.setdefault('rolling_text', '')
+            last_emit = state.setdefault('last_interim_emit_ts', 0.0)
+            
+            # VAD check for finalization decisions
             vad_result = self.vad_service.process_audio_chunk(audio_data, timestamp)
-            logger.info(f"VAD Result for session {session_id}: is_speech={vad_result.is_speech}, confidence={vad_result.confidence}, energy={getattr(vad_result, 'energy', 'N/A')}")
+            logger.debug(f"VAD Result for session {session_id}: is_speech={vad_result.is_speech}, confidence={vad_result.confidence}")
             
-            # TEMPORARY: Skip VAD filtering for testing (remove when working)
-            should_process = True  # Always process for now
-            # should_process = vad_result.is_speech  # Enable this line when VAD is working properly
-            
-            if not should_process:
-                logger.info(f"VAD filtered out audio chunk for session {session_id} - no speech detected")
-                return None
-            
-            # ENHANCED: Process with Whisper with comprehensive logging
-            logger.info(f"Sending audio to Whisper API for session {session_id}, chunk size: {len(audio_data)} bytes")
-            transcription_result = self.whisper_service.transcribe_chunk_sync(
+            # Process with Whisper API
+            logger.debug(f"Sending audio to Whisper API for session {session_id}, chunk size: {len(audio_data)} bytes")
+            res = self.whisper_service.transcribe_chunk_sync(
                 audio_data=audio_data,
                 session_id=session_id
             )
-            logger.info(f"Whisper API response for session {session_id}: {transcription_result}")
             
-            if transcription_result and transcription_result.get('text'):
-                text = transcription_result['text'].strip()
-                if text:
-                    # Create segment in database
-                    from models.segment import Segment
-                    from app import db
+            if not res or not res.get('text'):
+                return None
+                
+            # 2) Update rolling buffer
+            text = res['text'].strip()
+            conf = float(res.get('confidence', 0.8))
+            
+            if text:
+                # Append to rolling buffer with space if needed
+                buf += (' ' if buf and text else '') + text
+                state['rolling_text'] = buf
+                
+                # 3) Decide interim vs final
+                emit_interim = (now - last_emit) >= 0.4 and len(text) > 0  # 400ms throttle
+                finalize = self._should_finalize(session_id, vad_result, now, state)
+                
+                if finalize:
+                    # FINAL: Persist segment and clear buffer
+                    logger.info(f"FINAL transcription for session {session_id}: '{buf}' (confidence: {conf})")
+                    self._persist_segment(session_id, buf, conf, now)
+                    state['rolling_text'] = ''
+                    state['stats']['final_events'] += 1
                     
-                    # Get database session
-                    db_session = SessionService.get_session_by_external(session_id)
-                    if db_session:
-                        segment = Segment(
-                            session_id=db_session.id,
-                            text=text,
-                            confidence=float(transcription_result.get('confidence', 0.8)),
-                            start_time=timestamp or time.time(),
-                            end_time=(timestamp or time.time()) + 1.0,
-                            language='en'
-                        )
-                        db.session.add(segment)
-                        db.session.commit()
-                        
-                        logger.info(f"Created segment: {text} (confidence: {segment.confidence})")
-                    
-                    result_data = {
+                    return {
                         'transcription': {
-                            'text': text,
-                            'confidence': float(transcription_result.get('confidence', 0.8)),
+                            'text': buf,
+                            'confidence': conf,
                             'is_final': True
                         },
-                        'timestamp': timestamp or time.time(),
+                        'timestamp': now,
                         'session_id': session_id
                     }
                     
-                    logger.info(f"SUCCESS: Returning transcription result for session {session_id}: '{text}' (confidence: {result_data['transcription']['confidence']})")
-                    return result_data
+                elif emit_interim:
+                    # INTERIM: Return without persisting
+                    logger.info(f"INTERIM transcription for session {session_id}: '{buf}' (confidence: {conf})")
+                    state['last_interim_emit_ts'] = now
+                    state['stats']['interim_events'] += 1
+                    
+                    return {
+                        'transcription': {
+                            'text': buf,
+                            'confidence': conf,
+                            'is_final': False
+                        },
+                        'timestamp': now,
+                        'session_id': session_id
+                    }
             
-            logger.warning(f"No transcription result for session {session_id} - Whisper returned empty or invalid result")
             return None
             
         except Exception as e:
@@ -701,11 +822,16 @@ class TranscriptionService:
                 'audio_chunks': [],
                 'pending_processing': 0,
                 'user_config': user_config or {},
+                'rolling_text': '',  # Interim text buffer
+                'last_interim_emit_ts': 0.0,  # Throttling timestamp
+                'end_of_stream': False,  # Finalization trigger
                 'stats': {
                     'total_audio_duration': 0.0,
                     'speech_duration': 0.0,
                     'silence_duration': 0.0,
                     'total_segments': 0,
+                    'interim_events': 0,  # Track interim events
+                    'final_events': 0,   # Track final events
                     'average_confidence': 0.0
                 }
             }

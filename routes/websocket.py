@@ -522,14 +522,15 @@ def register_websocket_handlers(socketio):
                                 'timestamp': result.get('timestamp', timestamp)
                             }, room=session_id)
                         elif text.strip():
+                            # INT-LIVE-I1: Emit interim transcript 
                             socketio.emit('interim_transcript', {
                                 'session_id': session_id,
                                 'text': text,
-                                    'confidence': confidence,
-                                    'timestamp': result.get('timestamp', timestamp)
-                                }, room=session_id)
+                                'confidence': confidence,
+                                'timestamp': result.get('timestamp', timestamp)
+                            }, room=session_id)
                             
-                            logger.info(f"Transcription result: {text[:50]}... (confidence: {confidence})")
+                            logger.info(f"INTERIM result: {text[:50]}... (confidence: {confidence})")
                         
                         if result.get('vad'):
                             socketio.emit('vad_result', {
