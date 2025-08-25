@@ -981,12 +981,24 @@ class TranscriptionService:
                 buf += (' ' if buf and text else '') + text
                 state['rolling_text'] = buf
                 
+                # 🔥 CRITICAL FIX: Re-check concatenated buffer for quality issues
+                if self._is_repetitive_text(buf):
+                    logger.warning(f"BUFFER QUALITY FILTER: Rejected concatenated repetitive text for session {session_id}: '{buf}'")
+                    # Reset buffer to prevent repetitive patterns from accumulating
+                    state['rolling_text'] = text  # Keep only the latest valid chunk
+                    buf = text
+                
                 # 3) Decide interim vs final
                 emit_interim = (now - last_emit) >= 0.4 and len(text) > 0  # 400ms throttle
                 finalize = self._should_finalize(session_id, vad_result, now, state)
                 
                 if finalize:
-                    # FINAL: Persist segment and clear buffer
+                    # FINAL: Additional quality check on final buffer
+                    if self._is_repetitive_text(buf):
+                        logger.warning(f"FINAL QUALITY FILTER: Blocked repetitive final text for session {session_id}: '{buf}'")
+                        state['rolling_text'] = ''
+                        return None
+                    
                     logger.info(f"FINAL transcription for session {session_id}: '{buf}' (confidence: {conf})")
                     self._persist_segment(session_id, buf, conf, now)
                     state['rolling_text'] = ''
@@ -1003,7 +1015,11 @@ class TranscriptionService:
                     }
                     
                 elif emit_interim:
-                    # INTERIM: Return without persisting
+                    # INTERIM: Additional quality check on interim buffer
+                    if self._is_repetitive_text(buf):
+                        logger.debug(f"INTERIM QUALITY FILTER: Blocked repetitive interim text for session {session_id}: '{buf}'")
+                        return None
+                    
                     logger.info(f"INTERIM transcription for session {session_id}: '{buf}' (confidence: {conf})")
                     state['last_interim_emit_ts'] = now
                     state['stats']['interim_events'] += 1
