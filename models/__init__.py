@@ -7,5 +7,6 @@ from .base import Base
 from .session import Session
 from .segment import Segment
 from .summary import Summary
+from .shared_link import SharedLink
 
-__all__ = ['Base', 'Session', 'Segment', 'Summary']
+__all__ = ['Base', 'Session', 'Segment', 'Summary', 'SharedLink']
