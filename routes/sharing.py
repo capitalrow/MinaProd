@@ -6,7 +6,7 @@ Handles session sharing with view-only links and exports.
 import os
 from flask import Blueprint, request, jsonify, render_template, abort, url_for
 from sqlalchemy.orm import Session as DBSession
-from app_refactored import db
+from app import db
 from services.share_service import ShareService
 from config import Config
 
