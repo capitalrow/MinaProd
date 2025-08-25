@@ -11,7 +11,7 @@ from sqlalchemy import select
 
 from models.session import Session
 from models.shared_link import SharedLink
-from app_refactored import db
+from app import db
 
 
 class ShareService:

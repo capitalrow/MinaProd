@@ -32,7 +32,7 @@ def health_check():
         
         # Add database connectivity check
         try:
-            from app_refactored import db
+            from app import db
             # Simple query to check database connectivity
             from sqlalchemy import text
             db.session.execute(text('SELECT 1')).fetchone()
