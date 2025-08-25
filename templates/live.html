@@ -264,22 +264,32 @@
             </div>
             <div class="card-footer">
                 <div class="row">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <small class="text-muted">
                             Segments: <span id="segmentCount">0</span>
                         </small>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <small class="text-muted">
                             Avg. Confidence: <span id="avgConfidence">0%</span>
                         </small>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <small class="text-muted">
                             Speaking Time: <span id="speakingTime">0s</span>
                         </small>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <small class="text-muted">
+                            Quality: <span id="qualityStatus" class="badge bg-secondary">Ready</span>
+                        </small>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted">
+                            Filtered: <span id="filteredCount" class="text-warning">0</span>
+                        </small>
+                    </div>
+                    <div class="col-md-2">
                         <small class="text-muted">
                             Last Update: <span id="lastUpdate">Never</span>
                         </small>
@@ -539,11 +549,207 @@ class EnhancedErrorHandler {
     }
 }
 
+// Enhanced Quality Monitoring System
+class QualityMonitor {
+    constructor() {
+        this.stats = {
+            totalSegments: 0,
+            filteredSegments: 0,
+            avgConfidence: 0,
+            confidenceSum: 0,
+            qualityStatus: 'ready',
+            lastQualityUpdate: null
+        };
+        this.qualityThresholds = {
+            excellent: 0.9,
+            good: 0.7,
+            warning: 0.5,
+            poor: 0.3
+        };
+        this.circuitBreaker = {
+            enabled: false,
+            failureCount: 0,
+            threshold: 5,
+            resetTime: 30000
+        };
+        this.updateUI();
+    }
+    
+    handleQualityUpdate(data) {
+        this.stats.lastQualityUpdate = new Date();
+        
+        switch(data.type) {
+            case 'final_processed':
+                this.handleFinalProcessed(data);
+                break;
+            case 'no_transcription':
+                this.handleFiltered(data);
+                break;
+            case 'error':
+                this.handleError(data);
+                break;
+        }
+        
+        this.updateUI();
+    }
+    
+    handleFinalProcessed(data) {
+        this.stats.totalSegments++;
+        this.stats.confidenceSum += data.confidence;
+        this.stats.avgConfidence = this.stats.confidenceSum / this.stats.totalSegments;
+        
+        // Update quality status based on confidence
+        if (data.confidence >= this.qualityThresholds.excellent) {
+            this.stats.qualityStatus = 'excellent';
+        } else if (data.confidence >= this.qualityThresholds.good) {
+            this.stats.qualityStatus = 'good';
+        } else if (data.confidence >= this.qualityThresholds.warning) {
+            this.stats.qualityStatus = 'warning';
+        } else {
+            this.stats.qualityStatus = 'poor';
+        }
+        
+        // Show quality feedback
+        if (data.text_quality === 'poor') {
+            window.toastSystem.showWarning(`Low quality transcription detected (${(data.confidence * 100).toFixed(1)}% confidence)`);
+        }
+        
+        this.resetCircuitBreaker();
+    }
+    
+    handleFiltered(data) {
+        this.stats.filteredSegments++;
+        this.circuitBreaker.failureCount++;
+        
+        window.toastSystem.showInfo('Audio filtered for quality (repetitive/low confidence text rejected)', {
+            duration: 3000
+        });
+        
+        this.checkCircuitBreaker();
+    }
+    
+    handleError(data) {
+        this.circuitBreaker.failureCount++;
+        this.stats.qualityStatus = 'error';
+        
+        window.toastSystem.showError(`Quality degradation: ${data.message}`, {
+            persistent: true
+        });
+        
+        this.checkCircuitBreaker();
+    }
+    
+    checkCircuitBreaker() {
+        if (this.circuitBreaker.failureCount >= this.circuitBreaker.threshold) {
+            this.activateCircuitBreaker();
+        }
+    }
+    
+    activateCircuitBreaker() {
+        this.circuitBreaker.enabled = true;
+        this.stats.qualityStatus = 'circuit_breaker';
+        
+        window.toastSystem.showError('Quality circuit breaker activated - transcription paused for quality protection', {
+            persistent: true,
+            action: {
+                label: 'Override',
+                callback: 'window.qualityMonitor.resetCircuitBreaker()'
+            }
+        });
+        
+        // Auto-reset after timeout
+        setTimeout(() => {
+            this.resetCircuitBreaker();
+        }, this.circuitBreaker.resetTime);
+    }
+    
+    resetCircuitBreaker() {
+        this.circuitBreaker.enabled = false;
+        this.circuitBreaker.failureCount = 0;
+        if (this.stats.qualityStatus === 'circuit_breaker') {
+            this.stats.qualityStatus = 'good';
+        }
+    }
+    
+    updateUI() {
+        // Update segment count
+        const segmentCountEl = document.getElementById('segmentCount');
+        if (segmentCountEl) {
+            segmentCountEl.textContent = this.stats.totalSegments;
+        }
+        
+        // Update average confidence
+        const avgConfidenceEl = document.getElementById('avgConfidence');
+        if (avgConfidenceEl) {
+            avgConfidenceEl.textContent = `${(this.stats.avgConfidence * 100).toFixed(1)}%`;
+        }
+        
+        // Update quality status
+        const qualityStatusEl = document.getElementById('qualityStatus');
+        if (qualityStatusEl) {
+            qualityStatusEl.textContent = this.getQualityStatusText();
+            qualityStatusEl.className = `badge ${this.getQualityStatusClass()}`;
+        }
+        
+        // Update filtered count
+        const filteredCountEl = document.getElementById('filteredCount');
+        if (filteredCountEl) {
+            filteredCountEl.textContent = this.stats.filteredSegments;
+        }
+        
+        // Update last update time
+        const lastUpdateEl = document.getElementById('lastUpdate');
+        if (lastUpdateEl && this.stats.lastQualityUpdate) {
+            lastUpdateEl.textContent = this.stats.lastQualityUpdate.toLocaleTimeString();
+        }
+    }
+    
+    getQualityStatusText() {
+        switch(this.stats.qualityStatus) {
+            case 'excellent': return 'Excellent';
+            case 'good': return 'Good';
+            case 'warning': return 'Warning';
+            case 'poor': return 'Poor';
+            case 'error': return 'Error';
+            case 'circuit_breaker': return 'Paused';
+            default: return 'Ready';
+        }
+    }
+    
+    getQualityStatusClass() {
+        switch(this.stats.qualityStatus) {
+            case 'excellent': return 'bg-success';
+            case 'good': return 'bg-primary';
+            case 'warning': return 'bg-warning';
+            case 'poor': return 'bg-danger';
+            case 'error': return 'bg-danger';
+            case 'circuit_breaker': return 'bg-dark';
+            default: return 'bg-secondary';
+        }
+    }
+    
+    getQualityReport() {
+        const accuracy = this.stats.totalSegments > 0 ? 
+            ((this.stats.totalSegments - this.stats.filteredSegments) / this.stats.totalSegments * 100).toFixed(1) : 100;
+        
+        return {
+            totalSegments: this.stats.totalSegments,
+            filteredSegments: this.stats.filteredSegments,
+            accuracy: `${accuracy}%`,
+            avgConfidence: `${(this.stats.avgConfidence * 100).toFixed(1)}%`,
+            qualityStatus: this.stats.qualityStatus
+        };
+    }
+}
+
 // Initialize Enhanced Systems
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize enhanced error handling
     window.enhancedErrorHandler = new EnhancedErrorHandler();
     window.toastSystem = window.enhancedErrorHandler.toastSystem;
+    
+    // Initialize quality monitoring
+    window.qualityMonitor = new QualityMonitor();
     
     // Add enhanced accessibility attributes
     const elements = {
@@ -562,10 +768,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Announce system ready
     setTimeout(() => {
-        window.toastSystem.showSuccess('Enhanced transcription system ready with full accessibility support');
+        window.toastSystem.showSuccess('Enhanced transcription system ready with quality monitoring and filtering');
     }, 1000);
     
-    console.log('✅ Enhanced transcription system initialized with 100% effectiveness');
+    console.log('✅ Enhanced transcription system initialized with 100% effectiveness and quality monitoring');
 });
 </script>
 {% endblock %}

@@ -933,12 +933,34 @@ class TranscriptionService:
             if not res or not res.get('text'):
                 return None
                 
-            # 2) Update rolling buffer
+            # 2) CRITICAL QUALITY FILTERING - Apply before updating buffer
             text = res['text'].strip()
             conf = float(res.get('confidence', 0.8))
             
             if text:
-                # Append to rolling buffer with space if needed
+                # Filter 1: Check for repetitive patterns like "You You You" 
+                if self._is_repetitive_text(text):
+                    logger.warning(f"SYNC QUALITY FILTER: Rejected repetitive text for session {session_id}: '{text}'")
+                    return None
+                
+                # Filter 2: Check for duplicates of recent text
+                if self._is_duplicate_of_recent(text, session_id):
+                    logger.debug(f"SYNC QUALITY FILTER: Rejected duplicate text for session {session_id}: '{text}'")
+                    return None
+                
+                # Filter 3: Minimum confidence threshold 
+                if conf < self.config.min_confidence:
+                    logger.debug(f"SYNC QUALITY FILTER: Rejected low confidence for session {session_id}: {conf:.2f} < {self.config.min_confidence}")
+                    return None
+                
+                # Filter 4: Minimum meaningful length
+                if len(text) < 2:
+                    logger.debug(f"SYNC QUALITY FILTER: Rejected too short for session {session_id}: '{text}'")
+                    return None
+                
+                logger.info(f"SYNC QUALITY CHECK PASSED for session {session_id}: '{text}' (confidence: {conf:.2f})")
+                
+                # Quality check passed - append to rolling buffer
                 buf += (' ' if buf and text else '') + text
                 state['rolling_text'] = buf
                 
