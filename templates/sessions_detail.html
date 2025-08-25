@@ -32,15 +32,36 @@
             </div>
         </div>
         <div class="col-md-4 text-end">
-            <!-- Export Toolbar (M2.5) -->
-            <div id="export" class="btn-group">
-                {% if session.status == 'completed' %}
-                <a href="/sessions/{{ session.id }}/export.md" 
-                   class="btn btn-outline-primary"
-                   download="mina-session-{{ session.id }}.md">
-                    <i class="fas fa-download"></i> Export Markdown
-                </a>
-                {% endif %}
+            <!-- M4 Share & Export Toolbar -->
+            <div class="d-flex gap-2 justify-content-end">
+                <!-- Share Button -->
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#shareModal">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+                
+                <!-- Export Dropdown -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <ul class="dropdown-menu">
+                        {% if session.status == 'completed' %}
+                        <li><a class="dropdown-item" href="/sessions/{{ session.id }}/export.md" download="mina-session-{{ session.id }}.md">
+                            <i class="fas fa-file-text me-2"></i>Markdown
+                        </a></li>
+                        <li><a class="dropdown-item" href="/sessions/{{ session.id }}/export.docx" download="mina-session-{{ session.id }}.docx">
+                            <i class="fas fa-file-word me-2"></i>DOCX
+                        </a></li>
+                        <li><a class="dropdown-item" href="/sessions/{{ session.id }}/export.pdf" download="mina-session-{{ session.id }}.pdf">
+                            <i class="fas fa-file-pdf me-2"></i>PDF
+                        </a></li>
+                        {% else %}
+                        <li><span class="dropdown-item text-muted">Complete session to export</span></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <!-- New Session Button -->
                 <a href="{{ url_for('transcription.live_transcription') }}" class="btn btn-primary">
                     <i class="fas fa-microphone"></i> New Session
                 </a>
@@ -622,4 +643,179 @@ function copyToClipboard(text) {
     10%, 90% { opacity: 1; transform: translateY(0); }
 }
 </style>
+
+<!-- M4 Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shareModalLabel">
+                    <i class="fas fa-share-alt me-2"></i>Share Session
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="shareContent">
+                    <p class="text-muted">Generate a view-only link to share this session with others.</p>
+                    
+                    <div class="mb-3">
+                        <label for="shareDays" class="form-label">Link expires in:</label>
+                        <select class="form-select" id="shareDays">
+                            <option value="1">1 day</option>
+                            <option value="3">3 days</option>
+                            <option value="7" selected>7 days</option>
+                            <option value="14">14 days</option>
+                            <option value="30">30 days</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-success" id="generateShareBtn">
+                            <i class="fas fa-link me-2"></i>Generate Share Link
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Generated Link Display -->
+                <div id="shareResult" style="display: none;">
+                    <div class="alert alert-success">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-check-circle me-2"></i>Share Link Generated!
+                        </h6>
+                        <p class="mb-3">Anyone with this link can view the session transcript and summary in read-only mode.</p>
+                        
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="shareUrl" readonly>
+                            <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard(document.getElementById('shareUrl').value)">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                Expires: <span id="shareExpiry"></span>
+                            </small>
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="deactivateShareBtn">
+                                <i class="fas fa-ban me-1"></i>Deactivate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Error Display -->
+                <div id="shareError" style="display: none;">
+                    <div class="alert alert-danger">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Error
+                        </h6>
+                        <p id="shareErrorText"></p>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetShareModal()">
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// M4 Share functionality
+let currentShareToken = null;
+
+document.getElementById('generateShareBtn').addEventListener('click', function() {
+    const days = document.getElementById('shareDays').value;
+    const btn = this;
+    
+    // Show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
+    
+    // Generate share link
+    fetch(`/sessions/{{ session.id }}/share`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ days: parseInt(days) })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success result
+            document.getElementById('shareUrl').value = data.url;
+            document.getElementById('shareExpiry').textContent = new Date(Date.now() + data.expires_in_days * 24 * 60 * 60 * 1000).toLocaleDateString();
+            currentShareToken = data.token;
+            
+            document.getElementById('shareContent').style.display = 'none';
+            document.getElementById('shareResult').style.display = 'block';
+        } else {
+            throw new Error(data.error || 'Failed to generate share link');
+        }
+    })
+    .catch(error => {
+        // Show error
+        document.getElementById('shareErrorText').textContent = error.message;
+        document.getElementById('shareContent').style.display = 'none';
+        document.getElementById('shareError').style.display = 'block';
+    })
+    .finally(() => {
+        // Reset button
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-link me-2"></i>Generate Share Link';
+    });
+});
+
+document.getElementById('deactivateShareBtn').addEventListener('click', function() {
+    if (!currentShareToken) return;
+    
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Deactivating...';
+    
+    fetch(`/sessions/{{ session.id }}/share/${currentShareToken}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reset modal
+            resetShareModal();
+            
+            // Show toast notification
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.innerHTML = '<i class="fas fa-check me-2"></i>Share link deactivated!';
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (document.body.contains(toast)) {
+                    document.body.removeChild(toast);
+                }
+            }, 3000);
+        } else {
+            throw new Error(data.error || 'Failed to deactivate link');
+        }
+    })
+    .catch(error => {
+        console.error('Error deactivating share link:', error);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-ban me-1"></i>Deactivate';
+    });
+});
+
+function resetShareModal() {
+    document.getElementById('shareContent').style.display = 'block';
+    document.getElementById('shareResult').style.display = 'none';
+    document.getElementById('shareError').style.display = 'none';
+    currentShareToken = null;
+}
+
+// Reset modal when it's closed
+document.getElementById('shareModal').addEventListener('hidden.bs.modal', resetShareModal);
+</script>
+
 {% endblock %}

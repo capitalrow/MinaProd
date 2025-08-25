@@ -67,6 +67,10 @@ class Config:
     # Debug Configuration
     SHOW_DEBUG_PANEL = os.environ.get('SHOW_DEBUG_PANEL', 'false').lower() == 'true'
     
+    # M4: Sharing Configuration
+    SHARE_LINK_EXPIRY_DAYS = int(os.environ.get('SHARE_LINK_EXPIRY_DAYS', '7'))
+    SHARE_BASE_URL = os.environ.get('SHARE_BASE_URL', 'http://localhost:5000')
+    
     # Application metadata
     APP_VERSION = os.environ.get('APP_VERSION', '0.1.0')
     GIT_SHA = os.environ.get('GIT_SHA', 'dev')

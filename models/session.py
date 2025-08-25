@@ -33,6 +33,11 @@ class Session(Base):
     # M3: Summary relationship - accessed via backref from Summary model
     # Note: Relationship defined in Summary model to avoid circular imports
     
+    # M4: Shared links relationship  
+    shared_links: Mapped[list["SharedLink"]] = relationship(
+        back_populates="session", cascade="all, delete-orphan"
+    )
+    
     def __repr__(self):
         return f'<Session {self.external_id}: {self.title}>'
     
