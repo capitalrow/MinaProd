@@ -37,7 +37,7 @@ class TranscriptionServiceConfig:
     """Configuration for transcription service."""
     # VAD configuration
     vad_sensitivity: float = 0.5
-    vad_min_speech_duration: int = 300  # ms
+    vad_min_speech_duration: int = 10000  # ms
     vad_min_silence_duration: int = 500  # ms
     
     # Audio processing
