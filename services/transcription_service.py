@@ -103,6 +103,11 @@ class TranscriptionService:
         # Set up Whisper service callback
         self.whisper_service.set_result_callback(self._on_transcription_result)
         
+        # Critical quality control parameters
+        self.dedup_buffer_size = 200  # Characters
+        self.min_word_variety_ratio = 0.3  # Minimum unique words ratio
+        self.max_repetition_threshold = 3  # Max consecutive identical words
+        
         logger.info(f"Transcription service initialized with config: {asdict(self.config)}")
     
     # Sync wrapper methods for Flask routes (avoids asyncio.run() in request handlers)
@@ -454,20 +459,27 @@ class TranscriptionService:
         sequence_number = session_data['sequence_number']
         session_data['sequence_number'] += 1
         
-        # Create segment
+        # Get database session ID from external ID
+        from sqlalchemy import select
+        from models.session import Session as DbSession
+        
+        stmt = select(DbSession).filter_by(external_id=session_id)
+        db_session_obj = db.session.execute(stmt).scalar_one_or_none()
+        
+        if not db_session_obj:
+            logger.error(f"Database session not found for external_id: {session_id}")
+            return
+            
+        # Create segment using correct database schema
+        from models.segment import Segment
+        
         segment = Segment(
-            session_id=session_id,
-            segment_id=f"{session_id}_{sequence_number}",
-            sequence_number=sequence_number,
-            start_time=transcription_result.timestamp - transcription_result.duration,
-            end_time=transcription_result.timestamp,
+            session_id=db_session_obj.id,  # Use database ID, not external ID
+            kind='final' if transcription_result.is_final else 'interim',
             text=transcription_result.text,
-            confidence=transcription_result.confidence,
-            is_final=transcription_result.is_final,
-            language=transcription_result.language,
-            audio_duration=transcription_result.duration,
-            sample_rate=self.config.sample_rate,
-            metadata=transcription_result.metadata
+            avg_confidence=transcription_result.confidence,  # Correct field name
+            start_ms=int((transcription_result.timestamp - transcription_result.duration) * 1000),
+            end_ms=int(transcription_result.timestamp * 1000)
         )
         
         db.session.add(segment)
@@ -483,16 +495,89 @@ class TranscriptionService:
         new_avg = (current_avg * (total_segments - 1) + transcription_result.confidence) / total_segments
         session_data['stats']['average_confidence'] = new_avg
         
-        # Update database session  
-        from sqlalchemy import select
-        stmt = select(Session).filter_by(external_id=session_id)
-        db_session = db.session.execute(stmt).scalar_one_or_none()
-        if db_session:
-            # Update session stats
-            db_session.total_segments = (db_session.total_segments or 0) + 1
+        # Update database session (using already retrieved db_session_obj)
+        if db_session_obj:
+            db_session_obj.total_segments = (db_session_obj.total_segments or 0) + 1
             db.session.commit()
         
         logger.debug(f"Stored segment {sequence_number} for session {session_id}")
+    
+    def _is_repetitive_text(self, text: str) -> bool:
+        """
+        Critical quality filter: Detect repetitive text patterns like 'You You You'.
+        
+        Args:
+            text: Text to analyze
+            
+        Returns:
+            True if text appears to be repetitive garbage
+        """
+        if not text or len(text.strip()) < 3:
+            return True
+            
+        words = text.strip().lower().split()
+        if len(words) < 2:
+            return False
+            
+        # Check for excessive repetition of same word
+        word_counts = {}
+        for word in words:
+            word_counts[word] = word_counts.get(word, 0) + 1
+            
+        # Flag if any word appears more than max_repetition_threshold times
+        max_word_count = max(word_counts.values())
+        if max_word_count > self.max_repetition_threshold:
+            logger.warning(f"Rejected repetitive text: '{text}' (word '{max(word_counts, key=word_counts.get)}' appears {max_word_count} times)")
+            return True
+            
+        # Check word variety ratio
+        unique_words = len(set(words))
+        variety_ratio = unique_words / len(words)
+        
+        if variety_ratio < self.min_word_variety_ratio:
+            logger.warning(f"Rejected low variety text: '{text}' (variety ratio: {variety_ratio:.2f})")
+            return True
+            
+        return False
+    
+    def _is_duplicate_of_recent(self, text: str, session_id: str) -> bool:
+        """
+        Check if text is substantially similar to recent transcription.
+        
+        Args:
+            text: New text to check
+            session_id: Session identifier
+            
+        Returns:
+            True if text is likely a duplicate
+        """
+        if session_id not in self.active_sessions:
+            return False
+            
+        session_data = self.active_sessions[session_id]
+        rolling_text = session_data.get('rolling_text', '')
+        
+        if not rolling_text or not text:
+            return False
+            
+        # Simple similarity check using common words
+        text_words = set(text.lower().split())
+        rolling_words = set(rolling_text.lower().split())
+        
+        if not text_words or not rolling_words:
+            return False
+            
+        # Calculate Jaccard similarity
+        intersection = text_words.intersection(rolling_words)
+        union = text_words.union(rolling_words)
+        similarity = len(intersection) / len(union) if union else 0
+        
+        # Flag as duplicate if >80% similarity
+        if similarity > 0.8:
+            logger.debug(f"Rejected duplicate text: '{text}' (similarity: {similarity:.2f})")
+            return True
+            
+        return False
     
     def _format_transcription_result(self, result: TranscriptionResult) -> Dict[str, Any]:
         """Format transcription result for API response."""
@@ -508,12 +593,45 @@ class TranscriptionService:
         }
     
     def _on_transcription_result(self, result: TranscriptionResult):
-        """Handle transcription result callback."""
+        """Handle transcription result callback with critical quality filtering."""
         session_id = result.metadata.get('session_id')
         if not session_id or session_id not in self.active_sessions:
             return
         
-        # Call registered callbacks
+        # CRITICAL QUALITY FILTERS: Prevent repetitive garbage transcriptions
+        text = result.text.strip()
+        
+        # Filter 1: Check for repetitive patterns like "You You You"
+        if self._is_repetitive_text(text):
+            logger.warning(f"QUALITY FILTER: Rejected repetitive transcription for session {session_id}: '{text}'")
+            return
+        
+        # Filter 2: Check for duplicates of recent text
+        if self._is_duplicate_of_recent(text, session_id):
+            logger.debug(f"QUALITY FILTER: Rejected duplicate transcription for session {session_id}: '{text}'")
+            return
+        
+        # Filter 3: Minimum confidence threshold (already applied by Whisper service)
+        if result.confidence < self.config.min_confidence and not result.is_final:
+            logger.debug(f"QUALITY FILTER: Rejected low confidence transcription: {result.confidence:.2f} < {self.config.min_confidence}")
+            return
+        
+        # Filter 4: Minimum meaningful length
+        if len(text) < 2 and not result.is_final:
+            logger.debug(f"QUALITY FILTER: Rejected too short transcription: '{text}'")
+            return
+        
+        # Quality check passed - update deduplication buffer
+        if session_id in self.active_sessions:
+            session_data = self.active_sessions[session_id]
+            rolling_text = session_data.get('rolling_text', '')
+            # Keep last N characters for deduplication
+            new_rolling_text = (rolling_text + " " + text)[-self.dedup_buffer_size:]
+            session_data['rolling_text'] = new_rolling_text
+        
+        logger.info(f"QUALITY CHECK PASSED: '{text}' (confidence: {result.confidence:.2f}, final: {result.is_final})")
+        
+        # Call registered callbacks with filtered result
         callbacks = self.session_callbacks.get(session_id, [])
         for callback in callbacks:
             try:
@@ -715,7 +833,9 @@ class TranscriptionService:
                 if rolling_text:
                     logger.info(f"Flushing final buffer for session {session_id}: '{rolling_text}'")
                     self._persist_segment(session_id, rolling_text, 0.8, time.time())
-                    state['stats']['final_events'] += 1
+                    # Safe dictionary access to prevent AttributeError
+                    stats = state.get('stats', {})
+                    stats['final_events'] = stats.get('final_events', 0) + 1
                 
                 # Log session stats
                 stats = state.get('stats', {})
