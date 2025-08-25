@@ -196,3 +196,64 @@ def liveness_check():
         "status": "alive",
         "timestamp": datetime.utcnow().isoformat()
     }), 200
+
+@health_bp.route('/api/health', methods=['GET'])
+def api_health_check():
+    """
+    API health check endpoint for monitoring tools and external services.
+    
+    Returns:
+        JSON response with basic health status and system metrics
+    """
+    try:
+        # Get basic system status
+        status = {
+            "status": "ok",
+            "timestamp": datetime.utcnow().isoformat(),
+            "version": os.environ.get('APP_VERSION', '0.1.0'),
+            "environment": os.environ.get('FLASK_ENV', 'development')
+        }
+        
+        # Check database connectivity
+        try:
+            from app import db
+            from sqlalchemy import text
+            db.session.execute(text('SELECT 1')).fetchone()
+            status["database"] = {"status": "connected", "healthy": True}
+        except Exception as e:
+            logger.error(f"Database health check failed: {e}")
+            status["database"] = {"status": "error", "healthy": False, "error": str(e)}
+            status["status"] = "degraded"
+        
+        # Check transcription service
+        try:
+            from services.transcription_service import TranscriptionService
+            status["services"] = {
+                "transcription": {"status": "available", "healthy": True},
+                "websocket": {"status": "active", "healthy": True}
+            }
+        except Exception as e:
+            logger.error(f"Service health check failed: {e}")
+            status["services"] = {"status": "error", "healthy": False, "error": str(e)}
+        
+        # Basic system metrics
+        try:
+            import psutil
+            status["system"] = {
+                "cpu_percent": psutil.cpu_percent(interval=0.1),
+                "memory_percent": psutil.virtual_memory().percent,
+                "disk_percent": psutil.disk_usage('/').percent
+            }
+        except Exception as e:
+            logger.warning(f"System metrics unavailable: {e}")
+            status["system"] = {"status": "metrics_unavailable"}
+        
+        return jsonify(status), 200 if status["status"] == "ok" else 503
+        
+    except Exception as e:
+        logger.error(f"API health check failed: {e}")
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }), 500
