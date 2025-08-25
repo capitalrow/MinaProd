@@ -569,9 +569,10 @@ class QualityMonitor {
         this.circuitBreaker = {
             enabled: false,
             failureCount: 0,
-            threshold: 5,
-            resetTime: 30000
+            threshold: 12,  // Increased from 5 to reduce over-triggering
+            resetTime: 45000  // Increased to 45 seconds
         };
+        this.lastFilterAlert = 0;  // Track last filter notification
         this.updateUI();
     }
     
@@ -621,9 +622,14 @@ class QualityMonitor {
         this.stats.filteredSegments++;
         this.circuitBreaker.failureCount++;
         
-        window.toastSystem.showInfo('Audio filtered for quality (repetitive/low confidence text rejected)', {
-            duration: 3000
-        });
+        // Reduce notification spam - only show every 10 seconds
+        const now = Date.now();
+        if (now - this.lastFilterAlert > 10000) {
+            window.toastSystem.showInfo('Audio filtered for quality (repetitive/low confidence text rejected)', {
+                timeout: 2000  // Reduced from 3000
+            });
+            this.lastFilterAlert = now;
+        }
         
         this.checkCircuitBreaker();
     }
@@ -649,13 +655,17 @@ class QualityMonitor {
         this.circuitBreaker.enabled = true;
         this.stats.qualityStatus = 'circuit_breaker';
         
-        window.toastSystem.showError('Quality circuit breaker activated - transcription paused for quality protection', {
-            persistent: true,
-            action: {
-                label: 'Override',
-                callback: 'window.qualityMonitor.resetCircuitBreaker()'
-            }
-        });
+        // Reduced frequency notifications - only show if not recently shown
+        if (!this.lastCircuitBreakerAlert || Date.now() - this.lastCircuitBreakerAlert > 30000) {
+            window.toastSystem.showWarning('Quality protection activated', {
+                timeout: 5000,  // Auto-dismiss after 5 seconds
+                action: {
+                    label: 'Reset',
+                    callback: 'window.qualityMonitor.resetCircuitBreaker()'
+                }
+            });
+            this.lastCircuitBreakerAlert = Date.now();
+        }
         
         // Auto-reset after timeout
         setTimeout(() => {
