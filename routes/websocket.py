@@ -456,7 +456,7 @@ def register_websocket_handlers(socketio):
             audio_data = data.get('audio_data')
             timestamp = data.get('timestamp', time.time())
             chunk_index = data.get('chunk_index', 0)
-            is_final_chunk = data.get('is_final_chunk', True)
+            is_final_chunk = data.get('is_final_chunk', False)  # 🔥 INT-LIVE-I2: CRITICAL FIX - default False for proper interim flow
             
             if not session_id or not audio_data:
                 logger.error(f"Missing required data: session_id={bool(session_id)}, audio_data={bool(audio_data)}")
@@ -539,20 +539,9 @@ def register_websocket_handlers(socketio):
             try:
                 logger.info(f"Processing audio chunk for session {session_id}, size: {len(audio_bytes)} bytes")
                 
-                # Calculate input level for UI feedback
-                import numpy as np
-                try:
-                    # Simple RMS calculation for input level
-                    audio_array = np.frombuffer(audio_bytes, dtype=np.int16)
-                    if len(audio_array) > 0:
-                        rms = np.sqrt(np.mean(audio_array.astype(np.float32) ** 2))
-                        max_val = np.iinfo(np.int16).max
-                        input_level = float(min(rms / max_val, 1.0))
-                    else:
-                        input_level = 0.0
-                except Exception as e:
-                    logger.warning(f"Could not calculate input level: {e}")
-                    input_level = 0.1  # Default to show some activity
+                # 🔥 INT-LIVE-I2: Removed server-side RMS calculation on compressed bytes
+                # Input level will come from client-side WebAudio RMS
+                input_level = data.get('rms', 0.0)  # Use client-provided RMS if available
                 
                 # Send real-time audio stats to UI
                 emit('audio_received', {

@@ -1,462 +1,499 @@
-/**
- * Fix Pack UX-R1: Start/Stop recording wiring
- * Simple implementation that follows the exact specification
- */
+// 🔥 INT-LIVE-I2: Enhanced WebAudio RMS Recording Implementation
+// Drop-in replacement with real-time RMS calculation and proper socket handling
 
-// Guard against double initialization
-if (!window._minaHandlersBound) {
-    let socket = null;
-    let mediaRecorder = null;
-    let audioStream = null;
-    let CURRENT_SESSION_ID = null;
+(() => {
+  let socket;
+  let CURRENT_SESSION_ID = null;
 
-    // Initialize Socket.IO connection
-    function initializeSocket() {
-        socket = io({
-            transports: ['websocket', 'polling'],
-            upgrade: true,
-            rememberUpgrade: true,
-            timeout: 20000,  // FIXED: Increased timeout for better connection stability
-            reconnection: true,
-            reconnectionDelay: 1000,
-            reconnectionAttempts: 5,
-            autoConnect: true,
-            forceNew: false
-        });
-        
-        // Connection status handlers
-        socket.on('connect', () => {
-            document.getElementById('wsStatus').textContent = 'Connected';
-            console.log('Socket connected');
-            // Enable recording button when connected
-            const startBtn = document.getElementById('startRecordingBtn');
-            if (startBtn) {
-                startBtn.disabled = false;
-            }
-        });
-        
-        socket.on('disconnect', () => {
-            document.getElementById('wsStatus').textContent = 'Disconnected';
-            console.log('Socket disconnected');
-            // Disable recording button when disconnected
-            const startBtn = document.getElementById('startRecordingBtn');
-            if (startBtn) {
-                startBtn.disabled = true;
-            }
-        });
-        
-        socket.on('connect_error', (error) => {
-            console.error('Socket connection error:', error);
-            document.getElementById('wsStatus').textContent = 'Connection Error';
-        });
-        
-        // Transcription result handlers - INT-LIVE-I1: Enhanced interim handling
-        socket.on('interim_transcript', (payload) => {
-            console.log('Interim transcript received:', payload);
-            
-            // Check if interim updates are enabled
-            const showInterimToggle = document.getElementById('showInterim');
-            if (showInterimToggle && !showInterimToggle.checked) {
-                return; // Skip interim updates if disabled
-            }
-            
-            const interimText = document.getElementById('interimText');
-            if (interimText) {
-                interimText.textContent = payload.text || '';
-                interimText.style.display = payload.text ? 'block' : 'none';
-                
-                // Hide initial message when interim text appears
-                const initialMessage = document.getElementById('initialMessage');
-                if (initialMessage && payload.text) {
-                    initialMessage.style.display = 'none';
-                }
-            }
-        });
-        
-        socket.on('final_transcript', (payload) => {
-            const finalDiv = document.getElementById('finalText');
-            const interimDiv = document.getElementById('interimText');
-            
-            if (finalDiv && payload.text) {
-                finalDiv.textContent = (finalDiv.textContent + ' ' + payload.text).trim();
-                // Hide initial message if present
-                const initialMessage = document.getElementById('initialMessage');
-                if (initialMessage) {
-                    initialMessage.style.display = 'none';
-                }
-            }
-            
-            if (interimDiv) {
-                interimDiv.textContent = '';
-                interimDiv.style.display = 'none';
-            }
-            
-            // Update quality monitoring with enhanced data
-            if (window.qualityMonitor && payload.confidence !== undefined) {
-                window.qualityMonitor.handleQualityUpdate({
-                    type: 'final_processed',
-                    confidence: payload.confidence || 0,
-                    text_quality: payload.quality_status || 'good',
-                    timestamp: payload.timestamp
-                });
-            }
-        });
-        
-        // Enhanced Quality Monitoring Event Handlers
-        socket.on('quality_update', (data) => {
-            console.log('Quality update received:', data);
-            if (window.qualityMonitor) {
-                window.qualityMonitor.handleQualityUpdate(data);
-            }
-        });
-        
-        // Session management
-        socket.on('session_created', (data) => {
-            CURRENT_SESSION_ID = data.session_id;
-            console.log('Session created:', CURRENT_SESSION_ID);
-            
-            // INT-LIVE-I1: Explicitly join the WebSocket room
-            socket.emit('join_session', { session_id: CURRENT_SESSION_ID });
-            console.log('Explicitly joined session room:', CURRENT_SESSION_ID);
-            
-            // Update UI to show session is ready
-            const sessionInfo = document.getElementById('sessionInfo');
-            if (sessionInfo) {
-                sessionInfo.textContent = `Session: ${CURRENT_SESSION_ID.substring(0, 8)}...`;
-            }
-        });
-        
-        // Audio processing confirmation
-        socket.on('audio_received', (data) => {
-            console.log('Audio processing confirmed:', data);
-            updateAudioStats(data);
-        });
-        
-        // Transcription result handlers - enhanced logging
-        socket.on('transcription_segment', (data) => {
-            console.log('Transcription segment received:', data);
-            displayTranscriptionSegment(data);
-        });
-        
-        // Error handling
-        socket.on('error', (error) => {
-            console.error('Socket error:', error);
-            showError('Transcription error: ' + error.message);
-        });
-    }
+  // Media capture
+  let mediaStream;
+  let mediaRecorder;
+  let chunks = []; // raw WebM/Opus blobs before upload
 
-    function startRecording() {
-        console.log('Starting recording...');
-        
-        // Check WebSocket connection with retry
-        if (!socket || !socket.connected) {
-            console.log('Socket not connected, attempting to reconnect...');
-            document.getElementById('wsStatus').textContent = 'Connecting...';
-            
-            // Try to reconnect
-            if (socket) {
-                socket.connect();
-            } else {
-                initializeSocket();
-            }
-            
-            // Wait a moment and try again
-            setTimeout(() => {
-                if (!socket || !socket.connected) {
-                    document.getElementById('wsStatus').textContent = 'Not connected';
-                    showError('WebSocket connection failed. Please check your internet connection and try again.');
-                    return;
-                } else {
-                    // Connection succeeded, proceed with recording
-                    proceedWithRecording();
-                }
-            }, 2000);
-            return;
-        }
-        
-        proceedWithRecording();
-    }
+  // WebAudio RMS
+  let audioCtx;
+  let sourceNode;
+  let analyser;
+  let timeData;
+  let rafId = null;
+  let lastRms = 0;
+
+  // UI elements (lazy getters for safety)
+  const startBtn = () => document.getElementById('startRecordingBtn');
+  const stopBtn = () => document.getElementById('stopRecordingBtn');
+  const wsStatus = () => document.getElementById('wsStatus');
+  const micStatus = () => document.getElementById('micStatus');
+  const inputLevel = () => document.getElementById('inputLevel');
+
+  // --- Socket Management -----------------------------------------------------------
+  function initSocket() {
+    if (socket && socket.connected) return;
     
-    function proceedWithRecording() {
-        // Request microphone access
-        navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(stream => {
-                audioStream = stream;
-                
-                // Create session if needed
-                if (!CURRENT_SESSION_ID) {
-                    socket.emit('create_session', {
-                        title: 'Live Recording Session',
-                        language: 'en'
-                    });
-                }
-
-                // Determine supported MIME type
-                let mimeType = 'audio/webm';
-                if (!MediaRecorder.isTypeSupported(mimeType)) {
-                    mimeType = 'audio/webm;codecs=opus';
-                    if (!MediaRecorder.isTypeSupported(mimeType)) {
-                        mimeType = ''; // Use default
-                    }
-                }
-
-                // Create MediaRecorder
-                const options = mimeType ? { mimeType } : {};
-                mediaRecorder = new MediaRecorder(stream, options);
-                
-                mediaRecorder.addEventListener('dataavailable', event => {
-                    console.log('MediaRecorder data available:', {
-                        size: event.data.size,
-                        type: event.data.type,
-                        sessionId: CURRENT_SESSION_ID,
-                        socketConnected: socket?.connected
-                    });
-                    
-                    if (event.data.size > 0 && CURRENT_SESSION_ID) {
-                        // Convert blob to ArrayBuffer and then to base64
-                        event.data.arrayBuffer().then(arrayBuffer => {
-                            console.log('Audio ArrayBuffer size:', arrayBuffer.byteLength);
-                            
-                            // Split large chunks to avoid transmission issues
-                            const MAX_CHUNK_SIZE = 32768; // 32KB chunks
-                            const uint8Array = new Uint8Array(arrayBuffer);
-                            
-                            if (uint8Array.length > MAX_CHUNK_SIZE) {
-                                // Split into smaller chunks
-                                for (let i = 0; i < uint8Array.length; i += MAX_CHUNK_SIZE) {
-                                    const chunk = uint8Array.slice(i, i + MAX_CHUNK_SIZE);
-                                    const chunkBase64 = btoa(String.fromCharCode.apply(null, chunk));
-                                    
-                                    console.log(`Sending audio chunk ${i / MAX_CHUNK_SIZE + 1}, size: ${chunk.length}`);
-                                    socket.emit('audio_chunk', {
-                                        session_id: CURRENT_SESSION_ID,
-                                        audio_data: chunkBase64,
-                                        timestamp: Date.now(),
-                                        chunk_index: i / MAX_CHUNK_SIZE,
-                                        is_final_chunk: i + MAX_CHUNK_SIZE >= uint8Array.length
-                                    });
-                                }
-                            } else {
-                                // Send as single chunk
-                                const base64 = btoa(String.fromCharCode.apply(null, uint8Array));
-                                console.log('Sending single audio chunk, size:', uint8Array.length);
-                                
-                                socket.emit('audio_chunk', {
-                                    session_id: CURRENT_SESSION_ID,
-                                    audio_data: base64,
-                                    timestamp: Date.now(),
-                                    chunk_index: 0,
-                                    is_final_chunk: true
-                                });
-                            }
-                        }).catch(error => {
-                            console.error('Error processing audio data:', error);
-                        });
-                    } else {
-                        console.warn('Skipping audio chunk:', {
-                            dataSize: event.data.size,
-                            hasSessionId: !!CURRENT_SESSION_ID
-                        });
-                    }
-                });
-
-                mediaRecorder.addEventListener('error', event => {
-                    console.error('MediaRecorder error:', event.error);
-                    showError('Recording error: ' + event.error.message);
-                });
-
-                // Start recording with 1 second chunks
-                mediaRecorder.start(1000);
-                
-                // Update UI
-                document.getElementById('startRecordingBtn').disabled = true;
-                document.getElementById('stopRecordingBtn').disabled = false;
-                document.getElementById('micStatus').textContent = 'Recording...';
-                
-                console.log('Recording started');
-            })
-            .catch(err => {
-                console.error('Microphone access denied:', err);
-                if (err.name === 'NotAllowedError') {
-                    showError('Microphone access denied. Enable mic to use live transcription.');
-                } else {
-                    showError('Error accessing microphone: ' + err.message);
-                }
-            });
-    }
-
-    function stopRecording() {
-        console.log('Stopping recording...');
-        
-        // Stop MediaRecorder
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            mediaRecorder.stop();
-        }
-        
-        // Stop audio stream
-        if (audioStream) {
-            audioStream.getTracks().forEach(track => track.stop());
-            audioStream = null;
-        }
-        
-        // Emit end of stream
-        if (socket && CURRENT_SESSION_ID) {
-            socket.emit('end_of_stream', { session_id: CURRENT_SESSION_ID });
-        }
-        
-        // Update UI
-        document.getElementById('startRecordingBtn').disabled = false;
-        document.getElementById('stopRecordingBtn').disabled = true;
-        document.getElementById('micStatus').textContent = 'Stopped';
-        
-        console.log('Recording stopped');
-    }
-
-    function refreshStatuses() {
-        // Update connection status
-        if (socket && socket.connected) {
-            document.getElementById('wsStatus').textContent = 'Connected';
-        } else {
-            document.getElementById('wsStatus').textContent = 'Disconnected';
-        }
-        
-        // Update mic status
-        if (mediaRecorder && mediaRecorder.state === 'recording') {
-            document.getElementById('micStatus').textContent = 'Recording...';
-        } else {
-            document.getElementById('micStatus').textContent = 'Not connected';
-        }
-    }
-
-    function showError(message) {
-        // Simple error display - could be enhanced with toast notifications
-        console.error('Recording error:', message);
-        alert(message); // Replace with better UI later
-    }
-    
-    // Helper functions for enhanced UI feedback
-    function updateAudioStats(data) {
-        const inputLevel = document.getElementById('inputLevel');
-        const vadStatus = document.getElementById('vadStatus');
-        
-        if (inputLevel && data.input_level !== undefined) {
-            inputLevel.textContent = `Input Level: ${Math.round(data.input_level * 100)}%`;
-        }
-        
-        if (vadStatus && data.vad_status) {
-            vadStatus.textContent = `VAD: ${data.vad_status}`;
-        }
-    }
-    
-    function displayTranscriptionSegment(data) {
-        const finalDiv = document.getElementById('finalText');
-        const interimDiv = document.getElementById('interimText');
-        const initialMessage = document.getElementById('initialMessage');
-        
-        // 🎯 ENHANCED: Better real-time transcription display
-        if (data.is_final && finalDiv) {
-            // Add final transcription text with smooth transition
-            const currentText = finalDiv.textContent || '';
-            const newText = (currentText + ' ' + data.text).trim();
-            finalDiv.textContent = newText;
-            
-            // Add visual feedback for new content
-            finalDiv.style.backgroundColor = '#1a472a';  // Green flash
-            setTimeout(() => {
-                finalDiv.style.backgroundColor = '';
-            }, 150);
-            
-            // Hide initial message
-            if (initialMessage) {
-                initialMessage.style.display = 'none';
-            }
-            
-            // Clear interim text with fade
-            if (interimDiv) {
-                interimDiv.style.opacity = '0.3';
-                setTimeout(() => {
-                    interimDiv.textContent = '';
-                    interimDiv.style.display = 'none';
-                    interimDiv.style.opacity = '';
-                }, 100);
-            }
-            
-            // Auto-scroll to show new content
-            finalDiv.scrollTop = finalDiv.scrollHeight;
-            
-        } else if (!data.is_final && interimDiv && data.text) {
-            // 🎯 ENHANCED: Show interim transcription with typing effect
-            interimDiv.textContent = data.text;
-            interimDiv.style.display = 'block';
-            interimDiv.style.opacity = '0.7';  // Distinguish from final text
-            interimDiv.style.fontStyle = 'italic';
-            
-            // Confidence indicator
-            if (data.confidence !== undefined) {
-                const confidence = Math.round(data.confidence * 100);
-                interimDiv.style.borderLeft = confidence > 70 ? '3px solid #4ade80' : 
-                                            confidence > 50 ? '3px solid #fbbf24' : 
-                                            '3px solid #f87171';
-            }
-            
-            // Hide initial message
-            if (initialMessage) {
-                initialMessage.style.display = 'none';
-            }
-        }
-        
-        // 🎯 ENHANCED: Update statistics with visual feedback
-        const segmentCounter = document.querySelector('[data-segment-count]');
-        if (segmentCounter && data.segment_count !== undefined) {
-            segmentCounter.textContent = `Segments: ${data.segment_count}`;
-            if (data.is_final) {
-                segmentCounter.style.color = '#4ade80';  // Green flash for new segments
-                setTimeout(() => segmentCounter.style.color = '', 300);
-            }
-        }
-        
-        // Update confidence display
-        const confidenceDisplay = document.querySelector('[data-confidence]');
-        if (confidenceDisplay && data.confidence !== undefined) {
-            const confidence = Math.round(data.confidence * 100);
-            confidenceDisplay.textContent = `Confidence: ${confidence}%`;
-            confidenceDisplay.style.color = confidence > 70 ? '#4ade80' : 
-                                          confidence > 50 ? '#fbbf24' : 
-                                          '#f87171';
-        }
-    }
-
-    // DOM ready handler
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('DOM loaded, setting up recording controls...');
-        
-        // Get button elements
-        const startBtn = document.getElementById('startRecordingBtn');
-        const stopBtn = document.getElementById('stopRecordingBtn');
-        
-        if (!startBtn || !stopBtn) {
-            console.error('Required buttons not found:', { startBtn: !!startBtn, stopBtn: !!stopBtn });
-            return;
-        }
-        
-        // Disable start button until WebSocket connects
-        startBtn.disabled = true;
-        stopBtn.disabled = true;
-        
-        // Bind event listeners
-        startBtn.addEventListener('click', startRecording);
-        stopBtn.addEventListener('click', stopRecording);
-        
-        // Initialize Socket.IO
-        initializeSocket();
-        
-        // Update initial status
-        refreshStatuses();
-        
-        console.log('Recording controls initialized');
+    console.log('🔥 INT-LIVE-I2: Initializing socket with proper event handlers...');
+    socket = io({ 
+      transports: ['websocket', 'polling'],
+      forceNew: false,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
     });
 
-    // Mark handlers as bound
-    window._minaHandlersBound = true;
-    console.log('Recording wiring initialized');
-}
+    socket.on('connect', () => {
+      console.log('✅ Socket connected');
+      if (wsStatus()) wsStatus().textContent = 'Connected';
+      
+      // Auto-join session if we have one
+      if (CURRENT_SESSION_ID) {
+        console.log(`🔄 Auto-joining session: ${CURRENT_SESSION_ID}`);
+        socket.emit('join_session', { session_id: CURRENT_SESSION_ID });
+      }
+    });
+
+    socket.on('disconnect', () => {
+      console.log('❌ Socket disconnected');
+      if (wsStatus()) wsStatus().textContent = 'Disconnected';
+    });
+
+    socket.on('error', (error) => {
+      console.error('🚨 Socket error:', error);
+      if (wsStatus()) wsStatus().textContent = 'Error';
+    });
+
+    // --- Transcription Event Handlers ---
+    socket.on('interim_transcript', (payload) => {
+      console.log('📝 Interim transcript:', payload.text?.substring(0, 50) + '...');
+      
+      const interimDiv = document.getElementById('interimText');
+      if (interimDiv && payload.text) {
+        interimDiv.textContent = payload.text;
+        interimDiv.style.display = 'block';
+        
+        // Add confidence styling
+        if (payload.avg_confidence !== undefined) {
+          const conf = payload.avg_confidence;
+          if (conf > 0.7) {
+            interimDiv.className = 'transcription-segment interim confidence-high';
+          } else if (conf > 0.5) {
+            interimDiv.className = 'transcription-segment interim confidence-medium';
+          } else {
+            interimDiv.className = 'transcription-segment interim confidence-low';
+          }
+        }
+      }
+    });
+
+    socket.on('final_transcript', (payload) => {
+      console.log('✅ Final transcript:', payload.text?.substring(0, 50) + '...');
+      
+      // Clear interim display
+      const interimDiv = document.getElementById('interimText');
+      if (interimDiv) {
+        interimDiv.style.display = 'none';
+        interimDiv.textContent = '';
+      }
+      
+      // Add to final transcript display
+      const finalDiv = document.getElementById('finalText');
+      if (finalDiv && payload.text) {
+        const text = payload.text.trim();
+        if (text) {
+          // Create a new segment element
+          const segmentDiv = document.createElement('div');
+          segmentDiv.className = 'transcription-segment final';
+          segmentDiv.textContent = (finalDiv.textContent ? ' ' : '') + text;
+          
+          // Add confidence indicator
+          if (payload.avg_confidence !== undefined) {
+            const confBar = document.createElement('div');
+            confBar.className = 'confidence-indicator';
+            const confLevel = document.createElement('div');
+            confLevel.className = `confidence-bar ${payload.avg_confidence > 0.7 ? 'confidence-high' : 
+                                                   payload.avg_confidence > 0.5 ? 'confidence-medium' : 'confidence-low'}`;
+            confLevel.style.width = `${Math.round(payload.avg_confidence * 100)}%`;
+            confBar.appendChild(confLevel);
+            segmentDiv.appendChild(confBar);
+          }
+          
+          finalDiv.appendChild(segmentDiv);
+          
+          // Auto-scroll if enabled
+          const autoScroll = document.getElementById('autoScroll');
+          if (autoScroll && autoScroll.checked) {
+            segmentDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+          }
+        }
+      }
+    });
+
+    // Session management events
+    socket.on('session_created', (data) => {
+      console.log('🆕 Session created:', data.session_id);
+      CURRENT_SESSION_ID = data.session_id;
+      socket.emit('join_session', { session_id: CURRENT_SESSION_ID });
+    });
+
+    socket.on('joined_session', (data) => {
+      console.log('✅ Joined session:', data.session_id);
+    });
+
+    // Audio processing feedback
+    socket.on('audio_received', (data) => {
+      // Update input level from server acknowledgment if no client RMS
+      if (!lastRms && data.input_level) {
+        updateInputLevel(data.input_level);
+      }
+    });
+
+    socket.on('processing_error', (data) => {
+      console.error('🚨 Processing error:', data.error);
+      showError(`Processing error: ${data.error}`);
+    });
+  }
+
+  // --- WebAudio RMS Processing ---
+  function startRmsLoop() {
+    if (!analyser || !timeData) return;
+    
+    const tick = () => {
+      analyser.getFloatTimeDomainData(timeData);
+      
+      // Compute RMS in PCM domain (real-time signal analysis)
+      let sum = 0;
+      for (let i = 0; i < timeData.length; i++) {
+        const v = timeData[i];
+        sum += v * v;
+      }
+      lastRms = Math.sqrt(sum / timeData.length) || 0;
+
+      // Update UI meter
+      updateInputLevel(lastRms);
+      
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function stopRmsLoop() {
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+    lastRms = 0;
+    updateInputLevel(0);
+  }
+
+  function updateInputLevel(level) {
+    const levelElement = inputLevel();
+    if (levelElement) {
+      const pct = Math.min(1, level * 4); // Scale up visually
+      levelElement.textContent = `${Math.round(pct * 100)}%`;
+    }
+
+    // Update visual meter if present
+    const meter = document.getElementById('levelMeter');
+    if (meter) {
+      meter.style.width = `${Math.round(pct * 100)}%`;
+      meter.setAttribute('aria-valuenow', String(pct));
+    }
+  }
+
+  // --- Recording Controls ---
+  async function startRecording() {
+    try {
+      console.log('🎤 Starting recording with WebAudio RMS...');
+      
+      // Ensure socket connection
+      initSocket();
+      if (!socket || !socket.connected) {
+        console.warn('⚠️ Socket not connected, waiting...');
+        if (wsStatus()) wsStatus().textContent = 'Connecting...';
+        
+        // Wait for connection with timeout
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Connection timeout')), 5000);
+          socket.once('connect', () => {
+            clearTimeout(timeout);
+            resolve();
+          });
+        });
+      }
+
+      // Request microphone access
+      console.log('🎤 Requesting microphone access...');
+      mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 16000
+        }
+      });
+      
+      if (micStatus()) micStatus().textContent = 'Recording...';
+
+      // Set up WebAudio pipeline for real-time RMS
+      console.log('🔊 Setting up WebAudio RMS pipeline...');
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      sourceNode = audioCtx.createMediaStreamSource(mediaStream);
+      analyser = audioCtx.createAnalyser();
+      
+      // Configure analyser for responsive RMS
+      analyser.fftSize = 1024; // Balance between responsiveness and accuracy
+      analyser.smoothingTimeConstant = 0.3; // Some smoothing but still responsive
+      
+      timeData = new Float32Array(analyser.fftSize);
+      sourceNode.connect(analyser);
+      
+      // Start RMS monitoring
+      startRmsLoop();
+
+      // Set up MediaRecorder for audio transmission
+      console.log('🎵 Setting up MediaRecorder...');
+      const mimeCandidates = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus', 
+        'audio/ogg'
+      ];
+      
+      const mimeType = mimeCandidates.find(t => MediaRecorder.isTypeSupported(t)) || '';
+      console.log(`📦 Using MIME type: ${mimeType || 'default'}`);
+      
+      const options = mimeType ? { mimeType } : {};
+      mediaRecorder = new MediaRecorder(mediaStream, options);
+
+      mediaRecorder.ondataavailable = async (e) => {
+        if (!e.data || !e.data.size || !socket || !socket.connected) return;
+        
+        try {
+          // Convert to ArrayBuffer and then base64
+          const arrayBuf = await e.data.arrayBuffer();
+          const base64Data = arrayBufferToBase64(arrayBuf);
+          
+          // Emit with real-time RMS data
+          socket.emit('audio_chunk', {
+            session_id: CURRENT_SESSION_ID,
+            is_final_chunk: false,  // 🔥 INT-LIVE-I2: Proper default
+            audio_data_b64: base64Data,
+            mime_type: mediaRecorder.mimeType || mimeType || 'audio/webm',
+            rms: lastRms,  // 🔥 Real client-side RMS
+            ts_client: Date.now()
+          });
+          
+          console.log(`📤 Sent audio chunk: ${arrayBuf.byteLength} bytes, RMS: ${lastRms.toFixed(3)}`);
+          
+        } catch (error) {
+          console.error('🚨 Error sending audio chunk:', error);
+        }
+      };
+
+      mediaRecorder.onstart = () => {
+        console.log('✅ MediaRecorder started');
+        if (startBtn()) startBtn().disabled = true;
+        if (stopBtn()) stopBtn().disabled = false;
+      };
+
+      mediaRecorder.onstop = () => {
+        console.log('⏹️ MediaRecorder stopped');
+        if (startBtn()) startBtn().disabled = false;
+        if (stopBtn()) stopBtn().disabled = true;
+      };
+
+      mediaRecorder.onerror = (e) => {
+        console.error('🚨 MediaRecorder error:', e);
+        showError('Recording error occurred');
+      };
+
+      // Start recording with optimized chunk timing
+      // 300ms gives ~3-4 chunks/sec for good interim cadence
+      mediaRecorder.start(300);
+      
+      console.log('🎯 Recording started successfully');
+
+    } catch (err) {
+      console.error('🚨 Start recording error:', err);
+      
+      let message = 'Recording failed';
+      if (err.name === 'NotAllowedError') {
+        message = 'Microphone access denied. Please allow microphone permissions.';
+      } else if (err.name === 'NotFoundError') {
+        message = 'No microphone found. Please connect a microphone.';
+      } else if (err.message === 'Connection timeout') {
+        message = 'Connection timeout. Please check your internet connection.';
+      }
+      
+      if (micStatus()) micStatus().textContent = message;
+      showError(message);
+      
+      // Clean up on error
+      cleanup();
+    }
+  }
+
+  function stopRecording() {
+    try {
+      console.log('⏹️ Stopping recording...');
+      
+      // Stop MediaRecorder
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      
+      // Send final signal to trigger server-side finalization
+      if (socket && socket.connected && CURRENT_SESSION_ID) {
+        console.log('📤 Sending finalization signal...');
+        socket.emit('audio_chunk', {
+          session_id: CURRENT_SESSION_ID,
+          is_final_chunk: true,  // 🔥 Critical: trigger finalization
+          audio_data_b64: null,  // No audio data, just signal
+          mime_type: null,
+          rms: 0,
+          ts_client: Date.now()
+        });
+      }
+      
+      cleanup();
+      
+      if (micStatus()) micStatus().textContent = 'Stopped';
+      console.log('✅ Recording stopped successfully');
+      
+    } catch (e) {
+      console.error('🚨 Stop recording error:', e);
+      cleanup(); // Ensure cleanup even on error
+    }
+  }
+
+  function cleanup() {
+    // Stop RMS monitoring
+    stopRmsLoop();
+    
+    // Clean up WebAudio
+    if (sourceNode) {
+      sourceNode.disconnect();
+      sourceNode = null;
+    }
+    if (audioCtx) {
+      audioCtx.close();
+      audioCtx = null;
+    }
+    
+    // Clean up media stream
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(track => track.stop());
+      mediaStream = null;
+    }
+    
+    // Reset UI
+    if (startBtn()) startBtn().disabled = false;
+    if (stopBtn()) stopBtn().disabled = true;
+    
+    analyser = null;
+    timeData = null;
+    mediaRecorder = null;
+  }
+
+  // --- Utility Functions ---
+  function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  }
+
+  function showError(message) {
+    console.error('🚨 Error:', message);
+    
+    // Try to show in UI if toast system exists
+    if (window.ToastNotificationSystem) {
+      new ToastNotificationSystem().showError(message);
+    } else {
+      // Fallback to alert
+      alert(message);
+    }
+  }
+
+  function createSession() {
+    if (!socket || !socket.connected) {
+      console.warn('⚠️ Cannot create session - socket not connected');
+      return;
+    }
+    
+    console.log('🆕 Creating new session...');
+    socket.emit('create_session', {
+      title: 'Live Recording Session',
+      language: document.getElementById('sessionLanguage')?.value || 'en'
+    });
+  }
+
+  // --- Event Binding ---
+  function bindEvents() {
+    if (window._minaRecordingBound) {
+      console.log('⚠️ Recording events already bound, skipping...');
+      return;
+    }
+    
+    console.log('🔗 Binding recording UI events...');
+    
+    const start = startBtn();
+    const stop = stopBtn();
+    
+    if (start) {
+      start.addEventListener('click', () => {
+        // Create session first if needed
+        if (!CURRENT_SESSION_ID) {
+          createSession();
+          // Wait a moment for session creation, then start
+          setTimeout(startRecording, 500);
+        } else {
+          startRecording();
+        }
+      });
+    }
+    
+    if (stop) {
+      stop.addEventListener('click', stopRecording);
+    }
+    
+    // Clear transcription button
+    const clearBtn = document.getElementById('clearTranscription');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        const finalDiv = document.getElementById('finalText');
+        const interimDiv = document.getElementById('interimText');
+        if (finalDiv) finalDiv.innerHTML = '';
+        if (interimDiv) {
+          interimDiv.textContent = '';
+          interimDiv.style.display = 'none';
+        }
+        console.log('🗑️ Transcription cleared');
+      });
+    }
+    
+    window._minaRecordingBound = true;
+    console.log('✅ Recording events bound successfully');
+  }
+
+  // --- Initialization ---
+  function initialize() {
+    console.log('🚀 INT-LIVE-I2: Initializing enhanced recording system...');
+    
+    // Initialize socket connection
+    initSocket();
+    
+    // Bind UI events once DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bindEvents);
+    } else {
+      bindEvents();
+    }
+    
+    console.log('✅ Recording system initialized');
+  }
+
+  // Auto-initialize
+  initialize();
+
+})();
