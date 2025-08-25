@@ -18,6 +18,8 @@ from .audio_processor import AudioProcessor
 from models.session import Session
 from models.segment import Segment
 from app_refactored import db
+from datetime import datetime
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
