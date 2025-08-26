@@ -238,8 +238,6 @@
       }
     });
           
-          finalDiv.appendChild(segmentDiv);
-          
           // Auto-scroll if enabled
           const autoScroll = document.getElementById('autoScroll');
           if (autoScroll && autoScroll.checked) {
