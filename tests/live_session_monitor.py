@@ -56,7 +56,16 @@ class LiveSessionMonitor:
         @self.sio.on('joined_session')
         async def on_joined_session(data):
             self.session_id = data.get('session_id')
-            print(f"🏠 Monitoring session: {self.session_id}")
+            print(f"🏠 Now monitoring session: {self.session_id}")
+            if not self.session_start_time:
+                self.session_start_time = time.time()
+        
+        @self.sio.on('session_created')
+        async def on_session_created(data):
+            self.session_id = data.get('session_id')
+            print(f"🆕 Session created: {self.session_id}")
+            if not self.session_start_time:
+                self.session_start_time = time.time()
         
         @self.sio.on('interim_transcript')
         async def on_interim_transcript(data):
@@ -128,27 +137,24 @@ class LiveSessionMonitor:
             if target_session_id:
                 # Monitor specific session
                 self.session_id = target_session_id
+                print(f"🎯 Monitoring existing session: {self.session_id}")
             else:
-                # Create new session for monitoring
-                response = requests.post(f"{self.server_url}/api/sessions")
-                session_data = response.json()
-                self.session_id = session_data['session_id']
-            
-            # Join session
-            await self.sio.emit('join_session', {'session_id': self.session_id})
-            await asyncio.sleep(2)
+                # We'll join any session that gets created
+                print("👀 Waiting for session to be created via web interface...")
+                print("📋 Go to /live page and click 'Start Recording' now!")
             
             self.session_start_time = time.time()
             
-            print(f"🎤 Ready to monitor session: {self.session_id}")
-            print("📋 Instructions:")
+            print("🔍 Monitoring active - watching for transcription events...")
+            print()
+            print("📋 INSTRUCTIONS:")
             print("   1. Go to /live page in your browser")
             print("   2. Click 'Start Recording' to begin live transcription")
             print("   3. Speak naturally for up to 2 minutes")
-            print("   4. Monitor will track all transcription events")
+            print("   4. Monitor will automatically track all events")
             print("   5. Press Ctrl+C here when done to generate report")
             print()
-            print("🔍 Monitoring active - watching for transcription events...")
+            print("⏳ Waiting for recording to start...")
             
             # Monitor until interrupted
             try:
