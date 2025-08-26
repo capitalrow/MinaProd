@@ -3,15 +3,15 @@
 
 import os
 
-# Note: monkey_patch is handled automatically by gunicorn eventlet worker
+# Note: Monkey patch handled by eventlet worker automatically
 
 # Server socket
 bind = "0.0.0.0:5000"
 backlog = 2048
 
-# Worker processes - SCALABILITY: Multiple workers for better performance
-# Note: EventletWorker handles WebSocket connections efficiently with Redis scaling
-workers = min(4, (os.cpu_count() or 1) + 1)  # CPU cores + 1, max 4
+# Worker processes - Socket.IO requires single worker without Redis coordination
+# TODO: Enable multiple workers after Redis Socket.IO adapter is configured
+workers = 1
 worker_class = "eventlet"
 worker_connections = 1000
 
@@ -33,7 +33,7 @@ access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
 proc_name = "mina_app"
 
 # Server mechanics  
-preload_app = True  # PRODUCTION: Enable for better memory usage with multiple workers
+preload_app = False  # CRITICAL: Must be False for Socket.IO compatibility
 reload = False  # Set to False for production
 reuse_port = True
 
