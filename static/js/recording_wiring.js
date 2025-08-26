@@ -193,9 +193,16 @@
       showNotification('Reconnected successfully!', 'success', 2000);
     });
     
-    // 🔥 CRITICAL FIX: Add transcription event listeners
+    // 🔥 CONSOLIDATED TRANSCRIPTION EVENT HANDLERS
     socket.on('interim_transcript', (data) => {
-      console.log('📝 Interim transcript received:', data.text);
+      console.log('📝 Interim transcript received:', data.text?.substring(0, 50) + '...');
+      
+      // Check if interim display is enabled
+      const showInterimCheckbox = document.getElementById('showInterim');
+      if (!showInterimCheckbox || !showInterimCheckbox.checked) {
+        return; // Skip interim updates if disabled
+      }
+      
       updateTranscriptionUI(data, false);
     });
     
@@ -204,11 +211,15 @@
       updateTranscriptionUI(data, true);
     });
     
-    socket.on('audio_received', (data) => {
-      console.log('🎵 Audio chunk acknowledged:', data.chunk_id, 'Processing time:', data.processing_time_ms + 'ms');
+    socket.on('transcription_segment', (data) => {
+      console.log('📄 Transcription segment:', data);
+      // Handle both interim and final based on data.is_final
+      updateTranscriptionUI(data, data.is_final || false);
     });
     
-    // Removed duplicate error handler - consolidated above
+    socket.on('audio_acknowledged', (data) => {
+      console.log('📨 ACK #' + data.chunk_id + ': ' + data.processing_time_ms + 'ms, mode:', data.mode || 'unknown');
+    });
     
     socket.on('reconnect', (attemptNumber) => {
       console.log(`🔄 Reconnected after ${attemptNumber} attempts`);
@@ -226,40 +237,6 @@
         showNotification(`Reconnecting... (${connectionHealth.reconnectAttempts}/${connectionHealth.maxReconnectAttempts})`, 'warning', 2000);
       }
     });
-
-    // --- Transcription Event Handlers ---
-    socket.on('interim_transcript', (payload) => {
-      console.log('📝 Interim transcript:', payload.text?.substring(0, 50) + '...');
-      
-      const interimDiv = document.getElementById('interimText');
-      if (interimDiv && payload.text) {
-        interimDiv.textContent = payload.text;
-        interimDiv.style.display = 'block';
-        
-        // Add confidence styling
-        if (payload.avg_confidence !== undefined) {
-          const conf = payload.avg_confidence;
-          if (conf > 0.7) {
-            interimDiv.className = 'transcription-segment interim confidence-high';
-          } else if (conf > 0.5) {
-            interimDiv.className = 'transcription-segment interim confidence-medium';
-          } else {
-            interimDiv.className = 'transcription-segment interim confidence-low';
-          }
-        }
-      }
-    });
-
-    socket.on('final_transcript', (payload) => {
-      console.log('✅ Final transcript:', payload.text?.substring(0, 50) + '...');
-      
-      // 🚀 ADVANCED: Apply AI quality enhancement
-      const qualityAnalysis = qualityEnhancer.analyzeTranscriptQuality({
-        text: payload.text,
-        confidence: payload.avg_confidence
-      });
-      
-      console.log('🧠 Quality Analysis:', qualityAnalysis);
       
       // Show quality insights if needed
       if (qualityAnalysis.recommendation !== 'continue' && qualityAnalysis.recommendation !== 'excellent') {
@@ -2061,29 +2038,57 @@
       return;
     }
     
+    // Handle missing or empty text
+    if (!data.text || data.text.trim() === '') {
+      console.log('📝 Empty transcription text, skipping update');
+      return;
+    }
+    
     if (isFinal) {
-      // Remove any interim text
+      // Remove any interim text before adding final
       const interimElements = container.querySelectorAll('.interim-transcript');
       interimElements.forEach(el => el.remove());
       
       // Add final transcript segment
       const finalElement = document.createElement('div');
       finalElement.className = 'transcription-segment final-transcript mb-2';
+      finalElement.setAttribute('data-segment-id', data.segment_id || Date.now());
+      
+      const confidence = Math.round((data.avg_confidence || data.confidence || 0) * 100);
+      const confidenceClass = confidence > 70 ? 'confidence-high' : confidence > 50 ? 'confidence-medium' : 'confidence-low';
+      
       finalElement.innerHTML = `
-        <div class="segment-content">${data.text}</div>
+        <div class="segment-content ${confidenceClass}">${escapeHtml(data.text)}</div>
         <div class="segment-meta text-muted small">
-          <span class="confidence">Confidence: ${Math.round((data.avg_confidence || data.confidence || 0) * 100)}%</span>
+          <span class="confidence">Confidence: ${confidence}%</span>
           <span class="timestamp ms-2">${new Date().toLocaleTimeString()}</span>
+          ${data.speaker ? `<span class="speaker ms-2">Speaker: ${data.speaker}</span>` : ''}
         </div>
       `;
       container.appendChild(finalElement);
       
-      // Update "Ready to transcribe" message
-      const readyMessage = container.querySelector('.text-center');
+      // Hide "Ready to transcribe" message
+      const readyMessage = container.querySelector('.text-center.text-muted');
       if (readyMessage && readyMessage.textContent.includes('Ready to transcribe')) {
         readyMessage.style.display = 'none';
       }
+      
+      // 📊 Track successful transcription in telemetry
+      if (window._minaTelemetry) {
+        window._minaTelemetry.reportTranscriptionSegment({
+          isFinal: true,
+          confidence: confidence,
+          textLength: data.text.length
+        });
+      }
+      
     } else {
+      // Handle interim results - only if "Show interim" is enabled
+      const showInterimCheckbox = document.getElementById('showInterim');
+      if (!showInterimCheckbox || !showInterimCheckbox.checked) {
+        return; // Skip interim updates if disabled
+      }
+      
       // Update or add interim transcript
       let interimElement = container.querySelector('.interim-transcript');
       if (!interimElement) {
@@ -2091,29 +2096,61 @@
         interimElement.className = 'transcription-segment interim-transcript mb-2';
         container.appendChild(interimElement);
       }
+      
+      const confidence = Math.round((data.avg_confidence || data.confidence || 0) * 100);
       interimElement.innerHTML = `
-        <div class="segment-content text-primary">${data.text}</div>
+        <div class="segment-content text-primary" style="font-style: italic;">${escapeHtml(data.text)}</div>
         <div class="segment-meta text-muted small">
-          <span class="confidence">Confidence: ${Math.round((data.avg_confidence || data.confidence || 0) * 100)}%</span>
-          <span class="status ms-2">Interim</span>
+          <span class="confidence">Confidence: ${confidence}%</span>
+          <span class="status ms-2"><i class="fas fa-spinner fa-spin me-1"></i>Processing...</span>
         </div>
       `;
       
       // Hide "Ready to transcribe" message
-      const readyMessage = container.querySelector('.text-center');
+      const readyMessage = container.querySelector('.text-center.text-muted');
       if (readyMessage && readyMessage.textContent.includes('Ready to transcribe')) {
         readyMessage.style.display = 'none';
       }
     }
     
     // Auto-scroll if enabled
-    const autoScroll = document.getElementById('autoScroll');
-    if (autoScroll && autoScroll.checked) {
+    const autoScrollCheckbox = document.getElementById('autoScroll');
+    if (autoScrollCheckbox && autoScrollCheckbox.checked) {
       container.scrollTop = container.scrollHeight;
     }
     
-    // Update stats
-    updateTranscriptionStats(data, isFinal);
+    // Update session stats if available
+    if (data.session_stats) {
+      updateSessionStats(data.session_stats);
+    }
+  }
+  
+  // Helper function to escape HTML for security
+  function escapeHtml(text) {
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+  }
+  
+  // Update session statistics display
+  function updateSessionStats(stats) {
+    const elements = {
+      'sessionId': stats.session_id,
+      'segmentsCount': stats.segments_count || 0,
+      'avgConfidence': Math.round((stats.avg_confidence || 0) * 100) + '%',
+      'processingTime': (stats.processing_time || 0) + 'ms',
+      'chunkCount': stats.chunk_count || 0
+    };
+    
+    Object.entries(elements).forEach(([id, value]) => {
+      const element = document.getElementById(id);
+      if (element) element.textContent = value;
+    });
   }
   
   function updateTranscriptionStats(data, isFinal) {
