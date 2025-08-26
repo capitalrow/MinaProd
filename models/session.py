@@ -4,11 +4,17 @@ SQLAlchemy 2.0-safe model for meeting sessions with durable storage.
 """
 
 import uuid
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, DateTime, Text, JSON, Boolean, Float, func
 from .base import Base
+
+# Forward reference for type checking
+if TYPE_CHECKING:
+    from .segment import Segment
+    from .shared_link import SharedLink  
+    from .metrics import ChunkMetric, SessionMetric
 
 class Session(Base):
     """
@@ -42,6 +48,16 @@ class Session(Base):
     # M4: Shared links relationship  
     shared_links: Mapped[list["SharedLink"]] = relationship(
         back_populates="session", cascade="all, delete-orphan"
+    )
+    
+    # 🎯 OBSERVER: Metrics relationships for comprehensive observability
+    # TODO: OBSERVER-DASHBOARD-PIN - Once Mina app is stable, expose session_scores,
+    # latency metrics, and text quality metrics in Founder Dashboard for visibility.
+    chunk_metrics: Mapped[list["ChunkMetric"]] = relationship(
+        back_populates="session", cascade="all, delete-orphan"
+    )
+    session_metrics: Mapped[Optional["SessionMetric"]] = relationship(
+        back_populates="session", cascade="all, delete-orphan", uselist=False
     )
     
     def __repr__(self):

@@ -65,6 +65,7 @@ def create_app(config_class=Config):
     from routes.summary import summary_bp
     from routes.sharing import sharing_bp
     from routes.export import export_bp
+    from routes.internal_metrics import internal_metrics_bp
     from routes.websocket import register_websocket_handlers
     
     app.register_blueprint(health_bp)
@@ -73,6 +74,7 @@ def create_app(config_class=Config):
     app.register_blueprint(summary_bp)
     app.register_blueprint(sharing_bp)
     app.register_blueprint(export_bp)
+    app.register_blueprint(internal_metrics_bp)
     
     # Register Socket.IO handlers
     register_websocket_handlers(socketio)
@@ -81,7 +83,7 @@ def create_app(config_class=Config):
     with app.app_context():
         # Import M2 + M3 models with new SQLAlchemy 2.0 Base
         from models.base import Base
-        from models import Session, Segment, Summary, SharedLink  # noqa: F401
+        from models import Session, Segment, Summary, SharedLink, ChunkMetric, SessionMetric  # noqa: F401
         
         # Create tables if they don't exist (for development)
         if app.config.get('DEVELOPMENT', True):

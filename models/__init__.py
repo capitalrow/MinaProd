@@ -8,5 +8,6 @@ from .session import Session
 from .segment import Segment
 from .summary import Summary
 from .shared_link import SharedLink
+from .metrics import ChunkMetric, SessionMetric
 
-__all__ = ['Base', 'Session', 'Segment', 'Summary', 'SharedLink']
+__all__ = ['Base', 'Session', 'Segment', 'Summary', 'SharedLink', 'ChunkMetric', 'SessionMetric']
