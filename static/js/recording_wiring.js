@@ -1536,6 +1536,7 @@
       console.log('🎤 Requesting microphone access...');
       
       try {
+        console.log('🔍 Checking microphone permissions and device capabilities...');
         // 📱 MOBILE-OPTIMIZED: Apply device-specific audio constraints
         const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
@@ -1557,6 +1558,11 @@
         mediaStream = await navigator.mediaDevices.getUserMedia(audioConstraints);
         
         console.log('✅ Microphone access granted');
+        console.log('🎤 Microphone stream details:', {
+          tracks: mediaStream.getAudioTracks().length,
+          active: mediaStream.active,
+          id: mediaStream.id
+        });
         
       } catch (permissionError) {
         // 🔥 ENHANCED: Comprehensive microphone permission error handling
@@ -1736,6 +1742,13 @@
       
       // Clean up on error
       cleanup();
+      
+      // 🔥 CRITICAL FIX: Reset button state on error
+      if (startBtn()) {
+        startBtn().disabled = false;
+        startBtn().removeAttribute('processing');
+      }
+      window._recordingInProgress = false;
     }
   }
 
