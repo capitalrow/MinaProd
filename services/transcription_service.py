@@ -42,8 +42,8 @@ class TranscriptionServiceConfig:
     """Configuration for transcription service."""
     # VAD configuration
     vad_sensitivity: float = 0.5
-    vad_min_speech_duration: int = 500  # ms - OPTIMIZED for faster first interim
-    vad_min_silence_duration: int = 500  # ms
+    vad_min_speech_duration: int = 300  # ms - ITERATION 2: Further optimized for faster response
+    vad_min_silence_duration: int = 400  # ms
     
     # Audio processing
     sample_rate: int = 16000
@@ -52,7 +52,7 @@ class TranscriptionServiceConfig:
     
     # Transcription settings
     language: str = "en"
-    min_confidence: float = 0.4  # 🔥 CRITICAL FIX: Reduced from 0.7 to 0.4 - less aggressive filtering
+    min_confidence: float = 0.35  # 🔥 ITERATION 2: Further reduced for more frequent interims
     enable_speaker_detection: bool = True
     enable_sentiment_analysis: bool = False
     
@@ -71,12 +71,12 @@ class TranscriptionServiceConfig:
     streaming_mode: str = "realtime"  # realtime, batch, adaptive
     quality_monitoring: bool = True
     bandwidth_adaptation: bool = True
-    latency_target_ms: int = 200
+    latency_target_ms: int = 150  # ITERATION 2: More aggressive latency target
     transmission_optimization: bool = True
     buffer_size_adaptation: bool = True
     
     # 🔥 INT-LIVE-I3: Interim throttling and endpointing
-    interim_throttle_ms: int = 200  # Throttle interims to ~200ms - OPTIMIZED for faster response
+    interim_throttle_ms: int = 150  # Throttle interims to ~150ms - ITERATION 2: More aggressive
     min_token_diff: int = 5  # Minimum token difference to emit interim
     punctuation_boundary_chars: str = '.!?;:'
     min_tokens_for_punctuation_final: int = 3  # Min tokens before punctuation triggers final
