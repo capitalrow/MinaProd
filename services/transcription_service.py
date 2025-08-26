@@ -1256,14 +1256,21 @@ class TranscriptionService:
             logger.debug(f"VAD Result for session {session_id}: is_speech={vad_result.is_speech}, confidence={vad_result.confidence}")
             
             # Process with Whisper API
-            logger.debug(f"Sending audio to Whisper API for session {session_id}, chunk size: {len(audio_data)} bytes")
+            logger.info(f"🎤 WHISPER API CALL: Sending audio to Whisper for session {session_id}, chunk size: {len(audio_data)} bytes")
             res = self.whisper_service.transcribe_chunk_sync(
                 audio_data=audio_data,
                 session_id=session_id
             )
             
-            if not res or not res.get('text'):
+            # 🔥 CRITICAL DEBUG: Log Whisper API response
+            if not res:
+                logger.warning(f"⚠️ WHISPER API returned None for session {session_id} (audio: {len(audio_data)} bytes)")
                 return None
+            elif not res.get('text'):
+                logger.warning(f"⚠️ WHISPER API returned empty text for session {session_id}: {res}")
+                return None
+            else:
+                logger.info(f"✅ WHISPER SUCCESS: Got text '{res['text'][:100]}...' for session {session_id}")
                 
             # 2) CRITICAL QUALITY FILTERING - Apply before updating buffer
             text = res['text'].strip()
