@@ -1,7 +1,7 @@
 import time
 import json
 from flask import request
-from flask_socketio import Namespace, emit, join_room, disconnect
+from flask_socketio import emit, join_room, disconnect
 from app import socketio, db
 import logging
 
