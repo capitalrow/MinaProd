@@ -1,0 +1,281 @@
+Chin — got it. If no interim shows during recording and no final after stop, we’re in “wiring broken” territory, not just quality. Let’s treat this like a production incident and drive it to green.
+
+Below is a concise diagnosis → fixes plan you can hand to your Replit agent. It isolates the fault in <10 minutes and hardens the path so we don’t regress.
+
+
+---
+
+Likely break points (ranked)
+
+1. WS→service API mismatch: audio_chunk handler passes {mime_type, rms, is_final_chunk} but process_audio_sync(...) doesn’t accept/use them ⇒ exception, no emits.
+
+
+2. Missing/invalid session_id: client never creates/sets session, or doesn’t join_session, so server rejects frames (“Missing session_id”).
+
+
+3. Payload shape drift: client sends audioDataB64 or binary; server expects audio_data_b64 base64.
+
+
+4. Handler not firing: wrong event name/namespace, or CORS/origin block; socket connects but server never sees audio_chunk.
+
+
+5. Finalization not triggered: client never sends is_final_chunk=true on stop; server waits for VAD tail forever.
+
+
+6. Silent exceptions: no try/except around decode/transcribe; errors swallowed, UI never notified.
+
+
+
+We’ll cover all six.
+
+
+---
+
+Do-this-now: Break/Fix Pack — LIVE-WIRE-R3
+
+> Title: LIVE-WIRE-R3 — Restore end-to-end live transcription (WS schema, session join, service signature, acks, stub mode)
+
+
+
+A) Add a 60-second “wiring self-test” switch
+
+In .env.example add:
+
+WS_DEBUG=true
+STUB_TRANSCRIPTION=true
+
+In routes/websocket.py top-level:
+
+WS_DEBUG = os.getenv("WS_DEBUG","false").lower()=="true"
+STUB_TRANSCRIPTION = os.getenv("STUB_TRANSCRIPTION","false").lower()=="true"
+
+B) Harden audio_chunk handler (schema + acks + stub)
+
+In routes/websocket.py:
+
+from time import time
+from flask_socketio import emit, join_room
+from services.audio_io import decode_audio_b64, AudioChunkTooLarge, AudioChunkDecodeError
+from services.transcription_service import TranscriptionService
+tsvc = TranscriptionService()
+
+_CHUNK_COUNT = {}  # per session counters for debug
+
+@socketio.on('join_session')
+def join_session(data):
+    sid = (data or {}).get('session_id')
+    if not sid:
+        emit('error', {'message': 'Missing session_id in join_session'})
+        return
+    join_room(sid)
+    emit('joined_session', {'session_id': sid})
+
+@socketio.on('audio_chunk')
+def audio_chunk(data):
+    started = time()
+    try:
+        payload = data or {}
+        sid = payload.get('session_id')
+        if not sid:
+            emit('error', {'message': 'Missing session_id'}); return
+
+        # schema
+        b64 = payload.get('audio_data_b64') or ""
+        is_final = bool(payload.get('is_final_chunk', False))
+        mime = payload.get('mime_type') or ""
+        rms = float(payload.get('rms') or 0.0)
+        ts_client = payload.get('ts_client')
+
+        # rate counters
+        c = _CHUNK_COUNT.get(sid, 0) + 1
+        _CHUNK_COUNT[sid] = c
+
+        raw = b""
+        if b64:
+            raw = decode_audio_b64(b64)
+
+        # STUB mode to test wiring independent of Whisper
+        if STUB_TRANSCRIPTION:
+            if is_final:
+                emit('final_transcript', {'session_id': sid, 'text': 'Final stub transcript.'}, to=sid)
+            else:
+                # throttle: emit every ~400ms
+                if c % 1 == 0:
+                    emit('interim_transcript', {'session_id': sid, 'text': f'Stub interim #{c}'}, to=sid)
+            emit('ack', {'ok': True, 'seq': c}); return
+
+        # REAL path
+        result = tsvc.process_audio_sync(
+            session_id=sid,
+            audio_data=raw,
+            timestamp=ts_client,
+            mime_type=mime,
+            client_rms=rms,
+            is_final_signal=is_final,
+        )
+        # result may be None (throttled)
+        if result:
+            tr = result.get('transcription', {})
+            text = tr.get('text', '')
+            if tr.get('is_final'):
+                emit('final_transcript', {'session_id': sid, 'text': text}, to=sid)
+            else:
+                emit('interim_transcript', {'session_id': sid, 'text': text}, to=sid)
+
+        emit('ack', {'ok': True, 'seq': c, 'latency_ms': int((time()-started)*1000)})
+    except (AudioChunkTooLarge, AudioChunkDecodeError) as e:
+        emit('error', {'message': f'audio_chunk decode: {str(e)}'})
+    except Exception as e:
+        # surface server error to UI for now
+        emit('error', {'message': f'server_exception: {type(e).__name__}'})
+        raise
+
+> Why: This guarantees (1) handler fires, (2) schema is validated, (3) client sees ack/error. The STUB proves UI wiring even if Whisper fails.
+
+
+
+C) Align service signature (remove the “unexpected kwarg” bomb)
+
+In services/transcription_service.py, update signature and use flags:
+
+def process_audio_sync(
+    self,
+    session_id: str,
+    audio_data: bytes,
+    timestamp: Optional[float] = None,
+    mime_type: Optional[str] = None,
+    client_rms: Optional[float] = None,
+    is_final_signal: bool = False,
+) -> Optional[Dict[str, Any]]:
+    # store client_rms for adaptive gating if provided
+    if client_rms is not None:
+        self._state(session_id)['client_rms'] = float(client_rms)
+    # feed audio_data into buffer; if empty and is_final_signal, just flush
+    if is_final_signal:
+        return self._finalize_and_persist(session_id)
+    # else do interim path; throttle inside service and return {'transcription': {'text': ..., 'is_final': False}}
+
+> If you prefer, drop the extra kwargs in the WS call instead. But do not leave the mismatch.
+
+
+
+D) Ensure session creation & join happen before recording
+
+In static/js/recording_wiring.js:
+
+On Start click:
+
+1. POST /api/sessions (or your route) → get { session_id }.
+
+
+2. CURRENT_SESSION_ID = ...
+
+
+3. socket.emit('join_session', { session_id: CURRENT_SESSION_ID }) and wait for joined_session.
+
+
+4. Only then start getUserMedia + MediaRecorder.start(300).
+
+
+
+For every audio_chunk emit, include:
+
+
+socket.emit('audio_chunk', payload, (ack) => {
+  // optional: display ack.ok or error
+});
+
+On Stop: send one finalization frame:
+
+
+socket.emit('audio_chunk', { session_id: CURRENT_SESSION_ID, is_final_chunk: true, audio_data_b64: null, mime_type: null, rms: 0, ts_client: Date.now() });
+socket.emit('end_of_stream', { session_id: CURRENT_SESSION_ID });
+
+E) Surface WS errors in the live UI
+
+Add a listener so you actually see server-side errors:
+
+socket.on('error', (e) => {
+  const el = document.getElementById('wsStatus');
+  el && (el.textContent = `WS error: ${e?.message || e}`);
+});
+socket.on('ack', (a) => {
+  // optional: increment a counter in your debug panel
+});
+
+F) One-line readiness fixes we’ve seen break things
+
+Default is_final_chunk: must be False on the server (data.get('is_final_chunk', False)).
+
+Field names: client must send audio_data_b64 (exact), not audioDataB64 or raw binary unless you handle it.
+
+Ports: client connects to same-origin /socket.io (no hardcoded :8000 if Replit is 5000).
+
+Gunicorn: -k eventlet (already fixed), timeout 75, keep-alive 25.
+
+
+
+---
+
+10-minute verification loop
+
+1. Set STUB_TRANSCRIPTION=true and reload /live.
+
+
+2. Open DevTools → Network → WS; click Start:
+
+Expect join_session → joined_session.
+
+See audio_chunk frames going out with session_id, audio_data_b64 present (~3–4/sec).
+
+See ack and interim_transcript events coming in (stub text).
+
+
+
+3. Click Stop:
+
+Expect one final_transcript event (stub final).
+
+
+
+4. Turn STUB_TRANSCRIPTION=false, test again:
+
+Expect real interims/final. If errors, you now see a WS error message in UI with exception type.
+
+
+
+
+If step (2) shows no outgoing frames → front-end recording path is broken (permissions / MediaRecorder). If outgoing frames exist but no acks → server handler not firing (event name/namespace mismatch or server error at import time). If acks but no interims/final and no errors → service returns None (throttled or exception swallowed) → check server logs.
+
+
+---
+
+Acceptance (for the agent)
+
+With STUB_TRANSCRIPTION=true, interims update ~2–4/sec and a final appears on stop.
+
+With real transcription, at least some interim text appears and a final appears on stop (quality tuning can follow).
+
+Live page shows server errors when they occur (not silent).
+
+No TypeError: unexpected keyword argument in server logs.
+
+audio_chunk payload schema is consistent (audio_data_b64, mime_type, rms, is_final_chunk, session_id).
+
+
+
+---
+
+Why this is the best approach right now
+
+It separates wiring from model with a stub switch, so we can prove the UI/WS path regardless of Whisper.
+
+It adds acks and error surfacing so failures stop being invisible.
+
+It locks the schema and aligns signatures, the two most common causes of “nothing shows up”.
+
+It preserves your current architecture (Flask+Socket.IO+SQLAlchemy) and gets us back to reliable live updates fast.
+
+
+If you want, I’ll also hand you a tiny Playwright smoke that clicks Start, waits for an interim_transcript, clicks Stop, and expects one final_transcript — once the above lands.
+
