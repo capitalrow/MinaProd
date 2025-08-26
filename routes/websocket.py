@@ -53,7 +53,8 @@ def timeout_context(seconds):
 @socketio.on('connect')
 def on_connect():
     """Handle client connection with enhanced tracking."""
-    client_id = request.sid
+    from flask_socketio import request as socketio_request
+    client_id = socketio_request.sid
     connection_time = time.time()
     
     logger.info({
@@ -61,7 +62,7 @@ def on_connect():
         "client_id": client_id,
         "timestamp": connection_time,
         "user_agent": request.headers.get('User-Agent', 'Unknown'),
-        "remote_addr": request.remote_addr
+        "remote_addr": getattr(request, 'remote_addr', 'unknown')
     })
     
     emit('connected', {
@@ -73,7 +74,8 @@ def on_connect():
 @socketio.on('disconnect')
 def on_disconnect(disconnect_reason=None):
     """Handle client disconnection with cleanup."""
-    client_id = request.sid
+    from flask_socketio import request as socketio_request
+    client_id = socketio_request.sid
     disconnect_time = time.time()
     
     logger.info({
@@ -164,7 +166,8 @@ def audio_chunk(data):
     }
     """
     start_time = time.time()
-    client_id = request.sid
+    from flask_socketio import request as socketio_request
+    client_id = socketio_request.sid
     payload = data or {}
     
     # Extract and validate payload
@@ -310,9 +313,9 @@ def audio_chunk(data):
     }
     
     if is_final:
-        socketio.emit('final_transcript', transcript_payload, to=session_id)
+        socketio.emit('final_transcript', transcript_payload, room=session_id)
     else:
-        socketio.emit('interim_transcript', transcript_payload, to=session_id)
+        socketio.emit('interim_transcript', transcript_payload, room=session_id)
 
 @socketio.on('end_of_stream')
 def end_of_stream(data):
