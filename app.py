@@ -64,6 +64,7 @@ def create_app(config_class=Config):
     from routes.summary import summary_bp
     from routes.sharing import sharing_bp
     from routes.export import export_bp
+    from routes.api_performance import api_performance
     from routes.websocket import register_websocket_handlers
     
     app.register_blueprint(health_bp)
@@ -72,6 +73,7 @@ def create_app(config_class=Config):
     app.register_blueprint(summary_bp)
     app.register_blueprint(sharing_bp)
     app.register_blueprint(export_bp)
+    app.register_blueprint(api_performance)
     
     # Register Socket.IO handlers
     register_websocket_handlers(socketio)

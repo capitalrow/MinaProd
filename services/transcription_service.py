@@ -136,6 +136,18 @@ class TranscriptionService:
         self.min_interim_diff_chars = 5  # Minimum character difference for interim emit
         self.punctuation_marks = {'.', '!', '?', ';', ':'}  # Marks that trigger boundaries
         
+        # Initialize performance monitoring and QA pipeline
+        try:
+            from .performance_monitor import performance_monitor
+            from .qa_pipeline import qa_pipeline
+            self.performance_monitor = performance_monitor
+            self.qa_pipeline = qa_pipeline
+            logger.info("Performance monitoring and QA pipeline initialized")
+        except ImportError as e:
+            logger.warning(f"Could not initialize monitoring services: {e}")
+            self.performance_monitor = None
+            self.qa_pipeline = None
+        
         logger.info(f"Transcription service initialized with config: {asdict(self.config)}")
     
     def _compute_adaptive_confidence(self, vad_result: Optional[Dict[str, Any]]) -> float:
@@ -1137,6 +1149,13 @@ class TranscriptionService:
         Synchronous session startup for immediate session registration.
         """
         try:
+            # Initialize performance monitoring for this session
+            if self.performance_monitor:
+                self.performance_monitor.start_session_monitoring(session_id)
+            
+            # Initialize QA pipeline for this session
+            if self.qa_pipeline:
+                self.qa_pipeline.start_qa_session(session_id)
             if session_id in self.active_sessions:
                 logger.info(f"Session {session_id} already active")
                 return

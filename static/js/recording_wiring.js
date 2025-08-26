@@ -25,22 +25,47 @@
   const micStatus = () => document.getElementById('micStatus');
   const inputLevel = () => document.getElementById('inputLevel');
 
-  // --- Socket Management -----------------------------------------------------------
+  // --- Enhanced Socket Management with Reliability -----------------------------------------------------------
+  
+  // Connection health monitoring state
+  let connectionHealth = {
+    isConnected: false,
+    lastHeartbeat: Date.now(),
+    reconnectAttempts: 0,
+    maxReconnectAttempts: 5,
+    heartbeatInterval: null
+  };
+  
   function initSocket() {
     if (socket && socket.connected) return;
     
-    console.log('🔥 INT-LIVE-I2: Initializing socket with proper event handlers...');
+    console.log('🔥 ENHANCED: Initializing socket with reliability features...');
     socket = io({ 
       transports: ['websocket', 'polling'],
       forceNew: false,
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      randomizationFactor: 0.5,
+      timeout: 20000
     });
+    
+    setupConnectionHealthMonitoring();
 
     socket.on('connect', () => {
-      console.log('✅ Socket connected');
-      if (wsStatus()) wsStatus().textContent = 'Connected';
+      console.log('✅ Socket connected - Enhanced reliability active');
+      connectionHealth.isConnected = true;
+      connectionHealth.reconnectAttempts = 0;
+      connectionHealth.lastHeartbeat = Date.now();
+      
+      if (wsStatus()) {
+        wsStatus().textContent = 'Connected';
+        wsStatus().className = 'status-indicator connected';
+      }
+      
+      // Show success message briefly
+      showNotification('Connected to Mina transcription service', 'success', 2000);
       
       // Auto-join session if we have one
       if (CURRENT_SESSION_ID) {
@@ -49,14 +74,48 @@
       }
     });
 
-    socket.on('disconnect', () => {
-      console.log('❌ Socket disconnected');
-      if (wsStatus()) wsStatus().textContent = 'Disconnected';
+    socket.on('disconnect', (reason) => {
+      console.log(`❌ Socket disconnected: ${reason}`);
+      connectionHealth.isConnected = false;
+      
+      if (wsStatus()) {
+        wsStatus().textContent = `Disconnected (${reason})`;
+        wsStatus().className = 'status-indicator disconnected';
+      }
+      
+      // Show appropriate user message
+      if (reason === 'io server disconnect') {
+        showNotification('Connection closed by server. Please refresh the page.', 'error', 5000);
+      } else {
+        showNotification('Connection lost. Attempting to reconnect...', 'warning', 3000);
+      }
     });
 
     socket.on('error', (error) => {
       console.error('🚨 Socket error:', error);
-      if (wsStatus()) wsStatus().textContent = 'Error';
+      if (wsStatus()) {
+        wsStatus().textContent = `Error: ${error}`;
+        wsStatus().className = 'status-indicator error';
+      }
+      
+      showNotification(`Connection error: ${error}`, 'error', 4000);
+    });
+    
+    socket.on('reconnect', (attemptNumber) => {
+      console.log(`🔄 Reconnected after ${attemptNumber} attempts`);
+      connectionHealth.reconnectAttempts = attemptNumber;
+      showNotification(`Reconnected successfully!`, 'success', 2000);
+    });
+    
+    socket.on('reconnect_error', (error) => {
+      console.error('🔄❌ Reconnection failed:', error);
+      connectionHealth.reconnectAttempts++;
+      
+      if (connectionHealth.reconnectAttempts >= connectionHealth.maxReconnectAttempts) {
+        showNotification('Unable to reconnect. Please refresh the page.', 'error', 10000);
+      } else {
+        showNotification(`Reconnecting... (${connectionHealth.reconnectAttempts}/${connectionHealth.maxReconnectAttempts})`, 'warning', 2000);
+      }
     });
 
     // --- Transcription Event Handlers ---
@@ -148,6 +207,97 @@
       console.error('🚨 Processing error:', data.error);
       showError(`Processing error: ${data.error}`);
     });
+  }
+  
+  // --- Connection Health Monitoring ---
+  function setupConnectionHealthMonitoring() {
+    // Start heartbeat monitoring every 30 seconds
+    if (connectionHealth.heartbeatInterval) {
+      clearInterval(connectionHealth.heartbeatInterval);
+    }
+    
+    connectionHealth.heartbeatInterval = setInterval(() => {
+      if (socket && socket.connected) {
+        connectionHealth.lastHeartbeat = Date.now();
+        socket.emit('heartbeat', { timestamp: connectionHealth.lastHeartbeat });
+      } else {
+        // Connection appears down, check for stale connection
+        const timeSinceLastHeartbeat = Date.now() - connectionHealth.lastHeartbeat;
+        if (timeSinceLastHeartbeat > 45000) { // 45 seconds without heartbeat
+          console.warn('⚠️ Stale connection detected, forcing reconnect...');
+          if (socket) {
+            socket.disconnect();
+            socket.connect();
+          }
+        }
+      }
+    }, 30000);
+  }
+
+  // --- Enhanced User Notifications ---
+  function showNotification(message, type = 'info', duration = 3000) {
+    // Remove any existing notifications
+    const existingNotification = document.querySelector('.notification-popup');
+    if (existingNotification) {
+      existingNotification.remove();
+    }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification-popup ${type}`;
+    notification.innerHTML = `
+      <div class="notification-content">
+        <span class="notification-icon">${getNotificationIcon(type)}</span>
+        <span class="notification-message">${message}</span>
+        <button class="notification-close" onclick="this.parentElement.parentElement.remove()">&times;</button>
+      </div>
+    `;
+    
+    // Add to DOM
+    document.body.appendChild(notification);
+    
+    // Auto-hide after duration
+    setTimeout(() => {
+      if (notification.parentElement) {
+        notification.classList.add('fade-out');
+        setTimeout(() => notification.remove(), 300);
+      }
+    }, duration);
+  }
+  
+  function getNotificationIcon(type) {
+    const icons = {
+      success: '✅',
+      error: '❌', 
+      warning: '⚠️',
+      info: 'ℹ️'
+    };
+    return icons[type] || icons.info;
+  }
+
+  // --- Enhanced Error Handling ---
+  function showError(message, details = '') {
+    console.error('🚨 Enhanced Error Display:', message, details);
+    
+    // Update any error display elements
+    const errorDiv = document.getElementById('errorDisplay');
+    if (errorDiv) {
+      errorDiv.innerHTML = `
+        <div class="error-content">
+          <h4>⚠️ Processing Error</h4>
+          <p><strong>Issue:</strong> ${message}</p>
+          ${details ? `<p class="error-details">${details}</p>` : ''}
+          <div class="error-actions">
+            <button onclick="location.reload()" class="btn btn-primary btn-sm">Refresh Page</button>
+            <button onclick="this.parentElement.parentElement.parentElement.style.display='none'" class="btn btn-secondary btn-sm">Dismiss</button>
+          </div>
+        </div>
+      `;
+      errorDiv.style.display = 'block';
+    }
+    
+    // Also show as notification
+    showNotification(`Error: ${message}`, 'error', 5000);
   }
 
   // --- WebAudio RMS Processing ---
