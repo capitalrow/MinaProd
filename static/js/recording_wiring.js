@@ -284,9 +284,29 @@
           });
           
           console.log(`📤 Sent audio chunk: ${arrayBuf.byteLength} bytes, RMS: ${lastRms.toFixed(3)}`);
-          
+        
         } catch (error) {
-          console.error('🚨 Error sending audio chunk:', error);
+          console.error('🚨 Error sending audio chunk:', {
+            error: error.message,
+            stack: error.stack,
+            sessionId: CURRENT_SESSION_ID,
+            chunkSize: arrayBuf.byteLength,
+            timestamp: Date.now(),
+            rms: lastRms,
+            vadResult: vadResult,
+            mimeType: mediaRecorder.mimeType || mimeType || 'audio/webm'
+          });
+          
+          // Increment error counter for monitoring
+          if (!window.MINA_ERROR_STATS) {
+            window.MINA_ERROR_STATS = { audio_send_errors: 0, connection_errors: 0, processing_errors: 0 };
+          }
+          window.MINA_ERROR_STATS.audio_send_errors += 1;
+          
+          // Show user-friendly error if too many failures
+          if (window.MINA_ERROR_STATS.audio_send_errors > 5) {
+            showError('Connection issues detected. Please check your internet connection and try again.');
+          }
         }
       };
 

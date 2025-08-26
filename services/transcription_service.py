@@ -880,6 +880,95 @@ class TranscriptionService:
             'config': asdict(self.config)
         }
     
+    def is_session_active(self, session_id: str) -> bool:
+        """
+        Check if a session is currently active.
+        
+        Args:
+            session_id: Session ID to check
+            
+        Returns:
+            True if session exists and is active
+        """
+        if not session_id or session_id not in self.active_sessions:
+            return False
+            
+        session_data = self.active_sessions[session_id]
+        return session_data['state'] in [SessionState.IDLE, SessionState.ACTIVE]
+    
+    def cleanup_client_sessions(self, client_id: str):
+        """
+        Clean up all sessions associated with a specific client.
+        Also cleans up inactive sessions older than 30 minutes.
+        
+        Args:
+            client_id: WebSocket client ID to clean up
+        """
+        current_time = time.time()
+        sessions_to_cleanup = []
+        
+        # Find sessions that need cleanup (old inactive sessions)
+        for session_id, session_data in self.active_sessions.items():
+            time_since_activity = current_time - session_data['last_activity']
+            
+            # Clean up sessions inactive for more than 30 minutes
+            if time_since_activity > 1800:  # 30 minutes
+                sessions_to_cleanup.append(session_id)
+        
+        for session_id in sessions_to_cleanup:
+            try:
+                final_stats = self.end_session_sync(session_id)
+                logger.info(f"Cleaned up inactive session {session_id}")
+            except Exception as e:
+                logger.error(f"Error cleaning up session {session_id}: {e}")
+        
+        logger.info(f"Cleanup completed for client {client_id}, removed {len(sessions_to_cleanup)} sessions")
+    
+    def end_session_sync(self, session_id: str) -> Dict[str, Any]:
+        """Synchronous wrapper for end_session."""
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Direct synchronous implementation
+                return self._end_session_sync_impl(session_id)
+            else:
+                return asyncio.run(self.end_session(session_id))
+        except RuntimeError:
+            return asyncio.run(self.end_session(session_id))
+    
+    def _end_session_sync_impl(self, session_id: str) -> Dict[str, Any]:
+        """Direct synchronous implementation for end_session."""
+        if session_id not in self.active_sessions:
+            raise ValueError(f"Session {session_id} not found")
+        
+        session_data = self.active_sessions[session_id]
+        
+        # Update database session
+        from sqlalchemy import select
+        stmt = select(Session).filter_by(external_id=session_id)
+        db_session = db.session.execute(stmt).scalar_one_or_none()
+        if db_session:
+            db_session.status = 'completed'
+            
+            # Update final statistics
+            stats = session_data['stats']
+            db_session.total_segments = stats['total_segments']
+            db_session.average_confidence = stats['average_confidence']
+            db_session.total_duration = stats['total_audio_duration']
+            db.session.commit()
+        
+        # Get final statistics before cleanup
+        final_stats = self._get_session_statistics(session_id)
+        
+        # Cleanup
+        del self.active_sessions[session_id]
+        if session_id in self.session_callbacks:
+            del self.session_callbacks[session_id]
+        
+        logger.info(f"Ended transcription session: {session_id}")
+        return final_stats
+    
     def update_config(self, **kwargs):
         """Update service configuration."""
         for key, value in kwargs.items():
