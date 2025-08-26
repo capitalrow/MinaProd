@@ -61,15 +61,30 @@ class TranscriptionServiceConfig:
     enable_realtime: bool = True
     interim_results: bool = True
     backpressure_threshold: int = 5  # max queued audio chunks
+    
+    # 🔥 INT-LIVE-I3: Interim throttling and endpointing
+    interim_throttle_ms: int = 400  # Throttle interims to ~400ms
+    min_token_diff: int = 5  # Minimum token difference to emit interim
+    punctuation_boundary_chars: str = '.!?;:'
+    min_tokens_for_punctuation_final: int = 3  # Min tokens before punctuation triggers final
+    vad_tail_silence_ms: int = 1500  # VAD silence duration to trigger final
 
 class TranscriptionService:
     """
     High-level transcription service that orchestrates VAD, audio processing, and Whisper streaming.
     Provides a unified interface for real-time meeting transcription with enhanced coordination.
+    🔥 INT-LIVE-I3: Enhanced with interim throttling, endpointing, and metrics.
     """
     
     def __init__(self, config: Optional[TranscriptionServiceConfig] = None):
         self.config = config or TranscriptionServiceConfig()
+        
+        # 🔥 INT-LIVE-I3: Session-level interim throttling and metrics
+        self.session_interim_state = {}  # {session_id: {last_interim_time, last_text, metrics}}
+        
+        # Import and initialize interim throttler
+        from interim_throttling import get_interim_throttler
+        self.interim_throttler = get_interim_throttler(self.config)
         
         # Initialize sub-services
         vad_config = VADConfig(

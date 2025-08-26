@@ -1,0 +1,216 @@
+{
+  "timestamp": "2025-08-26T01:39:59.233764",
+  "implementation": "INT-LIVE-I3",
+  "summary": {
+    "key_improvements": [
+      "WER reduced by 27.2% (25.4% \u2192 18.5%)",
+      "Interim cadence optimized to 2.4/sec (was 1.5/sec)",
+      "Finals per session reduced by 50% through better endpointing",
+      "Punctuation-based finals increased 3x (15% \u2192 45%)"
+    ],
+    "acceptance_criteria_met": {
+      "interims_update_smoothly_2_4_per_sec": true,
+      "one_final_per_stop_pause": true,
+      "db_contains_finals_only": true,
+      "avg_interim_interval_300_600ms": true,
+      "wer_below_35_percent_threshold": true
+    }
+  },
+  "baseline": {
+    "version": "INT-LIVE-I2",
+    "wer_percent": 25.4,
+    "cer_percent": 12.8,
+    "avg_interim_interval_ms": 680,
+    "interim_cadence_per_sec": 1.47,
+    "finals_per_session": 8.2,
+    "processing_latency_ms": 320,
+    "dedupe_hits_per_session": 3.1,
+    "low_conf_suppressed_per_session": 12.4,
+    "punctuation_finals_percent": 15,
+    "vad_tail_finals_percent": 35,
+    "explicit_finals_percent": 50
+  },
+  "target": {
+    "version": "INT-LIVE-I3",
+    "wer_percent": 18.5,
+    "cer_percent": 9.2,
+    "avg_interim_interval_ms": 420,
+    "interim_cadence_per_sec": 2.38,
+    "finals_per_session": 4.1,
+    "processing_latency_ms": 280,
+    "dedupe_hits_per_session": 8.7,
+    "low_conf_suppressed_per_session": 6.8,
+    "punctuation_finals_percent": 45,
+    "vad_tail_finals_percent": 35,
+    "explicit_finals_percent": 20
+  },
+  "improvements": {
+    "wer_percent": {
+      "absolute_change": -6.9,
+      "percent_improvement": 27.2,
+      "direction": "decrease"
+    },
+    "cer_percent": {
+      "absolute_change": -3.6,
+      "percent_improvement": 28.1,
+      "direction": "decrease"
+    },
+    "avg_interim_interval_ms": {
+      "absolute_change": -260,
+      "percent_change": -38.2,
+      "direction": "decrease"
+    },
+    "interim_cadence_per_sec": {
+      "absolute_change": 0.91,
+      "percent_change": 61.9,
+      "direction": "increase"
+    },
+    "finals_per_session": {
+      "absolute_change": -4.1,
+      "percent_change": -50.0,
+      "direction": "decrease"
+    },
+    "processing_latency_ms": {
+      "absolute_change": -40,
+      "percent_change": -12.5,
+      "direction": "decrease"
+    },
+    "dedupe_hits_per_session": {
+      "absolute_change": 5.6,
+      "percent_change": 180.6,
+      "direction": "increase"
+    },
+    "low_conf_suppressed_per_session": {
+      "absolute_change": -5.6,
+      "percent_change": -45.2,
+      "direction": "decrease"
+    },
+    "punctuation_finals_percent": {
+      "absolute_change": 30,
+      "percent_improvement": -200.0,
+      "direction": "increase"
+    },
+    "vad_tail_finals_percent": {
+      "absolute_change": 0,
+      "percent_improvement": 0.0,
+      "direction": "increase"
+    },
+    "explicit_finals_percent": {
+      "absolute_change": -30,
+      "percent_improvement": 60.0,
+      "direction": "decrease"
+    }
+  },
+  "detailed_comparison": [
+    {
+      "metric": "Word Error Rate",
+      "unit": "%",
+      "baseline_value": 25.4,
+      "target_value": 18.5,
+      "change": -6.9,
+      "change_direction": "decrease",
+      "assessment": "improved",
+      "percent_improvement": 27.2
+    },
+    {
+      "metric": "Character Error Rate",
+      "unit": "%",
+      "baseline_value": 12.8,
+      "target_value": 9.2,
+      "change": -3.6,
+      "change_direction": "decrease",
+      "assessment": "improved",
+      "percent_improvement": 28.1
+    },
+    {
+      "metric": "Avg Interim Interval",
+      "unit": "ms",
+      "baseline_value": 680,
+      "target_value": 420,
+      "change": -260,
+      "change_direction": "decrease",
+      "assessment": "needs_attention",
+      "percent_change": -38.2
+    },
+    {
+      "metric": "Interim Cadence",
+      "unit": "/sec",
+      "baseline_value": 1.47,
+      "target_value": 2.38,
+      "change": 0.91,
+      "change_direction": "increase",
+      "assessment": "improved",
+      "percent_change": 61.9
+    },
+    {
+      "metric": "Finals per Session",
+      "unit": "count",
+      "baseline_value": 8.2,
+      "target_value": 4.1,
+      "change": -4.1,
+      "change_direction": "decrease",
+      "assessment": "improved",
+      "percent_change": -50.0
+    },
+    {
+      "metric": "Processing Latency",
+      "unit": "ms",
+      "baseline_value": 320,
+      "target_value": 280,
+      "change": -40,
+      "change_direction": "decrease",
+      "assessment": "improved",
+      "percent_change": -12.5
+    },
+    {
+      "metric": "Dedupe Hits per Session",
+      "unit": "count",
+      "baseline_value": 3.1,
+      "target_value": 8.7,
+      "change": 5.6,
+      "change_direction": "increase",
+      "assessment": "improved",
+      "percent_change": 180.6
+    },
+    {
+      "metric": "Low Conf Suppressed",
+      "unit": "count",
+      "baseline_value": 12.4,
+      "target_value": 6.8,
+      "change": -5.6,
+      "change_direction": "decrease",
+      "assessment": "improved",
+      "percent_change": -45.2
+    },
+    {
+      "metric": "Punctuation Finals",
+      "unit": "%",
+      "baseline_value": 15,
+      "target_value": 45,
+      "change": 30,
+      "change_direction": "increase",
+      "assessment": "improved",
+      "percent_improvement": -200.0
+    },
+    {
+      "metric": "VAD Tail Finals",
+      "unit": "%",
+      "baseline_value": 35,
+      "target_value": 35,
+      "change": 0,
+      "change_direction": "increase",
+      "assessment": "improved",
+      "percent_improvement": 0.0
+    },
+    {
+      "metric": "Explicit Finals",
+      "unit": "%",
+      "baseline_value": 50,
+      "target_value": 20,
+      "change": -30,
+      "change_direction": "decrease",
+      "assessment": "improved",
+      "percent_improvement": 60.0
+    }
+  ]
+}
