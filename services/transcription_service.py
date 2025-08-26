@@ -12,13 +12,17 @@ from typing import Optional, Dict, Any, Callable, List
 from dataclasses import dataclass, asdict
 from enum import Enum
 
-from .vad_service import VADService, VADConfig
-from .whisper_streaming import WhisperStreamingService, TranscriptionConfig, TranscriptionResult
-from .audio_processor import AudioProcessor
-from .audio_quality_monitor import AudioQualityMonitor, AudioQualityConfig, AGCConfig, initialize_audio_quality_monitor
-from .confidence_scoring import AdvancedConfidenceScorer, ConfidenceConfig, initialize_confidence_scorer
-from .audio_quality_analyzer import AudioQualityAnalyzer, QualityEnhancementConfig
-from .performance_optimizer import PerformanceOptimizer, ResourceLimits
+# 🔧 FIXED: Use TYPE_CHECKING imports to prevent circular import issues
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .vad_service import VADService, VADConfig
+    from .whisper_streaming import WhisperStreamingService, TranscriptionConfig, TranscriptionResult  
+    from .audio_processor import AudioProcessor
+    from .audio_quality_monitor import AudioQualityMonitor, AudioQualityConfig, AGCConfig
+    from .confidence_scoring import AdvancedConfidenceScorer, ConfidenceConfig
+    from .audio_quality_analyzer import AudioQualityAnalyzer, QualityEnhancementConfig
+    from .performance_optimizer import PerformanceOptimizer, ResourceLimits
 from models.session import Session
 from models.segment import Segment
 from app import db
@@ -90,14 +94,24 @@ class TranscriptionService:
     """
     
     def __init__(self, config: Optional[TranscriptionServiceConfig] = None):
+        # 🔧 FIXED: Import services here to avoid circular imports
+        from .vad_service import VADService, VADConfig
+        from .whisper_streaming import WhisperStreamingService, TranscriptionConfig
+        from .audio_processor import AudioProcessor
+        from .audio_quality_analyzer import AudioQualityAnalyzer, QualityEnhancementConfig
+        from .performance_optimizer import PerformanceOptimizer, ResourceLimits
+        
         self.config = config or TranscriptionServiceConfig()
         
         # 🔥 INT-LIVE-I3: Session-level interim throttling and metrics
         self.session_interim_state = {}  # {session_id: {last_interim_time, last_text, metrics}}
         
         # Import and initialize interim throttler
-        from interim_throttling import get_interim_throttler
-        self.interim_throttler = get_interim_throttler(self.config)
+        try:
+            from interim_throttling import get_interim_throttler
+            self.interim_throttler = get_interim_throttler(self.config)
+        except ImportError:
+            self.interim_throttler = None  # Fallback if module doesn't exist
         
         # Initialize sub-services
         vad_config = VADConfig(
@@ -824,7 +838,7 @@ class TranscriptionService:
             session_data['state'] = SessionState.ERROR
             return None
     
-    async def _store_segment(self, session_id: str, transcription_result: TranscriptionResult):
+    async def _store_segment(self, session_id: str, transcription_result: 'TranscriptionResult'):
         """Store transcription segment in database."""
         session_data = self.active_sessions[session_id]
         sequence_number = session_data['sequence_number']
@@ -974,7 +988,7 @@ class TranscriptionService:
             
         return False
     
-    def _format_transcription_result(self, result: TranscriptionResult) -> Dict[str, Any]:
+    def _format_transcription_result(self, result: 'TranscriptionResult') -> Dict[str, Any]:
         """Format transcription result for API response."""
         return {
             'text': result.text,
@@ -1018,7 +1032,7 @@ class TranscriptionService:
         
         return intersection / union if union > 0 else 0.0
     
-    def _on_transcription_result(self, result: TranscriptionResult):
+    def _on_transcription_result(self, result: 'TranscriptionResult'):
         """Handle transcription result callback with critical quality filtering."""
         session_id = result.metadata.get('session_id')
         if not session_id or session_id not in self.active_sessions:
@@ -1065,12 +1079,12 @@ class TranscriptionService:
             except Exception as e:
                 logger.error(f"Error in transcription callback: {e}")
     
-    def add_session_callback(self, session_id: str, callback: Callable[[TranscriptionResult], None]):
+    def add_session_callback(self, session_id: str, callback: Callable[['TranscriptionResult'], None]):
         """Add callback for transcription results."""
         if session_id in self.session_callbacks:
             self.session_callbacks[session_id].append(callback)
     
-    def remove_session_callback(self, session_id: str, callback: Callable[[TranscriptionResult], None]):
+    def remove_session_callback(self, session_id: str, callback: Callable[['TranscriptionResult'], None]):
         """Remove callback for transcription results."""
         if session_id in self.session_callbacks:
             try:
