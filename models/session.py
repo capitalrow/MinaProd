@@ -7,7 +7,7 @@ import uuid
 from typing import Optional
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, DateTime, Text, JSON, Boolean, func
+from sqlalchemy import String, Integer, DateTime, Text, JSON, Boolean, Float, func
 from .base import Base
 
 class Session(Base):
@@ -26,6 +26,11 @@ class Session(Base):
     locale: Mapped[Optional[str]] = mapped_column(String(10))
     device_info: Mapped[Optional[dict]] = mapped_column(JSON)
     meta: Mapped[Optional[dict]] = mapped_column(JSON)
+    
+    # Statistics fields required by TranscriptionService
+    total_segments: Mapped[Optional[int]] = mapped_column(Integer, default=0, nullable=True)
+    average_confidence: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
+    total_duration: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
     
     segments: Mapped[list["Segment"]] = relationship(
         back_populates="session", cascade="all, delete-orphan"

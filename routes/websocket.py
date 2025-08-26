@@ -296,12 +296,16 @@ def audio_chunk(data):
             "chunk_id": chunk_id,
             "chunk_size": len(raw_bytes)
         })
-        return
-    
-    tr = result['transcription']
-    txt = (tr.get('text') or '').strip()
-    conf = float(tr.get('confidence') or 0.0)
-    is_final = bool(tr.get('is_final'))
+        # Continue processing - don't return early
+        tr = None
+        txt = ""
+        conf = 0.0
+        is_final = False
+    else:
+        tr = result['transcription']
+        txt = (tr.get('text') or '').strip()
+        conf = float(tr.get('confidence') or 0.0)
+        is_final = bool(tr.get('is_final'))
     processing_time = (time.time() - start_time) * 1000
     
     # Log transcription emission
@@ -317,23 +321,59 @@ def audio_chunk(data):
         "mime_type": mime_type
     })
     
+    # Only emit if we have actual transcription text
     if not txt:
-        return
-    
-    # Emit transcription results to session room
-    transcript_payload = {
-        "session_id": session_id,
-        "text": txt,
-        "avg_confidence": conf,
-        "timestamp": start_time,
-        "chunk_id": chunk_id,
-        "processing_time_ms": processing_time
-    }
-    
-    if is_final:
-        socketio.emit('final_transcript', transcript_payload, room=session_id)
+        logger.debug({
+            "event": "no_text_to_emit",
+            "session_id": session_id,
+            "chunk_id": chunk_id,
+            "has_result": bool(result),
+            "has_transcription": bool(tr)
+        })
+        # Don't return early - continue to acknowledge processing
     else:
-        socketio.emit('interim_transcript', transcript_payload, room=session_id)
+        # Emit transcription results to session room
+        transcript_payload = {
+            "session_id": session_id,
+            "text": txt,
+            "avg_confidence": conf,
+            "timestamp": start_time,
+            "chunk_id": chunk_id,
+            "processing_time_ms": processing_time
+        }
+        
+        try:
+            if is_final:
+                socketio.emit('final_transcript', transcript_payload, to=session_id)
+                logger.info(f"✅ EMITTED FINAL transcript for {session_id}: '{txt[:50]}...'")
+            else:
+                socketio.emit('interim_transcript', transcript_payload, to=session_id)
+                logger.info(f"✅ EMITTED INTERIM transcript for {session_id}: '{txt[:50]}...'")
+            
+            # Send user-friendly progress update
+            emit('transcription_progress', {
+                'status': 'success',
+                'type': 'final' if is_final else 'interim',
+                'confidence': conf,
+                'text_length': len(txt)
+            })
+            
+        except Exception as e:
+            logger.error(f"❌ ERROR emitting transcript: {e}")
+            # Send user-friendly error message
+            emit('transcription_progress', {
+                'status': 'error',
+                'message': 'Transcription service temporarily unavailable'
+            })
+    
+    # Always send processing acknowledgment
+    emit('audio_processed', {
+        'chunk_id': chunk_id,
+        'processing_time_ms': processing_time,
+        'has_transcription': bool(txt),
+        'confidence': conf,
+        'is_final': is_final
+    })
 
 @socketio.on('end_of_stream')
 def end_of_stream(data):
