@@ -1530,7 +1530,9 @@
       }
 
       // 🔥 CRITICAL FIX: Create session before recording
+      console.log('🔧 DEBUG: About to create session...');
       await createSessionAndWait();
+      console.log('🔧 DEBUG: Session creation completed, continuing to microphone...');
 
       // Request microphone access
       console.log('🎤 Requesting microphone access...');
@@ -1855,23 +1857,27 @@
       const sessionCreatedHandler = (data) => {
         console.log('🆕 Session created successfully:', data.session_id);
         CURRENT_SESSION_ID = data.session_id;
-        clearTimeout(timeoutId);
         
         // 🔥 PHASE 1: Join session room immediately after creation using enhanced protocol
         console.log('🏠 Joining session room:', data.session_id);
         joinSession(data.session_id);
         
-        // Listen for room join confirmation
+        // 🔥 CRITICAL FIX: Wait for room join confirmation before resolving
         const roomJoinedHandler = (joinData) => {
           console.log('✅ Successfully joined session room:', joinData.session_id);
+          clearTimeout(timeoutId);
+          socket.off('session_created', sessionCreatedHandler);
+          socket.off('error', errorHandler);
           socket.off('joined_session', roomJoinedHandler);
+          socket.off('joined_session', joinedFallbackHandler);
+          resolve(); // Only resolve after BOTH session creation AND room joining
         };
         
         socket.once('joined_session', roomJoinedHandler);
         
         socket.off('session_created', sessionCreatedHandler);
         socket.off('error', errorHandler);
-        resolve();
+        // Do NOT resolve here - wait for room join confirmation
       };
       
       const errorHandler = (error) => {
@@ -1885,7 +1891,7 @@
       socket.once('session_created', sessionCreatedHandler);
       socket.once('error', errorHandler);
       
-      // Add debug listener for joined_session as fallback
+      // Add debug listener for joined_session as fallback (only if no session created yet)
       const joinedFallbackHandler = (joinData) => {
         if (!CURRENT_SESSION_ID && joinData.session_id) {
           console.log('🔄 Using joined_session as fallback for session creation:', joinData.session_id);
