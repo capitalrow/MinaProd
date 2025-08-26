@@ -6,7 +6,7 @@ SQLAlchemy 2.0-safe model for transcription segments with durable storage.
 from typing import Optional
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, DateTime, Text, ForeignKey, Float, Boolean, func
+from sqlalchemy import String, Integer, BigInteger, DateTime, Text, ForeignKey, Float, Boolean, func
 from .base import Base
 
 # Forward reference for type checking
@@ -25,8 +25,8 @@ class Segment(Base):
     kind: Mapped[str] = mapped_column(String(16))  # interim|final
     text: Mapped[str] = mapped_column(Text)
     avg_confidence: Mapped[Optional[float]] = mapped_column(Float)
-    start_ms: Mapped[Optional[int]] = mapped_column(Integer)
-    end_ms: Mapped[Optional[int]] = mapped_column(Integer)
+    start_ms: Mapped[Optional[int]] = mapped_column(BigInteger)  # 🔧 FIXED: Support large timestamps  
+    end_ms: Mapped[Optional[int]] = mapped_column(BigInteger)    # 🔧 FIXED: Support large timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     session: Mapped["Session"] = relationship(back_populates="segments")
