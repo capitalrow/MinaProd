@@ -17,7 +17,16 @@ class WebSocketStreaming {
             retryDelay: options.retryDelay || 1000,
             bufferSize: options.bufferSize || 8192,
             enableBackpressure: options.enableBackpressure !== false,
-            maxPendingChunks: options.maxPendingChunks || 5
+            maxPendingChunks: options.maxPendingChunks || 5,
+            // 🔥 PHASE 2: Advanced streaming optimization
+            adaptiveBuffering: options.adaptiveBuffering !== false,
+            qualityMonitoring: options.qualityMonitoring !== false,
+            streamingMode: options.streamingMode || 'realtime', // realtime, batch, adaptive
+            transmissionOptimization: options.transmissionOptimization !== false,
+            bandwidthAdaptation: options.bandwidthAdaptation !== false,
+            latencyTargetMs: options.latencyTargetMs || 200,
+            maxBufferMs: options.maxBufferMs || 2000,
+            minBufferMs: options.minBufferMs || 100
         };
         
         // Audio streaming state
@@ -44,7 +53,25 @@ class WebSocketStreaming {
             transmissionErrors: 0,
             vadFilteredChunks: 0,
             backpressureEvents: 0,
-            connectionDrops: 0
+            connectionDrops: 0,
+            // 🔥 PHASE 2: Advanced streaming metrics
+            adaptiveBufferAdjustments: 0,
+            qualityScore: 1.0,
+            bandwidthUtilization: 0,
+            transmissionEfficiency: 1.0,
+            latencySpikes: 0,
+            bufferUnderruns: 0,
+            bufferOverruns: 0
+        };
+        
+        // 🔥 PHASE 2: Adaptive streaming state
+        this.adaptiveState = {
+            currentBufferSize: this.config.bufferSize,
+            targetLatency: this.config.latencyTargetMs,
+            measurementWindow: [],
+            lastAdjustment: 0,
+            qualityHistory: [],
+            bandwidthHistory: []
         };
         
         // Callback functions
@@ -55,7 +82,169 @@ class WebSocketStreaming {
         // Initialize
         this.initializeSocket();
         
-        console.log('WebSocketStreaming initialized with config:', this.config);
+        // 🔥 PHASE 2: Initialize adaptive streaming components
+        this.initializeAdaptiveStreaming();
+        
+        console.log('WebSocketStreaming initialized with Phase 2 enhancements:', this.config);
+    }
+    
+    // 🔥 PHASE 2: Initialize adaptive streaming components
+    initializeAdaptiveStreaming() {
+        if (this.config.adaptiveBuffering) {
+            console.log('Adaptive buffering enabled');
+        }
+        
+        if (this.config.qualityMonitoring) {
+            console.log('Quality monitoring enabled');
+            // Initialize quality measurement window
+            this.qualityMeasurementInterval = setInterval(() => {
+                this.measureStreamingQuality();
+            }, 1000); // Measure every second
+        }
+        
+        if (this.config.bandwidthAdaptation) {
+            console.log('Bandwidth adaptation enabled');
+            this.bandwidthMeasurementInterval = setInterval(() => {
+                this.measureBandwidth();
+            }, 5000); // Measure every 5 seconds
+        }
+    }
+    
+    // 🔥 PHASE 2: Adaptive buffer size adjustment
+    adjustBufferSizeAdaptively() {
+        const now = Date.now();
+        const timeSinceLastAdjustment = now - this.adaptiveState.lastAdjustment;
+        
+        // Only adjust every 2 seconds to avoid thrashing
+        if (timeSinceLastAdjustment < 2000) return;
+        
+        const currentLatency = this.calculateAverageLatency();
+        const targetLatency = this.adaptiveState.targetLatency;
+        
+        if (currentLatency > targetLatency * 1.5) {
+            // Latency too high, reduce buffer size
+            const newSize = Math.max(this.config.minBufferMs / this.config.chunkDuration, 
+                                   this.adaptiveState.currentBufferSize * 0.8);
+            if (newSize !== this.adaptiveState.currentBufferSize) {
+                this.adaptiveState.currentBufferSize = Math.floor(newSize);
+                this.stats.adaptiveBufferAdjustments++;
+                console.log(`Adaptive: Reduced buffer size to ${this.adaptiveState.currentBufferSize}`);
+            }
+        } else if (currentLatency < targetLatency * 0.5 && this.audioBuffer.length === 0) {
+            // Latency very low and buffer empty, increase buffer size
+            const newSize = Math.min(this.config.maxBufferMs / this.config.chunkDuration,
+                                   this.adaptiveState.currentBufferSize * 1.2);
+            if (newSize !== this.adaptiveState.currentBufferSize) {
+                this.adaptiveState.currentBufferSize = Math.floor(newSize);
+                this.stats.adaptiveBufferAdjustments++;
+                console.log(`Adaptive: Increased buffer size to ${this.adaptiveState.currentBufferSize}`);
+            }
+        }
+        
+        this.adaptiveState.lastAdjustment = now;
+    }
+    
+    // 🔥 PHASE 2: Quality monitoring
+    updateQualityMetrics() {
+        const currentTime = Date.now();
+        const pendingChunksRatio = this.pendingChunks.size / this.config.maxPendingChunks;
+        const bufferUtilizationRatio = this.audioBuffer.length / this.adaptiveState.currentBufferSize;
+        
+        // Calculate quality score (1.0 = perfect, 0.0 = terrible)
+        let qualityScore = 1.0;
+        
+        // Penalize high pending chunks (backpressure)
+        qualityScore -= pendingChunksRatio * 0.3;
+        
+        // Penalize buffer underruns and overruns
+        if (bufferUtilizationRatio < 0.1) {
+            this.stats.bufferUnderruns++;
+            qualityScore -= 0.2;
+        } else if (bufferUtilizationRatio > 0.9) {
+            this.stats.bufferOverruns++;
+            qualityScore -= 0.1;
+        }
+        
+        // Penalize transmission errors
+        const errorRate = this.stats.transmissionErrors / Math.max(1, this.stats.totalChunksSent);
+        qualityScore -= errorRate * 0.5;
+        
+        this.stats.qualityScore = Math.max(0, Math.min(1, qualityScore));
+        
+        // Track quality history for trending
+        this.adaptiveState.qualityHistory.push({
+            timestamp: currentTime,
+            score: this.stats.qualityScore
+        });
+        
+        // Keep only last 60 measurements (1 minute at 1 second intervals)
+        if (this.adaptiveState.qualityHistory.length > 60) {
+            this.adaptiveState.qualityHistory.shift();
+        }
+    }
+    
+    // 🔥 PHASE 2: Streaming quality measurement
+    measureStreamingQuality() {
+        if (!this.isStreaming) return;
+        
+        const currentLatency = this.calculateAverageLatency();
+        
+        // Track latency spikes
+        if (currentLatency > this.adaptiveState.targetLatency * 2) {
+            this.stats.latencySpikes++;
+        }
+        
+        // Update transmission efficiency
+        const expectedRate = 1000 / this.config.chunkDuration; // chunks per second
+        const actualRate = this.stats.totalChunksSent / Math.max(1, (Date.now() - this.streamStartTime) / 1000);
+        this.stats.transmissionEfficiency = Math.min(1, actualRate / expectedRate);
+    }
+    
+    // 🔥 PHASE 2: Bandwidth measurement
+    measureBandwidth() {
+        if (!this.isStreaming) return;
+        
+        const now = Date.now();
+        const timeWindow = 5000; // 5 seconds
+        const cutoffTime = now - timeWindow;
+        
+        // Calculate bytes transmitted in the last 5 seconds
+        let recentBytes = 0;
+        let recentChunks = 0;
+        
+        this.adaptiveState.measurementWindow.forEach(measurement => {
+            if (measurement.timestamp > cutoffTime) {
+                recentBytes += measurement.bytes;
+                recentChunks++;
+            }
+        });
+        
+        // Clean old measurements
+        this.adaptiveState.measurementWindow = this.adaptiveState.measurementWindow.filter(
+            m => m.timestamp > cutoffTime
+        );
+        
+        // Calculate bandwidth utilization (bytes per second)
+        const bandwidth = recentBytes / (timeWindow / 1000);
+        this.stats.bandwidthUtilization = bandwidth;
+        
+        // Track bandwidth history
+        this.adaptiveState.bandwidthHistory.push({
+            timestamp: now,
+            bandwidth: bandwidth,
+            chunks: recentChunks
+        });
+        
+        // Keep only last 12 measurements (1 minute at 5 second intervals)
+        if (this.adaptiveState.bandwidthHistory.length > 12) {
+            this.adaptiveState.bandwidthHistory.shift();
+        }
+    }
+    
+    // 🔥 PHASE 2: Calculate average latency
+    calculateAverageLatency() {
+        if (this.stats.totalChunksSent === 0) return 0;
+        return this.stats.averageLatency;
     }
     
     initializeSocket() {
@@ -230,11 +419,21 @@ class WebSocketStreaming {
     processAudioBuffer() {
         if (!this.isStreaming || this.isPaused || this.audioBuffer.length === 0) return;
         
+        // 🔥 PHASE 2: Adaptive buffer management
+        if (this.config.adaptiveBuffering) {
+            this.adjustBufferSizeAdaptively();
+        }
+        
         // Check for backpressure
         if (this.config.enableBackpressure && this.pendingChunks.size >= this.config.maxPendingChunks) {
             this.stats.backpressureEvents++;
             console.warn('Backpressure detected, skipping transmission');
             return;
+        }
+        
+        // 🔥 PHASE 2: Quality monitoring and transmission optimization
+        if (this.config.qualityMonitoring) {
+            this.updateQualityMetrics();
         }
         
         // Get next chunk from buffer

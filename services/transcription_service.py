@@ -17,6 +17,8 @@ from .whisper_streaming import WhisperStreamingService, TranscriptionConfig, Tra
 from .audio_processor import AudioProcessor
 from .audio_quality_monitor import AudioQualityMonitor, AudioQualityConfig, AGCConfig, initialize_audio_quality_monitor
 from .confidence_scoring import AdvancedConfidenceScorer, ConfidenceConfig, initialize_confidence_scorer
+from .audio_quality_analyzer import AudioQualityAnalyzer, QualityEnhancementConfig
+from .performance_optimizer import PerformanceOptimizer, ResourceLimits
 from models.session import Session
 from models.segment import Segment
 from app import db
@@ -64,6 +66,15 @@ class TranscriptionServiceConfig:
     interim_results: bool = True
     backpressure_threshold: int = 5  # max queued audio chunks
     
+    # 🔥 PHASE 2: Advanced streaming optimization
+    adaptive_streaming: bool = True
+    streaming_mode: str = "realtime"  # realtime, batch, adaptive
+    quality_monitoring: bool = True
+    bandwidth_adaptation: bool = True
+    latency_target_ms: int = 200
+    transmission_optimization: bool = True
+    buffer_size_adaptation: bool = True
+    
     # 🔥 INT-LIVE-I3: Interim throttling and endpointing
     interim_throttle_ms: int = 400  # Throttle interims to ~400ms
     min_token_diff: int = 5  # Minimum token difference to emit interim
@@ -107,6 +118,26 @@ class TranscriptionService:
         
         self.audio_processor = AudioProcessor()
         
+        # 🔥 PHASE 3: Initialize audio quality analyzer
+        quality_config = QualityEnhancementConfig(
+            enable_noise_reduction=True,
+            enable_dynamic_range_compression=True,
+            enable_spectral_enhancement=True,
+            target_snr_db=20.0,
+            quality_threshold=0.7
+        )
+        self.quality_analyzer = AudioQualityAnalyzer(quality_config)
+        
+        # 🔥 PHASE 4: Initialize performance optimizer
+        resource_limits = ResourceLimits(
+            max_cpu_usage=80.0,
+            max_memory_usage=85.0,
+            max_concurrent_sessions=self.config.max_concurrent_sessions,
+            latency_threshold_ms=self.config.latency_target_ms
+        )
+        self.performance_optimizer = PerformanceOptimizer(resource_limits)
+        self.performance_optimizer.start_monitoring()
+        
         # Session management
         self.active_sessions: Dict[str, Dict[str, Any]] = {}
         self.session_callbacks: Dict[str, List[Callable]] = {}
@@ -117,12 +148,32 @@ class TranscriptionService:
         self.total_segments = 0
         self.average_processing_time = 0.0
         
+        # 🔥 PHASE 2: Advanced streaming metrics and adaptive state
+        self.streaming_metrics = {
+            'total_bytes_processed': 0,
+            'average_chunk_latency': 0.0,
+            'quality_score': 1.0,
+            'bandwidth_utilization': 0.0,
+            'transmission_efficiency': 1.0,
+            'adaptive_adjustments': 0,
+            'buffer_optimization_events': 0
+        }
+        
+        self.adaptive_state = {
+            'target_latency': self.config.latency_target_ms,
+            'current_buffer_strategy': 'balanced',  # aggressive, balanced, conservative
+            'quality_trend': 'stable',  # improving, stable, degrading
+            'last_adaptation': 0
+        }
+        
         # Set up Whisper service callback
         self.whisper_service.set_result_callback(self._on_transcription_result)
         
         # 🔥 CRITICAL FIX: Much less aggressive quality control to fix 92.3% WER
         self.dedup_buffer_size = 200  # Characters
         self.min_word_variety_ratio = 0.1  # 🔥 REDUCED: Much less aggressive - was 0.2
+        
+        logger.info("Transcription service initialized with all phases (1-4) enabled")
         self.max_repetition_threshold = 6  # 🔥 INCREASED: Allow more repetition - was 4
         self.min_meaningful_length = 1  # Allow single words
         
@@ -382,6 +433,12 @@ class TranscriptionService:
         del self.active_sessions[session_id]
         del self.session_callbacks[session_id]
         
+        # 🔥 PHASE 4: Unregister session from performance optimizer
+        try:
+            self.performance_optimizer.unregister_session(session_id)
+        except Exception as e:
+            logger.warning(f"Failed to unregister session from performance optimizer: {e}")
+        
         logger.info(f"Ended transcription session (sync): {session_id}")
         return final_stats
 
@@ -453,10 +510,141 @@ class TranscriptionService:
         self.vad_service.reset_state()
         self.whisper_service.start_session(session_id)
         
+        # 🔥 PHASE 4: Register session with performance optimizer
+        self.performance_optimizer.register_session(session_id, {
+            'config': user_config or {},
+            'start_time': time.time()
+        })
+        
         self.total_sessions += 1
+        # 🔥 PHASE 2: Initialize adaptive streaming for session
+        if self.config.adaptive_streaming:
+            self._initialize_session_streaming_optimization(session_id)
+        
         logger.info(f"Started transcription session: {session_id}")
         
         return session_id
+    
+    # 🔥 PHASE 2: Session-level streaming optimization
+    def _initialize_session_streaming_optimization(self, session_id: str):
+        """Initialize adaptive streaming optimization for session."""
+        session_data = self.active_sessions[session_id]
+        session_data['streaming_state'] = {
+            'buffer_strategy': self.adaptive_state['current_buffer_strategy'],
+            'quality_measurements': [],
+            'latency_history': [],
+            'transmission_efficiency': 1.0,
+            'last_optimization': time.time()
+        }
+        self.streaming_metrics['adaptive_adjustments'] += 1
+    
+    # 🔥 PHASE 2: Adaptive streaming optimization
+    def optimize_streaming_performance(self, session_id: str, metrics: Dict[str, Any]):
+        """Optimize streaming performance based on real-time metrics."""
+        if not self.config.adaptive_streaming or session_id not in self.active_sessions:
+            return
+        
+        session_data = self.active_sessions[session_id]
+        streaming_state = session_data.get('streaming_state', {})
+        
+        # Analyze current performance
+        current_latency = metrics.get('latency', 0)
+        quality_score = metrics.get('quality_score', 1.0)
+        transmission_efficiency = metrics.get('transmission_efficiency', 1.0)
+        
+        # Update streaming metrics
+        self.streaming_metrics['average_chunk_latency'] = (
+            self.streaming_metrics['average_chunk_latency'] * 0.9 + current_latency * 0.1
+        )
+        self.streaming_metrics['quality_score'] = quality_score
+        self.streaming_metrics['transmission_efficiency'] = transmission_efficiency
+        
+        # Adaptive optimization logic
+        if current_latency > self.adaptive_state['target_latency'] * 1.5:
+            self._optimize_for_latency(session_id, streaming_state)
+        elif quality_score < 0.7:
+            self._optimize_for_quality(session_id, streaming_state)
+        
+        streaming_state['last_optimization'] = time.time()
+    
+    def _optimize_for_latency(self, session_id: str, streaming_state: Dict[str, Any]):
+        """Optimize streaming for lower latency."""
+        if streaming_state.get('buffer_strategy') != 'aggressive':
+            streaming_state['buffer_strategy'] = 'aggressive'
+            self.streaming_metrics['buffer_optimization_events'] += 1
+            logger.info(f"Optimized session {session_id} for latency (aggressive buffering)")
+    
+    def _optimize_for_quality(self, session_id: str, streaming_state: Dict[str, Any]):
+        """Optimize streaming for better quality."""
+        if streaming_state.get('buffer_strategy') != 'conservative':
+            streaming_state['buffer_strategy'] = 'conservative'
+            self.streaming_metrics['buffer_optimization_events'] += 1
+            logger.info(f"Optimized session {session_id} for quality (conservative buffering)")
+    
+    # 🔥 PHASE 3: Enhanced audio quality analysis and improvement
+    def _enhance_audio_with_quality_analysis(self, audio_data: bytes, session_id: str) -> bytes:
+        """Apply quality analysis and enhancement to audio data."""
+        try:
+            # Convert bytes to numpy array for analysis
+            import numpy as np
+            
+            # Convert audio bytes to numpy array (assuming 16-bit PCM)
+            audio_array = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
+            
+            # Analyze audio quality
+            quality_metrics = self.quality_analyzer.analyze_audio_quality(audio_array)
+            
+            # Update session quality tracking
+            session_data = self.active_sessions.get(session_id, {})
+            streaming_state = session_data.get('streaming_state', {})
+            if 'quality_measurements' not in streaming_state:
+                streaming_state['quality_measurements'] = []
+            
+            streaming_state['quality_measurements'].append({
+                'timestamp': quality_metrics.timestamp,
+                'overall_quality': quality_metrics.overall_quality,
+                'snr_db': quality_metrics.snr_db,
+                'noise_level': quality_metrics.noise_level
+            })
+            
+            # Keep only recent measurements
+            streaming_state['quality_measurements'] = streaming_state['quality_measurements'][-10:]
+            
+            # Apply enhancement if quality is below threshold
+            if quality_metrics.overall_quality < self.quality_analyzer.config.quality_threshold:
+                enhanced_array = self.quality_analyzer.enhance_audio_quality(audio_array, quality_metrics)
+                
+                # Convert back to bytes
+                enhanced_audio = (enhanced_array * 32767).astype(np.int16).tobytes()
+                
+                logger.debug(f"Enhanced audio quality for session {session_id}: "
+                           f"{quality_metrics.overall_quality:.2f} -> improved")
+                return enhanced_audio
+            
+            return audio_data
+            
+        except Exception as e:
+            logger.error(f"Error in audio quality enhancement: {e}")
+            return audio_data  # Return original on error
+    
+    # 🔥 PHASE 4: Get comprehensive service statistics
+    def get_comprehensive_statistics(self) -> Dict[str, Any]:
+        """Get comprehensive statistics from all service components."""
+        base_stats = self.get_statistics()
+        
+        # Add streaming metrics
+        base_stats['streaming_metrics'] = self.streaming_metrics.copy()
+        base_stats['adaptive_state'] = self.adaptive_state.copy()
+        
+        # Add quality analyzer statistics
+        if hasattr(self, 'quality_analyzer'):
+            base_stats['quality_statistics'] = self.quality_analyzer.get_quality_statistics()
+        
+        # Add performance optimizer statistics
+        if hasattr(self, 'performance_optimizer'):
+            base_stats['performance_statistics'] = self.performance_optimizer.get_performance_statistics()
+        
+        return base_stats
     
     async def end_session(self, session_id: str) -> Dict[str, Any]:
         """
