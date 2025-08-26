@@ -27,6 +27,136 @@ class WebSocketTranscriptionTest:
         self.session_joined = False
         self.connection_successful = False
         
+    def generate_podcast_conversation_audio(self, duration_seconds: float = 150.0) -> bytes:
+        """Generate podcast-style conversation audio similar to Joe Budden podcast format."""
+        try:
+            import wave
+            from io import BytesIO
+            
+            sample_rate = 16000
+            total_samples = int(sample_rate * duration_seconds)
+            conversation_audio = np.zeros(total_samples, dtype=np.float32)
+            
+            # Podcast conversation pattern: longer segments, natural overlaps, varied pacing
+            segment_patterns = [
+                # Host introducing topic (10s)
+                {"duration": 10, "speaker": "host", "energy": "medium", "pace": "steady"},
+                {"duration": 1, "speaker": "silence", "energy": "none", "pace": "none"},
+                # Guest response (15s)
+                {"duration": 15, "speaker": "guest", "energy": "high", "pace": "fast"},
+                {"duration": 2, "speaker": "silence", "energy": "none", "pace": "none"},
+                # Host follow-up (8s)
+                {"duration": 8, "speaker": "host", "energy": "low", "pace": "slow"},
+                {"duration": 1, "speaker": "silence", "energy": "none", "pace": "none"},
+                # Guest detailed response (20s)
+                {"duration": 20, "speaker": "guest", "energy": "medium", "pace": "varied"},
+                {"duration": 3, "speaker": "silence", "energy": "none", "pace": "none"},
+                # Both speaking/overlapping (5s)
+                {"duration": 5, "speaker": "both", "energy": "high", "pace": "fast"},
+                {"duration": 2, "speaker": "silence", "energy": "none", "pace": "none"},
+            ]
+            
+            current_sample = 0
+            while current_sample < total_samples:
+                for pattern in segment_patterns:
+                    if current_sample >= total_samples:
+                        break
+                        
+                    segment_samples = int(pattern["duration"] * sample_rate)
+                    end_sample = min(current_sample + segment_samples, total_samples)
+                    
+                    if pattern["speaker"] == "silence":
+                        # Add minimal background noise
+                        conversation_audio[current_sample:end_sample] = 0.01 * np.random.normal(0, 1, end_sample - current_sample)
+                    
+                    elif pattern["speaker"] == "host":
+                        # Host voice characteristics (deeper, authoritative)
+                        t = np.linspace(0, pattern["duration"], end_sample - current_sample)
+                        
+                        # Speech formants for deeper voice
+                        fundamental = 0.4 * np.sin(2 * np.pi * 120 * t)  # Lower fundamental frequency
+                        formant1 = 0.3 * np.sin(2 * np.pi * 350 * t)
+                        formant2 = 0.2 * np.sin(2 * np.pi * 700 * t)
+                        formant3 = 0.1 * np.sin(2 * np.pi * 1400 * t)
+                        
+                        # Pace modulation
+                        if pattern["pace"] == "fast":
+                            pace_freq = 5
+                        elif pattern["pace"] == "slow":
+                            pace_freq = 2
+                        else:
+                            pace_freq = 3
+                            
+                        envelope = 0.7 * (1 + np.sin(2 * np.pi * pace_freq * t))
+                        speech = (fundamental + formant1 + formant2 + formant3) * envelope
+                        
+                        # Add natural speech variations
+                        speech += 0.1 * np.random.normal(0, 1, len(speech))
+                        conversation_audio[current_sample:end_sample] = speech
+                    
+                    elif pattern["speaker"] == "guest":
+                        # Guest voice characteristics (higher, more animated)
+                        t = np.linspace(0, pattern["duration"], end_sample - current_sample)
+                        
+                        # Speech formants for higher voice
+                        fundamental = 0.35 * np.sin(2 * np.pi * 180 * t)  # Higher fundamental
+                        formant1 = 0.4 * np.sin(2 * np.pi * 450 * t)
+                        formant2 = 0.25 * np.sin(2 * np.pi * 900 * t)
+                        formant3 = 0.15 * np.sin(2 * np.pi * 1800 * t)
+                        
+                        # Energy modulation
+                        if pattern["energy"] == "high":
+                            energy_mult = 1.2
+                            pace_freq = 6
+                        elif pattern["energy"] == "low":
+                            energy_mult = 0.8
+                            pace_freq = 2
+                        else:
+                            energy_mult = 1.0
+                            pace_freq = 4
+                            
+                        envelope = energy_mult * 0.6 * (1 + np.sin(2 * np.pi * pace_freq * t))
+                        speech = (fundamental + formant1 + formant2 + formant3) * envelope
+                        
+                        # Add animated speech patterns
+                        speech += 0.15 * np.random.normal(0, 1, len(speech))
+                        conversation_audio[current_sample:end_sample] = speech
+                    
+                    elif pattern["speaker"] == "both":
+                        # Overlapping conversation
+                        t = np.linspace(0, pattern["duration"], end_sample - current_sample)
+                        
+                        # Host voice (background)
+                        host_speech = 0.2 * np.sin(2 * np.pi * 120 * t) + 0.15 * np.sin(2 * np.pi * 350 * t)
+                        # Guest voice (foreground)
+                        guest_speech = 0.3 * np.sin(2 * np.pi * 180 * t) + 0.25 * np.sin(2 * np.pi * 450 * t)
+                        
+                        envelope = 0.8 * (1 + np.sin(2 * np.pi * 5 * t))
+                        combined_speech = (host_speech + guest_speech) * envelope
+                        combined_speech += 0.2 * np.random.normal(0, 1, len(combined_speech))
+                        conversation_audio[current_sample:end_sample] = combined_speech
+                    
+                    current_sample = end_sample
+            
+            # Normalize and convert to 16-bit PCM
+            conversation_audio = np.clip(conversation_audio, -1.0, 1.0)
+            audio_int16 = (conversation_audio * 32767).astype(np.int16)
+            
+            # Create proper WAV file
+            wav_buffer = BytesIO()
+            with wave.open(wav_buffer, 'wb') as wav_file:
+                wav_file.setnchannels(1)  # Mono
+                wav_file.setsampwidth(2)  # 16-bit
+                wav_file.setframerate(sample_rate)
+                wav_file.writeframes(audio_int16.tobytes())
+            
+            wav_buffer.seek(0)
+            return wav_buffer.getvalue()
+            
+        except Exception as e:
+            logger.error(f"Failed to generate podcast audio: {e}")
+            return self.generate_test_audio_bytes(duration_seconds)
+
     def generate_conversation_audio_bytes(self, duration_seconds: float = 120.0) -> bytes:
         """Generate longer conversation-like audio for comprehensive testing."""
         try:
@@ -324,9 +454,9 @@ class WebSocketTranscriptionTest:
             await sio.emit('join_session', {'session_id': session_id})
             await asyncio.sleep(3)
             
-            # Generate and send 2+ minute conversation
-            logger.info("🎵 Generating 2+ minute conversation audio...")
-            conversation_audio = self.generate_conversation_audio_bytes(duration_seconds=130.0)
+            # Generate and send podcast-style conversation
+            logger.info("🎵 Generating podcast-style conversation audio (2.5+ minutes)...")
+            conversation_audio = self.generate_podcast_conversation_audio(duration_seconds=150.0)
             chunk_size = 8192  # Larger chunks for longer audio
             
             logger.info(f"🎵 Sending {len(conversation_audio)} bytes of conversation audio...")
