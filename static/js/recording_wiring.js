@@ -575,14 +575,51 @@
 
       // Request microphone access
       console.log('🎤 Requesting microphone access...');
-      mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 16000
+      
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 16000
+          }
+        });
+        
+        console.log('✅ Microphone access granted');
+        
+      } catch (permissionError) {
+        // 🔥 ENHANCED: Comprehensive microphone permission error handling
+        console.error('🚨 Microphone access error:', permissionError);
+        
+        let errorMessage = 'Unable to access microphone';
+        let actionText = 'Try Again';
+        
+        if (permissionError.name === 'NotAllowedError') {
+          errorMessage = 'Microphone access denied. Please allow microphone access and try again.';
+          actionText = 'Check Permissions';
+        } else if (permissionError.name === 'NotFoundError') {
+          errorMessage = 'No microphone found. Please connect a microphone and try again.';
+          actionText = 'Check Device';
+        } else if (permissionError.name === 'NotReadableError') {
+          errorMessage = 'Microphone is being used by another application. Please close other apps using the microphone.';
+          actionText = 'Check Apps';
         }
-      });
+        
+        showError(errorMessage, {
+          action: actionText,
+          callback: () => {
+            // 🔥 ENHANCED: Provide specific help based on error type
+            if (permissionError.name === 'NotAllowedError') {
+              window.open('https://support.google.com/chrome/answer/2693767', '_blank');
+            }
+          }
+        });
+        
+        // Update UI state
+        updateConnectionStatus('error', 'Microphone access denied');
+        return;
+      }
       
       if (micStatus()) micStatus().textContent = 'Recording...';
 

@@ -3,6 +3,7 @@ import json
 import traceback
 import uuid
 from contextlib import contextmanager
+from functools import wraps
 from flask import request
 from flask_socketio import emit, join_room, disconnect
 from app import socketio, db
@@ -59,18 +60,41 @@ def timeout_context(seconds):
         signal.alarm(0)
         signal.signal(signal.SIGALRM, old_handler)
 
+# 🔥 ENHANCED: Robust error handling decorator
+def handle_socket_errors(f):
+    """Decorator for comprehensive WebSocket error handling."""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except Exception as e:
+            logger.error(f"🚨 WebSocket error in {f.__name__}: {str(e)}")
+            logger.error(f"Full traceback: {traceback.format_exc()}")
+            
+            # Emit error to client with user-friendly message
+            try:
+                emit('error', {
+                    'type': 'system_error',
+                    'message': 'An unexpected error occurred. Please refresh and try again.',
+                    'timestamp': time.time()
+                })
+            except Exception as emit_error:
+                logger.error(f"Failed to emit error to client: {emit_error}")
+    return wrapper
+
 @socketio.on('connect')
+@handle_socket_errors
 def on_connect():
-    """Handle client connection with enhanced tracking."""
-    # Use Flask-SocketIO's built-in session management
-    # Get session ID from Flask-SocketIO context
+    """🔥 ENHANCED: Handle client connection with comprehensive tracking and error recovery."""
     try:
         from flask import session as flask_session
         client_id = flask_session.get('client_id', str(uuid.uuid4()))
     except:
         client_id = str(uuid.uuid4())
+    
     connection_time = time.time()
     
+    # 🔥 ENHANCED: Structured logging for better monitoring
     logger.info({
         "event": "client_connected",
         "client_id": client_id,

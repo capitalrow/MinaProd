@@ -28,6 +28,8 @@ class TranscriptionMetrics:
     wer_score: Optional[float] = None
     confidence_scores: List[float] = field(default_factory=list)
     dedup_effectiveness: float = 0.0
+    quality_scores: List[float] = field(default_factory=list)
+    text_segments: List[Dict[str, Any]] = field(default_factory=list)
     
 class PerformanceMonitor:
     """Comprehensive performance monitoring for live transcription."""
@@ -122,6 +124,62 @@ class PerformanceMonitor:
         """Record an API retry attempt."""
         if session_id in self.metrics:
             self.metrics[session_id].retry_count += 1
+    
+    def record_transcription_result(self, session_id: str, success: bool, confidence: float = 0.0, text: str = ""):
+        """🔥 ENHANCED: Record transcription result with comprehensive QA metrics."""
+        try:
+            if session_id not in self.metrics:
+                self.start_session_monitoring(session_id)
+            
+            metrics = self.metrics[session_id]
+            if success and confidence > 0:
+                metrics.confidence_scores.append(confidence)
+                
+                # 🔥 ENHANCED: Text quality analysis
+                if text:
+                    quality_score = self._calculate_text_quality_score(text, confidence)
+                    metrics.quality_scores.append(quality_score)
+                    
+                    # Store text segments for potential WER calculation
+                    metrics.text_segments.append({
+                        'text': text,
+                        'timestamp': time.time(),
+                        'confidence': confidence,
+                        'quality_score': quality_score
+                    })
+                    
+        except Exception as e:
+            logger.error(f"Error recording transcription result: {e}")
+    
+    def _calculate_text_quality_score(self, text: str, confidence: float) -> float:
+        """🔥 NEW: Calculate quality score based on text characteristics."""
+        try:
+            # Base score from confidence
+            score = confidence
+            
+            # Penalize very short text (likely noise)
+            words = text.split()
+            if len(words) < 2:
+                score *= 0.7
+            
+            # Penalize excessive repetition
+            if len(words) > 1:
+                unique_ratio = len(set(words)) / len(words)
+                if unique_ratio < 0.5:  # Too much repetition
+                    score *= 0.8
+            
+            # Bonus for proper sentence structure
+            if text.strip().endswith(('.', '!', '?')):
+                score = min(1.0, score * 1.05)
+            
+            # Penalize all caps (likely error)
+            if text.isupper() and len(text) > 5:
+                score *= 0.9
+                
+            return max(0.0, min(1.0, score))
+            
+        except Exception:
+            return confidence
     
     def record_transcription_result(self, session_id: str, is_final: bool, confidence: float):
         """Record transcription result metrics."""
