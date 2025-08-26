@@ -3,6 +3,7 @@ Session Model (M2)
 SQLAlchemy 2.0-safe model for meeting sessions with durable storage.
 """
 
+import uuid
 from typing import Optional
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -74,3 +75,8 @@ class Session(Base):
     def mark_error(self):
         """Mark session as error state."""
         self.status = 'error'
+    
+    @staticmethod
+    def generate_external_id():
+        """Generate a unique external ID for session identification."""
+        return str(uuid.uuid4())
