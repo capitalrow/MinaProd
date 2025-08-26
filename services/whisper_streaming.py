@@ -276,7 +276,15 @@ class WhisperStreamingService:
             # Convert audio data to file-like object
             import io
             audio_file = io.BytesIO(audio_data)
-            audio_file.name = "audio.wav"  # Required for OpenAI API
+            
+            # Convert WebM to WAV format for OpenAI API compatibility
+            from .audio_processor import AudioProcessor
+            processor = AudioProcessor()
+            wav_data = processor.convert_to_wav(audio_data, input_format='webm')
+            
+            # Use converted WAV data
+            audio_file = io.BytesIO(wav_data)
+            audio_file.name = "audio.wav"  # Now matches the actual converted format
             
             # Prepare transcription parameters
             params = {
@@ -548,13 +556,12 @@ class WhisperStreamingService:
             import tempfile
             import os
             
-            # 🔥 CRITICAL FIX: Use raw WebM data directly - Whisper supports WebM/Opus
-            # Skip fake conversion that was corrupting audio
-            logger.info(f"Using raw audio format for Whisper API: {len(audio_data)} bytes")
-            
-            # Use original audio data directly (WebM/Opus format)
-            wav_audio = audio_data
-            file_suffix = '.webm'  # Match the actual audio format
+            # Convert WebM to WAV format for OpenAI API compatibility  
+            from .audio_processor import AudioProcessor
+            processor = AudioProcessor()
+            wav_audio = processor.convert_to_wav(audio_data, input_format='webm')
+            file_suffix = '.wav'  # Match the converted audio format
+            logger.info(f"Converted {len(audio_data)} bytes WebM to {len(wav_audio)} bytes WAV")
             
             with tempfile.NamedTemporaryFile(suffix=file_suffix, delete=False) as temp_file:
                 temp_file.write(wav_audio)
