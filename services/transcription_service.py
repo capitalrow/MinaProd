@@ -894,7 +894,7 @@ class TranscriptionService:
             return False
             
         session_data = self.active_sessions[session_id]
-        return session_data['state'] in [SessionState.IDLE, SessionState.ACTIVE]
+        return session_data['state'] in [SessionState.IDLE, SessionState.RECORDING]
     
     def cleanup_client_sessions(self, client_id: str):
         """
