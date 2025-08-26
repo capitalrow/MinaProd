@@ -1553,6 +1553,7 @@ class TranscriptionService:
                     state['stats'].setdefault('dedupe_hits', 0)
                     state['stats']['dedupe_hits'] += 1
                     # 🔇 REDUCED NOISE: Minimal duplicate logging
+                    logger.debug(f"DUPLICATE FILTER: Filtered duplicate text for session {session_id}: '{text}'")
                     return None
                 
                 # Filter 3: 🔥 INT-LIVE-I2 Adaptive confidence threshold with hysteresis
@@ -1562,13 +1563,14 @@ class TranscriptionService:
                 
                 if should_suppress:
                     # 🔥 INT-LIVE-I2: Track suppression metrics
+                    state['stats'].setdefault('low_conf_suppressed', 0)
                     state['stats']['low_conf_suppressed'] += 1
                     if adaptive_conf != self.base_confidence:
+                        state['stats'].setdefault('adaptive_conf_adjustments', 0)
                         state['stats']['adaptive_conf_adjustments'] += 1
                     
                     # 🔇 REDUCED NOISE: Only log low confidence when significant
-                    if conf < 0.3:  # Only log very low confidence
-                        logger.debug(f"Quality: Adaptive confidence filter {conf:.2f} < {adaptive_conf:.2f}")
+                    logger.debug(f"CONFIDENCE FILTER: Suppressed low confidence text for session {session_id}: '{text}' (conf: {conf:.2f} < {adaptive_conf:.2f})")
                     return None
                 
                 # Filter 4: Minimum meaningful length (more permissive)
@@ -1592,6 +1594,11 @@ class TranscriptionService:
                 # 3) 🔥 INT-LIVE-I2: Smart interim vs final decision with punctuation & throttling
                 emit_interim = self._should_emit_interim(buf, now, last_emit, state)
                 finalize = self._should_finalize(session_id, vad_result, now, state)
+                
+                # 🔥 CRITICAL FIX: If neither interim nor final would emit, force an interim emission
+                # This ensures transcription results always reach the frontend
+                if not emit_interim and not finalize and buf.strip():
+                    emit_interim = True
                 
                 if finalize:
                     # FINAL: Additional quality check on final buffer
@@ -1625,12 +1632,14 @@ class TranscriptionService:
                     
                     # 🔥 INT-LIVE-I2: Track interim metrics
                     interval_ms = int((now - state['last_interim_emit_ts']) * 1000)
+                    state['stats'].setdefault('interim_intervals', [])
                     state['stats']['interim_intervals'].append(interval_ms)
                     # Keep only last 50 intervals for rolling average
                     if len(state['stats']['interim_intervals']) > 50:
                         state['stats']['interim_intervals'].pop(0)
                     
                     state['last_interim_emit_ts'] = now
+                    state['stats'].setdefault('interim_events', 0)
                     state['stats']['interim_events'] += 1
                     
                     return {

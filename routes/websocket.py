@@ -492,6 +492,16 @@ def audio_chunk(data):
             
             if text:
                 event_name = 'final_transcript' if is_final_result else 'interim_transcript'
+                
+                # Emit to the specific client (using request.sid)
+                emit(event_name, {
+                    'session_id': session_id,
+                    'text': text,
+                    'confidence': confidence,
+                    'timestamp': time.time()
+                })
+                
+                # Also emit to room if different from individual client
                 emit(event_name, {
                     'session_id': session_id,
                     'text': text,
@@ -500,7 +510,7 @@ def audio_chunk(data):
                 }, to=session_id)
                 
                 if WS_DEBUG:
-                    logger.info(f"✅ {event_name.upper()}: '{text[:50]}...' for session {session_id}")
+                    logger.info(f"✅ {event_name.upper()}: '{text[:50]}...' emitted to client and room {session_id}")
         
         # 🔥 ALWAYS SEND ACKNOWLEDGMENT
         emit('ack', {
