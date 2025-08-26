@@ -1519,8 +1519,8 @@
             channelCount: 1,
             echoCancellation: !isMobileDevice,  // Disable on mobile for compatibility
             noiseSuppression: !isMobileDevice,  // Disable on mobile for compatibility
-            autoGainControl: !isMobileDevice,   // Disable on mobile for compatibility
-            latency: 'interactive'              // Low latency for real-time
+            autoGainControl: !isMobileDevice    // Disable on mobile for compatibility
+            // Removed latency constraint - causing mobile errors
           }
         };
         
