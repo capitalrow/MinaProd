@@ -53,8 +53,8 @@ def timeout_context(seconds):
 @socketio.on('connect')
 def on_connect():
     """Handle client connection with enhanced tracking."""
-    from flask_socketio import request as socketio_request
-    client_id = socketio_request.sid
+    # Use Flask-SocketIO's built-in session management
+    client_id = request.sid if hasattr(request, 'sid') else str(uuid.uuid4())
     connection_time = time.time()
     
     logger.info({
@@ -74,8 +74,8 @@ def on_connect():
 @socketio.on('disconnect')
 def on_disconnect(disconnect_reason=None):
     """Handle client disconnection with cleanup."""
-    from flask_socketio import request as socketio_request
-    client_id = socketio_request.sid
+    # Use Flask-SocketIO's built-in session management
+    client_id = request.sid if hasattr(request, 'sid') else str(uuid.uuid4())
     disconnect_time = time.time()
     
     logger.info({
@@ -166,8 +166,8 @@ def audio_chunk(data):
     }
     """
     start_time = time.time()
-    from flask_socketio import request as socketio_request
-    client_id = socketio_request.sid
+    # Use Flask-SocketIO's built-in session management
+    client_id = request.sid if hasattr(request, 'sid') else str(uuid.uuid4())
     payload = data or {}
     
     # Extract and validate payload
