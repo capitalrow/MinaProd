@@ -1261,14 +1261,6 @@
       }
     }, 30000);
   }
-    }
-    
-    // Escape key to clear focus
-    if (event.key === 'Escape') {
-      document.activeElement.blur();
-      announceToScreenReader('Focus cleared');
-    }
-  }
   
   function setupFocusManagement() {
     // Enhanced focus indicators for keyboard navigation
