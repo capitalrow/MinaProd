@@ -356,7 +356,9 @@ class WhisperStreamingService:
     def _transcribe_audio(self, audio_data: bytes, is_final: bool) -> Optional[TranscriptionResult]:
         """Perform actual transcription using OpenAI Whisper API or stub mode."""
         # 🔥 PHASE 1: Use stub mode if enabled
+        logger.info(f"🚨 ITER3: _transcribe_audio called with {len(audio_data)} bytes, STUB_TRANSCRIPTION={STUB_TRANSCRIPTION}")
         if STUB_TRANSCRIPTION:
+            logger.info(f"🚨 ITER3: Using STUB mode instead of real Whisper API!")
             return self._stub_transcription(audio_data, is_final)
             
         if not self.client:
@@ -384,10 +386,12 @@ class WhisperStreamingService:
                 params["timestamp_granularities"] = ["word"]
             
             # Make API request
+            logger.info(f"🔧 ITER3: Calling REAL Whisper API with {len(audio_data)} bytes...")
             response = self.client.audio.transcriptions.create(**params)
             
             # Process response
             text = response.text.strip()
+            logger.info(f"🚨 ITER3: Whisper API returned: '{text}' (length: {len(text)})")
             
             # Extract word-level timestamps if available
             words = []

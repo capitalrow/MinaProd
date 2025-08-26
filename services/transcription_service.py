@@ -1535,19 +1535,21 @@ class TranscriptionService:
                         logger.debug(f"Quality: Filtered repetitive text ({len(text.split())} words)")
                     return None
                 
-                # Filter 2: Check for duplicates of recent text
-                if self._is_duplicate_of_recent(text, session_id):
+                # Filter 2: Check for duplicates of recent text - TEMPORARILY DISABLED FOR DEBUGGING
+                if False:  # self._is_duplicate_of_recent(text, session_id):
                     # 🔥 INT-LIVE-I2: Track deduplication metrics
                     state['stats'].setdefault('dedupe_hits', 0)
                     state['stats']['dedupe_hits'] += 1
                     # 🔇 REDUCED NOISE: Minimal duplicate logging
                     logger.debug(f"DUPLICATE FILTER: Filtered duplicate text for session {session_id}: '{text}'")
                     return None
+                else:
+                    logger.info(f"🔧 ITER3: DUPLICATE FILTER BYPASSED for '{text}'")
                 
-                # Filter 3: 🔥 INT-LIVE-I2 Adaptive confidence threshold with hysteresis
+                # Filter 3: 🔥 ITER3 - CONFIDENCE FILTER TEMPORARILY DISABLED
                 vad_dict = {'is_speech': vad_result.is_speech, 'confidence': vad_result.confidence} if hasattr(vad_result, 'is_speech') else vad_result
                 adaptive_conf = self._compute_adaptive_confidence(vad_dict)
-                should_suppress = self._apply_hysteresis_gating(conf, adaptive_conf)
+                should_suppress = False  # self._apply_hysteresis_gating(conf, adaptive_conf)
                 
                 if should_suppress:
                     # 🔥 INT-LIVE-I2: Track suppression metrics
@@ -1560,15 +1562,17 @@ class TranscriptionService:
                     # 🔇 REDUCED NOISE: Only log low confidence when significant
                     logger.debug(f"CONFIDENCE FILTER: Suppressed low confidence text for session {session_id}: '{text}' (conf: {conf:.2f} < {adaptive_conf:.2f})")
                     return None
+                else:
+                    logger.info(f"🔧 ITER3: CONFIDENCE FILTER BYPASSED for '{text}' (conf: {conf:.2f})")
                 
                 # Filter 4: Minimum meaningful length (more permissive) - RELAXED
                 if len(text.strip()) < 1:
                     logger.debug(f"SYNC QUALITY FILTER: Rejected empty text for session {session_id}: '{text}'")
                     return None
                 
-                # 🔥 CRITICAL FIX: Force finalization for single words to prevent getting stuck
-                if len(text.split()) == 1 and len(text) >= 2:
-                    logger.info(f"🔧 FORCE FINALIZE: Single word '{text}' - forcing finalization to prevent stall")
+                # 🔥 ITER3: EMERGENCY SEGMENT CREATION - Force every text through
+                if len(text.strip()) >= 1:  # Accept ANY non-empty text
+                    logger.info(f"🚨 ITER3 EMERGENCY: Force finalizing '{text}' - bypassing all filters!")
                     self._persist_segment(session_id, text, conf, time.time())
                     return {
                         'text': text,
