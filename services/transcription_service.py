@@ -671,7 +671,13 @@ class TranscriptionService:
     # 🔥 PHASE 4: Get comprehensive service statistics
     def get_comprehensive_statistics(self) -> Dict[str, Any]:
         """Get comprehensive statistics from all service components."""
-        base_stats = self.get_statistics()
+        base_stats = {
+            'total_sessions': self.total_sessions,
+            'active_sessions': len(self.active_sessions),
+            'total_segments': self.total_segments,
+            'average_processing_time': self.average_processing_time,
+            'processing_queue_size': self.processing_queue_size
+        }
         
         # Add streaming metrics
         base_stats['streaming_metrics'] = self.streaming_metrics.copy()
@@ -1563,7 +1569,7 @@ class TranscriptionService:
                     logger.info(f"🔧 ITER3: DUPLICATE FILTER BYPASSED for '{text}'")
                 
                 # Filter 3: 🔥 ITER3 - CONFIDENCE FILTER TEMPORARILY DISABLED
-                vad_dict = {'is_speech': vad_result.is_speech, 'confidence': vad_result.confidence} if hasattr(vad_result, 'is_speech') else vad_result
+                vad_dict = {'is_speech': getattr(vad_result, 'is_speech', True), 'confidence': getattr(vad_result, 'confidence', 0.8)} if vad_result else {'is_speech': True, 'confidence': 0.8}
                 adaptive_conf = self._compute_adaptive_confidence(vad_dict)
                 should_suppress = False  # self._apply_hysteresis_gating(conf, adaptive_conf)
                 

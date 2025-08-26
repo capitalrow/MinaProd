@@ -361,7 +361,7 @@ def join_session(data):
             return
         
         if WS_DEBUG:
-            logger.info(f"📝 SESSION JOIN: Client {request.sid} joined session {session_id}")
+            logger.info(f"📝 SESSION JOIN: Client joined session {session_id}")
         
         # 🔥 DEBUG: Always log session creation for debugging
         logger.info(f"📝 SESSION JOIN: Client joined session {session_id}")
@@ -551,12 +551,12 @@ def audio_chunk(data):
                 
                 # Update session statistics with latest data
                 if session.segments:
-                    confidences = [seg.confidence for seg in session.segments if seg.confidence]
+                    confidences = [seg.avg_confidence for seg in session.segments if seg.avg_confidence]
                     if confidences:
                         avg_confidence = sum(confidences) / len(confidences)
                         session.average_confidence = avg_confidence
                     
-                    durations = [seg.duration for seg in session.segments if seg.duration]
+                    durations = [seg.duration_ms for seg in session.segments if seg.duration_ms]
                     if durations:
                         total_duration = sum(durations)
                         session.total_duration = total_duration
@@ -620,7 +620,7 @@ def end_of_stream(data):
         logger.info({
             "event": "end_of_stream",
             "session_id": session_id,
-            "client_id": request.sid,
+            "client_id": "socket_client",
             "timestamp": time.time()
         })
         
