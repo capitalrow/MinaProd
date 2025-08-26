@@ -403,6 +403,41 @@
   }
 
   // 🔥 CRITICAL FIX: Session metrics update function
+  function updateSessionMetrics(metrics) {
+    try {
+      // Update segment count
+      const segmentElement = document.getElementById('segmentCount');
+      if (segmentElement) {
+        segmentElement.textContent = metrics.segments_count || 0;
+      }
+      
+      // Update session duration
+      const durationElement = document.getElementById('sessionDuration');
+      if (durationElement) {
+        const duration = metrics.session_duration || 0;
+        const minutes = Math.floor(duration / 60);
+        const seconds = Math.floor(duration % 60);
+        durationElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }
+      
+      // Update average confidence
+      const confidenceElement = document.getElementById('avgConfidence');
+      if (confidenceElement) {
+        const confidence = metrics.avg_confidence || 0;
+        confidenceElement.textContent = `${Math.round(confidence * 100)}%`;
+      }
+      
+      // Update words per minute
+      const wpmElement = document.getElementById('wordsPerMinute');
+      if (wpmElement) {
+        wpmElement.textContent = metrics.words_per_minute || 0;
+      }
+      
+    } catch (error) {
+      console.error('❌ Failed to update session metrics UI:', error);
+    }
+  }
+
   // 🔥 ADVANCED: Enhanced error handling with specific recovery guidance
   function showEnhancedError(errorType, message, details = {}) {
     const errorConfig = {
@@ -498,48 +533,6 @@
     return area;
   }
 
-  function updateSessionMetrics(metrics) {
-    try {
-      // Update segment count
-      const segmentElement = document.getElementById('segmentCount');
-      if (segmentElement) {
-        segmentElement.textContent = metrics.segments_count || 0;
-      }
-      
-      // Update average confidence
-      const confidenceElement = document.getElementById('avgConfidence');
-      if (confidenceElement) {
-        confidenceElement.textContent = `${metrics.avg_confidence || 0}%`;
-      }
-      
-      // Update speaking time
-      const timeElement = document.getElementById('speakingTime');
-      if (timeElement) {
-        const time = metrics.speaking_time || 0;
-        const minutes = Math.floor(time / 60);
-        const seconds = Math.floor(time % 60);
-        timeElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-      }
-      
-      // Update quality status
-      const qualityElement = document.getElementById('qualityStatus');
-      if (qualityElement) {
-        qualityElement.textContent = metrics.quality || 'Unknown';
-        qualityElement.className = `quality-${(metrics.quality || 'unknown').toLowerCase()}`;
-      }
-      
-      // Update last update timestamp
-      const lastUpdateElement = document.getElementById('lastUpdate');
-      if (lastUpdateElement) {
-        const now = new Date();
-        lastUpdateElement.textContent = now.toLocaleTimeString();
-      }
-      
-      console.log('✅ Session metrics UI updated:', metrics);
-    } catch (error) {
-      console.error('❌ Failed to update session metrics UI:', error);
-    }
-  }
   
   // 🚀 CUTTING-EDGE: AI-Powered Quality Enhancement
   class TranscriptionQualityEnhancer {
@@ -1253,56 +1246,21 @@
       announceToScreenReader('Microphone not active');
     }
   }
-    
-    // Focus management
-    setupFocusManagement();
-    
-    // Screen reader announcements
-    setupScreenReaderAnnouncements();
-    
-    // Mobile accessibility
-    setupMobileAccessibility();
-    
-    console.log('🔧 Accessibility features initialized');
-  }
   
-  function handleKeyboardShortcuts(event) {
-    // Only handle shortcuts when not in input fields
-    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+  // --- Connection Health Monitoring ---
+  function setupConnectionHealthMonitoring() {
+    // Start heartbeat monitoring every 30 seconds
+    if (connectionHealth.heartbeatInterval) {
+      clearInterval(connectionHealth.heartbeatInterval);
+    }
     
-    if (event.ctrlKey) {
-      switch(event.key.toLowerCase()) {
-        case 'r':
-          event.preventDefault();
-          if (startBtn() && !startBtn().disabled) {
-            startBtn().click();
-            announceToScreenReader('Recording started via keyboard shortcut');
-          }
-          break;
-        case 's':
-          event.preventDefault();
-          if (stopBtn() && !stopBtn().disabled) {
-            stopBtn().click();
-            announceToScreenReader('Recording stopped via keyboard shortcut');
-          }
-          break;
-        case 'delete':
-          event.preventDefault();
-          const clearBtn = document.getElementById('clearTranscription');
-          if (clearBtn) {
-            clearBtn.click();
-            announceToScreenReader('Transcription cleared via keyboard shortcut');
-          }
-          break;
-        case 'e':
-          event.preventDefault();
-          const exportBtn = document.getElementById('exportTranscription');
-          if (exportBtn) {
-            exportBtn.click();
-            announceToScreenReader('Transcription export started via keyboard shortcut');
-          }
-          break;
+    connectionHealth.heartbeatInterval = setInterval(() => {
+      if (socket && socket.connected) {
+        const startTime = Date.now();
+        socket.emit('ping', startTime);
       }
+    }, 30000);
+  }
     }
     
     // Escape key to clear focus
