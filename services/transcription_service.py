@@ -1094,7 +1094,9 @@ class TranscriptionService:
         except Exception as e:
             logger.error(f"Error starting session {session_id}: {e}")
     
-    def process_audio_sync(self, session_id: str, audio_data: bytes, timestamp: Optional[float] = None) -> Optional[Dict[str, Any]]:
+    def process_audio_sync(self, session_id: str, audio_data: bytes, timestamp: Optional[float] = None,
+                          mime_type: Optional[str] = None, client_rms: Optional[float] = None, 
+                          is_final_signal: bool = False) -> Optional[Dict[str, Any]]:
         """
         INT-LIVE-I1: INTERIM UPDATES - Process audio with interim and final transcription support.
         Implements rolling buffer for interim results and proper finalization logic.
@@ -1103,6 +1105,9 @@ class TranscriptionService:
             session_id: Session identifier
             audio_data: Raw audio bytes
             timestamp: Optional timestamp
+            mime_type: MIME type of audio data (e.g., 'audio/webm')
+            client_rms: Client-side RMS energy level
+            is_final_signal: Whether this is a final chunk signal
             
         Returns:
             Processing result dictionary with interim/final transcription or None
