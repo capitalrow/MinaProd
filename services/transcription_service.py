@@ -475,7 +475,13 @@ class TranscriptionService:
         
         # Process any remaining audio
         if session_data['audio_chunks']:
-            await self._process_pending_audio(session_id, final=True)
+            # Process remaining chunks synchronously
+            for chunk_data in session_data['audio_chunks']:
+                try:
+                    self.process_audio_sync(session_id, chunk_data['data'], is_final_signal=True)
+                except Exception as e:
+                    logger.error(f"Error processing pending audio: {e}")
+            session_data['audio_chunks'].clear()
         
         # Update database session
         from sqlalchemy import select
@@ -688,15 +694,15 @@ class TranscriptionService:
                 word_counts[word] = word_counts.get(word, 0) + 1
                 
             # 🔥 CRITICAL FIX: Only flag if word appears 3+ times in short texts
-            max_word_count = max(word_counts.values())
+            max_word_count = max(word_counts.values()) if word_counts else 0
             if len(words) <= 3 and max_word_count >= 3:  # 🔥 Changed from >1 to >=3
-                most_common_word = max(word_counts, key=word_counts.get)
+                most_common_word = max(word_counts, key=lambda k: word_counts[k]) if word_counts else ''
                 logger.warning(f"BLOCKED short repetitive text: '{text}' ('{most_common_word}' appears {max_word_count} times)")
                 return True
                 
             # For longer texts, use threshold
             if len(words) > 3 and max_word_count > getattr(self, 'max_repetition_threshold', 2):
-                most_common_word = max(word_counts, key=word_counts.get)
+                most_common_word = max(word_counts, key=lambda k: word_counts[k]) if word_counts else ''
                 logger.warning(f"BLOCKED repetitive text: '{text}' ('{most_common_word}' appears {max_word_count} times)")
                 return True
                 
@@ -1279,7 +1285,8 @@ class TranscriptionService:
                     return None
                 
                 # Filter 3: 🔥 INT-LIVE-I2 Adaptive confidence threshold with hysteresis
-                adaptive_conf = self._compute_adaptive_confidence(vad_result)
+                vad_dict = {'is_speech': vad_result.is_speech, 'confidence': vad_result.confidence} if hasattr(vad_result, 'is_speech') else vad_result
+                adaptive_conf = self._compute_adaptive_confidence(vad_dict)
                 should_suppress = self._apply_hysteresis_gating(conf, adaptive_conf)
                 
                 if should_suppress:
