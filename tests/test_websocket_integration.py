@@ -197,6 +197,16 @@ class WebSocketTranscriptionTest:
             result['audio_acknowledged'] += 1
             
         @sio.event
+        async def audio_acknowledged(data):
+            logger.info(f"🎵 Audio acknowledged: {data}")
+            result['audio_acknowledged'] += 1
+            
+        @sio.event
+        async def ack(data):
+            logger.info(f"🎵 Audio ack: {data}")
+            result['audio_acknowledged'] += 1
+            
+        @sio.event
         async def transcript_partial(data):
             logger.info(f"📝 Partial transcript: {data}")
             result['transcription_responses'] += 1

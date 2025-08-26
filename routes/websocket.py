@@ -429,6 +429,15 @@ def audio_chunk(data):
                 })
                 return
         
+        # 🔥 ENHANCED: Always emit acknowledgment for received audio chunk
+        emit('audio_acknowledged', {
+            'session_id': session_id,
+            'chunk_size': len(raw_audio) if raw_audio else 0,
+            'timestamp': time.time(),
+            'is_final': is_final,
+            'received': True
+        })
+        
         # 🔥 STUB TRANSCRIPTION MODE: Test wiring without real API calls
         if STUB_TRANSCRIPTION:
             if is_final:

@@ -230,6 +230,41 @@ class TranscriptionService:
         # Clamp to reasonable range
         return max(0.4, min(0.8, adaptive))
     
+    def _create_wav_from_chunks(self, audio_chunks: List[bytes]) -> bytes:
+        """Create a proper WAV file from buffered audio chunks."""
+        try:
+            import wave
+            from io import BytesIO
+            
+            # Extract raw audio data from chunks
+            raw_audio_data = b''
+            for chunk in audio_chunks:
+                if chunk.startswith(b'RIFF'):
+                    # Skip WAV header (44 bytes) and get audio data
+                    raw_audio_data += chunk[44:]
+                else:
+                    # Assume raw PCM data
+                    raw_audio_data += chunk
+            
+            if not raw_audio_data:
+                return b''
+                
+            # Create proper WAV file
+            wav_buffer = BytesIO()
+            with wave.open(wav_buffer, 'wb') as wav_file:
+                wav_file.setnchannels(1)  # Mono
+                wav_file.setsampwidth(2)  # 16-bit
+                wav_file.setframerate(16000)  # 16kHz
+                wav_file.writeframes(raw_audio_data)
+            
+            wav_buffer.seek(0)
+            return wav_buffer.getvalue()
+            
+        except Exception as e:
+            logger.warning(f"Failed to create WAV from buffer: {e}")
+            # Fallback: just concatenate chunks
+            return b''.join(audio_chunks)
+    
     def _apply_hysteresis_gating(self, confidence: float, threshold: float) -> bool:
         """
         🔥 INT-LIVE-I2: Apply hysteresis gating - require 2 consecutive frames for state change.
@@ -1446,10 +1481,36 @@ class TranscriptionService:
             # 🔥 PERFORMANCE MONITORING: Track chunk processing start
             chunk_start_time = time.time()
             
-            # Process with Whisper API
-            logger.info(f"🎤 WHISPER API CALL: Sending audio to Whisper for session {session_id}, chunk size: {len(audio_data)} bytes")
+            # Buffer audio chunks before processing with Whisper API
+            state.setdefault('audio_buffer', [])
+            state.setdefault('buffer_duration', 0.0)
+            
+            # Add audio to buffer
+            chunk_duration = len(audio_data) / (16000 * 2)  # Estimate duration for 16kHz 16-bit mono
+            state['audio_buffer'].append(audio_data)
+            state['buffer_duration'] += chunk_duration
+            
+            # Only process when we have enough buffered audio (2+ seconds or 5+ chunks)
+            should_process = (
+                state['buffer_duration'] >= 2.0 or  # 2 seconds of audio
+                len(state['audio_buffer']) >= 5     # At least 5 chunks
+            )
+            
+            if not should_process:
+                logger.debug(f"🔄 Buffering audio: {len(state['audio_buffer'])} chunks, {state['buffer_duration']:.2f}s")
+                return None
+                
+            # Combine buffered audio into single chunk with proper WAV format
+            combined_audio = self._create_wav_from_chunks(state['audio_buffer'])
+            
+            # Clear buffer
+            state['audio_buffer'] = []
+            state['buffer_duration'] = 0.0
+            
+            # Process combined audio with Whisper API
+            logger.info(f"🎤 WHISPER API CALL: Sending buffered audio to Whisper for session {session_id}, combined size: {len(combined_audio)} bytes")
             res = self.whisper_service.transcribe_chunk_sync(
-                audio_data=audio_data,
+                audio_data=combined_audio,
                 session_id=session_id
             )
             
@@ -1489,6 +1550,7 @@ class TranscriptionService:
                 # Filter 2: Check for duplicates of recent text
                 if self._is_duplicate_of_recent(text, session_id):
                     # 🔥 INT-LIVE-I2: Track deduplication metrics
+                    state['stats'].setdefault('dedupe_hits', 0)
                     state['stats']['dedupe_hits'] += 1
                     # 🔇 REDUCED NOISE: Minimal duplicate logging
                     return None
