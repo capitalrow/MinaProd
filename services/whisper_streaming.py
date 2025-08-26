@@ -82,15 +82,55 @@ class AudioBuffer:
             self.total_duration *= 0.9
     
     def get_concatenated_audio(self) -> Optional[bytes]:
-        """Get all buffered audio as single chunk."""
+        """Get all buffered audio as single chunk with proper WAV format."""
         if not self.buffer:
             return None
         
-        if len(self.buffer) == 1:
-            return self.buffer[0]
+        # Get all audio data
+        audio_chunks = list(self.buffer)
         
-        # Concatenate all chunks
-        return b''.join(self.buffer)
+        # If we have a single chunk that starts with RIFF (WAV header), return as-is
+        if len(audio_chunks) == 1 and audio_chunks[0].startswith(b'RIFF'):
+            return audio_chunks[0]
+        
+        # For multiple chunks or non-WAV data, create proper WAV file
+        return self._create_wav_from_chunks(audio_chunks)
+    
+    def _create_wav_from_chunks(self, chunks: List[bytes]) -> bytes:
+        """Create a proper WAV file from audio chunks."""
+        try:
+            import wave
+            from io import BytesIO
+            import struct
+            
+            # Extract raw audio data from chunks
+            raw_audio_data = b''
+            for chunk in chunks:
+                if chunk.startswith(b'RIFF'):
+                    # Skip WAV header (44 bytes) and get audio data
+                    raw_audio_data += chunk[44:]
+                else:
+                    # Assume raw PCM data
+                    raw_audio_data += chunk
+            
+            if not raw_audio_data:
+                return b''
+                
+            # Create proper WAV file
+            wav_buffer = BytesIO()
+            with wave.open(wav_buffer, 'wb') as wav_file:
+                wav_file.setnchannels(1)  # Mono
+                wav_file.setsampwidth(2)  # 16-bit
+                wav_file.setframerate(16000)  # 16kHz
+                wav_file.writeframes(raw_audio_data)
+            
+            wav_buffer.seek(0)
+            return wav_buffer.getvalue()
+            
+        except Exception as e:
+            logger.warning(f"Failed to create WAV from chunks: {e}")
+            # Fallback: just concatenate chunks
+            return b''.join(chunks)
     
     def clear(self):
         """Clear the buffer."""
@@ -217,11 +257,12 @@ class WhisperStreamingService:
         # Add to buffer
         self.audio_buffer.add_chunk(audio_data, timestamp, estimated_duration)
         
-        # Decide whether to process now
+        # Decide whether to process now - be more conservative with buffering
         should_process = (
             is_final or 
             self.audio_buffer.is_full() or
-            self.audio_buffer.total_duration >= self.config.min_chunk_duration
+            self.audio_buffer.total_duration >= self.config.max_chunk_duration or
+            (len(self.audio_buffer.buffer) >= 5 and self.audio_buffer.total_duration >= 2.0)  # Process after 5 chunks + 2 seconds
         )
         
         if should_process and not self.is_processing:
