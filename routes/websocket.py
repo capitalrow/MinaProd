@@ -512,6 +512,49 @@ def audio_chunk(data):
                 if WS_DEBUG:
                     logger.info(f"✅ {event_name.upper()}: '{text[:50]}...' emitted to client and room {session_id}")
         
+        # 🔥 CRITICAL FIX: Broadcast real-time session metrics after processing
+        try:
+            session = Session.query.filter_by(external_id=session_id).first()
+            if session:
+                # Calculate current session metrics
+                segment_count = len(session.segments) if session.segments else 0
+                avg_confidence = session.average_confidence or 0.0
+                total_duration = session.total_duration or 0.0
+                
+                # Update session statistics with latest data
+                if session.segments:
+                    confidences = [seg.confidence for seg in session.segments if seg.confidence]
+                    if confidences:
+                        avg_confidence = sum(confidences) / len(confidences)
+                        session.average_confidence = avg_confidence
+                    
+                    durations = [seg.duration for seg in session.segments if seg.duration]
+                    if durations:
+                        total_duration = sum(durations)
+                        session.total_duration = total_duration
+                
+                # Commit database updates
+                db.session.commit()
+                
+                # Broadcast metrics to client
+                session_metrics = {
+                    'session_id': session_id,
+                    'segments_count': segment_count,
+                    'avg_confidence': round(avg_confidence * 100, 1),  # Convert to percentage
+                    'speaking_time': round(total_duration, 1),
+                    'quality': 'Excellent' if avg_confidence > 0.8 else 'Good' if avg_confidence > 0.6 else 'Fair' if avg_confidence > 0.4 else 'Poor',
+                    'last_update': time.time(),
+                    'processing_status': 'active',
+                    'chunk_count': chunk_count
+                }
+                
+                emit('session_metrics_update', session_metrics, to=session_id)
+                
+                if WS_DEBUG:
+                    logger.info(f"📊 Session metrics broadcast: segments={segment_count}, confidence={avg_confidence:.2f}, duration={total_duration:.1f}s")
+        except Exception as metrics_error:
+            logger.error(f"Failed to broadcast session metrics: {metrics_error}")
+
         # 🔥 ALWAYS SEND ACKNOWLEDGMENT
         emit('ack', {
             'ok': True,
