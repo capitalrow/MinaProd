@@ -29,9 +29,9 @@ class WebSocketTranscriptionTest:
         
     def load_real_conversation_audio(self) -> bytes:
         """Load the provided Boosie conversation MP3 file for real audio testing."""
+        import subprocess
+        from io import BytesIO
         try:
-            import subprocess
-            from io import BytesIO
             
             # Path to the real conversation audio file
             audio_file_path = "attached_assets/ytmp3free.cc_boosie-goes-off-on-irv-gotti-dying-he-got-hated-on-while-he-was-alive-now-they-show-love-part-5-youtubemp3free.org_1756226101636.mp3"
