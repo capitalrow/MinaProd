@@ -54,10 +54,11 @@ def create_session(data):
         language = payload.get('language', 'en')
         
         # Create database session
+        import uuid
         session = Session(
             title=title,
-            language=language,
-            external_id=Session.generate_external_id()
+            locale=language,
+            external_id=str(uuid.uuid4())[:8]
         )
         db.session.add(session)
         db.session.commit()
