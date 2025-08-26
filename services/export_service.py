@@ -325,3 +325,27 @@ class ExportService:
             return f"mina-{safe_title}-{session_id}.{format_type}"
         else:
             return f"mina-session-{session_id}.{format_type}"
+    
+    @staticmethod
+    def session_to_txt(session_id: int) -> Optional[str]:
+        """Convert a session to plain text format."""
+        d = SessionService.get_session_detail(session_id)
+        if not d: 
+            return None
+        finals = [s['text'].strip() for s in d['segments'] if s.get('is_final')]
+        return "\n".join(finals)
+    
+    @staticmethod
+    def session_to_vtt(session_id: int) -> Optional[str]:
+        """Convert a session to WebVTT subtitle format."""
+        d = SessionService.get_session_detail(session_id)
+        if not d: 
+            return None
+        lines = ["WEBVTT", ""]
+        for s in d['segments']:
+            if not s.get('is_final'): 
+                continue
+            start = s.get('start_time_formatted','00:00.000').replace('.',',')
+            end = s.get('end_time_formatted','00:00.000').replace('.',',')
+            lines += [f"{start} --> {end}", s.get('text','').strip(), ""]
+        return "\n".join(lines)
