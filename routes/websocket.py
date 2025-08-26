@@ -539,7 +539,10 @@ def audio_chunk(data):
         
         # 🔥 CRITICAL FIX: Broadcast real-time session metrics after processing
         try:
-            session = Session.query.filter_by(external_id=session_id).first()
+            # 🔥 CRITICAL FIX: Use correct SQLAlchemy 2.0 syntax
+            from sqlalchemy import select
+            stmt = select(Session).filter_by(external_id=session_id)
+            session = db.session.execute(stmt).scalar_one_or_none()
             if session:
                 # Calculate current session metrics
                 segment_count = len(session.segments) if session.segments else 0
@@ -645,7 +648,7 @@ def default_error_handler(e):
 # --- Test Events ---
 
 @socketio.on('ping')
-def handle_ping():
+def handle_ping(data=None):
     """Simple ping/pong for connection testing."""
     emit('pong', {'timestamp': time.time()})
 

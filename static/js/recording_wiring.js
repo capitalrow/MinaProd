@@ -1510,14 +1510,36 @@
       console.log('🎤 Requesting microphone access...');
       
       try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        // 📱 MOBILE-OPTIMIZED: Apply device-specific audio constraints
+        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        const audioConstraints = {
           audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-            sampleRate: 16000
+            sampleRate: 16000,
+            channelCount: 1,
+            echoCancellation: !isMobileDevice,  // Disable on mobile for compatibility
+            noiseSuppression: !isMobileDevice,  // Disable on mobile for compatibility
+            autoGainControl: !isMobileDevice,   // Disable on mobile for compatibility
+            latency: 'interactive'              // Low latency for real-time
           }
-        });
+        };
+        
+        // Additional mobile optimizations
+        if (isMobileDevice) {
+          console.log('📱 Applying mobile audio optimizations');
+          audioConstraints.audio.mandatory = {
+            googEchoCancellation: false,
+            googAutoGainControl: false,
+            googNoiseSuppression: false,
+            googHighpassFilter: false
+          };
+          audioConstraints.audio.optional = [
+            {googEchoCancellation2: false},
+            {googAutoGainControl2: false}
+          ];
+        }
+        
+        mediaStream = await navigator.mediaDevices.getUserMedia(audioConstraints);
         
         console.log('✅ Microphone access granted');
         
