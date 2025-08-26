@@ -1015,6 +1015,97 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // E2E Browser Simulation Integration
+    window.updateUIForSimulation = function(isSimulating, sessionId) {
+        const debugInfo = document.getElementById('debugInfo');
+        const debugStatus = document.getElementById('debugStatus');
+        const simulateBtn = document.getElementById('simulateFromFileBtn');
+        const startBtn = document.getElementById('startRecordingBtn');
+        const stopBtn = document.getElementById('stopRecordingBtn');
+        
+        if (isSimulating) {
+            if (debugInfo) debugInfo.style.display = 'inline';
+            if (debugStatus) debugStatus.textContent = `Simulating (${sessionId})`;
+            if (simulateBtn) {
+                simulateBtn.innerHTML = '<i class="fas fa-stop me-2"></i>Stop Simulation';
+                simulateBtn.className = 'btn btn-warning';
+            }
+            if (startBtn) startBtn.disabled = true;
+            if (stopBtn) stopBtn.disabled = false;
+        } else {
+            if (debugInfo) debugInfo.style.display = 'none';
+            if (simulateBtn) {
+                simulateBtn.innerHTML = '<i class="fas fa-file-audio me-2"></i>Simulate from file';
+                simulateBtn.className = 'btn btn-outline-info';
+            }
+            if (startBtn) startBtn.disabled = false;
+            if (stopBtn) stopBtn.disabled = true;
+        }
+    };
+    
+    // Setup simulation button handler
+    const simulateBtn = document.getElementById('simulateFromFileBtn');
+    if (simulateBtn) {
+        simulateBtn.addEventListener('click', async function() {
+            const isCurrentlySimulating = this.textContent.includes('Stop');
+            
+            try {
+                this.disabled = true;
+                
+                if (isCurrentlySimulating) {
+                    // Stop simulation
+                    console.log('🛑 Stopping simulation...');
+                    if (window.simFromAudioStop) {
+                        const result = await window.simFromAudioStop();
+                        
+                        if (result.success) {
+                            console.log('✅ Simulation stopped successfully');
+                            if (window.toastSystem) {
+                                window.toastSystem.showSuccess('Simulation stopped');
+                            }
+                        } else {
+                            console.error('❌ Failed to stop simulation:', result.error);
+                            if (window.toastSystem) {
+                                window.toastSystem.showError(`Stop failed: ${result.error}`);
+                            }
+                        }
+                    }
+                } else {
+                    // Start simulation
+                    console.log('🎬 Starting file simulation...');
+                    if (window.simFromAudioStart) {
+                        const result = await window.simFromAudioStart();
+                        
+                        if (result.success) {
+                            console.log('✅ Simulation started successfully');
+                            if (window.toastSystem) {
+                                window.toastSystem.showSuccess(`Simulation started: ${result.sessionId}`);
+                            }
+                        } else {
+                            console.error('❌ Failed to start simulation:', result.error);
+                            if (window.toastSystem) {
+                                window.toastSystem.showError(`Simulation failed: ${result.error}`);
+                            }
+                        }
+                    } else {
+                        console.error('❌ Simulation functions not loaded');
+                        if (window.toastSystem) {
+                            window.toastSystem.showError('Simulation system not available');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Simulation error:', error);
+                if (window.toastSystem) {
+                    window.toastSystem.showError(`Error: ${error.message}`);
+                }
+            } finally {
+                this.disabled = false;
+            }
+        });
+        console.log('✅ Browser simulation integration ready');
+    }
+    
     // Announce system ready
     setTimeout(() => {
         window.toastSystem.showSuccess('Enhanced transcription system ready with quality monitoring and filtering');
