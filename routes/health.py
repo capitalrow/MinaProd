@@ -73,7 +73,7 @@ def detailed_health_check():
         JSON response with detailed health and performance metrics
     """
     try:
-        from app_refactored import db
+        from app import db
         import psutil
         import sys
         
@@ -166,10 +166,11 @@ def readiness_check():
     """
     try:
         # Check critical dependencies
-        from app_refactored import db
+        from app import db
         
         # Test database connection
-        db.session.execute('SELECT 1').fetchone()
+        from sqlalchemy import text
+        db.session.execute(text('SELECT 1')).fetchone()
         
         return jsonify({
             "status": "ready",
@@ -183,6 +184,11 @@ def readiness_check():
             "error": str(e),
             "timestamp": datetime.utcnow().isoformat()
         }), 503
+
+@health_bp.route('/ready', methods=['GET'])
+def ready_alias():
+    """Alias for readiness check."""
+    return readiness_check()
 
 @health_bp.route('/health/live', methods=['GET'])
 def liveness_check():

@@ -3,6 +3,10 @@
 
 import os
 
+# Apply eventlet monkey patch before any other imports
+import eventlet
+eventlet.monkey_patch()
+
 # Server socket
 bind = "0.0.0.0:5000"
 backlog = 2048
@@ -29,9 +33,13 @@ proc_name = "mina_app"
 
 # Server mechanics  
 preload_app = False  # IMPORTANT: Set to False for Socket.IO
-reload = True
+reload = False  # Set to False for production
 reuse_port = True
 
 # Environment variable to detect we're running under Gunicorn
 def when_ready(server):
     os.environ['SERVER_SOFTWARE'] = 'gunicorn'
+    server.log.info("Mina transcription service is ready to accept connections")
+
+def on_exit(server):
+    server.log.info("Mina transcription service shutting down")

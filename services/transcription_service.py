@@ -1123,6 +1123,14 @@ class TranscriptionService:
             state = self.active_sessions[session_id]
             now = timestamp or time.time()
             
+            # Use client_rms for adaptive gating if provided
+            if client_rms is not None:
+                state['last_client_rms'] = float(client_rms)
+            
+            # Handle final signal - flush and finalize current buffer
+            if is_final_signal:
+                return self._handle_final_signal(session_id, state, now)
+            
             # 1) Get rolling buffer and timestamps
             buf = state.setdefault('rolling_text', '')
             last_emit = state.setdefault('last_interim_emit_ts', 0.0)
@@ -1252,3 +1260,26 @@ class TranscriptionService:
         except Exception as e:
             logger.error(f"CRITICAL ERROR in synchronous audio processing for session {session_id}: {e}", exc_info=True)
             return None
+    
+    def _handle_final_signal(self, session_id: str, state: Dict[str, Any], now: float) -> Optional[Dict[str, Any]]:
+        """Handle final signal by flushing and finalizing current buffer."""
+        buf = state.get('rolling_text', '')
+        if not buf.strip():
+            return None
+            
+        # Finalize current buffer
+        avg_conf = state.get('last_confidence', 0.8)
+        logger.info(f"FINAL transcription (signal) for session {session_id}: '{buf}' (confidence: {avg_conf})")
+        self._persist_segment(session_id, buf, avg_conf, now)
+        state['rolling_text'] = ''
+        state['stats']['final_events'] += 1
+        
+        return {
+            'transcription': {
+                'text': buf,
+                'confidence': avg_conf,
+                'is_final': True
+            },
+            'timestamp': now,
+            'session_id': session_id
+        }

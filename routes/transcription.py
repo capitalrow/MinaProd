@@ -513,7 +513,7 @@ def transcribe_file():
                     
                     # Mark session as completed
                     session.status = 'completed'
-                    session.ended_at = datetime.utcnow()
+                    session.completed_at = datetime.utcnow()
                     
                     db.session.commit()
                     
