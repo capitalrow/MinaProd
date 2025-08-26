@@ -1,6 +1,115 @@
 /* Mina Platform Custom Styles */
 /* Following Bootstrap dark theme guidelines */
 
+/* 🔥 ADVANCED VISUAL RECORDING INDICATORS */
+.recording-pulse {
+  animation: recording-pulse 1.2s ease-in-out infinite;
+  position: relative;
+}
+
+.recording-indicator {
+  width: 14px;
+  height: 14px;
+  background: #dc3545;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  position: relative;
+  box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+}
+
+@keyframes recording-pulse {
+  0% { 
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+  }
+  70% { 
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+  }
+  100% { 
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+  }
+}
+
+/* Real-time audio level visualization */
+.mic-level-container {
+  width: 100%;
+  height: 8px;
+  background: var(--bs-gray-700);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 8px;
+  position: relative;
+}
+
+.mic-level-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #28a745 0%, #28a745 60%, #ffc107 80%, #dc3545 100%);
+  transition: width 0.1s ease-out;
+  min-width: 2px;
+}
+
+/* Connection status indicators */
+.status-indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+  position: relative;
+}
+
+.status-connected {
+  background: #28a745;
+  animation: status-pulse 2s ease-in-out infinite;
+}
+
+.status-connecting {
+  background: #ffc107;
+  animation: status-blink 1s ease-in-out infinite;
+}
+
+.status-disconnected {
+  background: #dc3545;
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes status-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+/* Quality indicators */
+.quality-excellent { color: #28a745; font-weight: bold; }
+.quality-good { color: #20c997; }
+.quality-fair { color: #ffc107; }
+.quality-poor { color: #dc3545; font-weight: bold; }
+
+/* Enhanced confidence bars */
+.confidence-indicator {
+  width: 100%;
+  height: 4px;
+  background: var(--bs-gray-600);
+  border-radius: 2px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.confidence-bar {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.confidence-high { background: #28a745; }
+.confidence-medium { background: #ffc107; }
+.confidence-low { background: #dc3545; }
+
 :root {
   --mina-primary: #0d6efd;
   --mina-secondary: #6c757d;
