@@ -1513,30 +1513,19 @@
         // 📱 MOBILE-OPTIMIZED: Apply device-specific audio constraints
         const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
+        // 📱 MOBILE-OPTIMIZED: Clean constraint format for maximum compatibility
         const audioConstraints = {
           audio: {
             sampleRate: 16000,
             channelCount: 1,
-            echoCancellation: !isMobileDevice,  // Disable on mobile for compatibility
-            noiseSuppression: !isMobileDevice,  // Disable on mobile for compatibility
-            autoGainControl: !isMobileDevice    // Disable on mobile for compatibility
-            // Removed latency constraint - causing mobile errors
+            echoCancellation: false,  // Always disabled for mobile compatibility
+            noiseSuppression: false,  // Always disabled for mobile compatibility
+            autoGainControl: false    // Always disabled for mobile compatibility
           }
         };
         
-        // Additional mobile optimizations
         if (isMobileDevice) {
-          console.log('📱 Applying mobile audio optimizations');
-          audioConstraints.audio.mandatory = {
-            googEchoCancellation: false,
-            googAutoGainControl: false,
-            googNoiseSuppression: false,
-            googHighpassFilter: false
-          };
-          audioConstraints.audio.optional = [
-            {googEchoCancellation2: false},
-            {googAutoGainControl2: false}
-          ];
+          console.log('📱 Mobile device detected - using simplified constraints');
         }
         
         mediaStream = await navigator.mediaDevices.getUserMedia(audioConstraints);
