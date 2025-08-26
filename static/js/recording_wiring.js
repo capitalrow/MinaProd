@@ -143,6 +143,12 @@
     socket.on('error', (errorData) => {
       console.error('🚨 Server error:', errorData);
       
+      // 🔥 CRITICAL: Handle recording errors properly
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        console.error('🚨 Recording failed due to server error, stopping...');
+        stopRecording().catch(e => console.error('Error stopping recording:', e));
+      }
+      
       const errorMessage = errorData.message || errorData || 'Unknown server error';
       const errorType = errorData.type || 'unknown';
       
@@ -327,7 +333,27 @@
 
     socket.on('processing_error', (data) => {
       console.error('🚨 Processing error:', data.error);
+      
+      // 🔥 CRITICAL: Stop recording on processing errors
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        console.error('🚨 Processing failed, stopping recording...');
+        stopRecording().catch(e => console.error('Error stopping recording on processing error:', e));
+      }
+      
       showError(`Processing error: ${data.error}`);
+    });
+    
+    // 🔥 NEW: Add missing transcription error handler
+    socket.on('transcription_error', (data) => {
+      console.error('🚨 Transcription error:', data);
+      
+      // Stop recording on transcription errors
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        console.error('🚨 Transcription failed, stopping recording...');
+        stopRecording().catch(e => console.error('Error stopping recording on transcription error:', e));
+      }
+      
+      showNotification(`Transcription failed: ${data.error || 'Unknown error'}`, 'error', 5000);
     });
   }
   

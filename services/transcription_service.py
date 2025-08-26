@@ -429,15 +429,7 @@ class TranscriptionService:
     
     def end_session_sync(self, session_id: str) -> Dict[str, Any]:
         """Synchronous wrapper for end_session."""
-        import asyncio
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                return self._end_session_sync_impl(session_id)
-            else:
-                return asyncio.run(self.end_session(session_id))
-        except RuntimeError:
-            return asyncio.run(self.end_session(session_id))
+        return self._end_session_sync_impl(session_id)
     
     def _end_session_sync_impl(self, session_id: str) -> Dict[str, Any]:
         """Direct synchronous implementation for end_session."""
@@ -672,11 +664,11 @@ class TranscriptionService:
         base_stats['adaptive_state'] = self.adaptive_state.copy()
         
         # Add quality analyzer statistics
-        if hasattr(self, 'quality_analyzer'):
+        if hasattr(self, 'quality_analyzer') and hasattr(self.quality_analyzer, 'get_quality_statistics'):
             base_stats['quality_statistics'] = self.quality_analyzer.get_quality_statistics()
         
         # Add performance optimizer statistics
-        if hasattr(self, 'performance_optimizer'):
+        if hasattr(self, 'performance_optimizer') and hasattr(self.performance_optimizer, 'get_performance_statistics'):
             base_stats['performance_statistics'] = self.performance_optimizer.get_performance_statistics()
         
         return base_stats
@@ -1168,18 +1160,9 @@ class TranscriptionService:
         
         logger.info(f"Cleanup completed for client {client_id}, removed {len(sessions_to_cleanup)} sessions")
     
-    def end_session_sync(self, session_id: str) -> Dict[str, Any]:
-        """Synchronous wrapper for end_session."""
-        import asyncio
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # Direct synchronous implementation
-                return self._end_session_sync_impl(session_id)
-            else:
-                return asyncio.run(self.end_session(session_id))
-        except RuntimeError:
-            return asyncio.run(self.end_session(session_id))
+    def end_session_sync_v2(self, session_id: str) -> Dict[str, Any]:
+        """Synchronous wrapper for end_session (v2)."""
+        return self._end_session_sync_impl(session_id)
     
     def _end_session_sync_impl(self, session_id: str) -> Dict[str, Any]:
         """Direct synchronous implementation for end_session."""
@@ -1517,16 +1500,19 @@ class TranscriptionService:
             
             # 🔥 PERFORMANCE MONITORING: Record processing latency
             processing_latency_ms = (time.time() - chunk_start_time) * 1000
-            self.performance_monitor.record_chunk_latency(session_id, processing_latency_ms)
+            if hasattr(self, 'performance_monitor') and self.performance_monitor:
+                self.performance_monitor.record_chunk_latency(session_id, processing_latency_ms)
             
             # 🔥 CRITICAL DEBUG: Enhanced Whisper API response handling
             if not res:
                 logger.warning(f"⚠️ WHISPER API returned None for session {session_id} (audio: {len(audio_data)} bytes, latency: {processing_latency_ms:.2f}ms)")
-                self.performance_monitor.record_dropped_chunk(session_id)
+                if hasattr(self, 'performance_monitor') and self.performance_monitor:
+                    self.performance_monitor.record_dropped_chunk(session_id)
                 return None
             elif res.get('error'):  # 🔥 ENHANCED: Handle error results
                 logger.error(f"🚨 WHISPER API ERROR: {res.get('error_type', 'unknown')} for session {session_id}: {res}")
-                self.performance_monitor.record_dropped_chunk(session_id)
+                if hasattr(self, 'performance_monitor') and self.performance_monitor:
+                    self.performance_monitor.record_dropped_chunk(session_id)
                 return None
             elif not res.get('text'):
                 logger.warning(f"⚠️ WHISPER API returned empty text for session {session_id}: {res} (latency: {processing_latency_ms:.2f}ms)")
@@ -1534,7 +1520,8 @@ class TranscriptionService:
             else:
                 logger.info(f"✅ WHISPER SUCCESS: Got text '{res['text'][:100]}...' for session {session_id} (latency: {processing_latency_ms:.2f}ms)")
                 # 🔥 PERFORMANCE: Record successful transcription
-                self.performance_monitor.record_transcription_result(session_id, True, res.get('confidence', 0.8))
+                if hasattr(self, 'performance_monitor') and self.performance_monitor:
+                    self.performance_monitor.record_transcription_result(session_id, True, res.get('confidence', 0.8))
                 
             # 2) CRITICAL QUALITY FILTERING - Apply before updating buffer
             text = res['text'].strip()
