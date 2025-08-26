@@ -1842,6 +1842,7 @@
       const sessionCreatedHandler = (data) => {
         console.log('🆕 Session created successfully:', data.session_id);
         CURRENT_SESSION_ID = data.session_id;
+        clearTimeout(timeoutId);
         
         // 🔥 PHASE 1: Join session room immediately after creation using enhanced protocol
         console.log('🏠 Joining session room:', data.session_id);
@@ -1867,9 +1868,23 @@
         reject(new Error(`Session creation failed: ${error.message || 'Unknown error'}`));
       };
       
-      // Set up listeners
+      // Set up listeners with debug logging
       socket.once('session_created', sessionCreatedHandler);
       socket.once('error', errorHandler);
+      
+      // Add debug listener for joined_session as fallback
+      const joinedFallbackHandler = (joinData) => {
+        if (!CURRENT_SESSION_ID && joinData.session_id) {
+          console.log('🔄 Using joined_session as fallback for session creation:', joinData.session_id);
+          CURRENT_SESSION_ID = joinData.session_id;
+          clearTimeout(timeoutId);
+          socket.off('session_created', sessionCreatedHandler);
+          socket.off('error', errorHandler);
+          socket.off('joined_session', joinedFallbackHandler);
+          resolve();
+        }
+      };
+      socket.once('joined_session', joinedFallbackHandler);
       
       // Request session creation
       console.log('📋 Creating new session...');
@@ -1878,12 +1893,15 @@
         language: document.getElementById('sessionLanguage')?.value || 'en'
       });
       
-      // Timeout after 10 seconds
-      setTimeout(() => {
+      // Timeout after 15 seconds (increased from 10 for mobile devices)
+      const timeoutId = setTimeout(() => {
         socket.off('session_created', sessionCreatedHandler);
         socket.off('error', errorHandler);
+        socket.off('joined_session', joinedFallbackHandler);
+        console.error('🚨 Session creation timeout - no session_created event received in 15s');
+        console.error('🚨 Current session ID at timeout:', CURRENT_SESSION_ID);
         reject(new Error('Session creation timeout'));
-      }, 10000);
+      }, 15000);
     });
   }
 
