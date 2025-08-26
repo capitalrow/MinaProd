@@ -112,11 +112,7 @@ def detailed_health_check():
                 "sessions_count": sessions_count,
                 "segments_count": segments_count,
                 "connection_pool": {
-                    "size": db.engine.pool.size(),
-                    "checked_in": db.engine.pool.checkedin(),
-                    "checked_out": db.engine.pool.checkedout(),
-                    "overflow": db.engine.pool.overflow(),
-                    "invalidated": db.engine.pool.invalidated()
+                    "status": "available"
                 }
             }
         except Exception as e:
@@ -225,34 +221,30 @@ def api_health_check():
             from app import db
             from sqlalchemy import text
             db.session.execute(text('SELECT 1')).fetchone()
-            status["database"] = {"status": "connected", "healthy": True}
+            status["database"] = "connected"
         except Exception as e:
             logger.error(f"Database health check failed: {e}")
-            status["database"] = {"status": "error", "healthy": False, "error": str(e)}
+            status["database"] = "error"
             status["status"] = "degraded"
         
         # Check transcription service
         try:
             from services.transcription_service import TranscriptionService
-            status["services"] = {
-                "transcription": {"status": "available", "healthy": True},
-                "websocket": {"status": "active", "healthy": True}
-            }
+            status["services"] = "available"
         except Exception as e:
             logger.error(f"Service health check failed: {e}")
-            status["services"] = {"status": "error", "healthy": False, "error": str(e)}
+            status["services"] = "error"
         
         # Basic system metrics
         try:
             import psutil
-            status["system"] = {
-                "cpu_percent": psutil.cpu_percent(interval=0.1),
-                "memory_percent": psutil.virtual_memory().percent,
-                "disk_percent": psutil.disk_usage('/').percent
-            }
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+            memory_percent = psutil.virtual_memory().percent
+            disk_percent = psutil.disk_usage('/').percent
+            status["system"] = f"cpu:{cpu_percent:.1f}% mem:{memory_percent:.1f}% disk:{disk_percent:.1f}%"
         except Exception as e:
             logger.warning(f"System metrics unavailable: {e}")
-            status["system"] = {"status": "metrics_unavailable"}
+            status["system"] = "metrics_unavailable"
         
         return jsonify(status), 200 if status["status"] == "ok" else 503
         
