@@ -590,7 +590,11 @@ class WhisperStreamingService:
             Transcription result dictionary or None
         """
         try:
-            if not self.client or not audio_data:
+            if not self.client:
+                logger.error("🚨 CRITICAL: OpenAI client not initialized for transcription")
+                return None
+            if not audio_data or len(audio_data) < 100:  # 🔥 Check for minimum audio size
+                logger.warning(f"⚠️ WHISPER SKIP: Audio too small ({len(audio_data) if audio_data else 0} bytes)")
                 return None
             
             # Save audio to temporary file for OpenAI API
@@ -608,6 +612,8 @@ class WhisperStreamingService:
                 temp_path = temp_file.name
             
             try:
+                logger.info(f"🗺 WHISPER CALL: Processing {len(audio_data)} bytes via OpenAI API")
+                
                 # Direct synchronous OpenAI transcription call
                 with open(temp_path, 'rb') as audio_file:
                     # the newest OpenAI model is "gpt-5" which was released August 7, 2025.
@@ -615,18 +621,21 @@ class WhisperStreamingService:
                     response = self.client.audio.transcriptions.create(
                         model="whisper-1",
                         file=audio_file,
-                        language="en"
+                        language="en",
+                        response_format="json"  # 🔥 CRITICAL: Explicitly request JSON format
                     )
                 
                 text = response.text.strip() if response.text else ""
                 
                 if text:
-                    logger.info(f"Whisper transcription: '{text}'")
+                    logger.info(f"✅ WHISPER SUCCESS: '{text}' (confidence: 0.8)")
                     return {
                         'text': text,
                         'confidence': 0.8,  # Whisper doesn't provide confidence, use default
                         'language': 'en'
                     }
+                else:
+                    logger.warning(f"⚠️ WHISPER EMPTY: OpenAI returned empty text for {len(audio_data)} bytes")
                 
                 return None
                 
