@@ -1290,23 +1290,25 @@ class TranscriptionService:
             # Get database session
             db_session = SessionService.get_session_by_external(session_id)
             if db_session:
+                # 🚨 ITER3 FIX: Use correct model parameters
                 segment = Segment(
                     session_id=db_session.id,
+                    kind="final",  # 🔧 FIXED: Added required kind field
                     text=text,
-                    confidence=confidence,
-                    start_time=timestamp,
-                    end_time=timestamp + 1.0,
-                    language='en'
+                    avg_confidence=confidence,  # 🔧 FIXED: Use avg_confidence not confidence
+                    start_ms=int(timestamp * 1000),  # 🔧 FIXED: Use start_ms in milliseconds
+                    end_ms=int((timestamp + 1.0) * 1000)  # 🔧 FIXED: Use end_ms in milliseconds
+                    # 🔧 FIXED: Removed language field (doesn't exist in model)
                 )
                 db.session.add(segment)
                 db.session.commit()
                 
-                logger.info(f"Persisted final segment: '{text}' (confidence: {confidence})")
+                logger.info(f"🚨 ITER3 SUCCESS: Persisted final segment: '{text}' (confidence: {confidence})")
             else:
                 logger.warning(f"Could not find database session for {session_id}")
                 
         except Exception as e:
-            logger.error(f"Error persisting segment for session {session_id}: {e}")
+            logger.error(f"🚨 ITER3 ERROR: Error persisting segment for session {session_id}: {e}")
     
     def _cleanup_stale_sessions(self):
         """Clean up stale sessions that may have been left orphaned."""
