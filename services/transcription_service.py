@@ -42,7 +42,7 @@ class TranscriptionServiceConfig:
     """Configuration for transcription service."""
     # VAD configuration
     vad_sensitivity: float = 0.5
-    vad_min_speech_duration: int = 10000  # ms
+    vad_min_speech_duration: int = 500  # ms - OPTIMIZED for faster first interim
     vad_min_silence_duration: int = 500  # ms
     
     # Audio processing
@@ -76,7 +76,7 @@ class TranscriptionServiceConfig:
     buffer_size_adaptation: bool = True
     
     # 🔥 INT-LIVE-I3: Interim throttling and endpointing
-    interim_throttle_ms: int = 400  # Throttle interims to ~400ms
+    interim_throttle_ms: int = 200  # Throttle interims to ~200ms - OPTIMIZED for faster response
     min_token_diff: int = 5  # Minimum token difference to emit interim
     punctuation_boundary_chars: str = '.!?;:'
     min_tokens_for_punctuation_final: int = 3  # Min tokens before punctuation triggers final
@@ -161,7 +161,7 @@ class TranscriptionService:
         
         self.adaptive_state = {
             'target_latency': self.config.latency_target_ms,
-            'current_buffer_strategy': 'balanced',  # aggressive, balanced, conservative
+            'current_buffer_strategy': 'aggressive',  # OPTIMIZED: aggressive for faster first interim
             'quality_trend': 'stable',  # improving, stable, degrading
             'last_adaptation': 0
         }
@@ -185,7 +185,7 @@ class TranscriptionService:
         self.suppression_active = False  # Current suppression state
         
         # 🔥 INT-LIVE-I2: Interim throttling and punctuation boundary detection
-        self.interim_throttle_ms = 400  # 300-500ms range per specification
+        self.interim_throttle_ms = 200  # OPTIMIZED: 200ms for faster first interim response
         self.min_interim_diff_chars = 5  # Minimum character difference for interim emit
         self.punctuation_marks = {'.', '!', '?', ';', ':'}  # Marks that trigger boundaries
         
