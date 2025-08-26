@@ -77,15 +77,23 @@ spec:
   type: ClusterIP
 
 ---
+# SECURITY CRITICAL: Replace with actual secrets using kubectl or secrets management
+# kubectl create secret generic mina-secrets \
+#   --from-literal=database-url="postgresql://REAL_USER:REAL_PASS@postgres-service:5432/mina_db" \
+#   --from-literal=session-secret="$(openssl rand -base64 32)" \
+#   --from-literal=openai-api-key="sk-YOUR_REAL_OPENAI_API_KEY"
 apiVersion: v1
 kind: Secret
 metadata:
   name: mina-secrets
+  annotations:
+    description: "Production secrets - MUST be replaced with real values"
 type: Opaque
+# PRODUCTION DEPLOYMENT: Remove stringData section and use kubectl create secret instead
 stringData:
-  database-url: "postgresql://username:password@postgres-service:5432/mina_db"
-  session-secret: "your-super-secret-session-key"
-  openai-api-key: "your-openai-api-key"
+  database-url: "REPLACE_WITH_REAL_DATABASE_URL"
+  session-secret: "REPLACE_WITH_REAL_SESSION_SECRET"
+  openai-api-key: "REPLACE_WITH_REAL_OPENAI_API_KEY"
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -99,10 +107,10 @@ metadata:
 spec:
   tls:
   - hosts:
-    - mina.yourdomain.com
+    - REPLACE_WITH_YOUR_DOMAIN.com
     secretName: mina-tls
   rules:
-  - host: mina.yourdomain.com
+  - host: REPLACE_WITH_YOUR_DOMAIN.com
     http:
       paths:
       - path: /

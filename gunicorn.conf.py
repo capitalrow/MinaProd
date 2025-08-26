@@ -9,12 +9,15 @@ import os
 bind = "0.0.0.0:5000"
 backlog = 2048
 
-# Worker processes - use 1 worker for Socket.IO compatibility
-workers = 1
+# Worker processes - SCALABILITY: Multiple workers for better performance
+# Note: EventletWorker handles WebSocket connections efficiently with Redis scaling
+workers = min(4, (os.cpu_count() or 1) + 1)  # CPU cores + 1, max 4
 worker_class = "eventlet"
 worker_connections = 1000
-timeout = 60
-keepalive = 2
+
+# Production timeouts
+timeout = 120  # Increased for transcription processing
+keepalive = 5  # Keep connections alive longer
 
 # Restart workers after this many requests
 max_requests = 1000
@@ -30,7 +33,7 @@ access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
 proc_name = "mina_app"
 
 # Server mechanics  
-preload_app = False  # IMPORTANT: Set to False for Socket.IO
+preload_app = True  # PRODUCTION: Enable for better memory usage with multiple workers
 reload = False  # Set to False for production
 reuse_port = True
 
