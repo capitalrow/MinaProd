@@ -1,0 +1,78 @@
+{
+    "system_performance_metrics": [
+        {
+            "metric": "end_to_end_latency",
+            "description": "Time from when a word is spoken to when it appears in the UI transcript (measuring total delay from speech to text)0",
+            "unit": "milliseconds"
+        },
+        {
+            "metric": "partial_result_latency",
+            "description": "Time for an initial interim transcription to appear after speech begins (indicating responsiveness of partial updates)1",
+            "unit": "milliseconds"
+        },
+        {
+            "metric": "finalization_latency",
+            "description": "Time from end-of-speech (when user stops speaking) to the final transcription being displayed2",
+            "unit": "milliseconds"
+        },
+        {
+            "metric": "real_time_factor",
+            "description": "Ratio of processing time to audio duration (must be < 1.0 for true real-time processing)3",
+            "unit": "ratio"
+        },
+        {
+            "metric": "throughput",
+            "description": "Amount of audio processed per second of real time (related to real-time factor, higher throughput implies lower latency)4",
+            "unit": "audio_seconds_per_second"
+        },
+        {
+            "metric": "cpu_usage",
+            "description": "CPU utilization of the transcription pipeline (to monitor performance overhead)",
+            "unit": "percentage"
+        },
+        {
+            "metric": "memory_usage",
+            "description": "Memory consumption of the transcription process",
+            "unit": "megabytes"
+        },
+        {
+            "metric": "network_usage",
+            "description": "Network data transmitted/received for transcription (if using external ASR service, monitors bandwidth usage)",
+            "unit": "bytes"
+        },
+        {
+            "metric": "error_count",
+            "description": "Number of system errors, timeouts, or failed transcription requests during the session"
+        }
+    ],
+    "linguistic_semantic_metrics": [
+        {
+            "metric": "word_error_rate",
+            "description": "Percentage of words transcribed incorrectly compared to a reference true transcript (overall accuracy)5",
+            "unit": "percentage"
+        },
+        {
+            "metric": "sentence_error_rate",
+            "description": "Percentage of sentences that contain at least one transcription error (sentence-level accuracy)6",
+            "unit": "percentage"
+        },
+        {
+            "metric": "average_confidence_score",
+            "description": "Average confidence score reported by the ASR for recognized words (indicates model's certainty)",
+            "unit": "0_to_1_score"
+        },
+        {
+            "metric": "interim_updates_count",
+            "description": "Number of interim (partial) transcription updates provided before the final transcript is finalized (frequent interim updates indicate continuous refinement)7"
+        },
+        {
+            "metric": "transcript_change_rate",
+            "description": "Fraction of words that changed from the last interim transcript to the final transcript (measures how much the final output was refined from interim)8"
+        },
+        {
+            "metric": "quality_delay_tradeoff",
+            "description": "Combined assessment of transcription quality vs. delay (e.g., how accuracy, such as WER, varies with latency)9"
+        }
+    ],
+    "note": "Put a pin in this idea: once the app is stable, integrate these metrics into the Founder dashboard."
+}
