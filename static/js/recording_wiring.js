@@ -103,6 +103,38 @@
     
     socket.on('reconnect', (attemptNumber) => {
       console.log(`🔄 Reconnected after ${attemptNumber} attempts`);
+      connectionHealth.isConnected = true;
+      connectionHealth.reconnectAttempts = 0;
+      
+      showNotification('Reconnected successfully!', 'success', 2000);
+    });
+    
+    // 🔥 CRITICAL FIX: Add transcription event listeners
+    socket.on('interim_transcript', (data) => {
+      console.log('📝 Interim transcript received:', data.text);
+      updateTranscriptionUI(data, false);
+    });
+    
+    socket.on('final_transcript', (data) => {
+      console.log('✅ Final transcript received:', data.text);
+      updateTranscriptionUI(data, true);
+    });
+    
+    socket.on('audio_received', (data) => {
+      console.log('🎵 Audio chunk acknowledged:', data.chunk_id, 'Processing time:', data.processing_time_ms + 'ms');
+    });
+    
+    socket.on('error', (errorData) => {
+      console.error('🚨 Server error:', errorData);
+      if (errorData.code === 'PROCESSING_TIMEOUT') {
+        showError('Audio processing timeout. Please check your connection.');
+      } else if (errorData.code === 'PROCESSING_ERROR') {
+        showError('Audio processing failed. Please try again.');
+      }
+    });
+    
+    socket.on('reconnect', (attemptNumber) => {
+      console.log(`🔄 Reconnected after ${attemptNumber} attempts`);
       connectionHealth.reconnectAttempts = attemptNumber;
       showNotification(`Reconnected successfully!`, 'success', 2000);
     });
@@ -586,7 +618,15 @@
       mediaRecorder = new MediaRecorder(mediaStream, options);
 
       mediaRecorder.ondataavailable = async (e) => {
-        if (!e.data || !e.data.size || !socket || !socket.connected) return;
+        if (!e.data || !e.data.size || !socket || !socket.connected) {
+          console.warn('⚠️ Skipping audio chunk - no data or connection issue');
+          return;
+        }
+        
+        if (!CURRENT_SESSION_ID) {
+          console.warn('⚠️ Skipping audio chunk - no active session');
+          return;
+        }
         
         try {
           // Convert to ArrayBuffer and then base64
@@ -776,6 +816,19 @@
       const sessionCreatedHandler = (data) => {
         console.log('🆕 Session created successfully:', data.session_id);
         CURRENT_SESSION_ID = data.session_id;
+        
+        // 🔥 CRITICAL FIX: Join session room immediately after creation
+        console.log('🏠 Joining session room:', data.session_id);
+        socket.emit('join_session', { session_id: data.session_id });
+        
+        // Listen for room join confirmation
+        const roomJoinedHandler = (joinData) => {
+          console.log('✅ Successfully joined session room:', joinData.session_id);
+          socket.off('joined_session', roomJoinedHandler);
+        };
+        
+        socket.once('joined_session', roomJoinedHandler);
+        
         socket.off('session_created', sessionCreatedHandler);
         socket.off('error', errorHandler);
         resolve();
@@ -895,6 +948,93 @@
     }
     
     console.log('🔧 ENHANCED: Accessibility-enabled recording system initialized');
+  }
+
+  // --- Transcription UI Updates -------------------------------------------------------------------------------
+  
+  function updateTranscriptionUI(data, isFinal) {
+    const container = document.querySelector('#transcriptionContainer, [data-transcription-container]');
+    if (!container) {
+      console.warn('⚠️ Transcription container not found');
+      return;
+    }
+    
+    if (isFinal) {
+      // Remove any interim text
+      const interimElements = container.querySelectorAll('.interim-transcript');
+      interimElements.forEach(el => el.remove());
+      
+      // Add final transcript segment
+      const finalElement = document.createElement('div');
+      finalElement.className = 'transcription-segment final-transcript mb-2';
+      finalElement.innerHTML = `
+        <div class="segment-content">${data.text}</div>
+        <div class="segment-meta text-muted small">
+          <span class="confidence">Confidence: ${Math.round((data.avg_confidence || data.confidence || 0) * 100)}%</span>
+          <span class="timestamp ms-2">${new Date().toLocaleTimeString()}</span>
+        </div>
+      `;
+      container.appendChild(finalElement);
+      
+      // Update "Ready to transcribe" message
+      const readyMessage = container.querySelector('.text-center');
+      if (readyMessage && readyMessage.textContent.includes('Ready to transcribe')) {
+        readyMessage.style.display = 'none';
+      }
+    } else {
+      // Update or add interim transcript
+      let interimElement = container.querySelector('.interim-transcript');
+      if (!interimElement) {
+        interimElement = document.createElement('div');
+        interimElement.className = 'transcription-segment interim-transcript mb-2';
+        container.appendChild(interimElement);
+      }
+      interimElement.innerHTML = `
+        <div class="segment-content text-primary">${data.text}</div>
+        <div class="segment-meta text-muted small">
+          <span class="confidence">Confidence: ${Math.round((data.avg_confidence || data.confidence || 0) * 100)}%</span>
+          <span class="status ms-2">Interim</span>
+        </div>
+      `;
+      
+      // Hide "Ready to transcribe" message
+      const readyMessage = container.querySelector('.text-center');
+      if (readyMessage && readyMessage.textContent.includes('Ready to transcribe')) {
+        readyMessage.style.display = 'none';
+      }
+    }
+    
+    // Auto-scroll if enabled
+    const autoScroll = document.getElementById('autoScroll');
+    if (autoScroll && autoScroll.checked) {
+      container.scrollTop = container.scrollHeight;
+    }
+    
+    // Update stats
+    updateTranscriptionStats(data, isFinal);
+  }
+  
+  function updateTranscriptionStats(data, isFinal) {
+    if (isFinal) {
+      // Update segment count
+      const segmentCount = document.querySelector('[data-segments-count]');
+      if (segmentCount) {
+        const current = parseInt(segmentCount.textContent.replace('Segments: ', '')) || 0;
+        segmentCount.textContent = `Segments: ${current + 1}`;
+      }
+      
+      // Update confidence
+      const avgConfidence = document.querySelector('[data-avg-confidence]');
+      if (avgConfidence && data.avg_confidence) {
+        avgConfidence.textContent = `Avg. Confidence: ${Math.round(data.avg_confidence * 100)}%`;
+      }
+      
+      // Update last update time
+      const lastUpdate = document.querySelector('[data-last-update]');
+      if (lastUpdate) {
+        lastUpdate.textContent = `Last Update: ${new Date().toLocaleTimeString()}`;
+      }
+    }
   }
 
   // Auto-initialize
