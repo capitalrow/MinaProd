@@ -42,7 +42,7 @@ class AudioFileSimulator {
     }
     
     async initializeAudioGraph() {
-        """Initialize WebAudio graph: AudioContext → MediaElementSource → AnalyserNode → MediaStreamDestination"""
+        // Initialize WebAudio graph: AudioContext → MediaElementSource → AnalyserNode → MediaStreamDestination
         try {
             this.log("🔧 Initializing WebAudio graph...");
             
@@ -87,7 +87,7 @@ class AudioFileSimulator {
     }
     
     calculateRMS() {
-        """Calculate RMS from AnalyserNode - same as real mic path"""
+        // Calculate RMS from AnalyserNode - same as real mic path
         if (!this.analyserNode) return 0.5;
         
         const bufferLength = this.analyserNode.frequencyBinCount;
@@ -108,7 +108,7 @@ class AudioFileSimulator {
     }
     
     async setupMediaRecorder() {
-        """Setup MediaRecorder from MediaStreamDestination - identical to real mic path"""
+        // Setup MediaRecorder from MediaStreamDestination - identical to real mic path
         try {
             this.log("🎤 Setting up MediaRecorder...");
             
@@ -163,7 +163,7 @@ class AudioFileSimulator {
     }
     
     async handleAudioData(audioBlob, mimeType) {
-        """Handle audio data - emit same payload as real mic path"""
+        // Handle audio data - emit same payload as real mic path
         try {
             this.metrics.chunksProcessed++;
             
@@ -199,7 +199,7 @@ class AudioFileSimulator {
     }
     
     async startSimulation() {
-        """Start simulation - creates session and begins MediaRecorder"""
+        // Start simulation - creates session and begins MediaRecorder
         try {
             this.log("🚀 Starting audio file simulation...");
             
@@ -267,7 +267,7 @@ class AudioFileSimulator {
     }
     
     async stopSimulation() {
-        """Stop simulation - send final chunk and cleanup"""
+        // Stop simulation - send final chunk and cleanup
         try {
             this.log("⏹️ Stopping simulation...");
             
@@ -331,7 +331,7 @@ class AudioFileSimulator {
     }
     
     getMetrics() {
-        """Get current simulation metrics"""
+        // Get current simulation metrics
         return {
             ...this.metrics,
             isRecording: this.isRecording,
@@ -345,7 +345,7 @@ window.audioFileSimulator = new AudioFileSimulator();
 
 // Helper functions for UI integration
 window.simFromAudioStart = async function() {
-    """Start simulation - called by UI button"""
+    // Start simulation - called by UI button
     console.log("🎬 Starting file simulation...");
     
     try {
@@ -374,7 +374,7 @@ window.simFromAudioStart = async function() {
 };
 
 window.simFromAudioStop = async function() {
-    """Stop simulation - called by UI button"""
+    // Stop simulation - called by UI button
     console.log("⏹️ Stopping file simulation...");
     
     try {
