@@ -27,6 +27,40 @@ class WebSocketTranscriptionTest:
         self.session_joined = False
         self.connection_successful = False
         
+    def load_real_conversation_audio(self) -> bytes:
+        """Load the provided Boosie conversation MP3 file for real audio testing."""
+        try:
+            import subprocess
+            from io import BytesIO
+            
+            # Path to the real conversation audio file
+            audio_file_path = "attached_assets/ytmp3free.cc_boosie-goes-off-on-irv-gotti-dying-he-got-hated-on-while-he-was-alive-now-they-show-love-part-5-youtubemp3free.org_1756226101636.mp3"
+            
+            # Convert MP3 to WAV format suitable for transcription using ffmpeg
+            cmd = [
+                'ffmpeg', '-i', audio_file_path,
+                '-acodec', 'pcm_s16le',  # 16-bit PCM
+                '-ar', '16000',          # 16kHz sample rate
+                '-ac', '1',              # Mono
+                '-f', 'wav',             # WAV format
+                '-'                      # Output to stdout
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, check=True)
+            logger.info(f"✅ Successfully converted real audio file to WAV: {len(result.stdout)} bytes")
+            
+            return result.stdout
+            
+        except subprocess.CalledProcessError as e:
+            logger.error(f"❌ Failed to convert audio file: {e}")
+            logger.error(f"stderr: {e.stderr.decode()}")
+            # Fallback to synthetic audio
+            return self.generate_podcast_conversation_audio(150.0)
+        except Exception as e:
+            logger.error(f"❌ Error loading real audio: {e}")
+            # Fallback to synthetic audio
+            return self.generate_podcast_conversation_audio(150.0)
+
     def generate_podcast_conversation_audio(self, duration_seconds: float = 150.0) -> bytes:
         """Generate podcast-style conversation audio similar to Joe Budden podcast format."""
         try:
@@ -454,9 +488,9 @@ class WebSocketTranscriptionTest:
             await sio.emit('join_session', {'session_id': session_id})
             await asyncio.sleep(3)
             
-            # Generate and send podcast-style conversation
-            logger.info("🎵 Generating podcast-style conversation audio (2.5+ minutes)...")
-            conversation_audio = self.generate_podcast_conversation_audio(duration_seconds=150.0)
+            # Use real conversation audio (Boosie interview)
+            logger.info("🎙️ Loading real conversation audio (Boosie interview - 5min 43sec)...")
+            conversation_audio = self.load_real_conversation_audio()
             chunk_size = 8192  # Larger chunks for longer audio
             
             logger.info(f"🎵 Sending {len(conversation_audio)} bytes of conversation audio...")
