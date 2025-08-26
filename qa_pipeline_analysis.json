@@ -1,0 +1,43 @@
+{
+  "timestamp": 1756205033.2072062,
+  "pipeline_analysis": {
+    "audio_flow": {
+      "chunks_sent": 44,
+      "chunk_sizes": [
+        4830,
+        5796,
+        5812
+      ],
+      "rms_range": {
+        "min": 0.0,
+        "max": 0.403
+      },
+      "status": "WORKING"
+    },
+    "websocket_connectivity": {
+      "connection_status": "CONNECTED",
+      "session_management": "WORKING",
+      "auto_join": "WORKING",
+      "status": "WORKING"
+    },
+    "critical_issues": {
+      "transcription_emission": "BROKEN - Results not emitted to frontend",
+      "vad_display": "BROKEN - Shows Waiting despite audio activity",
+      "audio_level_ui": "BROKEN - Shows 0% despite active chunks",
+      "early_return_bug": "CRITICAL - WebSocket handler returns before emitting results"
+    }
+  },
+  "performance_metrics": {
+    "chunk_latency_ms": "Not measured (no results returned)",
+    "queue_length": 0,
+    "dropped_chunks": "Not reported",
+    "interim_final_ratio": "No results to measure",
+    "processing_queue_size": 0
+  },
+  "frontend_issues": {
+    "ui_state_sync": "BROKEN - Backend processing not reflected in UI",
+    "error_handling": "INCOMPLETE - No transcription timeout handling",
+    "responsive_design": "GOOD - Mobile UI looks professional",
+    "accessibility": "NEEDS_AUDIT - No ARIA labels visible"
+  }
+}

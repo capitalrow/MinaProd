@@ -1,0 +1,216 @@
+{
+  "meta": {
+    "analysis_date": "2025-08-26",
+    "analyst": "Mina UAT Analysis Agent",
+    "version": "1.0",
+    "priority": "CRITICAL - Production Blocker"
+  },
+  "fix_pack_1_backend_pipeline": {
+    "title": "\ud83d\udd27 FIX PACK 1: Backend Pipeline Critical Fixes",
+    "priority": "CRITICAL",
+    "estimated_effort": "4-6 hours",
+    "tasks": [
+      {
+        "id": "FP1-01",
+        "title": "Fix WebSocket Transcription Response Pathway",
+        "description": "Remove early returns preventing transcription results from being emitted",
+        "files": [
+          "routes/websocket.py"
+        ],
+        "lines": [
+          299,
+          321
+        ],
+        "code_changes": [
+          "Replace early returns with conditional logging",
+          "Ensure emit statements are reached when transcription exists",
+          "Fix Flask-SocketIO room parameter syntax"
+        ],
+        "acceptance_criteria": [
+          "Transcription results emitted to frontend",
+          "No early returns before emit statements",
+          "Server logs show transcription_result events"
+        ]
+      },
+      {
+        "id": "FP1-02",
+        "title": "Fix VAD Threshold Configuration",
+        "description": "VAD detecting audio but not triggering Whisper calls",
+        "files": [
+          "services/transcription_service.py",
+          "services/vad_service.py"
+        ],
+        "lines": [
+          556
+        ],
+        "code_changes": [
+          "Lower VAD confidence threshold from 0.3 to 0.1",
+          "Add debug logging for VAD decisions",
+          "Fix condition: vad_result.is_speech OR confidence > threshold"
+        ],
+        "acceptance_criteria": [
+          "VAD triggers transcription with RMS > 0.1",
+          "UI shows VAD status updates",
+          "Whisper API calls initiated for speech chunks"
+        ]
+      },
+      {
+        "id": "FP1-03",
+        "title": "Fix Flask-SocketIO API Compatibility",
+        "description": "Resolve LSP diagnostics and room parameter issues",
+        "files": [
+          "routes/websocket.py"
+        ],
+        "code_changes": [
+          "Fix request.sid access pattern for Flask-SocketIO",
+          "Update emit() calls to use correct room parameter syntax",
+          "Add proper error handling for socketio operations"
+        ],
+        "acceptance_criteria": [
+          "Zero LSP diagnostics in websocket.py",
+          "Room-based emissions working correctly",
+          "No SocketIO API errors in logs"
+        ]
+      }
+    ]
+  },
+  "fix_pack_2_frontend_ui": {
+    "title": "\ud83c\udfa8 FIX PACK 2: Frontend UI/UX Enhancement",
+    "priority": "HIGH",
+    "estimated_effort": "2-3 hours",
+    "tasks": [
+      {
+        "id": "FP2-01",
+        "title": "Fix Audio Input Level Display",
+        "description": "UI shows 0% despite active audio chunks",
+        "files": [
+          "static/js/recording_wiring.js"
+        ],
+        "code_changes": [
+          "Connect WebAudio analyser RMS to UI display",
+          "Update inputLevel element with real-time values",
+          "Add visual feedback for audio activity"
+        ],
+        "acceptance_criteria": [
+          "Input level shows actual audio activity",
+          "Real-time updates during recording",
+          "Visual correlation with audio amplitude"
+        ]
+      },
+      {
+        "id": "FP2-02",
+        "title": "Enhanced Error User Experience",
+        "description": "Add clear error states and recovery flows",
+        "files": [
+          "templates/live.html",
+          "static/js/recording_wiring.js"
+        ],
+        "code_changes": [
+          "Add error toast notifications",
+          "Microphone permission denied handling",
+          "WebSocket disconnect/reconnect UX",
+          "API key missing error display"
+        ],
+        "acceptance_criteria": [
+          "Clear error messages for all failure modes",
+          "Recovery actions suggested to user",
+          "No silent failures or hanging states"
+        ]
+      }
+    ]
+  },
+  "fix_pack_3_qa_harness": {
+    "title": "\ud83d\udcca FIX PACK 3: QA & Monitoring Harness",
+    "priority": "MEDIUM",
+    "estimated_effort": "3-4 hours",
+    "tasks": [
+      {
+        "id": "FP3-01",
+        "title": "Comprehensive Metrics Logging",
+        "description": "Add structured JSON logging with request IDs",
+        "files": [
+          "routes/websocket.py",
+          "services/transcription_service.py"
+        ],
+        "code_changes": [
+          "Add request_id/session_id to all log statements",
+          "Track chunk latency, queue depth, retry counts",
+          "Measure interim\u2192final ratio and processing times"
+        ],
+        "acceptance_criteria": [
+          "All processing stages logged with metrics",
+          "Correlation IDs for request tracing",
+          "Performance metrics visible in logs"
+        ]
+      },
+      {
+        "id": "FP3-02",
+        "title": "WER & Quality Analysis Pipeline",
+        "description": "Implement Word Error Rate measurement",
+        "files": [
+          "services/qa_metrics.py",
+          "tests/test_transcription_accuracy.py"
+        ],
+        "code_changes": [
+          "Save raw audio and transcript pairs",
+          "Calculate WER, drift, and duplicate detection",
+          "Generate quality reports for analysis"
+        ],
+        "acceptance_criteria": [
+          "WER calculation implemented and tested",
+          "Quality metrics reported in structured format",
+          "Baseline accuracy measurements established"
+        ]
+      }
+    ]
+  },
+  "fix_pack_4_accessibility": {
+    "title": "\u267f FIX PACK 4: Accessibility & Standards Compliance",
+    "priority": "MEDIUM",
+    "estimated_effort": "2-3 hours",
+    "tasks": [
+      {
+        "id": "FP4-01",
+        "title": "WCAG 2.1 AA Compliance Implementation",
+        "description": "Add ARIA labels, keyboard navigation, contrast",
+        "files": [
+          "templates/live.html",
+          "static/css/main.css"
+        ],
+        "code_changes": [
+          "Add ARIA labels to all interactive elements",
+          "Implement keyboard-only navigation",
+          "Ensure AA+ color contrast ratios",
+          "Add live regions for screen readers"
+        ],
+        "acceptance_criteria": [
+          "Full keyboard navigation support",
+          "Screen reader compatibility verified",
+          "Color contrast meets AA+ standards",
+          "Accessibility audit passes"
+        ]
+      }
+    ]
+  },
+  "acceptance_criteria": {
+    "critical_success_factors": [
+      "Audio chunks flow from frontend to backend \u2713",
+      "Transcription results flow from backend to frontend \u274c (BLOCKED)",
+      "Interim transcripts appear within 2 seconds \u274c",
+      "Final transcripts appear within 2 seconds \u274c",
+      "One final transcript per recording session \u274c",
+      "VAD responds to audio activity \u274c",
+      "UI shows real-time audio levels \u274c",
+      "Error states handled gracefully \u26a0\ufe0f",
+      "Mobile responsive design works \u2705"
+    ],
+    "testing_protocol": [
+      "pytest backend API smoke tests \u2705",
+      "WebSocket connectivity tests \u2705",
+      "Live recording end-to-end test \u274c",
+      "Mobile device testing (iOS/Android) \u26a0\ufe0f",
+      "Accessibility audit with screen readers \u274c",
+      "Performance profiling under load \u274c"
+    ]
+  }
+}
