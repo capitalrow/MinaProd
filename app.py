@@ -83,6 +83,15 @@ def create_app(config_class=Config):
     # Register Socket.IO handlers
     register_websocket_handlers(socketio)
     
+    # 🔧 ACTIVATE EXISTING MONITORING SYSTEMS
+    try:
+        from activate_monitoring import setup_monitoring_endpoints, start_continuous_monitoring
+        setup_monitoring_endpoints()
+        start_continuous_monitoring()
+        logger.info("✅ Enhanced monitoring systems activated")
+    except Exception as e:
+        logger.warning(f"⚠️ Enhanced monitoring not available: {e}")
+    
     # Initialize database
     with app.app_context():
         # Import models with new SQLAlchemy 2.0 Base
