@@ -1150,9 +1150,10 @@ class TranscriptionService:
         current_time = time.time()
         sessions_to_cleanup = []
         
-        # Find sessions that need cleanup (old inactive sessions)
+        # 🔥 CRITICAL FIX: Safe access to last_activity with fallback
         for session_id, session_data in self.active_sessions.items():
-            time_since_activity = current_time - session_data['last_activity']
+            last_activity = session_data.get('last_activity', current_time - 3600)  # Fallback to 1 hour ago
+            time_since_activity = current_time - last_activity
             
             # Clean up sessions inactive for more than 30 minutes
             if time_since_activity > 1800:  # 30 minutes

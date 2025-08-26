@@ -236,12 +236,33 @@ class SessionService:
                 'total_segments': segments_count
             }
         except Exception:
+            # 🔥 CRITICAL FIX: Actually query database for real session counts  
+            active_count = db.session.scalars(
+                select(func.count()).select_from(Session).where(Session.status == 'active')
+            ).one()
+            
+            completed_count = db.session.scalars(
+                select(func.count()).select_from(Session).where(Session.status == 'completed')
+            ).one()
+            
+            error_count = db.session.scalars(
+                select(func.count()).select_from(Session).where(Session.status == 'error')
+            ).one()
+            
+            total_sessions = db.session.scalars(
+                select(func.count()).select_from(Session)
+            ).one()
+            
+            total_segments = db.session.scalars(
+                select(func.count()).select_from(Segment)
+            ).one()
+            
             return {
-                'active_sessions': 0,
-                'completed_sessions': 0,
-                'error_sessions': 0,
-                'total_sessions': 0,
-                'total_segments': 0
+                'active_sessions': int(active_count),
+                'completed_sessions': int(completed_count),
+                'error_sessions': int(error_count),
+                'total_sessions': int(total_sessions),
+                'total_segments': int(total_segments)
             }
     
     @staticmethod

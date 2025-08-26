@@ -78,12 +78,37 @@ def handle_socket_errors(f):
             logger.error(f"🚨 WebSocket error in {f.__name__}: {str(e)}")
             logger.error(f"Full traceback: {traceback.format_exc()}")
             
-            # Emit error to client with user-friendly message
+            # 🔥 CRITICAL FIX: Specific error messages with recovery guidance
             try:
+                error_type = 'system_error'
+                error_message = 'An unexpected error occurred. Please refresh and try again.'
+                recovery_action = 'refresh_page'
+                
+                # Provide specific error messages based on error type
+                error_str = str(e).lower()
+                if 'last_activity' in error_str:
+                    error_type = 'session_cleanup_error'
+                    error_message = 'Session cleanup failed. Your session may still be active.'
+                    recovery_action = 'continue_session'
+                elif 'session' in error_str and 'not found' in error_str:
+                    error_type = 'session_not_found'
+                    error_message = 'Session expired or not found. Starting a new session...'
+                    recovery_action = 'create_new_session'
+                elif 'audio' in error_str:
+                    error_type = 'audio_processing_error'
+                    error_message = 'Audio processing failed. Check your microphone and try again.'
+                    recovery_action = 'restart_recording'
+                elif 'transcription' in error_str:
+                    error_type = 'transcription_service_error'
+                    error_message = 'Transcription service temporarily unavailable. Retrying...'
+                    recovery_action = 'retry_transcription'
+                
                 emit('error', {
-                    'type': 'system_error',
-                    'message': 'An unexpected error occurred. Please refresh and try again.',
-                    'timestamp': time.time()
+                    'type': error_type,
+                    'message': error_message,
+                    'recovery_action': recovery_action,
+                    'timestamp': time.time(),
+                    'debug_info': str(e) if WS_DEBUG else None
                 })
             except Exception as emit_error:
                 logger.error(f"Failed to emit error to client: {emit_error}")
