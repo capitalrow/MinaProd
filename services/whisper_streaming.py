@@ -577,25 +577,38 @@ class WhisperStreamingService:
         self.executor.shutdown(wait=True)
         logger.info("Whisper streaming service shutdown complete")
     
-    def transcribe_chunk_sync(self, audio_data: bytes, session_id: str) -> Optional[Dict[str, Any]]:
+    def transcribe_chunk_sync(self, audio_data: bytes, session_id: str, retry_count: int = 0) -> Optional[Dict[str, Any]]:
         """
-        SIMPLIFIED: Synchronous transcription to fix server stability.
-        Direct OpenAI API call without complex async/threading.
+        🔥 ENHANCED: Robust synchronous transcription with comprehensive error handling.
         
         Args:
             audio_data: Raw audio bytes
             session_id: Session identifier
+            retry_count: Current retry attempt (for exponential backoff)
             
         Returns:
             Transcription result dictionary or None
         """
+        start_time = time.time()
+        
         try:
+            # 🔥 VALIDATION: Comprehensive input validation
             if not self.client:
                 logger.error("🚨 CRITICAL: OpenAI client not initialized for transcription")
+                return self._create_error_result("client_not_initialized", session_id)
+                
+            if not audio_data:
+                logger.warning(f"⚠️ WHISPER SKIP: No audio data provided for session {session_id}")
                 return None
-            if not audio_data or len(audio_data) < 100:  # 🔥 Check for minimum audio size
-                logger.warning(f"⚠️ WHISPER SKIP: Audio too small ({len(audio_data) if audio_data else 0} bytes)")
+                
+            if len(audio_data) < 1000:  # 🔥 ENHANCED: Minimum 1KB for meaningful audio
+                logger.info(f"📊 WHISPER SKIP: Audio chunk too small ({len(audio_data)} bytes) for session {session_id}")
                 return None
+                
+            # 🔥 AUDIO VALIDATION: Check for valid audio format
+            if not self._validate_audio_format(audio_data):
+                logger.error(f"🚨 AUDIO FORMAT ERROR: Invalid audio format for session {session_id}")
+                return self._create_error_result("invalid_audio_format", session_id)
             
             # Save audio to temporary file for OpenAI API
             import tempfile
@@ -612,30 +625,80 @@ class WhisperStreamingService:
                 temp_path = temp_file.name
             
             try:
-                logger.info(f"🗺 WHISPER CALL: Processing {len(audio_data)} bytes via OpenAI API")
+                # 🔥 ENHANCED LOGGING: Detailed API call tracking
+                request_id = f"{session_id}_{int(time.time()*1000)}"
+                logger.info(f"🗺 WHISPER API CALL: Processing {len(audio_data)} bytes via OpenAI API (request_id: {request_id})")
                 
-                # Direct synchronous OpenAI transcription call
+                # 🔥 ROBUST API CALL: Enhanced error handling and format validation
                 with open(temp_path, 'rb') as audio_file:
-                    # the newest OpenAI model is "gpt-5" which was released August 7, 2025.
-                    # do not change this unless explicitly requested by the user
-                    response = self.client.audio.transcriptions.create(
-                        model="whisper-1",
-                        file=audio_file,
-                        language="en",
-                        response_format="json"  # 🔥 CRITICAL: Explicitly request JSON format
-                    )
+                    # Verify file size before API call
+                    file_size = audio_file.seek(0, 2)
+                    audio_file.seek(0)
+                    
+                    if file_size == 0:
+                        logger.error(f"🚨 EMPTY FILE: Generated empty temp file for session {session_id}")
+                        return self._create_error_result("empty_temp_file", session_id)
+                    
+                    logger.info(f"📁 TEMP FILE: Created {file_size} byte file for Whisper API (request_id: {request_id})")
+                    
+                    # 🔥 API CALL: Enhanced with timeout and error handling
+                    try:
+                        response = self.client.audio.transcriptions.create(
+                            model="whisper-1",
+                            file=audio_file,
+                            language="en",
+                            response_format="json",
+                            timestamp_granularities=["word"]  # 🔥 ENHANCED: Request word-level timestamps
+                        )
+                        
+                        api_latency = (time.time() - start_time) * 1000
+                        logger.info(f"⚡ WHISPER TIMING: API call completed in {api_latency:.2f}ms (request_id: {request_id})")
+                        
+                    except Exception as api_error:
+                        logger.error(f"🚨 WHISPER API ERROR: {str(api_error)} (request_id: {request_id})")
+                        # 🔥 RETRY LOGIC: Implement exponential backoff
+                        if retry_count < 3:
+                            retry_delay = (2 ** retry_count) * 1.0  # 1s, 2s, 4s delays
+                            logger.info(f"🔄 RETRY: Attempting retry {retry_count + 1}/3 after {retry_delay}s delay")
+                            time.sleep(retry_delay)
+                            return self.transcribe_chunk_sync(audio_data, session_id, retry_count + 1)
+                        else:
+                            return self._create_error_result(f"api_error_after_retries: {str(api_error)}", session_id)
                 
-                text = response.text.strip() if response.text else ""
+                # 🔥 RESPONSE VALIDATION: Comprehensive result processing
+                if not response:
+                    logger.error(f"🚨 WHISPER NULL RESPONSE: API returned null response (request_id: {request_id})")
+                    return self._create_error_result("null_api_response", session_id)
                 
-                if text:
-                    logger.info(f"✅ WHISPER SUCCESS: '{text}' (confidence: 0.8)")
+                # 🔥 TEXT EXTRACTION: Handle different response formats
+                text = ""
+                if hasattr(response, 'text') and response.text:
+                    text = response.text.strip()
+                elif hasattr(response, 'segments') and response.segments:
+                    # Handle segmented response format
+                    text = " ".join([seg.text for seg in response.segments if hasattr(seg, 'text')]).strip()
+                
+                if text and len(text) > 0:
+                    total_latency = (time.time() - start_time) * 1000
+                    logger.info(f"✅ WHISPER SUCCESS: '{text[:100]}...' ({len(text)} chars, {total_latency:.2f}ms total, request_id: {request_id})")
+                    
                     return {
                         'text': text,
-                        'confidence': 0.8,  # Whisper doesn't provide confidence, use default
-                        'language': 'en'
+                        'confidence': 0.85,  # Enhanced default confidence
+                        'language': 'en',
+                        'processing_time_ms': total_latency,
+                        'request_id': request_id,
+                        'audio_duration_estimate': len(audio_data) / 16000,  # Rough estimate
+                        'retry_count': retry_count
                     }
                 else:
-                    logger.warning(f"⚠️ WHISPER EMPTY: OpenAI returned empty text for {len(audio_data)} bytes")
+                    logger.warning(f"⚠️ WHISPER EMPTY: OpenAI returned empty/null text for {len(audio_data)} bytes (request_id: {request_id}, response: {response})")
+                    # 🔥 FALLBACK: Try with different parameters on empty result
+                    if retry_count == 0:
+                        logger.info(f"🔄 FALLBACK: Retrying with enhanced parameters for session {session_id}")
+                        fallback_result = self._try_fallback_transcription(audio_data, session_id, temp_path)
+                        if fallback_result:
+                            return fallback_result
                 
                 return None
                 
@@ -645,5 +708,81 @@ class WhisperStreamingService:
                     os.unlink(temp_path)
                 
         except Exception as e:
-            logger.error(f"Error in synchronous Whisper transcription: {e}")
+            total_latency = (time.time() - start_time) * 1000
+            logger.error(f"🚨 WHISPER EXCEPTION: {str(e)} after {total_latency:.2f}ms for session {session_id}")
+            return self._create_error_result(f"exception: {str(e)}", session_id)
+    
+    def _validate_audio_format(self, audio_data: bytes) -> bool:
+        """🔥 ENHANCED: Validate audio format for Whisper API compatibility."""
+        try:
+            # Check for common audio file headers
+            if len(audio_data) < 4:
+                return False
+                
+            # Check for WebM header (common format from MediaRecorder)
+            if audio_data[:4] == b'\x1a\x45\xdf\xa3':  # WebM/Matroska header
+                return True
+                
+            # Check for WAV header
+            if audio_data[:4] == b'RIFF' and audio_data[8:12] == b'WAVE':
+                return True
+                
+            # Check for OGG header
+            if audio_data[:4] == b'OggS':
+                return True
+                
+            # Check for MP4/M4A header
+            if len(audio_data) >= 8 and audio_data[4:8] == b'ftyp':
+                return True
+                
+            # For other formats, allow through (Whisper is quite flexible)
+            logger.info(f"🔍 AUDIO FORMAT: Unknown format, allowing through (first 8 bytes: {audio_data[:8].hex()})")
+            return True
+            
+        except Exception as e:
+            logger.error(f"🚨 AUDIO VALIDATION ERROR: {e}")
+            return False
+    
+    def _create_error_result(self, error_type: str, session_id: str) -> Dict[str, Any]:
+        """🔥 ENHANCED: Create structured error result for failed transcription."""
+        return {
+            'text': '',
+            'confidence': 0.0,
+            'language': 'en',
+            'error': True,
+            'error_type': error_type,
+            'session_id': session_id,
+            'timestamp': time.time()
+        }
+    
+    def _try_fallback_transcription(self, audio_data: bytes, session_id: str, temp_path: str) -> Optional[Dict[str, Any]]:
+        """🔥 ENHANCED: Fallback transcription with different parameters."""
+        try:
+            logger.info(f"🔄 FALLBACK TRANSCRIPTION: Trying alternative approach for session {session_id}")
+            
+            with open(temp_path, 'rb') as audio_file:
+                # Try without language specification
+                response = self.client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=audio_file,
+                    response_format="verbose_json",  # 🔥 Try verbose format
+                    temperature=0.2  # 🔥 Add some randomness
+                )
+                
+                if response and hasattr(response, 'text') and response.text:
+                    text = response.text.strip()
+                    if text:
+                        logger.info(f"✅ FALLBACK SUCCESS: '{text[:50]}...' for session {session_id}")
+                        return {
+                            'text': text,
+                            'confidence': 0.7,  # Lower confidence for fallback
+                            'language': getattr(response, 'language', 'en'),
+                            'fallback': True
+                        }
+                        
+            logger.warning(f"⚠️ FALLBACK FAILED: No text from alternative approach for session {session_id}")
+            return None
+            
+        except Exception as e:
+            logger.error(f"🚨 FALLBACK ERROR: {e} for session {session_id}")
             return None

@@ -1255,6 +1255,9 @@ class TranscriptionService:
             vad_result = self.vad_service.process_audio_chunk(audio_data, timestamp)
             logger.debug(f"VAD Result for session {session_id}: is_speech={vad_result.is_speech}, confidence={vad_result.confidence}")
             
+            # 🔥 PERFORMANCE MONITORING: Track chunk processing start
+            chunk_start_time = time.time()
+            
             # Process with Whisper API
             logger.info(f"🎤 WHISPER API CALL: Sending audio to Whisper for session {session_id}, chunk size: {len(audio_data)} bytes")
             res = self.whisper_service.transcribe_chunk_sync(
@@ -1262,15 +1265,26 @@ class TranscriptionService:
                 session_id=session_id
             )
             
-            # 🔥 CRITICAL DEBUG: Log Whisper API response
+            # 🔥 PERFORMANCE MONITORING: Record processing latency
+            processing_latency_ms = (time.time() - chunk_start_time) * 1000
+            self.performance_monitor.record_chunk_latency(session_id, processing_latency_ms)
+            
+            # 🔥 CRITICAL DEBUG: Enhanced Whisper API response handling
             if not res:
-                logger.warning(f"⚠️ WHISPER API returned None for session {session_id} (audio: {len(audio_data)} bytes)")
+                logger.warning(f"⚠️ WHISPER API returned None for session {session_id} (audio: {len(audio_data)} bytes, latency: {processing_latency_ms:.2f}ms)")
+                self.performance_monitor.record_dropped_chunk(session_id)
+                return None
+            elif res.get('error'):  # 🔥 ENHANCED: Handle error results
+                logger.error(f"🚨 WHISPER API ERROR: {res.get('error_type', 'unknown')} for session {session_id}: {res}")
+                self.performance_monitor.record_dropped_chunk(session_id)
                 return None
             elif not res.get('text'):
-                logger.warning(f"⚠️ WHISPER API returned empty text for session {session_id}: {res}")
+                logger.warning(f"⚠️ WHISPER API returned empty text for session {session_id}: {res} (latency: {processing_latency_ms:.2f}ms)")
                 return None
             else:
-                logger.info(f"✅ WHISPER SUCCESS: Got text '{res['text'][:100]}...' for session {session_id}")
+                logger.info(f"✅ WHISPER SUCCESS: Got text '{res['text'][:100]}...' for session {session_id} (latency: {processing_latency_ms:.2f}ms)")
+                # 🔥 PERFORMANCE: Record successful transcription
+                self.performance_monitor.record_transcription_result(session_id, True, res.get('confidence', 0.8))
                 
             # 2) CRITICAL QUALITY FILTERING - Apply before updating buffer
             text = res['text'].strip()
