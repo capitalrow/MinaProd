@@ -7,58 +7,70 @@
 {% endblock %}
 
 {% block content %}
-<!-- Enhanced Header Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
-            <div class="d-flex align-items-center">
-                <div class="me-3">
-                    <div class="bg-primary bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center">
-                        <i class="fas fa-tachometer-alt fa-2x text-primary" aria-hidden="true"></i>
+<!-- Industry Standard: F-Pattern Header Layout -->
+<div class="f-pattern-container">
+    <header class="f-pattern-header">
+        <div class="content-hierarchy">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-4 py-3">
+                <!-- Left Side: Primary Information (F-Pattern: Top-Left Attention) -->
+                <div class="d-flex align-items-center">
+                    <div class="empty-state-illustration me-4" style="width: 60px; height: 60px;">
+                        <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+                    </div>
+                    <div>
+                        <h1 class="mb-2">Dashboard</h1>
+                        <p class="lead mb-0">Monitor your transcription sessions and system performance in real-time</p>
                     </div>
                 </div>
-                <div>
-                    <h1 class="mb-1">Dashboard</h1>
-                    <p class="text-muted mb-0">Monitor your transcription sessions and system performance</p>
+                
+                <!-- Right Side: Primary Actions (F-Pattern: Top-Right Scanning) -->
+                <div class="d-flex flex-column flex-sm-row gap-2 align-items-stretch align-items-sm-center">
+                    <a href="{{ url_for('transcription.live_transcription') }}" 
+                       class="cta-primary"
+                       aria-label="Start new live transcription session">
+                        <i class="fas fa-microphone" aria-hidden="true"></i>
+                        <span>Start New Session</span>
+                        <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                    </a>
+                    <button class="cta-secondary" 
+                            onclick="location.reload()" 
+                            aria-label="Refresh dashboard data">
+                        <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                        <span>Refresh Data</span>
+                    </button>
                 </div>
             </div>
-            <div class="d-flex gap-2">
-                <a href="{{ url_for('transcription.live_transcription') }}" 
-                   class="btn btn-primary btn-lg d-flex align-items-center" 
-                   aria-label="Start new live transcription session">
-                    <i class="fas fa-microphone me-2" aria-hidden="true"></i>
-                    <span>New Session</span>
-                </a>
-                <button class="btn btn-outline-secondary btn-lg" 
-                        onclick="location.reload()" 
-                        aria-label="Refresh dashboard data">
-                    <i class="fas fa-sync-alt" aria-hidden="true"></i>
-                    <span class="d-none d-md-inline ms-2">Refresh</span>
-                </button>
-            </div>
         </div>
-    </div>
+    </header>
 </div>
 
-<!-- Enhanced Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card h-100 position-relative overflow-hidden">
-            <div class="card-body text-center p-4">
-                <div class="mb-3">
-                    <div class="bg-primary bg-opacity-10 rounded-circle mx-auto d-flex align-items-center justify-content-center" 
-                         style="width: 60px; height: 60px;">
-                        <i class="fas fa-calendar-alt fa-2x text-primary" aria-hidden="true"></i>
+<!-- Visual Separator -->
+<hr class="my-4 opacity-25">
+
+<!-- Industry Standard: Key Metrics Grid (Z-Pattern Layout) -->
+<section class="f-pattern-primary" aria-labelledby="metrics-heading">
+    <div class="content-hierarchy">
+        <h2 id="metrics-heading" class="sr-only">Performance Metrics</h2>
+        <div class="row g-4 mb-5">
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100 position-relative overflow-hidden" data-stat="total_sessions">
+                    <div class="card-body text-center p-4">
+                        <div class="empty-state-illustration mx-auto mb-3" style="width: 60px; height: 60px; background: var(--mina-primary-light);">
+                            <i class="fas fa-calendar-alt text-primary" aria-hidden="true"></i>
+                        </div>
+                        <h2 class="display-6 fw-bold text-primary mb-2">{{ stats.get('total_sessions', 0) }}</h2>
+                        <p class="text-muted mb-0 fw-medium">Total Sessions</p>
+                        <div class="position-absolute top-0 end-0 p-2">
+                            <span class="badge bg-primary bg-opacity-10 text-primary">All Time</span>
+                        </div>
+                        <!-- Trend Indicator -->
+                        <div class="mt-2 d-flex align-items-center justify-content-center text-success">
+                            <i class="fas fa-arrow-up me-1" aria-hidden="true"></i>
+                            <small class="fw-medium">+12% this month</small>
+                        </div>
                     </div>
                 </div>
-                <h2 class="display-6 fw-bold text-primary mb-2">{{ stats.get('total_sessions', 0) }}</h2>
-                <p class="text-muted mb-0 fw-medium">Total Sessions</p>
-                <div class="position-absolute top-0 end-0 p-2">
-                    <span class="badge bg-primary bg-opacity-10 text-primary">All Time</span>
-                </div>
             </div>
-        </div>
-    </div>
     
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="card h-100 position-relative overflow-hidden">

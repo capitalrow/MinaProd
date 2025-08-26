@@ -23,74 +23,132 @@
     <!-- Skip Link for Accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
     
-    <!-- Enhanced Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark" role="navigation" aria-label="Main navigation">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('transcription.index') }}" aria-label="Mina - Meeting Insights Platform">
-                <i class="fas fa-microphone me-2" aria-hidden="true"></i>
-                <span class="fw-bold">Mina</span>
-            </a>
+    <!-- Industry-Standard Navigation with Optimized Information Architecture -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top" role="navigation" aria-label="Main navigation">
+        <div class="container-fluid px-4">
+            <!-- Left: Brand and Primary Navigation (F-Pattern Left Side) -->
+            <div class="d-flex align-items-center flex-grow-1">
+                <a class="navbar-brand d-flex align-items-center me-4" href="{{ url_for('transcription.index') }}" aria-label="Mina - Meeting Insights Platform">
+                    <div class="brand-icon-container me-2">
+                        <i class="fas fa-microphone" aria-hidden="true"></i>
+                    </div>
+                    <div class="brand-text">
+                        <span class="fw-bold">Mina</span>
+                        <small class="d-none d-lg-block text-muted">AI Transcription</small>
+                    </div>
+                </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
                     aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation menu">
                 <span class="navbar-toggler-icon"></span>
             </button>
             
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto" role="menubar">
-                    <li class="nav-item" role="none">
-                        <a class="nav-link d-flex align-items-center" href="{{ url_for('transcription.index') }}" role="menuitem" 
-                           aria-current="{% if request.endpoint == 'transcription.index' %}page{% else %}false{% endif %}">
-                            <i class="fas fa-tachometer-alt me-2" aria-hidden="true"></i>
-                            <span>Dashboard</span>
-                        </a>
-                    </li>
-                    <li class="nav-item" role="none">
-                        <a class="nav-link d-flex align-items-center" href="{{ url_for('transcription.live_transcription') }}" role="menuitem"
-                           aria-current="{% if request.endpoint == 'transcription.live_transcription' %}page{% else %}false{% endif %}">
-                            <i class="fas fa-broadcast-tower me-2" aria-hidden="true"></i>
-                            <span>Live Transcription</span>
-                        </a>
-                    </li>
-                    <li class="nav-item" role="none">
-                        <a class="nav-link d-flex align-items-center" href="{{ url_for('sessions.list_sessions') }}" role="menuitem"
-                           aria-current="{% if request.endpoint == 'sessions.list_sessions' %}page{% else %}false{% endif %}">
-                            <i class="fas fa-history me-2" aria-hidden="true"></i>
-                            <span>Sessions</span>
-                        </a>
-                    </li>
-                </ul>
+                <!-- Primary Actions (Industry Standard: Most Important Actions Visible) -->
+                <div class="primary-actions d-none d-lg-flex ms-3">
+                    <a href="{{ url_for('transcription.live_transcription') }}" 
+                       class="btn btn-primary btn-sm me-2 d-flex align-items-center"
+                       aria-label="Start new transcription session">
+                        <i class="fas fa-plus me-1" aria-hidden="true"></i>
+                        <span>New Session</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Right: Navigation and User Actions (F-Pattern Right Side) -->
+            <div class="d-flex align-items-center gap-3">
+                <!-- Navigation Menu -->
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav" role="menubar">
+                        <li class="nav-item" role="none">
+                            <a class="nav-link d-flex align-items-center" href="{{ url_for('transcription.index') }}" role="menuitem" 
+                               aria-current="{% if request.endpoint == 'transcription.index' %}page{% else %}false{% endif %}">
+                                <i class="fas fa-tachometer-alt me-2" aria-hidden="true"></i>
+                                <span class="d-lg-none">Dashboard</span>
+                                <span class="d-none d-lg-inline">Dashboard</span>
+                            </a>
+                        </li>
+                        <li class="nav-item" role="none">
+                            <a class="nav-link d-flex align-items-center" href="{{ url_for('sessions.list_sessions') }}" role="menuitem"
+                               aria-current="{% if request.endpoint == 'sessions.list_sessions' %}page{% else %}false{% endif %}">
+                                <i class="fas fa-history me-2" aria-hidden="true"></i>
+                                <span>Sessions</span>
+                            </a>
+                        </li>
+                    </ul>
                 
-                <ul class="navbar-nav" role="menubar">
-                    <li class="nav-item dropdown" role="none">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="menuitem" 
-                           data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" id="settingsDropdown">
-                            <i class="fas fa-cog me-2" aria-hidden="true"></i>
-                            <span>Settings</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" role="menu" aria-labelledby="settingsDropdown">
-                            <li role="none">
-                                <a class="dropdown-item d-flex align-items-center" href="#" role="menuitem"
-                                   data-bs-toggle="modal" data-bs-target="#settingsModal">
-                                    <i class="fas fa-sliders-h me-2" aria-hidden="true"></i>
-                                    <span>Preferences</span>
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider" role="separator"></li>
-                            <li role="none">
-                                <a class="dropdown-item d-flex align-items-center" href="{{ url_for('health.health_check') }}" 
-                                   target="_blank" role="menuitem">
-                                    <i class="fas fa-heartbeat me-2" aria-hidden="true"></i>
-                                    <span>System Health</span>
-                                    <i class="fas fa-external-link-alt ms-auto" aria-hidden="true" title="Opens in new tab"></i>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
+                </div>
+                
+                <!-- User Actions Dropdown (Industry Standard: Right-Side User Menu) -->
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center px-2" href="#" role="button" 
+                       data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" id="userMenuDropdown">
+                        <div class="user-avatar me-2">
+                            <i class="fas fa-user-circle fa-lg" aria-hidden="true"></i>
+                        </div>
+                        <div class="user-info d-none d-md-block">
+                            <small class="text-muted d-block">User</small>
+                        </div>
+                        <i class="fas fa-chevron-down ms-2" aria-hidden="true"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" role="menu" aria-labelledby="userMenuDropdown">
+                        <li role="none">
+                            <div class="dropdown-header">
+                                <strong>Account</strong>
+                            </div>
+                        </li>
+                        <li role="none">
+                            <a class="dropdown-item d-flex align-items-center" href="#" role="menuitem"
+                               data-bs-toggle="modal" data-bs-target="#settingsModal">
+                                <i class="fas fa-sliders-h me-2" aria-hidden="true"></i>
+                                <span>Preferences</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a class="dropdown-item d-flex align-items-center" href="#" role="menuitem">
+                                <i class="fas fa-bell me-2" aria-hidden="true"></i>
+                                <span>Notifications</span>
+                                <span class="badge bg-primary ms-auto">3</span>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider" role="separator"></li>
+                        <li role="none">
+                            <div class="dropdown-header">
+                                <strong>System</strong>
+                            </div>
+                        </li>
+                        <li role="none">
+                            <a class="dropdown-item d-flex align-items-center" href="{{ url_for('health.health_check') }}" 
+                               target="_blank" role="menuitem">
+                                <i class="fas fa-heartbeat me-2" aria-hidden="true"></i>
+                                <span>System Health</span>
+                                <i class="fas fa-external-link-alt ms-auto" aria-hidden="true" title="Opens in new tab"></i>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a class="dropdown-item d-flex align-items-center" href="#" role="menuitem">
+                                <i class="fas fa-question-circle me-2" aria-hidden="true"></i>
+                                <span>Help & Support</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
             </div>
         </div>
     </nav>
+    
+    <!-- Industry Standard: Status/Alert Bar (Below Navigation) -->
+    <div id="global-status-bar" class="status-bar d-none" role="alert" aria-live="polite">
+        <div class="container-fluid px-4">
+            <div class="d-flex align-items-center justify-content-between py-2">
+                <div class="d-flex align-items-center">
+                    <i class="status-icon me-2" aria-hidden="true"></i>
+                    <span class="status-message"></span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" onclick="hideStatusBar()" aria-label="Dismiss notification"></button>
+            </div>
+        </div>
+    </div>
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
