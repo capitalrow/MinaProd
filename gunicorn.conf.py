@@ -3,9 +3,7 @@
 
 import os
 
-# Apply eventlet monkey patch before any other imports
-import eventlet
-eventlet.monkey_patch()
+# Note: monkey_patch is handled automatically by gunicorn eventlet worker
 
 # Server socket
 bind = "0.0.0.0:5000"
