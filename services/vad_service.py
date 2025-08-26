@@ -224,8 +224,8 @@ class VADService:
         # Weighted combination
         total_prob = (0.6 * energy_prob + 0.3 * zcr_prob + 0.1 * spec_prob)
         
-        # Apply sensitivity adjustment
-        adjusted_prob = total_prob * (2.0 - self.config.sensitivity)
+        # Apply sensitivity adjustment - more aggressive for better detection
+        adjusted_prob = total_prob * (1.5 - self.config.sensitivity * 0.5)
         
         return max(0.0, min(1.0, adjusted_prob))
     

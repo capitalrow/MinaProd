@@ -42,7 +42,7 @@ class Config:
     TRANSCRIPTION_ENGINE = os.environ.get('TRANSCRIPTION_ENGINE', 'mock')
     
     # VAD (Voice Activity Detection) settings
-    VAD_SENSITIVITY = float(os.environ.get('VAD_SENSITIVITY', '0.5'))
+    VAD_SENSITIVITY = float(os.environ.get('VAD_SENSITIVITY', '0.3'))  # More sensitive for better speech detection
     VAD_MIN_SPEECH_DURATION = int(os.environ.get('VAD_MIN_SPEECH_DURATION', '300'))  # ms
     VAD_MIN_SILENCE_DURATION = int(os.environ.get('VAD_MIN_SILENCE_DURATION', '500'))  # ms
     
