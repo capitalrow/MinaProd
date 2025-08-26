@@ -187,12 +187,13 @@ class QAPipeline:
             avg_interval = sum(actual_intervals) / len(actual_intervals)
             drift_score = abs(avg_interval - expected_interval) / expected_interval
         else:
+            avg_interval = 0.0
             drift_score = 0.0
             
         return {
             'duplicates': duplicates,
             'drift_score': drift_score,
-            'avg_interval': avg_interval if actual_intervals else 0.0
+            'avg_interval': avg_interval
         }
     
     def finalize_session_qa(self, session_id: str, reference_transcript: Optional[str] = None) -> Dict[str, Any]:

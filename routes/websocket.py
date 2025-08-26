@@ -15,8 +15,17 @@ from models.session import Session
 
 logger = logging.getLogger(__name__)
 
-# Initialize transcription service
+# Initialize transcription service with performance monitoring
 tsvc = TranscriptionService()
+
+# Initialize performance monitoring for WebSocket routes
+try:
+    from services.performance_monitor import performance_monitor
+    websocket_performance_monitor = performance_monitor
+    logger.info("WebSocket performance monitoring initialized")
+except ImportError:
+    websocket_performance_monitor = None
+    logger.warning("WebSocket performance monitoring not available")
 
 # 🔥 INT-LIVE-I2: Simple in-memory rate limiting (swap to Redis if you want x-proc)
 _PER_SESSION_RATE = {}  # {session_id: [timestamps...]}
