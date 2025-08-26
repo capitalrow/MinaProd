@@ -27,8 +27,94 @@ class WebSocketTranscriptionTest:
         self.session_joined = False
         self.connection_successful = False
         
+    def generate_conversation_audio_bytes(self, duration_seconds: float = 120.0) -> bytes:
+        """Generate longer conversation-like audio for comprehensive testing."""
+        try:
+            import wave
+            from io import BytesIO
+            
+            sample_rate = 16000
+            t = np.linspace(0, duration_seconds, int(sample_rate * duration_seconds), False)
+            
+            # Create conversation-like audio with varying patterns
+            conversation_audio = np.zeros_like(t)
+            
+            # Simulate conversation segments with pauses
+            segment_duration = 8.0  # Each speaking segment
+            pause_duration = 2.0    # Pause between speakers
+            
+            current_time = 0
+            while current_time < duration_seconds - segment_duration:
+                # Speaking segment 1 (Person A)
+                start_idx = int(current_time * sample_rate)
+                end_idx = int((current_time + segment_duration) * sample_rate)
+                if end_idx <= len(conversation_audio):
+                    segment_t = t[start_idx:end_idx] - current_time
+                    
+                    # Generate speech-like patterns with varying formants
+                    speech = (
+                        0.4 * np.sin(2 * np.pi * 200 * segment_t) +  # Fundamental
+                        0.3 * np.sin(2 * np.pi * 400 * segment_t) +  # First formant
+                        0.2 * np.sin(2 * np.pi * 800 * segment_t) +  # Second formant
+                        0.1 * np.sin(2 * np.pi * 1600 * segment_t)   # Third formant
+                    )
+                    
+                    # Add amplitude modulation to simulate speech patterns
+                    envelope = 0.5 * (1 + np.sin(2 * np.pi * 3 * segment_t))
+                    speech *= envelope
+                    
+                    # Add realistic noise
+                    noise = 0.05 * np.random.normal(0, 1, len(speech))
+                    conversation_audio[start_idx:end_idx] = speech + noise
+                
+                current_time += segment_duration + pause_duration
+                
+                # Speaking segment 2 (Person B) - different characteristics
+                if current_time < duration_seconds - segment_duration:
+                    start_idx = int(current_time * sample_rate)
+                    end_idx = int((current_time + segment_duration) * sample_rate)
+                    if end_idx <= len(conversation_audio):
+                        segment_t = t[start_idx:end_idx] - current_time
+                        
+                        # Different speaker characteristics (higher pitch)
+                        speech = (
+                            0.3 * np.sin(2 * np.pi * 250 * segment_t) +  # Higher fundamental
+                            0.4 * np.sin(2 * np.pi * 500 * segment_t) +  # First formant
+                            0.2 * np.sin(2 * np.pi * 1000 * segment_t) + # Second formant
+                            0.1 * np.sin(2 * np.pi * 2000 * segment_t)   # Third formant
+                        )
+                        
+                        # Different speech rhythm
+                        envelope = 0.6 * (1 + np.sin(2 * np.pi * 4 * segment_t))
+                        speech *= envelope
+                        
+                        noise = 0.05 * np.random.normal(0, 1, len(speech))
+                        conversation_audio[start_idx:end_idx] = speech + noise
+                
+                current_time += segment_duration + pause_duration
+            
+            # Normalize and convert to 16-bit PCM
+            conversation_audio = np.clip(conversation_audio, -1.0, 1.0)
+            audio_int16 = (conversation_audio * 32767).astype(np.int16)
+            
+            # Create proper WAV file in memory
+            wav_buffer = BytesIO()
+            with wave.open(wav_buffer, 'wb') as wav_file:
+                wav_file.setnchannels(1)  # Mono
+                wav_file.setsampwidth(2)  # 16-bit
+                wav_file.setframerate(sample_rate)
+                wav_file.writeframes(audio_int16.tobytes())
+            
+            wav_buffer.seek(0)
+            return wav_buffer.getvalue()
+            
+        except Exception as e:
+            logger.error(f"Failed to generate conversation audio: {e}")
+            # Fallback to simple audio
+            return self.generate_test_audio_bytes(duration_seconds)
+
     def generate_test_audio_bytes(self, duration_seconds: float = 2.0) -> bytes:
-        """Generate proper WAV audio format that Whisper API accepts."""
+        """Generate basic test audio for simple tests."""
         try:
             import wave
             from io import BytesIO
@@ -155,6 +241,162 @@ class WebSocketTranscriptionTest:
             
         except Exception as e:
             logger.error(f"💥 Session join test failed: {e}")
+            result['error'] = str(e)
+            result['status'] = 'failed'
+        finally:
+            try:
+                await sio.disconnect()
+            except:
+                pass
+                
+        return result
+
+    async def test_conversation_transcription(self) -> Dict[str, Any]:
+        """Test comprehensive conversation transcription over 2+ minutes."""
+        logger.info("🧪 Testing full conversation transcription (2+ minutes)...")
+        
+        result = {
+            'test_name': 'Conversation Transcription',
+            'status': 'running',
+            'audio_chunks_sent': 0,
+            'audio_acknowledged': 0,
+            'transcription_responses': 0,
+            'pipeline_working': False,
+            'messages_received': [],
+            'conversation_segments': [],
+            'total_transcribed_text': '',
+            'test_duration_seconds': 0,
+            'error': None
+        }
+        
+        sio = socketio.AsyncClient()
+        session_id = f"conversation_test_{int(time.time())}"
+        start_time = time.time()
+        
+        @sio.event
+        async def connect():
+            logger.info("✅ Connected for conversation test")
+            
+        @sio.event
+        async def joined_session(data):
+            logger.info(f"✅ Conversation test session joined: {data}")
+            
+        @sio.event
+        async def audio_received(data):
+            result['audio_acknowledged'] += 1
+            
+        @sio.event
+        async def audio_acknowledged(data):
+            result['audio_acknowledged'] += 1
+            
+        @sio.event
+        async def ack(data):
+            result['audio_acknowledged'] += 1
+            
+        @sio.event
+        async def interim_transcript(data):
+            logger.info(f"📝 Interim transcript: {data}")
+            result['transcription_responses'] += 1
+            result['messages_received'].append(('interim', data))
+            result['conversation_segments'].append(data.get('text', ''))
+            result['total_transcribed_text'] += data.get('text', '') + ' '
+            result['pipeline_working'] = True
+            
+        @sio.event
+        async def final_transcript(data):
+            logger.info(f"📝 Final transcript: {data}")
+            result['transcription_responses'] += 1
+            result['messages_received'].append(('final', data))
+            result['conversation_segments'].append(data.get('text', ''))
+            result['total_transcribed_text'] += data.get('text', '') + ' '
+            result['pipeline_working'] = True
+            
+        @sio.event
+        async def error(data):
+            logger.error(f"❌ Conversation test error: {data}")
+            result['error'] = data
+        
+        try:
+            # Connect and join session
+            await sio.connect(self.base_url, wait_timeout=15)
+            await asyncio.sleep(2)
+            
+            await sio.emit('join_session', {'session_id': session_id})
+            await asyncio.sleep(3)
+            
+            # Generate and send 2+ minute conversation
+            logger.info("🎵 Generating 2+ minute conversation audio...")
+            conversation_audio = self.generate_conversation_audio_bytes(duration_seconds=130.0)
+            chunk_size = 8192  # Larger chunks for longer audio
+            
+            logger.info(f"🎵 Sending {len(conversation_audio)} bytes of conversation audio...")
+            
+            # Send audio in chunks with realistic timing
+            import base64
+            for i in range(0, len(conversation_audio), chunk_size):
+                chunk = conversation_audio[i:i + chunk_size]
+                
+                chunk_b64 = base64.b64encode(chunk).decode('utf-8')
+                
+                # Calculate RMS for the chunk
+                if len(chunk) >= 2:
+                    audio_chunk = chunk[44:] if i == 0 and chunk.startswith(b'RIFF') else chunk
+                    if len(audio_chunk) >= 2:
+                        try:
+                            chunk_array = np.frombuffer(audio_chunk, dtype=np.int16).astype(np.float32) / 32768.0
+                            rms = float(np.sqrt(np.mean(chunk_array ** 2)))
+                        except:
+                            rms = 0.15  # Default for conversation audio
+                    else:
+                        rms = 0.15
+                else:
+                    rms = 0.15
+                
+                await sio.emit('audio_chunk', {
+                    'session_id': session_id,
+                    'audio_data_b64': chunk_b64,
+                    'is_final_chunk': False,
+                    'mime_type': 'audio/wav',
+                    'rms': rms,
+                    'ts_client': int(time.time() * 1000)
+                })
+                
+                result['audio_chunks_sent'] += 1
+                
+                # Realistic delay between chunks (simulate real-time)
+                await asyncio.sleep(0.5)
+                
+                if result['audio_chunks_sent'] % 10 == 0:
+                    logger.info(f"📊 Sent {result['audio_chunks_sent']} conversation chunks, received {result['transcription_responses']} transcriptions...")
+            
+            # Send final chunk signal
+            await sio.emit('audio_data', {
+                'session_id': session_id,
+                'audio_data_b64': '',
+                'is_final_chunk': True,
+                'mime_type': 'audio/wav',
+                'rms': 0.0,
+                'ts_client': int(time.time() * 1000)
+            })
+            result['audio_chunks_sent'] += 1
+            logger.info("🏁 Sent final conversation chunk signal")
+            
+            # Wait for all transcription processing to complete
+            logger.info("⏳ Waiting for complete conversation transcription...")
+            await asyncio.sleep(30)  # Longer wait for full conversation
+            
+            result['test_duration_seconds'] = time.time() - start_time
+            result['status'] = 'completed'
+            
+            # Log conversation results
+            logger.info(f"🎭 Conversation transcription complete:")
+            logger.info(f"   📊 Chunks sent: {result['audio_chunks_sent']}")
+            logger.info(f"   📝 Transcriptions received: {result['transcription_responses']}")
+            logger.info(f"   📰 Total text: '{result['total_transcribed_text'][:100]}...'")
+            logger.info(f"   ⏱️  Test duration: {result['test_duration_seconds']:.1f}s")
+            
+        except Exception as e:
+            logger.error(f"💥 Conversation transcription test failed: {e}")
             result['error'] = str(e)
             result['status'] = 'failed'
         finally:
@@ -395,6 +637,7 @@ class WebSocketTranscriptionTest:
             self.test_frontend_integration,
             self.test_basic_connection,
             self.test_session_joining,
+            self.test_conversation_transcription,  # Comprehensive 2+ minute conversation test
             self.test_audio_transmission,
         ]
         
