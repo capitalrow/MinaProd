@@ -1561,10 +1561,21 @@ class TranscriptionService:
                     logger.debug(f"CONFIDENCE FILTER: Suppressed low confidence text for session {session_id}: '{text}' (conf: {conf:.2f} < {adaptive_conf:.2f})")
                     return None
                 
-                # Filter 4: Minimum meaningful length (more permissive)
+                # Filter 4: Minimum meaningful length (more permissive) - RELAXED
                 if len(text.strip()) < 1:
                     logger.debug(f"SYNC QUALITY FILTER: Rejected empty text for session {session_id}: '{text}'")
                     return None
+                
+                # 🔥 CRITICAL FIX: Force finalization for single words to prevent getting stuck
+                if len(text.split()) == 1 and len(text) >= 2:
+                    logger.info(f"🔧 FORCE FINALIZE: Single word '{text}' - forcing finalization to prevent stall")
+                    self._persist_segment(session_id, text, conf, time.time())
+                    return {
+                        'text': text,
+                        'confidence': conf,
+                        'is_final': True,
+                        'timestamp': time.time()
+                    }
                 
                 logger.info(f"SYNC QUALITY CHECK PASSED for session {session_id}: '{text}' (confidence: {conf:.2f})")
                 
@@ -1587,6 +1598,7 @@ class TranscriptionService:
                 # This ensures transcription results always reach the frontend
                 if not emit_interim and not finalize and buf.strip():
                     emit_interim = True
+                    logger.info(f"🔧 FORCED INTERIM: Ensuring output for session {session_id}: '{buf}'")
                 
                 if finalize:
                     # FINAL: Additional quality check on final buffer
