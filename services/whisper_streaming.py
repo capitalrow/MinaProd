@@ -257,13 +257,17 @@ class WhisperStreamingService:
         # Add to buffer
         self.audio_buffer.add_chunk(audio_data, timestamp, estimated_duration)
         
-        # Decide whether to process now - be more conservative with buffering
+        # 🚨 ITER3 FIX: Make buffering much more aggressive for live transcription
         should_process = (
             is_final or 
             self.audio_buffer.is_full() or
             self.audio_buffer.total_duration >= self.config.max_chunk_duration or
-            (len(self.audio_buffer.buffer) >= 5 and self.audio_buffer.total_duration >= 2.0)  # Process after 5 chunks + 2 seconds
+            len(self.audio_buffer.buffer) >= 3 or  # 🔧 FIXED: Process after just 3 chunks (was 5)
+            self.audio_buffer.total_duration >= 1.0  # 🔧 FIXED: Process after 1 second (was 2)
         )
+        
+        # 🚨 ITER3 DEBUG: Log buffering decisions
+        logger.info(f"🔧 ITER3 BUFFER: Session {self.session_id} - chunks: {len(self.audio_buffer.buffer)}, duration: {self.audio_buffer.total_duration:.1f}s, should_process: {should_process}")
         
         if should_process and not self.is_processing:
             return await self._process_buffered_audio(final=is_final)
