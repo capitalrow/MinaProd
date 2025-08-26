@@ -1926,19 +1926,18 @@
     const stop = stopBtn();
     
     if (start) {
-      // 🔥 CRITICAL FIX: Remove any existing click listeners to prevent double-binding
-      const existingListeners = start.cloneNode(true);
-      start.parentNode.replaceChild(existingListeners, start);
-      
-      existingListeners.addEventListener('click', async () => {
+      // 🔥 SIMPLE FIX: Just add event listener with proper state management
+      start.addEventListener('click', async (event) => {
         // Prevent double-clicks during processing
-        if (existingListeners.disabled || existingListeners.hasAttribute('processing')) {
+        if (start.disabled || start.hasAttribute('processing') || window._recordingInProgress) {
           console.log('⚠️ Recording already in progress, ignoring click');
           return;
         }
         
-        existingListeners.setAttribute('processing', 'true');
-        existingListeners.disabled = true;
+        console.log('🎯 Start recording button clicked');
+        window._recordingInProgress = true;
+        start.setAttribute('processing', 'true');
+        start.disabled = true;
         
         try {
           await startRecording(); // Session creation is now handled inside startRecording
@@ -1949,8 +1948,9 @@
         } finally {
           // Re-enable button after processing
           setTimeout(() => {
-            existingListeners.removeAttribute('processing');
-            existingListeners.disabled = false;
+            start.removeAttribute('processing');
+            start.disabled = false;
+            window._recordingInProgress = false;
           }, 1000);
         }
       });
