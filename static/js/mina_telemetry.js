@@ -112,6 +112,17 @@ class MinaTelemetry {
     return { pattern, count };
   }
   
+  reportTranscriptionSegment(segmentData) {
+    const metric = {
+      type: 'transcription_segment',
+      ...segmentData,
+      timestamp: Date.now()
+    };
+    
+    console.log('📊 Transcription segment tracked:', metric);
+    this.sendTelemetry('transcription_segment', metric);
+  }
+  
   sendTelemetry(eventType, data) {
     // Send to monitoring endpoint (non-blocking)
     try {
