@@ -15,6 +15,8 @@ from enum import Enum
 from .vad_service import VADService, VADConfig
 from .whisper_streaming import WhisperStreamingService, TranscriptionConfig, TranscriptionResult
 from .audio_processor import AudioProcessor
+from .audio_quality_monitor import AudioQualityMonitor, AudioQualityConfig, AGCConfig, initialize_audio_quality_monitor
+from .confidence_scoring import AdvancedConfidenceScorer, ConfidenceConfig, initialize_confidence_scorer
 from models.session import Session
 from models.segment import Segment
 from app import db
