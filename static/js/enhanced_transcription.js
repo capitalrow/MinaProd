@@ -215,8 +215,9 @@ class RealTimeTranscription {
     }
     
     setupEventListeners() {
-        // Control buttons
-        this.elements.startButton?.addEventListener('click', () => this.startRecording());
+        // Control buttons - DISABLED to prevent conflicts with recording_wiring.js
+        // The main recording logic is handled in recording_wiring.js to avoid duplicate event listeners
+        // this.elements.startButton?.addEventListener('click', () => this.startRecording());
         this.elements.pauseButton?.addEventListener('click', () => this.pauseRecording());
         this.elements.stopButton?.addEventListener('click', () => this.stopRecording());
         
@@ -459,8 +460,8 @@ class RealTimeTranscription {
         confidenceIndicator.className = 'confidence-indicator';
         
         const confidenceBar = document.createElement('div');
-        confidenceBar.className = `confidence-bar ${this.getConfidenceClass(segment.confidence)}`;
-        confidenceBar.style.width = `${segment.confidence * 100}%`;
+        confidenceBar.className = `confidence-bar ${this.getConfidenceClass(segment.avg_confidence)}`;
+        confidenceBar.style.width = `${segment.avg_confidence * 100}%`;
         
         confidenceIndicator.appendChild(confidenceBar);
         
