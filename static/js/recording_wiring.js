@@ -234,6 +234,173 @@
     }, 30000);
   }
 
+  // --- Accessibility and Keyboard Navigation Enhancement ---
+  function initAccessibilityFeatures() {
+    // Keyboard shortcuts
+    document.addEventListener('keydown', handleKeyboardShortcuts);
+    
+    // Focus management
+    setupFocusManagement();
+    
+    // Screen reader announcements
+    setupScreenReaderAnnouncements();
+    
+    // Mobile accessibility
+    setupMobileAccessibility();
+    
+    console.log('🔧 Accessibility features initialized');
+  }
+  
+  function handleKeyboardShortcuts(event) {
+    // Only handle shortcuts when not in input fields
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+    
+    if (event.ctrlKey) {
+      switch(event.key.toLowerCase()) {
+        case 'r':
+          event.preventDefault();
+          if (startBtn() && !startBtn().disabled) {
+            startBtn().click();
+            announceToScreenReader('Recording started via keyboard shortcut');
+          }
+          break;
+        case 's':
+          event.preventDefault();
+          if (stopBtn() && !stopBtn().disabled) {
+            stopBtn().click();
+            announceToScreenReader('Recording stopped via keyboard shortcut');
+          }
+          break;
+        case 'delete':
+          event.preventDefault();
+          const clearBtn = document.getElementById('clearTranscription');
+          if (clearBtn) {
+            clearBtn.click();
+            announceToScreenReader('Transcription cleared via keyboard shortcut');
+          }
+          break;
+        case 'e':
+          event.preventDefault();
+          const exportBtn = document.getElementById('exportTranscription');
+          if (exportBtn) {
+            exportBtn.click();
+            announceToScreenReader('Transcription export started via keyboard shortcut');
+          }
+          break;
+      }
+    }
+    
+    // Escape key to clear focus
+    if (event.key === 'Escape') {
+      document.activeElement.blur();
+      announceToScreenReader('Focus cleared');
+    }
+  }
+  
+  function setupFocusManagement() {
+    // Enhanced focus indicators for keyboard navigation
+    const focusableElements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    
+    document.querySelectorAll(focusableElements).forEach(element => {
+      element.addEventListener('focus', (e) => {
+        e.target.style.outline = '3px solid #007bff';
+        e.target.style.outlineOffset = '2px';
+      });
+      
+      element.addEventListener('blur', (e) => {
+        e.target.style.outline = '';
+        e.target.style.outlineOffset = '';
+      });
+    });
+  }
+  
+  function setupScreenReaderAnnouncements() {
+    // Create announcement functions for screen readers
+    window.announceToScreenReader = function(message, priority = 'polite') {
+      const announcer = priority === 'assertive' ? 
+        document.getElementById('sr-announcements') : 
+        document.getElementById('sr-status');
+      
+      if (announcer) {
+        announcer.textContent = message;
+        // Clear after announcement
+        setTimeout(() => {
+          announcer.textContent = '';
+        }, 1000);
+      }
+    };
+    
+    // Announce connection status changes
+    const originalWSStatus = wsStatus;
+    if (originalWSStatus) {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'childList' || mutation.type === 'characterData') {
+            const newStatus = mutation.target.textContent;
+            if (newStatus.includes('Connected')) {
+              announceToScreenReader('WebSocket connection established', 'assertive');
+            } else if (newStatus.includes('Disconnected')) {
+              announceToScreenReader('WebSocket connection lost', 'assertive');
+            }
+          }
+        });
+      });
+      
+      observer.observe(originalWSStatus(), { childList: true, characterData: true, subtree: true });
+    }
+  }
+  
+  function setupMobileAccessibility() {
+    // iOS audio context handling
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+      // Ensure audio context is resumed on first user interaction
+      const resumeAudioContext = () => {
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume().then(() => {
+            console.log('📱 iOS: AudioContext resumed');
+            announceToScreenReader('Audio system ready for iOS');
+          });
+        }
+      };
+      
+      document.addEventListener('touchstart', resumeAudioContext, { once: true });
+      document.addEventListener('click', resumeAudioContext, { once: true });
+    }
+    
+    // Android Chrome permission handling
+    if (/Android/.test(navigator.userAgent) && /Chrome/.test(navigator.userAgent)) {
+      // Enhanced permission request with user guidance
+      const originalGetUserMedia = navigator.mediaDevices.getUserMedia;
+      navigator.mediaDevices.getUserMedia = function(constraints) {
+        announceToScreenReader('Requesting microphone access for Android Chrome');
+        return originalGetUserMedia.call(this, constraints);
+      };
+    }
+    
+    // Touch-friendly enhancements
+    document.querySelectorAll('.btn').forEach(button => {
+      button.addEventListener('touchstart', (e) => {
+        // Add visual feedback for touch
+        e.target.style.transform = 'scale(0.95)';
+      }, { passive: true });
+      
+      button.addEventListener('touchend', (e) => {
+        setTimeout(() => {
+          e.target.style.transform = '';
+        }, 150);
+      }, { passive: true });
+    });
+    
+    // Prevent zoom on form inputs for iOS
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+      document.querySelectorAll('input, select, textarea').forEach(input => {
+        if (input.style.fontSize.length === 0) {
+          input.style.fontSize = '16px';
+        }
+      });
+    }
+  }
+
   // --- Enhanced User Notifications ---
   function showNotification(message, type = 'info', duration = 3000) {
     // Remove any existing notifications
@@ -298,6 +465,9 @@
     
     // Also show as notification
     showNotification(`Error: ${message}`, 'error', 5000);
+    
+    // Announce error to screen readers
+    announceToScreenReader(`Error occurred: ${message}`, 'assertive');
   }
 
   // --- WebAudio RMS Processing ---
@@ -703,12 +873,28 @@
     
     // Bind UI events once DOM is ready
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', bindEvents);
+      document.addEventListener('DOMContentLoaded', () => {
+        bindEvents();
+        initAccessibilityFeatures();
+        // Announce application ready to screen readers after initialization
+        setTimeout(() => {
+          if (typeof announceToScreenReader === 'function') {
+            announceToScreenReader('Mina live transcription application ready. Press Ctrl+R to start recording.', 'polite');
+          }
+        }, 1500);
+      });
     } else {
       bindEvents();
+      initAccessibilityFeatures();
+      // Announce application ready to screen readers after initialization
+      setTimeout(() => {
+        if (typeof announceToScreenReader === 'function') {
+          announceToScreenReader('Mina live transcription application ready. Press Ctrl+R to start recording.', 'polite');
+        }
+      }, 1500);
     }
     
-    console.log('✅ Recording system initialized');
+    console.log('🔧 ENHANCED: Accessibility-enabled recording system initialized');
   }
 
   // Auto-initialize

@@ -3,24 +3,81 @@
 {% block title %}Live Transcription - Mina{% endblock %}
 
 {% block head %}
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=5.0">
+<meta name="description" content="Real-time live transcription service with high accuracy speech-to-text conversion">
+<meta name="theme-color" content="#0d6efd">
+
+<!-- iOS and mobile enhancements -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mina Live">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Mina Live">
 
 <!-- Skip link for accessibility -->
 <style>
+/* Enhanced accessibility and mobile styles */
 .skip-link {
     position: absolute;
     top: -40px;
     left: 6px;
     background: var(--bs-primary);
     color: white;
-    padding: 8px;
+    padding: 12px 16px;
     text-decoration: none;
     transition: top 0.3s;
     z-index: 1000;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 14px;
 }
 
 .skip-link:focus {
     top: 6px;
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .card {
+        border: 2px solid var(--bs-light);
+    }
+    .btn {
+        border-width: 2px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .notification-popup,
+    .transcription-segment,
+    .loading-spinner {
+        animation: none;
+    }
+    .skip-link {
+        transition: none;
+    }
+}
+
+/* Mobile-first touch targets */
+@media (max-width: 768px) {
+    .btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 12px 16px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    .form-check-input {
+        min-height: 24px;
+        min-width: 24px;
+    }
+    
+    .form-check-label {
+        font-size: 16px;
+        padding-left: 8px;
+    }
 }
 
 .notification-toast {
@@ -165,8 +222,26 @@
 {% endblock %}
 
 {% block content %}
-<!-- Skip link for accessibility -->
+<!-- Enhanced skip navigation links -->
 <a href="#main-content" class="skip-link">Skip to main content</a>
+<a href="#recording-controls" class="skip-link">Skip to recording controls</a>
+<a href="#transcription-display" class="skip-link">Skip to transcription</a>
+
+<!-- ARIA live regions for screen reader announcements -->
+<div id="sr-announcements" 
+     aria-live="assertive" 
+     aria-atomic="true" 
+     class="sr-only"
+     role="status">
+</div>
+
+<!-- Status announcements for screen readers -->
+<div id="sr-status" 
+     aria-live="polite" 
+     aria-atomic="false" 
+     class="sr-only"
+     role="log">
+</div>
 
 <!-- Loading overlay -->
 <div id="loadingOverlay" class="loading-overlay">
@@ -190,17 +265,25 @@
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>
-                <i class="fas fa-broadcast-tower me-2"></i>
+            <h1 id="page-title">
+                <i class="fas fa-broadcast-tower me-2" aria-hidden="true"></i>
                 Live Transcription
             </h1>
             <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#sessionConfigModal">
-                    <i class="fas fa-cog me-2"></i>
+                <button class="btn btn-outline-secondary" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#sessionConfigModal"
+                        aria-label="Open transcription configuration settings"
+                        aria-describedby="config-description">
+                    <i class="fas fa-cog me-2" aria-hidden="true"></i>
                     Configure
                 </button>
-                <a href="{{ url_for('transcription.index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>
+                <span id="config-description" class="sr-only">Opens a dialog to configure transcription settings like language and sensitivity</span>
+                
+                <a href="{{ url_for('transcription.index') }}" 
+                   class="btn btn-secondary"
+                   aria-label="Navigate back to transcription dashboard">
+                    <i class="fas fa-arrow-left me-2" aria-hidden="true"></i>
                     Back to Dashboard
                 </a>
             </div>
@@ -238,35 +321,73 @@
     </div>
 </div>
 
-<!-- Controls -->
-<div class="row mb-4">
+<!-- Recording Controls Section -->
+<section id="recording-controls" 
+         class="row mb-4" 
+         role="region" 
+         aria-labelledby="controls-heading"
+         aria-describedby="controls-description">
     <div class="col-12">
+        <h2 id="controls-heading" class="sr-only">Recording Controls</h2>
+        <div id="controls-description" class="sr-only">Use these controls to start and stop audio recording for live transcription</div>
+        
         <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-microphone me-2" aria-hidden="true"></i>
+                    Audio Controls
+                </h3>
+            </div>
             <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-success" id="startRecordingBtn" aria-label="Start recording audio for transcription">
+                        <div class="d-flex gap-2" role="toolbar" aria-label="Recording controls toolbar">
+                            <button class="btn btn-success" 
+                                    id="startRecordingBtn" 
+                                    aria-label="Start recording audio for live transcription"
+                                    aria-describedby="start-help"
+                                    aria-keyshortcuts="Ctrl+R">
                                 <i class="fas fa-play me-2" aria-hidden="true"></i>
                                 Start Recording
                             </button>
-                            <button class="btn btn-danger" id="stopRecordingBtn" disabled aria-label="Stop recording audio">
+                            <div id="start-help" class="sr-only">Press Ctrl+R to quickly start recording</div>
+                            
+                            <button class="btn btn-danger" 
+                                    id="stopRecordingBtn" 
+                                    disabled 
+                                    aria-label="Stop recording audio and end transcription session"
+                                    aria-describedby="stop-help"
+                                    aria-keyshortcuts="Ctrl+S">
                                 <i class="fas fa-stop me-2" aria-hidden="true"></i>
-                                Stop
+                                Stop Recording
                             </button>
+                            <div id="stop-help" class="sr-only">Press Ctrl+S to quickly stop recording</div>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="d-flex align-items-center justify-content-end gap-3">
+                        <fieldset class="d-flex align-items-center justify-content-end gap-3">
+                            <legend class="sr-only">Transcription Display Options</legend>
+                            
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="autoScroll" checked>
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="autoScroll" 
+                                       checked
+                                       aria-describedby="autoscroll-help">
                                 <label class="form-check-label" for="autoScroll">Auto-scroll</label>
+                                <div id="autoscroll-help" class="sr-only">Automatically scroll transcription as new text appears</div>
                             </div>
+                            
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="showInterim" checked>
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="showInterim" 
+                                       checked
+                                       aria-describedby="interim-help">
                                 <label class="form-check-label" for="showInterim">Show interim</label>
+                                <div id="interim-help" class="sr-only">Show partial transcription results while you speak</div>
                             </div>
-                        </div>
+                        </fieldset>
                     </div>
                 </div>
             </div>
@@ -309,25 +430,54 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="card-title mb-0">
-                    <i class="fas fa-comments me-2"></i>
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-comments me-2" aria-hidden="true"></i>
                     Real-time Transcription
-                </h6>
+                </h3>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-secondary" id="clearTranscription">
-                        <i class="fas fa-trash me-1"></i>
+                    <button class="btn btn-sm btn-outline-secondary" 
+                            id="clearTranscription"
+                            aria-label="Clear all transcription text"
+                            aria-describedby="clear-help"
+                            aria-keyshortcuts="Ctrl+Delete">
+                        <i class="fas fa-trash me-1" aria-hidden="true"></i>
                         Clear
                     </button>
-                    <button class="btn btn-sm btn-outline-primary" id="exportTranscription">
-                        <i class="fas fa-download me-1"></i>
+                    <div id="clear-help" class="sr-only">Press Ctrl+Delete to quickly clear transcription</div>
+                    
+                    <button class="btn btn-sm btn-outline-primary" 
+                            id="exportTranscription"
+                            aria-label="Export transcription to file"
+                            aria-describedby="export-help"
+                            aria-keyshortcuts="Ctrl+E">
+                        <i class="fas fa-download me-1" aria-hidden="true"></i>
                         Export
                     </button>
+                    <div id="export-help" class="sr-only">Press Ctrl+E to quickly export transcription</div>
                 </div>
             </div>
             <div class="card-body p-0">
-                <div class="transcription-container" id="transcriptionContainer" aria-live="polite" aria-label="Live transcription results">
-                    <div id="interimText" class="transcription-segment interim" style="display: none;" aria-live="polite" aria-label="Interim transcription text"></div>
-                    <div id="finalText" class="transcription-segment final" aria-live="assertive" aria-label="Final transcription text"></div>
+                <div class="transcription-container" 
+                     id="transcriptionContainer" 
+                     role="log"
+                     aria-live="polite" 
+                     aria-label="Live transcription results"
+                     aria-describedby="transcription-instructions"
+                     tabindex="0">
+                    <div id="transcription-instructions" class="sr-only">Live transcription appears here. Use arrow keys to navigate, Tab to focus buttons.</div>
+                    
+                    <div id="interimText" 
+                         class="transcription-segment interim" 
+                         style="display: none;" 
+                         aria-live="polite" 
+                         aria-label="Interim transcription text"
+                         role="status"></div>
+                         
+                    <div id="finalText" 
+                         class="transcription-segment final" 
+                         aria-live="assertive" 
+                         aria-label="Final transcription text"
+                         role="log"></div>
                     <div class="text-center text-muted py-5" id="initialMessage">
                         <i class="fas fa-microphone-slash fa-3x mb-3"></i>
                         <h5>Ready to transcribe</h5>
