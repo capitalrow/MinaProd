@@ -1,5 +1,8 @@
 import time
 import json
+import traceback
+import uuid
+from contextlib import contextmanager
 from flask import request
 from flask_socketio import emit, join_room, disconnect
 from app import socketio, db
@@ -32,18 +35,63 @@ def _rate_ok(session_id: str, now: float, per_minute: int = 600) -> bool:
 
 # --- Session Management Events ---
 
+@contextmanager
+def timeout_context(seconds):
+    """Context manager for operation timeout protection."""
+    import signal
+    def timeout_handler(signum, frame):
+        raise TimeoutError(f"Operation timed out after {seconds} seconds")
+    
+    old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
+
 @socketio.on('connect')
 def on_connect():
-    """Handle client connection."""
+    """Handle client connection with enhanced tracking."""
     client_id = request.sid
-    logger.info(f"Client connected: {client_id}")
-    emit('connected', {'status': 'Connected to Mina transcription service'})
+    connection_time = time.time()
+    
+    logger.info({
+        "event": "client_connected",
+        "client_id": client_id,
+        "timestamp": connection_time,
+        "user_agent": request.headers.get('User-Agent', 'Unknown'),
+        "remote_addr": request.remote_addr
+    })
+    
+    emit('connected', {
+        'status': 'Connected to Mina transcription service',
+        'client_id': client_id,
+        'server_time': connection_time
+    })
 
 @socketio.on('disconnect')
 def on_disconnect(disconnect_reason=None):
-    """Handle client disconnection."""
+    """Handle client disconnection with cleanup."""
     client_id = request.sid
-    logger.info(f"Client disconnected: {client_id} (reason: {disconnect_reason})")
+    disconnect_time = time.time()
+    
+    logger.info({
+        "event": "client_disconnected", 
+        "client_id": client_id,
+        "reason": disconnect_reason,
+        "timestamp": disconnect_time
+    })
+    
+    # Clean up any active sessions for this client
+    try:
+        tsvc.cleanup_client_sessions(client_id)
+    except Exception as e:
+        logger.error({
+            "event": "cleanup_error",
+            "client_id": client_id,
+            "error": str(e)
+        })
 
 @socketio.on('create_session')
 def create_session(data):
@@ -102,113 +150,169 @@ def join_session(data):
 @socketio.on('audio_chunk')
 def audio_chunk(data):
     """
-    🔥 INT-LIVE-I2: Complete audio chunk handler with safe base64 decode and rate limiting.
+    Enhanced audio chunk handler with comprehensive error tracking and timeout protection.
     
     Expected payload:
     {
         "session_id": "abc123",
-        "is_final_chunk": false,  # 🔥 Fixed: defaults to False
-        "audio_data_b64": "...",  # may be null/empty when signaling final only
-        "mime_type": "audio/webm",
-        "rms": 0.03,              # 🔥 Client-side RMS from WebAudio
-        "ts_client": 1712345678901
+        "is_final_chunk": false,
+        "audio_data_b64": "...",
+        "mime_type": "audio/webm", 
+        "rms": 0.03,
+        "ts_client": 1712345678901,
+        "chunk_id": "optional_unique_id"
     }
     """
-    now = time.time()
+    start_time = time.time()
+    client_id = request.sid
     payload = data or {}
+    
+    # Extract and validate payload
     session_id = payload.get('session_id')
-    is_final_chunk = bool(payload.get('is_final_chunk', False))  # 🔥 Fixed default
+    chunk_id = payload.get('chunk_id', f"{session_id}_{int(start_time * 1000)}_{uuid.uuid4().hex[:8]}")
+    is_final_chunk = bool(payload.get('is_final_chunk', False))
     rms = float(payload.get('rms', 0.0))
     mime_type = payload.get('mime_type') or ""
     client_ts = payload.get('ts_client')
 
     if not session_id:
-        emit('error', {'message': 'Missing session_id'})
+        emit('error', {'code': 'MISSING_SESSION_ID', 'message': 'Missing session_id'})
         return
     
-    # 🔥 INT-LIVE-I2: Basic rate limiting per session (very lightweight)
-    if not _rate_ok(session_id, now):
-        emit('error', {'message': 'Rate limit exceeded'})
-        # 🔥 Track rate limit hits in metrics
-        logger.warning(f"Rate limit exceeded for session {session_id}")
+    # Validate session is active
+    if not tsvc.is_session_active(session_id):
+        emit('error', {'code': 'INVALID_SESSION', 'message': 'Session not found or inactive'})
         return
     
-    # 🔥 INT-LIVE-I2: Safe base64 decode with size limits
+    # Rate limiting with enhanced logging
+    if not _rate_ok(session_id, start_time):
+        logger.warning({
+            "event": "rate_limit_exceeded",
+            "session_id": session_id,
+            "client_id": client_id,
+            "timestamp": start_time
+        })
+        emit('error', {'code': 'RATE_LIMITED', 'message': 'Rate limit exceeded'})
+        return
+    
+    # Decode audio data safely
     raw_bytes = b""
     if payload.get('audio_data_b64'):
         try:
             raw_bytes = decode_audio_b64(payload['audio_data_b64'])
         except AudioChunkTooLarge:
-            emit('error', {'message': 'Chunk too large'})
+            logger.error({
+                "event": "chunk_too_large",
+                "session_id": session_id,
+                "chunk_id": chunk_id,
+                "max_size": "10MB"
+            })
+            emit('error', {'code': 'CHUNK_TOO_LARGE', 'message': 'Audio chunk too large'})
             return
-        except AudioChunkDecodeError:
-            emit('error', {'message': 'Invalid audio data'})
+        except AudioChunkDecodeError as e:
+            logger.error({
+                "event": "decode_error", 
+                "session_id": session_id,
+                "chunk_id": chunk_id,
+                "error": str(e)
+            })
+            emit('error', {'code': 'INVALID_AUDIO_DATA', 'message': 'Invalid audio data encoding'})
             return
     
-    # === Process Audio ===
-    # This returns None, or a dict like:
-    # {'transcription': {'text': '...', 'confidence': 0.78, 'is_final': False}}
+    # Process audio with timeout protection
     try:
-        result = tsvc.process_audio_sync(
-            session_id=session_id,
-            audio_data=raw_bytes,
-            timestamp=client_ts,
-            mime_type=mime_type,
-            client_rms=rms,
-            is_final_signal=is_final_chunk
-        )
-    except Exception as e:
-        # 🔥 INT-LIVE-I2: Structured log for observability
+        with timeout_context(30):  # 30 second max processing time
+            result = tsvc.process_audio_sync(
+                session_id=session_id,
+                audio_data=raw_bytes,
+                timestamp=client_ts,
+                mime_type=mime_type,
+                client_rms=rms,
+                is_final_signal=is_final_chunk
+            )
+            
+        # Send acknowledgment to client
+        emit('audio_received', {
+            'chunk_id': chunk_id,
+            'processing_time_ms': (time.time() - start_time) * 1000,
+            'status': 'processed'
+        })
+            
+    except TimeoutError:
+        processing_time = (time.time() - start_time) * 1000
         logger.error({
-            "ev": "audio_chunk_error",
+            "event": "processing_timeout",
             "session_id": session_id,
-            "err": str(e),
-            "mime_type": mime_type,
+            "chunk_id": chunk_id,
+            "processing_time_ms": processing_time,
+            "chunk_size": len(raw_bytes)
+        })
+        emit('error', {'code': 'PROCESSING_TIMEOUT', 'message': 'Audio processing timed out'})
+        return
+        
+    except Exception as e:
+        processing_time = (time.time() - start_time) * 1000
+        logger.error({
+            "event": "audio_processing_error",
+            "session_id": session_id,
+            "chunk_id": chunk_id,
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "processing_time_ms": processing_time,
             "chunk_size": len(raw_bytes),
+            "mime_type": mime_type,
             "is_final": is_final_chunk
         })
-        emit('error', {'message': 'Processing error'})
+        emit('error', {'code': 'PROCESSING_ERROR', 'message': 'Audio processing failed'})
         return
     
+    # Handle transcription results
     if not result or 'transcription' not in result:
-        # No interim to emit this time - normal for many chunks
+        # No transcription result - normal for many chunks
+        logger.debug({
+            "event": "no_transcription_result",
+            "session_id": session_id,
+            "chunk_id": chunk_id,
+            "chunk_size": len(raw_bytes)
+        })
         return
     
     tr = result['transcription']
     txt = (tr.get('text') or '').strip()
     conf = float(tr.get('confidence') or 0.0)
     is_final = bool(tr.get('is_final'))
+    processing_time = (time.time() - start_time) * 1000
     
-    # 🔥 INT-LIVE-I2: Structured logging (tailor to your JSON logger)
+    # Log transcription emission
     logger.info({
-        "ev": "transcription_emit",
+        "event": "transcription_result",
         "session_id": session_id,
-        "len": len(txt),
-        "conf": conf,
+        "chunk_id": chunk_id,
+        "text_length": len(txt),
+        "confidence": conf,
         "is_final": is_final,
+        "processing_time_ms": processing_time,
         "rms": rms,
-        "mime": mime_type,
+        "mime_type": mime_type
     })
     
     if not txt:
         return
     
+    # Emit transcription results to session room
+    transcript_payload = {
+        "session_id": session_id,
+        "text": txt,
+        "avg_confidence": conf,
+        "timestamp": start_time,
+        "chunk_id": chunk_id,
+        "processing_time_ms": processing_time
+    }
+    
     if is_final:
-        # Emit to all clients in the session room
-        socketio.emit('final_transcript', {
-            "session_id": session_id,
-            "text": txt,
-            "avg_confidence": conf,
-            "timestamp": now
-        }, room=session_id)
+        socketio.emit('final_transcript', transcript_payload, to=session_id)
     else:
-        # Interim transcript
-        socketio.emit('interim_transcript', {
-            "session_id": session_id,
-            "text": txt,
-            "avg_confidence": conf,
-            "timestamp": now
-        }, room=session_id)
+        socketio.emit('interim_transcript', transcript_payload, to=session_id)
 
 @socketio.on('end_of_stream')
 def end_of_stream(data):
@@ -219,9 +323,21 @@ def end_of_stream(data):
             emit('error', {'message': 'Missing session_id'})
             return
         
-        logger.info(f"End of stream for session: {session_id}")
-        tsvc.end_session(session_id)
-        emit('stream_ended', {'session_id': session_id})
+        logger.info({
+            "event": "end_of_stream",
+            "session_id": session_id,
+            "client_id": request.sid,
+            "timestamp": time.time()
+        })
+        
+        # End session and get final statistics
+        final_stats = tsvc.end_session(session_id)
+        
+        emit('stream_ended', {
+            'session_id': session_id,
+            'final_stats': final_stats,
+            'timestamp': time.time()
+        })
         
     except Exception as e:
         logger.error(f"Error ending stream: {e}")
