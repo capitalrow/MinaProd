@@ -237,40 +237,6 @@
         showNotification(`Reconnecting... (${connectionHealth.reconnectAttempts}/${connectionHealth.maxReconnectAttempts})`, 'warning', 2000);
       }
     });
-      
-      // Show quality insights if needed
-      if (qualityAnalysis.recommendation !== 'continue' && qualityAnalysis.recommendation !== 'excellent') {
-        showQualityInsight(qualityAnalysis);
-      }
-      
-      // Clear interim display
-      const interimDiv = document.getElementById('interimText');
-      if (interimDiv) {
-        interimDiv.style.display = 'none';
-        interimDiv.textContent = '';
-      }
-      
-      // Add to final transcript display
-      const finalDiv = document.getElementById('finalText');
-      if (finalDiv && payload.text) {
-        const text = payload.text.trim();
-        if (text) {
-          // Create a new segment element
-          const segmentDiv = document.createElement('div');
-          segmentDiv.className = 'transcription-segment final';
-          segmentDiv.textContent = (finalDiv.textContent ? ' ' : '') + text;
-          
-          // Add confidence indicator
-          if (payload.avg_confidence !== undefined) {
-            const confBar = document.createElement('div');
-            confBar.className = 'confidence-indicator';
-            const confLevel = document.createElement('div');
-            confLevel.className = `confidence-bar ${payload.avg_confidence > 0.7 ? 'confidence-high' : 
-                                                   payload.avg_confidence > 0.5 ? 'confidence-medium' : 'confidence-low'}`;
-            confLevel.style.width = `${Math.round(payload.avg_confidence * 100)}%`;
-            confBar.appendChild(confLevel);
-            segmentDiv.appendChild(confBar);
-          }
           
           finalDiv.appendChild(segmentDiv);
           
