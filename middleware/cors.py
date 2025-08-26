@@ -4,6 +4,7 @@ Cross-Origin Resource Sharing setup for development and production.
 """
 
 import logging
+import os
 from flask import request
 from flask_cors import CORS
 
@@ -29,11 +30,14 @@ def configure_cors(app):
     
     else:
         # Production CORS - more restrictive
-        allowed_origins = [
-            'https://yourdomain.com',
-            'https://app.yourdomain.com',
-            # Add your production domains here
+        # PRODUCTION: Replace with actual production domains
+        allowed_origins = os.environ.get('ALLOWED_ORIGINS', '').split(',') if os.environ.get('ALLOWED_ORIGINS') else [
+            'https://REPLACE_WITH_YOUR_DOMAIN.com',
+            'https://app.REPLACE_WITH_YOUR_DOMAIN.com',
+            'https://admin.REPLACE_WITH_YOUR_DOMAIN.com'
         ]
+        # Remove empty strings from split
+        allowed_origins = [origin.strip() for origin in allowed_origins if origin.strip()]
         
         CORS(app,
              origins=allowed_origins,

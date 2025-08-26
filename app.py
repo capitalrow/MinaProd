@@ -28,14 +28,15 @@ db = SQLAlchemy(model_class=Base)
 
 # Socket.IO configuration for better compatibility
 socketio = SocketIO(
-    cors_allowed_origins="*",
+    cors_allowed_origins=None,  # SECURITY: Will be configured in middleware/cors.py
     async_mode='eventlet',  # Required for stable WebSocket connections
     ping_timeout=60,  # Reduced timeout for better compatibility
     ping_interval=25,   # Regular ping to keep connection alive
     transports=['websocket', 'polling'],  # WebSocket first, polling fallback
     engineio_logger=False,   # Disabled for better Gunicorn compatibility
     socketio_logger=False,   # Disabled for better Gunicorn compatibility
-    max_http_buffer_size=1000000  # 1MB buffer for audio data
+    max_http_buffer_size=1000000,  # 1MB buffer for audio data
+    allow_unsafe_werkzeug=False  # SECURITY: Disable unsafe Werkzeug compatibility
 )
 
 def create_app(config_class=Config):
