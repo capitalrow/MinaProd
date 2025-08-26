@@ -76,8 +76,8 @@ def create_session(data):
         })
         
     except Exception as e:
-        logger.error(f"Error creating session: {e}")
-        emit('error', {'message': 'Failed to create session'})
+        logger.error(f"Error creating session: {e}", exc_info=True)
+        emit('error', {'message': f'Failed to create session: {str(e)}'})
 
 @socketio.on('join_session')
 def join_session(data):
