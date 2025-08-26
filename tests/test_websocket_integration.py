@@ -207,11 +207,18 @@ class WebSocketTranscriptionTest:
             result['audio_acknowledged'] += 1
             
         @sio.event
+        async def interim_transcript(data):
+            logger.info(f"📝 Interim transcript: {data}")
+            result['transcription_responses'] += 1
+            result['messages_received'].append(('interim', data))
+            result['pipeline_working'] = True
+            
+        @sio.event
         async def transcript_partial(data):
             logger.info(f"📝 Partial transcript: {data}")
             result['transcription_responses'] += 1
             result['messages_received'].append(('partial', data))
-            self.transcription_received = True
+            result['pipeline_working'] = True
             
         @sio.event
         async def transcript_final(data):
@@ -219,7 +226,6 @@ class WebSocketTranscriptionTest:
             result['transcription_responses'] += 1
             result['messages_received'].append(('final', data))
             result['pipeline_working'] = True
-            self.transcription_received = True
             
         @sio.event
         async def final_transcript(data):
@@ -227,7 +233,6 @@ class WebSocketTranscriptionTest:
             result['transcription_responses'] += 1
             result['messages_received'].append(('final_alt', data))
             result['pipeline_working'] = True
-            self.transcription_received = True
             
         @sio.event
         async def error(data):
