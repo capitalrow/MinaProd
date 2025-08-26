@@ -314,6 +314,11 @@
                             <i class="fas fa-clock me-1"></i>
                             <span id="sessionTime">00:00</span>
                         </small>
+                        <!-- E2E Debug Panel -->
+                        <small class="text-muted" id="debugInfo" style="display: none;">
+                            <i class="fas fa-bug me-1"></i>
+                            <span id="debugStatus">Debug Mode</span>
+                        </small>
                     </div>
                 </div>
             </div>
@@ -362,6 +367,15 @@
                                 Stop Recording
                             </button>
                             <div id="stop-help" class="sr-only">Press Ctrl+S to quickly stop recording</div>
+                            
+                            <!-- E2E Debug Simulation Toggle -->
+                            <button class="btn btn-outline-info" 
+                                    id="simulateFromFileBtn"
+                                    aria-label="Simulate recording from podcast file for testing"
+                                    title="E2E Testing: Simulate mic input from audio file">
+                                <i class="fas fa-file-audio me-2" aria-hidden="true"></i>
+                                Simulate from file
+                            </button>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -642,6 +656,7 @@
 <script src="/static/js/websocket_streaming.js"></script>
 <script src="/static/js/notification_system.js"></script>
 <script src="/static/js/recording_wiring.js"></script>
+<script src="/static/js/sim_from_audio.js"></script>
 
 <!-- Enhanced Features Inline JavaScript for 100% Effectiveness -->
 <script>
