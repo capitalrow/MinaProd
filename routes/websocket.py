@@ -112,6 +112,25 @@ def join_session(data):
             'last_activity': time.time()
         }
         
+        # 🔥 CRITICAL FIX: Create transcription service session when joining WebSocket session
+        try:
+            # Start transcription session in the service
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            actual_session_id = loop.run_until_complete(tsvc.start_session(session_id))
+            loop.close()
+            
+            if WS_DEBUG:
+                logger.info(f"🔧 TRANSCRIPTION SESSION CREATED: {actual_session_id} for WebSocket session {session_id}")
+        except Exception as e:
+            logger.error(f"🚨 Failed to create transcription service session: {e}")
+            emit('error', {
+                'type': 'transcription_session_error',
+                'message': f'Failed to initialize transcription: {str(e)}',
+                'timestamp': time.time()
+            })
+            return
+        
         if WS_DEBUG:
             logger.info(f"📝 SESSION JOIN: Client joined session {session_id}")
         
@@ -132,7 +151,7 @@ def join_session(data):
 
 @socketio.on('connect')
 @handle_socket_errors
-def on_connect():
+def on_connect(auth):
     """🔥 ENHANCED: Handle client connection with comprehensive tracking and error recovery."""
     try:
         from flask import session as flask_session
