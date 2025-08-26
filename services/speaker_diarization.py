@@ -904,7 +904,7 @@ class SpeakerDiarizationEngine:
         profile.last_detected = segment.end_time
         profile.total_speaking_time += segment.duration
         profile.segments_count += 1
-        profile.confidence_scores.append(segment.confidence)
+        profile.confidence_scores.append(segment.avg_confidence)
         
         # Update voice characteristics (running average)
         if profile.voice_characteristics:
@@ -976,7 +976,7 @@ class SpeakerDiarizationEngine:
                 'end_time': segment.end_time,
                 'duration': segment.duration,
                 'text': segment.text,
-                'confidence': segment.confidence
+                'confidence': segment.avg_confidence
             })
         
         return timeline

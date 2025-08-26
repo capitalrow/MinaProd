@@ -121,7 +121,7 @@ class TranscriptionQAPipeline:
         # Real-time quality checks
         self._check_segment_quality(session_id, segment)
         
-        logger.debug(f"📊 Recorded segment: {segment.text[:50]}... (confidence: {segment.confidence:.2f})")
+        logger.debug(f"📊 Recorded segment: {segment.text[:50]}... (confidence: {segment.avg_confidence:.2f})")
     
     def record_error(self, session_id: str, error_type: str, error_message: str):
         """Record error for analysis"""
@@ -186,7 +186,7 @@ class TranscriptionQAPipeline:
         for segment in segments:
             text_lower = segment.text.lower()
             for pattern in hallucination_patterns:
-                if pattern in text_lower and segment.confidence > 0.8:
+                if pattern in text_lower and segment.avg_confidence > 0.8:
                     hallucination_count += 1
                     logger.warning(f"🤖 Potential hallucination detected: {segment.text}")
                     break
@@ -245,9 +245,9 @@ class TranscriptionQAPipeline:
     def _check_segment_quality(self, session_id: str, segment: TranscriptionSegment):
         """Real-time quality checks for segments"""
         # Check for low confidence
-        if segment.confidence < 0.3:
+        if segment.avg_confidence < 0.3:
             self.record_error(session_id, 'low_confidence', 
-                            f"Low confidence segment: {segment.confidence:.2f}")
+                            f"Low confidence segment: {segment.avg_confidence:.2f}")
         
         # Check for excessive latency
         if segment.latency_ms > 3000:  # 3 seconds

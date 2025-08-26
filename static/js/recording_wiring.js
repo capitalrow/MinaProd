@@ -256,7 +256,7 @@
       // 🚀 ADVANCED: Apply AI quality enhancement
       const qualityAnalysis = qualityEnhancer.analyzeTranscriptQuality({
         text: payload.text,
-        confidence: payload.confidence || payload.avg_confidence
+        confidence: payload.avg_confidence
       });
       
       console.log('🧠 Quality Analysis:', qualityAnalysis);
@@ -570,7 +570,7 @@
     }
     
     analyzeTranscriptQuality(segment) {
-      const confidence = segment.confidence || 0;
+      const confidence = segment.avg_confidence || 0;
       const text = segment.text || '';
       
       // Advanced quality metrics
@@ -1715,13 +1715,20 @@
     } catch (err) {
       console.error('🚨 Start recording error:', err);
       
-      let message = 'Recording failed';
+      let message = 'Recording setup failed';
       if (err.name === 'NotAllowedError') {
         message = 'Microphone access denied. Please allow microphone permissions.';
       } else if (err.name === 'NotFoundError') {
         message = 'No microphone found. Please connect a microphone.';
+      } else if (err.name === 'NotSupportedError') {
+        message = 'Recording not supported on this device.';
       } else if (err.message === 'Connection timeout') {
         message = 'Connection timeout. Please check your internet connection.';
+      } else if (err.message && err.message.includes('socket')) {
+        message = 'Connection error. Please refresh and try again.';
+      } else {
+        console.error('🚨 Detailed error:', err.name, err.message, err.stack);
+        message = `Recording setup failed: ${err.message || 'Unknown error'}`;
       }
       
       if (micStatus()) micStatus().textContent = message;
@@ -1901,14 +1908,32 @@
     const stop = stopBtn();
     
     if (start) {
-      start.addEventListener('click', async () => {
-        // 🔥 CRITICAL FIX: Proper async session creation
+      // 🔥 CRITICAL FIX: Remove any existing click listeners to prevent double-binding
+      const existingListeners = start.cloneNode(true);
+      start.parentNode.replaceChild(existingListeners, start);
+      
+      existingListeners.addEventListener('click', async () => {
+        // Prevent double-clicks during processing
+        if (existingListeners.disabled || existingListeners.hasAttribute('processing')) {
+          console.log('⚠️ Recording already in progress, ignoring click');
+          return;
+        }
+        
+        existingListeners.setAttribute('processing', 'true');
+        existingListeners.disabled = true;
+        
         try {
           await startRecording(); // Session creation is now handled inside startRecording
         } catch (error) {
           console.error('🚨 Failed to start recording:', error);
           if (micStatus()) micStatus().textContent = 'Error';
           showError(`Failed to start recording: ${error.message}`);
+        } finally {
+          // Re-enable button after processing
+          setTimeout(() => {
+            existingListeners.removeAttribute('processing');
+            existingListeners.disabled = false;
+          }, 1000);
         }
       });
     }

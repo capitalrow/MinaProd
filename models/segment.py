@@ -10,7 +10,8 @@ from sqlalchemy import String, Integer, BigInteger, DateTime, Text, ForeignKey, 
 from .base import Base
 
 # Forward reference for type checking
-if False:  # TYPE_CHECKING
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
     from .session import Session
 
 class Segment(Base):
