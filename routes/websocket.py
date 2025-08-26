@@ -224,6 +224,17 @@ def audio_chunk(data):
     
     # Process audio with timeout protection
     try:
+        # Log audio chunk processing attempt
+        logger.info({
+            "event": "audio_chunk_processing_start",
+            "session_id": session_id,
+            "chunk_id": chunk_id,
+            "chunk_size": len(raw_bytes),
+            "mime_type": mime_type,
+            "rms": rms,
+            "is_final": is_final_chunk
+        })
+        
         with timeout_context(30):  # 30 second max processing time
             result = tsvc.process_audio_sync(
                 session_id=session_id,
@@ -233,6 +244,13 @@ def audio_chunk(data):
                 client_rms=rms,
                 is_final_signal=is_final_chunk
             )
+            
+        logger.info({
+            "event": "audio_chunk_processing_success",
+            "session_id": session_id,
+            "chunk_id": chunk_id,
+            "result_keys": list(result.keys()) if result else []
+        })
             
         # Send acknowledgment to client
         emit('audio_received', {
