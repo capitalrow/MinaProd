@@ -70,7 +70,7 @@
       // Auto-join session if we have one
       if (CURRENT_SESSION_ID) {
         console.log(`🔄 Auto-joining session: ${CURRENT_SESSION_ID}`);
-        socket.emit('join_session', { session_id: CURRENT_SESSION_ID });
+        joinSession(CURRENT_SESSION_ID);
       }
     });
 
@@ -91,14 +91,92 @@
       }
     });
 
-    socket.on('error', (error) => {
-      console.error('🚨 Socket error:', error);
-      if (wsStatus()) {
-        wsStatus().textContent = `Error: ${error}`;
-        wsStatus().className = 'status-indicator error';
+    // 🔥 PHASE 1: Enhanced session joining protocol
+    function joinSession(sessionId) {
+      if (!socket || !socket.connected) {
+        console.error('🚨 Cannot join session: Socket not connected');
+        showNotification('Connection not available. Please try again.', 'error');
+        return;
       }
       
-      showNotification(`Connection error: ${error}`, 'error', 4000);
+      console.log(`📝 Joining session: ${sessionId}`);
+      socket.emit('join_session', { session_id: sessionId });
+    }
+    
+    // 🔥 PHASE 1: Listen for session join confirmation
+    socket.on('joined_session', (data) => {
+      console.log('✅ Session joined successfully:', data);
+      CURRENT_SESSION_ID = data.session_id;
+      
+      // Show debug/stub mode indicators
+      if (data.debug_mode) {
+        showNotification('Debug mode enabled', 'info', 3000);
+      }
+      if (data.stub_mode) {
+        showNotification('Stub transcription mode - testing wiring', 'info', 5000);
+      }
+      
+      // Update UI to show session is ready
+      if (wsStatus()) {
+        wsStatus().textContent = data.stub_mode ? 'Connected (Stub Mode)' : 'Ready';
+        wsStatus().className = 'status-indicator connected';
+      }
+    });
+    
+    // 🔥 PHASE 1: Listen for acknowledgments to track delivery
+    let ackCount = 0;
+    socket.on('ack', (ackData) => {
+      ackCount++;
+      console.log(`📨 ACK #${ackData.seq}: ${ackData.latency_ms}ms, mode: ${ackData.mode}`);
+      
+      // Update performance indicator (optional UI enhancement)
+      if (ackData.latency_ms > 1000) {
+        console.warn(`⚠️ High latency detected: ${ackData.latency_ms}ms`);
+      }
+      
+      // Show periodic connection health
+      if (ackCount % 10 === 0) {
+        console.log(`🔗 Connection health: ${ackCount} chunks processed`);
+      }
+    });
+
+    socket.on('error', (errorData) => {
+      console.error('🚨 Server error:', errorData);
+      
+      const errorMessage = errorData.message || errorData || 'Unknown server error';
+      const errorType = errorData.type || 'unknown';
+      
+      // Specific error handling based on type
+      switch (errorType) {
+        case 'missing_session_id':
+          showNotification('Session error: Missing session ID', 'error');
+          break;
+        case 'session_not_joined':
+          showNotification('Please wait for session to initialize', 'warning');
+          // Auto-retry joining if we have a session ID
+          if (CURRENT_SESSION_ID) {
+            setTimeout(() => joinSession(CURRENT_SESSION_ID), 1000);
+          }
+          break;
+        case 'rate_limit_exceeded':
+          showNotification('Speaking too fast - please slow down', 'warning');
+          break;
+        case 'audio_decode_error':
+        case 'audio_processing_error':
+          showNotification('Audio processing error - please check microphone', 'error');
+          break;
+        case 'server_exception':
+          showNotification('Server error - please try again', 'error');
+          break;
+        default:
+          showNotification(errorMessage, 'error');
+      }
+      
+      // Update status indicator
+      if (wsStatus()) {
+        wsStatus().textContent = 'Error';
+        wsStatus().className = 'status-indicator error';
+      }
     });
     
     socket.on('reconnect', (attemptNumber) => {
@@ -124,14 +202,7 @@
       console.log('🎵 Audio chunk acknowledged:', data.chunk_id, 'Processing time:', data.processing_time_ms + 'ms');
     });
     
-    socket.on('error', (errorData) => {
-      console.error('🚨 Server error:', errorData);
-      if (errorData.code === 'PROCESSING_TIMEOUT') {
-        showError('Audio processing timeout. Please check your connection.');
-      } else if (errorData.code === 'PROCESSING_ERROR') {
-        showError('Audio processing failed. Please try again.');
-      }
-    });
+    // Removed duplicate error handler - consolidated above
     
     socket.on('reconnect', (attemptNumber) => {
       console.log(`🔄 Reconnected after ${attemptNumber} attempts`);
@@ -670,6 +741,18 @@
           const arrayBuf = await e.data.arrayBuffer();
           const base64Data = arrayBufferToBase64(arrayBuf);
           
+          // 🔥 PHASE 1: Validate session before sending
+          if (!CURRENT_SESSION_ID) {
+            console.error('🚨 Cannot send audio: No session ID available');
+            showNotification('Session not ready - please wait', 'warning');
+            return;
+          }
+          
+          if (!socket || !socket.connected) {
+            console.error('🚨 Cannot send audio: Socket not connected');
+            return;
+          }
+          
           // Emit with real-time RMS data
           socket.emit('audio_chunk', {
             session_id: CURRENT_SESSION_ID,
@@ -759,14 +842,14 @@
         mediaRecorder.stop();
       }
       
-      // Send final signal to trigger server-side finalization
+      // 🔥 PHASE 1: Send final signal to trigger server-side finalization
       if (socket && socket.connected && CURRENT_SESSION_ID) {
         console.log('📤 Sending finalization signal...');
         socket.emit('audio_chunk', {
           session_id: CURRENT_SESSION_ID,
           is_final_chunk: true,  // 🔥 Critical: trigger finalization
-          audio_data_b64: null,  // No audio data, just signal
-          mime_type: null,
+          audio_data_b64: '',  // Empty string instead of null
+          mime_type: '',
           rms: 0,
           ts_client: Date.now()
         });
@@ -854,9 +937,9 @@
         console.log('🆕 Session created successfully:', data.session_id);
         CURRENT_SESSION_ID = data.session_id;
         
-        // 🔥 CRITICAL FIX: Join session room immediately after creation
+        // 🔥 PHASE 1: Join session room immediately after creation using enhanced protocol
         console.log('🏠 Joining session room:', data.session_id);
-        socket.emit('join_session', { session_id: data.session_id });
+        joinSession(data.session_id);
         
         // Listen for room join confirmation
         const roomJoinedHandler = (joinData) => {
