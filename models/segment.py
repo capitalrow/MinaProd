@@ -25,8 +25,8 @@ class Segment(Base):
     kind: Mapped[str] = mapped_column(String(16))  # interim|final
     text: Mapped[str] = mapped_column(Text)
     avg_confidence: Mapped[Optional[float]] = mapped_column(Float)
-    start_ms: Mapped[Optional[int]] = mapped_column(BigInteger)  # 🔧 FIXED: Support large timestamps  
-    end_ms: Mapped[Optional[int]] = mapped_column(BigInteger)    # 🔧 FIXED: Support large timestamps
+    start_ms: Mapped[Optional[int]] = mapped_column(BigInteger().with_variant(BigInteger(), 'postgresql'))  # Support JS timestamps
+    end_ms: Mapped[Optional[int]] = mapped_column(BigInteger().with_variant(BigInteger(), 'postgresql'))    # Support JS timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     session: Mapped["Session"] = relationship(back_populates="segments")
