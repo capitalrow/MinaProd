@@ -8,6 +8,7 @@ import logging
 import asyncio
 import time
 import json
+import os
 from typing import Optional, Dict, Any, Callable, List
 from dataclasses import dataclass, asdict
 from collections import deque
@@ -21,6 +22,9 @@ except ImportError:
     OPENAI_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
+
+# 🔥 PHASE 1: Check for stub mode environment variable
+STUB_TRANSCRIPTION = os.getenv("STUB_TRANSCRIPTION", "false").lower() == "true"
 
 @dataclass
 class TranscriptionConfig:
@@ -309,7 +313,11 @@ class WhisperStreamingService:
         return None
     
     def _transcribe_audio(self, audio_data: bytes, is_final: bool) -> Optional[TranscriptionResult]:
-        """Perform actual transcription using OpenAI Whisper API or mock."""
+        """Perform actual transcription using OpenAI Whisper API or stub mode."""
+        # 🔥 PHASE 1: Use stub mode if enabled
+        if STUB_TRANSCRIPTION:
+            return self._stub_transcription(audio_data, is_final)
+            
         if not self.client:
             return self._mock_transcription(audio_data, is_final)
         
@@ -379,6 +387,40 @@ class WhisperStreamingService:
             logger.error(f"Whisper API error: {e}")
             raise
     
+    def _stub_transcription(self, audio_data: bytes, is_final: bool) -> TranscriptionResult:
+        """🔥 PHASE 1: Stub transcription for testing WebSocket wiring without API calls."""
+        import time
+        
+        # Minimal processing time for testing
+        time.sleep(0.05)  # 50ms to simulate some processing
+        
+        # Generate simple stub text for wiring validation
+        audio_length_seconds = len(audio_data) / (16000 * 2)  # Assume 16kHz, 16-bit
+        
+        if is_final:
+            text = f"Final stub transcription (session: {self.session_id}, seq: {self.sequence_number})"
+        else:
+            text = f"Interim stub #{self.sequence_number}"
+        
+        self.sequence_number += 1
+        
+        return TranscriptionResult(
+            text=text,
+            confidence=1.0,  # Perfect confidence for stub
+            is_final=is_final,
+            language=self.config.language,
+            duration=audio_length_seconds,
+            timestamp=time.time(),
+            words=[],
+            metadata={
+                "session_id": self.session_id,
+                "sequence_number": self.sequence_number,
+                "audio_size": len(audio_data),
+                "model": "stub",
+                "stub_mode": True
+            }
+        )
+
     def _mock_transcription(self, audio_data: bytes, is_final: bool) -> TranscriptionResult:
         """Mock transcription for testing when OpenAI is not available."""
         # Simulate processing time

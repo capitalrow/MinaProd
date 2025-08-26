@@ -13,6 +13,10 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import Config
 
+# 🔥 PHASE 1: Environment configuration for debugging and testing
+WS_DEBUG = os.getenv("WS_DEBUG", "false").lower() == "true"
+STUB_TRANSCRIPTION = os.getenv("STUB_TRANSCRIPTION", "false").lower() == "true"
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
