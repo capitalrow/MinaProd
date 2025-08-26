@@ -154,7 +154,7 @@ class WhisperStreamingService:
         if OPENAI_AVAILABLE:
             api_key = self._get_api_key()
             if api_key:
-                self.client = openai.Client(api_key=api_key)
+                self.client = openai.OpenAI(api_key=api_key)  # Fixed: Use OpenAI() instead of Client()
                 logger.info("OpenAI client initialized successfully")
             else:
                 logger.warning("OpenAI API key not found, using mock transcription")
@@ -182,7 +182,11 @@ class WhisperStreamingService:
         if self.session_id:
             # Process any remaining audio in buffer
             if self.audio_buffer.get_size() > 0:
-                self._process_buffered_audio(final=True)
+                # Synchronous processing for cleanup
+                try:
+                    self._process_buffered_audio_sync(final=True)
+                except Exception as e:
+                    logger.error(f"Error processing final buffer: {e}")
             
             logger.info(f"Ended transcription session: {self.session_id}")
             self.session_id = None
@@ -260,6 +264,43 @@ class WhisperStreamingService:
             
         except Exception as e:
             logger.error(f"Error processing audio: {e}")
+            self._update_statistics(0, success=False)
+        
+        finally:
+            self.is_processing = False
+        
+        return None
+    
+    def _process_buffered_audio_sync(self, final: bool = False) -> Optional[TranscriptionResult]:
+        """Synchronous version for cleanup operations."""
+        if self.is_processing:
+            logger.debug("Already processing, skipping")
+            return None
+        
+        audio_data = self.audio_buffer.get_concatenated_audio()
+        if not audio_data:
+            return None
+        
+        self.is_processing = True
+        start_time = time.time()
+        
+        try:
+            # Direct synchronous call for cleanup
+            result = self._transcribe_audio(audio_data, final)
+            
+            if result:
+                latency = time.time() - start_time
+                self._update_statistics(latency, success=True)
+                self.audio_buffer.clear()
+                
+                if self.result_callback:
+                    self.result_callback(result)
+                
+                logger.debug(f"Sync transcription completed in {latency:.2f}s")
+                return result
+                
+        except Exception as e:
+            logger.error(f"Error in sync processing: {e}")
             self._update_statistics(0, success=False)
         
         finally:
@@ -456,13 +497,21 @@ class WhisperStreamingService:
                 return self._mock_transcription(audio_data, True)
             
             # Use OpenAI Whisper API for file transcription
-            response = self.client.audio.transcriptions.create(
-                model=self.config.model,
-                file=audio_file,
-                language=self.config.language if self.config.language != 'auto' else None,
-                response_format='verbose_json',
-                timestamp_granularities=['word'] if self.config.enable_word_timestamps else ['segment']
-            )
+            language_param = self.config.language if self.config.language and self.config.language != 'auto' else None
+            
+            params = {
+                "model": self.config.model,
+                "file": audio_file,
+                "response_format": "verbose_json"
+            }
+            
+            if language_param:
+                params["language"] = language_param
+                
+            if self.config.enable_word_timestamps:
+                params["timestamp_granularities"] = ["word"]
+            
+            response = self.client.audio.transcriptions.create(**params)
             
             # Extract results
             text = response.text or ""
