@@ -1,0 +1,82 @@
+{
+  "timestamp": "2025-08-26T22:50:21.590416",
+  "tests": [
+    {
+      "name": "Basic Health Check",
+      "status": "pass",
+      "details": {
+        "database": "connected",
+        "environment": "development",
+        "git_sha": "dev",
+        "status": "ok",
+        "timestamp": "2025-08-26T22:50:21.597647",
+        "transcription_service": "available",
+        "version": "0.1.0"
+      },
+      "response_time_ms": 94.705
+    },
+    {
+      "name": "API Statistics",
+      "status": "pass",
+      "response_time_ms": 190.51299999999998,
+      "details": {
+        "database": {
+          "active_sessions": 45,
+          "total_segments": 21,
+          "total_sessions": 90
+        },
+        "service": {
+          "active_sessions": 0,
+          "average_processing_time": 0.0,
+          "config": {
+            "adaptive_streaming": true,
+            "audio_format": "webm",
+            "backpressure_threshold": 5,
+            "bandwidth_adaptation": true,
+            "buffer_size_adaptation": true,
+            "chunk_size": 1024,
+            "enable_realtime": true,
+            "enable_sentiment_analysis": false,
+            "enable_speaker_detection": true,
+            "interim_results": true,
+            "interim_throttle_ms": 150,
+            "language": "en",
+            "latency_target_ms": 150,
+            "max_chunk_duration": 30.0,
+            "max_concurrent_sessions": 10,
+            "min_chunk_duration": 0.1,
+            "min_confidence": 0.35,
+            "min_token_diff": 5,
+            "min_tokens_for_punctuation_final": 3,
+            "punctuation_boundary_chars": ".!?;:",
+            "quality_monitoring": true,
+            "sample_rate": 16000,
+            "streaming_mode": "realtime",
+            "transmission_optimization": true,
+            "vad_min_silence_duration": 400,
+            "vad_min_speech_duration": 300,
+            "vad_sensitivity": 0.5,
+            "vad_tail_silence_ms": 1500
+          },
+          "max_concurrent_sessions": 10,
+          "processing_queue_size": 0,
+          "total_segments": 0,
+          "total_sessions": 0
+        },
+        "timestamp": "2025-08-26T22:50:21.857721"
+      }
+    },
+    {
+      "name": "Live Page Load",
+      "status": "pass",
+      "response_time_ms": 15.169
+    },
+    {
+      "name": "WebSocket Readiness",
+      "status": "partial",
+      "message": "Service appears ready for WebSocket connections"
+    }
+  ],
+  "issues_found": [],
+  "overall_status": "healthy"
+}

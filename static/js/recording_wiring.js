@@ -1839,8 +1839,10 @@
     }
   }
 
-  // 🔥 CRITICAL FIX: Session creation with proper async handling
+  // 🔥 CRITICAL FIX: Session creation with proper async handling + monitoring
   function createSessionAndWait() {
+    const startTime = Date.now();
+    
     return new Promise((resolve, reject) => {
       if (CURRENT_SESSION_ID) {
         console.log('📋 Using existing session:', CURRENT_SESSION_ID);
@@ -1870,6 +1872,12 @@
           socket.off('error', errorHandler);
           socket.off('joined_session', roomJoinedHandler);
           socket.off('joined_session', joinedFallbackHandler);
+          // 📊 MONITORING: Track successful session creation timing
+          const totalTime = Date.now() - startTime;
+          console.log(`📊 SESSION SUCCESS: Total time ${totalTime}ms`);
+          if (window._minaTelemetry) {
+            window._minaTelemetry.reportSessionSuccess(totalTime);
+          }
           resolve(); // Only resolve after BOTH session creation AND room joining
         };
         
@@ -1919,6 +1927,19 @@
         socket.off('joined_session', joinedFallbackHandler);
         console.error('🚨 Session creation timeout - no session_created event received in 15s');
         console.error('🚨 Current session ID at timeout:', CURRENT_SESSION_ID);
+        
+        // 📊 MONITORING: Track timeout with detailed context
+        const timeoutDetails = {
+          hasSessionId: !!CURRENT_SESSION_ID,
+          sessionId: CURRENT_SESSION_ID,
+          socketConnected: socket?.connected || false,
+          totalTime: Date.now() - startTime
+        };
+        
+        if (window._minaTelemetry) {
+          window._minaTelemetry.reportSessionTimeout(timeoutDetails);
+        }
+        
         reject(new Error('Session creation timeout'));
       }, 15000);
     });
