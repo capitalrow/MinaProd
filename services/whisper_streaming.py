@@ -689,7 +689,7 @@ class WhisperStreamingService:
                             model="whisper-1",
                             file=audio_file,
                             language="en",
-                            response_format="json",
+                            response_format="verbose_json",
                             timestamp_granularities=["word"]  # 🔥 ENHANCED: Request word-level timestamps
                         )
                         

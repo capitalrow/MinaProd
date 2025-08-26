@@ -18,7 +18,9 @@ from models.session import Session
 logger = logging.getLogger(__name__)
 
 # Initialize transcription service with performance monitoring
-tsvc = TranscriptionService()
+from services.transcription_service import TranscriptionServiceConfig
+tsvc_config = TranscriptionServiceConfig()
+tsvc = TranscriptionService(tsvc_config)
 
 # 🔥 PHASE 1: Session management and debugging counters
 _CHUNK_COUNT = {}  # per session counters for debug tracking
@@ -113,17 +115,41 @@ def join_session(data):
         }
         
         # 🔥 CRITICAL FIX: Create transcription service session when joining WebSocket session
+        print(f"🔧 CREATING TRANSCRIPTION SESSION for: {session_id}")  # Force output
+        logger.info(f"🔧 CREATING TRANSCRIPTION SESSION for: {session_id}")
+        
         try:
-            # Start transcription session in the service
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            actual_session_id = loop.run_until_complete(tsvc.start_session(session_id))
-            loop.close()
+            # Initialize session in the transcription service directly (synchronous approach)
+            current_time = time.time()
             
-            if WS_DEBUG:
-                logger.info(f"🔧 TRANSCRIPTION SESSION CREATED: {actual_session_id} for WebSocket session {session_id}")
+            # Create session data structure
+            session_data = {
+                'created_at': current_time,
+                'status': 'active',
+                'stats': {
+                    'total_segments': 0,
+                    'average_confidence': 0.0,
+                    'total_audio_duration': 0.0
+                },
+                'config': tsvc_config.__dict__,
+                'streaming_state': {
+                    'buffer_strategy': 'balanced',
+                    'optimization_level': 'normal'
+                }
+            }
+            
+            # Add to transcription service
+            tsvc.active_sessions[session_id] = session_data
+            tsvc.session_callbacks[session_id] = []
+            tsvc.total_sessions += 1
+            
+            print(f"🔧 TRANSCRIPTION SESSION CREATED: {session_id}")  # Force output
+            logger.info(f"🔧 TRANSCRIPTION SESSION CREATED: {session_id}")
+            logger.info(f"🔧 Session data: {session_data}")
+                    
         except Exception as e:
             logger.error(f"🚨 Failed to create transcription service session: {e}")
+            logger.error(f"🚨 Full traceback: {traceback.format_exc()}")
             emit('error', {
                 'type': 'transcription_session_error',
                 'message': f'Failed to initialize transcription: {str(e)}',
@@ -131,8 +157,10 @@ def join_session(data):
             })
             return
         
-        if WS_DEBUG:
-            logger.info(f"📝 SESSION JOIN: Client joined session {session_id}")
+        # 🔥 DEBUG: Always log session creation for debugging
+        logger.info(f"📝 SESSION JOIN: Client joined session {session_id}")
+        logger.info(f"🔧 Active transcription sessions: {list(tsvc.active_sessions.keys())}")
+        logger.info(f"🔧 Total sessions in service: {len(tsvc.active_sessions)}")
         
         emit('joined_session', {
             'session_id': session_id,
@@ -264,8 +292,56 @@ def join_session(data):
             'last_activity': time.time()
         }
         
+        # 🔥 CRITICAL FIX: Create transcription service session when joining WebSocket session
+        print(f"🔧 CREATING TRANSCRIPTION SESSION for: {session_id}")  # Force output
+        logger.info(f"🔧 CREATING TRANSCRIPTION SESSION for: {session_id}")
+        
+        try:
+            # Initialize session in the transcription service directly (synchronous approach)
+            current_time = time.time()
+            
+            # Create session data structure
+            session_data = {
+                'created_at': current_time,
+                'status': 'active',
+                'stats': {
+                    'total_segments': 0,
+                    'average_confidence': 0.0,
+                    'total_audio_duration': 0.0
+                },
+                'config': tsvc_config.__dict__,
+                'streaming_state': {
+                    'buffer_strategy': 'balanced',
+                    'optimization_level': 'normal'
+                }
+            }
+            
+            # Add to transcription service
+            tsvc.active_sessions[session_id] = session_data
+            tsvc.session_callbacks[session_id] = []
+            tsvc.total_sessions += 1
+            
+            print(f"🔧 TRANSCRIPTION SESSION CREATED: {session_id}")  # Force output
+            logger.info(f"🔧 TRANSCRIPTION SESSION CREATED: {session_id}")
+            logger.info(f"🔧 Session data: {session_data}")
+                    
+        except Exception as e:
+            logger.error(f"🚨 Failed to create transcription service session: {e}")
+            logger.error(f"🚨 Full traceback: {traceback.format_exc()}")
+            emit('error', {
+                'type': 'transcription_session_error',
+                'message': f'Failed to initialize transcription: {str(e)}',
+                'timestamp': time.time()
+            })
+            return
+        
         if WS_DEBUG:
             logger.info(f"📝 SESSION JOIN: Client {request.sid} joined session {session_id}")
+        
+        # 🔥 DEBUG: Always log session creation for debugging
+        logger.info(f"📝 SESSION JOIN: Client joined session {session_id}")
+        logger.info(f"🔧 Active transcription sessions: {list(tsvc.active_sessions.keys())}")
+        logger.info(f"🔧 Total sessions in service: {len(tsvc.active_sessions)}")
         
         emit('joined_session', {
             'session_id': session_id,
