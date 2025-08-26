@@ -188,6 +188,14 @@ class WebSocketTranscriptionTest:
             self.transcription_received = True
             
         @sio.event
+        async def final_transcript(data):
+            logger.info(f"📝 Final transcript (alt): {data}")
+            result['transcription_responses'] += 1
+            result['messages_received'].append(('final_alt', data))
+            result['pipeline_working'] = True
+            self.transcription_received = True
+            
+        @sio.event
         async def error(data):
             logger.error(f"❌ Audio test error: {data}")
             result['error'] = data
