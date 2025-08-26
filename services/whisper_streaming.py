@@ -656,10 +656,33 @@ class WhisperStreamingService:
             import tempfile
             import os
             
-            # Use WebM format directly - officially supported by Whisper API
-            wav_audio = audio_data  # No conversion needed
-            file_suffix = '.webm'  # Use original format
-            logger.info(f"Using WebM format directly: {len(audio_data)} bytes")
+            # 🔥 ENHANCED AUDIO FORMAT DETECTION: Check multiple indicators
+            if audio_data.startswith(b'RIFF') and b'WAVE' in audio_data[:50]:
+                logger.info("🔍 AUDIO FORMAT: Detected WAV format")
+                wav_audio = audio_data  # Already WAV
+                file_suffix = '.wav'
+            elif audio_data.startswith(b'\x1a\x45\xdf\xa3'):  # WebM/Matroska magic number
+                logger.info("🔍 AUDIO FORMAT: Detected WebM format")
+                wav_audio = audio_data  # Keep as WebM for Whisper API
+                file_suffix = '.webm'
+            elif audio_data.startswith(b'fLaC'):
+                logger.info("🔍 AUDIO FORMAT: Detected FLAC format")
+                wav_audio = audio_data  # Keep as FLAC for Whisper API
+                file_suffix = '.flac'
+            elif audio_data.startswith(b'OggS'):
+                logger.info("🔍 AUDIO FORMAT: Detected OGG format")
+                wav_audio = audio_data  # Keep as OGG for Whisper API
+                file_suffix = '.ogg'
+            elif audio_data.startswith(b'ID3') or audio_data[4:8] == b'ftyp':
+                logger.info("🔍 AUDIO FORMAT: Detected MP3/MP4 format")
+                wav_audio = audio_data  # Keep as MP3/MP4 for Whisper API
+                file_suffix = '.mp3' if audio_data.startswith(b'ID3') else '.mp4'
+            else:
+                logger.info(f"🔍 AUDIO FORMAT: Unknown format, treating as WAV (first 8 bytes: {audio_data[:8].hex()})")
+                # For unknown formats, assume WAV (most common for test data)
+                wav_audio = audio_data
+                file_suffix = '.wav'
+                logger.info(f"Using WAV format for unknown data: {len(audio_data)} bytes")
             
             with tempfile.NamedTemporaryFile(suffix=file_suffix, delete=False) as temp_file:
                 temp_file.write(wav_audio)

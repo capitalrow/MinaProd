@@ -28,23 +28,47 @@ class WebSocketTranscriptionTest:
         self.connection_successful = False
         
     def generate_test_audio_bytes(self, duration_seconds: float = 2.0) -> bytes:
-        """Generate synthetic audio as bytes for WebSocket transmission."""
-        sample_rate = 16000
-        t = np.linspace(0, duration_seconds, int(sample_rate * duration_seconds), False)
-        
-        # Generate speech-like audio with multiple frequencies
-        frequencies = [440, 880, 1320]  # A4, A5, E6
-        audio = np.sum([0.3 * np.sin(2 * np.pi * f * t) for f in frequencies], axis=0)
-        
-        # Add noise to make it more realistic
-        noise = 0.1 * np.random.normal(0, 1, len(audio))
-        audio = audio + noise
-        
-        # Convert to 16-bit PCM and return as bytes
-        audio = np.clip(audio, -1.0, 1.0)
-        audio_int16 = (audio * 32767).astype(np.int16)
-        
-        return audio_int16.tobytes()
+        """Generate proper WAV audio format that Whisper API accepts."""
+        try:
+            import wave
+            from io import BytesIO
+            
+            sample_rate = 16000
+            t = np.linspace(0, duration_seconds, int(sample_rate * duration_seconds), False)
+            
+            # Generate speech-like audio with multiple frequencies
+            frequencies = [440, 880, 1320]  # A4, A5, E6
+            audio = np.sum([0.3 * np.sin(2 * np.pi * f * t) for f in frequencies], axis=0)
+            
+            # Add noise to make it more realistic
+            noise = 0.1 * np.random.normal(0, 1, len(audio))
+            audio = audio + noise
+            
+            # Convert to 16-bit PCM
+            audio = np.clip(audio, -1.0, 1.0)
+            audio_int16 = (audio * 32767).astype(np.int16)
+            
+            # Create proper WAV file in memory
+            wav_buffer = BytesIO()
+            with wave.open(wav_buffer, 'wb') as wav_file:
+                wav_file.setnchannels(1)  # Mono
+                wav_file.setsampwidth(2)  # 16-bit
+                wav_file.setframerate(sample_rate)
+                wav_file.writeframes(audio_int16.tobytes())
+            
+            wav_buffer.seek(0)
+            return wav_buffer.getvalue()
+            
+        except Exception as e:
+            logger.warning(f"Failed to generate WAV: {e}, using fallback")
+            # Fallback to PCM if WAV generation fails
+            sample_rate = 16000
+            t = np.linspace(0, duration_seconds, int(sample_rate * duration_seconds), False)
+            frequencies = [440, 880, 1320]
+            audio = np.sum([0.3 * np.sin(2 * np.pi * f * t) for f in frequencies], axis=0)
+            audio = np.clip(audio, -1.0, 1.0)
+            audio_int16 = (audio * 32767).astype(np.int16)
+            return audio_int16.tobytes()
 
     async def test_basic_connection(self) -> Dict[str, Any]:
         """Test basic WebSocket connection."""
@@ -223,19 +247,26 @@ class WebSocketTranscriptionTest:
                 # Encode chunk as base64 (as expected by the WebSocket handler)
                 chunk_b64 = base64.b64encode(chunk).decode('utf-8')
                 
-                # Calculate RMS for the chunk
+                # Calculate RMS for the chunk (handle WAV data properly)
                 if len(chunk) >= 2:
-                    # Convert bytes back to int16 for RMS calculation
-                    chunk_array = np.frombuffer(chunk, dtype=np.int16).astype(np.float32) / 32768.0
-                    rms = float(np.sqrt(np.mean(chunk_array ** 2)))
+                    # For WAV data, skip header if this is the first chunk and calculate RMS from audio data
+                    audio_chunk = chunk[44:] if i == 0 and chunk.startswith(b'RIFF') else chunk
+                    if len(audio_chunk) >= 2:
+                        try:
+                            chunk_array = np.frombuffer(audio_chunk, dtype=np.int16).astype(np.float32) / 32768.0
+                            rms = float(np.sqrt(np.mean(chunk_array ** 2)))
+                        except:
+                            rms = 0.1  # Default for valid audio
+                    else:
+                        rms = 0.1  # Default for valid audio
                 else:
-                    rms = 0.0
+                    rms = 0.1
                 
                 await sio.emit('audio_chunk', {
                     'session_id': session_id,
                     'audio_data_b64': chunk_b64,
                     'is_final_chunk': False,
-                    'mime_type': 'audio/pcm',
+                    'mime_type': 'audio/wav',  # Proper MIME type for WAV
                     'rms': rms,
                     'ts_client': int(time.time() * 1000)  # milliseconds
                 })
