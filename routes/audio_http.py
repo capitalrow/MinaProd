@@ -14,37 +14,33 @@ import subprocess
 import struct
 from datetime import datetime
 
+# Initialize logger first
+logger = logging.getLogger(__name__)
+
+# Initialize monitoring data structures globally
+from collections import deque
+import psutil
+import threading
+
+chunk_metrics = deque(maxlen=100)  # Last 100 chunks
+session_stats = {}
+QA_SYSTEM_AVAILABLE = True
+
+# Initialize Google context processor functions
+apply_google_style_processing = None
+get_session_context = None
+GOOGLE_CONTEXT_AVAILABLE = False
+
 # Import Google-quality context processor
 try:
     from google_context_processor import apply_google_style_processing, get_session_context
     GOOGLE_CONTEXT_AVAILABLE = True
-    logger = logging.getLogger(__name__)
     logger.info("🎯 Google-quality context processor loaded")
 except ImportError as e:
-    logger = logging.getLogger(__name__)
     logger.warning(f"⚠️ Google context processor not available: {e}")
-    GOOGLE_CONTEXT_AVAILABLE = False
+    # Functions already initialized to None above
 
-# Import monitoring systems (simplified for stability)
-QA_SYSTEM_AVAILABLE = False
-try:
-    # Basic performance monitoring only
-    import psutil
-    import threading
-    from collections import deque
-    
-    # Simple monitoring data structures
-    chunk_metrics = deque(maxlen=100)  # Last 100 chunks
-    session_stats = {}
-    
-    QA_SYSTEM_AVAILABLE = True
-    # Logger needs to be defined before use
-    logger = logging.getLogger(__name__)
-    logger.info("🎯 Simplified monitoring system initialized")
-except ImportError as e:
-    logger = logging.getLogger(__name__)
-    logger.warning(f"⚠️ Monitoring not available: {e}")
-    QA_SYSTEM_AVAILABLE = False
+logger.info("🎯 Simplified monitoring system initialized")
 
 audio_http_bp = Blueprint('audio_http', __name__)
 # Logger already defined above
@@ -180,9 +176,10 @@ def convert_webm_to_wav_with_validation(webm_data: bytes) -> bytes | None:
         # Check for proper EBML header structure
         if not validate_webm_structure(webm_data):
             logger.warning("⚠️ WebM structure validation failed - trying repair")
-            webm_data = attempt_webm_repair(webm_data)
-            if not webm_data:
+            repaired_data = attempt_webm_repair(webm_data)
+            if not repaired_data:
                 return None
+            webm_data = repaired_data
         
         # Proceed with FFmpeg conversion
         return convert_webm_to_wav(webm_data)
@@ -336,7 +333,7 @@ def create_wav_header(data_size: int, sample_rate: int, channels: int, bits_per_
     
     return header
 
-def emergency_direct_whisper_call(temp_file_path: str, audio_data: bytes) -> str:
+def emergency_direct_whisper_call(temp_file_path: str, audio_data: bytes) -> str | None:
     """🚨 EMERGENCY: Direct Whisper API call with improved error handling"""
     try:
         api_key = os.environ.get('OPENAI_API_KEY')
@@ -366,7 +363,7 @@ def emergency_direct_whisper_call(temp_file_path: str, audio_data: bytes) -> str
         except:
             pass
 
-def create_minimal_wav_wrapper(audio_data: bytes) -> bytes:
+def create_minimal_wav_wrapper(audio_data: bytes) -> bytes | None:
     """🎯 GOOGLE-QUALITY: Advanced WAV wrapper for professional transcription"""
     try:
         logger.info("🎯 Creating GOOGLE-QUALITY WAV wrapper")
@@ -591,7 +588,7 @@ def transcribe_audio():
                 })
             
             # GOOGLE-QUALITY: Apply context-aware processing
-            if GOOGLE_CONTEXT_AVAILABLE:
+            if GOOGLE_CONTEXT_AVAILABLE and apply_google_style_processing is not None:
                 enhanced_text = apply_google_style_processing(clean_text, session_id)
                 logger.info(f"🎯 GOOGLE-ENHANCED: '{clean_text}' → '{enhanced_text}'")
                 clean_text = enhanced_text
