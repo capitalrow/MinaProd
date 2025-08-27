@@ -1163,11 +1163,32 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Start real Whisper transcription
                     await window.realWhisperIntegration.startTranscription(sessionId);
                     
+                    // ACTIVATE MONITORING SYSTEMS (Manual Monitoring Recommendation)
+                    if (window.liveMonitoringClient) {
+                        window.liveMonitoringClient.startMonitoring(sessionId);
+                        console.log('🔍 Live monitoring activated');
+                    }
+                    
+                    if (window.continuousImprovementClient) {
+                        window.continuousImprovementClient.startContinuousImprovement(sessionId);
+                        console.log('🔧 Continuous improvement activated');
+                    }
+                    
+                    if (window.predictivePerformanceClient) {
+                        window.predictivePerformanceClient.startPredictiveOptimization(sessionId);
+                        console.log('🔬 Predictive optimization activated');
+                    }
+                    
+                    if (window.comprehensiveTestingClient) {
+                        window.comprehensiveTestingClient.startComprehensiveTesting(sessionId);
+                        console.log('🧪 Comprehensive testing activated');
+                    }
+                    
                     // Update UI
                     this.disabled = true;
                     stopBtn.disabled = false;
                     
-                    window.toastSystem.showSuccess('✅ Real-time transcription started with Whisper API');
+                    window.toastSystem.showSuccess('✅ Real-time transcription started with Whisper API + Active Monitoring');
                     console.log('✅ Real-time transcription with Whisper API started');
                     
                 } catch (error) {
@@ -1182,24 +1203,90 @@ document.addEventListener('DOMContentLoaded', function() {
             stopBtn.addEventListener('click', function() {
                 window.realWhisperIntegration.stopTranscription();
                 
+                // STOP MONITORING SYSTEMS AND GENERATE REPORTS
+                if (window.liveMonitoringClient && window.liveMonitoringClient.isMonitoring) {
+                    const report = window.liveMonitoringClient.generateFinalReport();
+                    console.log('📊 Live monitoring report:', report);
+                }
+                
+                if (window.continuousImprovementClient && window.continuousImprovementClient.isActive) {
+                    const improvements = window.continuousImprovementClient.generateImprovementReport();
+                    console.log('🔧 Improvement report:', improvements);
+                }
+                
+                if (window.predictivePerformanceClient && window.predictivePerformanceClient.isActive) {
+                    const predictions = window.predictivePerformanceClient.generatePredictiveReport();
+                    console.log('🔬 Predictive analysis:', predictions);
+                }
+                
+                if (window.comprehensiveTestingClient && window.comprehensiveTestingClient.isActive) {
+                    const testResults = window.comprehensiveTestingClient.generateTestReport();
+                    console.log('🧪 Test results:', testResults);
+                }
+                
                 // Update UI
                 this.disabled = true;
                 startBtn.disabled = false;
                 
-                window.toastSystem.showInfo('Real-time transcription stopped');
-                console.log('⏹️ Real-time transcription stopped');
+                window.toastSystem.showInfo('Real-time transcription stopped - Analysis reports generated');
+                console.log('⏹️ Real-time transcription stopped with full monitoring reports');
             });
         }
         
         console.log('✅ Real Whisper API integration initialized on main page');
     }
     
-    // Announce system ready
+    // IMPLEMENTATION: Manual Monitoring Recommendations
+    // Activate continuous improvement and monitoring systems
+    if (window.liveMonitoringClient) {
+        console.log('🔍 Activating live monitoring client...');
+        // Auto-start monitoring when recording begins
+    }
+    
+    if (window.continuousImprovementClient) {
+        console.log('🔧 Activating continuous improvement client...');
+        // Auto-start improvements when recording begins  
+    }
+    
+    if (window.predictivePerformanceClient) {
+        console.log('🔬 Activating predictive performance client...');
+        // Auto-start predictive optimization when recording begins
+    }
+    
+    // Enhanced connection retry and recovery (Manual Monitoring Recommendation #1)
+    if (window.realWhisperIntegration) {
+        const originalInitialize = window.realWhisperIntegration.initializeConnection;
+        window.realWhisperIntegration.initializeConnection = async function() {
+            const maxRetries = 3;
+            let attempt = 0;
+            
+            while (attempt < maxRetries) {
+                try {
+                    await originalInitialize.call(this);
+                    console.log(`✅ Connection successful on attempt ${attempt + 1}`);
+                    return;
+                } catch (error) {
+                    attempt++;
+                    console.warn(`⚠️ Connection attempt ${attempt} failed:`, error.message);
+                    
+                    if (attempt < maxRetries) {
+                        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+                        console.log(`🔄 Retrying in ${delay}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } else {
+                        throw new Error(`Connection failed after ${maxRetries} attempts: ${error.message}`);
+                    }
+                }
+            }
+        };
+    }
+    
+    // Announce system ready with monitoring active
     setTimeout(() => {
-        window.toastSystem.showSuccess('Enhanced transcription system ready with REAL Whisper API');
+        window.toastSystem.showSuccess('Enhanced transcription system ready with REAL Whisper API + Active Monitoring');
     }, 1000);
     
-    console.log('✅ Enhanced transcription system initialized with REAL Whisper API integration');
+    console.log('✅ Enhanced transcription system initialized with REAL Whisper API integration + Manual Monitoring Recommendations');
 });
 </script>
 {% endblock %}

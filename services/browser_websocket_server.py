@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class BrowserWebSocketServer:
     """WebSocket server optimized specifically for browser connections."""
     
-    def __init__(self, host="0.0.0.0", port=8772, ssl_context=None):
+    def __init__(self, host="0.0.0.0", port=8773, ssl_context=None):
         self.host = host
         self.port = port
         self.ssl_context = ssl_context
