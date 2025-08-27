@@ -31,14 +31,15 @@ db = SQLAlchemy(model_class=Base)
 from services.native_websocket_server import start_native_websocket_server_thread
 from routes.native_websocket_routes import register_native_websocket_routes
 from routes.sync_websocket_routes import register_sync_websocket_routes
+from routes.library_websocket_routes import register_library_websocket_routes
 
-# Start SYNC WebSocket server to bypass all async conflicts
+# Start WebSocket Library Server for maximum browser compatibility
 try:
-    from services.sync_websocket_server import start_sync_websocket_server
-    start_sync_websocket_server()
-    logger.info("✅ Sync WebSocket server started successfully")
+    from services.websockets_library_server import start_websocket_library_server
+    start_websocket_library_server()
+    logger.info("✅ WebSocket Library Server started successfully")
 except Exception as e:
-    logger.error(f"❌ Failed to start sync WebSocket server: {e}")
+    logger.error(f"❌ Failed to start WebSocket Library Server: {e}")
 
 # Native WebSocket implementation only - Socket.IO disabled for testing
 socketio = None  # Temporarily disabled to resolve import conflicts
@@ -154,6 +155,7 @@ def create_app(config_class=Config):
         from routes.native_websocket_routes import register_native_websocket_routes
         register_native_websocket_routes(app)
         register_sync_websocket_routes(app)
+        register_library_websocket_routes(app)
         logger.info("✅ WebSocket routes registered")
     except Exception as e:
         logger.error(f"❌ Failed to register WebSocket routes: {e}")
