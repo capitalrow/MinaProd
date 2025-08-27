@@ -1,0 +1,132 @@
+{% extends "base_professional.html" %}
+
+{% block title %}Dashboard - Mina{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Professional Header -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="display-6 mb-2">Dashboard</h1>
+            <p class="lead">Professional AI-powered transcription platform</p>
+        </div>
+        <a href="/live" class="btn btn-primary btn-lg">
+            <i class="fas fa-microphone me-2"></i>
+            Start Recording
+        </a>
+    </div>
+
+    <!-- Clean Stats Grid -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.get('total_sessions', 0) }}</div>
+                <div class="stat-label">Total Sessions</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.get('total_segments', 0) }}</div>
+                <div class="stat-label">Segments</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-value">{{ "%.1f"|format(stats.get('avg_duration', 0)) }}m</div>
+                <div class="stat-label">Avg Duration</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-value">{{ "%.0f"|format(stats.get('avg_confidence', 0) * 100) }}%</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Sessions -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center py-3">
+            <h4 class="mb-0">Recent Sessions</h4>
+            <button class="btn btn-outline-light btn-sm" onclick="location.reload()">
+                <i class="fas fa-sync-alt me-1"></i>
+                Refresh
+            </button>
+        </div>
+        <div class="card-body">
+            {% if recent_sessions and recent_sessions|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Session</th>
+                            <th>Date</th>
+                            <th>Duration</th>
+                            <th>Words</th>
+                            <th>Accuracy</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for session in recent_sessions[:8] %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-microphone text-primary me-2"></i>
+                                    <div>
+                                        <div class="fw-medium">{{ session.title or 'Recording Session' }}</div>
+                                        <small class="text-muted">{{ session.external_id[:12] if session.external_id else 'N/A' }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <small>{{ session.started_at.strftime('%m/%d %H:%M') if session.started_at else 'N/A' }}</small>
+                            </td>
+                            <td>
+                                {% if session.total_duration and session.total_duration > 0 %}
+                                    {{ "%.1f"|format(session.total_duration/60) }}m
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark">{{ session.total_segments or 0 }}</span>
+                            </td>
+                            <td>
+                                {% set confidence = (session.average_confidence or 0) * 100 %}
+                                <div class="d-flex align-items-center">
+                                    <div class="progress me-2" style="width: 60px;">
+                                        <div class="progress-bar" style="width: {{ confidence }}%"></div>
+                                    </div>
+                                    <small>{{ "%.0f"|format(confidence) }}%</small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if session.status == 'completed' %}
+                                    <span class="badge bg-success">Complete</span>
+                                {% elif session.status == 'active' %}
+                                    <span class="badge bg-primary">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ session.status.title() }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-microphone-slash"></i>
+                <h5>No recordings yet</h5>
+                <p class="text-muted mb-4">Get started by creating your first transcription session</p>
+                <a href="/live" class="btn btn-primary">
+                    <i class="fas fa-microphone me-2"></i>
+                    Start Recording
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
