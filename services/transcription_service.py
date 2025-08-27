@@ -23,9 +23,8 @@ if TYPE_CHECKING:
     from .confidence_scoring import AdvancedConfidenceScorer, ConfidenceConfig
     from .audio_quality_analyzer import AudioQualityAnalyzer, QualityEnhancementConfig
     from .performance_optimizer import PerformanceOptimizer, ResourceLimits
-# FIXED: Lazy import to prevent circular dependency
-# from models.session import Session
-# from models.segment import Segment
+# FIXED: Import models properly
+from models import Session, Segment
 from app import db
 from services.session_service import SessionService
 from datetime import datetime
@@ -1054,36 +1053,7 @@ class TranscriptionService:
         
         return intersection / union if union > 0 else 0.0
     
-    def _create_wav_from_chunks(self, audio_chunks: List[bytes]) -> bytes:
-        """
-        CRITICAL FIX: Create WAV file from WebM audio chunks for Whisper API.
-        This method was missing and causing transcription failures.
-        """
-        try:
-            if not audio_chunks:
-                logger.warning("No audio chunks provided for WAV conversion")
-                return b''
-            
-            # Combine all audio chunks
-            combined_audio = b''.join(audio_chunks)
-            logger.info(f"🔄 Converting {len(audio_chunks)} chunks ({len(combined_audio)} bytes) to WAV format")
-            
-            # Use AudioProcessor for proper format conversion
-            processor = self.audio_processor
-            wav_audio = processor.convert_to_wav(
-                audio_data=combined_audio,
-                input_format='webm',
-                sample_rate=16000,
-                channels=1
-            )
-            
-            logger.info(f"✅ WAV conversion completed: {len(wav_audio)} bytes")
-            return wav_audio
-            
-        except Exception as e:
-            logger.error(f"🚨 Error converting audio chunks to WAV: {e}")
-            # Fallback: return combined raw audio
-            return b''.join(audio_chunks) if audio_chunks else b''
+    # Removed duplicate method - using the original _create_wav_from_chunks implementation above
     
     def _on_transcription_result(self, result: 'TranscriptionResult'):
         """Handle transcription result callback with critical quality filtering."""
@@ -1227,41 +1197,7 @@ class TranscriptionService:
         
         logger.info(f"Cleanup completed for client {client_id}, removed {len(sessions_to_cleanup)} sessions")
     
-    def end_session_sync_v2(self, session_id: str) -> Dict[str, Any]:
-        """Synchronous wrapper for end_session (v2)."""
-        return self._end_session_sync_impl(session_id)
-    
-    def _end_session_sync_impl(self, session_id: str) -> Dict[str, Any]:
-        """Direct synchronous implementation for end_session."""
-        if session_id not in self.active_sessions:
-            raise ValueError(f"Session {session_id} not found")
-        
-        session_data = self.active_sessions[session_id]
-        
-        # Update database session
-        from sqlalchemy import select
-        stmt = select(Session).filter_by(external_id=session_id)
-        db_session = db.session.execute(stmt).scalar_one_or_none()
-        if db_session:
-            db_session.status = 'completed'
-            
-            # Update final statistics
-            stats = session_data['stats']
-            db_session.total_segments = stats['total_segments']
-            db_session.average_confidence = stats['average_confidence']
-            db_session.total_duration = stats['total_audio_duration']
-            db.session.commit()
-        
-        # Get final statistics before cleanup
-        final_stats = self._get_session_statistics(session_id)
-        
-        # Cleanup
-        del self.active_sessions[session_id]
-        if session_id in self.session_callbacks:
-            del self.session_callbacks[session_id]
-        
-        logger.info(f"Ended transcription session: {session_id}")
-        return final_stats
+    # Removed duplicate method - using the original _end_session_sync_impl above
     
     def update_config(self, **kwargs):
         """Update service configuration."""
@@ -1398,93 +1334,9 @@ class TranscriptionService:
         if stale_sessions:
             logger.info(f"Cleaned up {len(stale_sessions)} stale sessions")
 
-    def end_session_sync(self, session_id: str) -> None:
-        """
-        INT-LIVE-I1: End session with final flush of any remaining buffer.
-        """
-        try:
-            if session_id in self.active_sessions:
-                state = self.active_sessions[session_id]
-                
-                # Flush any remaining rolling text as final
-                rolling_text = state.get('rolling_text', '').strip()
-                if rolling_text:
-                    logger.info(f"Flushing final buffer for session {session_id}: '{rolling_text}'")
-                    self._persist_segment(session_id, rolling_text, 0.8, time.time())
-                    # Safe dictionary access to prevent AttributeError
-                    stats = state.get('stats', {})
-                    stats['final_events'] = stats.get('final_events', 0) + 1
-                
-                # Log session stats
-                stats = state.get('stats', {})
-                logger.info(f"Session {session_id} ended - Interim events: {stats.get('interim_events', 0)}, Final events: {stats.get('final_events', 0)}")
-                
-                # Clean up session
-                del self.active_sessions[session_id]
-                if session_id in self.session_callbacks:
-                    del self.session_callbacks[session_id]
-                    
-        except Exception as e:
-            logger.error(f"Error ending session {session_id}: {e}")
+    # Removed duplicate method - using the original end_session_sync implementation above
     
-    def start_session_sync(self, session_id: str, user_config: Optional[Dict[str, Any]] = None) -> None:
-        """
-        FIXED: Add missing start_session_sync method that was being called everywhere.
-        Synchronous session startup for immediate session registration.
-        """
-        try:
-            # Initialize performance monitoring for this session
-            if self.performance_monitor:
-                self.performance_monitor.start_session_monitoring(session_id)
-            
-            # Initialize QA pipeline for this session
-            if self.qa_pipeline:
-                self.qa_pipeline.start_qa_session(session_id)
-            if session_id in self.active_sessions:
-                logger.info(f"Session {session_id} already active")
-                return
-            
-            # Initialize session data structure
-            self.active_sessions[session_id] = {
-                'state': SessionState.IDLE,
-                'created_at': time.time(),
-                'last_activity': time.time(),
-                'sequence_number': 0,
-                'audio_chunks': [],
-                'pending_processing': 0,
-                'user_config': user_config or {},
-                'rolling_text': '',  # Interim text buffer
-                'last_interim_emit_ts': 0.0,  # Throttling timestamp
-                'last_interim_text': '',  # Last interim text for diff comparison
-                'end_of_stream': False,  # Finalization trigger
-                'stats': {
-                    'total_audio_duration': 0.0,
-                    'speech_duration': 0.0,
-                    'silence_duration': 0.0,
-                    'total_segments': 0,
-                    'interim_events': 0,  # Track interim events
-                    'final_events': 0,   # Track final events
-                    'average_confidence': 0.0,
-                    # 🔥 INT-LIVE-I2: Enhanced metrics for quality monitoring
-                    'dedupe_hits': 0,  # Count of duplicate text filtered
-                    'low_conf_suppressed': 0,  # Count of low confidence rejections
-                    'chunks_dropped': 0,  # Count of dropped audio chunks
-                    'latency_samples': [],  # Rolling latency measurements (keep last 50)
-                    'queue_len_samples': [],  # Queue length for p95 calculation
-                    'adaptive_conf_adjustments': 0,  # Count of confidence adjustments
-                    'punctuation_boundaries': 0,  # Count of punctuation-triggered boundaries
-                    'interim_intervals': []  # Track interim emission intervals (ms)
-                }
-            }
-            
-            # Initialize callback list
-            if session_id not in self.session_callbacks:
-                self.session_callbacks[session_id] = []
-            
-            logger.info(f"Started transcription session: {session_id}")
-            
-        except Exception as e:
-            logger.error(f"Error starting session {session_id}: {e}")
+    # Removed duplicate method - using the original start_session_sync implementation above
     
     def process_audio_sync(self, session_id: str, audio_data: bytes, timestamp: Optional[float] = None,
                           mime_type: Optional[str] = None, client_rms: Optional[float] = None, 
@@ -1769,7 +1621,7 @@ class TranscriptionService:
         
         for sid in inactive_sessions:
             try:
-                self.end_session(sid)
+                self.end_session_sync(sid)
                 logger.info(f"Cleaned up inactive session: {sid}")
             except Exception as e:
                 logger.warning(f"Error cleaning session {sid}: {e}")
