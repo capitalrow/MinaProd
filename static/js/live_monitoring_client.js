@@ -412,26 +412,7 @@ class LiveMonitoringClient {
 // Initialize live monitoring client
 window.liveMonitoringClient = new LiveMonitoringClient();
 
-// Auto-integrate with recording states
-if (window.recordingStates) {
-    const originalSetState = window.recordingStates.setState;
-    window.recordingStates.setState = function(state, details) {
-        // Call original setState
-        originalSetState.call(this, state, details);
-        
-        // Start monitoring when recording begins
-        if (state === 'recording' && window.liveMonitoringClient && !window.liveMonitoringClient.isMonitoring) {
-            const sessionId = details?.sessionId || `session_${Date.now()}`;
-            window.liveMonitoringClient.startMonitoring(sessionId);
-        }
-        
-        // End monitoring when recording completes
-        if ((state === 'complete' || state === 'idle') && window.liveMonitoringClient && window.liveMonitoringClient.isMonitoring) {
-            const report = window.liveMonitoringClient.endMonitoring();
-            console.info('📊 Live monitoring final report:', report);
-        }
-    };
-}
+// Integration handled by unified enhancement integration system
 
 // Integrate with WebSocket events
 if (window.socket) {

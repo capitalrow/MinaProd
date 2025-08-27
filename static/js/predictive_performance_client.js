@@ -770,25 +770,6 @@ class PredictivePerformanceClient {
 // Initialize predictive performance client
 window.predictivePerformanceClient = new PredictivePerformanceClient();
 
-// Auto-integrate with recording states
-if (window.recordingStates) {
-    const originalSetState = window.recordingStates.setState;
-    window.recordingStates.setState = function(state, details) {
-        // Call original setState
-        originalSetState.call(this, state, details);
-        
-        // Start predictive optimization when recording begins
-        if (state === 'recording' && window.predictivePerformanceClient && !window.predictivePerformanceClient.isActive) {
-            const sessionId = details?.sessionId || `session_${Date.now()}`;
-            window.predictivePerformanceClient.startPredictiveOptimization(sessionId);
-        }
-        
-        // End predictive optimization when recording completes
-        if ((state === 'complete' || state === 'idle') && window.predictivePerformanceClient && window.predictivePerformanceClient.isActive) {
-            const report = window.predictivePerformanceClient.endPredictiveOptimization();
-            console.info('📊 Predictive optimization final report:', report);
-        }
-    };
-}
+// Integration handled by unified enhancement integration system
 
 console.info('🔬 Predictive performance client ready - advanced ML optimization available');

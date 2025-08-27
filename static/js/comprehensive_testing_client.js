@@ -1014,25 +1014,6 @@ class ComprehensiveTestingClient {
 // Initialize comprehensive testing client
 window.comprehensiveTestingClient = new ComprehensiveTestingClient();
 
-// Auto-integrate with recording states
-if (window.recordingStates) {
-    const originalSetState = window.recordingStates.setState;
-    window.recordingStates.setState = function(state, details) {
-        // Call original setState
-        originalSetState.call(this, state, details);
-        
-        // Start comprehensive testing when recording begins
-        if (state === 'recording' && window.comprehensiveTestingClient && !window.comprehensiveTestingClient.isActive) {
-            const sessionId = details?.sessionId || `session_${Date.now()}`;
-            window.comprehensiveTestingClient.startComprehensiveTesting(sessionId);
-        }
-        
-        // End testing when recording completes
-        if ((state === 'complete' || state === 'idle') && window.comprehensiveTestingClient && window.comprehensiveTestingClient.isActive) {
-            const report = window.comprehensiveTestingClient.endComprehensiveTesting();
-            console.info('📊 Comprehensive testing final report:', report);
-        }
-    };
-}
+// Integration handled by unified enhancement integration system
 
 console.info('🧪 Comprehensive testing client ready - thorough validation available');
