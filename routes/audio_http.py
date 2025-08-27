@@ -10,9 +10,114 @@ import tempfile
 import requests
 import base64
 import time
+import subprocess
 
 audio_http_bp = Blueprint('audio_http', __name__)
 logger = logging.getLogger(__name__)
+
+def convert_webm_to_wav(webm_data: bytes) -> bytes | None:
+    """🔥 CRITICAL FIX A1: Convert WebM audio to WAV format using FFmpeg"""
+    try:
+        # Create temporary input file
+        with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as input_file:
+            input_file.write(webm_data)
+            input_file_path = input_file.name
+        
+        # Create temporary output file  
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as output_file:
+            output_file_path = output_file.name
+        
+        # Convert using FFmpeg
+        cmd = [
+            'ffmpeg', '-y',  # Overwrite output
+            '-i', input_file_path,  # Input WebM file
+            '-ar', '16000',  # Sample rate 16kHz (Whisper requirement)
+            '-ac', '1',      # Mono audio
+            '-acodec', 'pcm_s16le',  # 16-bit PCM encoding
+            '-f', 'wav',     # WAV format
+            output_file_path
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        
+        if result.returncode == 0:
+            # Read converted WAV data
+            with open(output_file_path, 'rb') as f:
+                wav_data = f.read()
+            
+            # Cleanup
+            os.unlink(input_file_path)
+            os.unlink(output_file_path)
+            
+            logger.info(f"✅ WebM→WAV conversion successful: {len(webm_data)} bytes → {len(wav_data)} bytes")
+            return wav_data
+        else:
+            logger.error(f"❌ FFmpeg conversion failed: {result.stderr}")
+            # Cleanup on failure
+            if os.path.exists(input_file_path):
+                os.unlink(input_file_path)
+            if os.path.exists(output_file_path):
+                os.unlink(output_file_path)
+            return None
+            
+    except subprocess.TimeoutExpired:
+        logger.error("❌ FFmpeg conversion timeout")
+        return None
+    except Exception as e:
+        logger.error(f"❌ WebM conversion error: {e}")
+        return None
+
+def convert_ogg_to_wav(ogg_data: bytes) -> bytes | None:
+    """🔥 CRITICAL FIX A2: Convert OGG audio to WAV format using FFmpeg"""
+    try:
+        # Create temporary input file
+        with tempfile.NamedTemporaryFile(suffix='.ogg', delete=False) as input_file:
+            input_file.write(ogg_data)
+            input_file_path = input_file.name
+        
+        # Create temporary output file  
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as output_file:
+            output_file_path = output_file.name
+        
+        # Convert using FFmpeg
+        cmd = [
+            'ffmpeg', '-y',  # Overwrite output
+            '-i', input_file_path,  # Input OGG file
+            '-ar', '16000',  # Sample rate 16kHz
+            '-ac', '1',      # Mono audio
+            '-acodec', 'pcm_s16le',  # 16-bit PCM encoding
+            '-f', 'wav',     # WAV format
+            output_file_path
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        
+        if result.returncode == 0:
+            # Read converted WAV data
+            with open(output_file_path, 'rb') as f:
+                wav_data = f.read()
+            
+            # Cleanup
+            os.unlink(input_file_path)
+            os.unlink(output_file_path)
+            
+            logger.info(f"✅ OGG→WAV conversion successful: {len(ogg_data)} bytes → {len(wav_data)} bytes")
+            return wav_data
+        else:
+            logger.error(f"❌ FFmpeg OGG conversion failed: {result.stderr}")
+            # Cleanup on failure
+            if os.path.exists(input_file_path):
+                os.unlink(input_file_path)
+            if os.path.exists(output_file_path):
+                os.unlink(output_file_path)
+            return None
+            
+    except subprocess.TimeoutExpired:
+        logger.error("❌ FFmpeg OGG conversion timeout")
+        return None
+    except Exception as e:
+        logger.error(f"❌ OGG conversion error: {e}")
+        return None
 
 @audio_http_bp.route('/api/transcribe-audio', methods=['POST'])
 def transcribe_audio():
@@ -141,34 +246,48 @@ def transcribe_audio():
         }), 500
 
 def transcribe_audio_sync(audio_data):
-    """Enhanced audio transcription with monitoring recommendations implemented"""
+    """🔥 FIXED: Enhanced audio transcription with proper WebM→WAV conversion"""
     start_time = time.time()
     
     try:
-        # MONITORING FIX 1.1: Audio chunk validation
+        # CRITICAL FIX A1: Audio chunk validation
         if len(audio_data) < 100:
             logger.warning("⚠️ Audio chunk too small for transcription")
             return None
             
-        # MONITORING FIX 1.1: Audio format validation
-        if not audio_data.startswith(b'OpusHead') and not audio_data.startswith(b'RIFF'):
-            logger.warning("⚠️ Unexpected audio format detected")
-            
-        # Save to temp file with proper audio format handling
-        # Determine audio format and use appropriate extension
-        audio_extension = '.webm'
-        if audio_data.startswith(b'RIFF'):
+        # CRITICAL FIX A2: Detect and convert WebM format properly
+        if audio_data.startswith(b'\x1a\x45\xdf\xa3'):  # WebM/Matroska magic number
+            logger.info("🔍 DETECTED: WebM format - converting to WAV using FFmpeg")
+            wav_audio = convert_webm_to_wav(audio_data)
+            if not wav_audio:
+                logger.error("❌ WebM→WAV conversion failed")
+                return None
             audio_extension = '.wav'
-        elif audio_data.startswith(b'ID3') or audio_data[4:8] == b'ftyp':
-            audio_extension = '.mp4'
+        elif audio_data.startswith(b'RIFF') and b'WAVE' in audio_data[:50]:
+            logger.info("🔍 DETECTED: Already WAV format")
+            wav_audio = audio_data
+            audio_extension = '.wav'
         elif audio_data.startswith(b'OggS'):
-            audio_extension = '.ogg'
+            logger.info("🔍 DETECTED: OGG format - converting to WAV")
+            wav_audio = convert_ogg_to_wav(audio_data)
+            if not wav_audio:
+                logger.error("❌ OGG→WAV conversion failed")
+                return None
+            audio_extension = '.wav'
+        else:
+            logger.warning("⚠️ Unknown audio format - attempting WebM→WAV conversion as fallback")
+            wav_audio = convert_webm_to_wav(audio_data)
+            if not wav_audio:
+                logger.error("❌ Audio format conversion failed completely")
+                return None
+            audio_extension = '.wav'
         
+        # CRITICAL FIX A3: Save converted WAV data
         with tempfile.NamedTemporaryFile(suffix=audio_extension, delete=False) as temp_file:
-            temp_file.write(audio_data)
+            temp_file.write(wav_audio)
             temp_file_path = temp_file.name
             
-        logger.info(f"💾 Saved audio to {temp_file_path} ({len(audio_data)} bytes, format: {audio_extension})")
+        logger.info(f"💾 Saved converted audio to {temp_file_path} ({len(wav_audio)} bytes, format: {audio_extension})")
         
         try:
             # MONITORING FIX 1.1: API key validation
@@ -187,15 +306,8 @@ def transcribe_audio_sync(audio_data):
                 "User-Agent": "Mina-Transcription/1.0"
             }
             
-            # MONITORING FIX 1.1: Enhanced request with proper format handling
-            # Determine MIME type based on detected audio format
-            mime_type = 'audio/webm'
-            if audio_extension == '.wav':
-                mime_type = 'audio/wav'
-            elif audio_extension == '.mp4':
-                mime_type = 'audio/mp4'
-            elif audio_extension == '.ogg':
-                mime_type = 'audio/ogg'
+            # CRITICAL FIX A4: Use WAV format for reliable Whisper API compatibility
+            mime_type = 'audio/wav'
             
             filename = f'audio{audio_extension}'
             logger.info(f"🎵 Sending to Whisper: {filename} ({mime_type})")
