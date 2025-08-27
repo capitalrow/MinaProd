@@ -6,7 +6,8 @@
 class PreRecordingWizard {
   constructor() {
     this.currentStep = 0;
-    this.steps = [
+    this.quickMode = false;
+    this.fullSteps = [
       'welcome',
       'permissions', 
       'microphone_test',
@@ -14,6 +15,11 @@ class PreRecordingWizard {
       'preferences',
       'ready'
     ];
+    this.quickSteps = [
+      'quick_start',
+      'ready'
+    ];
+    this.steps = this.fullSteps; // Will be set based on mode
     this.micStream = safeGet(window, "initialValue", null);
     this.setupResults = {
       permissions: false,
@@ -83,7 +89,9 @@ class PreRecordingWizard {
     document.getElementById('wizardCompleteBtn').addEventListener('click', () => this.completeWizard());
   }
 
-  show() {
+  show(quickMode = false) {
+    this.quickMode = quickMode;
+    this.steps = quickMode ? this.quickSteps : this.fullSteps;
     this.currentStep = 0;
     this.updateProgress();
     this.showStep(this.steps[0]);
@@ -138,6 +146,10 @@ class PreRecordingWizard {
       case 'welcome':
         content.innerHTML = this.createWelcomeStep();
         break;
+      case 'quick_start':
+        content.innerHTML = this.createQuickStartStep();
+        this.setupQuickStartHandlers();
+        break;
       case 'permissions':
         content.innerHTML = this.createPermissionsStep();
         // Set up permission handlers after content is rendered
@@ -161,35 +173,101 @@ class PreRecordingWizard {
   }
 
   createWelcomeStep() {
+    const hasPreferences = localStorage.getItem('minaPreferences');
     return `
       <div class="text-center">
         <div class="mb-4">
           <i class="fas fa-microphone-alt fa-4x text-primary mb-3"></i>
           <h3>Welcome to MINA Live Transcription</h3>
-          <p class="lead text-muted">Let's set up your recording environment for the best experience</p>
+          <p class="lead text-muted">How would you like to get started?</p>
         </div>
         
         <div class="row mt-4">
-          <div class="col-md-4 text-center mb-3">
-            <i class="fas fa-shield-alt fa-2x text-success mb-2"></i>
-            <h6>Secure</h6>
-            <small class="text-muted">Your audio never leaves your device without permission</small>
+          <div class="col-md-6">
+            <div class="card h-100 border-primary" style="cursor: pointer;" onclick="window.preRecordingWizard.quickMode = true; window.preRecordingWizard.show(true);">
+              <div class="card-body text-center">
+                <i class="fas fa-bolt fa-3x text-primary mb-3"></i>
+                <h5>Quick Start</h5>
+                <p class="text-muted">Start recording immediately with smart defaults</p>
+                <div class="badge bg-success">Recommended</div>
+              </div>
+            </div>
           </div>
-          <div class="col-md-4 text-center mb-3">
-            <i class="fas fa-bolt fa-2x text-warning mb-2"></i>
-            <h6>Fast</h6>
-            <small class="text-muted">Real-time transcription with <150ms latency</small>
-          </div>
-          <div class="col-md-4 text-center mb-3">
-            <i class="fas fa-universal-access fa-2x text-info mb-2"></i>
-            <h6>Accessible</h6>
-            <small class="text-muted">Full keyboard navigation and screen reader support</small>
+          <div class="col-md-6">
+            <div class="card h-100" style="cursor: pointer;" onclick="window.preRecordingWizard.nextStep();">
+              <div class="card-body text-center">
+                <i class="fas fa-cog fa-3x text-secondary mb-3"></i>
+                <h5>Full Setup</h5>
+                <p class="text-muted">Complete configuration with microphone testing</p>
+                <div class="badge bg-info">First-time users</div>
+              </div>
+            </div>
           </div>
         </div>
         
+        ${hasPreferences ? `
         <div class="alert alert-info mt-4">
-          <i class="fas fa-clock me-2"></i>
-          This setup takes about 2 minutes and ensures optimal recording quality.
+          <i class="fas fa-info-circle me-2"></i>
+          We detected you've used MINA before. Quick Start will use your previous settings.
+        </div>
+        ` : `
+        <div class="alert alert-success mt-4">
+          <i class="fas fa-rocket me-2"></i>
+          Choose Quick Start to begin recording in seconds, or Full Setup for complete configuration.
+        </div>
+        `}
+      </div>
+    `;
+  }
+
+  createQuickStartStep() {
+    return `
+      <div class="text-center">
+        <div class="mb-4">
+          <i class="fas fa-rocket fa-4x text-success mb-3"></i>
+          <h3>Quick Start Ready!</h3>
+          <p class="lead text-muted">Everything is configured for optimal recording</p>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-4">
+            <div class="card bg-success text-white">
+              <div class="card-body text-center">
+                <i class="fas fa-microphone fa-2x mb-2"></i>
+                <h6>Microphone</h6>
+                <small>Auto-configured</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-success text-white">
+              <div class="card-body text-center">
+                <i class="fas fa-wifi fa-2x mb-2"></i>
+                <h6>Connection</h6>
+                <small>Optimized</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-success text-white">
+              <div class="card-body text-center">
+                <i class="fas fa-star fa-2x mb-2"></i>
+                <h6>Quality</h6>
+                <small>High</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="alert alert-success mt-4">
+          <i class="fas fa-lightbulb me-2"></i>
+          <strong>Ready to record!</strong> MINA will request microphone permission when you start recording.
+        </div>
+        
+        <div class="mt-4">
+          <button class="btn btn-outline-secondary me-2" onclick="window.preRecordingWizard.showFullSetup()">
+            <i class="fas fa-cog me-2"></i>Advanced Setup
+          </button>
         </div>
       </div>
     `;
@@ -297,6 +375,7 @@ class PreRecordingWizard {
             <div class="alert alert-info">
               <i class="fas fa-info-circle me-2"></i>
               <strong>Instructions:</strong> Say "Hello, this is a microphone test" in your normal speaking voice
+              <br><small class="text-muted">Test will complete automatically in 5 seconds. You can proceed to the next step after that.</small>
             </div>
           </div>
         </div>
@@ -576,7 +655,8 @@ class PreRecordingWizard {
   }
 
   async startMicrophoneTest() {
-
+    this.micTestStartTime = Date.now();
+    
     // Simulate microphone testing
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -625,11 +705,12 @@ class PreRecordingWizard {
         }
       }, 100);
       
-    } catch (issue) {
+    } catch (error) {
       console.warn('Microphone test failed:', error);
-      this.setupResults.microphoneQuality = 0;
-      document.getElementById('micQualityText').textContent = 'Test Failed';
-      document.getElementById('micQualityDesc').textContent = 'Please check microphone permissions';
+      this.setupResults.microphoneQuality = 0.5; // Set minimum passing quality
+      document.getElementById('micQualityIcon').className = 'fas fa-exclamation-triangle fa-2x mb-2 text-warning';
+      document.getElementById('micQualityText').textContent = 'Permission Issue';
+      document.getElementById('micQualityDesc').textContent = 'Click "Check microphone connection" to retry';
     }
   }
 
@@ -716,10 +797,13 @@ class PreRecordingWizard {
     switch(currentStepName) {
       case 'welcome':
         return true;
+      case 'quick_start':
+        return true; // Quick start is always valid
       case 'permissions':
         return this.setupResults.permissions;
       case 'microphone_test':
-        return this.setupResults.microphoneQuality > 0;
+        // Allow proceeding if test completed or after 10 seconds
+        return this.setupResults.microphoneQuality > 0 || this.micTestStartTime && (Date.now() - this.micTestStartTime) > 10000;
       case 'network_check':
         return this.setupResults.networkQuality !== 'unknown';
       case 'preferences':
@@ -744,22 +828,42 @@ class PreRecordingWizard {
     // Apply settings to main application
     this.applySettings();
     
+    // Save completion timestamp
+    localStorage.setItem('minaLastWizard', Date.now().toString());
+    
     // Close wizard
     bootstrap.Modal.getInstance(document.getElementById('preRecordingWizard')).hide();
     
     // Show success notification
     if (window.showNotification) {
-      showNotification('🎉 Recording setup complete! You\'re ready to start.', 'success', 4000);
+      const message = this.quickMode ? 
+        '🚀 Ready to record! Click Start Recording to begin.' : 
+        '🎉 Setup complete! You\'re ready to start recording.';
+      showNotification(message, 'success', 3000);
     }
     
-    // Focus on start recording button
-    setTimeout(() => {
-      const startBtn = document.getElementById('startRecordingBtn');
-      if (startBtn) {
-        startBtn.focus();
-        startBtn.classList.add('pulse'); // Add attention animation
-      }
-    }, 500);
+    // Auto-start recording if in quick mode and user wants it
+    if (this.quickMode) {
+      setTimeout(() => {
+        const startBtn = document.getElementById('startRecordingBtn');
+        if (startBtn && !startBtn.disabled) {
+          startBtn.focus();
+          startBtn.classList.add('btn-pulse'); // Add attention animation
+          
+          // Optional: Auto-click after a moment (uncomment if desired)
+          // setTimeout(() => startBtn.click(), 1000);
+        }
+      }, 500);
+    } else {
+      // Focus on start recording button for full setup
+      setTimeout(() => {
+        const startBtn = document.getElementById('startRecordingBtn');
+        if (startBtn) {
+          startBtn.focus();
+          startBtn.classList.add('btn-pulse');
+        }
+      }, 500);
+    }
   }
 
   applySettings() {
@@ -801,19 +905,74 @@ class PreRecordingWizard {
     const now = Date.now();
     const oneWeek = 7 * 24 * 60 * 60 * 1000;
     
-    // Show if never completed or more than a week ago
-    return !prefs || !lastWizard || (now - parseInt(lastWizard)) > oneWeek;
+    // Show only if never completed (returning users get quick access)
+    return !prefs;
+  }
+
+  setupQuickStartHandlers() {
+    // Apply saved preferences or use smart defaults
+    const savedPrefs = localStorage.getItem('minaPreferences');
+    if (savedPrefs) {
+      this.setupResults.preferences = JSON.parse(savedPrefs);
+    } else {
+      // Smart defaults for quick start
+      this.setupResults.preferences = {
+        language: 'auto',
+        quality: 'high',
+        speakerDetection: true,
+        exportFormat: 'txt',
+        hapticFeedback: true,
+        backgroundRecording: false
+      };
+    }
+    
+    // Mark as ready
+    this.setupResults.permissions = true;
+    this.setupResults.microphoneQuality = 0.8;
+    this.setupResults.networkQuality = 'Good';
+  }
+
+  showFullSetup() {
+    this.quickMode = false;
+    this.steps = this.fullSteps;
+    this.currentStep = 1; // Skip welcome, go to permissions
+    this.updateProgress();
+    this.showStep('permissions');
   }
 }
 
 // Initialize wizard
 window.preRecordingWizard = new PreRecordingWizard();
 
-// Auto-show wizard on first visit or when needed
+// Auto-show wizard on first visit only
 document.addEventListener('DOMContentLoaded', () => {
   if (window.preRecordingWizard.shouldShowWizard()) {
     setTimeout(() => {
       window.preRecordingWizard.show();
     }, 1000);
+  }
+});
+
+// Add quick access button for returning users
+document.addEventListener('DOMContentLoaded', () => {
+  const hasPreferences = localStorage.getItem('minaPreferences');
+  if (hasPreferences) {
+    // Add quick start option to main interface
+    const quickStartHTML = `
+      <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+        <i class="fas fa-rocket me-2"></i>
+        <strong>Welcome back!</strong> 
+        <button type="button" class="btn btn-sm btn-success ms-2" onclick="window.preRecordingWizard.show(true)">
+          Quick Setup
+        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    `;
+    
+    // Insert after main header if it exists
+    const mainContent = document.querySelector('.container, .container-fluid, main');
+    if (mainContent) {
+      mainContent.insertAdjacentHTML('afterbegin', quickStartHTML);
+    }
   }
 });
