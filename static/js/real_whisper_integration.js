@@ -176,8 +176,18 @@ class RealWhisperIntegration {
         try {
             console.log('🎯 STARTING REAL WHISPER INTEGRATION');
             
+            // IMMEDIATE FIX: Force HTTP mode if WebSocket fails
             if (!this.isConnected) {
-                await this.initializeConnection();
+                try {
+                    await this.initializeConnection();
+                } catch (error) {
+                    console.log('🔧 WebSocket failed, switching to HTTP mode');
+                    if (window.directAudioTranscription) {
+                        console.log('✅ Activating Direct HTTP Audio Transcription');
+                        return await window.directAudioTranscription.startTranscription(sessionId);
+                    }
+                    throw error;
+                }
             }
             
             this.sessionId = sessionId;
