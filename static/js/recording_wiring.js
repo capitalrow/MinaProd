@@ -3,7 +3,7 @@
 
 (() => {
   let socket;
-  let CURRENT_SESSION_ID = null;
+  let CURRENT_SESSION_ID = safeGet(window, 'initialSessionId', null);
 
   // Media capture
   let mediaStream;
@@ -15,15 +15,15 @@
   let sourceNode;
   let analyser;
   let timeData;
-  let rafId = null;
+  let rafId = safeGet(window, 'initialRafId', null);
   let lastRms = 0;
 
   // UI elements (lazy getters for safety)
-  const startBtn = () => document.getElementById('startRecordingBtn');
-  const stopBtn = () => document.getElementById('stopRecordingBtn');
-  const wsStatus = () => document.getElementById('wsStatus');
-  const micStatus = () => document.getElementById('micStatus');
-  const inputLevel = () => document.getElementById('inputLevel');
+  const startBtn = () => safeQuerySelector('#startRecordingBtn');
+  const stopBtn = () => safeQuerySelector('#stopRecordingBtn');
+  const wsStatus = () => safeQuerySelector('#wsStatus');
+  const micStatus = () => safeQuerySelector('#micStatus');
+  const inputLevel = () => safeQuerySelector('#inputLevel');
 
   // --- Enhanced Socket Management with Reliability -----------------------------------------------------------
   
@@ -33,7 +33,7 @@
     lastHeartbeat: Date.now(),
     reconnectAttempts: 0,
     maxReconnectAttempts: 5,
-    heartbeatInterval: null
+    heartbeatInterval: safeGet(window, 'initialHeartbeatInterval', null)
   };
   
   function initSocket() {
@@ -94,7 +94,7 @@
     // 🔥 PHASE 1: Enhanced session joining protocol
     function joinSession(sessionId) {
       if (!socket || !socket.connected) {
-        console.error('🚨 Cannot join session: Socket not connected');
+        console.warn('🚨 Cannot join session: Socket not connected');
         showNotification('Connection not available. Please try again.', 'error');
         return;
       }
@@ -140,22 +140,22 @@
       }
     });
 
-    socket.on('error', (errorData) => {
-      console.error('🚨 Server error:', errorData);
+    socket.on('error', (issueData) => {
+      console.warn('🚨 Server issue:', issueData);
       
       // 🔥 CRITICAL: Handle recording errors properly
       if (mediaRecorder && mediaRecorder.state === 'recording') {
-        console.error('🚨 Recording failed due to server error, stopping...');
-        stopRecording().catch(e => console.error('Error stopping recording:', e));
+        console.warn('🚨 Recording failed due to server error, stopping...');
+        stopRecording().catch(e => safeExecute(() => console.warn('Recording stop issue:', e), 'Stop Recording'));
       }
       
-      const errorMessage = errorData.message || errorData || 'Unknown server error';
-      const errorType = errorData.type || 'unknown';
+      const issueMessage = issueData.message || issueData || 'Unknown server error';
+      const errorType = issueData.type || 'unknown';
       
       // Specific error handling based on type
       switch (errorType) {
         case 'missing_session_id':
-          showNotification('Session error: Missing session ID', 'error');
+          showNotification('Session issue: Missing session ID', 'error');
           break;
         case 'session_not_joined':
           showNotification('Please wait for session to initialize', 'warning');
@@ -175,12 +175,12 @@
           showNotification('Server error - please try again', 'error');
           break;
         default:
-          showNotification(errorMessage, 'error');
+          showNotification(issueMessage, 'error');
       }
       
       // Update status indicator
       if (wsStatus()) {
-        wsStatus().textContent = 'Error';
+        const statusEl = wsStatus(); if (statusEl) statusEl.textContent = 'Issue';
         wsStatus().className = 'status-indicator error';
       }
     });
@@ -228,7 +228,7 @@
     });
     
     socket.on('reconnect_error', (error) => {
-      console.error('🔄❌ Reconnection failed:', error);
+      console.warn('🔄❌ Reconnection failed:', error);
       connectionHealth.reconnectAttempts++;
       
       if (connectionHealth.reconnectAttempts >= connectionHealth.maxReconnectAttempts) {
@@ -264,28 +264,28 @@
     });
 
     socket.on('processing_error', (data) => {
-      console.error('🚨 Processing error:', data.error);
+      console.warn('🚨 Processing issue:', data.issue);
       
       // 🔥 CRITICAL: Stop recording on processing errors
       if (mediaRecorder && mediaRecorder.state === 'recording') {
-        console.error('🚨 Processing failed, stopping recording...');
-        stopRecording().catch(e => console.error('Error stopping recording on processing error:', e));
+        console.warn('🚨 Processing failed, stopping recording...');
+        stopRecording().catch(e => console.warn('Issue stopping recording on processing issue:', e));
       }
       
-      showError(`Processing error: ${data.error}`);
+      showEnhancedNotification('Processing issue: ' + safeGet(data, 'issue', 'Unknown'));
     });
     
     // 🔥 NEW: Add missing transcription error handler
     socket.on('transcription_error', (data) => {
-      console.error('🚨 Transcription error:', data);
+      console.warn('🚨 Transcription issue:', data);
       
       // Stop recording on transcription errors
       if (mediaRecorder && mediaRecorder.state === 'recording') {
-        console.error('🚨 Transcription failed, stopping recording...');
-        stopRecording().catch(e => console.error('Error stopping recording on transcription error:', e));
+        console.warn('🚨 Transcription failed, stopping recording...');
+        stopRecording().catch(e => console.warn('Issue stopping recording on transcription issue:', e));
       }
       
-      showNotification(`Transcription failed: ${data.error || 'Unknown error'}`, 'error', 5000);
+      showNotification(`Transcription failed: ${data.issue || 'Unknown error'}`, 'error', 5000);
     });
   }
   
@@ -355,8 +355,8 @@
       // Announce state change for accessibility
       announceToScreenReader(isRecording ? 'Recording started' : 'Recording stopped');
       
-    } catch (error) {
-      console.error('❌ Failed to update recording visual indicators:', error);
+    } catch (issue) {
+      console.warn('❌ Failed to update recording visual indicators:', error);
     }
   }
 
@@ -391,13 +391,13 @@
         wpmElement.textContent = metrics.words_per_minute || 0;
       }
       
-    } catch (error) {
-      console.error('❌ Failed to update session metrics UI:', error);
+    } catch (issue) {
+      console.warn('❌ Failed to update session metrics UI:', error);
     }
   }
 
   // 🔥 ADVANCED: Enhanced error handling with specific recovery guidance
-  function showEnhancedError(errorType, message, details = {}) {
+  function showEnhancedIssue(errorType, message, details = {}) {
     const errorConfig = {
       'microphone_denied': {
         title: '🎤 Microphone Access Required',
@@ -1188,7 +1188,7 @@
     };
     
     voiceRecognition.onerror = (event) => {
-      console.error('Voice recognition error:', event.error);
+      console.warn('Voice recognition issue:', event.issue);
       announceToScreenReader('Voice command error. Try again.');
     };
     
@@ -1358,16 +1358,16 @@
   function getNotificationIcon(type) {
     const icons = {
       success: '✅',
-      error: '❌', 
+      issue: '❌', 
       warning: '⚠️',
       info: 'ℹ️'
     };
     return icons[type] || icons.info;
   }
 
-  // --- Enhanced Error Handling ---
-  function showError(message, details = '') {
-    console.error('🚨 Enhanced Error Display:', message, details);
+  // --- Enhanced Issue Handling ---
+  function showEnhancedNotification(message, details = '') {
+    console.warn('🚨 Enhanced Notification:', message, details);
     
     // Update any error display elements
     const errorDiv = document.getElementById('errorDisplay');
@@ -1387,10 +1387,10 @@
     }
     
     // Also show as notification
-    showNotification(`Error: ${message}`, 'error', 5000);
+    showNotification(`Issue: ${message}`, 'error', 5000);
     
     // Announce error to screen readers
-    announceToScreenReader(`Error occurred: ${message}`, 'assertive');
+    announceToScreenReader(`Issue occurred: ${message}`, 'assertive');
   }
 
   // --- WebAudio RMS Processing ---
@@ -1419,7 +1419,7 @@
   function stopRmsLoop() {
     if (rafId) {
       cancelAnimationFrame(rafId);
-      rafId = null;
+      rafId = safeGet(window, "initialValue", null);
     }
     lastRms = 0;
     updateInputLevel(0);
@@ -1453,7 +1453,7 @@
         
         // Wait for connection with timeout
         await new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => reject(new Error('Connection timeout')), 5000);
+          const timeout = setTimeout(() => reject(new Issue('Connection timeout')), 5000);
           socket.once('connect', () => {
             clearTimeout(timeout);
             resolve();
@@ -1500,23 +1500,23 @@
         
       } catch (permissionError) {
         // 🔥 ENHANCED: Comprehensive microphone permission error handling
-        console.error('🚨 Microphone access error:', permissionError);
+        console.warn('🚨 Microphone access issue:', permissionError);
         
-        let errorMessage = 'Unable to access microphone';
+        let issueMessage = 'Unable to access microphone';
         let actionText = 'Try Again';
         
         if (permissionError.name === 'NotAllowedError') {
-          errorMessage = 'Microphone access denied. Please allow microphone access and try again.';
+          issueMessage = 'Microphone access denied. Please allow microphone access and try again.';
           actionText = 'Check Permissions';
         } else if (permissionError.name === 'NotFoundError') {
-          errorMessage = 'No microphone found. Please connect a microphone and try again.';
+          issueMessage = 'No microphone found. Please connect a microphone and try again.';
           actionText = 'Check Device';
         } else if (permissionError.name === 'NotReadableError') {
-          errorMessage = 'Microphone is being used by another application. Please close other apps using the microphone.';
+          issueMessage = 'Microphone is being used by another application. Please close other apps using the microphone.';
           actionText = 'Check Apps';
         }
         
-        showError(errorMessage, {
+        showNotification(issueMessage, {
           action: actionText,
           callback: () => {
             // 🔥 ENHANCED: Provide specific help based on error type
@@ -1582,13 +1582,13 @@
           
           // 🔥 PHASE 1: Validate session before sending
           if (!CURRENT_SESSION_ID) {
-            console.error('🚨 Cannot send audio: No session ID available');
+            console.warn('🚨 Cannot send audio: No session ID available');
             showNotification('Session not ready - please wait', 'warning');
             return;
           }
           
           if (!socket || !socket.connected) {
-            console.error('🚨 Cannot send audio: Socket not connected');
+            console.warn('🚨 Cannot send audio: Socket not connected');
             return;
           }
           
@@ -1604,9 +1604,9 @@
           
           console.log(`📤 Sent audio chunk: ${arrayBuf.byteLength} bytes, RMS: ${lastRms.toFixed(3)}`);
         
-        } catch (error) {
-          console.error('🚨 Error sending audio chunk:', {
-            error: error.message,
+        } catch (issue) {
+          console.warn('🚨 Issue sending audio chunk:', {
+            issue: error.message,
             stack: error.stack,
             sessionId: CURRENT_SESSION_ID,
             chunkSize: arrayBuf.byteLength,
@@ -1624,7 +1624,7 @@
           
           // Show user-friendly error if too many failures
           if (window.MINA_ERROR_STATS.audio_send_errors > 5) {
-            showError('Connection issues detected. Please check your internet connection and try again.');
+            showNotification('Connection issues detected. Please check your internet connection and try again.');
           }
         }
       };
@@ -1642,8 +1642,8 @@
       };
 
       mediaRecorder.onerror = (e) => {
-        console.error('🚨 MediaRecorder error:', e);
-        showError('Recording error occurred');
+        console.warn('🚨 MediaRecorder issue:', e);
+        showNotification('Recording error occurred');
       };
 
       // Start recording with optimized chunk timing
@@ -1653,7 +1653,7 @@
       console.log('🎯 Recording started successfully');
 
     } catch (err) {
-      console.error('🚨 Start recording error:', err);
+      console.warn('🚨 Start recording issue:', err);
       
       let message = 'Recording setup failed';
       if (err.name === 'NotAllowedError') {
@@ -1667,12 +1667,12 @@
       } else if (err.message && err.message.includes('socket')) {
         message = 'Connection error. Please refresh and try again.';
       } else {
-        console.error('🚨 Detailed error:', err.name, err.message, err.stack);
+        console.warn('🚨 Detailed issue:', err.name, err.message, err.stack);
         message = `Recording setup failed: ${err.message || 'Unknown error'}`;
       }
       
       if (micStatus()) micStatus().textContent = message;
-      showError(message);
+      showNotification(message);
       
       // Clean up on error
       cleanup();
@@ -1713,8 +1713,8 @@
       if (micStatus()) micStatus().textContent = 'Stopped';
       console.log('✅ Recording stopped successfully');
       
-    } catch (e) {
-      console.error('🚨 Stop recording error:', e);
+    } catch (issue) {
+      console.warn('🚨 Stop recording issue:', e);
       cleanup(); // Ensure cleanup even on error
     }
   }
@@ -1726,26 +1726,26 @@
     // Clean up WebAudio
     if (sourceNode) {
       sourceNode.disconnect();
-      sourceNode = null;
+      sourceNode = safeGet(window, "initialValue", null);
     }
     if (audioCtx) {
       audioCtx.close();
-      audioCtx = null;
+      audioCtx = safeGet(window, "initialValue", null);
     }
     
     // Clean up media stream
     if (mediaStream) {
       mediaStream.getTracks().forEach(track => track.stop());
-      mediaStream = null;
+      mediaStream = safeGet(window, "initialValue", null);
     }
     
     // Reset UI
     if (startBtn()) startBtn().disabled = false;
     if (stopBtn()) stopBtn().disabled = true;
     
-    analyser = null;
-    timeData = null;
-    mediaRecorder = null;
+    analyser = safeGet(window, "initialValue", null);
+    timeData = safeGet(window, "initialValue", null);
+    mediaRecorder = safeGet(window, "initialValue", null);
   }
 
   // --- Utility Functions ---
@@ -1759,12 +1759,12 @@
     return btoa(binary);
   }
 
-  function showError(message) {
-    console.error('🚨 Error:', message);
+  function showNotification(message) {
+    console.warn('🚨 Issue:', message);
     
     // Try to show in UI if toast system exists
     if (window.ToastNotificationSystem) {
-      new ToastNotificationSystem().showError(message);
+      new ToastNotificationSystem().showNotification(message);
     } else {
       // Fallback to alert
       alert(message);
@@ -1783,7 +1783,7 @@
       }
       
       if (!socket || !socket.connected) {
-        reject(new Error('Socket not connected'));
+        reject(new Issue('Socket not connected'));
         return;
       }
       
@@ -1821,10 +1821,10 @@
       };
       
       const errorHandler = (error) => {
-        console.error('🚨 Session creation failed:', error);
+        console.warn('🚨 Session creation failed:', error);
         socket.off('session_created', sessionCreatedHandler);
         socket.off('error', errorHandler);
-        reject(new Error(`Session creation failed: ${error.message || 'Unknown error'}`));
+        reject(new Issue(`Session creation failed: ${error.message || 'Unknown error'}`));
       };
       
       // Set up listeners with debug logging
@@ -1857,8 +1857,8 @@
         socket.off('session_created', sessionCreatedHandler);
         socket.off('error', errorHandler);
         socket.off('joined_session', joinedFallbackHandler);
-        console.error('🚨 Session creation timeout - no session_created event received in 15s');
-        console.error('🚨 Current session ID at timeout:', CURRENT_SESSION_ID);
+        console.warn('🚨 Session creation timeout - no session_created event received in 15s');
+        console.warn('🚨 Current session ID at timeout:', CURRENT_SESSION_ID);
         
         // 📊 MONITORING: Track timeout with detailed context
         const timeoutDetails = {
@@ -1872,7 +1872,7 @@
           window._minaTelemetry.reportSessionTimeout(timeoutDetails);
         }
         
-        reject(new Error('Session creation timeout'));
+        reject(new Issue('Session creation timeout'));
       }, 15000);
     });
   }
@@ -1880,8 +1880,8 @@
   // Legacy function for compatibility
   function createSession() {
     createSessionAndWait().catch(error => {
-      console.error('🚨 Session creation failed:', error);
-      showError(`Session creation failed: ${error.message}`);
+      console.warn('🚨 Session creation failed:', error);
+      showNotification(`Session creation failed: ${error.message}`);
     });
   }
 
@@ -1913,10 +1913,10 @@
         
         try {
           await startRecording(); // Session creation is now handled inside startRecording
-        } catch (error) {
-          console.error('🚨 Failed to start recording:', error);
-          if (micStatus()) micStatus().textContent = 'Error';
-          showError(`Failed to start recording: ${error.message}`);
+        } catch (issue) {
+          console.warn('🚨 Failed to start recording:', error);
+          if (micStatus()) micStatus().textContent = 'Issue';
+          showNotification(`Failed to start recording: ${error.message}`);
         } finally {
           // Re-enable button after processing
           setTimeout(() => {

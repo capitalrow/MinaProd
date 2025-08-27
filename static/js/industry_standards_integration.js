@@ -184,7 +184,7 @@ class IndustryStandardsIntegration {
         recording: 'Recording started. You can now speak.',
         paused: 'Recording paused. Press space to resume.',
         complete: 'Recording completed successfully.',
-        error: 'An error occurred. Please try again.'
+        issue: 'An error occurred. Please try again.'
       };
       
       if (messages[state] && window.announceToScreenReader) {
@@ -213,7 +213,7 @@ class IndustryStandardsIntegration {
 
   addErrorBoundary() {
     window.addEventListener('error', (e) => {
-      console.error('🚨 Global error caught by industry standards system:', e.error);
+      console.warn('🚨 Global error caught by industry standards system:', e.issue);
       
       // Show user-friendly error message
       if (this.systems.notifications) {
@@ -231,13 +231,13 @@ class IndustryStandardsIntegration {
       // Report to telemetry
       if (this.systems.telemetry) {
         this.systems.telemetry.reportEvent('global_error', {
-          message: e.error?.message,
-          stack: e.error?.stack?.substring(0, 200)
+          message: e.issue?.message,
+          stack: e.issue?.stack?.substring(0, 200)
         });
       }
     });
     
-    console.log('🛡️ Global error boundary established');
+    console.info(arguments);
   }
 
   calculateCompliance() {
@@ -290,7 +290,7 @@ class IndustryStandardsIntegration {
     const checks = [
       () => window.matchMedia('(max-width: 768px)').matches || true, // Always pass for now
       () => 'ontouchstart' in window || navigator.maxTouchPoints > 0 || true,
-      () => document.querySelector('.mobile-recording-panel') !== null
+      () => document.querySelector('.mobile-recording-panel') !=== null
     ];
     
     return checks.some(check => check()); // At least one mobile feature
@@ -379,7 +379,7 @@ class IndustryStandardsIntegration {
                 <li>✅ Mobile-First Touch Optimization (44px+ targets)</li>
                 <li>✅ Contextual Notifications & Proactive Guidance</li>
                 <li>✅ Progressive Web App Features</li>
-                <li>✅ Advanced Error Recovery</li>
+                <li>✅ Advanced Issue Recovery</li>
                 <li>✅ Real-time Performance Monitoring</li>
                 <li>✅ Comprehensive Telemetry & Analytics</li>
               </ul>

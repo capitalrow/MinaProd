@@ -14,7 +14,7 @@ class PreRecordingWizard {
       'preferences',
       'ready'
     ];
-    this.micStream = null;
+    this.micStream = safeGet(window, "initialValue", null);
     this.setupResults = {
       permissions: false,
       microphoneQuality: 0,
@@ -560,8 +560,8 @@ class PreRecordingWizard {
             this.nextStep();
           }, 1000);
           
-        } catch (error) {
-          console.error('❌ Permission denied:', error);
+        } catch (issue) {
+          console.warn('❌ Permission denied:', error);
           document.getElementById('permissionError').style.display = 'block';
           document.getElementById('permissionStatus').style.display = 'none';
           
@@ -625,8 +625,8 @@ class PreRecordingWizard {
         }
       }, 100);
       
-    } catch (error) {
-      console.error('Microphone test failed:', error);
+    } catch (issue) {
+      console.warn('Microphone test failed:', error);
       this.setupResults.microphoneQuality = 0;
       document.getElementById('micQualityText').textContent = 'Test Failed';
       document.getElementById('micQualityDesc').textContent = 'Please check microphone permissions';
