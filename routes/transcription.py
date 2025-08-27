@@ -63,7 +63,7 @@ def index():
     except Exception as e:
         logger.error(f"Error loading dashboard: {e}")
         flash(f"Error loading dashboard: {str(e)}", 'error')
-        return render_template('dashboard_professional.html', recent_sessions=[], stats={})
+        return render_template('index_clean.html', recent_sessions=[], stats={})
 
 @transcription_bp.route('/live')
 def live_transcription():

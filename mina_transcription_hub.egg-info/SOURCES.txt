@@ -16,7 +16,9 @@ models/session.py
 models/shared_link.py
 models/summary.py
 routes/__init__.py
+routes/api.py
 routes/api_performance.py
+routes/audio_http.py
 routes/browser_websocket_routes.py
 routes/export.py
 routes/health.py
