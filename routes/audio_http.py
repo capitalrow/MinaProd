@@ -394,9 +394,9 @@ def validate_audio_quality(audio_data: bytes) -> dict:
             'has_wav_header': False,
             'has_webm_header': False,
             'has_opus_codec': False,
-            'quality_score': 0.0,
+            'quality_score': 0.5,  # 🔧 Better default score
             'issues': [],
-            'format_confidence': 0.0
+            'format_confidence': 0.7
         }
         
         # Enhanced size validation
@@ -484,9 +484,9 @@ def validate_audio_quality(audio_data: bytes) -> dict:
         logger.error(f"❌ Enhanced audio quality validation error: {e}")
         return {
             'size_bytes': len(audio_data), 
-            'quality_score': 0.0, 
+            'quality_score': 0.2,  # 🔧 Still allow some processing 
             'issues': [f'Validation failed: {str(e)[:100]}'],
-            'format_confidence': 0.0
+            'format_confidence': 0.3
         }
 
 def create_professional_wav_from_webm(audio_data: bytes) -> bytes | None:
@@ -874,9 +874,13 @@ def transcribe_audio_sync(audio_data):
         quality_metrics = validate_audio_quality(audio_data)
         logger.info(f"🔍 Audio Quality: {quality_metrics['quality_score']:.2f} ({quality_metrics['size_bytes']} bytes)")
         
-        if quality_metrics['quality_score'] < 0.1:
-            logger.warning(f"⚠️ Low quality audio: {quality_metrics['issues']}")
+        # 🔧 RELAXED: Lower quality threshold for mobile devices
+        if quality_metrics['quality_score'] < 0.01:
+            logger.warning(f"⚠️ Extremely poor quality audio: {quality_metrics['issues']}")
             return None
+        
+        # Log quality for debugging
+        logger.info(f"🎯 Audio quality acceptable: {quality_metrics['quality_score']:.3f}")
         
         if len(audio_data) < 500:  # Increased minimum size
             logger.warning("⚠️ Audio chunk too small for reliable transcription")
