@@ -16,61 +16,129 @@ logger = logging.getLogger(__name__)
 
 @audio_http_bp.route('/api/transcribe-audio', methods=['POST'])
 def transcribe_audio():
-    """Receive and transcribe audio data via HTTP POST"""
+    """Enhanced HTTP endpoint for real audio transcription"""
     try:
         data = request.get_json()
-        
         if not data:
             return jsonify({'error': 'No data provided'}), 400
             
         session_id = data.get('session_id', 'unknown')
-        audio_data = data.get('audio_data')  # Base64 encoded
+        chunk_number = data.get('chunk_number', 0)
+        is_final = data.get('is_final', False)
+        action = data.get('action', 'transcribe')
         
-        logger.info(f"🎵 Received audio for session {session_id}")
+        logger.info(f"🎵 Processing request for session {session_id} (chunk {chunk_number}, action: {action})")
         
-        if not audio_data:
-            return jsonify({
-                'session_id': session_id,
-                'text': '[No audio data]',
-                'is_final': False,
-                'confidence': 0.0
-            })
-        
-        # Decode and transcribe
-        try:
-            audio_bytes = base64.b64decode(audio_data)
-            transcript = transcribe_audio_sync(audio_bytes)
-            
-            if transcript and transcript.strip():
+        # Handle finalization request
+        if action == 'finalize':
+            text = data.get('text', '')
+            if text.strip():
+                # Clean up final transcript
+                final_text = text.strip()
+                if not final_text[0].isupper():
+                    final_text = final_text[0].upper() + final_text[1:]
+                if final_text[-1] not in '.!?':
+                    final_text += '.'
+                    
+                logger.info(f"✅ Finalized transcript for {session_id}: {final_text[:50]}...")
                 return jsonify({
                     'session_id': session_id,
-                    'text': transcript.strip(),
-                    'is_final': True,
-                    'confidence': 0.95,
-                    'status': 'success'
+                    'final_text': final_text,
+                    'status': 'finalized'
                 })
             else:
                 return jsonify({
                     'session_id': session_id,
-                    'text': '[No speech detected]',
-                    'is_final': False,
-                    'confidence': 0.0,
-                    'status': 'no_speech'
+                    'final_text': 'No speech was detected in this recording.',
+                    'status': 'finalized'
                 })
-                
-        except Exception as e:
-            logger.error(f"❌ Audio processing error: {e}")
+        
+        # Regular transcription request
+        audio_data = data.get('audio_data')
+        if not audio_data:
             return jsonify({
                 'session_id': session_id,
-                'text': '[Processing error]',
-                'is_final': False,
+                'text': '[No audio data]',
                 'confidence': 0.0,
-                'status': 'error'
+                'chunk_number': chunk_number,
+                'is_final': is_final,
+                'status': 'no_audio'
+            })
+        
+        # Decode and validate audio
+        try:
+            audio_bytes = base64.b64decode(audio_data)
+            if len(audio_bytes) < 100:
+                logger.warning(f"⚠️ Audio chunk {chunk_number} too small: {len(audio_bytes)} bytes")
+                return jsonify({
+                    'session_id': session_id,
+                    'text': '[Audio chunk too small]',
+                    'confidence': 0.0,
+                    'chunk_number': chunk_number,
+                    'is_final': is_final,
+                    'status': 'too_small'
+                })
+        except Exception as e:
+            logger.error(f"❌ Audio decode error: {e}")
+            return jsonify({'error': 'Invalid audio data'}, 400)
+        
+        # Transcribe with Whisper
+        transcript = transcribe_audio_sync(audio_bytes)
+        
+        if transcript and transcript.strip():
+            clean_text = transcript.strip()
+            
+            # Filter out common false positives and noise
+            false_positives = [
+                'thank you', 'thanks for watching', 'bye', 'goodbye',
+                'you', 'the', 'a', 'an', 'and', 'but', 'or', 'uh', 'um'
+            ]
+            
+            # Only reject single word false positives
+            if clean_text.lower() in false_positives and len(clean_text.split()) <= 2:
+                logger.info(f"⚠️ Filtered false positive: '{clean_text}'")
+                return jsonify({
+                    'session_id': session_id,
+                    'text': '[Filtered]',
+                    'confidence': 0.0,
+                    'chunk_number': chunk_number,
+                    'is_final': is_final,
+                    'status': 'filtered'
+                })
+            
+            # Calculate confidence and stats
+            words = clean_text.split()
+            word_count = len(words)
+            confidence = min(0.98, max(0.75, 0.85 + (word_count * 0.02)))
+            
+            logger.info(f"✅ Chunk {chunk_number} transcribed: '{clean_text}' (confidence: {confidence:.2f})")
+            
+            return jsonify({
+                'session_id': session_id,
+                'text': clean_text,
+                'confidence': confidence,
+                'word_count': word_count,
+                'chunk_number': chunk_number,
+                'is_final': is_final,
+                'status': 'success'
+            })
+        else:
+            logger.info(f"⚠️ No speech detected in chunk {chunk_number}")
+            return jsonify({
+                'session_id': session_id,
+                'text': '[No speech detected]',
+                'confidence': 0.0,
+                'chunk_number': chunk_number,
+                'is_final': is_final,
+                'status': 'no_speech'
             })
             
     except Exception as e:
-        logger.error(f"❌ HTTP audio endpoint error: {e}")
-        return jsonify({'error': 'Server error'}), 500
+        logger.error(f"❌ HTTP transcription endpoint error: {e}")
+        return jsonify({
+            'error': 'Server error',
+            'details': str(e)
+        }), 500
 
 def transcribe_audio_sync(audio_data):
     """Enhanced audio transcription with monitoring recommendations implemented"""
@@ -123,8 +191,7 @@ def transcribe_audio_sync(audio_data):
                     url, 
                     headers=headers, 
                     files=files, 
-                    timeout=15,  # Increased timeout
-                    retry=3 if hasattr(requests, 'retry') else None
+                    timeout=15  # Increased timeout
                 )
             
             # Clean up temp file
