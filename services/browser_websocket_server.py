@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class BrowserWebSocketServer:
     """WebSocket server optimized specifically for browser connections."""
     
-    def __init__(self, host="0.0.0.0", port=8773, ssl_context=None):
+    def __init__(self, host="0.0.0.0", port=8774, ssl_context=None):  # Changed default port
         self.host = host
         self.port = port
         self.ssl_context = ssl_context
@@ -318,8 +318,30 @@ def start_browser_websocket_server():
                 logger.warning(f"⚠️ SSL context creation failed: {e}")
                 ssl_context = None
         
-        browser_server = BrowserWebSocketServer(ssl_context=ssl_context)
-        browser_server.run_forever()
+        # MANUAL MONITORING RECOMMENDATION: Try multiple ports to avoid conflicts
+        ports_to_try = [8774, 8775, 8776, 8777]
+        server_started = False
+        
+        for port in ports_to_try:
+            try:
+                logger.info(f"🔧 Attempting to start Enhanced WebSocket server on port {port}")
+                browser_server = BrowserWebSocketServer(port=port, ssl_context=ssl_context)
+                browser_server.run_forever()
+                server_started = True
+                break
+            except OSError as e:
+                if "Address already in use" in str(e):
+                    logger.warning(f"⚠️ Port {port} in use, trying next port...")
+                    continue
+                else:
+                    logger.error(f"❌ Failed to start server on port {port}: {e}")
+                    continue
+            except Exception as e:
+                logger.error(f"❌ Unexpected error on port {port}: {e}")
+                continue
+        
+        if not server_started:
+            logger.error("❌ Could not start Enhanced WebSocket server on any port")
     
     thread = threading.Thread(target=run_server, daemon=True, name="BrowserWebSocketServer")
     thread.start()

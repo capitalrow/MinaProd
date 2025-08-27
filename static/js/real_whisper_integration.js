@@ -25,18 +25,51 @@ class RealWhisperIntegration {
         try {
             console.log('🔗 Initializing real-time transcription connection...');
             
-            // MANUAL MONITORING RECOMMENDATION #1: Use existing WebSocket infrastructure 
-            // Connect to enhanced browser WebSocket server (port 8773)
+            // MANUAL MONITORING RECOMMENDATION #1: Smart port detection with fallback
+            // Try multiple ports to find working Enhanced WebSocket server
             
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const host = window.location.hostname;
-            const port = '8773';  // Enhanced WebSocket server port
-            const wsUrl = `${protocol}//${host}:${port}`;
+            const portsToTry = ['8774', '8775', '8776', '8773'];  // Try alternatives first
             
-            console.log(`Connecting to enhanced WebSocket server: ${wsUrl}`);
+            let connected = false;
+            for (const port of portsToTry) {
+                try {
+                    const wsUrl = `${protocol}//${host}:${port}`;
+                    console.log(`🔧 Attempting Enhanced WebSocket connection: ${wsUrl}`);
+                    
+                    this.socket = new WebSocket(wsUrl);
+                    
+                    // Test connection with timeout
+                    await new Promise((resolve, reject) => {
+                        const timeout = setTimeout(() => {
+                            reject(new Error(`Port ${port} timeout`));
+                        }, 2000);
+                        
+                        this.socket.onopen = () => {
+                            clearTimeout(timeout);
+                            console.log(`✅ Connected to Enhanced WebSocket on port ${port}`);
+                            connected = true;
+                            resolve();
+                        };
+                        
+                        this.socket.onerror = () => {
+                            clearTimeout(timeout);
+                            reject(new Error(`Port ${port} failed`));
+                        };
+                    });
+                    
+                    if (connected) break;
+                    
+                } catch (error) {
+                    console.warn(`⚠️ Port ${port} failed: ${error.message}`);
+                    continue;
+                }
+            }
             
-            // Create native WebSocket connection
-            this.socket = new WebSocket(wsUrl);
+            if (!connected) {
+                throw new Error('Enhanced WebSocket server not available on any port');
+            }
             
             // MANUAL MONITORING RECOMMENDATION #2: Enhanced WebSocket event handlers
             this.socket.onopen = () => {
