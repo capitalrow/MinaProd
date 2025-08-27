@@ -19,6 +19,7 @@ try:
     import openai
     OPENAI_AVAILABLE = True
 except ImportError:
+    openai = None  # Assign None to avoid unbound variable
     OPENAI_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
@@ -195,11 +196,16 @@ class WhisperStreamingService:
         self.result_callback: Optional[Callable[[TranscriptionResult], None]] = None
         
         # Initialize OpenAI client if available
+        self.client = None
         if OPENAI_AVAILABLE:
             api_key = self._get_api_key()
             if api_key:
-                self.client = openai.OpenAI(api_key=api_key)  # Fixed: Use OpenAI() instead of Client()
-                logger.info("OpenAI client initialized successfully")
+                try:
+                    self.client = openai.OpenAI(api_key=api_key)
+                    logger.info("OpenAI client initialized successfully")
+                except Exception as e:
+                    logger.error(f"Failed to initialize OpenAI client: {e}")
+                    self.client = None
             else:
                 logger.warning("OpenAI API key not found, using mock transcription")
         else:
@@ -874,6 +880,10 @@ class WhisperStreamingService:
         try:
             logger.info(f"🔄 FALLBACK TRANSCRIPTION: Trying alternative approach for session {session_id}")
             
+            if not self.client:
+                logger.error("🚨 FALLBACK FAILED: No OpenAI client available")
+                return None
+                
             with open(temp_path, 'rb') as audio_file:
                 # Try without language specification
                 response = self.client.audio.transcriptions.create(
