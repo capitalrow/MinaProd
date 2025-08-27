@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-08-27T18:36:22.963546",
+  "tests": [
+    {
+      "name": "Homepage",
+      "path": "/",
+      "status_code": 200,
+      "expected_status": 200,
+      "duration_ms": 198.77,
+      "success": true,
+      "content_length": 20095
+    },
+    {
+      "name": "Live Transcription Page",
+      "path": "/live",
+      "status_code": 200,
+      "expected_status": 200,
+      "duration_ms": 11.09,
+      "success": true,
+      "content_length": 17872
+    },
+    {
+      "name": "Stats API",
+      "path": "/api/stats",
+      "status_code": 200,
+      "expected_status": 200,
+      "duration_ms": 178.95,
+      "success": true,
+      "content_length": 1332
+    }
+  ]
+}

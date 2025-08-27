@@ -54,6 +54,11 @@ Requires-Dist: pyjwt>=2.10.1
 Requires-Dist: flask-login>=0.6.3
 Requires-Dist: aiohttp>=3.12.15
 Requires-Dist: websockets>=15.0.1
+Requires-Dist: socketio>=0.2.1
+Requires-Dist: playwright>=1.54.0
+Requires-Dist: pytest-asyncio>=1.1.0
+Requires-Dist: pytest-html>=4.1.1
+Requires-Dist: pytest-xvfb>=3.1.1
 Provides-Extra: dev
 Requires-Dist: pytest>=7.4.0; extra == "dev"
 Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
