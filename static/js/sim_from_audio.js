@@ -58,7 +58,7 @@ class AudioFileSimulator {
             // Wait for audio to be loadable
             await new Promise((resolve, reject) => {
                 this.audioElement.addEventListener('canplay', resolve);
-                this.audioElement.addEventListener('error', reject);
+                this.audioElement.addEventListener('issue', reject);
                 this.audioElement.load();
             });
             

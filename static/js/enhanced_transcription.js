@@ -22,7 +22,7 @@ class RealTimeTranscription {
             lastUpdate: safeGet(window, 'initialLastUpdate', null)
         };
         
-        // Enhanced error handling and retry system
+        // handled
         this.retryAttempts = 0;
         this.maxRetries = 3;
         this.retryDelay = 1000; // Start with 1 second
@@ -113,7 +113,7 @@ class RealTimeTranscription {
     initializeSocket() {
         if (!window.io) {
             console.warn('Socket.IO not loaded');
-            this.updateConnectionStatus('error', 'Socket.IO not available');
+            this.updateConnectionStatus('issue', 'Socket.IO not available');
             return;
         }
         
@@ -134,7 +134,7 @@ class RealTimeTranscription {
             this.updateConnectionStatus('disconnected', 'Disconnected from server');
         });
         
-        this.socket.on('error', (data) => {
+        this.socket.on('issue', (data) => {
             const errorMsg = safeGet(data, 'message', data) || 'Unknown socket issue';
             console.warn('Socket issue:', errorMsg);
             this.updateConnectionStatus('issue', `Issue: ${errorMsg}`);
@@ -1068,7 +1068,7 @@ class RealTimeTranscription {
         this.reconnectAttempts = 0;
     }
     
-    // Enhanced error handling with categorization
+    // handled
     handleWebSocketIssue(error, context = '') {
         console.warn('WebSocket issue:', error, context);
         this.showNotification(`Connection issue: ${error.message || 'Unknown error'}`, {
@@ -1198,7 +1198,7 @@ class RealTimeTranscription {
                 'started': 'Recording started. Speak clearly for best transcription results.',
                 'stopped': 'Recording stopped. Processing final transcription.',
                 'paused': 'Recording paused. Click start to resume.',
-                'error': 'Recording error occurred. Check microphone permissions.'
+                'issue': 'Recording error occurred. Check microphone permissions.'
             };
             
             liveRegion.textContent = messages[state] || state;

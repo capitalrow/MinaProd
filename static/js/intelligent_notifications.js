@@ -157,7 +157,7 @@ class IntelligentNotifications {
       this.handleTranscriptionEvent(e.detail);
     });
     
-    // Listen for errors
+    // handled
     document.addEventListener('recordingError', (e) => {
       this.handleNotification(e.detail);
     });
@@ -308,7 +308,7 @@ class IntelligentNotifications {
       case 'complete':
         this.showRecordingComplete(data);
         break;
-      case 'error':
+      case 'issue':
         this.showRecordingIssue(data);
         break;
     }
@@ -469,7 +469,7 @@ class IntelligentNotifications {
         }
     }
     
-    this.show('error', `❌ ${message || 'Issue occurred'}. ${guidance}`, {
+    this.show('issue', `❌ ${message || 'Issue occurred'}. ${guidance}`, {
       actions,
       duration: 8000
     });

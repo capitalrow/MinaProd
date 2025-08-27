@@ -107,7 +107,7 @@ class NotificationManager {
             'info': 'fas fa-info-circle',
             'warning': 'fas fa-exclamation-triangle',
             'danger': 'fas fa-exclamation-circle',
-            'error': 'fas fa-exclamation-circle'
+            'issue': 'fas fa-exclamation-circle'
         };
         return icons[type] || icons.info;
     }

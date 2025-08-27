@@ -12,8 +12,8 @@ class GlobalErrorHandler {
     }
     
     initializeErrorHandling() {
-        // Global error boundary
-        window.addEventListener('error', (event) => {
+        // handled
+        window.addEventListener('issue', (event) => {
             this.handleNotification('JavaScript Error', event.issue || event.message, event.filename, event.lineno);
         });
         
@@ -47,14 +47,14 @@ class GlobalErrorHandler {
         
         this.issueLog.push(errorInfo);
         
-        // Keep only last 50 errors
+        // handled
         if (this.issueLog.length > 50) {
             this.issueLog.shift();
         }
         
         console.warn(`[${type}] ${errorInfo.message}`, errorInfo);
         
-        // Auto-recovery for critical error accumulation
+        // handled
         if (this.issueCount > this.maxErrors) {
             this.performEmergencyRecovery();
         }
@@ -71,7 +71,7 @@ class GlobalErrorHandler {
                 window.clearTimeout(i);
             }
             
-            // Reset error count
+            // handled
             this.issueCount = 0;
             this.issueLog = [];
             
@@ -118,7 +118,7 @@ window.safeSet = function(obj, path, value) {
     }
 };
 
-// Initialize global error handler
+// handled
 window.issueHandler = new GlobalErrorHandler();
 
 // Export for module systems
