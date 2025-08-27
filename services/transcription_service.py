@@ -102,6 +102,9 @@ class TranscriptionService:
         from .audio_quality_analyzer import AudioQualityAnalyzer, QualityEnhancementConfig
         from .performance_optimizer import PerformanceOptimizer, ResourceLimits
         
+        # Import app and db for database operations with context management
+        from app import db
+        
         self.config = config or TranscriptionServiceConfig()
         
         # 🔥 INT-LIVE-I3: Session-level interim throttling and metrics
@@ -388,7 +391,11 @@ class TranscriptionService:
             raise Exception(f"Maximum concurrent sessions ({self.config.max_concurrent_sessions}) reached")
         
         # Create database session - FIXED model fields
-        db_session = Session(
+        def get_session_model():
+            from models.session import Session
+            return Session
+        
+        db_session = get_session_model()(
             external_id=session_id,  # FIXED: Use external_id instead of session_id
             title="Transcription Session",
             status='active',  # FIXED: Use 'active' instead of 'created'  
@@ -503,7 +510,11 @@ class TranscriptionService:
             raise Exception(f"Maximum concurrent sessions ({self.config.max_concurrent_sessions}) reached")
         
         # Create database session - FIXED model fields
-        db_session = Session(
+        def get_session_model():
+            from models.session import Session
+            return Session
+        
+        db_session = get_session_model()(
             external_id=session_id,  # FIXED: Use external_id instead of session_id
             title="Transcription Session",
             status='active',  # FIXED: Use 'active' instead of 'created'  

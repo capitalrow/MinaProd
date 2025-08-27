@@ -70,7 +70,6 @@ def create_app(config_class=Config):
     from routes.sharing import sharing_bp
     from routes.export import export_bp
     from routes.api_performance import api_performance
-    from routes.websocket import register_websocket_handlers
     
     app.register_blueprint(health_bp)
     app.register_blueprint(transcription_bp)
@@ -80,8 +79,12 @@ def create_app(config_class=Config):
     app.register_blueprint(export_bp)
     app.register_blueprint(api_performance)
     
-    # Register Socket.IO handlers
-    register_websocket_handlers(socketio)
+    # Register Socket.IO handlers with lazy import to prevent circular dependency
+    def register_websockets():
+        from routes.websocket import register_websocket_handlers
+        register_websocket_handlers(socketio)
+    
+    register_websockets()
     
     # 🔧 ACTIVATE EXISTING MONITORING SYSTEMS
     try:

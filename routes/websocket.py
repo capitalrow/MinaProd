@@ -311,7 +311,11 @@ def create_session(data):
         
         # Create database session
         import uuid
-        session = Session(
+        def get_session_model():
+            from models.session import Session
+            return Session
+        
+        session = get_session_model()(
             title=title,
             locale=language,
             external_id=str(uuid.uuid4())[:8]
