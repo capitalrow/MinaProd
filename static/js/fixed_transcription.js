@@ -14,6 +14,8 @@ class FixedMinaTranscription {
         this.chunkCount = 0;
         this.cumulativeText = '';
         this.totalWords = 0;
+        this.contextBuffer = '';  // GOOGLE-QUALITY: Context across chunks
+        this.lastTranscriptTime = 0;
         this.audioContext = null;
         this.analyser = null;
         this.lastDataAvailableTime = null;
@@ -119,15 +121,16 @@ class FixedMinaTranscription {
             this.chunkCount = 0;
             this.lastDataAvailableTime = Date.now();
             
-            // RESEARCH FIX 2: Enhanced microphone request with error handling
+            // GOOGLE-QUALITY FIX: Enhanced audio capture with professional settings
             try {
                 this.mediaStream = await navigator.mediaDevices.getUserMedia({
                     audio: {
+                        // Professional audio settings to match Google quality
+                        sampleRate: 16000,
+                        channelCount: 1,
                         echoCancellation: true,
                         noiseSuppression: true,
-                        autoGainControl: true,
-                        sampleRate: 16000,
-                        channelCount: 1
+                        autoGainControl: true
                     }
                 });
             } catch (mediaError) {

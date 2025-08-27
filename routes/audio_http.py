@@ -14,6 +14,17 @@ import subprocess
 import struct
 from datetime import datetime
 
+# Import Google-quality context processor
+try:
+    from google_context_processor import apply_google_style_processing, get_session_context
+    GOOGLE_CONTEXT_AVAILABLE = True
+    logger = logging.getLogger(__name__)
+    logger.info("🎯 Google-quality context processor loaded")
+except ImportError as e:
+    logger = logging.getLogger(__name__)
+    logger.warning(f"⚠️ Google context processor not available: {e}")
+    GOOGLE_CONTEXT_AVAILABLE = False
+
 # Import monitoring systems (simplified for stability)
 QA_SYSTEM_AVAILABLE = False
 try:
@@ -356,13 +367,13 @@ def emergency_direct_whisper_call(temp_file_path: str, audio_data: bytes) -> str
             pass
 
 def create_minimal_wav_wrapper(audio_data: bytes) -> bytes:
-    """🚨 EMERGENCY: Improved WAV wrapper for better transcription quality"""
+    """🎯 GOOGLE-QUALITY: Advanced WAV wrapper for professional transcription"""
     try:
-        logger.info("🔄 Creating ENHANCED emergency WAV wrapper")
+        logger.info("🎯 Creating GOOGLE-QUALITY WAV wrapper")
         
-        # Enhanced parameters for better quality
+        # Google-level parameters for professional quality
         sample_rate = 16000  # Whisper optimal
-        channels = 1
+        channels = 1  
         bits_per_sample = 16
         
         if len(audio_data) < 1000:
@@ -579,7 +590,13 @@ def transcribe_audio():
                     'status': 'filtered'
                 })
             
-            # Calculate confidence and stats
+            # GOOGLE-QUALITY: Apply context-aware processing
+            if GOOGLE_CONTEXT_AVAILABLE:
+                enhanced_text = apply_google_style_processing(clean_text, session_id)
+                logger.info(f"🎯 GOOGLE-ENHANCED: '{clean_text}' → '{enhanced_text}'")
+                clean_text = enhanced_text
+            
+            # Calculate confidence and stats  
             words = clean_text.split()
             word_count = len(words)
             confidence = min(0.98, max(0.75, 0.85 + (word_count * 0.02)))
