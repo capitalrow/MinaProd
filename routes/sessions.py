@@ -65,7 +65,7 @@ def list_sessions():
         })
     
     # Return HTML template for browser requests
-    return render_template('sessions_list.html', 
+    return render_template('sessions_professional.html', 
                          sessions=sessions,
                          query=q, 
                          status=status,

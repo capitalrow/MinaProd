@@ -56,7 +56,7 @@ def index():
         stats = SessionService.get_session_stats()
         stats['total_duration_hours'] = 0.0  # Placeholder for now
         
-        return render_template('dashboard_professional.html', 
+        return render_template('index_professional.html', 
                              recent_sessions=recent_sessions,
                              stats=stats)
     
