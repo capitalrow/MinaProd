@@ -6,7 +6,8 @@ Modified for better Gunicorn compatibility
 import os
 import logging
 from flask import Flask
-from flask_socketio import SocketIO
+# Temporarily disabled Socket.IO to resolve conflicts
+# from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -26,13 +27,19 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 
-# Basic Socket.IO configuration for immediate compatibility
-socketio = SocketIO(
-    cors_allowed_origins="*",
-    async_mode='eventlet',
-    transports=['polling', 'websocket'],
-    max_http_buffer_size=1000000
-)
+# Native WebSocket Server Integration
+from services.native_websocket_server import start_native_websocket_server_thread
+from routes.native_websocket_routes import register_native_websocket_routes
+
+# Start native WebSocket server in background thread
+try:
+    start_native_websocket_server_thread()
+    logger.info("✅ Native WebSocket server started successfully")
+except Exception as e:
+    logger.error(f"❌ Failed to start native WebSocket server: {e}")
+
+# Native WebSocket implementation only - Socket.IO disabled for testing
+socketio = None  # Temporarily disabled to resolve import conflicts
 
 def create_app(config_class=Config):
     """
@@ -120,7 +127,8 @@ def create_app(config_class=Config):
     
     # Initialize extensions
     db.init_app(app)
-    socketio.init_app(app)
+    # socketio disabled for native WebSocket testing
+    # socketio.init_app(app)
     
     # Register blueprints
     from routes.health import health_bp
@@ -139,12 +147,19 @@ def create_app(config_class=Config):
     app.register_blueprint(export_bp)
     app.register_blueprint(api_performance)
     
-    # Register Socket.IO handlers with lazy import to prevent circular dependency
-    def register_websockets():
-        from routes.websocket import register_websocket_handlers
-        register_websocket_handlers(socketio)
+    # Register native WebSocket routes
+    try:
+        from routes.native_websocket_routes import register_native_websocket_routes
+        register_native_websocket_routes(app)
+        logger.info("✅ Native WebSocket routes registered")
+    except Exception as e:
+        logger.error(f"❌ Failed to register native WebSocket routes: {e}")
     
-    register_websockets()
+    # Socket.IO handlers disabled for native WebSocket testing
+    # def register_websockets():
+    #     from routes.websocket import register_websocket_handlers
+    #     register_websocket_handlers(socketio)
+    # register_websockets()
     
     # 🔧 ACTIVATE EXISTING MONITORING SYSTEMS
     try:

@@ -7,10 +7,10 @@ actions, decisions, and risks extracted from session transcripts.
 
 import logging
 from flask import Blueprint, request, jsonify, current_app
-from flask_socketio import emit
+# from flask_socketio import emit  # Disabled for native WebSocket testing
 
 from services.analysis_service import AnalysisService
-from app import socketio
+# from app import socketio  # Disabled for native WebSocket testing
 
 logger = logging.getLogger(__name__)
 
@@ -126,10 +126,7 @@ def trigger_auto_summary(session_id: int):
         summary_data = AnalysisService.generate_summary(session_id)
         
         # Emit event to notify clients that summary is ready
-        socketio.emit('summary_generated', {
-            'session_id': session_id,
-            'summary_id': summary_data['id']
-        }, room=f'session_{session_id}')
+        # socketio.emit('summary_generated', { 'session_id': session_id, 'summary_id': summary_data['id'] }, room=f'session_{session_id}')  # Disabled
         
         logger.info(f"Auto-summary {summary_data['id']} generated for session {session_id}")
         
@@ -137,7 +134,4 @@ def trigger_auto_summary(session_id: int):
         logger.error(f"Auto-summary generation failed for session {session_id}: {e}")
         
         # Emit error event
-        socketio.emit('summary_error', {
-            'session_id': session_id,
-            'error': 'Failed to auto-generate summary'
-        }, room=f'session_{session_id}')
+        # socketio.emit('summary_error', { 'session_id': session_id, 'error': 'Failed to auto-generate summary' }, room=f'session_{session_id}')  # Disabled
