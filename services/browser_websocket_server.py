@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Browser WebSocket Server - Optimized specifically for browser compatibility
+Browser WebSocket Server - Real-time transcription with OpenAI Whisper API
 Uses minimal WebSocket implementation designed for browser connections
 """
 
@@ -11,7 +11,12 @@ import logging
 import time
 import uuid
 import threading
+import os
+import io
+import tempfile
 from datetime import datetime
+import openai
+from pydub import AudioSegment
 
 logger = logging.getLogger(__name__)
 
@@ -91,38 +96,163 @@ class BrowserWebSocketServer:
             }))
     
     async def handle_browser_audio(self, websocket, client_id, audio_data):
-        """Handle audio data from browser MediaRecorder."""
+        """Handle audio data from browser MediaRecorder with real Whisper API transcription and instant feedback."""
         session_id = self.sessions.get(client_id, 'unknown')
         timestamp = datetime.now().strftime('%H:%M:%S')
         audio_size = len(audio_data)
         
         logger.info(f"🎵 Received browser audio: {audio_size} bytes from {client_id}")
         
-        # Generate mock transcription for immediate feedback
-        mock_responses = [
-            "Hello, this is working perfectly!",
-            "Browser audio transcription is functioning.",
-            "Your microphone input is being processed.",
-            "Real-time WebSocket transcription active.",
-            "Audio chunks successfully received and processed."
-        ]
+        # Skip very small audio chunks to reduce API calls
+        if audio_size < 1024:
+            logger.debug(f"⏭️ Skipping small audio chunk: {audio_size} bytes")
+            return
         
-        import random
-        text = random.choice(mock_responses)
-        is_final = audio_size > 500  # Larger chunks are considered final
-        
-        # Send transcription back to browser
-        transcription = {
+        # Send immediate interim feedback for excellent latency
+        interim_response = {
             'type': 'transcription_result',
             'session_id': session_id,
-            'text': f"[{timestamp}] {text} (Audio: {audio_size} bytes)",
-            'is_final': is_final,
-            'confidence': 0.95,
-            'timestamp': time.time()
+            'text': "🎙️ Processing audio...",
+            'is_final': False,
+            'confidence': 0.1,
+            'timestamp': time.time(),
+            'processing': True
         }
+        await websocket.send(json.dumps(interim_response))
         
-        await websocket.send(json.dumps(transcription))
-        logger.info(f"📝 Sent browser transcription: {text[:30]}...")
+        try:
+            # Process audio with real OpenAI Whisper API
+            transcription_text = await self.transcribe_audio_real(audio_data)
+            
+            if transcription_text and transcription_text.strip():
+                is_final = audio_size > 2048
+                confidence = 0.95
+                
+                # Send real transcription result
+                final_response = {
+                    'type': 'transcription_result',
+                    'session_id': session_id,
+                    'text': transcription_text.strip(),
+                    'is_final': is_final,
+                    'confidence': confidence,
+                    'timestamp': time.time(),
+                    'audio_duration': audio_size,
+                    'processing': False
+                }
+                
+                await websocket.send(json.dumps(final_response))
+                logger.info(f"📝 Real transcription sent: {transcription_text[:50]}...")
+            else:
+                # No speech detected - send feedback
+                no_speech_response = {
+                    'type': 'transcription_result',
+                    'session_id': session_id,
+                    'text': "[No speech detected]",
+                    'is_final': False,
+                    'confidence': 0.0,
+                    'timestamp': time.time(),
+                    'processing': False
+                }
+                await websocket.send(json.dumps(no_speech_response))
+                logger.debug("🔇 No speech detected in audio chunk")
+                
+        except Exception as e:
+            logger.error(f"❌ Transcription error: {e}")
+            # Send error feedback
+            error_response = {
+                'type': 'transcription_result',
+                'session_id': session_id,
+                'text': f"[Audio processing temporarily unavailable]",
+                'is_final': False,
+                'confidence': 0.0,
+                'timestamp': time.time(),
+                'processing': False
+            }
+            await websocket.send(json.dumps(error_response))
+    
+    async def transcribe_audio_real(self, audio_data):
+        """Transcribe audio using OpenAI Whisper API with optimized audio processing."""
+        try:
+            # Check if audio data looks like valid WebM
+            if len(audio_data) < 50 or not self.is_valid_webm(audio_data):
+                logger.debug(f"⚠️ Audio data doesn't appear to be valid WebM format")
+                return None
+            
+            # Save audio data to temporary file
+            with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_file:
+                temp_file.write(audio_data)
+                temp_webm_path = temp_file.name
+            
+            # Convert to WAV using ffmpeg directly for better compatibility
+            wav_path = temp_webm_path.replace('.webm', '.wav')
+            
+            try:
+                # Use ffmpeg to convert WebM to WAV with optimal settings for Whisper
+                import subprocess
+                ffmpeg_cmd = [
+                    'ffmpeg', '-i', temp_webm_path,
+                    '-ar', '16000',  # 16kHz sample rate
+                    '-ac', '1',      # Mono channel
+                    '-c:a', 'pcm_s16le',  # 16-bit PCM
+                    '-y',            # Overwrite output
+                    wav_path
+                ]
+                
+                result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=10)
+                
+                if result.returncode != 0:
+                    logger.error(f"❌ FFmpeg conversion failed: {result.stderr}")
+                    return None
+                
+                # Check if WAV file was created and has content
+                if not os.path.exists(wav_path) or os.path.getsize(wav_path) < 1000:
+                    logger.debug(f"⚠️ WAV conversion produced empty or small file")
+                    return None
+                
+                # Read the converted WAV file
+                with open(wav_path, 'rb') as wav_file:
+                    wav_data = wav_file.read()
+                
+                # Set up OpenAI client
+                client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+                
+                # Call Whisper API with optimized settings
+                response = client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=("audio.wav", wav_data, "audio/wav"),
+                    language="en",
+                    prompt="Transcribe this speech clearly and accurately.",
+                    temperature=0.0
+                )
+                
+                return response.text
+                
+            finally:
+                # Clean up temporary files
+                for path in [temp_webm_path, wav_path]:
+                    if os.path.exists(path):
+                        try:
+                            os.unlink(path)
+                        except:
+                            pass
+                            
+        except Exception as e:
+            logger.error(f"❌ Real transcription error: {e}")
+            return None
+    
+    def is_valid_webm(self, audio_data):
+        """Check if audio data appears to be valid WebM format."""
+        # WebM files typically start with EBML header
+        webm_signatures = [
+            b'\x1A\x45\xDF\xA3',  # EBML header
+            b'webm',              # WebM string
+            b'Opus',              # Opus codec
+            b'OpusHead'           # Opus header
+        ]
+        
+        # Check for any WebM signature in the first 200 bytes
+        header = audio_data[:200]
+        return any(sig in header for sig in webm_signatures)
     
     async def start_server(self):
         """Start the browser-optimized WebSocket server."""

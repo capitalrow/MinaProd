@@ -87,6 +87,16 @@
         }
         .interim-text { color: #ffd700; opacity: 0.8; }
         .final-text { color: #ffffff; font-weight: 500; }
+        .processing-text { 
+            color: #ffc107; 
+            font-style: italic; 
+            animation: pulse 1s infinite; 
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
         .timestamp { color: #a0a0a0; font-size: 12px; margin-right: 10px; }
         
         .debug-panel {
@@ -305,19 +315,39 @@
             this.elements.transcriptSegments.textContent = this.transcriptSegmentCount;
             
             const timestamp = new Date().toLocaleTimeString();
-            const cssClass = data.is_final ? 'final-text' : 'interim-text';
             const confidence = Math.round(data.confidence * 100);
             
-            // Add to transcript
+            // Handle different types of transcription responses
+            let cssClass, displayText;
+            
+            if (data.processing) {
+                // Interim processing message
+                cssClass = 'processing-text';
+                displayText = data.text;
+            } else if (data.is_final) {
+                // Final transcription result
+                cssClass = 'final-text';
+                displayText = data.text;
+            } else {
+                // Interim or partial result
+                cssClass = 'interim-text';
+                displayText = data.text;
+            }
+            
+            // Add to transcript with enhanced styling
+            const statusIcon = data.processing ? '🎙️' : (data.is_final ? '✅' : '📝');
             const transcriptLine = `<div class="${cssClass}">` +
                 `<span class="timestamp">[${timestamp}]</span>` +
-                `${data.text} <small>(${confidence}% confidence, ${Math.round(latency)}ms latency)</small>` +
+                `${statusIcon} ${displayText} ` +
+                `<small>(${confidence}% confidence, ${Math.round(latency)}ms latency)</small>` +
                 `</div>`;
             
             this.elements.transcript.innerHTML += transcriptLine;
             this.elements.transcript.scrollTop = this.elements.transcript.scrollHeight;
             
-            this.logDebug(`📝 Transcription: "${data.text}" (${data.is_final ? 'final' : 'interim'})`, 'success');
+            // Enhanced logging for real transcription
+            const resultType = data.processing ? 'processing' : (data.is_final ? 'final' : 'interim');
+            this.logDebug(`📝 ${resultType}: "${data.text}"`, 'success');
         }
         
         async startRecording() {
@@ -340,10 +370,19 @@
                     session_id: this.sessionId
                 }));
                 
-                // Setup MediaRecorder
-                this.mediaRecorder = new MediaRecorder(stream, {
-                    mimeType: 'audio/webm;codecs=opus'
-                });
+                // Setup MediaRecorder with optimized settings for transcription
+                const options = {
+                    mimeType: 'audio/webm;codecs=opus',
+                    audioBitsPerSecond: 128000  // Higher quality for better transcription
+                };
+                
+                // Fallback for browsers that don't support webm/opus
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options.mimeType = 'audio/webm';
+                    this.logDebug('⚠️ Opus not supported, using default WebM', 'warning');
+                }
+                
+                this.mediaRecorder = new MediaRecorder(stream, options);
                 
                 this.startTime = performance.now();
                 this.audioChunkCount = 0;
@@ -365,7 +404,7 @@
                     }
                 };
                 
-                this.mediaRecorder.start(250); // 250ms chunks for low latency
+                this.mediaRecorder.start(1000); // 1000ms chunks for optimal API transcription
                 this.isRecording = true;
                 
                 this.elements.recordBtn.disabled = true;
