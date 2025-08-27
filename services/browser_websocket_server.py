@@ -67,10 +67,12 @@ class BrowserWebSocketServer:
                                 'client_id': client_id,
                                 'timestamp': time.time()
                             }))
-                    else:
-                        # Binary audio data from MediaRecorder
-                        logger.debug(f"🎵 Binary audio: {len(message)} bytes from {client_id}")
+                    elif isinstance(message, bytes):
+                        # Binary audio data from MediaRecorder - CRITICAL FIX
+                        logger.debug(f"🎵 Binary audio detected: {len(message)} bytes from {client_id}")
                         await self.handle_browser_audio(websocket, client_id, message)
+                    else:
+                        logger.warning(f"⚠️ Unknown message type from {client_id}: {type(message)}")
                         
                 except Exception as e:
                     logger.error(f"❌ Message processing error for {client_id}: {e}")
