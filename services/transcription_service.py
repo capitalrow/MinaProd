@@ -105,6 +105,10 @@ class TranscriptionService:
         # Import app and db for database operations with context management
         from app import db
         
+        # Initialize memory management
+        self._last_cleanup = time.time()
+        self._cleanup_interval = 300  # 5 minutes
+        
         self.config = config or TranscriptionServiceConfig()
         
         # 🔥 INT-LIVE-I3: Session-level interim throttling and metrics
@@ -1749,3 +1753,42 @@ class TranscriptionService:
             'timestamp': now,
             'session_id': session_id
         }
+    
+    def cleanup_memory(self):
+        """Aggressive memory cleanup for optimal performance."""
+        import gc
+        import time
+        
+        current_time = time.time()
+        
+        # Clean up inactive sessions (older than 5 minutes)
+        inactive_sessions = [
+            sid for sid, data in self.active_sessions.items() 
+            if current_time - data.get('last_activity', 0) > 300
+        ]
+        
+        for sid in inactive_sessions:
+            try:
+                self.end_session(sid)
+                logger.info(f"Cleaned up inactive session: {sid}")
+            except Exception as e:
+                logger.warning(f"Error cleaning session {sid}: {e}")
+        
+        # Clear audio processor buffers
+        if hasattr(self, 'audio_processor') and hasattr(self.audio_processor, 'clear_buffers'):
+            try:
+                self.audio_processor.clear_buffers()
+            except Exception as e:
+                logger.warning(f"Error clearing audio buffers: {e}")
+        
+        # Force garbage collection
+        collected = gc.collect()
+        
+        self._last_cleanup = current_time
+        logger.info(f"Memory cleanup completed: {collected} objects collected, {len(inactive_sessions)} sessions cleaned")
+    
+    def ensure_memory_optimization(self):
+        """Ensure memory optimization is running."""
+        current_time = time.time()
+        if current_time - self._last_cleanup > self._cleanup_interval:
+            self.cleanup_memory()
