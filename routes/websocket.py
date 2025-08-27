@@ -15,6 +15,7 @@ from services.audio_io import decode_audio_b64, AudioChunkTooLarge, AudioChunkDe
 from services.live_session_monitor import live_monitor
 from services.adaptive_performance_enhancer import adaptive_enhancer
 from services.advanced_optimization_engine import advanced_optimization_engine
+from services.self_healing_optimizer import self_healing_optimizer
 # FIXED: Lazy import to prevent circular dependency
 # from services.transcription_service import TranscriptionService
 # from models.session import Session
