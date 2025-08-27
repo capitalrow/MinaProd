@@ -32,7 +32,10 @@ class RealWhisperIntegration {
             
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const host = window.location.hostname;
+            // CRITICAL FIX: Use same host as web page, not localhost
             const portsToTry = ['8774', '8775', '8776', '8773'];  // Try alternatives first
+            
+            console.log(`🔍 Connecting to host: ${host} (not localhost)`);
             
             let connected = false;
             for (const port of portsToTry) {
