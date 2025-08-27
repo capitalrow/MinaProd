@@ -215,7 +215,10 @@
             
             try {
                 // Connect to Browser WebSocket Server (optimized for browser compatibility)
-                const wsUrl = `ws://${window.location.hostname}:8771`;
+                // Use window.location.host to include port, then replace with WebSocket port
+                const host = window.location.hostname;
+                const wsUrl = `ws://${host}:8771`;
+                console.log(`🔗 WebSocket URL: ${wsUrl}`);
                 this.logDebug(`Connecting to: ${wsUrl}`, 'info');
                 
                 this.socket = new WebSocket(wsUrl);

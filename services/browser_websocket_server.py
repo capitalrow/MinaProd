@@ -25,7 +25,7 @@ class BrowserWebSocketServer:
         self.sessions = {}
         self.running = False
         
-    async def handle_client(self, websocket, path):
+    async def handle_client(self, websocket):
         """Handle a browser WebSocket connection."""
         client_id = str(uuid.uuid4())
         self.clients[client_id] = websocket
