@@ -23,8 +23,9 @@ if TYPE_CHECKING:
     from .confidence_scoring import AdvancedConfidenceScorer, ConfidenceConfig
     from .audio_quality_analyzer import AudioQualityAnalyzer, QualityEnhancementConfig
     from .performance_optimizer import PerformanceOptimizer, ResourceLimits
-from models.session import Session
-from models.segment import Segment
+# FIXED: Lazy import to prevent circular dependency
+# from models.session import Session
+# from models.segment import Segment
 from app import db
 from services.session_service import SessionService
 from datetime import datetime
@@ -1037,6 +1038,37 @@ class TranscriptionService:
         union = len(ngrams1.union(ngrams2))
         
         return intersection / union if union > 0 else 0.0
+    
+    def _create_wav_from_chunks(self, audio_chunks: List[bytes]) -> bytes:
+        """
+        CRITICAL FIX: Create WAV file from WebM audio chunks for Whisper API.
+        This method was missing and causing transcription failures.
+        """
+        try:
+            if not audio_chunks:
+                logger.warning("No audio chunks provided for WAV conversion")
+                return b''
+            
+            # Combine all audio chunks
+            combined_audio = b''.join(audio_chunks)
+            logger.info(f"🔄 Converting {len(audio_chunks)} chunks ({len(combined_audio)} bytes) to WAV format")
+            
+            # Use AudioProcessor for proper format conversion
+            processor = self.audio_processor
+            wav_audio = processor.convert_to_wav(
+                audio_data=combined_audio,
+                input_format='webm',
+                sample_rate=16000,
+                channels=1
+            )
+            
+            logger.info(f"✅ WAV conversion completed: {len(wav_audio)} bytes")
+            return wav_audio
+            
+        except Exception as e:
+            logger.error(f"🚨 Error converting audio chunks to WAV: {e}")
+            # Fallback: return combined raw audio
+            return b''.join(audio_chunks) if audio_chunks else b''
     
     def _on_transcription_result(self, result: 'TranscriptionResult'):
         """Handle transcription result callback with critical quality filtering."""
