@@ -32,14 +32,15 @@ from services.native_websocket_server import start_native_websocket_server_threa
 from routes.native_websocket_routes import register_native_websocket_routes
 from routes.sync_websocket_routes import register_sync_websocket_routes
 from routes.library_websocket_routes import register_library_websocket_routes
+from routes.browser_websocket_routes import register_browser_websocket_routes
 
-# Start WebSocket Library Server for maximum browser compatibility
+# Start Browser WebSocket Server for guaranteed browser compatibility
 try:
-    from services.websockets_library_server import start_websocket_library_server
-    start_websocket_library_server()
-    logger.info("✅ WebSocket Library Server started successfully")
+    from services.browser_websocket_server import start_browser_websocket_server
+    start_browser_websocket_server()
+    logger.info("✅ Browser WebSocket Server started successfully")
 except Exception as e:
-    logger.error(f"❌ Failed to start WebSocket Library Server: {e}")
+    logger.error(f"❌ Failed to start Browser WebSocket Server: {e}")
 
 # Native WebSocket implementation only - Socket.IO disabled for testing
 socketio = None  # Temporarily disabled to resolve import conflicts
@@ -156,6 +157,7 @@ def create_app(config_class=Config):
         register_native_websocket_routes(app)
         register_sync_websocket_routes(app)
         register_library_websocket_routes(app)
+        register_browser_websocket_routes(app)
         logger.info("✅ WebSocket routes registered")
     except Exception as e:
         logger.error(f"❌ Failed to register WebSocket routes: {e}")

@@ -151,17 +151,20 @@ class WebSocketLibraryServer:
             server = await self.start_server()
             await server.wait_closed()
         
-        # Set up event loop for this thread
+        # Set up event loop for this thread with better error handling
         try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
+            # Always create a new event loop for the thread
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-        
-        try:
+            
+            logger.info("🔧 Starting WebSocket server in dedicated thread")
             loop.run_until_complete(run())
         except Exception as e:
             logger.error(f"❌ Server error: {e}")
+            import traceback
+            logger.error(f"📋 Full traceback: {traceback.format_exc()}")
+        finally:
+            loop.close()
 
 # Global server instance
 library_server = None

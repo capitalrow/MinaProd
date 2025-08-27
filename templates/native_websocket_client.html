@@ -214,8 +214,8 @@
             this.connectionStartTime = performance.now();
             
             try {
-                // Connect to WebSocket Library Server (100% browser compatible)
-                const wsUrl = `ws://${window.location.hostname}:8770`;
+                // Connect to Browser WebSocket Server (optimized for browser compatibility)
+                const wsUrl = `ws://${window.location.hostname}:8771`;
                 this.logDebug(`Connecting to: ${wsUrl}`, 'info');
                 
                 this.socket = new WebSocket(wsUrl);
