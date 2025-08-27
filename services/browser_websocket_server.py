@@ -133,9 +133,9 @@ class BrowserWebSocketServer:
         
         logger.info(f"🎵 Received browser audio: {audio_size} bytes from {client_id}")
         
-        # Skip very small audio chunks to reduce API calls
-        if audio_size < 1024:
-            logger.debug(f"⏭️ Skipping small audio chunk: {audio_size} bytes")
+        # Skip only extremely small audio chunks to reduce API calls
+        if audio_size < 100:
+            logger.debug(f"⏭️ Skipping tiny audio chunk: {audio_size} bytes")
             return
         
         # Send immediate interim feedback for excellent latency
@@ -271,18 +271,29 @@ class BrowserWebSocketServer:
             return None
     
     def is_valid_webm(self, audio_data):
-        """Check if audio data appears to be valid WebM format."""
-        # WebM files typically start with EBML header
-        webm_signatures = [
-            b'\x1A\x45\xDF\xA3',  # EBML header
+        """Check if audio data appears to be valid audio format (WebM, WAV, or other)."""
+        # Support multiple audio formats from browsers
+        audio_signatures = [
+            b'\x1A\x45\xDF\xA3',  # EBML header (WebM)
             b'webm',              # WebM string
             b'Opus',              # Opus codec
-            b'OpusHead'           # Opus header
+            b'OpusHead',          # Opus header
+            b'RIFF',              # WAV/WEBM RIFF header
+            b'ftyp',              # MP4/M4A header
+            b'OggS',              # Ogg container
+            b'\xFF\xFB',          # MP3 header (variable bitrate)
+            b'\xFF\xF3',          # MP3 header (fixed bitrate)
+            b'\xFF\xF2'           # MP3 header (Layer III)
         ]
         
-        # Check for any WebM signature in the first 200 bytes
-        header = audio_data[:200]
-        return any(sig in header for sig in webm_signatures)
+        # Check for any audio signature in the first 300 bytes
+        header = audio_data[:300]
+        
+        # Also accept if it looks like binary audio data (has reasonable size and variety)
+        has_audio_signature = any(sig in header for sig in audio_signatures)
+        looks_like_audio = len(audio_data) > 50 and len(set(audio_data[:100])) > 10
+        
+        return has_audio_signature or looks_like_audio
     
     async def start_server(self):
         """Start the browser-optimized WebSocket server."""

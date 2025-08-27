@@ -689,18 +689,17 @@
 <script src="/static/js/intelligent_notifications.js"></script>
 <script src="/static/js/mobile_gestures.js"></script>
 
-<!-- Final Integration System -->
-<script src="/static/js/industry_standards_integration.js"></script>
-
-<!-- CRITICAL FIX: Completely disable competing systems -->
-<!-- recording_wiring.js DISABLED to prevent conflicts -->
-<!-- sim_from_audio.js DISABLED to prevent conflicts -->
+<!-- CRITICAL FIX: Disable competing systems BEFORE loading Real Whisper Integration -->
 <script>
 // OVERRIDE: Disable competing transcription systems completely
 window.DISABLE_RECORDING_WIRING = true;
 window.DISABLE_PROFESSIONAL_RECORDER = true;
 window.FORCE_REAL_WHISPER_INTEGRATION = true;
+console.log('🎯 Competing systems disabled, preparing for Real Whisper Integration');
 </script>
+
+<!-- Final Integration System - load AFTER disabling competing systems -->
+<script src="/static/js/industry_standards_integration.js"></script>
 
 <!-- Enhanced Features Inline JavaScript for 100% Effectiveness -->
 <script>
