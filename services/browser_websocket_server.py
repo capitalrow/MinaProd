@@ -32,43 +32,70 @@ class BrowserWebSocketServer:
         self.running = False
         
     async def handle_client(self, websocket):
-        """Handle a browser WebSocket connection."""
+        """Handle Enhanced WebSocket connection with robust protocol handling."""
         client_id = str(uuid.uuid4())
         self.clients[client_id] = websocket
         
-        logger.info(f"🌐 Browser client connected: {client_id}")
+        logger.info(f"🌐 Enhanced WebSocket client connected: {client_id}")
         
         try:
-            # Send immediate welcome message
+            # Send enhanced welcome message
             welcome = {
                 'type': 'connected',
                 'client_id': client_id,
                 'server_time': time.time(),
-                'message': 'Browser WebSocket Server Ready'
+                'server': 'Enhanced WebSocket Server v2.0',
+                'protocol': 'mixed_json_binary',
+                'message': 'Ready for real-time transcription'
             }
             await websocket.send(json.dumps(welcome))
             
-            # Handle messages from browser
+            # Handle messages from browser with enhanced error recovery
             async for message in websocket:
                 try:
                     if isinstance(message, str):
-                        # JSON message from browser
-                        data = json.loads(message)
-                        await self.handle_browser_message(websocket, client_id, data)
+                        # JSON control messages (session join, ping, etc.)
+                        try:
+                            data = json.loads(message)
+                            logger.debug(f"📨 JSON message: {data.get('type', 'unknown')} from {client_id}")
+                            await self.handle_browser_message(websocket, client_id, data)
+                        except json.JSONDecodeError as e:
+                            logger.error(f"❌ Invalid JSON from {client_id}: {e}")
+                            await websocket.send(json.dumps({
+                                'type': 'error',
+                                'message': 'Invalid JSON format',
+                                'client_id': client_id,
+                                'timestamp': time.time()
+                            }))
                     else:
                         # Binary audio data from MediaRecorder
+                        logger.debug(f"🎵 Binary audio: {len(message)} bytes from {client_id}")
                         await self.handle_browser_audio(websocket, client_id, message)
+                        
                 except Exception as e:
-                    logger.error(f"❌ Error handling browser message: {e}")
+                    logger.error(f"❌ Message processing error for {client_id}: {e}")
+                    # Send error but keep connection alive
+                    try:
+                        await websocket.send(json.dumps({
+                            'type': 'error',
+                            'message': f'Processing failed: {str(e)}',
+                            'client_id': client_id,
+                            'timestamp': time.time()
+                        }))
+                    except:
+                        pass  # Connection might be closed
                     
         except websockets.exceptions.ConnectionClosed:
-            logger.info(f"🌐 Browser client disconnected: {client_id}")
+            logger.info(f"🌐 Enhanced WebSocket client disconnected: {client_id}")
         except Exception as e:
-            logger.error(f"❌ Browser client error: {e}")
+            logger.error(f"❌ Enhanced WebSocket client error: {e}")
         finally:
+            # Enhanced cleanup
             if client_id in self.clients:
                 del self.clients[client_id]
             if client_id in self.sessions:
+                session_id = self.sessions[client_id]
+                logger.info(f"🧹 Session cleanup: {session_id} for client {client_id}")
                 del self.sessions[client_id]
     
     async def handle_browser_message(self, websocket, client_id, data):

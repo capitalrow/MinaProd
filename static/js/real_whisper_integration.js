@@ -88,14 +88,7 @@ class RealWhisperIntegration {
                 }
             };
             
-            this.socket.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    this.handleTranscriptionMessage(data);
-                } catch (error) {
-                    console.error('❌ Failed to parse WebSocket message:', error);
-                }
-            };
+            // Message handler will be set up after connection handshake
             
             this.socket.onclose = () => {
                 this.isConnected = false;
@@ -118,18 +111,35 @@ class RealWhisperIntegration {
                 }
             };
             
-            // MANUAL MONITORING RECOMMENDATION #3: Enhanced WebSocket connection promise
+            // Enhanced WebSocket connection with message handling
             return new Promise((resolve, reject) => {
                 const timeout = setTimeout(() => {
                     reject(new Error('Enhanced WebSocket connection timeout after 10 seconds'));
                 }, 10000);
                 
                 this.socket.onopen = () => {
-                    clearTimeout(timeout);
-                    this.isConnected = true;
-                    this.connectionAttempts = 0;
-                    console.log('✅ Real-time transcription connected via Enhanced WebSocket');
-                    resolve();
+                    console.log('🔗 Enhanced WebSocket connection opened, waiting for server handshake...');
+                    // Don't resolve immediately, wait for server welcome message
+                };
+                
+                this.socket.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        console.log('📨 Server message:', data);
+                        
+                        if (data.type === 'connected') {
+                            clearTimeout(timeout);
+                            this.isConnected = true;
+                            this.connectionAttempts = 0;
+                            console.log('✅ Enhanced WebSocket Server handshake complete:', data.server);
+                            resolve();
+                        } else {
+                            // Handle other message types during connection
+                            this.handleTranscriptionMessage(data);
+                        }
+                    } catch (e) {
+                        console.warn('📨 Non-JSON message during connection:', event.data);
+                    }
                 };
                 
                 this.socket.onerror = (error) => {
@@ -139,13 +149,23 @@ class RealWhisperIntegration {
                 };
             });
             
+            // Set up message handler for ongoing communication
+            this.socket.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    this.handleTranscriptionMessage(data);
+                } catch (e) {
+                    console.warn('📨 Non-JSON message received:', event.data);
+                }
+            };
+            
         } catch (error) {
             console.error('Failed to initialize connection:', error);
             throw error;
         }
     }
     
-    // MANUAL MONITORING RECOMMENDATION #4: Enhanced WebSocket client (no external dependencies needed)
+    // Enhanced WebSocket client with proper session management
     
     async startTranscription(sessionId) {
         try {
@@ -220,15 +240,18 @@ class RealWhisperIntegration {
     }
     
     handleTranscriptionMessage(data) {
-        console.log('📨 Transcription message:', data);
+        console.log('📨 Enhanced WebSocket message:', data);
         
         switch (data.type) {
             case 'connected':
-                console.log('🔗 Server handshake complete');
+                console.log('🔗 Enhanced WebSocket Server handshake complete:', data.message);
                 break;
                 
             case 'session_joined':
-                console.log('📝 Session joined:', data.session_id);
+                console.log('📝 Session joined successfully:', data.session_id);
+                if (window.toastSystem) {
+                    window.toastSystem.showSuccess(`Session ${data.session_id} ready for transcription`);
+                }
                 break;
                 
             case 'transcription_result':
@@ -236,8 +259,14 @@ class RealWhisperIntegration {
                 break;
                 
             case 'error':
-                console.error('❌ Server error:', data.message);
+                console.error('❌ Enhanced WebSocket Server error:', data.message);
+                if (window.toastSystem) {
+                    window.toastSystem.showError(`Server Error: ${data.message}`);
+                }
                 break;
+                
+            default:
+                console.log('📨 Unknown message type:', data.type);
         }
     }
     
