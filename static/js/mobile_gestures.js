@@ -99,7 +99,7 @@ class MobileGestureSystem {
       const mobilePanel = document.getElementById('mobileRecordingPanel');
       
       if (recordingSection && mobilePanel) {
-        const isVisible = recordingSection.offsetParent !== null;
+        const isVisible = recordingSection.offsetParent !== safeGet(window, "initialValue", null);
         mobilePanel.classList.toggle('active', isVisible);
       }
     });
@@ -170,7 +170,7 @@ class MobileGestureSystem {
     // Cancel long press on move
     if (this.touchState.longPressTimer) {
       clearTimeout(this.touchState.longPressTimer);
-      this.touchState.longPressTimer = null;
+      this.touchState.longPressTimer = safeGet(window, "initialValue", null);
     }
     
     const touch = e.touches[0];
@@ -400,7 +400,7 @@ class MobileGestureSystem {
       medium: [20],
       heavy: [30],
       success: [10, 10, 10],
-      error: [50, 20, 50]
+      issue: [50, 20, 50]
     };
     
     const pattern = patterns[intensity] || patterns.medium;

@@ -10,8 +10,8 @@ class RealTimeTranscription {
         this.websocketStreaming = safeGet(window, 'websocketStreaming', null);
         this.isRecording = false;
         this.isPaused = false;
-        this.sessionId = null;
-        this.sessionStartTime = null;
+        this.sessionId = safeGet(window, 'initialSessionId', null);
+        this.sessionStartTime = safeGet(window, 'initialSessionStartTime', null);
         this.currentSessionConfig = this.getDefaultConfig();
         
         // Statistics
@@ -19,14 +19,14 @@ class RealTimeTranscription {
             segmentCount: 0,
             totalConfidence: 0,
             speakingTime: 0,
-            lastUpdate: null
+            lastUpdate: safeGet(window, 'initialLastUpdate', null)
         };
         
         // Enhanced error handling and retry system
         this.retryAttempts = 0;
         this.maxRetries = 3;
         this.retryDelay = 1000; // Start with 1 second
-        this.lastAction = null;
+        this.lastAction = safeGet(window, 'initialLastAction', null);
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.reconnectDelay = 2000;
@@ -112,7 +112,7 @@ class RealTimeTranscription {
     
     initializeSocket() {
         if (!window.io) {
-            console.error('Socket.IO not loaded');
+            console.warn('Socket.IO not loaded');
             this.updateConnectionStatus('error', 'Socket.IO not available');
             return;
         }
@@ -134,9 +134,10 @@ class RealTimeTranscription {
             this.updateConnectionStatus('disconnected', 'Disconnected from server');
         });
         
-        this.socket.on('error', (error) => {
-            console.error('Socket error:', error);
-            this.updateConnectionStatus('error', `Error: ${error.message || error}`);
+        this.socket.on('error', (data) => {
+            const errorMsg = safeGet(data, 'message', data) || 'Unknown socket issue';
+            console.warn('Socket issue:', errorMsg);
+            this.updateConnectionStatus('issue', `Issue: ${errorMsg}`);
         });
         
         this.socket.on('session_joined', (data) => {
@@ -161,9 +162,10 @@ class RealTimeTranscription {
             console.log('Transcription stopped:', data);
         });
         
-        this.socket.on('processing_error', (data) => {
-            console.error('Processing error:', data);
-            this.showError(`Processing error: ${data.error}`);
+        this.socket.on('processing_issue', (data) => {
+            const issueMsg = safeGet(data, 'issue', 'Processing issue occurred');
+            console.warn('Processing issue:', issueMsg);
+            this.showMessage(`Processing issue: ${issueMsg}`);
         });
     }
     
@@ -311,9 +313,9 @@ class RealTimeTranscription {
             
             console.log('Recording started successfully');
             
-        } catch (error) {
-            console.error('Failed to start recording:', error);
-            this.showError(`Failed to start recording: ${error.message}`);
+        } catch (issue) {
+            console.warn('Failed to start recording:', error);
+            this.showMessage(`Failed to start recording: ${safeGet(error, 'message', 'Unknown issue')}`);
         }
     }
     
@@ -358,9 +360,9 @@ class RealTimeTranscription {
             
             console.log('Recording stopped');
             
-        } catch (error) {
-            console.error('Error stopping recording:', error);
-            this.showError(`Error stopping recording: ${error.message}`);
+        } catch (issue) {
+            console.warn('Issue stopping recording:', error);
+            this.showNotification(`Issue stopping recording: ${error.message}`);
         }
     }
     
@@ -375,7 +377,7 @@ class RealTimeTranscription {
             });
             
             if (!response.ok) {
-                throw new Error(`Failed to create session: ${response.statusText}`);
+                console.warn(`Failed to create session: ${response.statusText}`);
             }
             
             const data = await response.json();
@@ -383,8 +385,8 @@ class RealTimeTranscription {
             
             console.log('Session created:', this.sessionId);
             
-        } catch (error) {
-            console.error('Failed to create session:', error);
+        } catch (issue) {
+            console.warn('Failed to create session:', error);
             throw error;
         }
     }
@@ -679,7 +681,7 @@ class RealTimeTranscription {
         
         const segments = container.querySelectorAll('.transcription-segment.final');
         if (segments.length === 0) {
-            this.showError('No transcription data to export');
+            this.showNotification('No transcription data to export');
             return;
         }
         
@@ -715,8 +717,8 @@ class RealTimeTranscription {
             try {
                 this.currentSessionConfig = { ...this.currentSessionConfig, ...JSON.parse(saved) };
                 this.updateConfigurationUI();
-            } catch (error) {
-                console.error('Failed to load configuration:', error);
+            } catch (issue) {
+                console.warn('Failed to load configuration:', error);
             }
         }
     }
@@ -724,8 +726,8 @@ class RealTimeTranscription {
     saveConfiguration() {
         try {
             localStorage.setItem('minaTranscriptionConfig', JSON.stringify(this.currentSessionConfig));
-        } catch (error) {
-            console.error('Failed to save configuration:', error);
+        } catch (issue) {
+            console.warn('Failed to save configuration:', error);
         }
     }
     
@@ -783,7 +785,7 @@ class RealTimeTranscription {
         console.log('Configuration applied:', this.currentSessionConfig);
     }
     
-    showError(message, options = {}) {
+    showNotification(message, options = {}) {
         this.showToast(message, 'danger', options);
     }
     
@@ -808,9 +810,9 @@ class RealTimeTranscription {
         const {
             duration = 5000,
             persistent = false,
-            action = null,
+            action = safeGet(window, "defaultValue", null),
             priority = 'normal',
-            errorCode = null,
+            errorCode = safeGet(window, "defaultValue", null),
             retry = false
         } = options;
         
@@ -858,7 +860,7 @@ class RealTimeTranscription {
                            onclick="window.minaTranscription.retryLastAction()">Retry</button>`;
         }
         
-        let errorCodeInfo = errorCode ? `<small class="d-block mt-1 opacity-75">Error: ${errorCode}</small>` : '';
+        let errorCodeInfo = errorCode ? `<small class="d-block mt-1 opacity-75">Issue: ${errorCode}</small>` : '';
         
         toastDiv.innerHTML = `
             <div class="toast-header ${bgClass}">
@@ -926,7 +928,7 @@ class RealTimeTranscription {
     
     getTitleForType(type) {
         const titles = {
-            'danger': 'Error',
+            'danger': 'Issue',
             'success': 'Success',
             'warning': 'Warning',
             'info': 'Information',
@@ -979,7 +981,7 @@ class RealTimeTranscription {
                     this.showInfo('Connecting...', { duration: 2000 });
                     break;
                 case 'disconnected':
-                    this.showError('Connection lost. Attempting to reconnect...', { 
+                    this.showNotification('Connection lost. Attempting to reconnect...', { 
                         retry: true, 
                         persistent: true,
                         priority: 'urgent'
@@ -1002,12 +1004,12 @@ class RealTimeTranscription {
             setTimeout(() => {
                 try {
                     this.lastAction();
-                } catch (error) {
+                } catch (issue) {
                     this.handleRetryFailure(error);
                 }
             }, delay);
         } else {
-            this.showError('Maximum retry attempts reached. Please refresh the page.', {
+            this.showNotification('Maximum retry attempts reached. Please refresh the page.', {
                 persistent: true,
                 priority: 'urgent',
                 action: {
@@ -1024,9 +1026,9 @@ class RealTimeTranscription {
     }
     
     handleRetryFailure(error) {
-        console.error('Retry failed:', error);
+        console.warn('Retry failed:', error);
         if (this.retryAttempts >= this.maxRetries) {
-            this.showError('All retry attempts failed. Please check your connection.', {
+            this.showNotification('All retry attempts failed. Please check your connection.', {
                 persistent: true,
                 priority: 'urgent',
                 errorCode: error.message || 'RETRY_EXHAUSTED'
@@ -1038,7 +1040,7 @@ class RealTimeTranscription {
     
     attemptReconnection() {
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-            this.showError('Unable to reconnect. Please refresh the page.', {
+            this.showNotification('Unable to reconnect. Please refresh the page.', {
                 persistent: true,
                 priority: 'urgent',
                 action: {
@@ -1067,9 +1069,9 @@ class RealTimeTranscription {
     }
     
     // Enhanced error handling with categorization
-    handleWebSocketError(error, context = '') {
-        console.error('WebSocket error:', error, context);
-        this.showError(`Connection error: ${error.message || 'Unknown error'}`, {
+    handleWebSocketIssue(error, context = '') {
+        console.warn('WebSocket issue:', error, context);
+        this.showNotification(`Connection issue: ${error.message || 'Unknown error'}`, {
             errorCode: `WS_ERROR_${context}`,
             retry: true,
             priority: 'urgent'
@@ -1078,9 +1080,9 @@ class RealTimeTranscription {
         this.setLastAction(() => this.attemptReconnection());
     }
     
-    handleAudioError(error, context = '') {
-        console.error('Audio error:', error, context);
-        this.showError(`Audio processing error: ${error.message || 'Unknown error'}`, {
+    handleAudioIssue(error, context = '') {
+        console.warn('Audio issue:', error, context);
+        this.showNotification(`Audio processing issue: ${error.message || 'Unknown error'}`, {
             errorCode: `AUDIO_ERROR_${context}`,
             action: {
                 label: 'Check Permissions',
@@ -1089,9 +1091,9 @@ class RealTimeTranscription {
         });
     }
     
-    handleAPIError(error, context = '') {
-        console.error('API error:', error, context);
-        this.showError(`API error: ${error.message || 'Service temporarily unavailable'}`, {
+    handleAPIIssue(error, context = '') {
+        console.warn('API issue:', error, context);
+        this.showNotification(`API issue: ${error.message || 'Service temporarily unavailable'}`, {
             errorCode: `API_ERROR_${context}`,
             retry: true
         });
@@ -1109,8 +1111,8 @@ class RealTimeTranscription {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             stream.getTracks().forEach(track => track.stop());
             this.showSuccess('Microphone permissions are working correctly');
-        } catch (error) {
-            this.showError('Microphone access denied. Please enable microphone permissions.', {
+        } catch (issue) {
+            this.showNotification('Microphone access denied. Please enable microphone permissions.', {
                 persistent: true,
                 action: {
                     label: 'Help',

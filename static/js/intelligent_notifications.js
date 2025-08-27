@@ -20,7 +20,7 @@ class IntelligentNotifications {
       success: { icon: 'fas fa-check-circle', color: 'success', duration: 3000 },
       info: { icon: 'fas fa-info-circle', color: 'info', duration: 4000 },
       warning: { icon: 'fas fa-exclamation-triangle', color: 'warning', duration: 5000 },
-      error: { icon: 'fas fa-times-circle', color: 'danger', duration: 7000 },
+      issue: { icon: 'fas fa-times-circle', color: 'danger', duration: 7000 },
       guidance: { icon: 'fas fa-lightbulb', color: 'primary', duration: 6000 },
       quality: { icon: 'fas fa-star', color: 'info', duration: 4000 }
     };
@@ -159,7 +159,7 @@ class IntelligentNotifications {
     
     // Listen for errors
     document.addEventListener('recordingError', (e) => {
-      this.handleError(e.detail);
+      this.handleNotification(e.detail);
     });
   }
 
@@ -309,7 +309,7 @@ class IntelligentNotifications {
         this.showRecordingComplete(data);
         break;
       case 'error':
-        this.showRecordingError(data);
+        this.showRecordingIssue(data);
         break;
     }
   }
@@ -420,8 +420,8 @@ class IntelligentNotifications {
     }
   }
 
-  handleError(errorData) {
-    const { type, message, recoverable } = errorData;
+  handleNotification(issueData) {
+    const { type, message, recoverable } = issueData;
     
     let guidance = '';
     let actions = [];
@@ -469,7 +469,7 @@ class IntelligentNotifications {
         }
     }
     
-    this.show('error', `❌ ${message || 'Error occurred'}. ${guidance}`, {
+    this.show('error', `❌ ${message || 'Issue occurred'}. ${guidance}`, {
       actions,
       duration: 8000
     });

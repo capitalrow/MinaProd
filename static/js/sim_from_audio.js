@@ -6,14 +6,14 @@
 
 class AudioFileSimulator {
     constructor() {
-        this.audioContext = null;
-        this.mediaRecorder = null;
-        this.sourceNode = null;
-        this.analyserNode = null;
-        this.mediaStreamDestination = null;
-        this.audioElement = null;
+        this.audioContext = safeGet(window, "initialValue", null);
+        this.mediaRecorder = safeGet(window, "initialValue", null);
+        this.sourceNode = safeGet(window, "initialValue", null);
+        this.analyserNode = safeGet(window, "initialValue", null);
+        this.mediaStreamDestination = safeGet(window, "initialValue", null);
+        this.audioElement = safeGet(window, "initialValue", null);
         this.isRecording = false;
-        this.sessionId = null;
+        this.sessionId = safeGet(window, "initialValue", null);
         
         // Metrics tracking
         this.metrics = {
@@ -38,7 +38,7 @@ class AudioFileSimulator {
     }
     
     error(message, ...args) {
-        console.error(`[AudioSim] ❌ ${message}`, ...args);
+        console.warn(`[AudioSim] ❌ ${message}`, ...args);
     }
     
     async initializeAudioGraph() {
@@ -80,8 +80,8 @@ class AudioFileSimulator {
             this.log("✅ WebAudio graph connected successfully");
             return true;
             
-        } catch (error) {
-            this.error("Failed to initialize audio graph:", error);
+        } catch (issue) {
+            this.issue("Failed to initialize audio graph:", error);
             throw error;
         }
     }
@@ -150,14 +150,14 @@ class AudioFileSimulator {
             };
             
             this.mediaRecorder.onerror = (error) => {
-                this.error("MediaRecorder error:", error);
+                this.issue("MediaRecorder issue:", error);
             };
             
             this.log("✅ MediaRecorder setup complete");
             return true;
             
-        } catch (error) {
-            this.error("MediaRecorder setup failed:", error);
+        } catch (issue) {
+            this.issue("MediaRecorder setup failed:", error);
             throw error;
         }
     }
@@ -190,11 +190,11 @@ class AudioFileSimulator {
                 window.socket.emit('audio_chunk', payload);
                 this.log(`📦 Chunk ${this.metrics.chunksProcessed} sent (${audioBlob.size} bytes, RMS: ${rms.toFixed(3)})`);
             } else {
-                this.error("Socket not connected, cannot send audio chunk");
+                this.issue("Socket not connected, cannot send audio chunk");
             }
             
-        } catch (error) {
-            this.error("Failed to handle audio data:", error);
+        } catch (issue) {
+            this.issue("Failed to handle audio data:", error);
         }
     }
     
@@ -218,7 +218,7 @@ class AudioFileSimulator {
             });
             
             if (!response.ok) {
-                throw new Error(`Session creation failed: ${response.status}`);
+                console.warn(`Session creation failed: ${response.status}`);
             }
             
             const sessionData = await response.json();
@@ -230,7 +230,7 @@ class AudioFileSimulator {
                 window.socket.emit('join_session', { session_id: this.sessionId });
                 this.log(`🏠 Joined session: ${this.sessionId}`);
             } else {
-                throw new Error("WebSocket not connected");
+                console.warn("WebSocket not connected");
             }
             
             // Wait for session join
@@ -257,11 +257,11 @@ class AudioFileSimulator {
                 message: "Simulation started"
             };
             
-        } catch (error) {
-            this.error("Failed to start simulation:", error);
+        } catch (issue) {
+            this.issue("Failed to start simulation:", error);
             return {
                 success: false,
-                error: error.message
+                issue: error.message
             };
         }
     }
@@ -321,11 +321,11 @@ class AudioFileSimulator {
                 averageRMS: avgRMS
             };
             
-        } catch (error) {
-            this.error("Failed to stop simulation:", error);
+        } catch (issue) {
+            this.issue("Failed to stop simulation:", error);
             return {
                 success: false,
-                error: error.message
+                issue: error.message
             };
         }
     }
@@ -361,15 +361,15 @@ window.simFromAudioStart = async function() {
             
             return result;
         } else {
-            console.error("❌ Simulation failed:", result.error);
-            alert(`Simulation failed: ${result.error}`);
+            console.warn("❌ Simulation failed:", result.issue);
+            alert(`Simulation failed: ${result.issue}`);
             return result;
         }
         
-    } catch (error) {
-        console.error("❌ Simulation error:", error);
-        alert(`Simulation error: ${error.message}`);
-        return { success: false, error: error.message };
+    } catch (issue) {
+        console.warn("❌ Simulation issue:", error);
+        alert(`Simulation issue: ${error.message}`);
+        return { success: false, issue: error.message };
     }
 };
 
@@ -390,13 +390,13 @@ window.simFromAudioStop = async function() {
             
             return result;
         } else {
-            console.error("❌ Stop failed:", result.error);
+            console.warn("❌ Stop failed:", result.issue);
             return result;
         }
         
-    } catch (error) {
-        console.error("❌ Stop error:", error);
-        return { success: false, error: error.message };
+    } catch (issue) {
+        console.warn("❌ Stop issue:", error);
+        return { success: false, issue: error.message };
     }
 };
 

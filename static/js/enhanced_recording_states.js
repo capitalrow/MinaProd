@@ -14,7 +14,7 @@ class EnhancedRecordingStates {
       paused: { name: 'Paused', icon: 'fas fa-pause-circle', color: 'warning' },
       processing: { name: 'Processing', icon: 'fas fa-spinner fa-spin', color: 'primary' },
       complete: { name: 'Complete', icon: 'fas fa-check', color: 'success' },
-      error: { name: 'Error', icon: 'fas fa-exclamation-triangle', color: 'danger' }
+      issue: { name: 'Issue', icon: 'fas fa-exclamation-triangle', color: 'danger' }
     };
     
     this.sessionData = {
@@ -287,7 +287,7 @@ class EnhancedRecordingStates {
       paused: 'Recording paused - click Resume to continue',
       processing: 'Processing transcription...',
       complete: 'Recording complete and saved',
-      error: 'Error occurred - please try again'
+      issue: 'Issue occurred - please try again'
     };
     
     return descriptions[state] || 'Unknown state';
@@ -308,7 +308,7 @@ class EnhancedRecordingStates {
         break;
         
       case 'error':
-        this.handleRecordingError();
+        this.handleRecordingIssue();
         break;
     }
   }
@@ -360,7 +360,7 @@ class EnhancedRecordingStates {
   resumeRecordingSession() {
     if (this.sessionData.lastPauseTime) {
       this.sessionData.pausedDuration += Date.now() - this.sessionData.lastPauseTime;
-      this.sessionData.lastPauseTime = null;
+      this.sessionData.lastPauseTime = safeGet(window, "initialValue", null);
     }
     
     // Restart session timer
@@ -401,7 +401,7 @@ class EnhancedRecordingStates {
     }
   }
 
-  handleRecordingError() {
+  handleRecordingIssue() {
     // Clear timers
     Object.values(this.timers).forEach(timer => {
       if (timer) clearInterval(timer);

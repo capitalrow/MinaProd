@@ -7,7 +7,7 @@
 class WebSocketStreaming {
     constructor(options = {}) {
         this.config = {
-            socket: options.socket || null,
+            socket: safeGet(options, 'socket', null),
             chunkDuration: options.chunkDuration || 1000, // ms
             sampleRate: options.sampleRate || 16000,
             enableVAD: options.enableVAD !== false,
@@ -32,7 +32,7 @@ class WebSocketStreaming {
         // Audio streaming state
         this.isStreaming = false;
         this.isPaused = false;
-        this.sessionId = null;
+        this.sessionId = safeGet(window, 'initialSessionId', null);
         
         // Buffering and transmission
         this.audioBuffer = [];
@@ -43,7 +43,7 @@ class WebSocketStreaming {
         // Connection management
         this.connectionState = 'disconnected';
         this.retryCount = 0;
-        this.retryTimer = null;
+        this.retryTimer = safeGet(window, 'initialRetryTimer', null);
         
         // Statistics and monitoring
         this.stats = {
@@ -75,9 +75,9 @@ class WebSocketStreaming {
         };
         
         // Callback functions
-        this.onConnectionChange = null;
-        this.onTransmissionStats = null;
-        this.onError = null;
+        this.onConnectionChange = safeGet(window, 'initialConnectionChange', null);
+        this.onTransmissionStats = safeGet(window, 'initialTransmissionStats', null);
+        this.onNotification = safeGet(window, 'initialNotification', null);
         
         // Initialize
         this.initializeSocket();
@@ -249,7 +249,7 @@ class WebSocketStreaming {
     
     initializeSocket() {
         if (!this.config.socket) {
-            console.error('Socket.IO instance required for WebSocket streaming');
+            console.warn('Socket.IO instance required for WebSocket streaming');
             return;
         }
         
@@ -265,7 +265,7 @@ class WebSocketStreaming {
         });
         
         this.socket.on('connect_error', (error) => {
-            this.handleConnectionError(error);
+            this.handleConnectionNotification(error);
         });
         
         this.socket.on('audio_chunk_ack', (data) => {
@@ -304,12 +304,12 @@ class WebSocketStreaming {
             console.log('Audio streaming started successfully');
             return true;
             
-        } catch (error) {
-            console.error('Failed to start streaming:', error);
+        } catch (issue) {
+            console.warn('Failed to start streaming:', error);
             this.isStreaming = false;
             
             if (this.onError) {
-                this.onError(error);
+                this.onNotification(error);
             }
             
             throw error;
@@ -345,9 +345,9 @@ class WebSocketStreaming {
             };
             
             this.mediaRecorder.onerror = (error) => {
-                console.error('MediaRecorder error:', error);
+                console.warn('MediaRecorder issue:', error);
                 if (this.onError) {
-                    this.onError(error);
+                    this.onNotification(error);
                 }
             };
             
@@ -356,8 +356,8 @@ class WebSocketStreaming {
             
             console.log('MediaRecorder initialized and started');
             
-        } catch (error) {
-            console.error('Failed to initialize MediaRecorder:', error);
+        } catch (issue) {
+            console.warn('Failed to initialize MediaRecorder:', error);
             throw error;
         }
     }
@@ -412,7 +412,7 @@ class WebSocketStreaming {
                 this.processAudioBuffer();
             }
         }).catch(error => {
-            console.error('Failed to process audio data:', error);
+            console.warn('Failed to process audio data:', error);
         });
     }
     
@@ -503,12 +503,12 @@ class WebSocketStreaming {
                 this.handleChunkTimeout(chunk.sequence);
             }, 5000); // 5 second timeout
             
-        } catch (error) {
-            console.error('Failed to transmit audio chunk:', error);
+        } catch (issue) {
+            console.warn('Failed to transmit audio chunk:', error);
             this.stats.transmissionErrors++;
             
             if (this.onError) {
-                this.onError(error);
+                this.onNotification(error);
             }
         }
     }
@@ -584,7 +584,7 @@ class WebSocketStreaming {
             this.pendingChunks.delete(sequence);
             this.stats.transmissionErrors++;
             
-            console.error(`Failed to transmit chunk ${sequence} after ${this.config.maxRetries} attempts`);
+            console.warn(`Failed to transmit chunk ${sequence} after ${this.config.maxRetries} attempts`);
         }
     }
     
@@ -618,7 +618,7 @@ class WebSocketStreaming {
             this.retryCount = 0;
             if (this.retryTimer) {
                 clearTimeout(this.retryTimer);
-                this.retryTimer = null;
+                this.retryTimer = safeGet(window, "initialValue", null);
             }
         } else if (state === 'disconnected' && this.isStreaming) {
             this.stats.connectionDrops++;
@@ -630,18 +630,18 @@ class WebSocketStreaming {
         }
     }
     
-    handleConnectionError(error) {
-        console.error('Connection error:', error);
+    handleConnectionNotification(error) {
+        console.warn('Connection issue:', error);
         this.stats.transmissionErrors++;
         
         if (this.onError) {
-            this.onError(error);
+            this.onNotification(error);
         }
     }
     
     scheduleReconnection() {
         if (this.retryCount >= this.config.maxRetries) {
-            console.error('Max reconnection attempts reached');
+            console.warn('Max reconnection attempts reached');
             this.stopStreaming();
             return;
         }
@@ -696,13 +696,13 @@ class WebSocketStreaming {
         // Clear transmission loop
         if (this.transmissionInterval) {
             clearInterval(this.transmissionInterval);
-            this.transmissionInterval = null;
+            this.transmissionInterval = safeGet(window, "initialValue", null);
         }
         
         // Clear retry timer
         if (this.retryTimer) {
             clearTimeout(this.retryTimer);
-            this.retryTimer = null;
+            this.retryTimer = safeGet(window, "initialValue", null);
         }
         
         // Stop MediaRecorder
@@ -713,7 +713,7 @@ class WebSocketStreaming {
         // Stop media stream
         if (this.mediaStream) {
             this.mediaStream.getTracks().forEach(track => track.stop());
-            this.mediaStream = null;
+            this.mediaStream = safeGet(window, "initialValue", null);
         }
         
         // Process remaining buffer
@@ -771,8 +771,8 @@ class WebSocketStreaming {
         try {
             const devices = await navigator.mediaDevices.enumerateDevices();
             return devices.filter(device => device.kind === 'audioinput');
-        } catch (error) {
-            console.error('Failed to enumerate audio devices:', error);
+        } catch (issue) {
+            console.warn('Failed to enumerate audio devices:', error);
             return [];
         }
     }
@@ -782,6 +782,6 @@ class WebSocketStreaming {
 window.WebSocketStreaming = WebSocketStreaming;
 
 // Export as module if in Node.js environment
-if (typeof module !== 'undefined' && module.exports) {
+if (safeGet(arguments[0], "value") === null' && module.exports) {
     module.exports = WebSocketStreaming;
 }

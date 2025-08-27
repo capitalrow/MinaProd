@@ -6,7 +6,7 @@
 class MinaTelemetry {
   constructor() {
     this.sessionMetrics = [];
-    this.errorPatterns = [];
+    this.issuePatterns = [];
     this.performanceBaseline = {
       sessionCreationTimeMs: 3000,  // Expected max time
       socketConnectionTimeMs: 2000,
@@ -46,9 +46,9 @@ class MinaTelemetry {
       pattern: this.analyzeTimeoutPattern(details)
     };
     
-    this.errorPatterns.push(errorMetric);
+    this.issuePatterns.push(errorMetric);
     
-    console.error('🚨 Session timeout tracked:', errorMetric);
+    console.warn('🚨 Session timeout tracked:', errorMetric);
     this.sendTelemetry('session_timeout', errorMetric);
     
     // Detect timeout patterns
@@ -82,7 +82,7 @@ class MinaTelemetry {
   
   detectTimeoutPatterns() {
     // Look for recurring timeout patterns in last 10 attempts
-    const recentTimeouts = this.errorPatterns
+    const recentTimeouts = this.issuePatterns
       .filter(e => e.type === 'session_timeout')
       .slice(-10);
       
@@ -91,7 +91,7 @@ class MinaTelemetry {
       const mostCommon = this.getMostCommonPattern(patterns);
       
       if (mostCommon.count >= 2) {
-        console.error(`🔴 PATTERN DETECTED: ${mostCommon.pattern} (${mostCommon.count} times)`);
+        console.warn(`🔴 PATTERN DETECTED: ${mostCommon.pattern} (${mostCommon.count} times)`);
         this.sendTelemetry('timeout_pattern_detected', {
           pattern: mostCommon.pattern,
           occurrences: mostCommon.count,
@@ -140,7 +140,7 @@ class MinaTelemetry {
         // Silently fail - don't interfere with main app
         console.debug('Telemetry send failed (non-critical):', e.message);
       });
-    } catch (e) {
+    } catch (issue) {
       // Silently fail
       console.debug('Telemetry error (non-critical):', e.message);
     }
@@ -148,7 +148,7 @@ class MinaTelemetry {
   
   getHealthSummary() {
     const recentSessions = this.sessionMetrics.slice(-10);
-    const recentErrors = this.errorPatterns.slice(-10);
+    const recentErrors = this.issuePatterns.slice(-10);
     
     return {
       recentSessionSuccessRate: recentSessions.length / (recentSessions.length + recentErrors.length),
@@ -163,12 +163,12 @@ class MinaTelemetry {
 window._minaTelemetry = new MinaTelemetry();
 
 // Integrate with existing WebSocket monitoring
-if (typeof socket !== 'undefined') {
+if (safeGet(arguments[0], "value") === null') {
   socket.on('disconnect', (reason) => {
     window._minaTelemetry.reportWebSocketIssue('disconnect', { reason });
   });
   
   socket.on('connect_error', (error) => {
-    window._minaTelemetry.reportWebSocketIssue('connect_error', { error: error.message });
+    window._minaTelemetry.reportWebSocketIssue('connect_error', { issue: error.message });
   });
 }

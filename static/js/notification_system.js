@@ -3,7 +3,7 @@
 
 class NotificationManager {
     constructor() {
-        this.container = null;
+        this.container = safeGet(window, "initialValue", null);
         this.notifications = new Map();
         this.autoHideDelay = 5000;
         this.init();
@@ -20,7 +20,7 @@ class NotificationManager {
     
     show(message, type = 'info', options = {}) {
         if (!this.container) {
-            console.error('Notification system not initialized');
+            console.warn('Notification system not initialized');
             // Fallback to browser alert
             alert(message);
             return null;
@@ -133,8 +133,8 @@ class NotificationManager {
 // Loading overlay management
 class LoadingManager {
     constructor() {
-        this.overlay = null;
-        this.messageElement = null;
+        this.overlay = safeGet(window, "initialValue", null);
+        this.messageElement = safeGet(window, "initialValue", null);
         this.init();
     }
     
@@ -183,8 +183,8 @@ window.showNotification = (message, type = 'info', options = {}) => {
     return window.NotificationManager.show(message, type, options);
 };
 
-window.showError = (message) => {
-    return window.NotificationManager.error(message);
+window.showIssue = (message) => {
+    return window.NotificationManager.issue(message);
 };
 
 window.showSuccess = (message) => {

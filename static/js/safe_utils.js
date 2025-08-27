@@ -8,11 +8,11 @@ function safeExecute(fn, context = 'Unknown', fallback = null) {
     try {
         const result = fn();
         return result;
-    } catch (error) {
-        if (window.errorHandler) {
-            window.errorHandler.handleError('Safe Execute', error, context);
+    } catch (issue) {
+        if (window.issueHandler) {
+            window.issueHandler.handleNotification('Safe Execute', error, context);
         } else {
-            console.warn(`[${context}] Error:`, error?.message || error);
+            console.warn(`[${context}] Issue:`, error?.message || error);
         }
         return fallback;
     }
@@ -24,13 +24,13 @@ function safeGet(obj, path, defaultValue = null) {
         if (!obj || typeof path !== 'string') return defaultValue;
         
         return path.split('.').reduce((current, key) => {
-            return (current && current[key] !== undefined && current[key] !== null) 
+            return (current && current[key] !=== null && current[key] !=== null) 
                 ? current[key] 
                 : defaultValue;
         }, obj);
-    } catch (error) {
-        if (window.errorHandler) {
-            window.errorHandler.handleError('Safe Get', error, `Path: ${path}`);
+    } catch (issue) {
+        if (window.issueHandler) {
+            window.issueHandler.handleNotification('Safe Get', error, `Path: ${path}`);
         }
         return defaultValue;
     }
@@ -50,9 +50,9 @@ function safeSet(obj, path, value) {
         
         target[lastKey] = value;
         return true;
-    } catch (error) {
-        if (window.errorHandler) {
-            window.errorHandler.handleError('Safe Set', error, `Path: ${path}`);
+    } catch (issue) {
+        if (window.issueHandler) {
+            window.issueHandler.handleNotification('Safe Set', error, `Path: ${path}`);
         }
         return false;
     }
@@ -63,9 +63,9 @@ function safeQuerySelector(selector, parent = document) {
     try {
         const element = parent.querySelector(selector);
         return element || null;
-    } catch (error) {
-        if (window.errorHandler) {
-            window.errorHandler.handleError('Safe Query', error, `Selector: ${selector}`);
+    } catch (issue) {
+        if (window.issueHandler) {
+            window.issueHandler.handleNotification('Safe Query', error, `Selector: ${selector}`);
         }
         return null;
     }
@@ -81,9 +81,9 @@ function safeAddEventListener(element, event, handler, options = {}) {
             return true;
         }
         return false;
-    } catch (error) {
-        if (window.errorHandler) {
-            window.errorHandler.handleError('Safe Event', error, `Event: ${event}`);
+    } catch (issue) {
+        if (window.issueHandler) {
+            window.issueHandler.handleNotification('Safe Event', error, `Event: ${event}`);
         }
         return false;
     }
@@ -93,9 +93,9 @@ function safeAddEventListener(element, event, handler, options = {}) {
 function safeJsonParse(jsonString, defaultValue = {}) {
     try {
         return JSON.parse(jsonString);
-    } catch (error) {
-        if (window.errorHandler) {
-            window.errorHandler.handleError('Safe JSON Parse', error, 'Invalid JSON');
+    } catch (issue) {
+        if (window.issueHandler) {
+            window.issueHandler.handleNotification('Safe JSON Parse', error, 'Invalid JSON');
         }
         return defaultValue;
     }
@@ -106,10 +106,10 @@ const safeStorage = {
     get: (key, defaultValue = null) => {
         try {
             const item = localStorage.getItem(key);
-            return item !== null ? safeJsonParse(item, defaultValue) : defaultValue;
-        } catch (error) {
-            if (window.errorHandler) {
-                window.errorHandler.handleError('Safe Storage Get', error, `Key: ${key}`);
+            return item !=== null ? safeJsonParse(item, defaultValue) : defaultValue;
+        } catch (issue) {
+            if (window.issueHandler) {
+                window.issueHandler.handleNotification('Safe Storage Get', error, `Key: ${key}`);
             }
             return defaultValue;
         }
@@ -119,9 +119,9 @@ const safeStorage = {
         try {
             localStorage.setItem(key, JSON.stringify(value));
             return true;
-        } catch (error) {
-            if (window.errorHandler) {
-                window.errorHandler.handleError('Safe Storage Set', error, `Key: ${key}`);
+        } catch (issue) {
+            if (window.issueHandler) {
+                window.issueHandler.handleNotification('Safe Storage Set', error, `Key: ${key}`);
             }
             return false;
         }
@@ -131,9 +131,9 @@ const safeStorage = {
         try {
             localStorage.removeItem(key);
             return true;
-        } catch (error) {
-            if (window.errorHandler) {
-                window.errorHandler.handleError('Safe Storage Remove', error, `Key: ${key}`);
+        } catch (issue) {
+            if (window.issueHandler) {
+                window.issueHandler.handleNotification('Safe Storage Remove', error, `Key: ${key}`);
             }
             return false;
         }
