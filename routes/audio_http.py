@@ -719,14 +719,18 @@ def transcribe_audio():
         # Regular transcription request
         audio_data = data.get('audio_data')
         if not audio_data:
+            processing_time_ms = (time.time() - request_start_time) * 1000
+            if QA_SYSTEM_AVAILABLE:
+                track_chunk_processed(session_id, chunk_number, 0, 
+                                    processing_time_ms, success=False, 
+                                    reason="no_audio_data")
             return jsonify({
+                'error': 'validation_error',
+                'message': 'No audio data provided',
+                'details': 'audio_data field is required and cannot be empty',
                 'session_id': session_id,
-                'text': '[No audio data]',
-                'confidence': 0.0,
-                'chunk_number': chunk_number,
-                'is_final': is_final,
-                'status': 'no_audio'
-            })
+                'chunk_number': chunk_number
+            }), 400
         
         # Decode and validate audio
         try:
@@ -737,18 +741,28 @@ def transcribe_audio():
                 if QA_SYSTEM_AVAILABLE:
                     track_chunk_processed(session_id, chunk_number, len(audio_bytes), 
                                         processing_time_ms, success=False, 
-                                        reason="too_small")
+                                        reason="audio_too_small")
                 return jsonify({
+                    'error': 'validation_error',
+                    'message': 'Audio data too small for processing',
+                    'details': f'Minimum 100 bytes required, received {len(audio_bytes)} bytes',
                     'session_id': session_id,
-                    'text': '[Audio chunk too small]',
-                    'confidence': 0.0,
-                    'chunk_number': chunk_number,
-                    'is_final': is_final,
-                    'status': 'too_small'
-                })
+                    'chunk_number': chunk_number
+                }), 422
         except Exception as e:
             logger.error(f"❌ Audio decode error: {e}")
-            return jsonify({'error': 'Invalid audio data'}, 400)
+            processing_time_ms = (time.time() - request_start_time) * 1000
+            if QA_SYSTEM_AVAILABLE:
+                track_chunk_processed(session_id, chunk_number, 0, 
+                                    processing_time_ms, success=False, 
+                                    reason="decode_error")
+            return jsonify({
+                'error': 'validation_error',
+                'message': 'Invalid audio data format',
+                'details': f'Failed to decode base64 audio data: {str(e)[:100]}',
+                'session_id': session_id,
+                'chunk_number': chunk_number
+            }), 422
         
         # Transcribe with Whisper (with monitoring)
         transcription_start_time = time.time()
@@ -832,10 +846,23 @@ def transcribe_audio():
             
     except Exception as e:
         logger.error(f"❌ HTTP transcription endpoint error: {e}")
+        processing_time_ms = (time.time() - request_start_time) * 1000
+        if QA_SYSTEM_AVAILABLE:
+            track_chunk_processed(session_id, chunk_number, len(audio_bytes), 
+                                processing_time_ms, success=False, 
+                                reason=f"server_error: {str(e)[:100]}")
+        
+        # Enhanced error responses for better QA
+        error_type = "validation_error" if "quality" in str(e).lower() else "server_error"
+        
         return jsonify({
-            'error': 'Server error',
-            'details': str(e)
-        }), 500
+            'error': error_type,
+            'message': 'Audio processing failed',
+            'details': str(e)[:200],  # Limit error details
+            'session_id': session_id,
+            'chunk_number': chunk_number,
+            'status': 'error'
+        }), 400 if error_type == "validation_error" else 500
 
 def transcribe_audio_sync(audio_data):
     """🎯 PROFESSIONAL: Google-quality audio transcription pipeline"""
