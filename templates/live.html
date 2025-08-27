@@ -1143,16 +1143,41 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Browser simulation integration ready');
     }
     
-    // Initialize Real Whisper Integration for the main page
+    // CRITICAL FIX: Ensure Real Whisper Integration takes priority over competing systems
     if (window.realWhisperIntegration) {
-        console.log('🎯 Initializing Real Whisper API integration...');
+        console.log('🎯 Initializing PRIORITY Real Whisper API integration...');
         
-        // Replace start recording button functionality
+        // OVERRIDE: Disable competing transcription systems
+        if (window.professionalRecorder) {
+            console.log('⚠️ Disabling competing professionalRecorder system');
+            window.professionalRecorder = null;
+        }
+        
+        // PRIORITY: Get exclusive control of recording buttons
         const startBtn = document.getElementById('startRecordingBtn');
         const stopBtn = document.getElementById('stopRecordingBtn');
         
+        // Remove any existing event listeners
         if (startBtn) {
-            startBtn.addEventListener('click', async function() {
+            const newStartBtn = startBtn.cloneNode(true);
+            startBtn.parentNode.replaceChild(newStartBtn, startBtn);
+        }
+        if (stopBtn) {
+            const newStopBtn = stopBtn.cloneNode(true);
+            stopBtn.parentNode.replaceChild(newStopBtn, stopBtn);
+        }
+        
+        // Get fresh references to the new buttons
+        const priorityStartBtn = document.getElementById('startRecordingBtn');
+        const priorityStopBtn = document.getElementById('stopRecordingBtn');
+        
+        if (priorityStartBtn) {
+            priorityStartBtn.addEventListener('click', async function() {
+                console.log('🎯 PRIORITY: Real Whisper Integration handling start button');
+                
+                // Prevent any other systems from interfering
+                event.stopImmediatePropagation();
+                event.preventDefault();
                 try {
                     this.disabled = true;
                     window.toastSystem.showInfo('Connecting to real-time transcription service...');
@@ -1184,12 +1209,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.log('🧪 Comprehensive testing activated');
                     }
                     
-                    // Update UI
+                    // Update UI with priority control
                     this.disabled = true;
-                    stopBtn.disabled = false;
+                    if (priorityStopBtn) priorityStopBtn.disabled = false;
                     
-                    window.toastSystem.showSuccess('✅ Real-time transcription started with Whisper API + Active Monitoring');
-                    console.log('✅ Real-time transcription with Whisper API started');
+                    // Initialize final transcript collection
+                    window.interimTranscripts = [];
+                    window.finalTranscripts = [];
+                    
+                    window.toastSystem.showSuccess('✅ PRIORITY Real Whisper transcription started - Interim + Final generation ready');
+                    console.log('✅ PRIORITY Real Whisper Integration active with Final Transcript Generation');
                     
                 } catch (error) {
                     console.error('❌ Failed to start real-time transcription:', error);
@@ -1199,9 +1228,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        if (stopBtn) {
-            stopBtn.addEventListener('click', function() {
+        if (priorityStopBtn) {
+            priorityStopBtn.addEventListener('click', async function() {
+                console.log('🎯 PRIORITY: Real Whisper Integration handling stop button');
+                
+                // Stop real-time transcription
                 window.realWhisperIntegration.stopTranscription();
+                
+                // Generate final refined transcript using GPT-4
+                await generateFinalTranscript();
                 
                 // STOP MONITORING SYSTEMS AND GENERATE REPORTS
                 if (window.liveMonitoringClient && window.liveMonitoringClient.isMonitoring) {
@@ -1226,10 +1261,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Update UI
                 this.disabled = true;
-                startBtn.disabled = false;
+                if (priorityStartBtn) priorityStartBtn.disabled = false;
                 
-                window.toastSystem.showInfo('Real-time transcription stopped - Analysis reports generated');
-                console.log('⏹️ Real-time transcription stopped with full monitoring reports');
+                window.toastSystem.showSuccess('✅ Final transcript generated with GPT-4 refinement');
+                console.log('⏹️ PRIORITY Real Whisper Integration stopped with Final Transcript');
             });
         }
         
@@ -1286,7 +1321,120 @@ document.addEventListener('DOMContentLoaded', function() {
         window.toastSystem.showSuccess('Enhanced transcription system ready with REAL Whisper API + Active Monitoring');
     }, 1000);
     
-    console.log('✅ Enhanced transcription system initialized with REAL Whisper API integration + Manual Monitoring Recommendations');
+    // INDUSTRY STANDARD: Final Transcript Generation Function
+    async function generateFinalTranscript() {
+        try {
+            console.log('🔄 Generating final refined transcript...');
+            
+            if (!window.finalTranscripts || window.finalTranscripts.length === 0) {
+                console.log('⚠️ No final transcripts to process');
+                return;
+            }
+            
+            // Combine all final transcript segments
+            const combinedText = window.finalTranscripts.map(segment => segment.text).join(' ');
+            console.log(`📝 Combined transcript: ${combinedText.length} characters`);
+            
+            if (combinedText.length < 10) {
+                window.toastSystem.showWarning('Transcript too short for refinement');
+                return;
+            }
+            
+            // Show processing status
+            window.toastSystem.showInfo('🔄 Refining transcript with GPT-4...');
+            
+            // Call GPT-4 for final transcript refinement
+            const response = await fetch('/api/refine-transcript', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    raw_transcript: combinedText,
+                    segments: window.finalTranscripts,
+                    refinement_level: 'professional'
+                })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                
+                // Display final refined transcript
+                displayFinalTranscript(result.refined_transcript, result.summary);
+                
+                window.toastSystem.showSuccess('✅ Final transcript refined and ready');
+                console.log('✅ Final transcript generated successfully');
+            } else {
+                throw new Error(`Refinement failed: ${response.status}`);
+            }
+            
+        } catch (error) {
+            console.error('❌ Final transcript generation failed:', error);
+            
+            // Fallback: Display combined raw transcript
+            const rawTranscript = window.finalTranscripts.map(s => s.text).join(' ');
+            displayFinalTranscript(rawTranscript, 'Raw transcript (refinement unavailable)');
+            
+            window.toastSystem.showWarning('Final transcript ready (raw format)');
+        }
+    }
+    
+    function displayFinalTranscript(refinedText, summary) {
+        // Create final transcript display
+        const transcriptContainer = document.querySelector('.live-transcript-container') || document.getElementById('transcript');
+        
+        if (transcriptContainer) {
+            // Add final transcript section
+            const finalSection = document.createElement('div');
+            finalSection.className = 'final-transcript-section mt-4 p-3 border-top';
+            finalSection.innerHTML = `
+                <h5 class="text-success mb-3">
+                    <i class="fas fa-check-circle me-2"></i>Final Refined Transcript
+                </h5>
+                <div class="final-transcript-content p-3 bg-dark rounded mb-3">
+                    <p class="text-light mb-0">${refinedText}</p>
+                </div>
+                <div class="transcript-summary">
+                    <h6 class="text-info mb-2">
+                        <i class="fas fa-lightbulb me-2"></i>Summary
+                    </h6>
+                    <p class="text-muted">${summary}</p>
+                </div>
+                <div class="transcript-actions mt-3">
+                    <button class="btn btn-outline-success me-2" onclick="copyToClipboard('${refinedText.replace(/'/g, "\\'")}')">Copy Transcript</button>
+                    <button class="btn btn-outline-info" onclick="downloadTranscript('${refinedText.replace(/'/g, "\\'")}')">Download</button>
+                </div>
+            `;
+            
+            transcriptContainer.appendChild(finalSection);
+            
+            // Scroll to final transcript
+            finalSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+    
+    // Utility functions for final transcript
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            window.toastSystem.showSuccess('Transcript copied to clipboard');
+        }).catch(err => {
+            console.error('Copy failed:', err);
+            window.toastSystem.showError('Copy failed');
+        });
+    }
+    
+    function downloadTranscript(text) {
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `transcript_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+        window.toastSystem.showSuccess('Transcript downloaded');
+    }
+    
+    console.log('✅ PRIORITY Real Whisper Integration with Final Transcript Generation initialized');
 });
 </script>
 {% endblock %}

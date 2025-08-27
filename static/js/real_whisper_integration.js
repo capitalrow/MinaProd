@@ -326,7 +326,29 @@ class RealWhisperIntegration {
     }
     
     displayTranscriptionResult(result) {
-        // Clear "Ready to record" text and add real transcription
+        // INDUSTRY STANDARD: Separate interim and final transcript handling
+        if (result.is_final) {
+            // Store final transcripts for GPT-4 refinement
+            if (window.finalTranscripts) {
+                window.finalTranscripts.push({
+                    text: result.text,
+                    confidence: result.confidence,
+                    timestamp: result.timestamp
+                });
+                console.log(`📄 Final transcript segment stored: "${result.text}"`);
+            }
+        } else {
+            // Store interim transcripts for real-time display
+            if (window.interimTranscripts) {
+                window.interimTranscripts.push({
+                    text: result.text,
+                    confidence: result.confidence,
+                    timestamp: result.timestamp
+                });
+            }
+        }
+        
+        // Display transcription in UI
         const transcriptContainer = document.querySelector('.live-transcript-container') ||
                                   document.getElementById('transcript') || 
                                   document.getElementById('transcriptContent') ||
