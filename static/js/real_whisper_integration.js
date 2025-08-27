@@ -25,67 +25,115 @@ class RealWhisperIntegration {
         try {
             console.log('🔗 Initializing real-time transcription connection...');
             
-            // Determine WebSocket URL based on environment
+            // MANUAL MONITORING RECOMMENDATION #1: Fix Socket.IO compatibility issues
+            // Use Flask-SocketIO directly instead of separate WebSocket server to avoid port conflicts
+            
+            // Import Socket.IO if not already available
+            if (typeof io === 'undefined') {
+                console.log('📦 Loading Socket.IO client library...');
+                await this.loadSocketIOClient();
+            }
+            
+            // Connect to main Flask-SocketIO server (no separate port needed)
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const host = window.location.hostname;
-            const port = '8773';
-            const wsUrl = `${protocol}//${host}:${port}`;
+            const port = window.location.port || (protocol === 'wss:' ? '443' : '80');
+            const socketUrl = `${protocol}//${host}:${port}`;
             
-            console.log(`Connecting to: ${wsUrl}`);
+            console.log(`Connecting to Flask-SocketIO: ${socketUrl}`);
             
-            // Create WebSocket connection
-            this.socket = new WebSocket(wsUrl);
+            // Create Socket.IO connection with enhanced options
+            this.socket = io(socketUrl, {
+                transports: ['websocket', 'polling'], // Fallback to polling if WebSocket fails
+                timeout: 10000,
+                forceNew: true,
+                autoConnect: true
+            });
             
-            // Set up event handlers
-            this.socket.onopen = () => {
+            // MANUAL MONITORING RECOMMENDATION #2: Enhanced error handling and connection recovery
+            // Set up Socket.IO event handlers
+            this.socket.on('connect', () => {
                 this.isConnected = true;
                 this.connectionAttempts = 0;
-                console.log('✅ Real-time transcription connected');
+                console.log('✅ Real-time transcription connected via Socket.IO');
                 
-                // Update UI
+                // Update UI with connection status
                 if (window.professionalRecorder) {
                     window.professionalRecorder.updateConnectionStatus('connected');
                 }
-            };
+                
+                // Show success notification
+                if (window.toastSystem) {
+                    window.toastSystem.showSuccess('🔗 Transcription service connected');
+                }
+            });
             
-            this.socket.onmessage = (event) => {
-                this.handleTranscriptionMessage(JSON.parse(event.data));
-            };
+            this.socket.on('transcription_result', (data) => {
+                this.handleTranscriptionMessage(data);
+            });
             
-            this.socket.onclose = () => {
+            this.socket.on('disconnect', () => {
                 this.isConnected = false;
                 console.log('🔌 Real-time transcription disconnected');
                 this.handleReconnection();
-            };
+                
+                // Update UI
+                if (window.professionalRecorder) {
+                    window.professionalRecorder.updateConnectionStatus('disconnected');
+                }
+            });
             
-            this.socket.onerror = (error) => {
-                console.error('❌ WebSocket error:', error);
+            this.socket.on('connect_error', (error) => {
+                console.error('❌ Socket.IO connection error:', error);
                 this.handleConnectionError(error);
-            };
+                
+                // Show error notification
+                if (window.toastSystem) {
+                    window.toastSystem.showError('❌ Connection failed - retrying...');
+                }
+            });
             
+            // MANUAL MONITORING RECOMMENDATION #3: Connection retry and recovery mechanisms
             return new Promise((resolve, reject) => {
                 const timeout = setTimeout(() => {
-                    reject(new Error('Connection timeout'));
+                    reject(new Error('Socket.IO connection timeout after 10 seconds'));
                 }, 10000);
                 
-                this.socket.onopen = () => {
+                this.socket.on('connect', () => {
                     clearTimeout(timeout);
                     this.isConnected = true;
                     this.connectionAttempts = 0;
-                    console.log('✅ Real-time transcription connected');
+                    console.log('✅ Real-time transcription connected via Socket.IO');
                     resolve();
-                };
+                });
                 
-                this.socket.onerror = (error) => {
+                this.socket.on('connect_error', (error) => {
                     clearTimeout(timeout);
-                    reject(error);
-                };
+                    console.error('❌ Socket.IO connect_error:', error);
+                    reject(new Error(`Socket.IO connection failed: ${error.message || error}`));
+                });
             });
             
         } catch (error) {
             console.error('Failed to initialize connection:', error);
             throw error;
         }
+    }
+    
+    // MANUAL MONITORING RECOMMENDATION #4: Add Socket.IO client loading
+    async loadSocketIOClient() {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+            script.onload = () => {
+                console.log('✅ Socket.IO client loaded');
+                resolve();
+            };
+            script.onerror = () => {
+                reject(new Error('Failed to load Socket.IO client'));
+            };
+            document.head.appendChild(script);
+        });
     }
     
     async startTranscription(sessionId) {
@@ -96,11 +144,10 @@ class RealWhisperIntegration {
             
             this.sessionId = sessionId;
             
-            // Send session join message
-            this.socket.send(JSON.stringify({
-                type: 'join_session',
+            // Send session join message via Socket.IO
+            this.socket.emit('join_session', {
                 session_id: sessionId
-            }));
+            });
             
             // Initialize audio recording
             await this.initializeAudioRecording();
@@ -283,11 +330,43 @@ class RealWhisperIntegration {
         }));
     }
     
+    // MANUAL MONITORING RECOMMENDATION #5: Enhanced connection error handling
     handleConnectionError(error) {
-        console.error('Connection error:', error);
+        console.error('❌ Connection error:', error);
         
+        // Update UI immediately
+        if (window.professionalRecorder) {
+            window.professionalRecorder.updateConnectionStatus('error');
+        }
+        
+        if (this.connectionAttempts < this.maxConnectionAttempts) {
+            this.connectionAttempts++;
+            const delay = Math.pow(2, this.connectionAttempts) * 1000; // Exponential backoff
+            console.log(`🔄 Retrying connection (attempt ${this.connectionAttempts}/${this.maxConnectionAttempts}) in ${delay}ms`);
+            
+            // Show retry notification
+            if (window.toastSystem) {
+                window.toastSystem.showWarning(`🔄 Retrying connection... (${this.connectionAttempts}/${this.maxConnectionAttempts})`);
+            }
+            
+            setTimeout(() => this.initializeConnection(), delay);
+        } else {
+            console.error('❌ Max connection attempts reached - connection failed permanently');
+            
+            // Show failure notification
+            if (window.toastSystem) {
+                window.toastSystem.showError('❌ Connection failed after multiple attempts');
+            }
+            
+            // Update UI to show connection failure
+            if (window.professionalRecorder) {
+                window.professionalRecorder.updateConnectionStatus('failed');
+            }
+        }
+        
+        // Also use enhanced error handler if available
         if (window.enhancedErrorHandler) {
-            window.enhancedErrorHandler.handleError(error, 'WebSocket', () => {
+            window.enhancedErrorHandler.handleError(error, 'Socket.IO', () => {
                 this.attemptReconnection();
             });
         }
@@ -326,7 +405,7 @@ class RealWhisperIntegration {
         this.stopTranscription();
         
         if (this.socket) {
-            this.socket.close();
+            this.socket.disconnect();
             this.socket = null;
         }
         
