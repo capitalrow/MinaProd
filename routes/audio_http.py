@@ -9,6 +9,7 @@ import os
 import tempfile
 import requests
 import base64
+import time
 
 audio_http_bp = Blueprint('audio_http', __name__)
 logger = logging.getLogger(__name__)
@@ -72,52 +73,104 @@ def transcribe_audio():
         return jsonify({'error': 'Server error'}), 500
 
 def transcribe_audio_sync(audio_data):
-    """Synchronous audio transcription using OpenAI Whisper API"""
+    """Enhanced audio transcription with monitoring recommendations implemented"""
+    start_time = time.time()
+    
     try:
+        # MONITORING FIX 1.1: Audio chunk validation
         if len(audio_data) < 100:
+            logger.warning("⚠️ Audio chunk too small for transcription")
             return None
             
-        # Save to temp file
+        # MONITORING FIX 1.1: Audio format validation
+        if not audio_data.startswith(b'OpusHead') and not audio_data.startswith(b'RIFF'):
+            logger.warning("⚠️ Unexpected audio format detected")
+            
+        # Save to temp file with enhanced error handling
         with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_file:
             temp_file.write(audio_data)
             temp_file_path = temp_file.name
         
         try:
-            # Call OpenAI Whisper API
+            # MONITORING FIX 1.1: API key validation
             api_key = os.getenv('OPENAI_API_KEY')
             if not api_key:
-                logger.error("No OpenAI API key found")
+                logger.error("❌ CRITICAL: No OpenAI API key found")
+                return None
+                
+            if not api_key.startswith('sk-'):
+                logger.error("❌ CRITICAL: Invalid OpenAI API key format")
                 return None
                 
             url = "https://api.openai.com/v1/audio/transcriptions"
-            headers = {"Authorization": f"Bearer {api_key}"}
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "User-Agent": "Mina-Transcription/1.0"
+            }
             
+            # MONITORING FIX 1.1: Enhanced request with validation
             with open(temp_file_path, 'rb') as audio_file:
                 files = {
-                    'file': audio_file,
+                    'file': ('audio.webm', audio_file, 'audio/webm'),
                     'model': (None, 'whisper-1'),
-                    'response_format': (None, 'text'),
-                    'language': (None, 'en')
+                    'response_format': (None, 'json'),  # Get detailed response
+                    'language': (None, 'en'),
+                    'temperature': (None, '0')  # Deterministic results
                 }
                 
-                response = requests.post(url, headers=headers, files=files, timeout=10)
+                # MONITORING FIX 1.1: Request with comprehensive error handling
+                response = requests.post(
+                    url, 
+                    headers=headers, 
+                    files=files, 
+                    timeout=15,  # Increased timeout
+                    retry=3 if hasattr(requests, 'retry') else None
+                )
             
+            # Clean up temp file
             os.unlink(temp_file_path)
             
+            # MONITORING FIX 1.1: Enhanced response processing
+            processing_time = (time.time() - start_time) * 1000
+            
             if response.status_code == 200:
-                text = response.text.strip()
-                logger.info(f"✅ Transcribed: {text[:50]}...")
-                return text
+                try:
+                    result = response.json()
+                    text = result.get('text', '').strip()
+                    
+                    if text:
+                        logger.info(f"✅ WHISPER SUCCESS: {text[:50]}... ({processing_time:.0f}ms)")
+                        return text
+                    else:
+                        logger.warning(f"⚠️ WHISPER EMPTY: No text in response ({processing_time:.0f}ms)")
+                        return None
+                        
+                except Exception as json_error:
+                    # Fallback to text response
+                    text = response.text.strip()
+                    if text:
+                        logger.info(f"✅ WHISPER SUCCESS (text): {text[:50]}... ({processing_time:.0f}ms)")
+                        return text
+                    else:
+                        logger.error(f"❌ WHISPER JSON ERROR: {json_error}")
+                        return None
             else:
-                logger.error(f"OpenAI API error {response.status_code}: {response.text}")
+                logger.error(f"❌ WHISPER API ERROR {response.status_code}: {response.text[:200]}... ({processing_time:.0f}ms)")
                 return None
                 
+        except requests.exceptions.Timeout:
+            logger.error(f"❌ WHISPER TIMEOUT after {(time.time() - start_time) * 1000:.0f}ms")
+            return None
+        except requests.exceptions.RequestException as e:
+            logger.error(f"❌ WHISPER REQUEST ERROR: {e}")
+            return None
         except Exception as e:
             if os.path.exists(temp_file_path):
                 os.unlink(temp_file_path)
-            logger.error(f"Transcription error: {e}")
+            logger.error(f"❌ WHISPER PROCESSING ERROR: {e}")
             return None
             
     except Exception as e:
-        logger.error(f"Audio processing failed: {e}")
+        processing_time = (time.time() - start_time) * 1000
+        logger.error(f"❌ AUDIO PROCESSING FAILED: {e} ({processing_time:.0f}ms)")
         return None
