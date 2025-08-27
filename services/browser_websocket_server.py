@@ -126,10 +126,11 @@ class BrowserWebSocketServer:
             }))
     
     async def handle_browser_audio(self, websocket, client_id, audio_data):
-        """Handle audio data from browser MediaRecorder with real Whisper API transcription and instant feedback."""
+        """Handle audio data from browser MediaRecorder with concurrent processing for optimal performance."""
         session_id = self.sessions.get(client_id, 'unknown')
         timestamp = datetime.now().strftime('%H:%M:%S')
         audio_size = len(audio_data)
+        start_time = time.time()
         
         logger.info(f"🎵 Received browser audio: {audio_size} bytes from {client_id}")
         
@@ -138,23 +139,44 @@ class BrowserWebSocketServer:
             logger.debug(f"⏭️ Skipping tiny audio chunk: {audio_size} bytes")
             return
         
-        # Send immediate interim feedback for excellent latency
+        # Send immediate interim feedback for excellent latency (<100ms)
         interim_response = {
             'type': 'transcription_result',
             'session_id': session_id,
             'text': "🎙️ Processing audio...",
             'is_final': False,
             'confidence': 0.1,
-            'timestamp': time.time(),
+            'timestamp': start_time,
             'processing': True
         }
         await websocket.send(json.dumps(interim_response))
         
+        # CRITICAL: Process audio in background thread pool for concurrency
+        import concurrent.futures
+        import asyncio
+        
         try:
-            # Process audio with real OpenAI Whisper API
-            transcription_text = await self.transcribe_audio_real(audio_data)
+            # Use thread pool for I/O-bound Whisper API calls
+            loop = asyncio.get_event_loop()
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+                # Submit transcription task to thread pool
+                future = loop.run_in_executor(
+                    executor, 
+                    self.transcribe_audio_sync, 
+                    audio_data
+                )
+                
+                # Wait for transcription with timeout
+                try:
+                    transcription_text = await asyncio.wait_for(future, timeout=10.0)
+                except asyncio.TimeoutError:
+                    logger.warning(f"⏰ Transcription timeout for {audio_size} bytes")
+                    transcription_text = None
+            
+            processing_time = (time.time() - start_time) * 1000  # Convert to ms
             
             if transcription_text and transcription_text.strip():
+                # Determine if this is interim or final based on chunk size
                 is_final = audio_size > 2048
                 confidence = 0.95
                 
@@ -165,13 +187,14 @@ class BrowserWebSocketServer:
                     'text': transcription_text.strip(),
                     'is_final': is_final,
                     'confidence': confidence,
-                    'timestamp': time.time(),
+                    'timestamp': start_time,
                     'audio_duration': audio_size,
+                    'processing_time_ms': processing_time,
                     'processing': False
                 }
                 
                 await websocket.send(json.dumps(final_response))
-                logger.info(f"📝 Real transcription sent: {transcription_text[:50]}...")
+                logger.info(f"📝 Real transcription sent ({processing_time:.1f}ms): {transcription_text[:50]}...")
             else:
                 # No speech detected - send feedback
                 no_speech_response = {
@@ -180,14 +203,16 @@ class BrowserWebSocketServer:
                     'text': "[No speech detected]",
                     'is_final': False,
                     'confidence': 0.0,
-                    'timestamp': time.time(),
+                    'timestamp': start_time,
+                    'processing_time_ms': processing_time,
                     'processing': False
                 }
                 await websocket.send(json.dumps(no_speech_response))
-                logger.debug("🔇 No speech detected in audio chunk")
+                logger.debug(f"🔇 No speech detected in audio chunk ({processing_time:.1f}ms)")
                 
         except Exception as e:
-            logger.error(f"❌ Transcription error: {e}")
+            processing_time = (time.time() - start_time) * 1000
+            logger.error(f"❌ Transcription error ({processing_time:.1f}ms): {e}")
             # Send error feedback
             error_response = {
                 'type': 'transcription_result',
@@ -195,18 +220,35 @@ class BrowserWebSocketServer:
                 'text': f"[Audio processing temporarily unavailable]",
                 'is_final': False,
                 'confidence': 0.0,
-                'timestamp': time.time(),
+                'timestamp': start_time,
+                'processing_time_ms': processing_time,
                 'processing': False
             }
             await websocket.send(json.dumps(error_response))
     
+    def transcribe_audio_sync(self, audio_data):
+        """Synchronous wrapper for Whisper API calls (runs in thread pool)."""
+        import asyncio
+        # Create new event loop for this thread
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(self.transcribe_audio_real(audio_data))
+        finally:
+            loop.close()
+    
     async def transcribe_audio_real(self, audio_data):
         """Transcribe audio using OpenAI Whisper API with optimized audio processing."""
         try:
-            # Check if audio data looks like valid WebM
-            if len(audio_data) < 50 or not self.is_valid_webm(audio_data):
-                logger.debug(f"⚠️ Audio data doesn't appear to be valid WebM format")
+            # ENHANCED: Accept more audio formats and smaller chunks
+            if len(audio_data) < 50:
+                logger.debug(f"⚠️ Audio chunk too small: {len(audio_data)} bytes")
                 return None
+                
+            # Check if audio data looks like valid audio (more permissive)
+            if not self.is_valid_webm(audio_data):
+                logger.debug(f"⚠️ Audio data format validation failed, attempting conversion anyway")
+                # Don't return None, attempt to process anyway
             
             # Save audio data to temporary file
             with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_file:
