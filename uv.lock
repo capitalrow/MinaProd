@@ -1586,7 +1586,6 @@ dependencies = [
     { name = "python-docx" },
     { name = "python-dotenv" },
     { name = "python-engineio" },
-    { name = "python-socketio", extra = ["asyncio-client", "client"] },
     { name = "redis" },
     { name = "reportlab" },
     { name = "requests" },
@@ -1594,7 +1593,6 @@ dependencies = [
     { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
     { name = "scipy", version = "1.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "socketio" },
     { name = "sqlalchemy" },
     { name = "webrtcvad" },
     { name = "websocket" },
@@ -1676,7 +1674,6 @@ requires-dist = [
     { name = "python-docx", specifier = ">=1.2.0" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "python-engineio", specifier = "==4.7.1" },
-    { name = "python-socketio", extras = ["asyncio-client", "client"], specifier = "==5.8.0" },
     { name = "redis", specifier = ">=6.4.0" },
     { name = "redis", marker = "extra == 'production'", specifier = ">=4.6.0" },
     { name = "reportlab", specifier = ">=4.4.3" },
@@ -1684,7 +1681,6 @@ requires-dist = [
     { name = "requests-mock", marker = "extra == 'test'", specifier = ">=1.11.0" },
     { name = "ruff", specifier = ">=0.12.10" },
     { name = "scipy", specifier = ">=1.10.0" },
-    { name = "socketio", specifier = ">=0.2.1" },
     { name = "sqlalchemy", specifier = ">=2.0.0" },
     { name = "webrtcvad", specifier = ">=2.0.10" },
     { name = "websocket", specifier = ">=0.2.1" },
@@ -1872,12 +1868,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/a2/6e/371856a3fb9d31ca8
 wheels = [
     { url = "https://files.pythonhosted.org/packages/79/7b/2c79738432f5c924bef5071f933bcc9efd0473bac3b4aa584a6f7c1c8df8/mypy_extensions-1.1.0-py3-none-any.whl", hash = "sha256:1be4cccdb0f2482337c4743e60421de3a356cd97508abadd57d47403e94f5505", size = 4963 },
 ]
-
-[[package]]
-name = "netifaces"
-version = "0.10.6"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/72/01/ba076082628901bca750bf53b322a8ff10c1d757dc29196a8e6082711c9d/netifaces-0.10.6.tar.gz", hash = "sha256:0c4da523f36d36f1ef92ee183f2512f3ceb9a9d2a45f7d19cda5a42c6689ebe0", size = 25166 }
 
 [[package]]
 name = "nodeenv"
@@ -2908,15 +2898,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/5d/e9/f296186e2a91f1472b9da74346163411196dc1b17f425acf088f293b32cc/python_socketio-5.8.0-py3-none-any.whl", hash = "sha256:7adb8867aac1c2929b9c1429f1c02e12ca4c36b67c807967393e367dfbb01441", size = 56982 },
 ]
 
-[package.optional-dependencies]
-asyncio-client = [
-    { name = "aiohttp" },
-]
-client = [
-    { name = "requests" },
-    { name = "websocket-client" },
-]
-
 [[package]]
 name = "pyvirtualdisplay"
 version = "3.0"
@@ -3253,16 +3234,6 @@ wheels = [
 ]
 
 [[package]]
-name = "socketio"
-version = "0.2.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "netifaces" },
-    { name = "setuptools" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e0/bf/37ebfc6f628741a1ece11a3147b1927168ff70839b6ec83d0f9a1526abee/socketio-0.2.1.tar.gz", hash = "sha256:dee5abde39c6021d9d1874582479a4e7f8a8352b38bc7731fb6b27b76976f62c", size = 6081 }
-
-[[package]]
 name = "sqlalchemy"
 version = "2.0.43"
 source = { registry = "https://pypi.org/simple" }
@@ -3467,15 +3438,6 @@ dependencies = [
     { name = "greenlet" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f2/6d/a60d620ea575c885510c574909d2e3ed62129b121fa2df00ca1c81024c87/websocket-0.2.1.tar.gz", hash = "sha256:42b506fae914ac5ed654e23ba9742e6a342b1a1c3eb92632b6166c65256469a4", size = 195339 }
-
-[[package]]
-name = "websocket-client"
-version = "1.8.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e6/30/fba0d96b4b5fbf5948ed3f4681f7da2f9f64512e1d303f94b4cc174c24a5/websocket_client-1.8.0.tar.gz", hash = "sha256:3239df9f44da632f96012472805d40a23281a991027ce11d2f45a6f24ac4c3da", size = 54648 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/84/44687a29792a70e111c5c477230a72c4b957d88d16141199bf9acb7537a3/websocket_client-1.8.0-py3-none-any.whl", hash = "sha256:17b44cc997f5c498e809b22cdf2d9c7a9e71c02c8cc2b6c56e7c2d1239bfa526", size = 58826 },
-]
 
 [[package]]
 name = "websockets"

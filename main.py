@@ -11,9 +11,8 @@ if __name__ == '__main__' and 'gunicorn' not in os.environ.get('SERVER_SOFTWARE'
     import eventlet
     eventlet.monkey_patch()
 
+# Temporarily use basic app while fixing SocketIO
 from app import app
-# socketio temporarily disabled for native WebSocket testing
-socketio = None
 
 # Configure logging
 logging.basicConfig(
@@ -28,7 +27,7 @@ logger = logging.getLogger(__name__)
 if __name__ == '__main__':
     logger.info("🚀 Starting Mina with Flask server (native WebSocket on port 8765)...")
     
-    # Use standard Flask server since Socket.IO is disabled
+    # Use standard Flask server temporarily
     app.run(
         host='0.0.0.0',
         port=5000,

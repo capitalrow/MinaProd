@@ -19,6 +19,7 @@ routes/__init__.py
 routes/api.py
 routes/api_performance.py
 routes/audio_http.py
+routes/audio_processing_fixes.py
 routes/browser_websocket_routes.py
 routes/export.py
 routes/health.py
@@ -27,6 +28,7 @@ routes/library_websocket_routes.py
 routes/native_websocket_routes.py
 routes/sessions.py
 routes/sharing.py
+routes/speech_detection_enhancement.py
 routes/summary.py
 routes/sync_websocket_routes.py
 routes/transcription.py
