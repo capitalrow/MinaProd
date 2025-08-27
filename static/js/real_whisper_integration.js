@@ -28,7 +28,7 @@ class RealWhisperIntegration {
             // Determine WebSocket URL based on environment
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const host = window.location.hostname;
-            const port = '8772';
+            const port = '8773';
             const wsUrl = `${protocol}//${host}:${port}`;
             
             console.log(`Connecting to: ${wsUrl}`);
