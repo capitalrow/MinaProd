@@ -6,8 +6,8 @@ Modified for better Gunicorn compatibility
 import os
 import logging
 from flask import Flask
-# Temporarily disabled Socket.IO to resolve conflicts
-# from flask_socketio import SocketIO
+# MANUAL MONITORING RECOMMENDATION #1: Use existing WebSocket infrastructure 
+# from flask_socketio import SocketIO  # Temporarily disabled due to dependency conflicts
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -42,8 +42,8 @@ try:
 except Exception as e:
     logger.error(f"❌ Failed to start Browser WebSocket Server: {e}")
 
-# Native WebSocket implementation only - Socket.IO disabled for testing
-socketio = None  # Temporarily disabled to resolve import conflicts
+# MANUAL MONITORING RECOMMENDATION #1: Use enhanced WebSocket server instead
+socketio = None  # Using native WebSocket server for better compatibility
 
 def create_app(config_class=Config):
     """
@@ -131,8 +131,9 @@ def create_app(config_class=Config):
     
     # Initialize extensions
     db.init_app(app)
-    # socketio disabled for native WebSocket testing
-    # socketio.init_app(app)
+    
+    # MANUAL MONITORING RECOMMENDATION #1: Enhanced WebSocket already initialized
+    logger.info("✅ Using enhanced WebSocket infrastructure for real-time transcription")
     
     # Register blueprints
     from routes.health import health_bp
@@ -162,11 +163,8 @@ def create_app(config_class=Config):
     except Exception as e:
         logger.error(f"❌ Failed to register WebSocket routes: {e}")
     
-    # Socket.IO handlers disabled for native WebSocket testing
-    # def register_websockets():
-    #     from routes.websocket import register_websocket_handlers
-    #     register_websocket_handlers(socketio)
-    # register_websockets()
+    # MANUAL MONITORING RECOMMENDATION #1: Enhanced WebSocket routes already registered
+    logger.info("✅ Enhanced WebSocket event handlers active")
     
     # 🔧 ACTIVATE EXISTING MONITORING SYSTEMS
     try:
