@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Mina{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Professional Header -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="h2 mb-2">Welcome to Mina</h1>
+            <p class="text-muted lead">Professional AI-powered transcription platform</p>
+        </div>
+        <a href="{{ url_for('transcription.live_transcription') }}" class="btn btn-primary btn-lg px-4">
+            <i class="fas fa-microphone me-2"></i>
+            Start Transcription
+        </a>
+    </div>
+
+    <!-- Clean Stats Overview -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <div class="text-primary mb-3">
+                        <i class="fas fa-calendar-alt fa-2x"></i>
+                    </div>
+                    <h3 class="h4 mb-2" id="totalSessions">{{ stats.get('total_sessions', 0) }}</h3>
+                    <p class="text-muted mb-0">Total Sessions</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <div class="text-success mb-3">
+                        <i class="fas fa-file-alt fa-2x"></i>
+                    </div>
+                    <h3 class="h4 mb-2" id="totalSegments">{{ stats.get('total_segments', 0) }}</h3>
+                    <p class="text-muted mb-0">Segments Processed</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <div class="text-info mb-3">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                    <h3 class="h4 mb-2" id="averageDuration">{{ "%.1f"|format(stats.get('avg_duration', 0)) }}m</h3>
+                    <p class="text-muted mb-0">Avg Duration</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <div class="text-warning mb-3">
+                        <i class="fas fa-percentage fa-2x"></i>
+                    </div>
+                    <h3 class="h4 mb-2" id="averageConfidence">{{ "%.0f"|format(stats.get('avg_confidence', 0) * 100) }}%</h3>
+                    <p class="text-muted mb-0">Avg Confidence</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Sessions -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="h5 mb-0">Recent Sessions</h4>
+                <button class="btn btn-outline-secondary btn-sm" onclick="refreshStats()">
+                    <i class="fas fa-sync-alt"></i>
+                    Refresh
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if recent_sessions %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Session</th>
+                            <th>Started</th>
+                            <th>Duration</th>
+                            <th>Segments</th>
+                            <th>Confidence</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for session in recent_sessions[:10] %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-microphone text-primary me-2"></i>
+                                    <div>
+                                        <div class="fw-medium">{{ session.title or 'Untitled Session' }}</div>
+                                        <small class="text-muted">{{ session.external_id[:8] }}...</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <small>{{ session.started_at.strftime('%Y-%m-%d %H:%M') if session.started_at else 'N/A' }}</small>
+                            </td>
+                            <td>
+                                {% set duration_seconds = session.total_duration or 0 %}
+                                {% if duration_seconds > 0 %}
+                                    {{ "%.1f"|format(duration_seconds/60) }}m
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark">{{ session.total_segments or 0 }}</span>
+                            </td>
+                            <td>
+                                {% set confidence = (session.average_confidence or 0) * 100 %}
+                                <div class="d-flex align-items-center">
+                                    <div class="progress me-2" style="width: 60px; height: 8px;">
+                                        <div class="progress-bar 
+                                            {% if confidence >= 80 %}bg-success
+                                            {% elif confidence >= 60 %}bg-warning
+                                            {% else %}bg-danger{% endif %}" 
+                                            style="width: {{ confidence }}%"></div>
+                                    </div>
+                                    <small>{{ "%.0f"|format(confidence) }}%</small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if session.status == 'completed' %}
+                                    <span class="badge bg-success">Complete</span>
+                                {% elif session.status == 'active' %}
+                                    <span class="badge bg-primary">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ session.status.title() }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('sessions.list_sessions') }}" 
+                                       class="btn btn-outline-primary btn-sm" title="View Sessions">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('export.export_session_text', session_id=session.id) }}" 
+                                       class="btn btn-outline-secondary btn-sm" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-microphone-slash fa-3x mb-3 opacity-50"></i>
+                <p class="lead">No sessions yet</p>
+                <a href="{{ url_for('transcription.live_transcription') }}" class="btn btn-primary">
+                    Create Your First Session
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Clean JavaScript -->
+<script>
+function refreshStats() {
+    location.reload();
+}
+
+// Auto-refresh stats every 30 seconds
+setInterval(() => {
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('totalSessions').textContent = data.total_sessions || 0;
+            document.getElementById('totalSegments').textContent = data.total_segments || 0;
+            document.getElementById('averageDuration').textContent = (data.avg_duration || 0).toFixed(1) + 'm';
+            document.getElementById('averageConfidence').textContent = Math.round((data.avg_confidence || 0) * 100) + '%';
+        })
+        .catch(error => console.log('Stats refresh failed:', error));
+}, 30000);
+</script>
+{% endblock %}

@@ -56,21 +56,21 @@ def index():
         stats = SessionService.get_session_stats()
         stats['total_duration_hours'] = 0.0  # Placeholder for now
         
-        return render_template('index.html', 
+        return render_template('index_clean.html', 
                              recent_sessions=recent_sessions,
                              stats=stats)
     
     except Exception as e:
         logger.error(f"Error loading dashboard: {e}")
         flash(f"Error loading dashboard: {str(e)}", 'error')
-        return render_template('index.html', recent_sessions=[], stats={})
+        return render_template('index_clean.html', recent_sessions=[], stats={})
 
 @transcription_bp.route('/live')
 def live_transcription():
     """
     Real-time transcription interface.
     """
-    return render_template('live.html')
+    return render_template('live_clean.html')
 
 @transcription_bp.route('/sessions')
 def list_sessions():
