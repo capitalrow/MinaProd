@@ -18,14 +18,14 @@ logger = logging.getLogger(__name__)
 class WebSocketLibraryServer:
     """Production-grade WebSocket server using the standard websockets library."""
     
-    def __init__(self, host="0.0.0.0", port=8769):
+    def __init__(self, host="0.0.0.0", port=8770):  # Changed port to avoid conflicts
         self.host = host
         self.port = port
         self.clients = {}
         self.sessions = {}
         self.running = False
         
-    async def handle_connection(self, websocket, path):
+    async def handle_connection(self, websocket):
         """Handle a WebSocket connection."""
         client_id = str(uuid.uuid4())
         self.clients[client_id] = websocket
@@ -132,7 +132,7 @@ class WebSocketLibraryServer:
         logger.info(f"🚀 Starting WebSocket Library Server on {self.host}:{self.port}")
         
         server = await websockets.serve(
-            self.handle_connection,
+            lambda websocket, path: self.handle_connection(websocket),
             self.host,
             self.port,
             ping_interval=20,
