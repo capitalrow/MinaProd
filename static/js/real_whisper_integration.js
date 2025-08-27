@@ -273,6 +273,19 @@ class RealWhisperIntegration {
     handleTranscriptionResult(data) {
         const timestamp = new Date().toLocaleTimeString();
         const confidence = Math.round(data.confidence * 100);
+        const latency = Date.now() - (data.timestamp || Date.now());
+        
+        // INDUSTRY STANDARD: Update performance metrics
+        if (window.performanceMonitor && window.performanceMonitor.isActive) {
+            window.performanceMonitor.segmentCount++;
+            window.performanceMonitor.latencies.push(latency);
+            window.performanceMonitor.confidenceScores.push(confidence / 100);
+            
+            if (data.text) {
+                const wordCount = data.text.split(' ').filter(word => word.length > 0).length;
+                window.performanceMonitor.wordCount += wordCount;
+            }
+        }
         
         // Handle different types of responses
         if (data.processing) {
@@ -284,19 +297,12 @@ class RealWhisperIntegration {
                 text: data.text,
                 confidence: confidence,
                 is_final: data.is_final,
-                timestamp: timestamp
+                timestamp: timestamp,
+                latency: latency
             });
         }
         
-        // Update transcription statistics if available
-        if (window.professionalRecorder && window.professionalRecorder.updateTranscriptionStats) {
-            window.professionalRecorder.updateTranscriptionStats({
-                segments: this.transcriptionBuffer.length,
-                avgConfidence: confidence
-            });
-        }
-        
-        console.log(`📝 Transcription: "${data.text}" (${confidence}% confidence)`);
+        console.log(`📝 Transcription: "${data.text}" (${confidence}% confidence, ${latency}ms latency)`);
     }
     
     displayProcessingFeedback(text) {
@@ -362,7 +368,7 @@ class RealWhisperIntegration {
             }
             
             const segmentElement = document.createElement('div');
-            segmentElement.className = `transcript-segment ${result.is_final ? 'final' : 'interim'} mb-2`;
+            segmentElement.className = `transcript-segment ${result.is_final ? 'final' : 'interim'} mb-2 fade-in`;
             segmentElement.innerHTML = `
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="transcript-text">

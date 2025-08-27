@@ -692,8 +692,15 @@
 <!-- Final Integration System -->
 <script src="/static/js/industry_standards_integration.js"></script>
 
-<!-- Real Whisper Integration replaces recording_wiring.js -->
-<script src="/static/js/sim_from_audio.js"></script>
+<!-- CRITICAL FIX: Completely disable competing systems -->
+<!-- recording_wiring.js DISABLED to prevent conflicts -->
+<!-- sim_from_audio.js DISABLED to prevent conflicts -->
+<script>
+// OVERRIDE: Disable competing transcription systems completely
+window.DISABLE_RECORDING_WIRING = true;
+window.DISABLE_PROFESSIONAL_RECORDER = true;
+window.FORCE_REAL_WHISPER_INTEGRATION = true;
+</script>
 
 <!-- Enhanced Features Inline JavaScript for 100% Effectiveness -->
 <script>
@@ -1143,14 +1150,20 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Browser simulation integration ready');
     }
     
-    // CRITICAL FIX: Ensure Real Whisper Integration takes priority over competing systems
-    if (window.realWhisperIntegration) {
-        console.log('🎯 Initializing PRIORITY Real Whisper API integration...');
+    // INDUSTRY STANDARD: Real Whisper Integration as EXCLUSIVE transcription system
+    if (window.realWhisperIntegration && window.FORCE_REAL_WHISPER_INTEGRATION) {
+        console.log('🎯 Initializing EXCLUSIVE Real Whisper API integration...');
         
-        // OVERRIDE: Disable competing transcription systems
-        if (window.professionalRecorder) {
-            console.log('⚠️ Disabling competing professionalRecorder system');
-            window.professionalRecorder = null;
+        // COMPLETE OVERRIDE: Disable ALL competing transcription systems
+        window.professionalRecorder = null;
+        window.recordingWiring = null;
+        window.webSocketStreaming = null;
+        window.audioProcessor = null;
+        
+        // Clear any existing intervals/timers from competing systems
+        for (let i = 1; i < 99999; i++) {
+            window.clearInterval(i);
+            window.clearTimeout(i);
         }
         
         // PRIORITY: Get exclusive control of recording buttons
@@ -1172,15 +1185,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const priorityStopBtn = document.getElementById('stopRecordingBtn');
         
         if (priorityStartBtn) {
-            priorityStartBtn.addEventListener('click', async function() {
-                console.log('🎯 PRIORITY: Real Whisper Integration handling start button');
+            priorityStartBtn.addEventListener('click', async function(event) {
+                console.log('🎯 EXCLUSIVE: Real Whisper Integration handling start button');
                 
-                // Prevent any other systems from interfering
+                // COMPLETE PREVENTION: Stop all other handlers
                 event.stopImmediatePropagation();
                 event.preventDefault();
+                event.stopPropagation();
+                
                 try {
                     this.disabled = true;
-                    window.toastSystem.showInfo('Connecting to real-time transcription service...');
+                    
+                    // Add comprehensive UI feedback
+                    updateConnectionStatus('Connecting to Enhanced WebSocket...', 'info');
+                    window.toastSystem.showInfo('🔗 Connecting to real-time transcription service...');
                     
                     // Generate session ID
                     const sessionId = `live_${Date.now()}`;
@@ -1213,12 +1231,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.disabled = true;
                     if (priorityStopBtn) priorityStopBtn.disabled = false;
                     
-                    // Initialize final transcript collection
+                    // Initialize comprehensive transcript tracking
                     window.interimTranscripts = [];
                     window.finalTranscripts = [];
+                    window.transcriptionStartTime = Date.now();
+                    window.transcriptionMetrics = {
+                        totalWords: 0,
+                        avgConfidence: 0,
+                        latencySum: 0,
+                        latencyCount: 0
+                    };
                     
-                    window.toastSystem.showSuccess('✅ PRIORITY Real Whisper transcription started - Interim + Final generation ready');
-                    console.log('✅ PRIORITY Real Whisper Integration active with Final Transcript Generation');
+                    // Start real-time performance monitoring
+                    startPerformanceMonitoring();
+                    
+                    updateConnectionStatus('Real Whisper Integration ACTIVE', 'success');
+                    window.toastSystem.showSuccess('✅ EXCLUSIVE Real Whisper transcription started - Industry standard quality active');
+                    console.log('✅ EXCLUSIVE Real Whisper Integration active with Performance Monitoring');
                     
                 } catch (error) {
                     console.error('❌ Failed to start real-time transcription:', error);
@@ -1229,11 +1258,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (priorityStopBtn) {
-            priorityStopBtn.addEventListener('click', async function() {
-                console.log('🎯 PRIORITY: Real Whisper Integration handling stop button');
+            priorityStopBtn.addEventListener('click', async function(event) {
+                console.log('🎯 EXCLUSIVE: Real Whisper Integration handling stop button');
+                
+                // COMPLETE PREVENTION: Stop all other handlers
+                event.stopImmediatePropagation();
+                event.preventDefault();
+                event.stopPropagation();
+                
+                // Stop performance monitoring
+                stopPerformanceMonitoring();
+                
+                // Display final performance metrics
+                displayPerformanceReport();
                 
                 // Stop real-time transcription
                 window.realWhisperIntegration.stopTranscription();
+                
+                updateConnectionStatus('Generating final transcript...', 'info');
                 
                 // Generate final refined transcript using GPT-4
                 await generateFinalTranscript();
@@ -1434,7 +1476,127 @@ document.addEventListener('DOMContentLoaded', function() {
         window.toastSystem.showSuccess('Transcript downloaded');
     }
     
-    console.log('✅ PRIORITY Real Whisper Integration with Final Transcript Generation initialized');
+    // INDUSTRY STANDARD: Performance Monitoring Functions
+    function startPerformanceMonitoring() {
+        window.performanceMonitor = {
+            startTime: Date.now(),
+            wordCount: 0,
+            segmentCount: 0,
+            latencies: [],
+            confidenceScores: [],
+            isActive: true
+        };
+        
+        // Real-time performance updates every 5 seconds
+        window.performanceInterval = setInterval(updatePerformanceMetrics, 5000);
+        console.log('📊 Performance monitoring started');
+    }
+    
+    function stopPerformanceMonitoring() {
+        if (window.performanceInterval) {
+            clearInterval(window.performanceInterval);
+            window.performanceInterval = null;
+        }
+        
+        if (window.performanceMonitor) {
+            window.performanceMonitor.isActive = false;
+        }
+        
+        console.log('📊 Performance monitoring stopped');
+    }
+    
+    function updatePerformanceMetrics() {
+        if (!window.performanceMonitor || !window.performanceMonitor.isActive) return;
+        
+        const monitor = window.performanceMonitor;
+        const elapsed = (Date.now() - monitor.startTime) / 1000;
+        const wordsPerMinute = monitor.wordCount > 0 ? (monitor.wordCount / elapsed) * 60 : 0;
+        const avgLatency = monitor.latencies.length > 0 ? 
+            monitor.latencies.reduce((a, b) => a + b, 0) / monitor.latencies.length : 0;
+        const avgConfidence = monitor.confidenceScores.length > 0 ? 
+            monitor.confidenceScores.reduce((a, b) => a + b, 0) / monitor.confidenceScores.length : 0;
+        
+        // Update performance display
+        updatePerformanceDisplay({
+            elapsed: Math.round(elapsed),
+            wordCount: monitor.wordCount,
+            wordsPerMinute: Math.round(wordsPerMinute),
+            avgLatency: Math.round(avgLatency),
+            avgConfidence: Math.round(avgConfidence * 100),
+            segmentCount: monitor.segmentCount
+        });
+    }
+    
+    function updatePerformanceDisplay(metrics) {
+        // Update the live performance indicators in the UI
+        const timeElement = document.querySelector('.recording-time') || document.querySelector('[data-metric="time"]');
+        const wordsElement = document.querySelector('.words-count') || document.querySelector('[data-metric="words"]');
+        const accuracyElement = document.querySelector('.accuracy-score') || document.querySelector('[data-metric="accuracy"]');
+        
+        if (timeElement) {
+            timeElement.textContent = formatTime(metrics.elapsed);
+        }
+        
+        if (wordsElement) {
+            wordsElement.textContent = metrics.wordCount;
+        }
+        
+        if (accuracyElement) {
+            accuracyElement.textContent = `${metrics.avgConfidence}%`;
+        }
+        
+        // Add real-time status indicator
+        updateConnectionStatus(`Active: ${metrics.wordCount} words, ${metrics.avgConfidence}% confidence`, 'success');
+    }
+    
+    function displayPerformanceReport() {
+        if (!window.performanceMonitor) return;
+        
+        const monitor = window.performanceMonitor;
+        const totalTime = (Date.now() - monitor.startTime) / 1000;
+        const avgLatency = monitor.latencies.length > 0 ? 
+            monitor.latencies.reduce((a, b) => a + b, 0) / monitor.latencies.length : 0;
+        const avgConfidence = monitor.confidenceScores.length > 0 ? 
+            monitor.confidenceScores.reduce((a, b) => a + b, 0) / monitor.confidenceScores.length : 0;
+        
+        const report = {
+            totalTime: Math.round(totalTime),
+            totalWords: monitor.wordCount,
+            totalSegments: monitor.segmentCount,
+            avgLatency: Math.round(avgLatency),
+            avgConfidence: Math.round(avgConfidence * 100),
+            wordsPerMinute: monitor.wordCount > 0 ? Math.round((monitor.wordCount / totalTime) * 60) : 0
+        };
+        
+        console.log('📊 Final Performance Report:', report);
+        
+        // Display report in UI
+        window.toastSystem.showInfo(
+            `Session Complete: ${report.totalWords} words, ${report.avgConfidence}% avg confidence, ${report.avgLatency}ms avg latency`
+        );
+    }
+    
+    function updateConnectionStatus(message, type = 'info') {
+        // Update connection status display
+        const statusElement = document.querySelector('.connection-status') || 
+                            document.querySelector('.status-indicator') ||
+                            document.querySelector('#debugStatus');
+        
+        if (statusElement) {
+            statusElement.textContent = message;
+            statusElement.className = `connection-status text-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'}`;
+        }
+        
+        console.log(`🔗 Status: ${message}`);
+    }
+    
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    console.log('✅ EXCLUSIVE Real Whisper Integration with Industry Standard Performance Monitoring initialized');
 });
 </script>
 {% endblock %}
