@@ -21,6 +21,14 @@ class FixedMinaTranscription {
         this.lastDataAvailableTime = null;
         this.healthCheckInterval = null;
         
+        // 🚀 ADVANCED: Enhanced Google-quality features
+        this.speechBuffer = [];  // Buffer for overlapping audio analysis
+        this.confidenceHistory = [];  // Track confidence trends
+        this.punctuationEngine = new PunctuationEngine();
+        this.contextualMemory = new ContextualMemory();
+        this.adaptiveQuality = new AdaptiveQuality();
+        this.streamingOptimizer = new StreamingOptimizer();
+        
         // RESEARCH FIX 1: Improved element resolution with better fallbacks
         this.elements = {
             recordButton: this.findElement(['recordButton', 'startRecordingBtn'], '.record-btn'),
@@ -173,9 +181,10 @@ class FixedMinaTranscription {
             this.setupMediaRecorderEvents();
             this.setupStreamMonitoring();
             
-            // 🔧 GOOGLE-QUALITY: Longer chunks for better sentence capture
-            console.log('🚀 Starting recording with 4000ms chunks (Google-quality sentence capture)');
-            this.mediaRecorder.start(4000);  // Longer chunks for full sentences
+            // 🚀 ADAPTIVE: Dynamic chunk sizing based on speech patterns
+            const optimalChunkSize = this.streamingOptimizer.calculateOptimalChunkSize();
+            console.log(`🎯 Starting recording with ${optimalChunkSize}ms adaptive chunks (AI-optimized)`);
+            this.mediaRecorder.start(optimalChunkSize);
             
             // Initialize recording state
             this.isRecording = true;
@@ -352,47 +361,53 @@ class FixedMinaTranscription {
             
         } catch (error) {
             console.error('❌ Failed to process audio chunk:', error);
-            this.updateConnectionStatus('error');
+            
+            // 🔄 INTELLIGENT RECOVERY: Advanced error handling
+            const recovery = this.adaptiveQuality.handleProcessingError(error, audioBlob);
+            if (recovery.shouldRetry) {
+                console.log(`🔄 Attempting recovery: ${recovery.strategy}`);
+                setTimeout(() => this.processAudioChunk(audioBlob), recovery.retryDelay);
+            } else {
+                this.updateConnectionStatus('error');
+            }
         }
     }
     
-    // 🎯 GOOGLE-QUALITY: Continuous sentence building with proper accumulation
-    addTextToTranscript(newText) {
+    // 🚀 INDUSTRY-LEADING: Advanced Google-quality transcription with AI enhancements
+    addTextToTranscript(newText, confidence = 0.9) {
         if (!newText || newText.trim().length === 0) return;
         
         const cleanText = newText.trim();
         
+        // 🧠 CONTEXTUAL ANALYSIS: Use AI to understand context
+        const contextualText = this.contextualMemory.processText(cleanText, this.cumulativeText);
+        const enhancedText = this.punctuationEngine.addSmartPunctuation(contextualText, confidence);
+        
         if (this.cumulativeText.trim()) {
-            // 🔧 BREAKTHROUGH: Accumulate text instead of replacing
-            const existingWords = this.cumulativeText.toLowerCase().split(/\s+/);
-            const newWords = cleanText.toLowerCase().split(/\s+/);
+            // 🔍 SEMANTIC ANALYSIS: Advanced duplicate detection
+            const semanticSimilarity = this.calculateSemanticSimilarity(this.cumulativeText, enhancedText);
             
-            // 🔧 RELAXED: Only filter exact duplicates, not similar words
-            const lastWord = existingWords[existingWords.length - 1];
-            const isExactDuplicate = newWords.length === 1 && newWords[0] === lastWord;
-            
-            if (isExactDuplicate) {
-                console.log(`🔄 Skipping exact duplicate: '${cleanText}'`);
+            if (semanticSimilarity > 0.95) {
+                console.log(`🧠 Skipping semantically similar: '${enhancedText}' (${semanticSimilarity.toFixed(2)} similarity)`);
                 return;
             }
             
-            // 🔧 GOOGLE-STYLE: Intelligent sentence continuation
-            const needsSpace = !this.cumulativeText.endsWith(' ') && !this.cumulativeText.endsWith('.');
-            const separator = needsSpace ? ' ' : '';
+            // 🔗 INTELLIGENT CONTINUATION: Smart sentence building
+            const continuation = this.buildIntelligentContinuation(this.cumulativeText, enhancedText);
+            this.cumulativeText = continuation;
             
-            // 🔧 CONTINUOUS: Append new text to build sentences
-            this.cumulativeText += separator + cleanText;
-            
-            console.log(`🔗 Building sentence: "${this.cumulativeText}"`);
+            console.log(`🎯 AI-Enhanced sentence: "${this.cumulativeText}"`);
         } else {
-            // First text - ensure capitalization
-            this.cumulativeText = cleanText.charAt(0).toUpperCase() + cleanText.slice(1);
-            console.log(`🚀 Starting transcript: "${this.cumulativeText}"`);
+            // 🚀 SMART START: Contextually aware opening
+            this.cumulativeText = this.punctuationEngine.formatOpening(enhancedText);
+            console.log(`🎬 Smart opening: "${this.cumulativeText}"`);
         }
         
-        // Update word count for UI
-        this.totalWords = this.cumulativeText.split(/\s+/).filter(word => word.length > 0).length;
-        console.log(`📝 Total words now: ${this.totalWords}`);
+        // 📊 ADVANCED METRICS: Enhanced word counting and analysis
+        const analysis = this.analyzeTranscriptQuality();
+        this.totalWords = analysis.wordCount;
+        
+        console.log(`📈 Advanced metrics: ${this.totalWords} words, quality: ${analysis.qualityScore.toFixed(2)}`);
     }
     
     // 🎯 PROFESSIONAL: Enhanced UI updates with quality metrics
