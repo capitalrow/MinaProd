@@ -16,9 +16,9 @@ from services.live_session_monitor import live_monitor
 from services.adaptive_performance_enhancer import adaptive_enhancer
 from services.advanced_optimization_engine import advanced_optimization_engine
 from services.self_healing_optimizer import self_healing_optimizer
-# FIXED: Lazy import to prevent circular dependency
-# from services.transcription_service import TranscriptionService
-# from models.session import Session
+# FIXED: Import models properly
+from models import Session
+# from services.transcription_service import TranscriptionService - lazy loaded via get_transcription_service()
 
 logger = logging.getLogger(__name__)
 

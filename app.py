@@ -58,6 +58,71 @@ def create_app(config_class=Config):
         x_port=1
     )
     
+    # Configure CORS middleware  
+    from middleware.cors import configure_cors
+    configure_cors(app)
+    
+    # SECURITY: Add production security headers
+    @app.after_request
+    def add_security_headers(response):
+        """Add comprehensive security headers for production deployment."""
+        from flask import request
+        
+        # Content Security Policy - Allow same origin and specific trusted sources
+        if not app.config.get('DEVELOPMENT'):
+            # Production CSP - restrictive but functional for WebSocket/audio apps
+            csp_policy = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "  # Required for Socket.IO and audio processing
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "  # Bootstrap and inline styles
+                "connect-src 'self' wss: ws: https://api.openai.com; "  # WebSocket and OpenAI API
+                "media-src 'self' blob:; "  # Audio blob URLs
+                "worker-src 'self' blob:; "  # Web workers for audio
+                "frame-ancestors 'none'; "  # Prevent embedding
+                "object-src 'none'; "
+                "base-uri 'self'"
+            )
+        else:
+            # Development CSP - more permissive for localhost
+            csp_policy = (
+                "default-src 'self' localhost:* 127.0.0.1:* *.replit.dev *.replit.app; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' localhost:* 127.0.0.1:* *.replit.dev *.replit.app; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net localhost:* 127.0.0.1:* *.replit.dev *.replit.app; "
+                "connect-src 'self' wss: ws: https://api.openai.com localhost:* 127.0.0.1:* *.replit.dev *.replit.app; "
+                "media-src 'self' blob: localhost:* 127.0.0.1:* *.replit.dev *.replit.app; "
+                "worker-src 'self' blob:; "
+                "frame-ancestors 'self' localhost:* 127.0.0.1:* *.replit.dev *.replit.app"
+            )
+        
+        response.headers['Content-Security-Policy'] = csp_policy
+        
+        # HTTP Strict Transport Security (HSTS) - only for HTTPS
+        if request.is_secure or app.config.get('FORCE_HTTPS'):
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+        
+        # Prevent clickjacking
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'  # Allow same-origin framing for Replit
+        
+        # Prevent MIME type sniffing
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        
+        # XSS Protection (legacy but still useful)
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        
+        # Referrer Policy - protect user privacy
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        
+        # Permissions Policy - restrict dangerous features
+        response.headers['Permissions-Policy'] = (
+            'microphone=(self), '  # Required for transcription
+            'camera=(), '  # Not needed
+            'geolocation=(), '
+            'payment=(), '
+            'usb=()'
+        )
+        
+        return response
+    
     # Initialize extensions
     db.init_app(app)
     socketio.init_app(app)
