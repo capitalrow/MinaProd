@@ -1,0 +1,1558 @@
+{% extends "base.html" %}
+
+{% block title %}Live Transcription - Mina{% endblock %}
+
+{% block head %}
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=5.0">
+<meta name="description" content="Real-time live transcription service with high accuracy speech-to-text conversion">
+<meta name="theme-color" content="#0d6efd">
+
+<!-- Single transcription system only -->
+
+<!-- iOS and mobile enhancements -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mina Live">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Mina Live">
+
+<!-- Skip link for accessibility -->
+<style>
+/* Enhanced accessibility and mobile styles */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: var(--bs-primary);
+    color: white;
+    padding: 12px 16px;
+    text-decoration: none;
+    transition: top 0.3s;
+    z-index: 1000;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.skip-link:focus {
+    top: 6px;
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .card {
+        border: 2px solid var(--bs-light);
+    }
+    .btn {
+        border-width: 2px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .notification-popup,
+    .transcription-segment,
+    .loading-spinner {
+        animation: none;
+    }
+    .skip-link {
+        transition: none;
+    }
+}
+
+/* Mobile-first touch targets */
+@media (max-width: 768px) {
+    .btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 12px 16px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    .form-check-input {
+        min-height: 24px;
+        min-width: 24px;
+    }
+    
+    .form-check-label {
+        font-size: 16px;
+        padding-left: 8px;
+    }
+}
+
+.notification-toast {
+    min-width: 300px;
+    z-index: 1055;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+}
+
+.loading-spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 0.4em solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--bs-primary);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+<style>
+.transcription-container {
+    min-height: 400px;
+    max-height: 600px;
+    overflow-y: auto;
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-gray-600);
+    border-radius: 0.375rem;
+    padding: 1rem;
+}
+
+.transcription-segment {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.25rem;
+    transition: all 0.3s ease;
+}
+
+.transcription-segment.interim {
+    background: rgba(var(--bs-warning-rgb), 0.1);
+    border-left: 3px solid var(--bs-warning);
+    font-style: italic;
+}
+
+.transcription-segment.final {
+    background: rgba(var(--bs-success-rgb), 0.1);
+    border-left: 3px solid var(--bs-success);
+}
+
+.speaker-label {
+    font-weight: bold;
+    color: var(--bs-info);
+    font-size: 0.9em;
+    margin-bottom: 0.25rem;
+}
+
+.confidence-indicator {
+    width: 100%;
+    height: 4px;
+    background: var(--bs-gray-600);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 0.25rem;
+}
+
+.confidence-bar {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.confidence-high { background: var(--bs-success); }
+.confidence-medium { background: var(--bs-warning); }
+.confidence-low { background: var(--bs-danger); }
+
+.audio-visualizer {
+    width: 100%;
+    height: 60px;
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-gray-600);
+    border-radius: 0.375rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.wave-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 2px;
+}
+
+.wave-bar {
+    width: 3px;
+    background: var(--bs-primary);
+    border-radius: 2px;
+    transition: height 0.1s ease;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+.status-connected { background: var(--bs-success); }
+.status-connecting { background: var(--bs-warning); animation: pulse 1s infinite; }
+.status-disconnected { background: var(--bs-danger); }
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Enhanced skip navigation links -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<a href="#recording-controls" class="skip-link">Skip to recording controls</a>
+<a href="#transcription-display" class="skip-link">Skip to transcription</a>
+
+<!-- ARIA live regions for screen reader announcements -->
+<div id="sr-announcements" 
+     aria-live="assertive" 
+     aria-atomic="true" 
+     class="sr-only"
+     role="status">
+</div>
+
+<!-- Status announcements for screen readers -->
+<div id="sr-status" 
+     aria-live="polite" 
+     aria-atomic="false" 
+     class="sr-only"
+     role="log">
+</div>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="text-center text-white">
+        <div class="loading-spinner"></div>
+        <div class="mt-3">
+            <span id="loadingMessage">Loading...</span>
+        </div>
+    </div>
+</div>
+
+<!-- Notification area -->
+<div id="notificationArea" 
+     aria-live="assertive" 
+     aria-atomic="true" 
+     class="position-fixed top-0 end-0 p-3" 
+     style="z-index: 1100;">
+</div>
+
+<main id="main-content" role="main">
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 id="page-title">
+                <i class="fas fa-broadcast-tower me-2" aria-hidden="true"></i>
+                Live Transcription
+            </h1>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#sessionConfigModal"
+                        aria-label="Open transcription configuration settings"
+                        aria-describedby="config-description">
+                    <i class="fas fa-cog me-2" aria-hidden="true"></i>
+                    Configure
+                </button>
+                <span id="config-description" class="sr-only">Opens a dialog to configure transcription settings like language and sensitivity</span>
+                
+                <a href="{{ url_for('transcription.index') }}" 
+                   class="btn btn-secondary"
+                   aria-label="Navigate back to transcription dashboard">
+                    <i class="fas fa-arrow-left me-2" aria-hidden="true"></i>
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Connection Status -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="status-indicator status-disconnected" id="connectionStatus"></span>
+                        <span id="wsStatus">Initializing...</span>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <small class="text-muted">
+                            <i class="fas fa-microphone me-1"></i>
+                            <span id="micStatus">Not connected</span>
+                        </small>
+                        <small class="text-muted">
+                            <i class="fas fa-language me-1"></i>
+                            <span id="languageStatus">en</span>
+                        </small>
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            <span id="sessionTime">00:00</span>
+                        </small>
+                        <!-- E2E Debug Panel -->
+                        <small class="text-muted" id="debugInfo" style="display: none;">
+                            <i class="fas fa-bug me-1"></i>
+                            <span id="debugStatus">Debug Mode</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recording Controls Section -->
+<section id="recording-controls" 
+         class="row mb-4" 
+         role="region" 
+         aria-labelledby="controls-heading"
+         aria-describedby="controls-description">
+    <div class="col-12">
+        <h2 id="controls-heading" class="sr-only">Recording Controls</h2>
+        <div id="controls-description" class="sr-only">Use these controls to start and stop audio recording for live transcription</div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-microphone me-2" aria-hidden="true"></i>
+                    Audio Controls
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex gap-2" role="toolbar" aria-label="Recording controls toolbar">
+                            <button class="btn btn-success" 
+                                    id="startRecordingBtn" 
+                                    aria-label="Start recording audio for live transcription"
+                                    aria-describedby="start-help"
+                                    aria-keyshortcuts="Ctrl+R">
+                                <i class="fas fa-play me-2" aria-hidden="true"></i>
+                                Start Recording
+                            </button>
+                            <div id="start-help" class="sr-only">Press Ctrl+R to quickly start recording</div>
+                            
+                            <button class="btn btn-danger" 
+                                    id="stopRecordingBtn" 
+                                    disabled 
+                                    aria-label="Stop recording audio and end transcription session"
+                                    aria-describedby="stop-help"
+                                    aria-keyshortcuts="Ctrl+S">
+                                <i class="fas fa-stop me-2" aria-hidden="true"></i>
+                                Stop Recording
+                            </button>
+                            <div id="stop-help" class="sr-only">Press Ctrl+S to quickly stop recording</div>
+                            
+                            <!-- E2E Debug Simulation Toggle -->
+                            <button class="btn btn-outline-info" 
+                                    id="simulateFromFileBtn"
+                                    aria-label="Simulate recording from podcast file for testing"
+                                    title="E2E Testing: Simulate mic input from audio file">
+                                <i class="fas fa-file-audio me-2" aria-hidden="true"></i>
+                                Simulate from file
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <fieldset class="d-flex align-items-center justify-content-end gap-3">
+                            <legend class="sr-only">Transcription Display Options</legend>
+                            
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="autoScroll" 
+                                       checked
+                                       aria-describedby="autoscroll-help">
+                                <label class="form-check-label" for="autoScroll">Auto-scroll</label>
+                                <div id="autoscroll-help" class="sr-only">Automatically scroll transcription as new text appears</div>
+                            </div>
+                            
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="showInterim" 
+                                       checked
+                                       aria-describedby="interim-help">
+                                <label class="form-check-label" for="showInterim">Show interim</label>
+                                <div id="interim-help" class="sr-only">Show partial transcription results while you speak</div>
+                            </div>
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Audio Visualizer -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-wave-square me-2"></i>
+                    Audio Input
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="audio-visualizer" id="audioVisualizer">
+                    <div class="wave-container" id="waveContainer">
+                        <!-- Wave bars will be generated dynamically -->
+                    </div>
+                </div>
+                <div class="mt-2 d-flex justify-content-between">
+                    <small class="text-muted">
+                        <i class="fas fa-volume-up me-1"></i>
+                        Input Level: <span id="inputLevel">0%</span>
+                    </small>
+                    <small class="text-muted">
+                        VAD: <span id="vadStatus">Waiting</span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transcription Display -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-comments me-2" aria-hidden="true"></i>
+                    Real-time Transcription
+                </h3>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" 
+                            id="clearTranscription"
+                            aria-label="Clear all transcription text"
+                            aria-describedby="clear-help"
+                            aria-keyshortcuts="Ctrl+Delete">
+                        <i class="fas fa-trash me-1" aria-hidden="true"></i>
+                        Clear
+                    </button>
+                    <div id="clear-help" class="sr-only">Press Ctrl+Delete to quickly clear transcription</div>
+                    
+                    <button class="btn btn-sm btn-outline-primary" 
+                            id="exportTranscription"
+                            aria-label="Export transcription to file"
+                            aria-describedby="export-help"
+                            aria-keyshortcuts="Ctrl+E">
+                        <i class="fas fa-download me-1" aria-hidden="true"></i>
+                        Export
+                    </button>
+                    <div id="export-help" class="sr-only">Press Ctrl+E to quickly export transcription</div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="transcription-container" 
+                     id="transcriptionContainer" 
+                     role="log"
+                     aria-live="polite" 
+                     aria-label="Live transcription results"
+                     aria-describedby="transcription-instructions"
+                     tabindex="0">
+                    <div id="transcription-instructions" class="sr-only">Live transcription appears here. Use arrow keys to navigate, Tab to focus buttons.</div>
+                    
+                    <div id="interimText" 
+                         class="transcription-segment interim" 
+                         style="display: none;" 
+                         aria-live="polite" 
+                         aria-label="Interim transcription text"
+                         role="status"></div>
+                         
+                    <div id="finalText" 
+                         class="transcription-segment final" 
+                         aria-live="assertive" 
+                         aria-label="Final transcription text"
+                         role="log"></div>
+                    <div class="text-center text-muted py-5" id="initialMessage">
+                        <i class="fas fa-microphone-slash fa-3x mb-3"></i>
+                        <h5>Ready to transcribe</h5>
+                        <p>Click "Start Recording" to begin live transcription</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="row">
+                    <div class="col-md-2">
+                        <small class="text-muted">
+                            Segments: <span id="segmentCount">0</span>
+                        </small>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted">
+                            Avg. Confidence: <span id="avgConfidence">0%</span>
+                        </small>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted">
+                            Speaking Time: <span id="speakingTime">0s</span>
+                        </small>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted">
+                            Quality: <span id="qualityStatus" class="badge bg-secondary">Ready</span>
+                        </small>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted">
+                            Filtered: <span id="filteredCount" class="text-warning">0</span>
+                        </small>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted">
+                            Last Update: <span id="lastUpdate">Never</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session Configuration Modal -->
+<div class="modal fade" id="sessionConfigModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-cog me-2"></i>
+                    Session Configuration
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="sessionConfigForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="sessionTitle" class="form-label">Session Title</label>
+                                <input type="text" class="form-control" id="sessionTitle" 
+                                       value="Live Session" placeholder="Enter session title">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="sessionLanguage" class="form-label">Language</label>
+                                <select class="form-select" id="sessionLanguage">
+                                    <option value="en" selected>English</option>
+                                    <option value="es">Spanish</option>
+                                    <option value="fr">French</option>
+                                    <option value="de">German</option>
+                                    <option value="zh">Chinese</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="sessionDescription" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="sessionDescription" rows="2" 
+                                  placeholder="Brief description of the meeting or session"></textarea>
+                    </div>
+                    
+                    <h6 class="mb-3">Audio Processing</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="vadSensitivityConfig" class="form-label">
+                                    VAD Sensitivity: <span id="vadSensitivityValue">0.5</span>
+                                </label>
+                                <input type="range" class="form-range" id="vadSensitivityConfig" 
+                                       min="0.1" max="1.0" step="0.1" value="0.5">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="minConfidenceConfig" class="form-label">
+                                    Min Confidence: <span id="minConfidenceValue">0.7</span>
+                                </label>
+                                <input type="range" class="form-range" id="minConfidenceConfig" 
+                                       min="0.5" max="1.0" step="0.05" value="0.7">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6 class="mb-3">Features</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="enableSpeakerDetectionConfig" checked>
+                                <label class="form-check-label" for="enableSpeakerDetectionConfig">
+                                    Speaker Detection
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="enableSentimentAnalysisConfig">
+                                <label class="form-check-label" for="enableSentimentAnalysisConfig">
+                                    Sentiment Analysis
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="enableRealtimeConfig" checked>
+                                <label class="form-check-label" for="enableRealtimeConfig">
+                                    Real-time Processing
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="enableWordTimestampsConfig" checked>
+                                <label class="form-check-label" for="enableWordTimestampsConfig">
+                                    Word Timestamps
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="applyConfig">Apply Configuration</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% include 'debug_panel.html' %}
+
+<!-- Toast Notification Container for Enhanced Error Feedback -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 11;">
+    <!-- Toast notifications will be dynamically inserted here -->
+</div>
+
+<!-- Accessibility: Live region for screen reader announcements -->
+<div id="live-announcements" aria-live="polite" aria-atomic="false" class="sr-only"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<!-- Single Working Transcription System -->
+<script src="/static/js/mina_transcription.js"></script>
+
+<!-- Enhanced Features Inline JavaScript for 100% Effectiveness -->
+<script>
+// Enhanced Toast Notification System
+class ToastNotificationSystem {
+    constructor() {
+        this.toastContainer = document.querySelector('.toast-container');
+        if (!this.toastContainer) {
+            this.createToastContainer();
+        }
+    }
+    
+    createToastContainer() {
+        this.toastContainer = document.createElement('div');
+        this.toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        this.toastContainer.style.zIndex = '11';
+        document.body.appendChild(this.toastContainer);
+    }
+    
+    showToast(message, type = 'info', options = {}) {
+        const { duration = 5000, persistent = false, action = null } = options;
+        
+        const toastId = 'toast-' + Date.now();
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.id = toastId;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                ${action ? `<button type="button" class="btn btn-sm btn-outline-light me-2" onclick="${action.callback}">${action.label}</button>` : ''}
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        this.toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast, { autohide: !persistent, delay: duration });
+        bsToast.show();
+        
+        // Accessibility announcement
+        this.announceToScreen(message);
+        
+        return toast;
+    }
+    
+    announceToScreen(message) {
+        const liveRegion = document.getElementById('live-announcements');
+        if (liveRegion) {
+            liveRegion.textContent = message;
+        }
+    }
+    
+    showError(message, options = {}) { return this.showToast(message, 'danger', options); }
+    showSuccess(message, options = {}) { return this.showToast(message, 'success', options); }
+    showWarning(message, options = {}) { return this.showToast(message, 'warning', options); }
+    showInfo(message, options = {}) { return this.showToast(message, 'info', options); }
+}
+
+// Enhanced Error Handling and Retry System
+class EnhancedErrorHandler {
+    constructor() {
+        this.retryAttempts = 0;
+        this.maxRetries = 3;
+        this.retryDelay = 1000;
+        this.lastAction = null;
+        this.toastSystem = new ToastNotificationSystem();
+        this.setupKeyboardShortcuts();
+    }
+    
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.dismissAllToasts();
+            }
+            if (e.ctrlKey && e.key === 'r' && this.lastAction) {
+                e.preventDefault();
+                this.retryLastAction();
+            }
+        });
+    }
+    
+    handleError(error, context = 'General', action = null) {
+        this.lastAction = action;
+        const errorMessage = this.categorizeError(error, context);
+        
+        this.toastSystem.showError(errorMessage, {
+            persistent: true,
+            action: action ? {
+                label: 'Retry',
+                callback: 'window.enhancedErrorHandler.retryLastAction()'
+            } : null
+        });
+    }
+    
+    categorizeError(error, context) {
+        if (context === 'WebSocket') {
+            return `Connection error: ${error.message || 'Failed to connect to server'}. Check your internet connection.`;
+        } else if (context === 'Audio') {
+            return `Microphone error: ${error.message || 'Cannot access microphone'}. Please check permissions.`;
+        } else if (context === 'API') {
+            return `Transcription error: ${error.message || 'Service temporarily unavailable'}. Retrying...`;
+        }
+        return `System error: ${error.message || 'An unexpected error occurred'}`;
+    }
+    
+    retryLastAction() {
+        if (this.lastAction && this.retryAttempts < this.maxRetries) {
+            this.retryAttempts++;
+            this.toastSystem.showInfo(`Retrying... (${this.retryAttempts}/${this.maxRetries})`);
+            setTimeout(() => {
+                try {
+                    this.lastAction();
+                } catch (error) {
+                    this.handleError(error, 'Retry');
+                }
+            }, this.retryDelay * this.retryAttempts);
+        }
+    }
+    
+    dismissAllToasts() {
+        const toasts = document.querySelectorAll('.toast');
+        toasts.forEach(toast => {
+            const bsToast = bootstrap.Toast.getInstance(toast);
+            if (bsToast) bsToast.hide();
+        });
+    }
+}
+
+// Enhanced Quality Monitoring System
+class QualityMonitor {
+    constructor() {
+        this.stats = {
+            totalSegments: 0,
+            filteredSegments: 0,
+            avgConfidence: 0,
+            confidenceSum: 0,
+            qualityStatus: 'ready',
+            lastQualityUpdate: null
+        };
+        this.qualityThresholds = {
+            excellent: 0.9,
+            good: 0.7,
+            warning: 0.5,
+            poor: 0.3
+        };
+        this.circuitBreaker = {
+            enabled: false,
+            failureCount: 0,
+            threshold: 12,  // Increased from 5 to reduce over-triggering
+            resetTime: 45000  // Increased to 45 seconds
+        };
+        this.lastFilterAlert = 0;  // Track last filter notification
+        this.updateUI();
+    }
+    
+    handleQualityUpdate(data) {
+        this.stats.lastQualityUpdate = new Date();
+        
+        switch(data.type) {
+            case 'final_processed':
+                this.handleFinalProcessed(data);
+                break;
+            case 'no_transcription':
+                this.handleFiltered(data);
+                break;
+            case 'error':
+                this.handleError(data);
+                break;
+        }
+        
+        this.updateUI();
+    }
+    
+    handleFinalProcessed(data) {
+        this.stats.totalSegments++;
+        this.stats.confidenceSum += data.confidence;
+        this.stats.avgConfidence = this.stats.confidenceSum / this.stats.totalSegments;
+        
+        // Update quality status based on confidence
+        if (data.confidence >= this.qualityThresholds.excellent) {
+            this.stats.qualityStatus = 'excellent';
+        } else if (data.confidence >= this.qualityThresholds.good) {
+            this.stats.qualityStatus = 'good';
+        } else if (data.confidence >= this.qualityThresholds.warning) {
+            this.stats.qualityStatus = 'warning';
+        } else {
+            this.stats.qualityStatus = 'poor';
+        }
+        
+        // Show quality feedback
+        if (data.text_quality === 'poor') {
+            window.toastSystem.showWarning(`Low quality transcription detected (${(data.confidence * 100).toFixed(1)}% confidence)`);
+        }
+        
+        this.resetCircuitBreaker();
+    }
+    
+    handleFiltered(data) {
+        this.stats.filteredSegments++;
+        this.circuitBreaker.failureCount++;
+        
+        // Reduce notification spam - only show every 10 seconds
+        const now = Date.now();
+        if (now - this.lastFilterAlert > 10000) {
+            window.toastSystem.showInfo('Audio filtered for quality (repetitive/low confidence text rejected)', {
+                timeout: 2000  // Reduced from 3000
+            });
+            this.lastFilterAlert = now;
+        }
+        
+        this.checkCircuitBreaker();
+    }
+    
+    handleError(data) {
+        this.circuitBreaker.failureCount++;
+        this.stats.qualityStatus = 'error';
+        
+        window.toastSystem.showError(`Quality degradation: ${data.message}`, {
+            persistent: true
+        });
+        
+        this.checkCircuitBreaker();
+    }
+    
+    checkCircuitBreaker() {
+        if (this.circuitBreaker.failureCount >= this.circuitBreaker.threshold) {
+            this.activateCircuitBreaker();
+        }
+    }
+    
+    activateCircuitBreaker() {
+        this.circuitBreaker.enabled = true;
+        this.stats.qualityStatus = 'circuit_breaker';
+        
+        // Reduced frequency notifications - only show if not recently shown
+        if (!this.lastCircuitBreakerAlert || Date.now() - this.lastCircuitBreakerAlert > 30000) {
+            window.toastSystem.showWarning('Quality protection activated', {
+                timeout: 5000,  // Auto-dismiss after 5 seconds
+                action: {
+                    label: 'Reset',
+                    callback: 'window.qualityMonitor.resetCircuitBreaker()'
+                }
+            });
+            this.lastCircuitBreakerAlert = Date.now();
+        }
+        
+        // Auto-reset after timeout
+        setTimeout(() => {
+            this.resetCircuitBreaker();
+        }, this.circuitBreaker.resetTime);
+    }
+    
+    resetCircuitBreaker() {
+        this.circuitBreaker.enabled = false;
+        this.circuitBreaker.failureCount = 0;
+        if (this.stats.qualityStatus === 'circuit_breaker') {
+            this.stats.qualityStatus = 'good';
+        }
+    }
+    
+    updateUI() {
+        // Update segment count
+        const segmentCountEl = document.getElementById('segmentCount');
+        if (segmentCountEl) {
+            segmentCountEl.textContent = this.stats.totalSegments;
+        }
+        
+        // Update average confidence
+        const avgConfidenceEl = document.getElementById('avgConfidence');
+        if (avgConfidenceEl) {
+            avgConfidenceEl.textContent = `${(this.stats.avgConfidence * 100).toFixed(1)}%`;
+        }
+        
+        // Update quality status
+        const qualityStatusEl = document.getElementById('qualityStatus');
+        if (qualityStatusEl) {
+            qualityStatusEl.textContent = this.getQualityStatusText();
+            qualityStatusEl.className = `badge ${this.getQualityStatusClass()}`;
+        }
+        
+        // Update filtered count
+        const filteredCountEl = document.getElementById('filteredCount');
+        if (filteredCountEl) {
+            filteredCountEl.textContent = this.stats.filteredSegments;
+        }
+        
+        // Update last update time
+        const lastUpdateEl = document.getElementById('lastUpdate');
+        if (lastUpdateEl && this.stats.lastQualityUpdate) {
+            lastUpdateEl.textContent = this.stats.lastQualityUpdate.toLocaleTimeString();
+        }
+    }
+    
+    getQualityStatusText() {
+        switch(this.stats.qualityStatus) {
+            case 'excellent': return 'Excellent';
+            case 'good': return 'Good';
+            case 'warning': return 'Warning';
+            case 'poor': return 'Poor';
+            case 'error': return 'Error';
+            case 'circuit_breaker': return 'Paused';
+            default: return 'Ready';
+        }
+    }
+    
+    getQualityStatusClass() {
+        switch(this.stats.qualityStatus) {
+            case 'excellent': return 'bg-success';
+            case 'good': return 'bg-primary';
+            case 'warning': return 'bg-warning';
+            case 'poor': return 'bg-danger';
+            case 'error': return 'bg-danger';
+            case 'circuit_breaker': return 'bg-dark';
+            default: return 'bg-secondary';
+        }
+    }
+    
+    getQualityReport() {
+        const accuracy = this.stats.totalSegments > 0 ? 
+            ((this.stats.totalSegments - this.stats.filteredSegments) / this.stats.totalSegments * 100).toFixed(1) : 100;
+        
+        return {
+            totalSegments: this.stats.totalSegments,
+            filteredSegments: this.stats.filteredSegments,
+            accuracy: `${accuracy}%`,
+            avgConfidence: `${(this.stats.avgConfidence * 100).toFixed(1)}%`,
+            qualityStatus: this.stats.qualityStatus
+        };
+    }
+}
+
+// Initialize Enhanced Systems
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize enhanced error handling
+    window.enhancedErrorHandler = new EnhancedErrorHandler();
+    window.toastSystem = window.enhancedErrorHandler.toastSystem;
+    
+    // Initialize quality monitoring
+    window.qualityMonitor = new QualityMonitor();
+    
+    // Add enhanced accessibility attributes
+    const elements = {
+        startRecordingBtn: 'Start recording audio for live transcription',
+        stopRecordingBtn: 'Stop recording and end transcription session',
+        transcriptionContainer: 'Live transcription results will appear here',
+        audioVisualizer: 'Audio input level visualization'
+    };
+    
+    Object.entries(elements).forEach(([id, description]) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.setAttribute('aria-label', description);
+        }
+    });
+    
+    // E2E Browser Simulation Integration
+    window.updateUIForSimulation = function(isSimulating, sessionId) {
+        const debugInfo = document.getElementById('debugInfo');
+        const debugStatus = document.getElementById('debugStatus');
+        const simulateBtn = document.getElementById('simulateFromFileBtn');
+        const startBtn = document.getElementById('startRecordingBtn');
+        const stopBtn = document.getElementById('stopRecordingBtn');
+        
+        if (isSimulating) {
+            if (debugInfo) debugInfo.style.display = 'inline';
+            if (debugStatus) debugStatus.textContent = `Simulating (${sessionId})`;
+            if (simulateBtn) {
+                simulateBtn.innerHTML = '<i class="fas fa-stop me-2"></i>Stop Simulation';
+                simulateBtn.className = 'btn btn-warning';
+            }
+            if (startBtn) startBtn.disabled = true;
+            if (stopBtn) stopBtn.disabled = false;
+        } else {
+            if (debugInfo) debugInfo.style.display = 'none';
+            if (simulateBtn) {
+                simulateBtn.innerHTML = '<i class="fas fa-file-audio me-2"></i>Simulate from file';
+                simulateBtn.className = 'btn btn-outline-info';
+            }
+            if (startBtn) startBtn.disabled = false;
+            if (stopBtn) stopBtn.disabled = true;
+        }
+    };
+    
+    // Setup simulation button handler
+    const simulateBtn = document.getElementById('simulateFromFileBtn');
+    if (simulateBtn) {
+        simulateBtn.addEventListener('click', async function() {
+            const isCurrentlySimulating = this.textContent.includes('Stop');
+            
+            try {
+                this.disabled = true;
+                
+                if (isCurrentlySimulating) {
+                    // Stop simulation
+                    console.log('🛑 Stopping simulation...');
+                    if (window.simFromAudioStop) {
+                        const result = await window.simFromAudioStop();
+                        
+                        if (result.success) {
+                            console.log('✅ Simulation stopped successfully');
+                            if (window.toastSystem) {
+                                window.toastSystem.showSuccess('Simulation stopped');
+                            }
+                        } else {
+                            console.error('❌ Failed to stop simulation:', result.error);
+                            if (window.toastSystem) {
+                                window.toastSystem.showError(`Stop failed: ${result.error}`);
+                            }
+                        }
+                    }
+                } else {
+                    // Start simulation
+                    console.log('🎬 Starting file simulation...');
+                    if (window.simFromAudioStart) {
+                        const result = await window.simFromAudioStart();
+                        
+                        if (result.success) {
+                            console.log('✅ Simulation started successfully');
+                            if (window.toastSystem) {
+                                window.toastSystem.showSuccess(`Simulation started: ${result.sessionId}`);
+                            }
+                        } else {
+                            console.error('❌ Failed to start simulation:', result.error);
+                            if (window.toastSystem) {
+                                window.toastSystem.showError(`Simulation failed: ${result.error}`);
+                            }
+                        }
+                    } else {
+                        console.error('❌ Simulation functions not loaded');
+                        if (window.toastSystem) {
+                            window.toastSystem.showError('Simulation system not available');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Simulation error:', error);
+                if (window.toastSystem) {
+                    window.toastSystem.showError(`Error: ${error.message}`);
+                }
+            } finally {
+                this.disabled = false;
+            }
+        });
+        console.log('✅ Browser simulation integration ready');
+    }
+    
+    // INDUSTRY STANDARD: Real Whisper Integration as EXCLUSIVE transcription system
+    if (window.realWhisperIntegration && window.FORCE_REAL_WHISPER_INTEGRATION) {
+        console.log('🎯 Initializing EXCLUSIVE Real Whisper API integration...');
+        
+        // COMPLETE OVERRIDE: Disable ALL competing transcription systems
+        window.professionalRecorder = null;
+        window.recordingWiring = null;
+        window.webSocketStreaming = null;
+        window.audioProcessor = null;
+        
+        // Clear any existing intervals/timers from competing systems
+        for (let i = 1; i < 99999; i++) {
+            window.clearInterval(i);
+            window.clearTimeout(i);
+        }
+        
+        // PRIORITY: Get exclusive control of recording buttons
+        const startBtn = document.getElementById('startRecordingBtn');
+        const stopBtn = document.getElementById('stopRecordingBtn');
+        
+        // Remove any existing event listeners
+        if (startBtn) {
+            const newStartBtn = startBtn.cloneNode(true);
+            startBtn.parentNode.replaceChild(newStartBtn, startBtn);
+        }
+        if (stopBtn) {
+            const newStopBtn = stopBtn.cloneNode(true);
+            stopBtn.parentNode.replaceChild(newStopBtn, stopBtn);
+        }
+        
+        // Get fresh references to the new buttons
+        const priorityStartBtn = document.getElementById('startRecordingBtn');
+        const priorityStopBtn = document.getElementById('stopRecordingBtn');
+        
+        if (priorityStartBtn) {
+            priorityStartBtn.addEventListener('click', async function(event) {
+                console.log('🎯 EXCLUSIVE: Real Whisper Integration handling start button');
+                
+                // COMPLETE PREVENTION: Stop all other handlers
+                event.stopImmediatePropagation();
+                event.preventDefault();
+                event.stopPropagation();
+                
+                try {
+                    this.disabled = true;
+                    
+                    // Add comprehensive UI feedback
+                    updateConnectionStatus('Connecting to Enhanced WebSocket...', 'info');
+                    window.toastSystem.showInfo('🔗 Connecting to real-time transcription service...');
+                    
+                    // Generate session ID
+                    const sessionId = `live_${Date.now()}`;
+                    
+                    // Start real Whisper transcription
+                    await window.realWhisperIntegration.startTranscription(sessionId);
+                    
+                    // ACTIVATE MONITORING SYSTEMS (Manual Monitoring Recommendation)
+                    if (window.liveMonitoringClient) {
+                        window.liveMonitoringClient.startMonitoring(sessionId);
+                        console.log('🔍 Live monitoring activated');
+                    }
+                    
+                    if (window.continuousImprovementClient) {
+                        window.continuousImprovementClient.startContinuousImprovement(sessionId);
+                        console.log('🔧 Continuous improvement activated');
+                    }
+                    
+                    if (window.predictivePerformanceClient) {
+                        window.predictivePerformanceClient.startPredictiveOptimization(sessionId);
+                        console.log('🔬 Predictive optimization activated');
+                    }
+                    
+                    if (window.comprehensiveTestingClient) {
+                        window.comprehensiveTestingClient.startComprehensiveTesting(sessionId);
+                        console.log('🧪 Comprehensive testing activated');
+                    }
+                    
+                    // Update UI with priority control
+                    this.disabled = true;
+                    if (priorityStopBtn) priorityStopBtn.disabled = false;
+                    
+                    // Initialize comprehensive transcript tracking
+                    window.interimTranscripts = [];
+                    window.finalTranscripts = [];
+                    window.transcriptionStartTime = Date.now();
+                    window.transcriptionMetrics = {
+                        totalWords: 0,
+                        avgConfidence: 0,
+                        latencySum: 0,
+                        latencyCount: 0
+                    };
+                    
+                    // Start real-time performance monitoring
+                    startPerformanceMonitoring();
+                    
+                    updateConnectionStatus('Real Whisper Integration ACTIVE', 'success');
+                    window.toastSystem.showSuccess('✅ EXCLUSIVE Real Whisper transcription started - Industry standard quality active');
+                    console.log('✅ EXCLUSIVE Real Whisper Integration active with Performance Monitoring');
+                    
+                } catch (error) {
+                    console.error('❌ Failed to start real-time transcription:', error);
+                    window.toastSystem.showError(`Connection failed: ${error.message}`);
+                    this.disabled = false;
+                }
+            });
+        }
+        
+        if (priorityStopBtn) {
+            priorityStopBtn.addEventListener('click', async function(event) {
+                console.log('🎯 EXCLUSIVE: Real Whisper Integration handling stop button');
+                
+                // COMPLETE PREVENTION: Stop all other handlers
+                event.stopImmediatePropagation();
+                event.preventDefault();
+                event.stopPropagation();
+                
+                // Stop performance monitoring
+                stopPerformanceMonitoring();
+                
+                // Display final performance metrics
+                displayPerformanceReport();
+                
+                // Stop real-time transcription
+                window.realWhisperIntegration.stopTranscription();
+                
+                updateConnectionStatus('Generating final transcript...', 'info');
+                
+                // Generate final refined transcript using GPT-4
+                await generateFinalTranscript();
+                
+                // STOP MONITORING SYSTEMS AND GENERATE REPORTS
+                if (window.liveMonitoringClient && window.liveMonitoringClient.isMonitoring) {
+                    const report = window.liveMonitoringClient.generateFinalReport();
+                    console.log('📊 Live monitoring report:', report);
+                }
+                
+                if (window.continuousImprovementClient && window.continuousImprovementClient.isActive) {
+                    const improvements = window.continuousImprovementClient.generateImprovementReport();
+                    console.log('🔧 Improvement report:', improvements);
+                }
+                
+                if (window.predictivePerformanceClient && window.predictivePerformanceClient.isActive) {
+                    const predictions = window.predictivePerformanceClient.generatePredictiveReport();
+                    console.log('🔬 Predictive analysis:', predictions);
+                }
+                
+                if (window.comprehensiveTestingClient && window.comprehensiveTestingClient.isActive) {
+                    const testResults = window.comprehensiveTestingClient.generateTestReport();
+                    console.log('🧪 Test results:', testResults);
+                }
+                
+                // Update UI
+                this.disabled = true;
+                if (priorityStartBtn) priorityStartBtn.disabled = false;
+                
+                window.toastSystem.showSuccess('✅ Final transcript generated with GPT-4 refinement');
+                console.log('⏹️ PRIORITY Real Whisper Integration stopped with Final Transcript');
+            });
+        }
+        
+        console.log('✅ Real Whisper API integration initialized on main page');
+    }
+    
+    // IMPLEMENTATION: Manual Monitoring Recommendations
+    // Activate continuous improvement and monitoring systems
+    if (window.liveMonitoringClient) {
+        console.log('🔍 Activating live monitoring client...');
+        // Auto-start monitoring when recording begins
+    }
+    
+    if (window.continuousImprovementClient) {
+        console.log('🔧 Activating continuous improvement client...');
+        // Auto-start improvements when recording begins  
+    }
+    
+    if (window.predictivePerformanceClient) {
+        console.log('🔬 Activating predictive performance client...');
+        // Auto-start predictive optimization when recording begins
+    }
+    
+    // Enhanced connection retry and recovery (Manual Monitoring Recommendation #1)
+    if (window.realWhisperIntegration) {
+        const originalInitialize = window.realWhisperIntegration.initializeConnection;
+        window.realWhisperIntegration.initializeConnection = async function() {
+            const maxRetries = 3;
+            let attempt = 0;
+            
+            while (attempt < maxRetries) {
+                try {
+                    await originalInitialize.call(this);
+                    console.log(`✅ Connection successful on attempt ${attempt + 1}`);
+                    return;
+                } catch (error) {
+                    attempt++;
+                    console.warn(`⚠️ Connection attempt ${attempt} failed:`, error.message);
+                    
+                    if (attempt < maxRetries) {
+                        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+                        console.log(`🔄 Retrying in ${delay}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } else {
+                        throw new Error(`Connection failed after ${maxRetries} attempts: ${error.message}`);
+                    }
+                }
+            }
+        };
+    }
+    
+    // Announce system ready with monitoring active
+    setTimeout(() => {
+        window.toastSystem.showSuccess('Enhanced transcription system ready with REAL Whisper API + Active Monitoring');
+    }, 1000);
+    
+    // INDUSTRY STANDARD: Final Transcript Generation Function
+    async function generateFinalTranscript() {
+        try {
+            console.log('🔄 Generating final refined transcript...');
+            
+            if (!window.finalTranscripts || window.finalTranscripts.length === 0) {
+                console.log('⚠️ No final transcripts to process');
+                return;
+            }
+            
+            // Combine all final transcript segments
+            const combinedText = window.finalTranscripts.map(segment => segment.text).join(' ');
+            console.log(`📝 Combined transcript: ${combinedText.length} characters`);
+            
+            if (combinedText.length < 10) {
+                window.toastSystem.showWarning('Transcript too short for refinement');
+                return;
+            }
+            
+            // Show processing status
+            window.toastSystem.showInfo('🔄 Refining transcript with GPT-4...');
+            
+            // Call GPT-4 for final transcript refinement
+            const response = await fetch('/api/refine-transcript', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    raw_transcript: combinedText,
+                    segments: window.finalTranscripts,
+                    refinement_level: 'professional'
+                })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                
+                // Display final refined transcript
+                displayFinalTranscript(result.refined_transcript, result.summary);
+                
+                window.toastSystem.showSuccess('✅ Final transcript refined and ready');
+                console.log('✅ Final transcript generated successfully');
+            } else {
+                throw new Error(`Refinement failed: ${response.status}`);
+            }
+            
+        } catch (error) {
+            console.error('❌ Final transcript generation failed:', error);
+            
+            // Fallback: Display combined raw transcript
+            const rawTranscript = window.finalTranscripts.map(s => s.text).join(' ');
+            displayFinalTranscript(rawTranscript, 'Raw transcript (refinement unavailable)');
+            
+            window.toastSystem.showWarning('Final transcript ready (raw format)');
+        }
+    }
+    
+    function displayFinalTranscript(refinedText, summary) {
+        // Create final transcript display
+        const transcriptContainer = document.querySelector('.live-transcript-container') || document.getElementById('transcript');
+        
+        if (transcriptContainer) {
+            // Add final transcript section
+            const finalSection = document.createElement('div');
+            finalSection.className = 'final-transcript-section mt-4 p-3 border-top';
+            finalSection.innerHTML = `
+                <h5 class="text-success mb-3">
+                    <i class="fas fa-check-circle me-2"></i>Final Refined Transcript
+                </h5>
+                <div class="final-transcript-content p-3 bg-dark rounded mb-3">
+                    <p class="text-light mb-0">${refinedText}</p>
+                </div>
+                <div class="transcript-summary">
+                    <h6 class="text-info mb-2">
+                        <i class="fas fa-lightbulb me-2"></i>Summary
+                    </h6>
+                    <p class="text-muted">${summary}</p>
+                </div>
+                <div class="transcript-actions mt-3">
+                    <button class="btn btn-outline-success me-2" onclick="copyToClipboard('${refinedText.replace(/'/g, "\\'")}')">Copy Transcript</button>
+                    <button class="btn btn-outline-info" onclick="downloadTranscript('${refinedText.replace(/'/g, "\\'")}')">Download</button>
+                </div>
+            `;
+            
+            transcriptContainer.appendChild(finalSection);
+            
+            // Scroll to final transcript
+            finalSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+    
+    // Utility functions for final transcript
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            window.toastSystem.showSuccess('Transcript copied to clipboard');
+        }).catch(err => {
+            console.error('Copy failed:', err);
+            window.toastSystem.showError('Copy failed');
+        });
+    }
+    
+    function downloadTranscript(text) {
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `transcript_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+        window.toastSystem.showSuccess('Transcript downloaded');
+    }
+    
+    // INDUSTRY STANDARD: Performance Monitoring Functions
+    function startPerformanceMonitoring() {
+        window.performanceMonitor = {
+            startTime: Date.now(),
+            wordCount: 0,
+            segmentCount: 0,
+            latencies: [],
+            confidenceScores: [],
+            isActive: true
+        };
+        
+        // Real-time performance updates every 5 seconds
+        window.performanceInterval = setInterval(updatePerformanceMetrics, 5000);
+        console.log('📊 Performance monitoring started');
+    }
+    
+    function stopPerformanceMonitoring() {
+        if (window.performanceInterval) {
+            clearInterval(window.performanceInterval);
+            window.performanceInterval = null;
+        }
+        
+        if (window.performanceMonitor) {
+            window.performanceMonitor.isActive = false;
+        }
+        
+        console.log('📊 Performance monitoring stopped');
+    }
+    
+    function updatePerformanceMetrics() {
+        if (!window.performanceMonitor || !window.performanceMonitor.isActive) return;
+        
+        const monitor = window.performanceMonitor;
+        const elapsed = (Date.now() - monitor.startTime) / 1000;
+        const wordsPerMinute = monitor.wordCount > 0 ? (monitor.wordCount / elapsed) * 60 : 0;
+        const avgLatency = monitor.latencies.length > 0 ? 
+            monitor.latencies.reduce((a, b) => a + b, 0) / monitor.latencies.length : 0;
+        const avgConfidence = monitor.confidenceScores.length > 0 ? 
+            monitor.confidenceScores.reduce((a, b) => a + b, 0) / monitor.confidenceScores.length : 0;
+        
+        // Update performance display
+        updatePerformanceDisplay({
+            elapsed: Math.round(elapsed),
+            wordCount: monitor.wordCount,
+            wordsPerMinute: Math.round(wordsPerMinute),
+            avgLatency: Math.round(avgLatency),
+            avgConfidence: Math.round(avgConfidence * 100),
+            segmentCount: monitor.segmentCount
+        });
+    }
+    
+    function updatePerformanceDisplay(metrics) {
+        // Update the live performance indicators in the UI
+        const timeElement = document.querySelector('.recording-time') || document.querySelector('[data-metric="time"]');
+        const wordsElement = document.querySelector('.words-count') || document.querySelector('[data-metric="words"]');
+        const accuracyElement = document.querySelector('.accuracy-score') || document.querySelector('[data-metric="accuracy"]');
+        
+        if (timeElement) {
+            timeElement.textContent = formatTime(metrics.elapsed);
+        }
+        
+        if (wordsElement) {
+            wordsElement.textContent = metrics.wordCount;
+        }
+        
+        if (accuracyElement) {
+            accuracyElement.textContent = `${metrics.avgConfidence}%`;
+        }
+        
+        // Add real-time status indicator
+        updateConnectionStatus(`Active: ${metrics.wordCount} words, ${metrics.avgConfidence}% confidence`, 'success');
+    }
+    
+    function displayPerformanceReport() {
+        if (!window.performanceMonitor) return;
+        
+        const monitor = window.performanceMonitor;
+        const totalTime = (Date.now() - monitor.startTime) / 1000;
+        const avgLatency = monitor.latencies.length > 0 ? 
+            monitor.latencies.reduce((a, b) => a + b, 0) / monitor.latencies.length : 0;
+        const avgConfidence = monitor.confidenceScores.length > 0 ? 
+            monitor.confidenceScores.reduce((a, b) => a + b, 0) / monitor.confidenceScores.length : 0;
+        
+        const report = {
+            totalTime: Math.round(totalTime),
+            totalWords: monitor.wordCount,
+            totalSegments: monitor.segmentCount,
+            avgLatency: Math.round(avgLatency),
+            avgConfidence: Math.round(avgConfidence * 100),
+            wordsPerMinute: monitor.wordCount > 0 ? Math.round((monitor.wordCount / totalTime) * 60) : 0
+        };
+        
+        console.log('📊 Final Performance Report:', report);
+        
+        // Display report in UI
+        window.toastSystem.showInfo(
+            `Session Complete: ${report.totalWords} words, ${report.avgConfidence}% avg confidence, ${report.avgLatency}ms avg latency`
+        );
+    }
+    
+    function updateConnectionStatus(message, type = 'info') {
+        // Update connection status display
+        const statusElement = document.querySelector('.connection-status') || 
+                            document.querySelector('.status-indicator') ||
+                            document.querySelector('#debugStatus');
+        
+        if (statusElement) {
+            statusElement.textContent = message;
+            statusElement.className = `connection-status text-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'}`;
+        }
+        
+        console.log(`🔗 Status: ${message}`);
+    }
+    
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    console.log('✅ EXCLUSIVE Real Whisper Integration with Industry Standard Performance Monitoring initialized');
+});
+</script>
+{% endblock %}

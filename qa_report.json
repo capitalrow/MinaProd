@@ -1,8 +1,156 @@
 {
-  "overall_score": 61.43,
-  "grade": "C",
-  "tests_passed": 4,
-  "total_tests": 7,
-  "success_rate": 57.14,
-  "critical_issues": [
-    
+  "test_summary": {
+    "total_sessions_tested": 3,
+    "total_chunks_processed": 18,
+    "overall_success_rate": 100.0,
+    "total_words_transcribed": 0,
+    "total_test_duration_s": 32.535624265670776,
+    "average_words_per_session": 0.0
+  },
+  "performance_metrics": {
+    "average_latency_ms": 1522.9053020477295,
+    "median_latency_ms": 1663.0337119102478,
+    "min_latency_ms": 1242.6484823226929,
+    "max_latency_ms": 1663.0337119102478,
+    "latency_std_dev": 242.70952546571746
+  },
+  "quality_metrics": {
+    "transcription_throughput_wps": 0.0,
+    "average_session_success_rate": 100.0,
+    "interim_to_final_ratio": 0.0
+  },
+  "error_analysis": {
+    "timeout_errors": 0,
+    "network_errors": 0,
+    "server_errors": 0,
+    "audio_processing_errors": 0
+  },
+  "error_condition_tests": {
+    "empty_audio": {
+      "success": true,
+      "latency_ms": 3.3769607543945312,
+      "response": {
+        "chunk_number": 1,
+        "confidence": 0.0,
+        "is_final": false,
+        "session_id": "test_empty",
+        "status": "no_audio",
+        "text": "[No audio data]"
+      },
+      "status_code": 200,
+      "chunk_number": 1
+    },
+    "invalid_base64": {
+      "success": false,
+      "status_code": 200,
+      "expected_error": true
+    },
+    "missing_session_id": {
+      "success": true,
+      "status_code": 200,
+      "response": {
+        "chunk_number": 1,
+        "confidence": 0.0,
+        "is_final": false,
+        "session_id": "unknown",
+        "status": "too_small",
+        "text": "[Audio chunk too small]"
+      }
+    },
+    "oversized_audio": {
+      "success": true,
+      "latency_ms": 9767.532348632812,
+      "response": {
+        "chunk_number": 1,
+        "confidence": 0.0,
+        "is_final": false,
+        "session_id": "test_oversized",
+        "status": "no_speech",
+        "text": "[No speech detected]"
+      },
+      "status_code": 200,
+      "chunk_number": 1
+    },
+    "malformed_request": {
+      "success": true,
+      "status_code": 500,
+      "expected_error": true
+    }
+  },
+  "individual_session_metrics": [
+    {
+      "session_id": "qa_test_single_001",
+      "timestamp": "2025-08-27T17:55:08.836775",
+      "total_chunks": 8,
+      "successful_chunks": 8,
+      "failed_chunks": 0,
+      "average_latency_ms": 1242.6484823226929,
+      "min_latency_ms": 774.5006084442139,
+      "max_latency_ms": 2138.2269859313965,
+      "total_words": 0,
+      "total_characters": 0,
+      "interim_updates": 0,
+      "final_transcripts": 1,
+      "total_audio_duration_s": 13.959468603134155,
+      "audio_chunks_sent": 8,
+      "audio_bytes_processed": 11792,
+      "timeout_errors": 0,
+      "network_errors": 0,
+      "server_errors": 0,
+      "audio_processing_errors": 0,
+      "memory_usage_mb": 0.0,
+      "cpu_usage_percent": 0.0
+    },
+    {
+      "session_id": "load_test_session_0_1756317337",
+      "timestamp": "2025-08-27T17:55:37.516754",
+      "total_chunks": 5,
+      "successful_chunks": 5,
+      "failed_chunks": 0,
+      "average_latency_ms": 1663.0337119102478,
+      "min_latency_ms": 3.3769607543945312,
+      "max_latency_ms": 9767.532348632812,
+      "total_words": 0,
+      "total_characters": 0,
+      "interim_updates": 0,
+      "final_transcripts": 1,
+      "total_audio_duration_s": 9.14690375328064,
+      "audio_chunks_sent": 5,
+      "audio_bytes_processed": 6620,
+      "timeout_errors": 0,
+      "network_errors": 0,
+      "server_errors": 0,
+      "audio_processing_errors": 0,
+      "memory_usage_mb": 0.0,
+      "cpu_usage_percent": 0.0
+    },
+    {
+      "session_id": "load_test_session_1_1756317337",
+      "timestamp": "2025-08-27T17:55:37.517899",
+      "total_chunks": 5,
+      "successful_chunks": 5,
+      "failed_chunks": 0,
+      "average_latency_ms": 1663.0337119102478,
+      "min_latency_ms": 3.3769607543945312,
+      "max_latency_ms": 9767.532348632812,
+      "total_words": 0,
+      "total_characters": 0,
+      "interim_updates": 0,
+      "final_transcripts": 1,
+      "total_audio_duration_s": 9.429251909255981,
+      "audio_chunks_sent": 5,
+      "audio_bytes_processed": 6620,
+      "timeout_errors": 0,
+      "network_errors": 0,
+      "server_errors": 0,
+      "audio_processing_errors": 0,
+      "memory_usage_mb": 0.0,
+      "cpu_usage_percent": 0.0
+    }
+  ],
+  "test_timestamp": "2025-08-27T17:55:46.948315",
+  "recommendations": [
+    "CRITICAL: No transcribed words detected. Verify audio processing pipeline and Whisper API integration.",
+    "EXCELLENT: System meets performance targets. Consider load testing with higher concurrency."
+  ]
+}
