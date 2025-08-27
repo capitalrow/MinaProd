@@ -154,10 +154,21 @@ def transcribe_audio_sync(audio_data):
         if not audio_data.startswith(b'OpusHead') and not audio_data.startswith(b'RIFF'):
             logger.warning("⚠️ Unexpected audio format detected")
             
-        # Save to temp file with enhanced error handling
-        with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_file:
+        # Save to temp file with proper audio format handling
+        # Determine audio format and use appropriate extension
+        audio_extension = '.webm'
+        if audio_data.startswith(b'RIFF'):
+            audio_extension = '.wav'
+        elif audio_data.startswith(b'ID3') or audio_data[4:8] == b'ftyp':
+            audio_extension = '.mp4'
+        elif audio_data.startswith(b'OggS'):
+            audio_extension = '.ogg'
+        
+        with tempfile.NamedTemporaryFile(suffix=audio_extension, delete=False) as temp_file:
             temp_file.write(audio_data)
             temp_file_path = temp_file.name
+            
+        logger.info(f"💾 Saved audio to {temp_file_path} ({len(audio_data)} bytes, format: {audio_extension})")
         
         try:
             # MONITORING FIX 1.1: API key validation
@@ -176,10 +187,22 @@ def transcribe_audio_sync(audio_data):
                 "User-Agent": "Mina-Transcription/1.0"
             }
             
-            # MONITORING FIX 1.1: Enhanced request with validation
+            # MONITORING FIX 1.1: Enhanced request with proper format handling
+            # Determine MIME type based on detected audio format
+            mime_type = 'audio/webm'
+            if audio_extension == '.wav':
+                mime_type = 'audio/wav'
+            elif audio_extension == '.mp4':
+                mime_type = 'audio/mp4'
+            elif audio_extension == '.ogg':
+                mime_type = 'audio/ogg'
+            
+            filename = f'audio{audio_extension}'
+            logger.info(f"🎵 Sending to Whisper: {filename} ({mime_type})")
+            
             with open(temp_file_path, 'rb') as audio_file:
                 files = {
-                    'file': ('audio.webm', audio_file, 'audio/webm'),
+                    'file': (filename, audio_file, mime_type),
                     'model': (None, 'whisper-1'),
                     'response_format': (None, 'json'),  # Get detailed response
                     'language': (None, 'en'),
