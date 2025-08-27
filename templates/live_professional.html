@@ -129,9 +129,11 @@ class ProfessionalRecorder {
     initSocket() {
         try {
             this.socket = io({
-                transports: ['websocket', 'polling'],
+                transports: ['polling', 'websocket'],
                 timeout: 20000,
-                forceNew: true
+                forceNew: true,
+                upgrade: true,
+                rememberUpgrade: false
             });
 
             this.socket.on('connect', () => {
