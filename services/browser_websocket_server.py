@@ -23,9 +23,10 @@ logger = logging.getLogger(__name__)
 class BrowserWebSocketServer:
     """WebSocket server optimized specifically for browser connections."""
     
-    def __init__(self, host="0.0.0.0", port=8771):
+    def __init__(self, host="0.0.0.0", port=8771, ssl_context=None):
         self.host = host
         self.port = port
+        self.ssl_context = ssl_context
         self.clients = {}
         self.sessions = {}
         self.running = False
@@ -258,11 +259,12 @@ class BrowserWebSocketServer:
         """Start the browser-optimized WebSocket server."""
         logger.info(f"🌐 Starting Browser WebSocket Server on {self.host}:{self.port}")
         
-        # Create server with browser-friendly settings
+        # Create server with browser-friendly settings and SSL support
         server = await websockets.serve(
             self.handle_client,
             self.host,
             self.port,
+            ssl=self.ssl_context,
             ping_interval=30,
             ping_timeout=90,
             max_size=5*1024*1024,  # 5MB for audio chunks
@@ -271,7 +273,8 @@ class BrowserWebSocketServer:
         )
         
         self.running = True
-        logger.info(f"✅ Browser WebSocket Server running on ws://{self.host}:{self.port}")
+        protocol = "wss" if self.ssl_context else "ws"
+        logger.info(f"✅ Browser WebSocket Server running on {protocol}://{self.host}:{self.port}")
         return server
     
     def run_forever(self):
@@ -295,17 +298,32 @@ class BrowserWebSocketServer:
 browser_server = None
 
 def start_browser_websocket_server():
-    """Start the browser WebSocket server in a thread."""
+    """Start the browser WebSocket server in a thread with SSL support."""
+    import os
+    import ssl
     global browser_server
     
     def run_server():
         global browser_server
-        browser_server = BrowserWebSocketServer()
+        
+        # Check if we need SSL for HTTPS environment
+        ssl_context = None
+        if os.environ.get('REPLIT_SLUG') or os.environ.get('HTTPS'):
+            logger.info("🔒 HTTPS environment detected - enabling SSL for WebSocket")
+            try:
+                ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+            except Exception as e:
+                logger.warning(f"⚠️ SSL context creation failed: {e}")
+                ssl_context = None
+        
+        browser_server = BrowserWebSocketServer(ssl_context=ssl_context)
         browser_server.run_forever()
     
     thread = threading.Thread(target=run_server, daemon=True, name="BrowserWebSocketServer")
     thread.start()
-    logger.info("🌐 Browser WebSocket Server thread started")
+    logger.info("🌐 Browser WebSocket Server thread started with SSL support")
     return thread
 
 def get_browser_server_status():
