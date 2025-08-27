@@ -12,6 +12,7 @@ import os
 
 # Import services
 from services.audio_io import decode_audio_b64, AudioChunkTooLarge, AudioChunkDecodeError
+from services.live_session_monitor import live_monitor
 # FIXED: Lazy import to prevent circular dependency
 # from services.transcription_service import TranscriptionService
 # from models.session import Session
