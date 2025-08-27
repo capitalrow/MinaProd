@@ -3,9 +3,12 @@ Session Routes (M2)
 REST API endpoints for session management, list, detail, and finalization.
 """
 
+import logging
 from flask import Blueprint, request, jsonify, render_template, abort, Response
 from services.session_service import SessionService
 from services.export_service import ExportService
+
+logger = logging.getLogger(__name__)
 
 sessions_bp = Blueprint('sessions', __name__, url_prefix='/sessions')
 
@@ -29,13 +32,30 @@ def list_sessions():
     offset = int(request.args.get('offset', 0))
     response_format = request.args.get('format', 'html')
     
-    # Get sessions from service
-    sessions = SessionService.list_sessions(q=q, status=status, limit=limit, offset=offset)
+    # Get sessions from service with error handling
+    try:
+        sessions_result = SessionService.list_sessions(q=q, status=status, limit=limit, offset=offset)
+        
+        # Handle pagination object vs list
+        if hasattr(sessions_result, 'items'):
+            sessions = sessions_result.items
+            total_count = sessions_result.total
+        elif isinstance(sessions_result, list):
+            sessions = sessions_result
+            total_count = len(sessions)
+        else:
+            sessions = []
+            total_count = 0
+            
+    except Exception as e:
+        logger.error(f"Error listing sessions: {e}")
+        return jsonify({'error': 'Failed to load sessions'}), 500
     
     # Return JSON for API requests
     if response_format == 'json':
         return jsonify({
-            'sessions': [session.to_dict() for session in sessions],
+            'sessions': [session.to_dict() for session in sessions] if sessions else [],
+            'total': total_count,
             'query': {
                 'q': q,
                 'status': status,
