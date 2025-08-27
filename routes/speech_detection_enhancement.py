@@ -7,12 +7,12 @@ try:
     import numpy as np
     NUMPY_AVAILABLE = True
 except ImportError:
+    np = None
     NUMPY_AVAILABLE = False
-    # Fallback for basic operations
     import array
 import struct
 import logging
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict, Any, Union, List
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class SpeechDetectionEnhancer:
                 'issues': [str(e)]
             }
     
-    def extract_audio_samples(self, audio_data: bytes) -> np.ndarray:
+    def extract_audio_samples(self, audio_data: bytes) -> Union[List[float], None]:
         """
         Extract audio samples from various formats
         """
@@ -108,17 +108,18 @@ class SpeechDetectionEnhancer:
                 audio_data[:4] == b'RIFF' and 
                 audio_data[8:12] == b'WAVE')
     
-    def extract_wav_samples(self, audio_data: bytes):
+    def extract_wav_samples(self, audio_data: bytes) -> Union[List[float], None]:
         """Extract samples from WAV data"""
         try:
             # Skip WAV header (44 bytes)
             audio_samples = audio_data[44:]
             
-            if NUMPY_AVAILABLE:
+            if NUMPY_AVAILABLE and np is not None:
                 # Convert to 16-bit integers
                 samples = np.frombuffer(audio_samples, dtype=np.int16)
-                # Normalize to [-1, 1]
-                return samples.astype(np.float32) / 32768.0
+                # Normalize to [-1, 1] and convert to list
+                normalized = samples.astype(np.float32) / 32768.0
+                return normalized.tolist()
             else:
                 # Fallback without numpy
                 samples = []
@@ -131,7 +132,7 @@ class SpeechDetectionEnhancer:
             logger.error(f"❌ WAV extraction error: {e}")
             return None
     
-    def extract_raw_samples(self, audio_data: bytes) -> np.ndarray:
+    def extract_raw_samples(self, audio_data: bytes) -> Union[List[float], None]:
         """Extract samples treating data as raw 16-bit PCM"""
         try:
             # Skip potential headers by finding audio-like content
