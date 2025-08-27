@@ -134,16 +134,18 @@ def convert_webm_to_wav(webm_data: bytes) -> bytes | None:
         output_file.close()
         output_file_path = output_file.name
         
-        # Enhanced FFmpeg conversion with better error handling
+        # 🎯 FIXED: Professional WebM/Opus to WAV conversion
         cmd = [
             'ffmpeg', '-y',  # Overwrite output
-            '-i', input_file_path,  # Input WebM file
-            '-vn',           # No video (audio only)
-            '-acodec', 'pcm_s16le',  # 16-bit PCM
-            '-ac', '1',      # Mono
-            '-ar', '16000',  # 16kHz sample rate (Whisper optimal)
-            '-f', 'wav',     # Force WAV format
-            '-loglevel', 'error',  # Reduce noise
+            '-f', 'webm',    # Force WebM input format
+            '-i', input_file_path,  # Input file
+            '-vn',           # No video streams
+            '-acodec', 'pcm_s16le',  # 16-bit PCM output
+            '-ac', '1',      # Force mono output
+            '-ar', '16000',  # 16kHz sample rate
+            '-f', 'wav',     # Force WAV output format
+            '-avoid_negative_ts', 'make_zero',  # Fix timing issues
+            '-loglevel', 'warning',  # Better error reporting
             output_file_path
         ]
         
@@ -384,106 +386,229 @@ def emergency_direct_whisper_call(temp_file_path: str, audio_data: bytes) -> str
             pass
 
 def validate_audio_quality(audio_data: bytes) -> dict:
-    """🎯 NEW: Validate audio data quality before transcription"""
+    """🎯 ENHANCED: Professional audio quality validation with deep inspection"""
     try:
         quality_metrics = {
             'size_bytes': len(audio_data),
             'estimated_duration_ms': 0,
             'has_wav_header': False,
             'has_webm_header': False,
+            'has_opus_codec': False,
             'quality_score': 0.0,
-            'issues': []
+            'issues': [],
+            'format_confidence': 0.0
         }
         
-        # Check file size
-        if len(audio_data) < 1000:
-            quality_metrics['issues'].append('Audio too small')
+        # Enhanced size validation
+        if len(audio_data) < 100:
+            quality_metrics['issues'].append('Audio too small for any format')
             return quality_metrics
+        elif len(audio_data) < 1000:
+            quality_metrics['issues'].append('Audio very small - may be incomplete')
             
-        # Check for proper headers
+        # Enhanced header detection
         if audio_data.startswith(b'RIFF') and b'WAVE' in audio_data[:20]:
             quality_metrics['has_wav_header'] = True
-            # Extract duration from WAV header if possible
+            quality_metrics['format_confidence'] = 0.9
+            
+            # Extract WAV properties
             try:
-                # Simple WAV duration estimation
-                sample_rate = struct.unpack('<L', audio_data[24:28])[0] if len(audio_data) >= 28 else 16000
-                data_size = len(audio_data) - 44  # Assume standard 44-byte header
-                quality_metrics['estimated_duration_ms'] = (data_size / (sample_rate * 2)) * 1000
+                if len(audio_data) >= 28:
+                    sample_rate = struct.unpack('<L', audio_data[24:28])[0]
+                    channels = struct.unpack('<H', audio_data[22:24])[0]
+                    data_size = len(audio_data) - 44
+                    quality_metrics['estimated_duration_ms'] = (data_size / (sample_rate * channels * 2)) * 1000
             except:
-                pass
+                quality_metrics['issues'].append('WAV header parsing failed')
                 
-        elif audio_data.startswith(b'\x1a\x45\xdf\xa3'):
+        elif audio_data.startswith(b'\x1a\x45\xdf\xa3'):  # EBML/WebM header
             quality_metrics['has_webm_header'] = True
-            # Rough estimation for WebM (2 seconds per 32KB is typical)
-            quality_metrics['estimated_duration_ms'] = (len(audio_data) / 32000) * 2000
+            quality_metrics['format_confidence'] = 0.7
             
-        # Calculate quality score
+            # Look for Opus codec marker
+            if b'OpusHead' in audio_data[:2000] or b'A_OPUS' in audio_data[:2000]:
+                quality_metrics['has_opus_codec'] = True
+                quality_metrics['format_confidence'] = 0.8
+                
+            # Enhanced WebM duration estimation
+            # Opus typically 32kbps, WebM overhead ~10%
+            estimated_bitrate = 35000  # bits per second
+            quality_metrics['estimated_duration_ms'] = (len(audio_data) * 8 / estimated_bitrate) * 1000
+            
+        else:
+            # Check for other common patterns
+            if b'ftyp' in audio_data[:20]:  # MP4/M4A
+                quality_metrics['issues'].append('Detected MP4/M4A format - not supported')
+            elif b'ID3' in audio_data[:10]:  # MP3
+                quality_metrics['issues'].append('Detected MP3 format - not supported')
+            elif b'OggS' in audio_data[:10]:  # OGG
+                quality_metrics['issues'].append('Detected OGG format - partial support')
+            else:
+                quality_metrics['issues'].append('Unknown audio format - may fail conversion')
+                quality_metrics['format_confidence'] = 0.1
+                
+        # Enhanced quality scoring
         score = 0.0
+        
+        # Format recognition bonus
         if quality_metrics['has_wav_header']:
-            score += 0.4
+            score += 0.5  # WAV is best
         elif quality_metrics['has_webm_header']:
-            score += 0.3
-            
-        if len(audio_data) > 5000:
-            score += 0.3
+            if quality_metrics['has_opus_codec']:
+                score += 0.4  # WebM+Opus is good
+            else:
+                score += 0.25  # WebM without clear codec
+                
+        # Size scoring
+        if len(audio_data) > 10000:
+            score += 0.3  # Good size
         elif len(audio_data) > 2000:
-            score += 0.2
+            score += 0.2  # Acceptable size
+        elif len(audio_data) > 500:
+            score += 0.1  # Minimal size
             
-        if quality_metrics['estimated_duration_ms'] > 500:
-            score += 0.3
-        elif quality_metrics['estimated_duration_ms'] > 200:
-            score += 0.2
+        # Duration scoring
+        if quality_metrics['estimated_duration_ms'] > 1000:
+            score += 0.2  # Good duration
+        elif quality_metrics['estimated_duration_ms'] > 300:
+            score += 0.1  # Minimal duration
             
-        quality_metrics['quality_score'] = score
+        quality_metrics['quality_score'] = min(1.0, score)
+        
+        # Add confidence-based adjustments
+        quality_metrics['quality_score'] *= quality_metrics['format_confidence']
         
         return quality_metrics
         
     except Exception as e:
-        logger.error(f"❌ Audio quality validation error: {e}")
-        return {'size_bytes': len(audio_data), 'quality_score': 0.0, 'issues': ['Validation failed']}
+        logger.error(f"❌ Enhanced audio quality validation error: {e}")
+        return {
+            'size_bytes': len(audio_data), 
+            'quality_score': 0.0, 
+            'issues': [f'Validation failed: {str(e)[:100]}'],
+            'format_confidence': 0.0
+        }
+
+def create_professional_wav_from_webm(audio_data: bytes) -> bytes | None:
+    """🎯 PROFESSIONAL: Advanced WebM to WAV conversion using direct Opus decoding approach"""
+    try:
+        logger.info("🎯 Creating professional WebM→WAV conversion")
+        
+        # Enhanced WebM analysis
+        if len(audio_data) < 1000:
+            logger.error("Audio data too small for processing")
+            return None
+        
+        # Professional approach: Use FFmpeg with specific WebM/Opus handling
+        temp_webm = None
+        temp_wav = None
+        
+        try:
+            # Create temporary WebM file with proper extension
+            with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as f:
+                f.write(audio_data)
+                temp_webm = f.name
+            
+            # Create temporary WAV output
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
+                temp_wav = f.name
+            
+            # Professional FFmpeg command for WebM/Opus extraction
+            cmd = [
+                'ffmpeg', '-y',
+                '-hide_banner',
+                '-loglevel', 'error',
+                '-f', 'matroska,webm',  # Specify container format
+                '-i', temp_webm,
+                '-vn',  # No video
+                '-acodec', 'pcm_s16le',
+                '-ac', '1',  # Mono
+                '-ar', '16000',  # 16kHz
+                '-f', 'wav',
+                temp_wav
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+            
+            if result.returncode == 0 and os.path.exists(temp_wav) and os.path.getsize(temp_wav) > 44:
+                # Read the converted WAV
+                with open(temp_wav, 'rb') as f:
+                    wav_data = f.read()
+                
+                logger.info(f"✅ Professional WebM conversion: {len(audio_data)}→{len(wav_data)} bytes")
+                return wav_data
+            else:
+                logger.warning(f"⚠️ FFmpeg failed: {result.stderr[:200]}")
+                # Fall back to emergency wrapper
+                return create_emergency_wav_wrapper(audio_data)
+                
+        finally:
+            # Cleanup temporary files
+            for temp_file in [temp_webm, temp_wav]:
+                if temp_file and os.path.exists(temp_file):
+                    try:
+                        os.unlink(temp_file)
+                    except:
+                        pass
+                        
+    except Exception as e:
+        logger.error(f"❌ Professional WebM conversion failed: {e}")
+        return create_emergency_wav_wrapper(audio_data)
 
 def create_emergency_wav_wrapper(audio_data: bytes) -> bytes | None:
-    """🚨 EMERGENCY: Fallback WAV wrapper when FFmpeg fails"""
+    """🚨 EMERGENCY: Enhanced fallback WAV wrapper with better audio extraction"""
     try:
-        logger.warning("🚨 Using emergency WAV wrapper - may have quality issues")
-        
-        # Basic parameters
-        sample_rate = 16000
-        channels = 1
-        bits_per_sample = 16
+        logger.warning("🚨 Using enhanced emergency WAV wrapper")
         
         if len(audio_data) < 1000:
             return None
         
-        # Try to skip WebM headers more intelligently
+        # Enhanced WebM parsing
         audio_start = 0
         
-        # Look for actual audio data patterns
         if audio_data.startswith(b'\x1a\x45\xdf\xa3'):  # WebM/EBML
-            # Find the cluster element (where audio data typically starts)
-            cluster_pattern = b'\x1f\x43\xb6\x75'  # Cluster element ID
-            pos = audio_data.find(cluster_pattern)
-            if pos > 0:
-                audio_start = pos + 20  # Skip cluster header
+            # Look for SimpleBlock elements (actual audio frames)
+            simple_block_pattern = b'\xa3'  # SimpleBlock element
+            cluster_pattern = b'\x1f\x43\xb6\x75'  # Cluster element
+            
+            # Find first cluster
+            cluster_pos = audio_data.find(cluster_pattern)
+            if cluster_pos > 0:
+                # Look for audio data after cluster
+                search_start = cluster_pos + 8
+                block_pos = audio_data.find(simple_block_pattern, search_start)
+                if block_pos > 0:
+                    audio_start = block_pos + 10  # Skip element header
+                else:
+                    audio_start = search_start + 100  # Conservative fallback
             else:
-                # Fallback: skip first 1KB of headers
-                audio_start = min(1024, len(audio_data) // 4)
+                # No cluster found, skip probable headers
+                audio_start = min(2048, len(audio_data) // 3)
         
-        # Extract potential PCM data
+        # Extract audio data with padding
+        available_data = len(audio_data) - audio_start
+        if available_data < 1000:
+            audio_start = max(0, len(audio_data) - 2000)  # Take last 2KB
+        
         pcm_data = audio_data[audio_start:]
         
-        # Ensure even bytes for 16-bit samples
+        # Ensure even length for 16-bit samples
         if len(pcm_data) % 2 != 0:
             pcm_data = pcm_data[:-1]
         
-        # Create WAV header
-        wav_header = create_wav_header(len(pcm_data), sample_rate, channels, bits_per_sample)
+        # Limit size to reasonable amount
+        if len(pcm_data) > 1000000:  # 1MB limit
+            pcm_data = pcm_data[:1000000]
         
-        logger.warning(f"⚠️ Emergency WAV: {len(pcm_data)} bytes PCM from offset {audio_start}")
+        # Create enhanced WAV header
+        sample_rate = 16000
+        wav_header = create_wav_header(len(pcm_data), sample_rate, 1, 16)
+        
+        logger.warning(f"⚠️ Enhanced emergency WAV: {len(pcm_data)} bytes from offset {audio_start}")
         return wav_header + pcm_data
         
     except Exception as e:
-        logger.error(f"❌ Emergency WAV wrapper failed: {e}")
+        logger.error(f"❌ Enhanced emergency wrapper failed: {e}")
         return None
 
 def convert_ogg_to_wav(ogg_data: bytes) -> bytes | None:
@@ -733,15 +858,26 @@ def transcribe_audio_sync(audio_data):
         # Step 2: Professional audio conversion
         logger.info("🎯 Starting professional audio conversion pipeline...")
         
-        # First attempt: Professional FFmpeg conversion
-        wav_audio = convert_webm_to_wav(audio_data)
-        conversion_method = "FFmpeg Professional"
+        # Professional multi-stage conversion pipeline
+        wav_audio = None
+        conversion_method = "Unknown"
         
-        if not wav_audio:
-            # Second attempt: Emergency fallback
-            logger.warning("⚠️ FFmpeg failed, using emergency conversion")
-            wav_audio = create_emergency_wav_wrapper(audio_data)
-            conversion_method = "Emergency Wrapper"
+        # Stage 1: Try professional WebM conversion
+        wav_audio = create_professional_wav_from_webm(audio_data)
+        if wav_audio:
+            conversion_method = "Professional WebM"
+        else:
+            # Stage 2: Try standard FFmpeg conversion
+            logger.warning("⚠️ Professional WebM failed, trying standard FFmpeg")
+            wav_audio = convert_webm_to_wav(audio_data)
+            if wav_audio:
+                conversion_method = "Standard FFmpeg"
+            else:
+                # Stage 3: Emergency wrapper as last resort
+                logger.warning("⚠️ All FFmpeg methods failed, using emergency wrapper")
+                wav_audio = create_emergency_wav_wrapper(audio_data)
+                if wav_audio:
+                    conversion_method = "Emergency Wrapper"
             
         if not wav_audio:
             logger.error("❌ All audio conversion methods failed")

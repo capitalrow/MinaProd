@@ -73,6 +73,59 @@
                         <div class="stat-value" id="confidenceScore">0%</div>
                         <div class="stat-label">Accuracy</div>
                     </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value" id="chunksProcessed">0</div>
+                        <div class="stat-label">Chunks</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value" id="latencyMs">0ms</div>
+                        <div class="stat-label">Latency</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value" id="qualityScore">0%</div>
+                        <div class="stat-label">Quality</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 🎯 NEW: System Health Panel -->
+            <div class="panel-section">
+                <h3 class="section-title">
+                    <i class="fas fa-heartbeat"></i>
+                    System Health
+                </h3>
+                
+                <div class="health-indicators">
+                    <div class="health-item">
+                        <span class="health-label">Audio Processing</span>
+                        <span class="health-status" id="audioProcessingHealth">
+                            <i class="fas fa-circle text-success"></i> Ready
+                        </span>
+                    </div>
+                    
+                    <div class="health-item">
+                        <span class="health-label">WebM Conversion</span>
+                        <span class="health-status" id="conversionHealth">
+                            <i class="fas fa-circle text-warning"></i> Checking
+                        </span>
+                    </div>
+                    
+                    <div class="health-item">
+                        <span class="health-label">Whisper API</span>
+                        <span class="health-status" id="whisperHealth">
+                            <i class="fas fa-circle text-success"></i> Connected
+                        </span>
+                    </div>
+                    
+                    <div class="health-item">
+                        <span class="health-label">Network</span>
+                        <span class="health-status" id="networkHealth">
+                            <i class="fas fa-circle text-success"></i> Stable
+                        </span>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -80,36 +133,132 @@
         <!-- Transcript Area -->
         <main class="transcript-area">
             <div class="transcript-header">
-                <h3 class="transcript-title">Live Transcript</h3>
+                <h3 class="transcript-title">
+                    <i class="fas fa-file-alt"></i>
+                    Live Transcript
+                    <span class="transcript-mode" id="transcriptMode">Real-time</span>
+                </h3>
                 
                 <div class="transcript-actions">
-                    <button class="btn btn-icon" id="clearTranscript" title="Clear">
+                    <!-- 🎯 NEW: Quality Indicator -->
+                    <div class="quality-indicator" id="qualityIndicator">
+                        <span class="quality-label">Quality:</span>
+                        <span class="quality-badge" id="qualityBadge">Excellent</span>
+                    </div>
+                    
+                    <button class="btn btn-icon" id="pauseTranscript" title="Pause/Resume" aria-label="Pause or resume transcription">
+                        <i class="fas fa-pause"></i>
+                    </button>
+                    <button class="btn btn-icon" id="clearTranscript" title="Clear" aria-label="Clear transcript">
                         <i class="fas fa-trash"></i>
                     </button>
-                    <button class="btn btn-icon" id="copyTranscript" title="Copy">
+                    <button class="btn btn-icon" id="copyTranscript" title="Copy" aria-label="Copy transcript to clipboard">
                         <i class="fas fa-copy"></i>
                     </button>
-                    <button class="btn btn-icon" id="downloadTranscript" title="Download">
+                    <button class="btn btn-icon" id="downloadTranscript" title="Download" aria-label="Download transcript as text file">
                         <i class="fas fa-download"></i>
+                    </button>
+                    <!-- 🎯 NEW: Settings -->
+                    <button class="btn btn-icon" id="transcriptSettings" title="Settings" aria-label="Transcription settings">
+                        <i class="fas fa-cog"></i>
                     </button>
                 </div>
             </div>
 
-            <div class="transcript-content" id="transcriptContainer">
+            <div class="transcript-content" id="transcriptContainer" role="log" aria-live="polite" aria-label="Live transcription text">
                 <div class="transcript-empty">
                     <i class="fas fa-microphone-slash"></i>
                     <p>Click record to start transcription</p>
+                    <div class="getting-started">
+                        <h4>Getting Started:</h4>
+                        <ol>
+                            <li>Ensure microphone access is allowed</li>
+                            <li>Speak clearly and at normal volume</li>
+                            <li>Click the record button to begin</li>
+                            <li>View real-time transcription below</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 🎯 NEW: Advanced Controls -->
+            <div class="transcript-controls" id="transcriptControls" style="display: none;">
+                <div class="control-row">
+                    <label class="control-label">
+                        <input type="checkbox" id="autoScroll" checked> Auto-scroll
+                    </label>
+                    <label class="control-label">
+                        <input type="checkbox" id="timestampMode"> Show timestamps
+                    </label>
+                    <label class="control-label">
+                        <input type="checkbox" id="confidenceMode"> Show confidence
+                    </label>
+                    <label class="control-label">
+                        <input type="range" id="fontSizeSlider" min="12" max="24" value="16">
+                        <span>Font Size: <span id="fontSizeValue">16px</span></span>
+                    </label>
                 </div>
             </div>
 
-            <div class="confidence-indicator">
-                <div class="confidence-label">
-                    <span>Confidence</span>
-                    <span id="confidenceText">0%</span>
+            <!-- 🎯 ENHANCED: Multi-metric Performance Panel -->
+            <div class="performance-panel">
+                <div class="metric-row">
+                    <div class="metric-item">
+                        <div class="metric-label">
+                            <i class="fas fa-bullseye"></i> Confidence
+                        </div>
+                        <div class="metric-value">
+                            <span id="confidenceText">0%</span>
+                            <div class="metric-bar">
+                                <div class="metric-fill" id="confidenceFill"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-item">
+                        <div class="metric-label">
+                            <i class="fas fa-tachometer-alt"></i> Latency
+                        </div>
+                        <div class="metric-value">
+                            <span id="latencyText">0ms</span>
+                            <div class="metric-bar">
+                                <div class="metric-fill" id="latencyFill"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-item">
+                        <div class="metric-label">
+                            <i class="fas fa-chart-line"></i> Quality
+                        </div>
+                        <div class="metric-value">
+                            <span id="qualityText">0%</span>
+                            <div class="metric-bar">
+                                <div class="metric-fill" id="qualityFill"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="confidence-bar">
-                    <div class="confidence-fill" id="confidenceFill"></div>
+                
+                <!-- 🎯 NEW: Real-time Diagnostics -->
+                <div class="diagnostics-row" id="diagnosticsRow" style="display: none;">
+                    <div class="diagnostic-item">
+                        <span class="diagnostic-label">Processing Method:</span>
+                        <span class="diagnostic-value" id="processingMethod">Unknown</span>
+                    </div>
+                    <div class="diagnostic-item">
+                        <span class="diagnostic-label">Audio Format:</span>
+                        <span class="diagnostic-value" id="audioFormat">Unknown</span>
+                    </div>
+                    <div class="diagnostic-item">
+                        <span class="diagnostic-label">Chunk Size:</span>
+                        <span class="diagnostic-value" id="chunkSize">0 KB</span>
+                    </div>
                 </div>
+                
+                <button class="diagnostics-toggle" id="diagnosticsToggle">
+                    <i class="fas fa-chart-bar"></i> Show Diagnostics
+                </button>
             </div>
         </main>
     </div>
