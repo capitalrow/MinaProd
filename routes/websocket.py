@@ -249,9 +249,9 @@ def join_session(data):
         })
 
 @socketio.on('connect')
-@handle_socket_errors
+@handle_socket_errors  
 def on_connect(auth):
-    """🔥 ENHANCED: Handle client connection with comprehensive tracking and error recovery."""
+    """🔥 MONITORING ENHANCED: Comprehensive connection handling with debugging and recovery."""
     try:
         from flask import session as flask_session
         client_id = flask_session.get('client_id', str(uuid.uuid4()))
@@ -260,19 +260,51 @@ def on_connect(auth):
     
     connection_time = time.time()
     
-    # 🔥 ENHANCED: Structured logging for better monitoring
+    # Monitoring Recommendation #4: Enable debugging for troubleshooting
+    transport_info = getattr(request, 'transport', 'unknown')
+    client_ip = request.headers.get('X-Forwarded-For', 
+                                  request.headers.get('X-Real-IP', 
+                                                    getattr(request, 'remote_addr', 'unknown')))
+    
+    # Enhanced structured logging with monitoring data
     logger.info({
         "event": "client_connected",
         "client_id": client_id,
         "timestamp": connection_time,
+        "transport": transport_info,
+        "client_ip": client_ip,
         "user_agent": request.headers.get('User-Agent', 'Unknown'),
-        "remote_addr": getattr(request, 'remote_addr', 'unknown')
+        "socket_id": request.sid,
+        "monitoring_priority": "connection_established"
     })
     
+    # Monitoring Recommendation #3: Add comprehensive error handling and recovery
+    try:
+        # Start monitoring systems for this connection
+        if 'live_monitor' in globals() and live_monitor:
+            live_monitor.start_session_monitoring(client_id)
+            logger.info(f"📊 Started live monitoring for session: {client_id}")
+        
+        if 'adaptive_enhancer' in globals() and adaptive_enhancer:
+            adaptive_enhancer.start_adaptive_enhancement(client_id)
+            logger.info(f"🚀 Started adaptive enhancement for session: {client_id}")
+            
+    except Exception as e:
+        logger.warning(f"⚠️ Monitoring systems initialization failed: {e}")
+    
+    # Enhanced connection response with debugging info
     emit('connected', {
-        'status': 'Connected to Mina transcription service',
+        'status': 'Connected to Mina transcription service - Enhanced',
         'client_id': client_id,
-        'server_time': connection_time
+        'server_time': connection_time,
+        'transport': transport_info,
+        'session_id': client_id,
+        'monitoring_active': True,
+        'debug_info': {
+            'socket_id': request.sid,
+            'client_ip': client_ip[:15] + '...' if len(client_ip) > 15 else client_ip,
+            'connection_time': connection_time
+        }
     })
 
 @socketio.on('disconnect')

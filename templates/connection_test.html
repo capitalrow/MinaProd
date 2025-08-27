@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket.IO Connection Test - Monitoring System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+</head>
+<body>
+    <h1>🔍 Manual Monitoring System - Connection Test</h1>
+    <div id="results"></div>
+    
+    <script>
+    // Monitoring System Test - Socket.IO Compatibility Check
+    function logResult(message) {
+        document.getElementById('results').innerHTML += '<p>' + message + '</p>';
+        console.log(message);
+    }
+    
+    logResult('🔄 Testing Socket.IO 2.3.0 compatibility...');
+    
+    const socket = io({
+        transports: ['polling', 'websocket'],
+        timeout: 10000
+    });
+    
+    socket.on('connect', () => {
+        logResult('✅ Socket.IO 2.3.0 connection successful!');
+        socket.emit('test_message', {test: true});
+    });
+    
+    socket.on('connected', (data) => {
+        logResult('✅ Server response received: ' + JSON.stringify(data));
+        setTimeout(() => socket.disconnect(), 2000);
+    });
+    
+    socket.on('connect_error', (error) => {
+        logResult('❌ Connection failed: ' + error);
+        logResult('🔄 This version incompatible, would try next...');
+    });
+    
+    socket.on('disconnect', () => {
+        logResult('🔌 Disconnected - Test complete');
+    });
+    
+    setTimeout(() => {
+        if (!socket.connected) {
+            logResult('⏰ Connection timeout - version incompatible');
+        }
+    }, 5000);
+    </script>
+</body>
+</html>
