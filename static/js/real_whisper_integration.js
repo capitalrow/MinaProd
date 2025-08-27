@@ -171,6 +171,8 @@ class RealWhisperIntegration {
     
     async startTranscription(sessionId) {
         try {
+            console.log('🎯 STARTING REAL WHISPER INTEGRATION');
+            
             if (!this.isConnected) {
                 await this.initializeConnection();
             }
@@ -189,6 +191,10 @@ class RealWhisperIntegration {
                 session_id: sessionId
             }));
             
+            // CRITICAL: Clear the transcript area and show active status
+            this.clearTranscriptArea();
+            this.showTranscriptionActive();
+            
             // Initialize audio recording
             await this.initializeAudioRecording();
             
@@ -198,6 +204,38 @@ class RealWhisperIntegration {
         } catch (error) {
             console.error('Failed to start transcription:', error);
             throw error;
+        }
+    }
+    
+    clearTranscriptArea() {
+        const transcriptContainer = document.querySelector('.live-transcript-container') ||
+                                  document.getElementById('transcript') || 
+                                  document.getElementById('transcriptContent') ||
+                                  document.querySelector('.transcript-content');
+                                  
+        if (transcriptContainer) {
+            transcriptContainer.innerHTML = '';
+            console.log('🧹 Transcript area cleared');
+        }
+    }
+    
+    showTranscriptionActive() {
+        const transcriptContainer = document.querySelector('.live-transcript-container') ||
+                                  document.getElementById('transcript') || 
+                                  document.getElementById('transcriptContent') ||
+                                  document.querySelector('.transcript-content');
+                                  
+        if (transcriptContainer) {
+            transcriptContainer.innerHTML = `
+                <div class="transcription-active p-3 text-center">
+                    <div class="spinner-border text-success mb-2" role="status">
+                        <span class="visually-hidden">Processing...</span>
+                    </div>
+                    <h6 class="text-success">🎤 Live Transcription Active</h6>
+                    <p class="text-muted mb-0">Listening for speech...</p>
+                </div>
+            `;
+            console.log('🎤 Showing active transcription status');
         }
     }
     
