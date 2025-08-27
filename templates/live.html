@@ -681,7 +681,7 @@
 <!-- 📊 MINA Telemetry - Client-side monitoring (load first) -->
 <script src="/static/js/mina_telemetry.js"></script>
 
-<script src="/static/js/websocket_streaming.js"></script>
+<script src="/static/js/real_whisper_integration.js"></script>
 <script src="/static/js/notification_system.js"></script>
 <!-- Industry Standard Enhancements -->
 <script src="/static/js/pre_recording_wizard.js"></script>
@@ -1143,12 +1143,63 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Browser simulation integration ready');
     }
     
+    // Initialize Real Whisper Integration for the main page
+    if (window.realWhisperIntegration) {
+        console.log('🎯 Initializing Real Whisper API integration...');
+        
+        // Replace start recording button functionality
+        const startBtn = document.getElementById('startRecordingBtn');
+        const stopBtn = document.getElementById('stopRecordingBtn');
+        
+        if (startBtn) {
+            startBtn.addEventListener('click', async function() {
+                try {
+                    this.disabled = true;
+                    window.toastSystem.showInfo('Connecting to real-time transcription service...');
+                    
+                    // Generate session ID
+                    const sessionId = `live_${Date.now()}`;
+                    
+                    // Start real Whisper transcription
+                    await window.realWhisperIntegration.startTranscription(sessionId);
+                    
+                    // Update UI
+                    this.disabled = true;
+                    stopBtn.disabled = false;
+                    
+                    window.toastSystem.showSuccess('✅ Real-time transcription started with Whisper API');
+                    console.log('✅ Real-time transcription with Whisper API started');
+                    
+                } catch (error) {
+                    console.error('❌ Failed to start real-time transcription:', error);
+                    window.toastSystem.showError(`Connection failed: ${error.message}`);
+                    this.disabled = false;
+                }
+            });
+        }
+        
+        if (stopBtn) {
+            stopBtn.addEventListener('click', function() {
+                window.realWhisperIntegration.stopTranscription();
+                
+                // Update UI
+                this.disabled = true;
+                startBtn.disabled = false;
+                
+                window.toastSystem.showInfo('Real-time transcription stopped');
+                console.log('⏹️ Real-time transcription stopped');
+            });
+        }
+        
+        console.log('✅ Real Whisper API integration initialized on main page');
+    }
+    
     // Announce system ready
     setTimeout(() => {
-        window.toastSystem.showSuccess('Enhanced transcription system ready with quality monitoring and filtering');
+        window.toastSystem.showSuccess('Enhanced transcription system ready with REAL Whisper API');
     }, 1000);
     
-    console.log('✅ Enhanced transcription system initialized with 100% effectiveness and quality monitoring');
+    console.log('✅ Enhanced transcription system initialized with REAL Whisper API integration');
 });
 </script>
 {% endblock %}
