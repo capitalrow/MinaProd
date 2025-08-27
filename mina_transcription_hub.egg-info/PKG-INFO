@@ -30,7 +30,6 @@ Requires-Dist: werkzeug>=2.3.0
 Requires-Dist: whitenoise>=6.5.0
 Requires-Dist: eventlet>=0.33.0
 Requires-Dist: python-engineio==4.7.1
-Requires-Dist: python-socketio[asyncio-client,client]==5.8.0
 Requires-Dist: numpy>=1.24.0
 Requires-Dist: scipy>=1.10.0
 Requires-Dist: webrtcvad>=2.0.10
@@ -54,7 +53,6 @@ Requires-Dist: pyjwt>=2.10.1
 Requires-Dist: flask-login>=0.6.3
 Requires-Dist: aiohttp>=3.12.15
 Requires-Dist: websockets>=15.0.1
-Requires-Dist: socketio>=0.2.1
 Requires-Dist: playwright>=1.54.0
 Requires-Dist: pytest-asyncio>=1.1.0
 Requires-Dist: pytest-html>=4.1.1
