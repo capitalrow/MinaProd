@@ -317,6 +317,10 @@ class FixedMinaTranscription {
             if (response.ok) {
                 const result = await response.json();
                 
+                // 🔧 CRITICAL FIX: Add processing time to result object
+                result.processing_time_ms = latency;
+                result.chunk_size_bytes = audioBlob.size;
+                
                 // Enhanced text validation
                 if (result.text && result.text.trim() && 
                     !result.text.includes('[No speech detected]') && 
@@ -331,6 +335,13 @@ class FixedMinaTranscription {
                     console.log(`✅ Transcribed: "${result.text}" (${latency}ms, confidence: ${Math.round((result.confidence || 0.9) * 100)}%)`);
                 } else {
                     console.log(`⚠️ No valid speech in chunk ${this.chunkCount} (${latency}ms)`);
+                    
+                    // 🔧 NEW: Still update metrics even for failed chunks
+                    this.updateChunkMetrics({
+                        processing_time_ms: latency,
+                        confidence: 0,
+                        chunk_size_bytes: audioBlob.size
+                    });
                 }
             } else {
                 console.error(`❌ Transcription failed: HTTP ${response.status}`);
@@ -439,6 +450,31 @@ class FixedMinaTranscription {
     }
     
     updateStats(result) {
+        console.log('🔢 Updating UI stats with:', result);
+        
+        // 🔧 FIX 1: Properly increment and display chunk count
+        const chunksElement = document.getElementById('chunksProcessed');
+        if (chunksElement) {
+            chunksElement.textContent = this.chunkCount;
+            console.log(`📊 Chunks processed: ${this.chunkCount}`);
+        }
+        
+        // 🔧 FIX 2: Display actual latency from processing
+        const latencyElement = document.getElementById('latencyMs');
+        if (latencyElement && result.processing_time_ms) {
+            const latencyMs = Math.round(result.processing_time_ms);
+            latencyElement.textContent = `${latencyMs}ms`;
+            console.log(`⚡ Latency: ${latencyMs}ms`);
+        }
+        
+        // 🔧 FIX 3: Calculate and display quality score
+        const qualityElement = document.getElementById('qualityScore');
+        if (qualityElement && result.confidence !== undefined) {
+            const qualityScore = Math.round(result.confidence * 100);
+            qualityElement.textContent = `${qualityScore}%`;
+            console.log(`🎯 Quality: ${qualityScore}%`);
+        }
+        
         // Update word count
         const words = this.cumulativeText.split(/\s+/).filter(word => word.length > 0);
         this.totalWords = words.length;
@@ -452,6 +488,9 @@ class FixedMinaTranscription {
             const confidence = Math.round((result.confidence || 0.95) * 100);
             this.elements.accuracy.textContent = confidence + '%';
         }
+        
+        // 🔧 FIX 4: Update performance bars
+        this.updatePerformanceBars(result);
     }
     
     updateConfidenceIndicators(result) {
@@ -469,6 +508,54 @@ class FixedMinaTranscription {
                 confidenceFill.style.width = confidence + '%';
             }
         }
+    }
+    
+    // 🔧 NEW METHOD: Update performance bars with actual values
+    updatePerformanceBars(result) {
+        const updates = {
+            'confidenceFill': result.confidence ? Math.round(result.confidence * 100) : 0,
+            'latencyFill': result.processing_time_ms ? Math.min(Math.round((5000 - result.processing_time_ms) / 5000 * 100), 100) : 0,
+            'qualityFill': result.confidence ? Math.round(result.confidence * 100) : 0
+        };
+        
+        Object.entries(updates).forEach(([elementId, percentage]) => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.style.width = `${percentage}%`;
+                console.log(`📊 ${elementId}: ${percentage}%`);
+            }
+        });
+        
+        // Update text values too
+        const textUpdates = {
+            'confidenceText': `${updates.confidenceFill}%`,
+            'latencyText': result.processing_time_ms ? `${Math.round(result.processing_time_ms)}ms` : '0ms',
+            'qualityText': `${updates.qualityFill}%`
+        };
+        
+        Object.entries(textUpdates).forEach(([elementId, text]) => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = text;
+            }
+        });
+    }
+    
+    // 🔧 NEW METHOD: Update chunk metrics even for non-speech chunks
+    updateChunkMetrics(metrics) {
+        // Update chunks processed counter
+        const chunksElement = document.getElementById('chunksProcessed');
+        if (chunksElement) {
+            chunksElement.textContent = this.chunkCount;
+        }
+        
+        // Update latency even for failed chunks
+        const latencyElement = document.getElementById('latencyMs');
+        if (latencyElement && metrics.processing_time_ms) {
+            latencyElement.textContent = `${Math.round(metrics.processing_time_ms)}ms`;
+        }
+        
+        console.log(`📊 Metrics updated: chunk ${this.chunkCount}, latency ${Math.round(metrics.processing_time_ms)}ms`);
     }
     
     clearTranscriptDisplay() {
