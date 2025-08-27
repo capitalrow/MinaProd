@@ -45,10 +45,12 @@ class IndustryStandardsIntegration {
   }
 
   async waitForSystems() {
-    const maxWait = 5000; // 5 seconds
+    const maxWait = 3000; // Reduced to 3 seconds
     const startTime = Date.now();
+    let attempts = 0;
+    const maxAttempts = 30; // Max 30 attempts
     
-    while (Date.now() - startTime < maxWait) {
+    while (Date.now() - startTime < maxWait && attempts < maxAttempts) {
       this.systems.wizard = window.preRecordingWizard;
       this.systems.states = window.recordingStates;
       this.systems.notifications = window.intelligentNotifications;
@@ -61,6 +63,7 @@ class IndustryStandardsIntegration {
         break;
       }
       
+      attempts++;
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     
@@ -69,17 +72,26 @@ class IndustryStandardsIntegration {
 
   connectSystems() {
     // Connect recording states with intelligent notifications
-    if (this.systems.states && this.systems.notifications) {
-      const originalSetState = this.systems.states.setState;
+    if (this.systems.states && this.systems.notifications && !this.systems.states._isWrapped) {
+      const originalSetState = this.systems.states.setState.bind(this.systems.states);
       this.systems.states.setState = (state, details) => {
-        originalSetState.call(this.systems.states, state, details);
+        // Prevent infinite recursion
+        if (this.systems.states._preventRecursion) return;
         
-        // Emit event for notifications
-        document.dispatchEvent(new CustomEvent('recordingStateChange', {
-          detail: { state, data: details }
-        }));
+        this.systems.states._preventRecursion = true;
+        try {
+          originalSetState(state, details);
+          
+          // Emit event for notifications (only once)
+          document.dispatchEvent(new CustomEvent('recordingStateChange', {
+            detail: { state, data: details }
+          }));
+        } finally {
+          this.systems.states._preventRecursion = false;
+        }
       };
       
+      this.systems.states._isWrapped = true;
       console.log('🔗 Connected recording states with intelligent notifications');
     }
     
