@@ -290,10 +290,13 @@ def on_disconnect(disconnect_reason=None):
         "timestamp": disconnect_time
     })
     
-    # Clean up any active sessions for this client
+    # Clean up any active sessions for this client and trigger memory cleanup
     try:
         service = get_transcription_service()
-        service.cleanup_client_sessions(client_id)
+        if hasattr(service, 'cleanup_client_sessions'):
+            service.cleanup_client_sessions(client_id)
+        if hasattr(service, 'cleanup_memory'):
+            service.cleanup_memory()
     except Exception as e:
         logger.error({
             "event": "cleanup_error",

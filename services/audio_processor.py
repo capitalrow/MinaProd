@@ -24,6 +24,16 @@ class AudioProcessor:
         self.default_sample_rate = 16000
         self.default_channels = 1
         self.default_bit_depth = 16
+        self._audio_buffer = []
+        self._conversion_cache = {}
+    
+    def clear_buffers(self):
+        """Clear all audio processing buffers for memory optimization."""
+        self._audio_buffer.clear()
+        self._conversion_cache.clear()
+        import gc
+        gc.collect()
+        logger.info("Audio processor buffers cleared")
     
     def convert_to_wav(self, audio_data: bytes, input_format: str = 'webm',
                        sample_rate: int = 16000, channels: int = 1) -> bytes:
@@ -411,7 +421,13 @@ class AudioProcessor:
             
         except Exception as e:
             logger.error(f"Error trimming silence: {e}")
-            return audio_array if isinstance(audio_data, np.ndarray) else np.array([])
+            # Ensure audio_array is defined before using it
+            if isinstance(audio_data, np.ndarray):
+                return audio_data
+            elif isinstance(audio_data, bytes):
+                return np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
+            else:
+                return np.array([])
     
     # === 🎵 ENTERPRISE-GRADE ADVANCED AUDIO PROCESSING === 
     
@@ -659,7 +675,13 @@ class AudioProcessor:
             
         except Exception as e:
             logger.error(f"❌ Error applying AGC: {e}")
-            return audio_array if isinstance(audio_data, np.ndarray) else np.array([])
+            # Ensure audio_array is defined before using it
+            if isinstance(audio_data, np.ndarray):
+                return audio_data
+            elif isinstance(audio_data, bytes):
+                return np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
+            else:
+                return np.array([])
     
     def analyze_audio_quality(self, audio_data: Union[bytes, np.ndarray], 
                             sample_rate: int = 16000) -> dict:

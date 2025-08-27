@@ -5,9 +5,9 @@
 
 class RealTimeTranscription {
     constructor() {
-        this.socket = null;
-        this.audioProcessor = null;
-        this.websocketStreaming = null;
+        this.socket = safeGet(window, 'socket', null);
+        this.audioProcessor = safeGet(window, 'audioProcessor', null);
+        this.websocketStreaming = safeGet(window, 'websocketStreaming', null);
         this.isRecording = false;
         this.isPaused = false;
         this.sessionId = null;
