@@ -27,16 +27,18 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 
-# Native WebSocket Server Integration
+# WebSocket Server Integration
 from services.native_websocket_server import start_native_websocket_server_thread
 from routes.native_websocket_routes import register_native_websocket_routes
+from routes.sync_websocket_routes import register_sync_websocket_routes
 
-# Start native WebSocket server in background thread
+# Start SYNC WebSocket server to bypass all async conflicts
 try:
-    start_native_websocket_server_thread()
-    logger.info("✅ Native WebSocket server started successfully")
+    from services.sync_websocket_server import start_sync_websocket_server
+    start_sync_websocket_server()
+    logger.info("✅ Sync WebSocket server started successfully")
 except Exception as e:
-    logger.error(f"❌ Failed to start native WebSocket server: {e}")
+    logger.error(f"❌ Failed to start sync WebSocket server: {e}")
 
 # Native WebSocket implementation only - Socket.IO disabled for testing
 socketio = None  # Temporarily disabled to resolve import conflicts
@@ -147,13 +149,14 @@ def create_app(config_class=Config):
     app.register_blueprint(export_bp)
     app.register_blueprint(api_performance)
     
-    # Register native WebSocket routes
+    # Register WebSocket routes
     try:
         from routes.native_websocket_routes import register_native_websocket_routes
         register_native_websocket_routes(app)
-        logger.info("✅ Native WebSocket routes registered")
+        register_sync_websocket_routes(app)
+        logger.info("✅ WebSocket routes registered")
     except Exception as e:
-        logger.error(f"❌ Failed to register native WebSocket routes: {e}")
+        logger.error(f"❌ Failed to register WebSocket routes: {e}")
     
     # Socket.IO handlers disabled for native WebSocket testing
     # def register_websockets():

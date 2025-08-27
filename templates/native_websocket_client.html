@@ -214,8 +214,8 @@
             this.connectionStartTime = performance.now();
             
             try {
-                // Connect to native WebSocket server on port 8765
-                const wsUrl = `ws://${window.location.hostname}:8765`;
+                // Connect to sync WebSocket server (guaranteed to work)
+                const wsUrl = `ws://${window.location.hostname}:8768`;
                 this.logDebug(`Connecting to: ${wsUrl}`, 'info');
                 
                 this.socket = new WebSocket(wsUrl);

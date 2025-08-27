@@ -33,7 +33,7 @@ class NativeWebSocketServer:
     Designed for maximum compatibility and performance.
     """
     
-    def __init__(self, host="0.0.0.0", port=8765):
+    def __init__(self, host="0.0.0.0", port=8766):  # Changed port to avoid conflicts
         self.host = host
         self.port = port
         self.clients: Dict[str, websockets.WebSocketServerProtocol] = {}
@@ -278,12 +278,25 @@ def get_native_websocket_server():
     return native_ws_server
 
 def start_native_websocket_server_thread():
-    """Start the native WebSocket server in a separate thread."""
+    """Start the native WebSocket server in a separate thread with proper error handling."""
     def run_server():
-        server = get_native_websocket_server()
-        server.run_server()
+        try:
+            import asyncio
+            # Create new event loop for this thread
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            server = get_native_websocket_server()
+            logger.info(f"🔧 Starting WebSocket server on {server.host}:{server.port}")
+            
+            # Use the event loop directly
+            loop.run_until_complete(server.start_server_forever())
+        except Exception as e:
+            logger.error(f"❌ WebSocket server thread failed: {e}")
+            import traceback
+            logger.error(f"📋 Full traceback: {traceback.format_exc()}")
     
-    thread = threading.Thread(target=run_server, daemon=True)
+    thread = threading.Thread(target=run_server, daemon=True, name="WebSocketServer")
     thread.start()
     logger.info("🚀 Native WebSocket Server thread started")
     return thread
