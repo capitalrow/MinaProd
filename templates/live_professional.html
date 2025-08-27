@@ -128,12 +128,20 @@ class ProfessionalRecorder {
 
     initSocket() {
         try {
+            console.log('🔄 Initializing Socket.IO with enhanced connection logic...');
+            
+            // Enhanced connection configuration based on monitoring recommendations
             this.socket = io({
                 transports: ['polling', 'websocket'],
-                timeout: 20000,
+                timeout: 30000,  // Extended timeout
                 forceNew: true,
                 upgrade: true,
-                rememberUpgrade: false
+                rememberUpgrade: false,
+                autoConnect: true,
+                reconnection: true,
+                reconnectionDelay: 1000,
+                reconnectionAttempts: 5,
+                maxReconnectionAttempts: 10
             });
 
             this.socket.on('connect', () => {
@@ -156,7 +164,18 @@ class ProfessionalRecorder {
 
             this.socket.on('connect_error', (error) => {
                 console.error('Connection failed:', error);
-                this.updateStatus('idle', 'Connection Error');
+                this.updateStatus('idle', 'Connection Error - Retrying...');
+                this.attemptConnectionRecovery();
+            });
+
+            this.socket.on('reconnect', (attemptNumber) => {
+                console.log(`✅ Reconnected after ${attemptNumber} attempts`);
+                this.updateStatus('connected', 'Reconnected');
+            });
+
+            this.socket.on('reconnect_error', (error) => {
+                console.warn('Reconnection failed:', error);
+                this.updateStatus('idle', 'Connection Issues');
             });
 
         } catch (error) {
@@ -343,11 +362,56 @@ class ProfessionalRecorder {
         a.click();
         URL.revokeObjectURL(url);
     }
+
+    // Enhanced connection recovery based on monitoring recommendations
+    attemptConnectionRecovery() {
+        console.log('🔧 Attempting connection recovery...');
+        
+        // Progressive retry strategy
+        setTimeout(() => {
+            if (!this.socket?.connected) {
+                console.log('🔄 Retrying Socket.IO connection...');
+                this.socket?.disconnect();
+                this.initSocket();
+            }
+        }, 2000);
+    }
+
+    // Enhanced error handling and debugging
+    logConnectionDetails() {
+        console.log('🔍 Connection Debug Info:', {
+            connected: this.socket?.connected,
+            id: this.socket?.id,
+            transport: this.socket?.io?.engine?.transport?.name,
+            readyState: this.socket?.io?.engine?.readyState
+        });
+    }
 }
 
-// Initialize when DOM is ready
+// Initialize when DOM is ready with enhanced error handling
 document.addEventListener('DOMContentLoaded', () => {
-    window.recorder = new ProfessionalRecorder();
+    try {
+        window.recorder = new ProfessionalRecorder();
+        console.log('✅ Professional Recorder initialized successfully');
+        
+        // Enhanced debugging for connection issues
+        setTimeout(() => {
+            if (window.recorder?.socket) {
+                window.recorder.logConnectionDetails();
+            }
+        }, 3000);
+        
+    } catch (error) {
+        console.error('❌ Failed to initialize recorder:', error);
+        // Fallback initialization
+        setTimeout(() => {
+            try {
+                window.recorder = new ProfessionalRecorder();
+            } catch (retryError) {
+                console.error('❌ Retry failed:', retryError);
+            }
+        }, 5000);
+    }
 });
 </script>
 {% endblock %}
