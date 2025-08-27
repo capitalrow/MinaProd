@@ -3,494 +3,68 @@
 {% block title %}Live Transcription - Mina{% endblock %}
 
 {% block head %}
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=5.0">
-<meta name="description" content="Real-time live transcription service with high accuracy speech-to-text conversion">
-<meta name="theme-color" content="#0d6efd">
-
-<!-- iOS and mobile enhancements -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Mina Live">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="application-name" content="Mina Live">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-/* Essential mobile styles */
-@media (max-width: 768px) {
-    .btn {
-        min-height: 44px;
-        min-width: 44px;
-        padding: 12px 16px;
-        font-size: 16px;
-    }
-}
-
-.recording-indicator {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    background-color: #dc3545;
-    border-radius: 50%;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-
-.transcript-text {
-    min-height: 200px;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 20px;
-    color: #fff;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 16px;
-    line-height: 1.5;
-    white-space: pre-wrap;
-    overflow-y: auto;
-    max-height: 400px;
-}
-
-.status-indicator {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-
-.status-connected { background: #198754; color: white; }
-.status-recording { background: #dc3545; color: white; }
-.status-processing { background: #ffc107; color: black; }
-.status-error { background: #dc3545; color: white; }
-
-/* Recording button enhanced */
-.record-btn {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.5rem;
-    transition: all 0.3s ease;
-    position: relative;
-}
-
-.record-btn:hover {
-    transform: scale(1.05);
-}
-
-.record-btn.recording {
-    background: linear-gradient(45deg, #dc3545, #bb2d3b);
-    animation: recordingPulse 2s infinite;
-}
-
-@keyframes recordingPulse {
-    0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
-}
-
-/* Audio level visualizer */
-.audio-level-container {
-    background: #2d3436;
-    border-radius: 4px;
-    overflow: hidden;
-    height: 8px;
-}
-
-.audio-level-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #00b894, #fdcb6e, #e17055);
-    transition: width 0.1s ease;
-    width: 0%;
-}
-
-/* Error states */
-.error-message {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-    border-radius: 4px;
-    padding: 12px;
-    margin-bottom: 16px;
-}
-
-.success-message {
-    background: #d1e7dd;
-    color: #0f5132;
-    border: 1px solid #badbcc;
-    border-radius: 4px;
-    padding: 12px;
-    margin-bottom: 16px;
-}
-
-/* ARIA live region */
-.sr-only {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    padding: 0 !important;
-    margin: -1px !important;
-    overflow: hidden !important;
-    clip: rect(0, 0, 0, 0) !important;
-    white-space: nowrap !important;
-    border: 0 !important;
-}
+.record-btn { width: 120px; height: 120px; border-radius: 50%; }
+.transcript-text { min-height: 200px; background: #1a1a1a; color: #fff; padding: 20px; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="row justify-content-center">
-        <div class="col-12 col-lg-10 col-xl-8">
-            <!-- Header -->
-            <div class="text-center mb-4">
-                <h1 class="h2 mb-2">Live Recording</h1>
-                <p class="text-muted">Real-time speech-to-text transcription</p>
-                <div id="connectionStatus" class="status-indicator status-connected">Ready</div>
-            </div>
-
-            <!-- Error/Success Messages Container -->
-            <div id="messageContainer" aria-live="polite"></div>
-
-            <!-- Recording Control -->
-            <div class="card bg-dark border-secondary mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0 text-center">
-                        <i class="fas fa-microphone me-2"></i>Recording Control
-                    </h5>
-                </div>
+        <div class="col-12 col-lg-8">
+            <h1 class="text-center mb-4">Live Recording</h1>
+            
+            <div class="card bg-dark mb-4">
                 <div class="card-body text-center">
-                    <div class="mb-4">
-                        <button id="recordButton" class="record-btn btn btn-danger" 
-                                aria-label="Start or stop recording"
-                                title="Click to start or stop recording">
-                            <i class="fas fa-microphone" aria-hidden="true"></i>
-                        </button>
-                    </div>
+                    <button id="recordButton" class="record-btn btn btn-danger mb-3">
+                        <i class="fas fa-microphone"></i>
+                    </button>
                     
                     <div class="row text-center mb-3">
                         <div class="col-4">
-                            <div class="text-primary h4" id="timer" aria-label="Recording time">00:00</div>
-                            <small class="text-muted">Time</small>
+                            <div class="text-primary h4" id="timer">00:00</div>
+                            <small>Time</small>
                         </div>
                         <div class="col-4">
-                            <div class="text-info h4" id="wordCount" aria-label="Word count">0</div>
-                            <small class="text-muted">Words</small>
+                            <div class="text-info h4" id="wordCount">0</div>
+                            <small>Words</small>
                         </div>
                         <div class="col-4">
-                            <div class="text-success h4" id="accuracy" aria-label="Accuracy percentage">0%</div>
-                            <small class="text-muted">Accuracy</small>
+                            <div class="text-success h4" id="accuracy">0%</div>
+                            <small>Accuracy</small>
                         </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="audioLevel" class="form-label small text-muted">Audio Level</label>
-                        <div class="audio-level-container">
-                            <div id="audioLevel" class="audio-level-bar" role="progressbar" 
-                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                    </div>
-
-                    <!-- Control Buttons -->
-                    <div class="d-flex justify-content-center gap-2">
-                        <button id="pauseButton" class="btn btn-warning btn-sm" style="display: none;"
-                                aria-label="Pause recording">
-                            <i class="fas fa-pause"></i> PAUSE
-                        </button>
-                        <button id="stopButton" class="btn btn-secondary btn-sm" style="display: none;"
-                                aria-label="Stop recording">
-                            <i class="fas fa-stop"></i> STOP
-                        </button>
                     </div>
                 </div>
             </div>
-
-            <!-- Live Transcript -->
-            <div class="card bg-dark border-secondary">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-file-alt me-2"></i>Live Transcript
-                    </h5>
-                    <div class="d-flex gap-2">
-                        <button id="copyButton" class="btn btn-outline-light btn-sm" style="display: none;"
-                                aria-label="Copy transcript to clipboard">
-                            <i class="fas fa-copy"></i> Copy
-                        </button>
-                        <button id="downloadButton" class="btn btn-outline-light btn-sm" style="display: none;"
-                                aria-label="Download transcript as text file">
-                            <i class="fas fa-download"></i> Download
-                        </button>
-                    </div>
+            
+            <div class="card bg-dark">
+                <div class="card-header">
+                    <h5>Live Transcript</h5>
                 </div>
                 <div class="card-body">
-                    <div id="transcript" class="transcript-text" 
-                         role="log" aria-live="polite" aria-label="Live transcription">
-                        Click the red button to start recording and see your speech transcribed in real-time.
-                    </div>
-                    
-                    <!-- Session Info -->
-                    <div class="mt-3 pt-2 border-top border-secondary small text-muted">
-                        <div class="row">
-                            <div class="col-6">
-                                Session: <span id="sessionId">-</span>
-                            </div>
-                            <div class="col-6 text-end">
-                                Last Update: <span id="lastUpdate">-</span>
-                            </div>
-                        </div>
+                    <div id="transcript" class="transcript-text" aria-live="polite">
+                        Click the red button to start recording...
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<!-- ARIA live region for screen reader announcements -->
-<div id="ariaAnnouncements" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
 {% endblock %}
 
 {% block scripts %}
-<!-- ONLY the working transcription system -->
 <script src="/static/js/mina_transcription.js"></script>
-
-<!-- Enhanced error handling and accessibility -->
 <script>
-// Comprehensive error handler and accessibility manager
-class MinaSystemManager {
-    constructor() {
-        this.isInitialized = false;
-        this.initializationAttempts = 0;
-        this.maxInitAttempts = 3;
-        
-        this.init();
+// Initialize clean system only
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.MinaTranscription) {
+        window.minaTranscription = new window.MinaTranscription();
+        console.log('✅ Mina clean system initialized');
+    } else {
+        console.error('❌ MinaTranscription not loaded');
     }
-    
-    init() {
-        console.log('🎯 Initializing Mina System Manager...');
-        
-        // Ensure only one transcription system
-        this.disableCompetingSystems();
-        
-        // Wait for DOM and our transcription system
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.initializeSystem());
-        } else {
-            this.initializeSystem();
-        }
-    }
-    
-    disableCompetingSystems() {
-        // Prevent any competing systems from initializing
-        window.DISABLE_ALL_LEGACY_SYSTEMS = true;
-        window.FORCE_SINGLE_TRANSCRIPTION_SYSTEM = true;
-        
-        // Clear any existing audio contexts or recorders
-        if (window.audioContext) {
-            window.audioContext.close();
-            window.audioContext = null;
-        }
-        
-        console.log('✅ Competing systems disabled');
-    }
-    
-    initializeSystem() {
-        this.initializationAttempts++;
-        
-        if (window.MinaTranscription && !this.isInitialized) {
-            try {
-                // Initialize the transcription system
-                window.minaTranscription = new window.MinaTranscription();
-                this.isInitialized = true;
-                
-                // Add our enhancements
-                this.addErrorHandling();
-                this.addAccessibilityFeatures();
-                this.addPerformanceMonitoring();
-                
-                console.log('✅ Mina System fully initialized');
-                this.announceToScreen('Transcription system ready');
-                
-            } catch (error) {
-                console.error('❌ Failed to initialize Mina System:', error);
-                this.handleInitializationError(error);
-            }
-        } else if (this.initializationAttempts < this.maxInitAttempts) {
-            console.log(`⏳ Waiting for MinaTranscription... (attempt ${this.initializationAttempts})`);
-            setTimeout(() => this.initializeSystem(), 1000);
-        } else {
-            console.error('❌ Failed to initialize after maximum attempts');
-            this.showCriticalError('System initialization failed. Please refresh the page.');
-        }
-    }
-    
-    addErrorHandling() {
-        // Override the original error handling with enhanced version
-        if (window.minaTranscription) {
-            const originalShowNotification = window.minaTranscription.showNotification.bind(window.minaTranscription);
-            
-            window.minaTranscription.showNotification = (message, type = 'info') => {
-                // Enhanced notification with accessibility
-                originalShowNotification(message, type);
-                this.announceToScreen(message);
-                this.showMessage(message, type);
-            };
-        }
-    }
-    
-    addAccessibilityFeatures() {
-        // Enhanced keyboard support
-        document.addEventListener('keydown', (e) => {
-            if (e.key === ' ' && e.target === document.body) {
-                e.preventDefault();
-                this.toggleRecording();
-            } else if (e.key === 'Escape') {
-                this.stopRecording();
-            }
-        });
-        
-        // Focus management
-        const recordButton = document.getElementById('recordButton');
-        if (recordButton) {
-            recordButton.addEventListener('focus', () => {
-                this.announceToScreen('Record button focused. Press space to start recording.');
-            });
-        }
-    }
-    
-    addPerformanceMonitoring() {
-        // Monitor system performance
-        this.performanceData = {
-            startTime: null,
-            chunkCount: 0,
-            successfulChunks: 0,
-            failedChunks: 0,
-            averageLatency: 0,
-            totalLatency: 0
-        };
-        
-        // Override processing methods to collect metrics
-        if (window.minaTranscription) {
-            const originalProcess = window.minaTranscription.processAudioChunk.bind(window.minaTranscription);
-            
-            window.minaTranscription.processAudioChunk = async (audioBlob) => {
-                const startTime = Date.now();
-                this.performanceData.chunkCount++;
-                
-                try {
-                    const result = await originalProcess(audioBlob);
-                    const latency = Date.now() - startTime;
-                    
-                    this.performanceData.successfulChunks++;
-                    this.performanceData.totalLatency += latency;
-                    this.performanceData.averageLatency = this.performanceData.totalLatency / this.performanceData.successfulChunks;
-                    
-                    // Log performance metrics
-                    if (this.performanceData.chunkCount % 10 === 0) {
-                        console.log(`📊 Performance: ${this.performanceData.successfulChunks}/${this.performanceData.chunkCount} chunks successful, avg latency: ${Math.round(this.performanceData.averageLatency)}ms`);
-                    }
-                    
-                    return result;
-                } catch (error) {
-                    this.performanceData.failedChunks++;
-                    console.error('❌ Chunk processing failed:', error);
-                    throw error;
-                }
-            };
-        }
-    }
-    
-    toggleRecording() {
-        if (window.minaTranscription) {
-            if (window.minaTranscription.isRecording) {
-                window.minaTranscription.stopRecording();
-            } else {
-                window.minaTranscription.startRecording();
-            }
-        }
-    }
-    
-    stopRecording() {
-        if (window.minaTranscription && window.minaTranscription.isRecording) {
-            window.minaTranscription.stopRecording();
-        }
-    }
-    
-    announceToScreen(message) {
-        const announcer = document.getElementById('ariaAnnouncements');
-        if (announcer) {
-            announcer.textContent = message;
-        }
-    }
-    
-    showMessage(message, type) {
-        const container = document.getElementById('messageContainer');
-        if (!container) return;
-        
-        const messageEl = document.createElement('div');
-        messageEl.className = type === 'error' ? 'error-message' : 'success-message';
-        messageEl.textContent = message;
-        
-        container.appendChild(messageEl);
-        
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            if (messageEl.parentNode) {
-                messageEl.parentNode.removeChild(messageEl);
-            }
-        }, 5000);
-    }
-    
-    showCriticalError(message) {
-        const container = document.getElementById('messageContainer');
-        if (container) {
-            container.innerHTML = `
-                <div class="error-message">
-                    <strong>Critical Error:</strong> ${message}
-                    <br>
-                    <button class="btn btn-primary btn-sm mt-2" onclick="location.reload()">
-                        Refresh Page
-                    </button>
-                </div>
-            `;
-        }
-        
-        this.announceToScreen('Critical error occurred. ' + message);
-    }
-    
-    handleInitializationError(error) {
-        let errorMessage = 'System initialization failed.';
-        
-        if (error.message.includes('getUserMedia')) {
-            errorMessage = 'Microphone access denied. Please allow microphone access and refresh the page.';
-        } else if (error.message.includes('network')) {
-            errorMessage = 'Network error. Please check your connection and refresh the page.';
-        }
-        
-        this.showCriticalError(errorMessage);
-    }
-    
-    getPerformanceReport() {
-        return {
-            ...this.performanceData,
-            successRate: this.performanceData.chunkCount > 0 ? 
-                (this.performanceData.successfulChunks / this.performanceData.chunkCount * 100).toFixed(1) + '%' : '0%'
-        };
-    }
-}
-
-// Initialize the system
-window.minaSystemManager = new MinaSystemManager();
-
-// Global keyboard shortcuts info
-console.log('⌨️ Keyboard shortcuts: Space = Start/Stop recording, Escape = Stop recording');
+});
 </script>
 {% endblock %}

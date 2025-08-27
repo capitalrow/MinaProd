@@ -70,7 +70,7 @@ def live_transcription():
     """
     Real-time transcription interface.
     """
-    return render_template('live_professional.html')
+    return render_template('live.html')
 
 @transcription_bp.route('/sessions')
 def list_sessions():
