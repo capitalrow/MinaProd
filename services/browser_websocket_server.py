@@ -159,10 +159,10 @@ class BrowserWebSocketServer:
             # Use thread pool for I/O-bound Whisper API calls
             loop = asyncio.get_event_loop()
             with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-                # Submit transcription task to thread pool
+                # Submit transcription task to thread pool (FIXED)
                 future = loop.run_in_executor(
                     executor, 
-                    self.transcribe_audio_sync, 
+                    self.transcribe_audio_blocking, 
                     audio_data
                 )
                 
@@ -228,17 +228,11 @@ class BrowserWebSocketServer:
     
     def transcribe_audio_sync(self, audio_data):
         """Synchronous wrapper for Whisper API calls (runs in thread pool)."""
-        import asyncio
-        # Create new event loop for this thread
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            return loop.run_until_complete(self.transcribe_audio_real(audio_data))
-        finally:
-            loop.close()
+        # FIXED: Call synchronous version directly to avoid event loop conflict
+        return self.transcribe_audio_blocking(audio_data)
     
-    async def transcribe_audio_real(self, audio_data):
-        """Transcribe audio using OpenAI Whisper API with optimized audio processing."""
+    def transcribe_audio_blocking(self, audio_data):
+        """Synchronous transcription using OpenAI Whisper API (for thread pool execution)."""
         try:
             # ENHANCED: Accept more audio formats and smaller chunks
             if len(audio_data) < 50:
