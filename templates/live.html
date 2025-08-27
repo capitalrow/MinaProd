@@ -4,231 +4,114 @@
 
 {% block head %}
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Professional real-time transcription service">
-<meta name="theme-color" content="#0d6efd">
-
-<!-- Bootstrap JS (Essential for UI functionality) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-<style>
-/* Clean, Professional Styling */
-.recording-card {
-    border: none;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    background: linear-gradient(145deg, #1e2328 0%, #252a2f 100%);
-}
-
-.status-indicator {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 8px;
-    animation: pulse 2s infinite;
-}
-
-.status-connected { background-color: #198754; }
-.status-recording { background-color: #dc3545; }
-.status-processing { background-color: #fd7e14; }
-.status-idle { background-color: #6c757d; }
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-
-.record-button {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    border: 4px solid #dc3545;
-    background: transparent;
-    color: #dc3545;
-    font-size: 24px;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto;
-}
-
-.record-button:hover {
-    background: #dc3545;
-    color: white;
-    transform: scale(1.05);
-}
-
-.record-button.recording {
-    background: #dc3545;
-    color: white;
-    animation: recording-pulse 1.5s infinite;
-}
-
-@keyframes recording-pulse {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
-    50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
-}
-
-.transcript-container {
-    min-height: 300px;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    border-radius: 8px;
-    padding: 20px;
-    font-family: 'Courier New', monospace;
-    line-height: 1.6;
-}
-
-.confidence-bar {
-    height: 6px;
-    background: #30363d;
-    border-radius: 3px;
-    overflow: hidden;
-    margin-top: 10px;
-}
-
-.confidence-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #dc3545 0%, #fd7e14 50%, #198754 100%);
-    border-radius: 3px;
-    transition: width 0.3s ease;
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 15px;
-    margin-top: 20px;
-}
-
-.stat-item {
-    text-align: center;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.stat-value {
-    font-size: 1.8em;
-    font-weight: bold;
-    color: #0d6efd;
-    display: block;
-}
-
-.stat-label {
-    font-size: 0.9em;
-    color: #6c757d;
-    margin-top: 5px;
-}
-</style>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<link href="/static/css/professional_ui.css" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4 py-3">
-    <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-1">Live Transcription</h1>
-            <p class="text-muted mb-0">Professional real-time speech-to-text conversion</p>
+<div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-content">
+            <h1 class="app-title">
+                <i class="fas fa-microphone-alt"></i>
+                Live Transcription
+            </h1>
+            <div class="connection-status">
+                <span class="status-dot ready" id="statusDot"></span>
+                <span class="status-text" id="statusText">Ready</span>
+            </div>
         </div>
-        <div class="d-flex align-items-center">
-            <span class="status-indicator status-idle" id="connectionStatus"></span>
-            <span class="text-muted" id="statusText">Ready</span>
-        </div>
-    </div>
+    </header>
 
-    <!-- Main Recording Interface -->
-    <div class="row g-4">
-        <!-- Recording Controls -->
-        <div class="col-lg-4">
-            <div class="card recording-card h-100">
-                <div class="card-header bg-transparent border-0">
-                    <h5 class="mb-0">Recording Control</h5>
-                </div>
-                <div class="card-body text-center">
-                    <button class="record-button" id="recordButton" title="Start Recording">
+    <!-- Main Content Grid -->
+    <div class="main-grid">
+        
+        <!-- Control Panel -->
+        <aside class="control-panel">
+            <div class="panel-section">
+                <h3 class="section-title">Recording</h3>
+                
+                <div class="record-controls">
+                    <button class="record-btn" id="recordButton">
                         <i class="fas fa-microphone"></i>
                     </button>
                     
-                    <div class="mt-4">
-                        <div class="btn-group w-100" role="group">
-                            <button class="btn btn-outline-secondary" id="pauseButton" disabled>
-                                <i class="fas fa-pause"></i> Pause
-                            </button>
-                            <button class="btn btn-outline-danger" id="stopButton" disabled>
-                                <i class="fas fa-stop"></i> Stop
-                            </button>
-                        </div>
+                    <div class="control-buttons">
+                        <button class="btn btn-secondary" id="pauseButton" disabled>
+                            <i class="fas fa-pause"></i>
+                        </button>
+                        <button class="btn btn-outline" id="stopButton" disabled>
+                            <i class="fas fa-stop"></i>
+                        </button>
                     </div>
+                </div>
 
-                    <!-- Audio Level Indicator -->
-                    <div class="mt-4">
-                        <label class="form-label text-muted">Audio Level</label>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-success" id="audioLevel" style="width: 0%"></div>
-                        </div>
-                    </div>
-
-                    <!-- Session Stats -->
-                    <div class="stats-grid mt-4">
-                        <div class="stat-item">
-                            <span class="stat-value" id="sessionTime">00:00</span>
-                            <div class="stat-label">Duration</div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value" id="wordCount">0</span>
-                            <div class="stat-label">Words</div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value" id="confidenceScore">0%</span>
-                            <div class="stat-label">Confidence</div>
-                        </div>
+                <div class="audio-meter">
+                    <label class="meter-label">Audio Level</label>
+                    <div class="level-bar">
+                        <div class="level-fill" id="audioLevel"></div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Transcript Display -->
-        <div class="col-lg-8">
-            <div class="card recording-card h-100">
-                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Live Transcript</h5>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-light" id="clearTranscript" title="Clear Transcript">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                        <button class="btn btn-outline-light" id="copyTranscript" title="Copy to Clipboard">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                        <button class="btn btn-outline-light" id="downloadTranscript" title="Download">
-                            <i class="fas fa-download"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="transcript-container" id="transcriptContainer">
-                        <div class="text-muted text-center py-5">
-                            <i class="fas fa-microphone-slash mb-3" style="font-size: 3em; opacity: 0.3;"></i>
-                            <p>Click the record button to start transcription</p>
-                        </div>
+            <div class="panel-section">
+                <h3 class="section-title">Session Stats</h3>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="sessionTime">00:00</div>
+                        <div class="stat-label">Duration</div>
                     </div>
                     
-                    <!-- Real-time Confidence Indicator -->
-                    <div class="mt-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <small class="text-muted">Transcription Confidence</small>
-                            <small class="text-muted" id="confidenceText">0%</small>
-                        </div>
-                        <div class="confidence-bar">
-                            <div class="confidence-fill" id="confidenceFill" style="width: 0%"></div>
-                        </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="wordCount">0</div>
+                        <div class="stat-label">Words</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value" id="confidenceScore">0%</div>
+                        <div class="stat-label">Accuracy</div>
                     </div>
                 </div>
             </div>
-        </div>
+        </aside>
+
+        <!-- Transcript Area -->
+        <main class="transcript-area">
+            <div class="transcript-header">
+                <h3 class="transcript-title">Live Transcript</h3>
+                
+                <div class="transcript-actions">
+                    <button class="btn btn-icon" id="clearTranscript" title="Clear">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="btn btn-icon" id="copyTranscript" title="Copy">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button class="btn btn-icon" id="downloadTranscript" title="Download">
+                        <i class="fas fa-download"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="transcript-content" id="transcriptContainer">
+                <div class="transcript-empty">
+                    <i class="fas fa-microphone-slash"></i>
+                    <p>Click record to start transcription</p>
+                </div>
+            </div>
+
+            <div class="confidence-indicator">
+                <div class="confidence-label">
+                    <span>Confidence</span>
+                    <span id="confidenceText">0%</span>
+                </div>
+                <div class="confidence-bar">
+                    <div class="confidence-fill" id="confidenceFill"></div>
+                </div>
+            </div>
+        </main>
     </div>
 </div>
 {% endblock %}

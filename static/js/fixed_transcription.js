@@ -21,14 +21,14 @@ class FixedMinaTranscription {
         
         // RESEARCH FIX 1: Improved element resolution with better fallbacks
         this.elements = {
-            recordButton: this.findElement(['recordButton', 'startRecordingBtn'], '.record-button'),
+            recordButton: this.findElement(['recordButton', 'startRecordingBtn'], '.record-btn'),
             timer: this.findElement(['sessionTime', 'timer'], '.timer'),
             wordCount: this.findElement(['wordCount', 'words'], '.word-count'),
             accuracy: this.findElement(['confidenceScore', 'accuracy'], '.accuracy'),
-            audioLevel: this.findElement(['audioLevel', 'inputLevel'], '.audio-level'),
-            transcript: this.findElement(['transcriptContainer', 'transcript', 'transcriptContent'], '.transcript-content, .live-transcript-container'),
+            audioLevel: this.findElement(['audioLevel', 'inputLevel'], '.level-fill'),
+            transcript: this.findElement(['transcriptContainer', 'transcript', 'transcriptContent'], '.transcript-content'),
             copyButton: this.findElement(['copyTranscript', 'copyButton'], '.copy-button'),
-            connectionStatus: this.findElement(['connectionStatus', 'wsStatus'], '.connection-status')
+            connectionStatus: this.findElement(['statusDot', 'connectionStatus', 'wsStatus'], '.status-dot')
         };
         
         this.init();
