@@ -12,15 +12,24 @@ import os
 
 # Import services
 from services.audio_io import decode_audio_b64, AudioChunkTooLarge, AudioChunkDecodeError
-from services.transcription_service import TranscriptionService
-from models.session import Session
+# FIXED: Lazy import to prevent circular dependency
+# from services.transcription_service import TranscriptionService
+# from models.session import Session
 
 logger = logging.getLogger(__name__)
 
-# Initialize transcription service with performance monitoring
-from services.transcription_service import TranscriptionServiceConfig
-tsvc_config = TranscriptionServiceConfig()
-tsvc = TranscriptionService(tsvc_config)
+# FIXED: Initialize transcription service lazily to prevent circular import
+tsvc = None
+tsvc_config = None
+
+def get_transcription_service():
+    """Lazy initialization of transcription service to prevent circular imports."""
+    global tsvc, tsvc_config
+    if tsvc is None:
+        from services.transcription_service import TranscriptionService, TranscriptionServiceConfig
+        tsvc_config = TranscriptionServiceConfig()
+        tsvc = TranscriptionService(tsvc_config)
+    return tsvc
 
 # 🔥 PHASE 1: Session management and debugging counters
 _CHUNK_COUNT = {}  # per session counters for debug tracking
@@ -164,9 +173,10 @@ def join_session(data):
             }
             
             # Add to transcription service
-            tsvc.active_sessions[session_id] = session_data
-            tsvc.session_callbacks[session_id] = []
-            tsvc.total_sessions += 1
+            service = get_transcription_service()
+            service.active_sessions[session_id] = session_data
+            service.session_callbacks[session_id] = []
+            service.total_sessions += 1
             
             # 🔥 CRITICAL FIX: Register WebSocket emission callback for transcription results
             def emit_transcription_result(result):
@@ -197,7 +207,7 @@ def join_session(data):
                     logger.error(f"🚨 Error emitting transcription result: {e}")
             
             # Register the callback
-            tsvc.add_session_callback(session_id, emit_transcription_result)
+            service.add_session_callback(session_id, emit_transcription_result)
             
             print(f"🔧 TRANSCRIPTION SESSION CREATED: {session_id}")  # Force output
             logger.info(f"🔧 TRANSCRIPTION SESSION CREATED: {session_id}")
@@ -215,8 +225,9 @@ def join_session(data):
         
         # 🔥 DEBUG: Always log session creation for debugging
         logger.info(f"📝 SESSION JOIN: Client joined session {session_id}")
-        logger.info(f"🔧 Active transcription sessions: {list(tsvc.active_sessions.keys())}")
-        logger.info(f"🔧 Total sessions in service: {len(tsvc.active_sessions)}")
+        service = get_transcription_service()
+        logger.info(f"🔧 Active transcription sessions: {list(service.active_sessions.keys())}")
+        logger.info(f"🔧 Total sessions in service: {len(service.active_sessions)}")
         
         emit('joined_session', {
             'session_id': session_id,
@@ -281,7 +292,8 @@ def on_disconnect(disconnect_reason=None):
     
     # Clean up any active sessions for this client
     try:
-        tsvc.cleanup_client_sessions(client_id)
+        service = get_transcription_service()
+        service.cleanup_client_sessions(client_id)
     except Exception as e:
         logger.error({
             "event": "cleanup_error",
@@ -308,7 +320,8 @@ def create_session(data):
         db.session.commit()
         
         # Initialize transcription service session
-        tsvc.start_session_sync(session.external_id, {
+        service = get_transcription_service()
+        service.start_session_sync(session.external_id, {
             'language': language,
             'title': title
         })
@@ -444,7 +457,8 @@ def audio_chunk(data):
         if WS_DEBUG:
             logger.info(f"🎤 REAL PROCESSING: Session {session_id}, {len(raw_audio)} bytes, final={is_final}")
         
-        result = tsvc.process_audio_sync(
+        service = get_transcription_service()
+        result = service.process_audio_sync(
             session_id=session_id,
             audio_data=raw_audio,
             timestamp=ts_client / 1000 if ts_client else started,
@@ -568,7 +582,8 @@ def end_of_stream(data):
         })
         
         # End session and get final statistics
-        final_stats = tsvc.end_session(session_id)
+        service = get_transcription_service()
+        final_stats = service.end_session(session_id)
         
         emit('stream_ended', {
             'session_id': session_id,
