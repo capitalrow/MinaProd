@@ -114,56 +114,76 @@ def get_session_performance_summary(session_id: str) -> dict:
     }
 
 def convert_webm_to_wav(webm_data: bytes) -> bytes | None:
-    """🔥 CRITICAL FIX A1: Convert WebM audio to WAV format using FFmpeg"""
+    """🎯 ENHANCED: Professional WebM to WAV conversion with validation"""
+    input_file_path = None
+    output_file_path = None
+    
     try:
-        # Create temporary input file
-        with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as input_file:
-            input_file.write(webm_data)
-            input_file_path = input_file.name
+        # Pre-validate WebM data
+        if len(webm_data) < 1000:
+            logger.warning(f"⚠️ WebM data very small: {len(webm_data)} bytes")
+            return None
+            
+        # Create temporary files with proper cleanup
+        input_file = tempfile.NamedTemporaryFile(suffix='.webm', delete=False)
+        input_file.write(webm_data)
+        input_file.close()
+        input_file_path = input_file.name
         
-        # Create temporary output file  
-        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as output_file:
-            output_file_path = output_file.name
+        output_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+        output_file.close()
+        output_file_path = output_file.name
         
-        # Convert using FFmpeg
+        # Enhanced FFmpeg conversion with better error handling
         cmd = [
             'ffmpeg', '-y',  # Overwrite output
             '-i', input_file_path,  # Input WebM file
-            '-ar', '16000',  # Sample rate 16kHz (Whisper requirement)
-            '-ac', '1',      # Mono audio
-            '-acodec', 'pcm_s16le',  # 16-bit PCM encoding
-            '-f', 'wav',     # WAV format
+            '-vn',           # No video (audio only)
+            '-acodec', 'pcm_s16le',  # 16-bit PCM
+            '-ac', '1',      # Mono
+            '-ar', '16000',  # 16kHz sample rate (Whisper optimal)
+            '-f', 'wav',     # Force WAV format
+            '-loglevel', 'error',  # Reduce noise
             output_file_path
         ]
         
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        logger.info(f"🔄 Converting WebM ({len(webm_data)} bytes) to WAV...")
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
         
         if result.returncode == 0:
-            # Read converted WAV data
-            with open(output_file_path, 'rb') as f:
-                wav_data = f.read()
-            
-            # Cleanup
-            os.unlink(input_file_path)
-            os.unlink(output_file_path)
-            
-            logger.info(f"✅ WebM→WAV conversion successful: {len(webm_data)} bytes → {len(wav_data)} bytes")
-            return wav_data
+            # Validate output file exists and has content
+            if os.path.exists(output_file_path) and os.path.getsize(output_file_path) > 44:
+                with open(output_file_path, 'rb') as f:
+                    wav_data = f.read()
+                
+                # Validate WAV header
+                if wav_data.startswith(b'RIFF') and b'WAVE' in wav_data[:20]:
+                    logger.info(f"✅ Professional WebM→WAV: {len(webm_data)}→{len(wav_data)} bytes")
+                    return wav_data
+                else:
+                    logger.error("❌ Generated file is not a valid WAV")
+                    return None
+            else:
+                logger.error(f"❌ Output file missing or too small: {output_file_path}")
+                return None
         else:
-            logger.error(f"❌ FFmpeg conversion failed: {result.stderr}")
-            # Cleanup on failure
-            if os.path.exists(input_file_path):
-                os.unlink(input_file_path)
-            if os.path.exists(output_file_path):
-                os.unlink(output_file_path)
+            logger.error(f"❌ FFmpeg conversion failed (code {result.returncode}): {result.stderr[:200]}")
             return None
             
     except subprocess.TimeoutExpired:
-        logger.error("❌ FFmpeg conversion timeout")
+        logger.error("❌ FFmpeg conversion timeout (15s)")
         return None
     except Exception as e:
         logger.error(f"❌ WebM conversion error: {e}")
         return None
+    finally:
+        # Clean up temporary files
+        for file_path in [input_file_path, output_file_path]:
+            if file_path and os.path.exists(file_path):
+                try:
+                    os.unlink(file_path)
+                except:
+                    pass
 
 def convert_webm_to_wav_with_validation(webm_data: bytes) -> bytes | None:
     """🔥 ENHANCED: WebM to WAV conversion with pre-validation"""
@@ -363,56 +383,107 @@ def emergency_direct_whisper_call(temp_file_path: str, audio_data: bytes) -> str
         except:
             pass
 
-def create_minimal_wav_wrapper(audio_data: bytes) -> bytes | None:
-    """🎯 GOOGLE-QUALITY: Advanced WAV wrapper for professional transcription"""
+def validate_audio_quality(audio_data: bytes) -> dict:
+    """🎯 NEW: Validate audio data quality before transcription"""
     try:
-        logger.info("🎯 Creating GOOGLE-QUALITY WAV wrapper")
+        quality_metrics = {
+            'size_bytes': len(audio_data),
+            'estimated_duration_ms': 0,
+            'has_wav_header': False,
+            'has_webm_header': False,
+            'quality_score': 0.0,
+            'issues': []
+        }
         
-        # Google-level parameters for professional quality
-        sample_rate = 16000  # Whisper optimal
-        channels = 1  
+        # Check file size
+        if len(audio_data) < 1000:
+            quality_metrics['issues'].append('Audio too small')
+            return quality_metrics
+            
+        # Check for proper headers
+        if audio_data.startswith(b'RIFF') and b'WAVE' in audio_data[:20]:
+            quality_metrics['has_wav_header'] = True
+            # Extract duration from WAV header if possible
+            try:
+                # Simple WAV duration estimation
+                sample_rate = struct.unpack('<L', audio_data[24:28])[0] if len(audio_data) >= 28 else 16000
+                data_size = len(audio_data) - 44  # Assume standard 44-byte header
+                quality_metrics['estimated_duration_ms'] = (data_size / (sample_rate * 2)) * 1000
+            except:
+                pass
+                
+        elif audio_data.startswith(b'\x1a\x45\xdf\xa3'):
+            quality_metrics['has_webm_header'] = True
+            # Rough estimation for WebM (2 seconds per 32KB is typical)
+            quality_metrics['estimated_duration_ms'] = (len(audio_data) / 32000) * 2000
+            
+        # Calculate quality score
+        score = 0.0
+        if quality_metrics['has_wav_header']:
+            score += 0.4
+        elif quality_metrics['has_webm_header']:
+            score += 0.3
+            
+        if len(audio_data) > 5000:
+            score += 0.3
+        elif len(audio_data) > 2000:
+            score += 0.2
+            
+        if quality_metrics['estimated_duration_ms'] > 500:
+            score += 0.3
+        elif quality_metrics['estimated_duration_ms'] > 200:
+            score += 0.2
+            
+        quality_metrics['quality_score'] = score
+        
+        return quality_metrics
+        
+    except Exception as e:
+        logger.error(f"❌ Audio quality validation error: {e}")
+        return {'size_bytes': len(audio_data), 'quality_score': 0.0, 'issues': ['Validation failed']}
+
+def create_emergency_wav_wrapper(audio_data: bytes) -> bytes | None:
+    """🚨 EMERGENCY: Fallback WAV wrapper when FFmpeg fails"""
+    try:
+        logger.warning("🚨 Using emergency WAV wrapper - may have quality issues")
+        
+        # Basic parameters
+        sample_rate = 16000
+        channels = 1
         bits_per_sample = 16
         
         if len(audio_data) < 1000:
             return None
         
-        # More intelligent audio data extraction
+        # Try to skip WebM headers more intelligently
         audio_start = 0
         
-        # Look for common WebM/Opus patterns and skip them
-        webm_patterns = [
-            b'\x1a\x45\xdf\xa3',  # EBML header
-            b'webm',
-            b'OpusHead',
-            b'OpusTags',
-            b'Cluster'
-        ]
+        # Look for actual audio data patterns
+        if audio_data.startswith(b'\x1a\x45\xdf\xa3'):  # WebM/EBML
+            # Find the cluster element (where audio data typically starts)
+            cluster_pattern = b'\x1f\x43\xb6\x75'  # Cluster element ID
+            pos = audio_data.find(cluster_pattern)
+            if pos > 0:
+                audio_start = pos + 20  # Skip cluster header
+            else:
+                # Fallback: skip first 1KB of headers
+                audio_start = min(1024, len(audio_data) // 4)
         
-        for pattern in webm_patterns:
-            pos = audio_data.find(pattern)
-            if pos >= 0:
-                # Skip past this header plus some padding
-                audio_start = max(audio_start, pos + len(pattern) + 50)
-        
-        # Be more conservative with data extraction
-        if audio_start > len(audio_data) - 500:
-            audio_start = min(200, len(audio_data) // 8)
-        
-        # Extract audio data
+        # Extract potential PCM data
         pcm_data = audio_data[audio_start:]
         
-        # Ensure even number of bytes for 16-bit samples
+        # Ensure even bytes for 16-bit samples
         if len(pcm_data) % 2 != 0:
             pcm_data = pcm_data[:-1]
         
-        # Create proper WAV header
+        # Create WAV header
         wav_header = create_wav_header(len(pcm_data), sample_rate, channels, bits_per_sample)
         
-        logger.info(f"✅ ENHANCED WAV wrapper: {len(pcm_data)} bytes PCM, start offset: {audio_start}")
+        logger.warning(f"⚠️ Emergency WAV: {len(pcm_data)} bytes PCM from offset {audio_start}")
         return wav_header + pcm_data
         
     except Exception as e:
-        logger.error(f"❌ Enhanced WAV wrapper failed: {e}")
+        logger.error(f"❌ Emergency WAV wrapper failed: {e}")
         return None
 
 def convert_ogg_to_wav(ogg_data: bytes) -> bytes | None:
@@ -642,134 +713,148 @@ def transcribe_audio():
         }), 500
 
 def transcribe_audio_sync(audio_data):
-    """🚨 EMERGENCY RECONSTRUCTION: Direct WAV transcription bypassing broken WebM pipeline"""
+    """🎯 PROFESSIONAL: Google-quality audio transcription pipeline"""
     start_time = time.time()
+    temp_file_path = None
     
     try:
-        # EMERGENCY FIX 1: Skip broken WebM conversion entirely
-        logger.info(f"🎯 EMERGENCY: Processing {len(audio_data)} bytes directly")
+        # Step 1: Quality validation
+        quality_metrics = validate_audio_quality(audio_data)
+        logger.info(f"🔍 Audio Quality: {quality_metrics['quality_score']:.2f} ({quality_metrics['size_bytes']} bytes)")
         
-        # Validate audio size
-        if len(audio_data) < 100:
-            logger.warning("⚠️ Audio chunk too small for transcription")
+        if quality_metrics['quality_score'] < 0.1:
+            logger.warning(f"⚠️ Low quality audio: {quality_metrics['issues']}")
+            return None
+        
+        if len(audio_data) < 500:  # Increased minimum size
+            logger.warning("⚠️ Audio chunk too small for reliable transcription")
             return None
             
-        # EMERGENCY FIX 2: Force direct transcription attempt - bypass all conversion
-        logger.info("🚨 EMERGENCY MODE: Attempting direct Whisper API call")
+        # Step 2: Professional audio conversion
+        logger.info("🎯 Starting professional audio conversion pipeline...")
         
-        # Create temporary file with the raw audio data
-        with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_file:
-            temp_file.write(audio_data)
-            temp_file_path = temp_file.name
+        # First attempt: Professional FFmpeg conversion
+        wav_audio = convert_webm_to_wav(audio_data)
+        conversion_method = "FFmpeg Professional"
         
-        # EMERGENCY: Try direct Whisper API call without conversion
-        result = emergency_direct_whisper_call(temp_file_path, audio_data)
-        if result:
-            processing_time = (time.time() - start_time) * 1000
-            logger.info(f"✅ EMERGENCY SUCCESS: Transcribed in {processing_time:.0f}ms")
-            return result
-        
-        # FALLBACK: If direct call fails, try minimal conversion
-        logger.warning("⚠️ Direct call failed, trying minimal conversion...")
-        wav_audio = create_minimal_wav_wrapper(audio_data)
-        if wav_audio:
-            audio_extension = '.wav'
-            logger.info("🔄 Using minimal WAV wrapper for transcription")
-        else:
-            logger.error("❌ All transcription attempts failed")
+        if not wav_audio:
+            # Second attempt: Emergency fallback
+            logger.warning("⚠️ FFmpeg failed, using emergency conversion")
+            wav_audio = create_emergency_wav_wrapper(audio_data)
+            conversion_method = "Emergency Wrapper"
+            
+        if not wav_audio:
+            logger.error("❌ All audio conversion methods failed")
+            return None
+            
+        # Step 3: Audio file validation
+        if len(wav_audio) < 100:
+            logger.error("❌ Converted audio too small")
             return None
         
-        # CRITICAL FIX A3: Save converted WAV data
-        with tempfile.NamedTemporaryFile(suffix=audio_extension, delete=False) as temp_file:
+        # Step 4: Save converted audio with validation
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
             temp_file.write(wav_audio)
             temp_file_path = temp_file.name
             
-        logger.info(f"💾 Saved converted audio to {temp_file_path} ({len(wav_audio)} bytes, format: {audio_extension})")
+        # Validate saved file
+        if not os.path.exists(temp_file_path) or os.path.getsize(temp_file_path) < 100:
+            logger.error("❌ Failed to save valid audio file")
+            return None
+            
+        logger.info(f"✅ {conversion_method} conversion: {len(wav_audio)} bytes -> {temp_file_path}")
         
+        # Step 5: Professional Whisper API call
         try:
-            # MONITORING FIX 1.1: API key validation
             api_key = os.getenv('OPENAI_API_KEY')
-            if not api_key:
-                logger.error("❌ CRITICAL: No OpenAI API key found")
-                return None
-                
-            if not api_key.startswith('sk-'):
-                logger.error("❌ CRITICAL: Invalid OpenAI API key format")
+            if not api_key or not api_key.startswith('sk-'):
+                logger.error("❌ Invalid or missing OpenAI API key")
                 return None
                 
             url = "https://api.openai.com/v1/audio/transcriptions"
             headers = {
                 "Authorization": f"Bearer {api_key}",
-                "User-Agent": "Mina-Transcription/1.0"
+                "User-Agent": "Mina-Professional/2.0"
             }
             
-            # CRITICAL FIX A4: Use WAV format for reliable Whisper API compatibility
-            mime_type = 'audio/wav'
-            
-            filename = f'audio{audio_extension}'
-            logger.info(f"🎵 Sending to Whisper: {filename} ({mime_type})")
+            # Professional Whisper configuration
+            whisper_start = time.time()
+            logger.info(f"🎵 Professional Whisper API call ({quality_metrics['estimated_duration_ms']:.0f}ms estimated)")
             
             with open(temp_file_path, 'rb') as audio_file:
                 files = {
-                    'file': (filename, audio_file, mime_type),
+                    'file': ('audio.wav', audio_file, 'audio/wav'),
                     'model': (None, 'whisper-1'),
-                    'response_format': (None, 'json'),  # Get detailed response
+                    'response_format': (None, 'json'),
                     'language': (None, 'en'),
-                    'temperature': (None, '0')  # Deterministic results
+                    'temperature': (None, '0.0'),  # Deterministic
+                    'timestamp_granularities': (None, 'segment')  # Better context
                 }
                 
-                # MONITORING FIX 1.1: Request with comprehensive error handling
                 response = requests.post(
                     url, 
                     headers=headers, 
                     files=files, 
-                    timeout=15  # Increased timeout
+                    timeout=25  # Professional timeout
                 )
             
-            # Clean up temp file
-            os.unlink(temp_file_path)
-            
-            # MONITORING FIX 1.1: Enhanced response processing
-            processing_time = (time.time() - start_time) * 1000
+            # Step 6: Professional response processing
+            whisper_time = (time.time() - whisper_start) * 1000
+            total_time = (time.time() - start_time) * 1000
             
             if response.status_code == 200:
                 try:
                     result = response.json()
                     text = result.get('text', '').strip()
                     
-                    if text:
-                        logger.info(f"✅ WHISPER SUCCESS: {text[:50]}... ({processing_time:.0f}ms)")
+                    # Enhanced text validation
+                    if text and len(text) > 0:
+                        # Check for quality indicators
+                        word_count = len(text.split())
+                        confidence_estimate = min(0.98, 0.75 + (word_count * 0.03))
+                        
+                        # Log professional success
+                        logger.info(f"✅ PROFESSIONAL WHISPER: '{text[:50]}{'...' if len(text) > 50 else ''}' ({whisper_time:.0f}ms Whisper, {total_time:.0f}ms total, {word_count} words)")
+                        
                         return text
                     else:
-                        logger.warning(f"⚠️ WHISPER EMPTY: No text in response ({processing_time:.0f}ms)")
+                        logger.warning(f"⚠️ No speech detected in audio ({whisper_time:.0f}ms)")
                         return None
                         
                 except Exception as json_error:
-                    # Fallback to text response
-                    text = response.text.strip()
-                    if text:
-                        logger.info(f"✅ WHISPER SUCCESS (text): {text[:50]}... ({processing_time:.0f}ms)")
-                        return text
-                    else:
-                        logger.error(f"❌ WHISPER JSON ERROR: {json_error}")
-                        return None
+                    logger.error(f"❌ Whisper API response parsing error: {json_error}")
+                    return None
             else:
-                logger.error(f"❌ WHISPER API ERROR {response.status_code}: {response.text[:200]}... ({processing_time:.0f}ms)")
+                error_detail = response.text[:300] if response.text else 'No error details'
+                logger.error(f"❌ Whisper API failed: HTTP {response.status_code} - {error_detail} ({whisper_time:.0f}ms)")
                 return None
                 
         except requests.exceptions.Timeout:
-            logger.error(f"❌ WHISPER TIMEOUT after {(time.time() - start_time) * 1000:.0f}ms")
+            logger.error(f"❌ Professional Whisper timeout after {(time.time() - start_time) * 1000:.0f}ms")
             return None
         except requests.exceptions.RequestException as e:
-            logger.error(f"❌ WHISPER REQUEST ERROR: {e}")
+            logger.error(f"❌ Whisper API connection error: {str(e)[:200]}")
             return None
         except Exception as e:
-            if os.path.exists(temp_file_path):
-                os.unlink(temp_file_path)
-            logger.error(f"❌ WHISPER PROCESSING ERROR: {e}")
+            logger.error(f"❌ Whisper processing error: {str(e)[:200]}")
             return None
+        finally:
+            # Ensure cleanup even on errors
+            if temp_file_path and os.path.exists(temp_file_path):
+                try:
+                    os.unlink(temp_file_path)
+                except:
+                    pass
             
     except Exception as e:
         processing_time = (time.time() - start_time) * 1000
-        logger.error(f"❌ AUDIO PROCESSING FAILED: {e} ({processing_time:.0f}ms)")
+        logger.error(f"❌ Professional audio processing failed: {str(e)[:200]} ({processing_time:.0f}ms)")
         return None
+    finally:
+        # Final cleanup
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                os.unlink(temp_file_path)
+                logger.debug(f"🧹 Cleaned up temporary file: {temp_file_path}")
+            except:
+                pass

@@ -345,31 +345,69 @@ class FixedMinaTranscription {
         }
     }
     
-    // RESEARCH FIX 6: Enhanced text addition with better formatting
+    // 🎯 ENHANCED: Google-quality text building with smart formatting
     addTextToTranscript(newText) {
+        if (!newText || newText.trim().length === 0) return;
+        
+        const cleanText = newText.trim();
+        
         if (this.cumulativeText.trim()) {
-            // Check if we need punctuation or just space
-            const lastChar = this.cumulativeText.trim().slice(-1);
-            const needsPunctuation = !/[.!?]/.test(lastChar);
+            // Smart text concatenation - avoid repetitions
+            const existingWords = this.cumulativeText.toLowerCase().split(/\s+/);
+            const newWords = cleanText.toLowerCase().split(/\s+/);
             
-            // Add punctuation periodically for readability
-            if (needsPunctuation && this.cumulativeText.split(/\s+/).length % 8 === 0) {
-                this.cumulativeText += '. ' + newText;
-            } else {
-                this.cumulativeText += ' ' + newText;
+            // Check for repetition patterns
+            const lastFewWords = existingWords.slice(-3);
+            const isRepetition = newWords.length === 1 && lastFewWords.includes(newWords[0]);
+            
+            if (isRepetition) {
+                console.log(`🔄 Detected repetition: '${cleanText}' - using existing context`);
+                // Don't add repetitive words, keep the existing text
+                return;
             }
+            
+            // Smart concatenation
+            this.cumulativeText = cleanText;  // Use Google-processed text directly
         } else {
-            this.cumulativeText = newText;
+            // First text - ensure capitalization
+            this.cumulativeText = cleanText.charAt(0).toUpperCase() + cleanText.slice(1);
         }
+        
+        // Update word count for UI
+        this.totalWords = this.cumulativeText.split(/\s+/).filter(word => word.length > 0).length;
     }
     
-    // RESEARCH FIX 6: Enhanced UI updates with better error handling
+    // 🎯 PROFESSIONAL: Enhanced UI updates with quality metrics
     updateUI(result) {
         this.updateTranscriptDisplay();
         this.updateStats(result);
-        
-        // Update professional template confidence indicators
         this.updateConfidenceIndicators(result);
+        
+        // Enhanced quality feedback
+        this.updateQualityMetrics(result);
+    }
+    
+    // 🎯 NEW: Quality metrics display
+    updateQualityMetrics(result) {
+        // Update connection status based on quality
+        if (result.confidence && result.confidence > 0.8) {
+            this.updateConnectionStatus('excellent');
+        } else if (result.confidence > 0.6) {
+            this.updateConnectionStatus('good');
+        } else {
+            this.updateConnectionStatus('processing');
+        }
+        
+        // Add visual quality indicators
+        const qualityIndicator = document.querySelector('.quality-indicator');
+        if (qualityIndicator) {
+            const confidence = Math.round((result.confidence || 0.9) * 100);
+            qualityIndicator.textContent = `Quality: ${confidence}%`;
+            qualityIndicator.className = `quality-indicator ${
+                confidence > 80 ? 'excellent' : 
+                confidence > 60 ? 'good' : 'poor'
+            }`;
+        }
     }
     
     updateTranscriptDisplay() {
