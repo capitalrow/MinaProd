@@ -61,5 +61,9 @@ externalPort = 5000
 localPort = 8771
 externalPort = 5173
 
+[[ports]]
+localPort = 8772
+externalPort = 6000
+
 [agent]
 integrations = ["python_database==1.0.0", "styling_replit==1.0.0", "python_openai==1.0.0"]
