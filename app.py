@@ -6,8 +6,8 @@ Modified for better Gunicorn compatibility
 import os
 import logging
 from flask import Flask
-# Keep SocketIO disabled due to dependency conflicts, fix client instead
-# from flask_socketio import SocketIO
+# Keep SocketIO disabled due to dependency conflicts, use HTTP endpoints instead
+# from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -42,8 +42,8 @@ try:
 except Exception as e:
     logger.error(f"❌ Failed to start Browser WebSocket Server: {e}")
 
-# Use existing working infrastructure instead
-socketio = None  # Using enhanced WebSocket for compatibility
+# Use HTTP endpoints for audio processing instead
+socketio = None
 
 def create_app(config_class=Config):
     """
@@ -170,6 +170,14 @@ def create_app(config_class=Config):
         logger.info("✅ WebSocket routes registered")
     except Exception as e:
         logger.error(f"❌ Failed to register WebSocket routes: {e}")
+    
+    # Register HTTP audio endpoints for direct processing
+    try:
+        from routes.audio_http import audio_http_bp
+        app.register_blueprint(audio_http_bp)
+        logger.info("✅ HTTP audio endpoints registered")
+    except Exception as e:
+        logger.error(f"❌ Failed to register HTTP audio endpoints: {e}")
     
     # MANUAL MONITORING RECOMMENDATION #1: Enhanced WebSocket routes already registered
     logger.info("✅ Enhanced WebSocket event handlers active")
