@@ -28,7 +28,7 @@ class RealWhisperIntegration {
             // Determine WebSocket URL based on environment
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const host = window.location.hostname;
-            const port = '8771';
+            const port = '8772';
             const wsUrl = `${protocol}//${host}:${port}`;
             
             console.log(`Connecting to: ${wsUrl}`);
@@ -238,22 +238,40 @@ class RealWhisperIntegration {
     }
     
     displayTranscriptionResult(result) {
-        // Add to main transcript
-        const transcriptContainer = document.getElementById('transcript') || 
+        // Clear "Ready to record" text and add real transcription
+        const transcriptContainer = document.querySelector('.live-transcript-container') ||
+                                  document.getElementById('transcript') || 
                                   document.getElementById('transcriptContent') ||
                                   document.querySelector('.transcript-content');
                                   
         if (transcriptContainer) {
+            // Remove "Ready to record" placeholder if it exists
+            const placeholder = transcriptContainer.querySelector('.text-muted');
+            if (placeholder && placeholder.textContent.includes('Ready to record')) {
+                placeholder.remove();
+            }
+            
             const segmentElement = document.createElement('div');
-            segmentElement.className = `transcript-segment ${result.is_final ? 'final' : 'interim'}`;
+            segmentElement.className = `transcript-segment ${result.is_final ? 'final' : 'interim'} mb-2`;
             segmentElement.innerHTML = `
-                <span class="timestamp">[${result.timestamp}]</span>
-                <span class="text">${result.text}</span>
-                <span class="confidence">(${result.confidence}% confidence)</span>
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="transcript-text">
+                        <small class="text-muted">[${result.timestamp}]</small>
+                        <span class="ms-2 ${result.is_final ? 'text-light fw-bold' : 'text-warning'}">${result.text}</span>
+                    </div>
+                    <small class="text-muted">${result.confidence}%</small>
+                </div>
             `;
             
             transcriptContainer.appendChild(segmentElement);
             transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
+            
+            // Update word count in the stats
+            const wordCountElement = document.querySelector('.metric-value');
+            if (wordCountElement && wordCountElement.textContent === '0') {
+                const words = result.text.split(' ').filter(word => word.length > 0).length;
+                wordCountElement.textContent = words;
+            }
         }
         
         // Add to transcription buffer
@@ -317,8 +335,53 @@ class RealWhisperIntegration {
     }
 }
 
-// Initialize global instance
+// Initialize global instance and professional recorder replacement
 window.realWhisperIntegration = new RealWhisperIntegration();
+
+// Professional Recorder replacement for compatibility
+class ProfessionalRecorder {
+    constructor() {
+        this.isRecording = false;
+        this.sessionId = null;
+        console.log('✅ Professional Recorder initialized with Real Whisper integration');
+    }
+    
+    async startRecording() {
+        try {
+            this.sessionId = `live_${Date.now()}`;
+            await window.realWhisperIntegration.startTranscription(this.sessionId);
+            this.isRecording = true;
+            console.log('✅ Recording started with Real Whisper API');
+            return { success: true, sessionId: this.sessionId };
+        } catch (error) {
+            console.error('❌ Failed to start recording:', error);
+            return { success: false, error: error.message };
+        }
+    }
+    
+    stopRecording() {
+        window.realWhisperIntegration.stopTranscription();
+        this.isRecording = false;
+        console.log('⏹️ Recording stopped');
+        return { success: true };
+    }
+    
+    updateConnectionStatus(status) {
+        const wsStatus = document.querySelector('#wsStatus');
+        if (wsStatus) {
+            wsStatus.textContent = status === 'connected' ? 'Connected' : 'Disconnected';
+            wsStatus.className = `status-indicator ${status}`;
+        }
+    }
+    
+    updateTranscriptionStats(stats) {
+        // Update UI with transcription statistics
+        console.log('📊 Transcription stats:', stats);
+    }
+}
+
+// Initialize professional recorder replacement
+window.professionalRecorder = new ProfessionalRecorder();
 
 // Add CSS for processing feedback
 const style = document.createElement('style');
