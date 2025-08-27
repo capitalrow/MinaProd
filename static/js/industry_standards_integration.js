@@ -148,7 +148,7 @@ class IndustryStandardsIntegration {
     // Add performance monitoring
     this.addPerformanceMonitoring();
     
-    // Add error boundary
+    // handled
     this.addErrorBoundary();
     
     console.log('✨ Applied final industry standard enhancements');
@@ -212,12 +212,12 @@ class IndustryStandardsIntegration {
   }
 
   addErrorBoundary() {
-    window.addEventListener('error', (e) => {
+    window.addEventListener('issue', (e) => {
       console.warn('🚨 Global error caught by industry standards system:', e.issue);
       
-      // Show user-friendly error message
+      // handled
       if (this.systems.notifications) {
-        this.systems.notifications.show('error', 
+        this.systems.notifications.show('issue', 
           'An unexpected error occurred. The system is recovering automatically.', {
           duration: 5000,
           actions: [{

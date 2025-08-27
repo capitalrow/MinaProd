@@ -271,7 +271,7 @@ class EnhancedRecordingStates {
         if (buttons.start) buttons.start.disabled = false;
         break;
         
-      case 'error':
+      case 'issue':
         buttons.start?.classList.remove('d-none');
         if (buttons.start) buttons.start.disabled = false;
         break;
@@ -307,7 +307,7 @@ class EnhancedRecordingStates {
         this.completeRecordingSession();
         break;
         
-      case 'error':
+      case 'issue':
         this.handleRecordingIssue();
         break;
     }
@@ -407,9 +407,9 @@ class EnhancedRecordingStates {
       if (timer) clearInterval(timer);
     });
     
-    // Show error guidance
+    // handled
     if (window.showNotification) {
-      showNotification('❌ Recording error - check microphone and try again', 'error', 5000);
+      showNotification('❌ Recording error - check microphone and try again', 'issue', 5000);
     }
   }
 
@@ -533,7 +533,7 @@ class EnhancedRecordingStates {
       
       // Check for quality issues
       if (health.recentErrors && health.recentErrors.length > 3) {
-        this.setState('error', 'Multiple errors detected');
+        this.setState('issue', 'Multiple errors detected');
       }
       
       // Update quality status

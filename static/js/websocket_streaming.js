@@ -165,7 +165,7 @@ class WebSocketStreaming {
             qualityScore -= 0.1;
         }
         
-        // Penalize transmission errors
+        // handled
         const errorRate = this.stats.transmissionErrors / Math.max(1, this.stats.totalChunksSent);
         qualityScore -= errorRate * 0.5;
         

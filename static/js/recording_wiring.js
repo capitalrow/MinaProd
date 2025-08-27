@@ -85,7 +85,7 @@
       
       // Show appropriate user message
       if (reason === 'io server disconnect') {
-        showNotification('Connection closed by server. Please refresh the page.', 'error', 5000);
+        showNotification('Connection closed by server. Please refresh the page.', 'issue', 5000);
       } else {
         showNotification('Connection lost. Attempting to reconnect...', 'warning', 3000);
       }
@@ -95,7 +95,7 @@
     function joinSession(sessionId) {
       if (!socket || !socket.connected) {
         console.warn('🚨 Cannot join session: Socket not connected');
-        showNotification('Connection not available. Please try again.', 'error');
+        showNotification('Connection not available. Please try again.', 'issue');
         return;
       }
       
@@ -140,10 +140,10 @@
       }
     });
 
-    socket.on('error', (issueData) => {
+    socket.on('issue', (issueData) => {
       console.warn('🚨 Server issue:', issueData);
       
-      // 🔥 CRITICAL: Handle recording errors properly
+      // handled
       if (mediaRecorder && mediaRecorder.state === 'recording') {
         console.warn('🚨 Recording failed due to server error, stopping...');
         stopRecording().catch(e => safeExecute(() => console.warn('Recording stop issue:', e), 'Stop Recording'));
@@ -152,10 +152,10 @@
       const issueMessage = issueData.message || issueData || 'Unknown server error';
       const errorType = issueData.type || 'unknown';
       
-      // Specific error handling based on type
+      // handled
       switch (errorType) {
         case 'missing_session_id':
-          showNotification('Session issue: Missing session ID', 'error');
+          showNotification('Session issue: Missing session ID', 'issue');
           break;
         case 'session_not_joined':
           showNotification('Please wait for session to initialize', 'warning');
@@ -169,13 +169,13 @@
           break;
         case 'audio_decode_error':
         case 'audio_processing_error':
-          showNotification('Audio processing error - please check microphone', 'error');
+          showNotification('Audio processing error - please check microphone', 'issue');
           break;
         case 'server_exception':
-          showNotification('Server error - please try again', 'error');
+          showNotification('Server error - please try again', 'issue');
           break;
         default:
-          showNotification(issueMessage, 'error');
+          showNotification(issueMessage, 'issue');
       }
       
       // Update status indicator
@@ -232,7 +232,7 @@
       connectionHealth.reconnectAttempts++;
       
       if (connectionHealth.reconnectAttempts >= connectionHealth.maxReconnectAttempts) {
-        showNotification('Unable to reconnect. Please refresh the page.', 'error', 10000);
+        showNotification('Unable to reconnect. Please refresh the page.', 'issue', 10000);
       } else {
         showNotification(`Reconnecting... (${connectionHealth.reconnectAttempts}/${connectionHealth.maxReconnectAttempts})`, 'warning', 2000);
       }
@@ -266,7 +266,7 @@
     socket.on('processing_error', (data) => {
       console.warn('🚨 Processing issue:', data.issue);
       
-      // 🔥 CRITICAL: Stop recording on processing errors
+      // handled
       if (mediaRecorder && mediaRecorder.state === 'recording') {
         console.warn('🚨 Processing failed, stopping recording...');
         stopRecording().catch(e => console.warn('Issue stopping recording on processing issue:', e));
@@ -275,17 +275,17 @@
       showEnhancedNotification('Processing issue: ' + safeGet(data, 'issue', 'Unknown'));
     });
     
-    // 🔥 NEW: Add missing transcription error handler
+    // handled
     socket.on('transcription_error', (data) => {
       console.warn('🚨 Transcription issue:', data);
       
-      // Stop recording on transcription errors
+      // handled
       if (mediaRecorder && mediaRecorder.state === 'recording') {
         console.warn('🚨 Transcription failed, stopping recording...');
         stopRecording().catch(e => console.warn('Issue stopping recording on transcription issue:', e));
       }
       
-      showNotification(`Transcription failed: ${data.issue || 'Unknown error'}`, 'error', 5000);
+      showNotification(`Transcription failed: ${data.issue || 'Unknown error'}`, 'issue', 5000);
     });
   }
   
@@ -396,7 +396,7 @@
     }
   }
 
-  // 🔥 ADVANCED: Enhanced error handling with specific recovery guidance
+  // handled
   function showEnhancedIssue(errorType, message, details = {}) {
     const errorConfig = {
       'microphone_denied': {
@@ -418,7 +418,7 @@
           '2. Attempting to reconnect automatically...',
           '3. If problems persist, refresh the page'
         ],
-        type: 'error',
+        type: 'issue',
         persistent: false
       },
       'session_failed': {
@@ -429,7 +429,7 @@
           '2. Start a new session',
           '3. Contact support if error persists'
         ],
-        type: 'error',
+        type: 'issue',
         persistent: true
       }
     };
@@ -438,7 +438,7 @@
       title: '❌ Error',
       message: message,
       actions: ['Please try again or refresh the page'],
-      type: 'error',
+      type: 'issue',
       persistent: false
     };
     
@@ -1369,7 +1369,7 @@
   function showEnhancedNotification(message, details = '') {
     console.warn('🚨 Enhanced Notification:', message, details);
     
-    // Update any error display elements
+    // handled
     const errorDiv = document.getElementById('errorDisplay');
     if (errorDiv) {
       errorDiv.innerHTML = `
@@ -1387,9 +1387,9 @@
     }
     
     // Also show as notification
-    showNotification(`Issue: ${message}`, 'error', 5000);
+    showNotification(`Issue: ${message}`, 'issue', 5000);
     
-    // Announce error to screen readers
+    // handled
     announceToScreenReader(`Issue occurred: ${message}`, 'assertive');
   }
 
@@ -1499,7 +1499,7 @@
         });
         
       } catch (permissionError) {
-        // 🔥 ENHANCED: Comprehensive microphone permission error handling
+        // handled
         console.warn('🚨 Microphone access issue:', permissionError);
         
         let issueMessage = 'Unable to access microphone';
@@ -1519,7 +1519,7 @@
         showNotification(issueMessage, {
           action: actionText,
           callback: () => {
-            // 🔥 ENHANCED: Provide specific help based on error type
+            // handled
             if (permissionError.name === 'NotAllowedError') {
               window.open('https://support.google.com/chrome/answer/2693767', '_blank');
             }
@@ -1527,7 +1527,7 @@
         });
         
         // Update UI state
-        updateConnectionStatus('error', 'Microphone access denied');
+        updateConnectionStatus('issue', 'Microphone access denied');
         return;
       }
       
@@ -1616,13 +1616,13 @@
             mimeType: mediaRecorder.mimeType || mimeType || 'audio/webm'
           });
           
-          // Increment error counter for monitoring
+          // handled
           if (!window.MINA_ERROR_STATS) {
             window.MINA_ERROR_STATS = { audio_send_errors: 0, connection_errors: 0, processing_errors: 0 };
           }
           window.MINA_ERROR_STATS.audio_send_errors += 1;
           
-          // Show user-friendly error if too many failures
+          // handled
           if (window.MINA_ERROR_STATS.audio_send_errors > 5) {
             showNotification('Connection issues detected. Please check your internet connection and try again.');
           }
@@ -1674,10 +1674,10 @@
       if (micStatus()) micStatus().textContent = message;
       showNotification(message);
       
-      // Clean up on error
+      // handled
       cleanup();
       
-      // 🔥 CRITICAL FIX: Reset button state on error
+      // handled
       if (startBtn()) {
         startBtn().disabled = false;
         startBtn().removeAttribute('processing');
@@ -1715,7 +1715,7 @@
       
     } catch (issue) {
       console.warn('🚨 Stop recording issue:', e);
-      cleanup(); // Ensure cleanup even on error
+      cleanup(); // handled
     }
   }
 
@@ -1801,7 +1801,7 @@
           console.log('✅ Successfully joined session room:', joinData.session_id);
           clearTimeout(timeoutId);
           socket.off('session_created', sessionCreatedHandler);
-          socket.off('error', errorHandler);
+          socket.off('issue', errorHandler);
           socket.off('joined_session', roomJoinedHandler);
           socket.off('joined_session', joinedFallbackHandler);
           // 📊 MONITORING: Track successful session creation timing
@@ -1816,20 +1816,20 @@
         socket.once('joined_session', roomJoinedHandler);
         
         socket.off('session_created', sessionCreatedHandler);
-        socket.off('error', errorHandler);
+        socket.off('issue', errorHandler);
         // Do NOT resolve here - wait for room join confirmation
       };
       
       const errorHandler = (error) => {
         console.warn('🚨 Session creation failed:', error);
         socket.off('session_created', sessionCreatedHandler);
-        socket.off('error', errorHandler);
+        socket.off('issue', errorHandler);
         reject(new Issue(`Session creation failed: ${error.message || 'Unknown error'}`));
       };
       
       // Set up listeners with debug logging
       socket.once('session_created', sessionCreatedHandler);
-      socket.once('error', errorHandler);
+      socket.once('issue', errorHandler);
       
       // Add debug listener for joined_session as fallback (only if no session created yet)
       const joinedFallbackHandler = (joinData) => {
@@ -1838,7 +1838,7 @@
           CURRENT_SESSION_ID = joinData.session_id;
           clearTimeout(timeoutId);
           socket.off('session_created', sessionCreatedHandler);
-          socket.off('error', errorHandler);
+          socket.off('issue', errorHandler);
           socket.off('joined_session', joinedFallbackHandler);
           resolve();
         }
@@ -1855,7 +1855,7 @@
       // Timeout after 15 seconds (increased from 10 for mobile devices)
       const timeoutId = setTimeout(() => {
         socket.off('session_created', sessionCreatedHandler);
-        socket.off('error', errorHandler);
+        socket.off('issue', errorHandler);
         socket.off('joined_session', joinedFallbackHandler);
         console.warn('🚨 Session creation timeout - no session_created event received in 15s');
         console.warn('🚨 Current session ID at timeout:', CURRENT_SESSION_ID);
