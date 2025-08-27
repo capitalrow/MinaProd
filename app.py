@@ -26,17 +26,12 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 
-# Socket.IO configuration enhanced based on monitoring recommendations
+# Basic Socket.IO configuration for immediate compatibility
 socketio = SocketIO(
-    cors_allowed_origins="*",  # Allow all origins for development - will be restricted in production
-    async_mode='eventlet',  # Required for stable WebSocket connections
-    ping_timeout=60,  # Extended timeout for audio streaming
-    ping_interval=25,   # Regular ping to keep connection alive
-    transports=['polling', 'websocket'],  # Polling first for reliability
-    engineio_logger=True if WS_DEBUG else False,   # Enable logging for debugging
-    socketio_logger=True if WS_DEBUG else False,   # Enable logging for debugging
-    max_http_buffer_size=2000000,  # 2MB buffer for audio data
-    allow_unsafe_werkzeug=False  # SECURITY: Disable unsafe Werkzeug compatibility
+    cors_allowed_origins="*",
+    async_mode='eventlet',
+    transports=['polling', 'websocket'],
+    max_http_buffer_size=1000000
 )
 
 def create_app(config_class=Config):
