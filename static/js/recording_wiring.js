@@ -237,15 +237,6 @@
         showNotification(`Reconnecting... (${connectionHealth.reconnectAttempts}/${connectionHealth.maxReconnectAttempts})`, 'warning', 2000);
       }
     });
-          
-          // Auto-scroll if enabled
-          const autoScroll = document.getElementById('autoScroll');
-          if (autoScroll && autoScroll.checked) {
-            segmentDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
-          }
-        }
-      }
-    });
 
     // Session management events
     socket.on('session_created', (data) => {
