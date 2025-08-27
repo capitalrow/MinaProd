@@ -576,7 +576,7 @@ class ResultSynthesizer { combine(data) { return data; } }
 class QualityEnhancer { enhance(data) { return data; } }
 class TrendAnalyzer { analyze() { return 'positive'; } }
 class PerformancePredictor { predict() { return 'improving'; } }
-class PerformanceOptimizer { recommend() { return ['continue']; } }
+class NeuralPerformanceOptimizer { recommend() { return ['continue']; } }
 
 // Global initialization
 window.NeuralProcessingEngine = NeuralProcessingEngine;
