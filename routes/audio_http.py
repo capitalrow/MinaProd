@@ -325,6 +325,106 @@ def create_wav_header(data_size: int, sample_rate: int, channels: int, bits_per_
     
     return header
 
+def emergency_direct_whisper_call(temp_file_path: str, audio_data: bytes) -> str:
+    """🚨 EMERGENCY: Direct Whisper API call bypassing all conversion"""
+    try:
+        api_key = os.environ.get('OPENAI_API_KEY')
+        if not api_key:
+            logger.error("❌ EMERGENCY: No OpenAI API key found")
+            return None
+            
+        logger.info(f"🚨 EMERGENCY: Direct Whisper call with {len(audio_data)} bytes")
+        
+        url = "https://api.openai.com/v1/audio/transcriptions"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "User-Agent": "Mina-Emergency-Transcription/1.0"
+        }
+        
+        # Try multiple format assumptions
+        formats_to_try = [
+            ('audio.webm', 'audio/webm'),
+            ('audio.ogg', 'audio/ogg'), 
+            ('audio.wav', 'audio/wav'),
+            ('audio.mp3', 'audio/mp3')
+        ]
+        
+        for filename, mime_type in formats_to_try:
+            try:
+                logger.info(f"🔄 EMERGENCY: Trying {filename} format")
+                
+                with open(temp_file_path, 'rb') as audio_file:
+                    files = {
+                        'file': (filename, audio_file, mime_type),
+                        'model': (None, 'whisper-1'),
+                        'response_format': (None, 'json')
+                    }
+                    
+                    response = requests.post(url, headers=headers, files=files, timeout=10)
+                    
+                    if response.status_code == 200:
+                        result = response.json()
+                        transcribed_text = result.get('text', '').strip()
+                        
+                        if transcribed_text:
+                            logger.info(f"✅ EMERGENCY SUCCESS with {filename}: '{transcribed_text[:50]}...'")
+                            return transcribed_text
+                        else:
+                            logger.warning(f"⚠️ {filename}: Empty transcription")
+                    else:
+                        logger.warning(f"⚠️ {filename}: HTTP {response.status_code}")
+                        
+            except Exception as e:
+                logger.warning(f"⚠️ {filename} failed: {e}")
+                continue
+                
+        logger.error("❌ EMERGENCY: All format attempts failed")
+        return None
+        
+    except Exception as e:
+        logger.error(f"❌ EMERGENCY call failed: {e}")
+        return None
+    finally:
+        try:
+            os.unlink(temp_file_path)
+        except:
+            pass
+
+def create_minimal_wav_wrapper(audio_data: bytes) -> bytes:
+    """🚨 EMERGENCY: Create minimal WAV wrapper for raw audio"""
+    try:
+        logger.info("🔄 Creating emergency WAV wrapper")
+        
+        # Assume the data is already in a suitable format
+        # Create a minimal WAV header
+        sample_rate = 16000
+        channels = 1
+        bits_per_sample = 16
+        
+        # Try to extract reasonable audio data
+        if len(audio_data) < 1000:
+            return None
+            
+        # Skip probable headers and metadata
+        audio_start = 0
+        for i, header_marker in enumerate([b'ftyp', b'mvhd', b'trak', b'mdat']):
+            pos = audio_data.find(header_marker)
+            if pos > audio_start:
+                audio_start = max(audio_start, pos + len(header_marker))
+        
+        if audio_start > len(audio_data) - 100:
+            audio_start = min(1000, len(audio_data) // 4)  # Conservative fallback
+            
+        pcm_data = audio_data[audio_start:]
+        wav_header = create_wav_header(len(pcm_data), sample_rate, channels, bits_per_sample)
+        
+        logger.info(f"✅ Emergency WAV wrapper: {len(pcm_data)} bytes PCM data")
+        return wav_header + pcm_data
+        
+    except Exception as e:
+        logger.error(f"❌ Emergency WAV wrapper failed: {e}")
+        return None
+
 def convert_ogg_to_wav(ogg_data: bytes) -> bytes | None:
     """🔥 CRITICAL FIX A2: Convert OGG audio to WAV format using FFmpeg"""
     try:
@@ -544,46 +644,42 @@ def transcribe_audio():
         }), 500
 
 def transcribe_audio_sync(audio_data):
-    """🔥 FIXED: Enhanced audio transcription with proper WebM→WAV conversion"""
+    """🚨 EMERGENCY RECONSTRUCTION: Direct WAV transcription bypassing broken WebM pipeline"""
     start_time = time.time()
     
     try:
-        # CRITICAL FIX A1: Audio chunk validation
+        # EMERGENCY FIX 1: Skip broken WebM conversion entirely
+        logger.info(f"🎯 EMERGENCY: Processing {len(audio_data)} bytes directly")
+        
+        # Validate audio size
         if len(audio_data) < 100:
             logger.warning("⚠️ Audio chunk too small for transcription")
             return None
             
-        # CRITICAL FIX A2: Enhanced WebM validation and conversion with fallback
-        if audio_data.startswith(b'\x1a\x45\xdf\xa3'):  # WebM/Matroska magic number
-            logger.info("🔍 DETECTED: WebM format - attempting conversion with validation")
-            wav_audio = convert_webm_to_wav_with_validation(audio_data)
-            if not wav_audio:
-                logger.warning("⚠️ Primary WebM conversion failed - trying alternative methods")
-                # Try alternative conversion approaches
-                wav_audio = try_alternative_audio_conversion(audio_data)
-                if not wav_audio:
-                    logger.error("❌ All WebM conversion methods failed")
-                    return None
+        # EMERGENCY FIX 2: Force direct transcription attempt - bypass all conversion
+        logger.info("🚨 EMERGENCY MODE: Attempting direct Whisper API call")
+        
+        # Create temporary file with the raw audio data
+        with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_file:
+            temp_file.write(audio_data)
+            temp_file_path = temp_file.name
+        
+        # EMERGENCY: Try direct Whisper API call without conversion
+        result = emergency_direct_whisper_call(temp_file_path, audio_data)
+        if result:
+            processing_time = (time.time() - start_time) * 1000
+            logger.info(f"✅ EMERGENCY SUCCESS: Transcribed in {processing_time:.0f}ms")
+            return result
+        
+        # FALLBACK: If direct call fails, try minimal conversion
+        logger.warning("⚠️ Direct call failed, trying minimal conversion...")
+        wav_audio = create_minimal_wav_wrapper(audio_data)
+        if wav_audio:
             audio_extension = '.wav'
-        elif audio_data.startswith(b'RIFF') and b'WAVE' in audio_data[:50]:
-            logger.info("🔍 DETECTED: Already WAV format")
-            wav_audio = audio_data
-            audio_extension = '.wav'
-        elif audio_data.startswith(b'OggS'):
-            logger.info("🔍 DETECTED: OGG format - converting to WAV")
-            wav_audio = convert_ogg_to_wav(audio_data)
-            if not wav_audio:
-                logger.error("❌ OGG→WAV conversion failed")
-                return None
-            audio_extension = '.wav'
+            logger.info("🔄 Using minimal WAV wrapper for transcription")
         else:
-            logger.info("🔍 UNKNOWN FORMAT: Attempting intelligent format detection")
-            # Try multiple conversion approaches for unknown formats
-            wav_audio = try_smart_audio_conversion(audio_data)
-            if not wav_audio:
-                logger.error("❌ All audio format conversion methods failed")
-                return None
-            audio_extension = '.wav'
+            logger.error("❌ All transcription attempts failed")
+            return None
         
         # CRITICAL FIX A3: Save converted WAV data
         with tempfile.NamedTemporaryFile(suffix=audio_extension, delete=False) as temp_file:
