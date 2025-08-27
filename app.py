@@ -26,16 +26,16 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 
-# Socket.IO configuration for better compatibility
+# Socket.IO configuration optimized for transcription
 socketio = SocketIO(
-    cors_allowed_origins=None,  # SECURITY: Will be configured in middleware/cors.py
+    cors_allowed_origins="*",  # Allow all origins for development - will be restricted in production
     async_mode='eventlet',  # Required for stable WebSocket connections
-    ping_timeout=60,  # Reduced timeout for better compatibility
+    ping_timeout=60,  # Extended timeout for audio streaming
     ping_interval=25,   # Regular ping to keep connection alive
-    transports=['websocket', 'polling'],  # WebSocket first, polling fallback
+    transports=['polling', 'websocket'],  # Polling first for reliability
     engineio_logger=False,   # Disabled for better Gunicorn compatibility
     socketio_logger=False,   # Disabled for better Gunicorn compatibility
-    max_http_buffer_size=1000000,  # 1MB buffer for audio data
+    max_http_buffer_size=2000000,  # 2MB buffer for audio data
     allow_unsafe_werkzeug=False  # SECURITY: Disable unsafe Werkzeug compatibility
 )
 
