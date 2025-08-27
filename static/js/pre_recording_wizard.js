@@ -140,6 +140,8 @@ class PreRecordingWizard {
         break;
       case 'permissions':
         content.innerHTML = this.createPermissionsStep();
+        // Set up permission handlers after content is rendered
+        setTimeout(() => this.setupPermissionHandlers(), 100);
         break;
       case 'microphone_test':
         content.innerHTML = this.createMicrophoneTestStep();
@@ -527,23 +529,53 @@ class PreRecordingWizard {
     `;
   }
 
-  async startMicrophoneTest() {
-    setTimeout(() => {
-      // Request microphone permissions if not granted
-      document.getElementById('requestPermissionsBtn')?.addEventListener('click', async () => {
+  setupPermissionHandlers() {
+    // Set up the request permissions button handler
+    const requestBtn = document.getElementById('requestPermissionsBtn');
+    if (requestBtn) {
+      requestBtn.addEventListener('click', async () => {
         try {
+          console.log('🎤 Requesting microphone permissions...');
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          
+          // Update UI to show success
           this.setupResults.permissions = true;
           document.getElementById('permissionStatus').style.display = 'block';
           document.getElementById('permissionError').style.display = 'none';
-          stream.getTracks().forEach(track => track.stop()); // Stop test stream
+          
+          // Enable next button
+          const nextBtn = document.querySelector('[onclick*="nextStep"]');
+          if (nextBtn) {
+            nextBtn.disabled = false;
+            nextBtn.classList.remove('disabled');
+          }
+          
+          // Stop the stream immediately
+          stream.getTracks().forEach(track => track.stop());
+          
+          console.log('✅ Microphone permissions granted successfully');
+          
+          // Auto-advance after 1 second
+          setTimeout(() => {
+            this.nextStep();
+          }, 1000);
+          
         } catch (error) {
-          console.error('Permission denied:', error);
+          console.error('❌ Permission denied:', error);
           document.getElementById('permissionError').style.display = 'block';
           document.getElementById('permissionStatus').style.display = 'none';
+          
+          // Show troubleshooting guide
+          const troubleshootingCollapse = document.getElementById('troubleshootingCollapse');
+          if (troubleshootingCollapse) {
+            troubleshootingCollapse.classList.add('show');
+          }
         }
       });
-    }, 100);
+    }
+  }
+
+  async startMicrophoneTest() {
 
     // Simulate microphone testing
     try {
