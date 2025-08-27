@@ -26,6 +26,20 @@ chunk_metrics = deque(maxlen=100)  # Last 100 chunks
 session_stats = {}
 QA_SYSTEM_AVAILABLE = True
 
+# Import enhanced audio processing fixes
+try:
+    from routes.audio_processing_fixes import (
+        enhanced_webm_to_wav_conversion,
+        calculate_conversion_quality_metrics,
+        validate_wav_output,
+        optimize_audio_for_whisper
+    )
+    ENHANCED_PROCESSING_AVAILABLE = True
+    logger.info("🎯 Enhanced audio processing fixes loaded")
+except ImportError as e:
+    logger.warning(f"⚠️ Enhanced processing not available: {e}")
+    ENHANCED_PROCESSING_AVAILABLE = False
+
 # Initialize Google context processor functions
 apply_google_style_processing = None
 get_session_context = None
@@ -886,33 +900,58 @@ def transcribe_audio_sync(audio_data):
             logger.warning("⚠️ Audio chunk too small for reliable transcription")
             return None
             
-        # Step 2: Professional audio conversion
-        logger.info("🎯 Starting professional audio conversion pipeline...")
+        # Step 2: Enhanced professional audio conversion
+        logger.info("🎯 Starting enhanced professional audio conversion pipeline...")
         
-        # Professional multi-stage conversion pipeline
+        # Enhanced multi-stage conversion pipeline
         wav_audio = None
         conversion_method = "Unknown"
+        conversion_start_time = time.time()
         
-        # Stage 1: Try professional WebM conversion
-        wav_audio = create_professional_wav_from_webm(audio_data)
-        if wav_audio:
-            conversion_method = "Professional WebM"
-        else:
-            # Stage 2: Try standard FFmpeg conversion
-            logger.warning("⚠️ Professional WebM failed, trying standard FFmpeg")
-            wav_audio = convert_webm_to_wav(audio_data)
-            if wav_audio:
-                conversion_method = "Standard FFmpeg"
+        # Stage 1: Try enhanced WebM conversion (NEW)
+        if ENHANCED_PROCESSING_AVAILABLE:
+            logger.info("🚀 Trying enhanced WebM conversion")
+            wav_audio = enhanced_webm_to_wav_conversion(audio_data)
+            if wav_audio and validate_wav_output(wav_audio):
+                conversion_method = "Enhanced WebM"
+                logger.info("✅ Enhanced WebM conversion successful")
             else:
-                # Stage 3: Emergency wrapper as last resort
-                logger.warning("⚠️ All FFmpeg methods failed, using emergency wrapper")
-                wav_audio = create_emergency_wav_wrapper(audio_data)
+                logger.warning("⚠️ Enhanced WebM conversion failed")
+        
+        # Stage 2: Try professional WebM conversion (EXISTING)
+        if not wav_audio:
+            wav_audio = create_professional_wav_from_webm(audio_data)
+            if wav_audio:
+                conversion_method = "Professional WebM"
+            else:
+                # Stage 3: Try standard FFmpeg conversion
+                logger.warning("⚠️ Professional WebM failed, trying standard FFmpeg")
+                wav_audio = convert_webm_to_wav(audio_data)
                 if wav_audio:
-                    conversion_method = "Emergency Wrapper"
+                    conversion_method = "Standard FFmpeg"
+                else:
+                    # Stage 4: Emergency wrapper as last resort
+                    logger.warning("⚠️ All FFmpeg methods failed, using emergency wrapper")
+                    wav_audio = create_emergency_wav_wrapper(audio_data)
+                    if wav_audio:
+                        conversion_method = "Emergency Wrapper"
             
         if not wav_audio:
             logger.error("❌ All audio conversion methods failed")
             return None
+            
+        # Step 2.5: Optimize audio for Whisper API
+        conversion_time = time.time() - conversion_start_time
+        if ENHANCED_PROCESSING_AVAILABLE:
+            wav_audio = optimize_audio_for_whisper(wav_audio)
+            
+            # Calculate and log quality metrics
+            quality_metrics = calculate_conversion_quality_metrics(
+                len(audio_data), len(wav_audio), conversion_time
+            )
+            logger.info(f"📊 Conversion quality: {quality_metrics}")
+            
+        logger.info(f"🎯 Audio conversion completed: {conversion_method} ({conversion_time:.2f}s)")
             
         # Step 3: Audio file validation
         if len(wav_audio) < 100:
