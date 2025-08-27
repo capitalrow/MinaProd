@@ -173,9 +173,9 @@ class FixedMinaTranscription {
             this.setupMediaRecorderEvents();
             this.setupStreamMonitoring();
             
-            // RESEARCH FIX 5: Use longer timeslice based on research (2s instead of 1.5s)
-            console.log('🚀 Starting recording with 2000ms chunks (optimized for mobile)');
-            this.mediaRecorder.start(2000);
+            // 🔧 GOOGLE-QUALITY: Longer chunks for better sentence capture
+            console.log('🚀 Starting recording with 4000ms chunks (Google-quality sentence capture)');
+            this.mediaRecorder.start(4000);  // Longer chunks for full sentences
             
             // Initialize recording state
             this.isRecording = true;
@@ -356,36 +356,43 @@ class FixedMinaTranscription {
         }
     }
     
-    // 🎯 ENHANCED: Google-quality text building with smart formatting
+    // 🎯 GOOGLE-QUALITY: Continuous sentence building with proper accumulation
     addTextToTranscript(newText) {
         if (!newText || newText.trim().length === 0) return;
         
         const cleanText = newText.trim();
         
         if (this.cumulativeText.trim()) {
-            // Smart text concatenation - avoid repetitions
+            // 🔧 BREAKTHROUGH: Accumulate text instead of replacing
             const existingWords = this.cumulativeText.toLowerCase().split(/\s+/);
             const newWords = cleanText.toLowerCase().split(/\s+/);
             
-            // Check for repetition patterns
-            const lastFewWords = existingWords.slice(-3);
-            const isRepetition = newWords.length === 1 && lastFewWords.includes(newWords[0]);
+            // 🔧 RELAXED: Only filter exact duplicates, not similar words
+            const lastWord = existingWords[existingWords.length - 1];
+            const isExactDuplicate = newWords.length === 1 && newWords[0] === lastWord;
             
-            if (isRepetition) {
-                console.log(`🔄 Detected repetition: '${cleanText}' - using existing context`);
-                // Don't add repetitive words, keep the existing text
+            if (isExactDuplicate) {
+                console.log(`🔄 Skipping exact duplicate: '${cleanText}'`);
                 return;
             }
             
-            // Smart concatenation
-            this.cumulativeText = cleanText;  // Use Google-processed text directly
+            // 🔧 GOOGLE-STYLE: Intelligent sentence continuation
+            const needsSpace = !this.cumulativeText.endsWith(' ') && !this.cumulativeText.endsWith('.');
+            const separator = needsSpace ? ' ' : '';
+            
+            // 🔧 CONTINUOUS: Append new text to build sentences
+            this.cumulativeText += separator + cleanText;
+            
+            console.log(`🔗 Building sentence: "${this.cumulativeText}"`);
         } else {
             // First text - ensure capitalization
             this.cumulativeText = cleanText.charAt(0).toUpperCase() + cleanText.slice(1);
+            console.log(`🚀 Starting transcript: "${this.cumulativeText}"`);
         }
         
         // Update word count for UI
         this.totalWords = this.cumulativeText.split(/\s+/).filter(word => word.length > 0).length;
+        console.log(`📝 Total words now: ${this.totalWords}`);
     }
     
     // 🎯 PROFESSIONAL: Enhanced UI updates with quality metrics
