@@ -6,8 +6,8 @@ Modified for better Gunicorn compatibility
 import os
 import logging
 from flask import Flask
-# MANUAL MONITORING RECOMMENDATION #1: Use existing WebSocket infrastructure 
-# from flask_socketio import SocketIO  # Temporarily disabled due to dependency conflicts
+# Keep SocketIO disabled due to dependency conflicts, fix client instead
+# from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -42,8 +42,8 @@ try:
 except Exception as e:
     logger.error(f"❌ Failed to start Browser WebSocket Server: {e}")
 
-# MANUAL MONITORING RECOMMENDATION #1: Use enhanced WebSocket server instead
-socketio = None  # Using native WebSocket server for better compatibility
+# Use existing working infrastructure instead
+socketio = None  # Using enhanced WebSocket for compatibility
 
 def create_app(config_class=Config):
     """

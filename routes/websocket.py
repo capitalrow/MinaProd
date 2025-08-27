@@ -5,9 +5,9 @@ import uuid
 from contextlib import contextmanager
 from functools import wraps
 from flask import request
-# from flask_socketio import emit, join_room, disconnect  # Disabled for native WebSocket testing
+# Keep SocketIO disabled for now, focus on WebSocket server fix
+# from flask_socketio import emit, join_room, disconnect
 from app import db, WS_DEBUG, STUB_TRANSCRIPTION
-# socketio disabled for native WebSocket testing
 import logging
 import os
 
