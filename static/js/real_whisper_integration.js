@@ -223,7 +223,14 @@ class RealWhisperIntegration {
                 if (event.data.size > 0 && this.socket && this.socket.readyState === WebSocket.OPEN) {
                     // Send audio data directly as binary
                     this.socket.send(event.data);
-                    console.log(`📤 Audio chunk sent: ${event.data.size} bytes`);
+                    console.log(`📤 REAL AUDIO chunk sent: ${event.data.size} bytes (Real Whisper Integration)`);
+                    
+                    // Update UI with audio transmission feedback
+                    if (window.toastSystem) {
+                        window.toastSystem.showInfo(`🎵 Processing ${event.data.size} bytes of audio...`);
+                    }
+                } else {
+                    console.warn('⚠️ Cannot send audio: WebSocket not ready or no data');
                 }
             };
             
@@ -232,6 +239,7 @@ class RealWhisperIntegration {
             this.isRecording = true;
             
             console.log('🎤 Audio recording initialized');
+            console.log('✅ Real Whisper Integration: MediaRecorder active, ready for transcription');
             
         } catch (error) {
             console.error('Failed to initialize audio recording:', error);
