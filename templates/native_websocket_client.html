@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎤 Native WebSocket Live Transcription Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            font-size: 18px;
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .status.connecting { background: rgba(255, 193, 7, 0.3); }
+        .status.connected { background: rgba(40, 167, 69, 0.3); }
+        .status.error { background: rgba(220, 53, 69, 0.3); }
+        .status.recording { background: rgba(255, 108, 47, 0.3); animation: pulse 2s infinite; }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        .btn-record { background: linear-gradient(45deg, #ff6b47, #ff8a47); color: white; }
+        .btn-stop { background: linear-gradient(45deg, #6c757d, #868e96); color: white; }
+        .btn-test { background: linear-gradient(45deg, #007bff, #0056b3); color: white; }
+        
+        .transcript-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            min-height: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        .transcript-content {
+            font-size: 16px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .interim-text { color: #ffd700; opacity: 0.8; }
+        .final-text { color: #ffffff; font-weight: 500; }
+        .timestamp { color: #a0a0a0; font-size: 12px; margin-right: 10px; }
+        
+        .debug-panel {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .debug-log { margin: 5px 0; padding: 5px; border-radius: 3px; }
+        .debug-info { background: rgba(23, 162, 184, 0.2); }
+        .debug-success { background: rgba(40, 167, 69, 0.2); }
+        .debug-warning { background: rgba(255, 193, 7, 0.2); }
+        .debug-error { background: rgba(220, 53, 69, 0.2); }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .metric-value { font-size: 24px; font-weight: bold; color: #ffd700; }
+        .metric-label { font-size: 12px; opacity: 0.8; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 Native WebSocket Live Transcription</h1>
+            <p>Direct WebSocket implementation for maximum compatibility and performance</p>
+        </div>
+        
+        <div id="connectionStatus" class="status connecting">
+            🔄 Initializing native WebSocket connection...
+        </div>
+        
+        <div class="controls">
+            <button id="testConnectionBtn" class="btn btn-test">🔍 Test Connection</button>
+            <button id="recordBtn" class="btn btn-record" disabled>🎤 Start Recording</button>
+            <button id="stopBtn" class="btn btn-stop" disabled>⏹️ Stop Recording</button>
+        </div>
+        
+        <div class="metrics">
+            <div class="metric-card">
+                <div id="connectionTime" class="metric-value">--</div>
+                <div class="metric-label">Connection Time (ms)</div>
+            </div>
+            <div class="metric-card">
+                <div id="audioChunks" class="metric-value">0</div>
+                <div class="metric-label">Audio Chunks Sent</div>
+            </div>
+            <div class="metric-card">
+                <div id="transcriptSegments" class="metric-value">0</div>
+                <div class="metric-label">Transcript Segments</div>
+            </div>
+            <div class="metric-card">
+                <div id="avgLatency" class="metric-value">--</div>
+                <div class="metric-label">Avg Latency (ms)</div>
+            </div>
+        </div>
+        
+        <div class="transcript-panel">
+            <h3>📝 Live Transcript</h3>
+            <div id="transcriptContent" class="transcript-content">
+                Waiting for audio input...
+            </div>
+        </div>
+        
+        <div class="debug-panel">
+            <h4>🔧 Debug Console</h4>
+            <div id="debugConsole"></div>
+        </div>
+    </div>
+
+    <script>
+    class NativeWebSocketTranscription {
+        constructor() {
+            this.socket = null;
+            this.mediaRecorder = null;
+            this.isRecording = false;
+            this.sessionId = null;
+            this.startTime = null;
+            this.connectionStartTime = null;
+            
+            // Metrics
+            this.audioChunkCount = 0;
+            this.transcriptSegmentCount = 0;
+            this.latencyMeasurements = [];
+            
+            // DOM elements
+            this.elements = {
+                status: document.getElementById('connectionStatus'),
+                testBtn: document.getElementById('testConnectionBtn'),
+                recordBtn: document.getElementById('recordBtn'),
+                stopBtn: document.getElementById('stopBtn'),
+                transcript: document.getElementById('transcriptContent'),
+                debug: document.getElementById('debugConsole'),
+                connectionTime: document.getElementById('connectionTime'),
+                audioChunks: document.getElementById('audioChunks'),
+                transcriptSegments: document.getElementById('transcriptSegments'),
+                avgLatency: document.getElementById('avgLatency')
+            };
+            
+            this.bindEvents();
+            this.logDebug('🚀 Native WebSocket Transcription Client initialized', 'info');
+        }
+        
+        bindEvents() {
+            this.elements.testBtn.addEventListener('click', () => this.testConnection());
+            this.elements.recordBtn.addEventListener('click', () => this.startRecording());
+            this.elements.stopBtn.addEventListener('click', () => this.stopRecording());
+        }
+        
+        async testConnection() {
+            this.logDebug('🔍 Testing native WebSocket connection...', 'info');
+            this.connectionStartTime = performance.now();
+            
+            try {
+                // Connect to native WebSocket server on port 8765
+                const wsUrl = `ws://${window.location.hostname}:8765`;
+                this.logDebug(`Connecting to: ${wsUrl}`, 'info');
+                
+                this.socket = new WebSocket(wsUrl);
+                
+                this.socket.onopen = () => {
+                    const connectionTime = Math.round(performance.now() - this.connectionStartTime);
+                    this.elements.connectionTime.textContent = connectionTime;
+                    
+                    this.updateStatus('✅ Connected to Native WebSocket Server', 'connected');
+                    this.logDebug(`✅ WebSocket connected in ${connectionTime}ms`, 'success');
+                    
+                    this.elements.testBtn.disabled = true;
+                    this.elements.recordBtn.disabled = false;
+                };
+                
+                this.socket.onmessage = (event) => {
+                    this.handleMessage(JSON.parse(event.data));
+                };
+                
+                this.socket.onclose = () => {
+                    this.updateStatus('🔌 Connection closed', 'error');
+                    this.logDebug('🔌 WebSocket connection closed', 'warning');
+                    this.resetUI();
+                };
+                
+                this.socket.onerror = (error) => {
+                    this.updateStatus('❌ Connection failed', 'error');
+                    this.logDebug(`❌ WebSocket error: ${error}`, 'error');
+                    this.resetUI();
+                };
+                
+                // Set connection timeout
+                setTimeout(() => {
+                    if (this.socket && this.socket.readyState === WebSocket.CONNECTING) {
+                        this.socket.close();
+                        this.updateStatus('⏰ Connection timeout', 'error');
+                        this.logDebug('⏰ Connection timeout after 10 seconds', 'error');
+                    }
+                }, 10000);
+                
+            } catch (error) {
+                this.updateStatus('❌ Connection failed', 'error');
+                this.logDebug(`❌ Failed to create WebSocket: ${error}`, 'error');
+            }
+        }
+        
+        handleMessage(data) {
+            this.logDebug(`📨 Received: ${JSON.stringify(data)}`, 'info');
+            
+            switch (data.type) {
+                case 'connected':
+                    this.logDebug(`🔗 Server handshake: ${data.client_id}`, 'success');
+                    break;
+                    
+                case 'session_joined':
+                    this.sessionId = data.session_id;
+                    this.logDebug(`📝 Joined session: ${this.sessionId}`, 'success');
+                    break;
+                    
+                case 'transcription_result':
+                    this.handleTranscriptionResult(data);
+                    break;
+                    
+                case 'error':
+                    this.logDebug(`❌ Server error: ${data.message}`, 'error');
+                    break;
+                    
+                case 'pong':
+                    this.logDebug('🏓 Pong received', 'info');
+                    break;
+            }
+        }
+        
+        handleTranscriptionResult(data) {
+            const latency = performance.now() - this.startTime;
+            this.latencyMeasurements.push(latency);
+            
+            const avgLatency = Math.round(
+                this.latencyMeasurements.reduce((a, b) => a + b, 0) / this.latencyMeasurements.length
+            );
+            this.elements.avgLatency.textContent = avgLatency;
+            
+            this.transcriptSegmentCount++;
+            this.elements.transcriptSegments.textContent = this.transcriptSegmentCount;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const cssClass = data.is_final ? 'final-text' : 'interim-text';
+            const confidence = Math.round(data.confidence * 100);
+            
+            // Add to transcript
+            const transcriptLine = `<div class="${cssClass}">` +
+                `<span class="timestamp">[${timestamp}]</span>` +
+                `${data.text} <small>(${confidence}% confidence, ${Math.round(latency)}ms latency)</small>` +
+                `</div>`;
+            
+            this.elements.transcript.innerHTML += transcriptLine;
+            this.elements.transcript.scrollTop = this.elements.transcript.scrollHeight;
+            
+            this.logDebug(`📝 Transcription: "${data.text}" (${data.is_final ? 'final' : 'interim'})`, 'success');
+        }
+        
+        async startRecording() {
+            try {
+                this.logDebug('🎤 Requesting microphone access...', 'info');
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 16000
+                    }
+                });
+                
+                // Join session
+                this.sessionId = `native_ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                this.socket.send(JSON.stringify({
+                    type: 'join_session',
+                    session_id: this.sessionId
+                }));
+                
+                // Setup MediaRecorder
+                this.mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: 'audio/webm;codecs=opus'
+                });
+                
+                this.startTime = performance.now();
+                this.audioChunkCount = 0;
+                this.transcriptSegmentCount = 0;
+                this.latencyMeasurements = [];
+                
+                this.elements.transcript.innerHTML = '';
+                this.updateStatus('🔴 Recording - Speak naturally...', 'recording');
+                
+                this.mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0 && this.socket.readyState === WebSocket.OPEN) {
+                        this.audioChunkCount++;
+                        this.elements.audioChunks.textContent = this.audioChunkCount;
+                        
+                        // Send audio data as binary
+                        this.socket.send(event.data);
+                        
+                        this.logDebug(`🎵 Sent audio chunk: ${event.data.size} bytes`, 'info');
+                    }
+                };
+                
+                this.mediaRecorder.start(250); // 250ms chunks for low latency
+                this.isRecording = true;
+                
+                this.elements.recordBtn.disabled = true;
+                this.elements.stopBtn.disabled = false;
+                
+                this.logDebug('✅ Recording started successfully', 'success');
+                
+            } catch (error) {
+                this.updateStatus('❌ Microphone access denied', 'error');
+                this.logDebug(`❌ Recording failed: ${error}`, 'error');
+            }
+        }
+        
+        stopRecording() {
+            if (this.mediaRecorder && this.isRecording) {
+                this.mediaRecorder.stop();
+                this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                this.isRecording = false;
+                
+                this.updateStatus('⏹️ Recording stopped', 'connected');
+                this.logDebug('⏹️ Recording stopped', 'info');
+                
+                this.elements.recordBtn.disabled = false;
+                this.elements.stopBtn.disabled = true;
+                
+                // Generate session summary
+                setTimeout(() => this.generateSessionSummary(), 1000);
+            }
+        }
+        
+        generateSessionSummary() {
+            const duration = this.startTime ? (performance.now() - this.startTime) / 1000 : 0;
+            const avgLatency = this.latencyMeasurements.length > 0 
+                ? Math.round(this.latencyMeasurements.reduce((a, b) => a + b, 0) / this.latencyMeasurements.length)
+                : 0;
+            
+            this.logDebug('📊 SESSION SUMMARY:', 'info');
+            this.logDebug(`Duration: ${duration.toFixed(1)} seconds`, 'info');
+            this.logDebug(`Audio chunks: ${this.audioChunkCount}`, 'info');
+            this.logDebug(`Transcript segments: ${this.transcriptSegmentCount}`, 'info');
+            this.logDebug(`Average latency: ${avgLatency}ms`, 'info');
+            this.logDebug(`Chunks per second: ${(this.audioChunkCount / duration).toFixed(1)}`, 'info');
+        }
+        
+        updateStatus(message, type) {
+            this.elements.status.textContent = message;
+            this.elements.status.className = `status ${type}`;
+        }
+        
+        logDebug(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.createElement('div');
+            logElement.className = `debug-log debug-${type}`;
+            logElement.textContent = `[${timestamp}] ${message}`;
+            
+            this.elements.debug.appendChild(logElement);
+            this.elements.debug.scrollTop = this.elements.debug.scrollHeight;
+            
+            console.log(`[${timestamp}] ${message}`);
+            
+            // Keep only last 100 debug messages
+            while (this.elements.debug.children.length > 100) {
+                this.elements.debug.removeChild(this.elements.debug.firstChild);
+            }
+        }
+        
+        resetUI() {
+            this.elements.testBtn.disabled = false;
+            this.elements.recordBtn.disabled = true;
+            this.elements.stopBtn.disabled = true;
+        }
+    }
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        new NativeWebSocketTranscription();
+    });
+    </script>
+</body>
+</html>
