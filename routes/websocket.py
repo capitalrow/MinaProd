@@ -168,6 +168,37 @@ def join_session(data):
             tsvc.session_callbacks[session_id] = []
             tsvc.total_sessions += 1
             
+            # 🔥 CRITICAL FIX: Register WebSocket emission callback for transcription results
+            def emit_transcription_result(result):
+                """Emit transcription result via WebSocket."""
+                try:
+                    text = result.text.strip()
+                    if not text:
+                        return
+                        
+                    event_name = 'final_transcript' if result.is_final else 'interim_transcript'
+                    
+                    emit_data = {
+                        'session_id': session_id,
+                        'text': text,
+                        'confidence': result.confidence,
+                        'is_final': result.is_final,
+                        'timestamp': result.timestamp,
+                        'language': result.language
+                    }
+                    
+                    # Emit to specific client and room
+                    emit(event_name, emit_data)
+                    emit(event_name, emit_data, to=session_id)
+                    
+                    logger.info(f"✅ CALLBACK EMIT {event_name.upper()}: '{text[:50]}...' for session {session_id}")
+                    
+                except Exception as e:
+                    logger.error(f"🚨 Error emitting transcription result: {e}")
+            
+            # Register the callback
+            tsvc.add_session_callback(session_id, emit_transcription_result)
+            
             print(f"🔧 TRANSCRIPTION SESSION CREATED: {session_id}")  # Force output
             logger.info(f"🔧 TRANSCRIPTION SESSION CREATED: {session_id}")
             logger.info(f"🔧 Session data: {session_data}")
