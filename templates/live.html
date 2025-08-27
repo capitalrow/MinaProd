@@ -234,16 +234,12 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/mina_transcription.js"></script>
+<script src="/static/js/fixed_transcription.js"></script>
 <script>
-// Initialize clean system only - maintaining compatibility with existing JS
+// Initialize FIXED system with enhanced compatibility
 document.addEventListener('DOMContentLoaded', function() {
-    if (window.MinaTranscription) {
-        window.minaTranscription = new window.MinaTranscription();
-        console.log('✅ Mina clean system initialized');
-    } else {
-        console.error('❌ MinaTranscription not loaded');
-    }
+    console.log('🚀 Loading FIXED Mina Transcription System...');
+    // The fixed system self-initializes with enhanced error handling
 });
 </script>
 {% endblock %}
