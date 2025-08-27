@@ -600,25 +600,6 @@ class ContinuousImprovementClient {
 // Initialize continuous improvement client
 window.continuousImprovementClient = new ContinuousImprovementClient();
 
-// Auto-integrate with recording states
-if (window.recordingStates) {
-    const originalSetState = window.recordingStates.setState;
-    window.recordingStates.setState = function(state, details) {
-        // Call original setState
-        originalSetState.call(this, state, details);
-        
-        // Start continuous improvement when recording begins
-        if (state === 'recording' && window.continuousImprovementClient && !window.continuousImprovementClient.isActive) {
-            const sessionId = details?.sessionId || `session_${Date.now()}`;
-            window.continuousImprovementClient.startContinuousImprovement(sessionId);
-        }
-        
-        // End improvement when recording completes
-        if ((state === 'complete' || state === 'idle') && window.continuousImprovementClient && window.continuousImprovementClient.isActive) {
-            const report = window.continuousImprovementClient.endContinuousImprovement();
-            console.info('📊 Continuous improvement final report:', report);
-        }
-    };
-}
+// Integration handled by unified enhancement integration system
 
 console.info('🔧 Continuous improvement client ready - will start with recording sessions');
