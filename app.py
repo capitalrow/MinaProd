@@ -152,6 +152,14 @@ def create_app(config_class=Config):
     app.register_blueprint(export_bp)
     app.register_blueprint(api_performance)
     
+    # Register API endpoints for advanced features
+    try:
+        from routes.api import api_bp
+        app.register_blueprint(api_bp)
+        logger.info("✅ API endpoints registered successfully")
+    except Exception as e:
+        logger.warning(f"⚠️ API endpoints not available: {e}")
+    
     # Register WebSocket routes
     try:
         from routes.native_websocket_routes import register_native_websocket_routes
