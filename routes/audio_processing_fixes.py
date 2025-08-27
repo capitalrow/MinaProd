@@ -131,7 +131,8 @@ def analyze_webm_structure(webm_data: bytes) -> dict:
         for count in byte_counts:
             if count > 0:
                 p = count / len(sample)
-                entropy -= p * (p.bit_length() - 1) if p > 0 else 0
+                import math
+                entropy -= p * math.log2(p) if p > 0 else 0
         
         analysis['entropy_score'] = entropy
     

@@ -40,6 +40,18 @@ except ImportError as e:
     logger.warning(f"⚠️ Enhanced processing not available: {e}")
     ENHANCED_PROCESSING_AVAILABLE = False
 
+# Import enhanced speech detection
+try:
+    from routes.speech_detection_enhancement import (
+        enhanced_speech_detection,
+        should_process_audio
+    )
+    ENHANCED_SPEECH_DETECTION_AVAILABLE = True
+    logger.info("🎯 Enhanced speech detection loaded")
+except ImportError as e:
+    logger.warning(f"⚠️ Enhanced speech detection not available: {e}")
+    ENHANCED_SPEECH_DETECTION_AVAILABLE = False
+
 # Initialize Google context processor functions
 apply_google_style_processing = None
 get_session_context = None
@@ -884,17 +896,29 @@ def transcribe_audio_sync(audio_data):
     temp_file_path = None
     
     try:
-        # Step 1: Quality validation
+        # Step 1: Enhanced quality validation with speech detection
         quality_metrics = validate_audio_quality(audio_data)
         logger.info(f"🔍 Audio Quality: {quality_metrics['quality_score']:.2f} ({quality_metrics['size_bytes']} bytes)")
         
-        # 🔧 RELAXED: Lower quality threshold for mobile devices
-        if quality_metrics['quality_score'] < 0.01:
-            logger.warning(f"⚠️ Extremely poor quality audio: {quality_metrics['issues']}")
-            return None
+        # Enhanced speech detection
+        if ENHANCED_SPEECH_DETECTION_AVAILABLE:
+            should_process, speech_analysis = should_process_audio(audio_data, min_confidence=0.15)
+            logger.info(f"🎤 Speech Detection: confidence={speech_analysis['confidence']:.3f}, "
+                       f"energy={speech_analysis['energy_level']:.3f}, "
+                       f"should_process={should_process}")
+            
+            # More lenient processing decision
+            if not should_process and speech_analysis['confidence'] < 0.1:
+                logger.info(f"⏭️ Skipping low-confidence audio: {speech_analysis}")
+                return None
+        else:
+            # Fallback: More lenient quality threshold
+            if quality_metrics['quality_score'] < 0.005:  # Reduced from 0.01
+                logger.warning(f"⚠️ Very poor quality audio: {quality_metrics['issues']}")
+                return None
         
         # Log quality for debugging
-        logger.info(f"🎯 Audio quality acceptable: {quality_metrics['quality_score']:.3f}")
+        logger.info(f"🎯 Audio processing approved: quality={quality_metrics['quality_score']:.3f}")
         
         if len(audio_data) < 500:  # Increased minimum size
             logger.warning("⚠️ Audio chunk too small for reliable transcription")
@@ -985,7 +1009,8 @@ def transcribe_audio_sync(audio_data):
             
             # Professional Whisper configuration
             whisper_start = time.time()
-            logger.info(f"🎵 Professional Whisper API call ({quality_metrics['estimated_duration_ms']:.0f}ms estimated)")
+            estimated_duration = quality_metrics.get('estimated_duration_ms', 0)
+            logger.info(f"🎵 Professional Whisper API call ({estimated_duration:.0f}ms estimated)")
             
             with open(temp_file_path, 'rb') as audio_file:
                 files = {
