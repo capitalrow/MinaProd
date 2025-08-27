@@ -19,12 +19,12 @@ class MinaTranscription {
         
         this.elements = {
             recordButton: document.getElementById('recordButton') || document.querySelector('.record-button, #startRecordingBtn'),
-            timer: document.getElementById('timer') || document.querySelector('.timer, #timer'),
+            timer: document.getElementById('sessionTime') || document.getElementById('timer') || document.querySelector('.timer, #timer'),
             wordCount: document.getElementById('wordCount') || document.querySelector('#words, .word-count'),
-            accuracy: document.getElementById('accuracy') || document.querySelector('#accuracy, .accuracy'),
+            accuracy: document.getElementById('confidenceScore') || document.getElementById('accuracy') || document.querySelector('#accuracy, .accuracy'),
             audioLevel: document.getElementById('audioLevel') || document.querySelector('#inputLevel, .audio-level'),
-            transcript: document.getElementById('transcript') || document.querySelector('#transcriptContent, .transcript-content, .live-transcript-container'),
-            copyButton: document.getElementById('copyButton') || document.querySelector('.copy-button'),
+            transcript: document.getElementById('transcriptContainer') || document.getElementById('transcript') || document.querySelector('#transcriptContent, .transcript-content, .live-transcript-container'),
+            copyButton: document.getElementById('copyTranscript') || document.getElementById('copyButton') || document.querySelector('.copy-button'),
             connectionStatus: document.getElementById('connectionStatus') || document.querySelector('#wsStatus, .connection-status')
         };
         
@@ -56,11 +56,32 @@ class MinaTranscription {
             });
         }
         
+        // Bind clear transcript button (professional template)
+        const clearButton = document.getElementById('clearTranscript');
+        if (clearButton) {
+            clearButton.addEventListener('click', () => {
+                this.clearTranscript();
+            });
+        }
+        
+        // Bind download button (professional template)
+        const downloadButton = document.getElementById('downloadTranscript');
+        if (downloadButton) {
+            downloadButton.addEventListener('click', () => {
+                this.downloadTranscript();
+            });
+        }
+        
         this.updateConnectionStatus('ready');
         
         // Clear any existing content
         if (this.elements.transcript) {
-            this.elements.transcript.textContent = 'Click the record button to start transcription';
+            this.elements.transcript.innerHTML = `
+                <div class="text-muted text-center py-5">
+                    <i class="fas fa-microphone-slash mb-3" style="font-size: 3em; opacity: 0.3;"></i>
+                    <p>Click the record button to start transcription</p>
+                </div>
+            `;
         }
         
         console.log('✅ Mina Transcription System ready');
@@ -360,10 +381,26 @@ class MinaTranscription {
             this.elements.wordCount.textContent = this.totalWords;
         }
         
-        // Update accuracy
+        // Update accuracy/confidence
         if (this.elements.accuracy) {
             const confidence = Math.round((result.confidence || 0.95) * 100);
             this.elements.accuracy.textContent = confidence + '%';
+        }
+        
+        // Update professional template confidence indicators
+        const confidenceText = document.getElementById('confidenceText');
+        const confidenceFill = document.getElementById('confidenceFill');
+        
+        if (confidenceText || confidenceFill) {
+            const confidence = Math.round((result.confidence || 0.95) * 100);
+            
+            if (confidenceText) {
+                confidenceText.textContent = confidence + '%';
+            }
+            
+            if (confidenceFill) {
+                confidenceFill.style.width = confidence + '%';
+            }
         }
     }
     
@@ -441,6 +478,46 @@ class MinaTranscription {
         this.elements.connectionStatus.className = config.class;
     }
     
+    clearTranscript() {
+        this.cumulativeText = '';
+        this.totalWords = 0;
+        
+        if (this.elements.transcript) {
+            this.elements.transcript.innerHTML = `
+                <div class="text-muted text-center py-5">
+                    <i class="fas fa-microphone-slash mb-3" style="font-size: 3em; opacity: 0.3;"></i>
+                    <p>Click the record button to start transcription</p>
+                </div>
+            `;
+        }
+        
+        if (this.elements.wordCount) {
+            this.elements.wordCount.textContent = '0';
+        }
+        
+        console.log('🗑️ Transcript cleared');
+    }
+    
+    downloadTranscript() {
+        if (!this.cumulativeText.trim()) {
+            this.showNotification('No transcript to download', 'warning');
+            return;
+        }
+        
+        const blob = new Blob([this.cumulativeText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `mina-transcript-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        this.showNotification('Transcript downloaded');
+        console.log('📥 Transcript downloaded');
+    }
+
     showNotification(message, type = 'info') {
         console.log(`📢 ${message}`);
         
