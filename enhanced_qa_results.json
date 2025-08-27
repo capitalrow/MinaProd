@@ -1,0 +1,356 @@
+{
+  "timestamp": "2025-08-27T20:25:31.415234",
+  "pipeline_version": "Enhanced_v2.0",
+  "test_categories": {
+    "real_audio_processing": {
+      "test_name": "Real Audio Processing",
+      "test_cases": [
+        {
+          "name": "high_quality_wav",
+          "status": "pass",
+          "score": 0.87,
+          "details": {
+            "transcription": "Oh",
+            "confidence": 0.87,
+            "audio_size_bytes": 64044,
+            "processing_time_ms": 1120.6879615783691,
+            "expected_success": true,
+            "min_confidence_met": true
+          }
+        },
+        {
+          "name": "speech_pattern_wav",
+          "status": "pass",
+          "score": 0.87,
+          "details": {
+            "transcription": "You",
+            "confidence": 0.87,
+            "audio_size_bytes": 76844,
+            "processing_time_ms": 1654.2694568634033,
+            "expected_success": true,
+            "min_confidence_met": true
+          }
+        },
+        {
+          "name": "low_amplitude_wav",
+          "status": "fail",
+          "score": 0.0,
+          "details": {
+            "transcription": "[No speech detected]",
+            "confidence": 0.0,
+            "audio_size_bytes": 48044,
+            "processing_time_ms": 1298.41947555542,
+            "expected_success": true,
+            "min_confidence_met": false
+          }
+        },
+        {
+          "name": "long_duration_wav",
+          "status": "pass",
+          "score": 0.98,
+          "details": {
+            "transcription": "Hi, welcome to my channel. in this video, i'm going to show you how to make a paper airplane. i hope you enjoy this video. don't forget to like, comment, and subscribe. thank you.",
+            "confidence": 0.98,
+            "audio_size_bytes": 128044,
+            "processing_time_ms": 1299.2782592773438,
+            "expected_success": true,
+            "min_confidence_met": true
+          }
+        }
+      ],
+      "summary": {
+        "passed": 3,
+        "failed": 1,
+        "total": 4
+      },
+      "category_score": 0.75,
+      "status": "fail"
+    },
+    "error_handling_validation": {
+      "test_name": "Enhanced Error Handling",
+      "test_cases": [
+        {
+          "name": "empty_audio",
+          "status": "fail",
+          "score": 0.0,
+          "details": {
+            "expected_error": true,
+            "got_error": false,
+            "audio_size_bytes": 0,
+            "response": {
+              "success": true,
+              "data": {
+                "chunk_number": 1,
+                "confidence": 0.0,
+                "is_final": false,
+                "session_id": "error_test_empty_audio",
+                "status": "no_audio",
+                "text": "[No audio data]"
+              },
+              "status_code": 200
+            }
+          }
+        },
+        {
+          "name": "tiny_audio",
+          "status": "fail",
+          "score": 0.0,
+          "details": {
+            "expected_error": true,
+            "got_error": false,
+            "audio_size_bytes": 4,
+            "response": {
+              "success": true,
+              "data": {
+                "chunk_number": 1,
+                "confidence": 0.0,
+                "is_final": false,
+                "session_id": "error_test_tiny_audio",
+                "status": "too_small",
+                "text": "[Audio chunk too small]"
+              },
+              "status_code": 200
+            }
+          }
+        },
+        {
+          "name": "corrupt_wav_header",
+          "status": "fail",
+          "score": 0.0,
+          "details": {
+            "expected_error": true,
+            "got_error": false,
+            "audio_size_bytes": 40,
+            "response": {
+              "success": true,
+              "data": {
+                "chunk_number": 1,
+                "confidence": 0.0,
+                "is_final": false,
+                "session_id": "error_test_corrupt_wav_header",
+                "status": "too_small",
+                "text": "[Audio chunk too small]"
+              },
+              "status_code": 200
+            }
+          }
+        },
+        {
+          "name": "oversized_audio",
+          "status": "fail",
+          "score": 0.0,
+          "details": {
+            "expected_error": true,
+            "got_error": false,
+            "audio_size_bytes": 52428800,
+            "response": {
+              "success": true,
+              "data": {
+                "chunk_number": 1,
+                "confidence": 0.0,
+                "is_final": false,
+                "session_id": "error_test_oversized_audio",
+                "status": "no_speech",
+                "text": "[No speech detected]"
+              },
+              "status_code": 200
+            }
+          }
+        }
+      ],
+      "summary": {
+        "passed": 0,
+        "failed": 4,
+        "total": 4
+      },
+      "category_score": 0.0,
+      "status": "fail"
+    },
+    "performance_benchmarks": {
+      "test_name": "Realistic Performance",
+      "latency_tests": [
+        {
+          "audio_size": "small_1s",
+          "duration_s": 1.0,
+          "audio_bytes": 32044,
+          "avg_latency_ms": 1086.852232615153,
+          "max_latency_ms": 1440.1302337646484,
+          "success_rate": 1.0,
+          "threshold_ms": 2000.0,
+          "passed": true
+        },
+        {
+          "audio_size": "medium_2s",
+          "duration_s": 2.0,
+          "audio_bytes": 64044,
+          "avg_latency_ms": 869.971513748169,
+          "max_latency_ms": 1018.8002586364746,
+          "success_rate": 1.0,
+          "threshold_ms": 4000.0,
+          "passed": true
+        },
+        {
+          "audio_size": "large_5s",
+          "duration_s": 5.0,
+          "audio_bytes": 160044,
+          "avg_latency_ms": 1345.3191916147869,
+          "max_latency_ms": 1582.3767185211182,
+          "success_rate": 1.0,
+          "threshold_ms": 10000.0,
+          "passed": true
+        }
+      ],
+      "summary": {
+        "passed": 3,
+        "failed": 0,
+        "total": 3
+      },
+      "category_score": 1.0,
+      "status": "pass"
+    },
+    "quality_validation": {
+      "test_name": "Quality Metrics",
+      "quality_tests": [
+        {
+          "name": "pure_tone_440hz",
+          "passed": false,
+          "confidence": 0.0,
+          "text_length": 20,
+          "transcription": "[No speech detected]"
+        },
+        {
+          "name": "speech_pattern",
+          "passed": true,
+          "confidence": 0.87,
+          "text_length": 3,
+          "transcription": "You"
+        }
+      ],
+      "summary": {
+        "passed": 1,
+        "failed": 1,
+        "total": 2
+      },
+      "category_score": 0.5,
+      "status": "fail"
+    },
+    "edge_case_handling": {
+      "test_name": "Edge Cases",
+      "edge_tests": [
+        {
+          "name": "minimum_valid_wav",
+          "passed": true,
+          "expected_success": true,
+          "actual_success": true,
+          "audio_size_bytes": 6444
+        },
+        {
+          "name": "high_frequency",
+          "passed": true,
+          "expected_success": true,
+          "actual_success": true,
+          "audio_size_bytes": 32044
+        }
+      ],
+      "summary": {
+        "passed": 2,
+        "failed": 0,
+        "total": 2
+      },
+      "category_score": 1.0,
+      "status": "pass"
+    },
+    "integration_testing": {
+      "test_name": "System Integration",
+      "integration_tests": [
+        {
+          "name": "api_availability",
+          "passed": true
+        },
+        {
+          "name": "session_handling",
+          "passed": true
+        }
+      ],
+      "summary": {
+        "passed": 2,
+        "failed": 0,
+        "total": 2
+      },
+      "category_score": 1.0,
+      "status": "pass"
+    }
+  },
+  "execution_time_s": 27.001304388046265,
+  "overall_assessment": {
+    "overall_grade": "D",
+    "overall_score": 0.6375000000000001,
+    "overall_percentage": 63.75000000000001,
+    "category_breakdown": {
+      "real_audio_processing": {
+        "score": 0.75,
+        "weight": 0.35,
+        "weighted_score": 0.26249999999999996,
+        "status": "fail",
+        "passed_tests": 3,
+        "total_tests": 4
+      },
+      "error_handling_validation": {
+        "score": 0.0,
+        "weight": 0.2,
+        "weighted_score": 0.0,
+        "status": "fail",
+        "passed_tests": 0,
+        "total_tests": 4
+      },
+      "performance_benchmarks": {
+        "score": 1.0,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "status": "pass",
+        "passed_tests": 3,
+        "total_tests": 3
+      },
+      "quality_validation": {
+        "score": 0.5,
+        "weight": 0.15,
+        "weighted_score": 0.075,
+        "status": "fail",
+        "passed_tests": 1,
+        "total_tests": 2
+      },
+      "edge_case_handling": {
+        "score": 1.0,
+        "weight": 0.05,
+        "weighted_score": 0.05,
+        "status": "pass",
+        "passed_tests": 2,
+        "total_tests": 2
+      },
+      "integration_testing": {
+        "score": 1.0,
+        "weight": 0.05,
+        "weighted_score": 0.05,
+        "status": "pass",
+        "passed_tests": 2,
+        "total_tests": 2
+      }
+    },
+    "critical_failures": [
+      "real_audio_processing",
+      "error_handling_validation"
+    ],
+    "recommendation": "CRITICAL FAILURES: real_audio_processing, error_handling_validation must be fixed",
+    "action_items": [
+      "CRITICAL: Fix audio processing pipeline for real audio data",
+      "CRITICAL: Implement proper input validation and error responses",
+      "HIGH: Improve transcription confidence and accuracy"
+    ],
+    "grade_threshold_met": {
+      "A++": false,
+      "A+": false,
+      "A": false,
+      "pass": false
+    }
+  }
+}
