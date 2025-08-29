@@ -41,6 +41,16 @@ class EnhancedSystemIntegration {
                 await this.qualityAdaptation.initialize();
             }
             
+            if (window.GoogleRecorderUISystem) {
+                this.uiSystem = new window.GoogleRecorderUISystem();
+                await this.uiSystem.initialize();
+            }
+            
+            if (window.SessionReliabilityManager) {
+                this.reliabilityManager = new window.SessionReliabilityManager();
+                await this.reliabilityManager.initialize();
+            }
+            
             console.log('✅ All enhancement systems ready');
             this.isEnhancedMode = true;
             
@@ -336,6 +346,14 @@ class EnhancedSystemIntegration {
         
         if (this.qualityAdaptation) {
             this.qualityAdaptation.stop();
+        }
+        
+        if (this.uiSystem) {
+            this.uiSystem.stop();
+        }
+        
+        if (this.reliabilityManager) {
+            this.reliabilityManager.stop();
         }
         
         this.isEnhancedMode = false;
