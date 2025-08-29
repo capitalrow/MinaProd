@@ -409,35 +409,71 @@ class MinaTranscriptionFix {
             this.stats.totalWords += words;
         }
         
-        // Update transcript display
-        if (this.uiElements.transcriptDisplay) {
-            const div = document.createElement('div');
-            div.className = `transcript-segment ${result.is_final ? 'final' : 'interim'}`;
-            div.innerHTML = `
-                <span class="transcript-text">${result.text}</span>
-                <span class="transcript-meta">${Math.round((result.confidence || 0) * 100)}%</span>
-            `;
-            this.uiElements.transcriptDisplay.appendChild(div);
-            this.uiElements.transcriptDisplay.scrollTop = this.uiElements.transcriptDisplay.scrollHeight;
+        // CRITICAL FIX: Use dedicated transcript display
+        if (window.transcriptDisplayFix && window.transcriptDisplayFix.isInitialized) {
+            window.transcriptDisplayFix.displayTranscriptionResult(result);
+            window.transcriptDisplayFix.updateLiveTranscriptElements(result);
+        } else {
+            this.displayTranscriptionFallback(result);
         }
         
-        // Update live transcript
-        if (this.uiElements.liveTranscript) {
-            this.uiElements.liveTranscript.textContent = result.text;
+    }
+    
+    displayTranscriptionFallback(result) {
+        console.log('🔧 Using fallback transcript display');
+        
+        // Find any available transcript container
+        const containers = [
+            document.getElementById('transcriptContainer'),
+            document.getElementById('transcript'),
+            document.querySelector('.transcript-content'),
+            document.querySelector('.transcription-container')
+        ].filter(el => el);
+        
+        if (containers.length === 0) {
+            console.error('❌ No transcript container found for fallback');
+            return;
         }
         
-        // Update transcript boxes on the page
-        const transcriptElements = document.querySelectorAll('.live-transcript, [data-transcript]');
-        transcriptElements.forEach(el => {
-            if (!result.is_final) {
-                el.textContent = result.text;
-                el.classList.add('interim');
+        const container = containers[0];
+        
+        // Clear empty state
+        const emptyState = container.querySelector('.transcript-empty');
+        if (emptyState) {
+            emptyState.style.display = 'none';
+        }
+        
+        // Create transcript segment
+        const segmentElement = document.createElement('div');
+        segmentElement.className = `transcript-segment ${result.is_final ? 'final' : 'interim'}`;
+        segmentElement.innerHTML = `
+            <div class="transcript-header">
+                <span class="timestamp">${new Date().toLocaleTimeString()}</span>
+                <span class="confidence">${Math.round((result.confidence || 0.9) * 100)}%</span>
+            </div>
+            <div class="text-content">${result.text}</div>
+        `;
+        
+        // Handle interim vs final
+        if (!result.is_final) {
+            const existingInterim = container.querySelector('.transcript-segment.interim');
+            if (existingInterim) {
+                existingInterim.replaceWith(segmentElement);
             } else {
-                el.textContent = result.text;
-                el.classList.remove('interim');
-                el.classList.add('final');
+                container.appendChild(segmentElement);
             }
-        });
+        } else {
+            const existingInterim = container.querySelector('.transcript-segment.interim');
+            if (existingInterim) {
+                existingInterim.remove();
+            }
+            container.appendChild(segmentElement);
+        }
+        
+        // Auto-scroll
+        container.scrollTop = container.scrollHeight;
+        
+        console.log('✅ Fallback transcript displayed');
     }
     
     updateStats(stats) {
