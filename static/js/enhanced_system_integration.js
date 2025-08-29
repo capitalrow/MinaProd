@@ -25,7 +25,23 @@ class EnhancedSystemIntegration {
             this.accuracyEnhancer = new window.TranscriptionAccuracyEnhancer();
             this.performanceOptimizer = new window.PerformanceOptimizer();
             
-            console.log('✅ Enhancement systems ready');
+            // Initialize advanced systems
+            if (window.AdaptiveMLCorrectionEngine) {
+                this.mlCorrectionEngine = new window.AdaptiveMLCorrectionEngine();
+                await this.mlCorrectionEngine.initialize();
+            }
+            
+            if (window.PredictiveLatencyOptimizer) {
+                this.latencyOptimizer = new window.PredictiveLatencyOptimizer();
+                await this.latencyOptimizer.initialize();
+            }
+            
+            if (window.DynamicQualityAdaptation) {
+                this.qualityAdaptation = new window.DynamicQualityAdaptation();
+                await this.qualityAdaptation.initialize();
+            }
+            
+            console.log('✅ All enhancement systems ready');
             this.isEnhancedMode = true;
             
             // Set up event listeners for system coordination
@@ -106,12 +122,20 @@ class EnhancedSystemIntegration {
             return originalResult;
         }
         
-        // Apply accuracy enhancements
-        const enhancedResult = this.accuracyEnhancer.enhanceTranscription(originalResult);
+        let enhancedResult = originalResult;
+        
+        // Step 1: Apply accuracy enhancements
+        enhancedResult = this.accuracyEnhancer.enhanceTranscription(enhancedResult);
+        
+        // Step 2: Apply ML corrections if available
+        if (this.mlCorrectionEngine) {
+            enhancedResult = this.mlCorrectionEngine.processTranscription(enhancedResult);
+        }
         
         // Add performance metrics
         enhancedResult.latency_ms = latency;
         enhancedResult.enhanced_mode = true;
+        enhancedResult.total_enhancements = this.countAppliedEnhancements(enhancedResult);
         
         // Update enhancement metrics
         this.updateEnhancementMetrics(originalResult, enhancedResult, latency);
@@ -120,6 +144,16 @@ class EnhancedSystemIntegration {
         this.logEnhancementResults(originalResult, enhancedResult);
         
         return enhancedResult;
+    }
+    
+    countAppliedEnhancements(result) {
+        let count = 0;
+        
+        if (result.enhancement_applied) count++;
+        if (result.ml_processed) count++;
+        if (result.ml_corrections && result.ml_corrections.length > 0) count += result.ml_corrections.length;
+        
+        return count;
     }
     
     updateEnhancementMetrics(original, enhanced, latency) {
@@ -290,6 +324,18 @@ class EnhancedSystemIntegration {
         
         if (this.accuracyEnhancer) {
             this.accuracyEnhancer.reset();
+        }
+        
+        if (this.mlCorrectionEngine) {
+            this.mlCorrectionEngine.stop();
+        }
+        
+        if (this.latencyOptimizer) {
+            this.latencyOptimizer.stop();
+        }
+        
+        if (this.qualityAdaptation) {
+            this.qualityAdaptation.stop();
         }
         
         this.isEnhancedMode = false;
