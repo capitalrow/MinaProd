@@ -62,25 +62,11 @@ def apply_google_style_processing(text: str, session_id: str) -> str:
         logger.info(f"🔄 GOOGLE-QUALITY: Filtering excessive repetition '{word_lower}' ({consecutive_count}x consecutive)")
         return context.get('sentence_buffer', clean_text)  # Return existing buffer
     
-    # 2. SENTENCE BUILDING: Build progressive sentences like Google
-    time_since_last = current_time - context['last_update']
+    # 🔥 CRITICAL FIX: Simplified processing to preserve transcription accuracy
+    # Return the original transcription with minimal enhancement
+    enhanced_text = clean_text.strip()
     
-    if time_since_last < 3.0:  # Within 3 seconds - likely same sentence
-        if context['sentence_buffer']:
-            # Smart concatenation - avoid duplicate words
-            buffer_words = context['sentence_buffer'].lower().split()
-            if word_lower not in buffer_words[-2:]:  # Not in last 2 words
-                enhanced_text = f"{context['sentence_buffer']} {clean_text}"
-            else:
-                enhanced_text = context['sentence_buffer']  # Skip duplicate
-        else:
-            enhanced_text = clean_text.capitalize()
-    else:
-        # New sentence - start fresh
-        enhanced_text = clean_text.capitalize()
-        context['sentence_count'] += 1
-    
-    # 3. CAPITALIZATION & PUNCTUATION: Like Google's professional output
+    # Only apply basic capitalization if needed
     if enhanced_text and not enhanced_text[0].isupper():
         enhanced_text = enhanced_text[0].upper() + enhanced_text[1:]
     
