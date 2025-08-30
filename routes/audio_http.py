@@ -826,8 +826,39 @@ def transcribe_audio():
             # GOOGLE-QUALITY: Apply context-aware processing
             if GOOGLE_CONTEXT_AVAILABLE and apply_google_style_processing is not None:
                 enhanced_text = apply_google_style_processing(clean_text, session_id)
-                logger.info(f"🎯 GOOGLE-ENHANCED: '{clean_text}' → '{enhanced_text}'")
-                clean_text = enhanced_text
+                if enhanced_text is None:
+                    # Transcription was filtered - skip this result and don't send to UI
+                    logger.info(f"🔄 GOOGLE-FILTERED: Skipping repetitive transcription '{clean_text}' - awaiting new speech")
+                    filter_processing_time_ms = (time.time() - request_start_time) * 1000
+                    track_chunk_processed(session_id, chunk_number, len(audio_bytes), 
+                                         filter_processing_time_ms, success=True, 
+                                         reason="filtered_repetitive", text=clean_text, confidence=0.0)
+                    return jsonify({
+                        'text': '',  # Empty text to clear UI
+                        'confidence': 0.0,
+                        'session_id': session_id,
+                        'chunk_number': chunk_number,
+                        'processing_time': filter_processing_time_ms,
+                        'is_final': is_final,
+                        'status': 'filtered'
+                    })
+                else:
+                    logger.info(f"🎯 GOOGLE-ENHANCED: '{clean_text}' → '{enhanced_text}'")
+                    clean_text = enhanced_text
+            
+            # Safety check: Ensure clean_text is not None
+            if clean_text is None or not clean_text.strip():
+                logger.info(f"⚠️ SAFETY-CHECK: clean_text is None or empty after processing - skipping")
+                processing_time_ms = (time.time() - request_start_time) * 1000
+                return jsonify({
+                    'text': '',
+                    'confidence': 0.0,
+                    'session_id': session_id,
+                    'chunk_number': chunk_number,
+                    'processing_time': processing_time_ms,
+                    'is_final': is_final,
+                    'status': 'filtered'
+                })
             
             # Calculate confidence and stats  
             words = clean_text.split()

@@ -57,10 +57,13 @@ def apply_google_style_processing(text: str, session_id: str) -> str:
         else:
             break
     
-    # Only filter excessive consecutive repetition (5+ times)
-    if consecutive_count >= 5:
+    # 🔥 CRITICAL FIX: Filter repetitive "you" responses to allow new speech
+    if consecutive_count >= 3 and word_lower == 'you':  # More aggressive filtering for "you"
+        logger.info(f"🔄 GOOGLE-QUALITY: Filtering repetitive 'you' ({consecutive_count}x consecutive) - awaiting new speech")
+        return None  # Return None to skip this transcription entirely
+    elif consecutive_count >= 5:  # General repetition filtering
         logger.info(f"🔄 GOOGLE-QUALITY: Filtering excessive repetition '{word_lower}' ({consecutive_count}x consecutive)")
-        return context.get('sentence_buffer', clean_text)  # Return existing buffer
+        return None  # Return None instead of existing buffer
     
     # 🔥 CRITICAL FIX: Simplified processing to preserve transcription accuracy
     # Return the original transcription with minimal enhancement
