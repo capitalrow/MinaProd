@@ -107,7 +107,7 @@ def apply_google_style_processing(text: str, session_id: str) -> str:
     if len(context['context_words']) > 50:
         context['context_words'] = context['context_words'][-30:]
     
-    logger.info(f"✅ GOOGLE-ENHANCED: '{text}' → '{enhanced_text[:100]}{'...' if len(enhanced_text) > 100 else ''}' ({word_count} words)")
+    logger.debug(f"✅ GOOGLE-ENHANCED: '{text}' → '{enhanced_text[:100]}{'...' if len(enhanced_text) > 100 else ''}' ({word_count} words)")
     return enhanced_text
 
 def get_session_context(session_id: str) -> str:
