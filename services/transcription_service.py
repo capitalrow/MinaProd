@@ -56,7 +56,7 @@ class TranscriptionServiceConfig:
     
     # Transcription settings
     language: str = "en"
-    min_confidence: float = 0.35  # 🔥 ITERATION 2: Further reduced for more frequent interims
+    min_confidence: float = 0.75  # 🔥 ACCURACY FIX: Increased for Google Recorder quality
     enable_speaker_detection: bool = True
     enable_sentiment_analysis: bool = False
     

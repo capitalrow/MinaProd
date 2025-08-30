@@ -35,17 +35,22 @@ class TranscriptionConfig:
     temperature: float = 0.0
     response_format: str = "json"
     prompt: Optional[str] = None
-    max_chunk_duration: float = 30.0  # seconds
-    min_chunk_duration: float = 0.1   # seconds
+    max_chunk_duration: float = 10.0  # seconds - 🔥 OPTIMIZED: Shorter chunks for better context
+    min_chunk_duration: float = 0.3   # seconds - 🔥 OPTIMIZED: Minimum viable speech segment
     buffer_size: int = 10  # number of audio chunks to buffer
-    confidence_threshold: float = 0.4  # 🔥 CRITICAL FIX: Reduced from 0.6 to 0.4
+    confidence_threshold: float = 0.8  # 🔥 ACCURACY FIX: Increased to 0.8 for Google Recorder quality
     enable_word_timestamps: bool = True
     enable_vad_filtering: bool = True
-    # M1 Quality settings
-    max_chunk_ms: int = 640
-    max_queue_len: int = 8
-    voice_tail_ms: int = 300
-    dedup_overlap_threshold: float = 0.9
+    # M1 Quality settings - 🔥 OPTIMIZED for Google Recorder accuracy
+    max_chunk_ms: int = 500  # Reduced for faster processing
+    max_queue_len: int = 6   # Reduced to prevent latency buildup
+    voice_tail_ms: int = 200  # Faster endpointing
+    dedup_overlap_threshold: float = 0.95  # Stricter deduplication
+    
+    # 🔥 NEW: Audio quality validation settings
+    min_audio_quality_score: float = 40.0  # Minimum quality score (0-100)
+    enable_quality_filtering: bool = True
+    quality_enhancement: bool = True
 
 @dataclass
 class TranscriptionResult:
@@ -374,6 +379,13 @@ class WhisperStreamingService:
         if not self.client:
             return self._mock_transcription(audio_data, is_final)
         
+        # 🔥 QUALITY VALIDATION: Check audio quality before sending to Whisper
+        if self.config.enable_quality_filtering:
+            quality_score = self._validate_audio_quality(audio_data)
+            if quality_score < self.config.min_audio_quality_score:
+                logger.warning(f"🚨 Audio quality too low ({quality_score:.1f} < {self.config.min_audio_quality_score}), skipping transcription")
+                return None
+        
         try:
             # Convert audio data to file-like object
             import io
@@ -415,8 +427,13 @@ class WhisperStreamingService:
                     for word in response.words
                 ]
             
-            # Calculate confidence (OpenAI doesn't provide this, so estimate)
+            # Calculate confidence and check for hallucinations
             confidence = self._estimate_confidence(text, len(audio_data))
+            
+            # 🔥 HALLUCINATION DETECTION: Filter out common Whisper hallucinations
+            if self._is_hallucination(text):
+                logger.warning(f"🚨 Detected hallucination, rejecting: '{text}'")
+                confidence = 0.0  # Force rejection
             
             # Create result
             result = TranscriptionResult(
@@ -441,6 +458,134 @@ class WhisperStreamingService:
         except Exception as e:
             logger.error(f"Whisper API error: {e}")
             raise
+    
+    def _is_hallucination(self, text: str) -> bool:
+        """
+        🛡️ Detect common Whisper hallucination patterns.
+        Implements Google Recorder-level quality filtering.
+        """
+        if not text or len(text.strip()) == 0:
+            return True
+        
+        text_lower = text.lower().strip()
+        
+        # Common hallucination patterns
+        hallucination_patterns = [
+            "bye-bye",
+            "bye bye", 
+            "goodbye",
+            "thank you for watching",
+            "thanks for watching",
+            "like and subscribe",
+            "don't forget to subscribe",
+            "see you next time",
+            "see you later",
+            "catch you later",
+            "until next time",
+            "that's all for today",
+            "music playing",
+            "[music]",
+            "(music)",
+            "♪",
+            "♫",
+            "applause",
+            "[applause]",
+            "(applause)",
+            "laughter",
+            "[laughter]",
+            "(laughter)"
+        ]
+        
+        # Check for exact matches
+        for pattern in hallucination_patterns:
+            if pattern in text_lower:
+                return True
+        
+        # Check for repetitive patterns (e.g., "bye bye bye bye")
+        words = text_lower.split()
+        if len(words) >= 3:
+            # Check if same word repeated 3+ times
+            for i in range(len(words) - 2):
+                if words[i] == words[i+1] == words[i+2]:
+                    return True
+        
+        # Check for very short nonsensical outputs
+        if len(text_lower) <= 3 and text_lower in ["um", "uh", "ah", "oh", "er", "mm", "hmm"]:
+            return True
+        
+        # Check for outputs that are just punctuation
+        if all(c in ".,!?;:-()[]{}\"' " for c in text):
+            return True
+        
+        # Check for extremely repetitive character patterns
+        if len(set(text_lower.replace(" ", ""))) <= 2 and len(text) > 5:
+            return True
+        
+        return False
+    
+    def _validate_audio_quality(self, audio_data: bytes) -> float:
+        """
+        🔥 GOOGLE RECORDER QUALITY: Validate audio quality before transcription.
+        Returns quality score 0-100, filters out poor quality audio that causes hallucinations.
+        """
+        try:
+            # Convert to numpy array for analysis
+            audio_array = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
+            
+            if len(audio_array) == 0:
+                return 0.0
+            
+            # 1. RMS Energy Analysis (speech vs noise)
+            rms_energy = np.sqrt(np.mean(audio_array ** 2))
+            energy_score = min(100, max(0, (rms_energy - 0.005) / 0.1 * 100))  # 0.005-0.105 range
+            
+            # 2. Dynamic Range (measure of variation)
+            peak_level = np.max(np.abs(audio_array))
+            if peak_level > 0:
+                dynamic_range = 20 * np.log10(peak_level / (rms_energy + 1e-10))
+                range_score = min(100, max(0, (dynamic_range - 10) / 30 * 100))  # 10-40 dB range
+            else:
+                range_score = 0
+            
+            # 3. Zero Crossing Rate (measure of speech characteristics)
+            zero_crossings = np.sum(np.diff(np.sign(audio_array)) != 0)
+            zcr = zero_crossings / len(audio_array)
+            zcr_score = min(100, max(0, (zcr - 0.01) / 0.15 * 100))  # 0.01-0.16 range
+            
+            # 4. Signal-to-Noise Ratio estimation
+            # Use lower 10% as noise floor estimation
+            sorted_audio = np.sort(np.abs(audio_array))
+            noise_floor = np.mean(sorted_audio[:len(sorted_audio)//10])
+            signal_level = np.mean(sorted_audio[-len(sorted_audio)//4:])  # Top 25% as signal
+            
+            if noise_floor > 0:
+                snr_db = 20 * np.log10(signal_level / (noise_floor + 1e-10))
+                snr_score = min(100, max(0, (snr_db - 5) / 25 * 100))  # 5-30 dB range
+            else:
+                snr_score = 100
+            
+            # 5. Duration check
+            duration_samples = len(audio_array)
+            min_samples = int(0.3 * 16000)  # 0.3 seconds at 16kHz
+            duration_score = 100 if duration_samples >= min_samples else 0
+            
+            # Weighted combination prioritizing speech characteristics
+            quality_score = (
+                energy_score * 0.25 +     # Basic energy presence
+                range_score * 0.20 +      # Dynamic variation
+                zcr_score * 0.20 +        # Speech-like characteristics
+                snr_score * 0.25 +        # Signal quality
+                duration_score * 0.10     # Sufficient duration
+            )
+            
+            logger.debug(f"🔍 Audio quality: {quality_score:.1f} (E:{energy_score:.1f}, R:{range_score:.1f}, Z:{zcr_score:.1f}, S:{snr_score:.1f}, D:{duration_score:.1f})")
+            
+            return quality_score
+            
+        except Exception as e:
+            logger.error(f"❌ Audio quality validation failed: {e}")
+            # On error, allow transcription to proceed
+            return 100.0
     
     def _stub_transcription(self, audio_data: bytes, is_final: bool) -> TranscriptionResult:
         """🔥 PHASE 1: Stub transcription for testing WebSocket wiring without API calls."""
