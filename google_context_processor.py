@@ -45,16 +45,22 @@ def apply_google_style_processing(text: str, session_id: str) -> str:
     
     # Google-style processing rules:
     
-    # 1. REPETITION DETECTION: If same word appears 3+ times consecutively, it's likely audio processing issue
-    if context['word_repetition_count'][word_lower] >= 3 and word_lower == context.get('last_word', '').lower():
-        logger.info(f"🔄 GOOGLE-QUALITY: Detected repetition pattern '{word_lower}' ({context['word_repetition_count'][word_lower]}x) - likely audio issue")
-        
-        # Don't add more repetitions, but preserve the sentence structure
-        if context['sentence_buffer'] and not context['sentence_buffer'].lower().endswith(word_lower):
-            context['sentence_buffer'] += f" {clean_text}"
-            return context['sentence_buffer']
+    # 🔥 CRITICAL FIX: Smart repetition detection for Google Recorder accuracy
+    consecutive_count = 1
+    if 'last_words' not in context:
+        context['last_words'] = []
+    
+    # Count consecutive occurrences
+    for prev_word in reversed(context['last_words'][-5:]):  # Check last 5 words
+        if prev_word.lower() == word_lower:
+            consecutive_count += 1
         else:
-            return context['sentence_buffer'] or clean_text
+            break
+    
+    # Only filter excessive consecutive repetition (5+ times)
+    if consecutive_count >= 5:
+        logger.info(f"🔄 GOOGLE-QUALITY: Filtering excessive repetition '{word_lower}' ({consecutive_count}x consecutive)")
+        return context.get('sentence_buffer', clean_text)  # Return existing buffer
     
     # 2. SENTENCE BUILDING: Build progressive sentences like Google
     time_since_last = current_time - context['last_update']
@@ -89,6 +95,13 @@ def apply_google_style_processing(text: str, session_id: str) -> str:
     context['context_words'].append(word_lower)
     context['last_word'] = clean_text
     context['last_meaningful_text'] = clean_text
+    
+    # 🔥 Track last words for consecutive detection
+    if 'last_words' not in context:
+        context['last_words'] = []
+    context['last_words'].append(clean_text)
+    if len(context['last_words']) > 10:
+        context['last_words'] = context['last_words'][-5:]  # Keep only last 5
     
     # Keep context manageable
     if len(context['context_words']) > 50:

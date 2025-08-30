@@ -373,13 +373,55 @@ class WebSocketStreaming {
         
         for (const mimeType of mimeTypes) {
             if (MediaRecorder.isTypeSupported(mimeType)) {
-                console.log('Using mime type:', mimeType);
+                console.log('✅ Using mime type:', mimeType);
+                this.detectedMimeType = mimeType; // 🔥 Store for later use
                 return mimeType;
             }
         }
         
-        console.warn('No supported mime type found, using default');
+        console.warn('⚠️ No supported mime type found, using default');
+        this.detectedMimeType = 'audio/webm'; // Default fallback
         return '';
+    }
+    
+    detectActualFormat(audioBlob) {
+        /**
+         * 🔥 CRITICAL FIX: Detect actual audio format from binary data
+         * Fixes the core issue where WebM label was wrong
+         */
+        try {
+            // Convert blob to array buffer for analysis
+            const reader = new FileReader();
+            const header = new Uint8Array(audioBlob.slice(0, 32)); // First 32 bytes
+            
+            // Check for WebM/Matroska signature
+            if (header[0] === 0x1A && header[1] === 0x45 && header[2] === 0xDF && header[3] === 0xA3) {
+                return 'webm';
+            }
+            
+            // Check for RIFF/WAV signature
+            if (header[0] === 0x52 && header[1] === 0x49 && header[2] === 0x46 && header[3] === 0x46) {
+                return 'wav';
+            }
+            
+            // Check for Ogg signature
+            if (header[0] === 0x4F && header[1] === 0x67 && header[2] === 0x67 && header[3] === 0x53) {
+                return 'ogg';
+            }
+            
+            // Check for MP4 signature
+            if (header[4] === 0x66 && header[5] === 0x74 && header[6] === 0x79 && header[7] === 0x70) {
+                return 'mp4';
+            }
+            
+            // If no signature matches, it's likely raw PCM
+            console.warn('⚠️ No audio format signature found, treating as raw PCM');
+            return 'raw-pcm';
+            
+        } catch (error) {
+            console.error('❌ Format detection failed:', error);
+            return 'unknown';
+        }
     }
     
     startTransmissionLoop() {
@@ -473,14 +515,17 @@ class WebSocketStreaming {
             const transmissionStartTime = Date.now();
             
             // Prepare chunk data
+            // 🔥 CRITICAL FIX: Proper format detection and encoding
+            const actualFormat = this.detectActualFormat(chunk.data);
             const chunkData = {
                 session_id: this.sessionId,
                 audio_data: this.encodeAudioData(chunk.data),
                 timestamp: chunk.timestamp,
                 sequence: chunk.sequence,
                 size: chunk.size,
-                format: 'webm', // or detected format
-                sample_rate: this.config.sampleRate
+                format: actualFormat, // 🔥 FIXED: Use actual detected format
+                sample_rate: this.config.sampleRate,
+                mime_type: this.detectedMimeType // Include the actual MIME type
             };
             
             // Add to pending chunks for acknowledgment tracking
@@ -519,8 +564,14 @@ class WebSocketStreaming {
             return this.compressAudioData(audioData);
         }
         
-        // Convert to base64 for transmission
-        return btoa(String.fromCharCode(...audioData));
+        // 🔥 CRITICAL FIX: Proper binary encoding for transmission
+        // Convert Uint8Array to base64 properly
+        let binary = '';
+        const len = audioData.length;
+        for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(audioData[i]);
+        }
+        return btoa(binary);
     }
     
     compressAudioData(audioData) {
