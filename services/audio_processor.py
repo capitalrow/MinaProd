@@ -178,20 +178,169 @@ class AudioProcessor:
     
     def _emergency_wav_conversion(self, audio_data: bytes, sample_rate: int, channels: int) -> bytes:
         """
-        🚨 Emergency fallback conversion with quality validation.
+        🔥 CRITICAL FIX: Proper raw PCM to WAV conversion for Google Recorder accuracy.
+        Handles the actual format mismatch that causes hallucinations.
         """
-        logger.warning("🚨 Using emergency WAV conversion - audio quality may be degraded")
+        logger.warning("🚨 Emergency conversion: Processing raw audio data")
         
-        # Check if data is already valid PCM
-        if len(audio_data) % 2 != 0:
-            audio_data = audio_data[:-1]  # Remove last byte if odd length
+        try:
+            # 🔥 STEP 1: Detect if this is actually raw PCM or garbage data
+            pcm_data = self._extract_raw_pcm(audio_data)
+            
+            # 🔥 STEP 2: Validate PCM data quality
+            if not self._validate_pcm_quality(pcm_data):
+                logger.error("❌ PCM data quality too low, rejecting to prevent hallucinations")
+                raise ValueError("Audio quality insufficient for transcription")
+            
+            # 🔥 STEP 3: Create proper WAV with validated PCM
+            wav_data = self._create_professional_wav(pcm_data, sample_rate, channels)
+            
+            logger.info(f"✅ Emergency conversion successful: {len(wav_data)} bytes")
+            return wav_data
+            
+        except Exception as e:
+            logger.error(f"❌ Emergency conversion failed: {e}")
+            raise ValueError(f"Unable to convert audio data: {e}")
+    
+    def _extract_raw_pcm(self, audio_data: bytes) -> bytes:
+        """
+        🔥 Extract raw PCM samples from unknown format data.
+        """
+        # Check if data might be base64 encoded PCM
+        if len(audio_data) % 4 == 0:
+            try:
+                import base64
+                decoded = base64.b64decode(audio_data)
+                if self._looks_like_pcm(decoded):
+                    logger.info("📦 Detected base64-encoded PCM data")
+                    return decoded
+            except:
+                pass
         
-        # Validate audio data quality before creating WAV
-        if len(audio_data) < 1600:  # Less than 0.05 seconds at 16kHz
-            logger.error("❌ Audio data too short for transcription")
-            raise ValueError("Insufficient audio data for transcription")
+        # Check if it's already raw PCM
+        if self._looks_like_pcm(audio_data):
+            logger.info("🎵 Detected raw PCM data")
+            return audio_data
         
-        return self._create_proper_wav_header(audio_data, sample_rate, channels)
+        # Try to find PCM data within the bytes
+        # Sometimes there's metadata or padding
+        for offset in [0, 44, 64, 128]:  # Common header sizes
+            if offset < len(audio_data):
+                potential_pcm = audio_data[offset:]
+                if len(potential_pcm) > 1600 and self._looks_like_pcm(potential_pcm):
+                    logger.info(f"🔍 Found PCM data at offset {offset}")
+                    return potential_pcm
+        
+        # If all else fails, treat as raw bytes but validate
+        logger.warning("⚠️ Treating unknown data as raw PCM")
+        return audio_data
+    
+    def _looks_like_pcm(self, data: bytes) -> bool:
+        """
+        🔍 Heuristic to detect if bytes are likely PCM audio samples.
+        """
+        if len(data) < 1600:  # Too short
+            return False
+        
+        if len(data) % 2 != 0:  # Should be even for 16-bit samples
+            return False
+        
+        # Convert to 16-bit samples and check characteristics
+        try:
+            samples = np.frombuffer(data[:min(3200, len(data))], dtype=np.int16)
+            
+            # Check dynamic range
+            peak = np.max(np.abs(samples))
+            if peak == 0:  # Silent
+                return False
+            if peak > 32767:  # Clipped
+                return False
+            
+            # Check for reasonable audio characteristics
+            rms = np.sqrt(np.mean(samples.astype(np.float32) ** 2))
+            if rms < 10:  # Too quiet
+                return False
+            
+            # Check zero crossing rate (speech typically 0.01-0.3)
+            zero_crossings = np.sum(np.diff(np.sign(samples)) != 0)
+            zcr = zero_crossings / len(samples)
+            if zcr > 0.5:  # Too noisy
+                return False
+            
+            return True
+            
+        except Exception:
+            return False
+    
+    def _validate_pcm_quality(self, pcm_data: bytes) -> bool:
+        """
+        🔍 Validate PCM data quality to prevent garbage from reaching Whisper.
+        """
+        try:
+            if len(pcm_data) < 1600:  # Less than 0.05 seconds at 16kHz
+                return False
+            
+            # Convert to numpy for analysis
+            samples = np.frombuffer(pcm_data, dtype=np.int16).astype(np.float32)
+            
+            # Check RMS energy (should be reasonable for speech)
+            rms = np.sqrt(np.mean(samples ** 2))
+            if rms < 50 or rms > 8000:  # Outside reasonable range
+                return False
+            
+            # Check dynamic range
+            peak = np.max(np.abs(samples))
+            if peak < 100:  # Too quiet
+                return False
+            
+            # Check for constant DC offset (sign of bad data)
+            dc_offset = np.mean(samples)
+            if abs(dc_offset) > peak * 0.5:  # DC offset too high
+                return False
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ PCM validation error: {e}")
+            return False
+    
+    def _create_professional_wav(self, pcm_data: bytes, sample_rate: int = 16000, channels: int = 1) -> bytes:
+        """
+        🔥 Create professional-grade WAV file optimized for Whisper API.
+        """
+        try:
+            # Ensure PCM data is properly aligned
+            if len(pcm_data) % (channels * 2) != 0:
+                # Pad to align with frame boundaries
+                padding_needed = (channels * 2) - (len(pcm_data) % (channels * 2))
+                pcm_data += b'\x00' * padding_needed
+            
+            # Apply light processing to optimize for Whisper
+            samples = np.frombuffer(pcm_data, dtype=np.int16).astype(np.float32)
+            
+            # Normalize to optimal range
+            peak = np.max(np.abs(samples))
+            if peak > 0:
+                target_peak = 16000.0  # ~50% of 16-bit range
+                if peak > target_peak:
+                    samples = samples * (target_peak / peak)
+            
+            # Remove DC offset
+            samples = samples - np.mean(samples)
+            
+            # Convert back to 16-bit
+            processed_pcm = samples.astype(np.int16).tobytes()
+            
+            # Create WAV header
+            wav_data = self._create_proper_wav_header(processed_pcm, sample_rate, channels)
+            
+            logger.info(f"✅ Professional WAV created: {len(wav_data)} bytes ({len(processed_pcm)} PCM + 44 header)")
+            return wav_data
+            
+        except Exception as e:
+            logger.error(f"❌ Professional WAV creation failed: {e}")
+            # Fallback to simple header creation
+            return self._create_proper_wav_header(pcm_data, sample_rate, channels)
     
     def _create_proper_wav_header(self, audio_data: bytes, sample_rate: int, channels: int) -> bytes:
         """
