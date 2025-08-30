@@ -181,15 +181,17 @@ class AdvancedErrorRecovery {
     }
     
     startHealthMonitoring() {
-        // Monitor system health every 2 seconds
+        // 🔥 OPTIMIZED: Reduced monitoring frequency to prevent spam
+        // Monitor system health every 10 seconds (was 2 seconds)
         this.healthMonitorInterval = setInterval(() => {
             this.checkSystemHealth();
-        }, 2000);
+        }, 10000);
         
-        // Monitor performance metrics every 5 seconds
+        // Monitor performance metrics every 30 seconds (was 5 seconds)
+        // Prevents constant memory pressure alerts
         this.performanceMonitorInterval = setInterval(() => {
             this.checkPerformanceHealth();
-        }, 5000);
+        }, 30000);
     }
     
     handleError(errorInfo) {
@@ -558,13 +560,16 @@ class AdvancedErrorRecovery {
     }
     
     checkPerformanceHealth() {
-        // Check memory usage
+        // 🔥 OPTIMIZED: Memory usage monitoring with realistic thresholds
         if (performance.memory) {
             const memoryUsage = performance.memory.usedJSHeapSize / performance.memory.totalJSHeapSize;
-            if (memoryUsage > 0.85) {
+            
+            // 🔥 CRITICAL FIX: Increased threshold to prevent false alarms
+            // Only trigger at truly critical memory levels (95%+)
+            if (memoryUsage > 0.95) {  // Changed from 0.85 to 0.95
                 this.handleError({
                     type: 'memory_pressure',
-                    message: `High memory usage: ${Math.round(memoryUsage * 100)}%`
+                    message: `Critical memory usage: ${Math.round(memoryUsage * 100)}%`
                 });
             }
         }

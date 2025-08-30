@@ -274,30 +274,73 @@ class AudioProcessor:
     
     def _validate_pcm_quality(self, pcm_data: bytes) -> bool:
         """
-        🔍 Validate PCM data quality to prevent garbage from reaching Whisper.
+        🔥 ENHANCED: Advanced PCM quality validation to prevent repetitive transcriptions.
+        Filters out silence, noise, and low-quality audio that causes "You" loops.
         """
         try:
             if len(pcm_data) < 1600:  # Less than 0.05 seconds at 16kHz
+                logger.debug("❌ PCM too short")
                 return False
             
             # Convert to numpy for analysis
             samples = np.frombuffer(pcm_data, dtype=np.int16).astype(np.float32)
             
-            # Check RMS energy (should be reasonable for speech)
+            # 1. Energy Analysis
             rms = np.sqrt(np.mean(samples ** 2))
-            if rms < 50 or rms > 8000:  # Outside reasonable range
-                return False
-            
-            # Check dynamic range
             peak = np.max(np.abs(samples))
-            if peak < 100:  # Too quiet
+            
+            # More strict energy thresholds to prevent "You" loops
+            if rms < 150:  # Increased from 50 - too quiet
+                logger.debug(f"❌ RMS too low: {rms:.1f}")
+                return False
+            if peak < 500:  # Increased from 100 - too quiet  
+                logger.debug(f"❌ Peak too low: {peak:.1f}")
+                return False
+            if rms > 12000:  # Clipping/noise
+                logger.debug(f"❌ RMS too high: {rms:.1f}")
+                return False
+                
+            # 2. Speech Characteristics
+            # Zero crossing rate (speech typically 0.05-0.25)
+            zero_crossings = np.sum(np.diff(np.sign(samples)) != 0)
+            zcr = zero_crossings / len(samples) if len(samples) > 0 else 0
+            if zcr < 0.02 or zcr > 0.4:  # Outside speech range
+                logger.debug(f"❌ ZCR outside speech range: {zcr:.3f}")
                 return False
             
-            # Check for constant DC offset (sign of bad data)
+            # 3. Dynamic Range Check
+            dynamic_range = peak / (rms + 1e-6)  # Avoid division by zero
+            if dynamic_range < 2.0 or dynamic_range > 50.0:  # Not speech-like
+                logger.debug(f"❌ Poor dynamic range: {dynamic_range:.1f}")
+                return False
+            
+            # 4. Spectral Analysis (Simple)
+            # Check for reasonable frequency content
+            fft = np.fft.fft(samples[:min(2048, len(samples))])
+            magnitude_spectrum = np.abs(fft[:len(fft)//2])
+            
+            # Check if energy is distributed reasonably across frequencies
+            low_freq_energy = np.sum(magnitude_spectrum[:64])    # 0-500Hz
+            mid_freq_energy = np.sum(magnitude_spectrum[64:256]) # 500-2000Hz 
+            high_freq_energy = np.sum(magnitude_spectrum[256:])  # 2000Hz+
+            total_energy = low_freq_energy + mid_freq_energy + high_freq_energy
+            
+            if total_energy == 0:
+                logger.debug("❌ No spectral energy")
+                return False
+                
+            mid_ratio = mid_freq_energy / total_energy
+            if mid_ratio < 0.15:  # Speech has significant mid-frequency content
+                logger.debug(f"❌ Low speech frequencies: {mid_ratio:.2f}")
+                return False
+            
+            # 5. DC Offset Check
             dc_offset = np.mean(samples)
-            if abs(dc_offset) > peak * 0.5:  # DC offset too high
+            if abs(dc_offset) > peak * 0.3:  # Reduced threshold
+                logger.debug(f"❌ High DC offset: {abs(dc_offset):.1f}")
                 return False
             
+            logger.debug(f"✅ PCM validation passed: RMS={rms:.1f}, Peak={peak:.1f}, ZCR={zcr:.3f}, DR={dynamic_range:.1f}, Mid={mid_ratio:.2f}")
             return True
             
         except Exception as e:

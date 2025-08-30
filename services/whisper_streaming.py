@@ -379,11 +379,20 @@ class WhisperStreamingService:
         if not self.client:
             return self._mock_transcription(audio_data, is_final)
         
-        # 🔥 QUALITY VALIDATION: Check audio quality before sending to Whisper
+        # 🔥 ENHANCED: Strict quality validation to prevent \"You\" loops
         if self.config.enable_quality_filtering:
             quality_score = self._validate_audio_quality(audio_data)
-            if quality_score < self.config.min_audio_quality_score:
-                logger.warning(f"🚨 Audio quality too low ({quality_score:.1f} < {self.config.min_audio_quality_score}), skipping transcription")
+            logger.debug(f"🔍 Audio quality score: {quality_score:.1f}")
+            
+            # Higher threshold to prevent repetitive transcriptions
+            min_quality = max(0.8, self.config.min_audio_quality_score)  # At least 80%
+            if quality_score < min_quality:
+                logger.info(f"🚨 Quality insufficient ({quality_score:.1f} < {min_quality:.1f}), preventing repetitive transcription")
+                return None
+            
+            # Additional check for very short audio that often produces \"you\"
+            if len(audio_data) < 8000:  # Less than 0.5 seconds at 16kHz
+                logger.info(f"🚨 Audio too short ({len(audio_data)} bytes), likely silence or noise")
                 return None
         
         try:
