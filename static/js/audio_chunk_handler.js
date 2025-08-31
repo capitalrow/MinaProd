@@ -62,7 +62,7 @@ class AudioChunkHandler {
         formData.append('session_id', this.sessionId || `session_${Date.now()}`);
         
         try {
-            const response = await fetch('/api/transcribe', {
+            const response = await fetch('/api/transcribe-audio', {
                 method: 'POST',
                 body: formData
             });
