@@ -185,13 +185,25 @@ class RealtimeTranscriptionService:
     
     def _calculate_whisper_confidence(self, response, audio_size: int) -> float:
         """
-        🎯 FIXED: Calculate accurate confidence using QA service
+        🎯 FIXED: Calculate accurate confidence using enterprise confidence service
         """
         try:
-            from services.qa_metrics import qa_service
-            return qa_service.calculate_confidence_score(response, audio_size)
+            from services.confidence_scoring import confidence_service
+            
+            # Use advanced confidence scoring if available
+            if hasattr(confidence_service, 'calculate_comprehensive_confidence'):
+                metrics = confidence_service.calculate_comprehensive_confidence(
+                    response, 
+                    audio_data=bytes(audio_size),  # Mock audio data for size
+                    session_context={'session_id': getattr(self, 'session_id', 'default')}
+                )
+                return metrics.overall_confidence
+            else:
+                # Fallback to QA service  
+                from services.qa_metrics import qa_service
+                return qa_service.calculate_confidence_score(response, audio_size)
         except Exception as e:
-            logger.error(f"❌ QA confidence calculation failed: {e}")
+            logger.error(f"❌ Confidence calculation failed: {e}")
             return 0.5  # Fallback
     
     def _is_hallucination(self, text: str) -> bool:
