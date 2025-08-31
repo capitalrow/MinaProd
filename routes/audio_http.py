@@ -26,7 +26,7 @@ chunk_metrics = deque(maxlen=100)  # Last 100 chunks
 session_stats = {}
 QA_SYSTEM_AVAILABLE = True
 
-# Import enhanced audio processing fixes
+# Import enhanced audio processing fixes with fallbacks
 try:
     from routes.audio_processing_fixes import (
         enhanced_webm_to_wav_conversion,
@@ -39,8 +39,12 @@ try:
 except ImportError as e:
     logger.warning(f"⚠️ Enhanced processing not available: {e}")
     ENHANCED_PROCESSING_AVAILABLE = False
+    enhanced_webm_to_wav_conversion = None
+    calculate_conversion_quality_metrics = None
+    validate_wav_output = None
+    optimize_audio_for_whisper = None
 
-# Import enhanced speech detection
+# Import enhanced speech detection with fallbacks
 try:
     from routes.speech_detection_enhancement import (
         enhanced_speech_detection,
@@ -51,15 +55,20 @@ try:
 except ImportError as e:
     logger.warning(f"⚠️ Enhanced speech detection not available: {e}")
     ENHANCED_SPEECH_DETECTION_AVAILABLE = False
+    enhanced_speech_detection = None
+    should_process_audio = None
 
-# Import critical fixes for 100% performance enhancement
+# Import critical fixes for 100% performance enhancement with fallbacks
 try:
     from critical_fixes_backend import audio_processor, deduplication_engine
     CRITICAL_FIXES_AVAILABLE = True
     logger.info("✅ Critical backend fixes loaded successfully")
 except ImportError as e:
+    # Initialize fallback implementations
     CRITICAL_FIXES_AVAILABLE = False
-    logger.warning(f"⚠️ Critical fixes not available: {e}")
+    audio_processor = None
+    deduplication_engine = None
+    logger.warning(f"⚠️ Critical fixes not available, using fallbacks: {e}")
 
 try:
     from robustness_enhancements import robustness_orchestrator
@@ -68,6 +77,7 @@ try:
     logger.info("🛡️ Robustness enhancements activated")
 except ImportError:
     ROBUSTNESS_AVAILABLE = False
+    robustness_orchestrator = None
 
 # Initialize Google context processor functions
 apply_google_style_processing = None
