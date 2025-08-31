@@ -11,11 +11,18 @@ class AudioChunkHandler {
     }
     
     /**
-     * Collect audio chunks into a complete blob
+     * Collect audio chunks and process interim results
      */
     collectChunk(chunk) {
         this.audioChunks.push(chunk);
         console.log(`📦 Collected chunk: ${chunk.size} bytes (${this.audioChunks.length} total)`);
+        
+        // Process interim results every few chunks (every 3-5 chunks for ~3-5 second intervals)
+        if (this.audioChunks.length % 3 === 0 && this.audioChunks.length > 2) {
+            const recentChunks = this.audioChunks.slice(-3); // Last 3 chunks
+            const interimBlob = new Blob(recentChunks, { type: 'audio/webm' });
+            this.processInterimChunk(interimBlob, Math.floor(this.audioChunks.length / 3));
+        }
     }
     
     /**
@@ -54,17 +61,32 @@ class AudioChunkHandler {
     }
     
     /**
-     * Send complete audio file to backend
+     * Send complete audio file to backend using correct base64 format
      */
     async sendCompleteAudio(audioBlob) {
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'recording.webm');
-        formData.append('session_id', this.sessionId || `session_${Date.now()}`);
-        
         try {
+            // Convert blob to base64 as expected by backend
+            const arrayBuffer = await audioBlob.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+            let binary = '';
+            for (let i = 0; i < uint8Array.byteLength; i++) {
+                binary += String.fromCharCode(uint8Array[i]);
+            }
+            const base64Audio = btoa(binary);
+            
+            console.log(`🎵 Sending ${audioBlob.size} bytes as base64 (${base64Audio.length} chars)`);
+            
             const response = await fetch('/api/transcribe-audio', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    'session_id': this.sessionId || `session_${Date.now()}`,
+                    'audio_data': base64Audio,
+                    'action': 'transcribe',
+                    'chunk_id': '1'
+                })
             });
             
             if (response.ok) {
@@ -72,31 +94,131 @@ class AudioChunkHandler {
                 console.log('✅ Transcription successful:', result);
                 
                 // Update UI with transcript
-                if (result.transcript && window.updateTranscriptDisplay) {
-                    window.updateTranscriptDisplay(result);
+                if (result.final_text) {
+                    this.displayFinalTranscript(result.final_text);
+                } else if (result.text) {
+                    this.displayFinalTranscript(result.text);
                 }
                 
                 // Update statistics
+                const processingTime = result.processing_time || (result.processing_time_ms ? result.processing_time_ms : 0);
                 if (window.updateSessionStats) {
                     window.updateSessionStats({
-                        words: result.word_count || result.transcript.split(' ').length,
-                        latency: `${Math.round(result.processing_time * 1000)}ms`,
-                        accuracy: '95%'
+                        words: result.word_count || (result.text ? result.text.split(' ').length : 0),
+                        latency: `${Math.round(processingTime)}ms`,
+                        accuracy: result.confidence ? `${Math.round(result.confidence * 100)}%` : '95%'
                     });
                 }
                 
                 window.toastSystem?.success('Transcription complete');
                 
             } else {
-                const error = await response.text();
-                console.error('❌ Transcription failed:', error);
-                window.toastSystem?.error('Transcription failed - please try again');
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                console.error('❌ Transcription failed:', errorData);
+                const errorMsg = errorData.message || errorData.error || 'Transcription failed';
+                window.toastSystem?.error(`Error: ${errorMsg}`);
             }
             
         } catch (error) {
             console.error('❌ Network error:', error);
-            window.toastSystem?.error('Connection error - please check your internet');
+            window.toastSystem?.error(`Connection error: ${error.message}`);
         }
+    }
+    
+    /**
+     * Display final transcript in UI
+     */
+    displayFinalTranscript(text) {
+        // Find transcript display areas
+        const displays = [
+            document.getElementById('fullTranscriptText'),
+            document.getElementById('final-transcript'),
+            document.querySelector('.complete-transcript-display'),
+            document.querySelector('.transcript-content')
+        ];
+        
+        for (const display of displays) {
+            if (display) {
+                if (display.tagName === 'INPUT' || display.tagName === 'TEXTAREA') {
+                    display.value = text;
+                } else {
+                    display.textContent = text;
+                }
+                display.style.display = 'block';
+            }
+        }
+        
+        // Hide placeholder
+        const placeholder = document.getElementById('transcriptPlaceholder');
+        if (placeholder) placeholder.style.display = 'none';
+        
+        console.log(`📝 Final transcript displayed: "${text.substring(0, 50)}..."`);
+    }
+    
+    /**
+     * Add interim transcription processing for real-time results
+     */
+    async processInterimChunk(chunkBlob, chunkIndex) {
+        if (this.isProcessing) return; // Prevent concurrent processing
+        
+        try {
+            this.isProcessing = true;
+            
+            // Convert chunk to base64
+            const arrayBuffer = await chunkBlob.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+            let binary = '';
+            for (let i = 0; i < uint8Array.byteLength; i++) {
+                binary += String.fromCharCode(uint8Array[i]);
+            }
+            const base64Audio = btoa(binary);
+            
+            const response = await fetch('/api/transcribe-audio', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    'session_id': this.sessionId,
+                    'audio_data': base64Audio,
+                    'action': 'transcribe',
+                    'chunk_id': chunkIndex.toString(),
+                    'is_interim': 'true'
+                })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                if (result.text && result.text.trim()) {
+                    this.displayInterimText(result.text, chunkIndex);
+                }
+            }
+            
+        } catch (error) {
+            console.warn(`⚠️ Interim processing failed for chunk ${chunkIndex}:`, error);
+        } finally {
+            this.isProcessing = false;
+        }
+    }
+    
+    /**
+     * Display interim text updates
+     */
+    displayInterimText(text, chunkIndex) {
+        const interimDisplay = document.getElementById('interim-transcript') || 
+                             document.querySelector('.interim-transcript');
+        
+        if (interimDisplay) {
+            interimDisplay.innerHTML = `
+                <div class="interim-chunk" data-chunk="${chunkIndex}">
+                    <span class="interim-text">${text}</span>
+                    <small class="interim-timestamp">${new Date().toLocaleTimeString()}</small>
+                </div>
+            `;
+            interimDisplay.style.display = 'block';
+        }
+        
+        console.log(`🔄 Interim result (chunk ${chunkIndex}): "${text}"`);
     }
     
     /**

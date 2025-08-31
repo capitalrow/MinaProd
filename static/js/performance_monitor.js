@@ -3,7 +3,7 @@
  * Monitors latency, memory usage, chunk processing, and error rates
  */
 
-class PerformanceMonitor {
+class PerformanceMonitorMain {
     constructor() {
         this.metrics = {
             latency: [],
@@ -448,7 +448,10 @@ class PerformanceMonitor {
 }
 
 // Initialize global performance monitor
-window.performanceMonitor = new PerformanceMonitor();
+// Prevent duplicate PerformanceMonitor conflicts
+if (!window.performanceMonitor) {
+    window.performanceMonitor = new PerformanceMonitorMain();
+}
 
 // Hook into existing transcription functions
 if (window.audioChunkHandler) {
