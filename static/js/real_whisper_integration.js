@@ -572,7 +572,7 @@ class RealWhisperIntegration {
             
             // Initialize HTTP-based transcription mode
             this.useHttpMode = true;
-            this.httpEndpoint = `${baseUrl}/api/transcribe`;
+            this.httpEndpoint = `${baseUrl}/api/transcribe-audio`;
             console.log(`📡 HTTP transcription endpoint: ${this.httpEndpoint}`);
             
             // CRITICAL FIX: HTTP mode setup, no WebSocket handlers needed
