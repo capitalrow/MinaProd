@@ -346,12 +346,74 @@ class RealWhisperIntegration {
     }
     
     updateErrorStats(error) {
-        // Track error statistics for monitoring
-        // Simple error counting for now
+        // Enhanced error tracking with retry logic
         if (!this.errorCount) this.errorCount = 0;
         this.errorCount++;
         
-        console.warn(`⚠️ Error count: ${this.errorCount}`);
+        this.lastError = {
+            message: error.message,
+            timestamp: Date.now(),
+            chunk: this.chunkCount,
+            type: this.categorizeError(error)
+        };
+        
+        console.warn(`⚠️ Error #${this.errorCount} at chunk ${this.chunkCount}:`, error.message);
+        
+        // Auto-retry logic for transient errors
+        if (this.shouldRetryError(error) && this.errorCount < 10) {
+            this.scheduleRetry(error);
+        }
+    }
+    
+    categorizeError(error) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes('network') || msg.includes('fetch')) return 'network';
+        if (msg.includes('timeout')) return 'timeout';
+        if (msg.includes('rate_limit') || msg.includes('429')) return 'rate_limit';
+        if (msg.includes('api_key') || msg.includes('401')) return 'auth';
+        if (msg.includes('500') || msg.includes('503')) return 'server';
+        return 'unknown';
+    }
+    
+    shouldRetryError(error) {
+        const retryableTypes = ['network', 'timeout', 'rate_limit', 'server'];
+        const errorType = this.categorizeError(error);
+        return retryableTypes.includes(errorType);
+    }
+    
+    async scheduleRetry(error, attempt = 1) {
+        const maxRetries = 3;
+        if (attempt > maxRetries) {
+            console.error(`❌ Max retries (${maxRetries}) exceeded for:`, error.message);
+            if (window.toastSystem) {
+                window.toastSystem.showError('❌ Transcription service unavailable - please check connection');
+            }
+            return;
+        }
+        
+        const delay = Math.min(1000 * Math.pow(2, attempt), 8000);
+        console.log(`🔄 Retrying in ${delay}ms (attempt ${attempt}/${maxRetries})`);
+        
+        if (window.toastSystem && attempt === 1) {
+            window.toastSystem.showWarning(`🔄 Connection issue - retrying automatically...`);
+        }
+        
+        setTimeout(async () => {
+            try {
+                if (this.lastFailedChunk) {
+                    await this.sendAudioDataHTTP(this.lastFailedChunk);
+                    this.lastFailedChunk = null;
+                    console.log(`✅ Retry attempt ${attempt} successful`);
+                    
+                    if (window.toastSystem) {
+                        window.toastSystem.showSuccess('✅ Connection restored!');
+                    }
+                }
+            } catch (retryError) {
+                console.error(`❌ Retry attempt ${attempt} failed:`, retryError);
+                await this.scheduleRetry(retryError, attempt + 1);
+            }
+        }, delay);
     }
     
     showChunkProcessingFeedback(chunkNumber, chunkSize) {
@@ -693,33 +755,57 @@ class RealWhisperIntegration {
                 if (event.data.size > 0) {
                     this.chunkCount++;
                     
+                    this.chunkStartTime = performance.now();
                     console.log(`📦 Collected chunk ${this.chunkCount}: ${event.data.size} bytes`);
                     
-                    // DISABLED: Automatic chunk sending - now handled by audio_chunk_handler.js
-                    // The audio_chunk_handler will collect all chunks and send complete audio
-                    // when recording stops, providing better compatibility with OpenAI API
-                    
-                    // try {
-                    //     // Send audio data via HTTP POST
-                    //     await this.sendAudioDataHTTP(event.data);
-                    //     
-                    //     // Show chunk processing feedback in UI
-                    //     this.showChunkProcessingFeedback(this.chunkCount, event.data.size);
-                    //     
-                    //     // Update UI with audio transmission feedback
-                    //     if (this.chunkCount % 2 === 0 && window.toastSystem) {
-                    //         window.toastSystem.showInfo(`🎵 Processing chunk ${this.chunkCount}...`);
-                    //     }
-                    // } catch (error) {
-                    //     console.error(`❌ Failed to process chunk ${this.chunkCount}:`, error);
-                    // }
+                    // CRITICAL FIX: Re-enabled HTTP chunk processing for real-time transcription
+                    try {
+                        // Send audio data via HTTP POST immediately
+                        await this.sendAudioDataHTTP(event.data);
+                        
+                        // Show chunk processing feedback in UI
+                        this.showChunkProcessingFeedback(this.chunkCount, event.data.size);
+                        
+                        // Update UI with audio transmission feedback
+                        if (this.chunkCount % 3 === 0 && window.toastSystem) {
+                            window.toastSystem.showInfo(`📊 Processing chunk ${this.chunkCount}...`);
+                        }
+                        
+                        // Comprehensive performance monitoring
+                        if (window.pipeline_monitor) {
+                            window.pipeline_monitor.log_chunk_metrics(this.sessionId, {
+                                chunk_id: this.chunkCount,
+                                chunk_size: event.data.size,
+                                timestamp: Date.now(),
+                                processing_time: performance.now() - this.chunkStartTime,
+                                queue_length: this.pendingChunks || 0,
+                                confidence: 0.95 // Will be updated when result comes back
+                            });
+                        }
+                        
+                    } catch (error) {
+                        console.error(`❌ Failed to process chunk ${this.chunkCount}:`, error);
+                        
+                        // Enhanced error tracking and retry logic
+                        this.updateErrorStats(error);
+                        
+                        // Store failed chunk for potential retry
+                        this.lastFailedChunk = event.data;
+                        
+                        if (this.chunkCount % 5 === 0) {
+                            // Only show error toast occasionally to avoid spam
+                            if (window.toastSystem) {
+                                window.toastSystem.showWarning(`⚠️ Processing issue on chunk ${this.chunkCount} - retrying...`);
+                            }
+                        }
+                    }
                 } else {
                     console.warn('⚠️ Cannot send audio: WebSocket not ready or no data');
                 }
             };
             
-            // Start recording with 1-second chunks for optimal accuracy
-            this.mediaRecorder.start(1000);
+            // PERFORMANCE OPTIMIZATION: Start with 500ms chunks for lower latency
+            this.mediaRecorder.start(500);
             this.isRecording = true;
             
             console.log('🎤 Audio recording initialized');
@@ -1220,108 +1306,113 @@ if (!document.getElementById('whisper-processing-styles')) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🎯 CRITICAL FIX: Binding Real Whisper Integration to UI buttons');
     
-    // Find the recording button (single toggle button)
+    // Find the main recording button (single toggle button)
     const recordBtn = document.getElementById('recordButton');
     
-    // Also look for separate start/stop buttons if they exist
-    const startBtn = document.getElementById('startRecordingBtn') || 
-                    document.querySelector('.start-recording-btn') ||
-                    document.querySelector('[data-action="start"]') ||
-                    recordBtn;
-                    
-    const stopBtn = document.getElementById('stopRecordingBtn') || 
-                   document.querySelector('.stop-recording-btn') ||
-                   document.querySelector('[data-action="stop"]') ||
-                   recordBtn;
-    
-    if (!startBtn || !stopBtn) {
-        console.error('❌ CRITICAL: Recording buttons not found in DOM');
+    if (!recordBtn) {
+        console.error('❌ CRITICAL: Main recording button not found in DOM');
         return;
     }
     
-    console.log('✅ Found recording buttons:', startBtn, stopBtn);
+    console.log('✅ Found main recording button:', recordBtn);
     
-    // EXCLUSIVE Real Whisper Integration button handlers
-    startBtn.addEventListener('click', async function(event) {
+    // Initialize button state
+    let isCurrentlyRecording = false;
+    
+    // CRITICAL FIX: Single toggle button handler for recording
+    recordBtn.addEventListener('click', async function(event) {
         event.preventDefault();
         event.stopImmediatePropagation();
         
-        console.log('🎯 EXCLUSIVE Real Whisper Integration handling start button');
+        console.log(`🎯 Recording button clicked - Current state: ${isCurrentlyRecording ? 'Recording' : 'Ready'}`);
         
-        try {
-            // Disable button to prevent double-clicks
-            startBtn.disabled = true;
-            startBtn.textContent = 'Connecting...';
-            
-            // Update UI immediately
-            if (window.toastSystem) {
-                window.toastSystem.showInfo('🔗 Connecting to real-time transcription...');
+        if (!isCurrentlyRecording) {
+            // START RECORDING
+            try {
+                // Update button to connecting state
+                recordBtn.disabled = true;
+                recordBtn.innerHTML = '<i class="fas fa-circle text-warning"></i>';
+                recordBtn.classList.add('connecting');
+                recordBtn.setAttribute('aria-label', 'Connecting to transcription service');
+                
+                // Update UI immediately
+                if (window.toastSystem) {
+                    window.toastSystem.showInfo('🔗 Connecting to real-time transcription...');
+                }
+                
+                // Generate session ID
+                const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+                
+                // Start Real Whisper Integration transcription
+                await window.realWhisperIntegration.startTranscription(sessionId);
+                
+                // Update to recording state
+                recordBtn.disabled = false;
+                recordBtn.innerHTML = '<i class="fas fa-stop text-danger"></i>';
+                recordBtn.classList.remove('connecting');
+                recordBtn.classList.add('recording');
+                recordBtn.setAttribute('aria-label', 'Stop recording');
+                recordBtn.setAttribute('aria-pressed', 'true');
+                
+                isCurrentlyRecording = true;
+                
+                // Start performance monitoring
+                if (window.pipeline_monitor) {
+                    window.pipeline_monitor.startMonitoring();
+                }
+                
+                console.log('✅ Recording started successfully');
+                
+                if (window.toastSystem) {
+                    window.toastSystem.showSuccess('🎤 Live transcription started!');
+                }
+                
+            } catch (error) {
+                console.error('❌ Failed to start recording:', error);
+                
+                // Reset button state on error
+                recordBtn.disabled = false;
+                recordBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+                recordBtn.classList.remove('connecting', 'recording');
+                recordBtn.setAttribute('aria-label', 'Start recording');
+                recordBtn.setAttribute('aria-pressed', 'false');
+                
+                if (window.toastSystem) {
+                    window.toastSystem.showError(`❌ Failed to start: ${error.message}`);
+                }
             }
-            
-            // Generate session ID
-            const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-            
-            // Start Real Whisper Integration transcription
-            await window.realWhisperIntegration.startTranscription(sessionId);
-            
-            // Update button states
-            startBtn.style.display = 'none';
-            stopBtn.style.display = 'inline-block';
-            stopBtn.disabled = false;
-            
-            // Start performance monitoring
-            if (window.performanceMonitor) {
-                window.performanceMonitor.startMonitoring();
-            }
-            
-            console.log('✅ Real Whisper Integration started successfully');
-            
-            if (window.toastSystem) {
-                window.toastSystem.showSuccess('🎤 Live transcription started!');
-            }
-            
-        } catch (error) {
-            console.error('❌ Real Whisper Integration start failed:', error);
-            
-            // Reset button state on error
-            startBtn.disabled = false;
-            startBtn.textContent = 'Start Recording';
-            
-            if (window.toastSystem) {
-                window.toastSystem.showError(`❌ Failed to start: ${error.message}`);
-            }
-        }
-    });
     
-    stopBtn.addEventListener('click', async function(event) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        
-        console.log('🎯 EXCLUSIVE Real Whisper Integration handling stop button');
-        
-        try {
-            // Disable button
-            stopBtn.disabled = true;
-            stopBtn.textContent = 'Stopping...';
-            
-            // Update UI
-            if (window.toastSystem) {
-                window.toastSystem.showInfo('🛑 Stopping transcription...');
-            }
-            
-            // Stop Real Whisper Integration
-            await window.realWhisperIntegration.stopTranscription();
-            
-            // Update button states
-            stopBtn.style.display = 'none';
-            startBtn.style.display = 'inline-block';
-            startBtn.disabled = false;
-            startBtn.textContent = 'Start Recording';
-            
-            // Stop performance monitoring
-            if (window.performanceMonitor) {
-                window.performanceMonitor.stopMonitoring();
-            }
+        } else {
+            // STOP RECORDING
+            try {
+                // Update button to stopping state
+                recordBtn.disabled = true;
+                recordBtn.innerHTML = '<i class="fas fa-circle text-warning"></i>';
+                recordBtn.classList.remove('recording');
+                recordBtn.classList.add('stopping');
+                recordBtn.setAttribute('aria-label', 'Stopping transcription');
+                
+                // Update UI
+                if (window.toastSystem) {
+                    window.toastSystem.showInfo('🛑 Stopping transcription...');
+                }
+                
+                // Stop Real Whisper Integration
+                await window.realWhisperIntegration.stopTranscription();
+                
+                // Reset button to ready state
+                recordBtn.disabled = false;
+                recordBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+                recordBtn.classList.remove('stopping', 'connecting', 'recording');
+                recordBtn.setAttribute('aria-label', 'Start recording');
+                recordBtn.setAttribute('aria-pressed', 'false');
+                
+                isCurrentlyRecording = false;
+                
+                // Stop performance monitoring
+                if (window.pipeline_monitor) {
+                    window.pipeline_monitor.stopMonitoring();
+                }
             
             console.log('✅ Real Whisper Integration stopped successfully');
             
