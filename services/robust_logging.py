@@ -53,7 +53,7 @@ class StructuredLogger:
             session_id, "performance_metrics", metrics, "info"
         )
     
-    def log_error(self, session_id: str, error: Exception, context: Dict[str, Any] = None):
+    def log_error(self, session_id: str, error: Exception, context: Optional[Dict[str, Any]] = None):
         """Log error with full traceback and context"""
         error_data = {
             "error_type": type(error).__name__,
@@ -91,7 +91,10 @@ def with_retry_logic(max_retries: int = 3, backoff_factor: float = 1.5):
                             f"All retry attempts failed for {func.__name__}: {e}"
                         )
             
-            raise last_exception
+            if last_exception:
+                raise last_exception
+            else:
+                raise RuntimeError(f"Function {func.__name__} failed without specific exception")
         return wrapper
     return decorator
 

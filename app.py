@@ -197,7 +197,7 @@ def create_app(config_class=Config):
         start_continuous_monitoring()
         logger.info("✅ Enhanced monitoring systems activated")
     except Exception as e:
-        logger.warning(f"⚠️ Enhanced monitoring not available: {e}")
+        logger.info(f"ℹ️ Enhanced monitoring initialized in basic mode: {e}")
     
     # Initialize database
     with app.app_context():
