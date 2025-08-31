@@ -723,7 +723,7 @@ def transcribe_audio():
     chunk_processing_start = None
     
     try:
-        data = request.get_json()
+        data = request.form.to_dict()  # Use form data instead of JSON for file uploads
         if not data:
             return jsonify({'error': 'No data provided'}), 400
             
@@ -1025,8 +1025,19 @@ def transcribe_audio():
     except Exception as e:
         logger.error(f"❌ HTTP transcription endpoint error: {e}")
         processing_time_ms = (time.time() - request_start_time) * 1000
+        
+        # Safe extraction of variables for error handling
+        safe_session_id = request.form.get('session_id', f'error_session_{int(time.time())}')
+        safe_chunk_number = int(request.form.get('chunk_id', 0))
+        
         if QA_SYSTEM_AVAILABLE:
-            track_chunk_processed(session_id, chunk_number, len(audio_bytes), 
+            # Get audio size safely
+            try:
+                audio_size = len(request.files.get('audio', {}).read() or b'') if 'audio' in request.files else 0
+            except:
+                audio_size = 0
+            
+            track_chunk_processed(safe_session_id, safe_chunk_number, audio_size, 
                                 processing_time_ms, success=False, 
                                 reason=f"server_error: {str(e)[:100]}")
         
@@ -1037,8 +1048,8 @@ def transcribe_audio():
             'error': error_type,
             'message': 'Audio processing failed',
             'details': str(e)[:200],  # Limit error details
-            'session_id': session_id,
-            'chunk_number': chunk_number,
+            'session_id': safe_session_id,
+            'chunk_number': safe_chunk_number,
             'status': 'error'
         }), 400 if error_type == "validation_error" else 500
 
