@@ -173,6 +173,23 @@ class WhisperStreamingService:
         self.session_id = None
         self.sequence_number = 0
         
+        # CRITICAL FIX: Initialize deduplication and QA systems
+        try:
+            from critical_fixes_backend import deduplication_engine
+            self.deduplication_engine = deduplication_engine
+            logger.info("✅ Deduplication engine integrated with Whisper service")
+        except ImportError:
+            self.deduplication_engine = None
+            logger.warning("⚠️ Deduplication engine not available")
+        
+        try:
+            from qa_pipeline_comprehensive import qa_pipeline
+            self.qa_pipeline = qa_pipeline
+            logger.info("✅ QA pipeline integrated with Whisper service")
+        except ImportError:
+            self.qa_pipeline = None
+            logger.warning("⚠️ QA pipeline not available")
+        
         # Statistics
         self.total_requests = 0
         self.successful_requests = 0

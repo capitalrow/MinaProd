@@ -447,6 +447,9 @@ def run_qa_analysis_demo() -> Dict[str, Any]:
     
     return asdict(result)
 
+# Initialize global QA pipeline instance for integration
+qa_pipeline = TranscriptionQAAnalyzer()
+
 if __name__ == "__main__":
     print("🧪 QA Pipeline Demo")
     results = run_qa_analysis_demo()

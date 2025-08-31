@@ -52,6 +52,23 @@ except ImportError as e:
     logger.warning(f"⚠️ Enhanced speech detection not available: {e}")
     ENHANCED_SPEECH_DETECTION_AVAILABLE = False
 
+# Import critical fixes for 100% performance enhancement
+try:
+    from critical_fixes_backend import audio_processor, deduplication_engine
+    CRITICAL_FIXES_AVAILABLE = True
+    logger.info("✅ Critical backend fixes loaded successfully")
+except ImportError as e:
+    CRITICAL_FIXES_AVAILABLE = False
+    logger.warning(f"⚠️ Critical fixes not available: {e}")
+
+try:
+    from robustness_enhancements import robustness_orchestrator
+    ROBUSTNESS_AVAILABLE = True
+    robustness_orchestrator.activate_robustness_features()
+    logger.info("🛡️ Robustness enhancements activated")
+except ImportError:
+    ROBUSTNESS_AVAILABLE = False
+
 # Initialize Google context processor functions
 apply_google_style_processing = None
 get_session_context = None
@@ -761,7 +778,26 @@ def transcribe_audio():
         # Decode and validate audio
         try:
             audio_bytes = base64.b64decode(audio_data)
-            if len(audio_bytes) < 100:
+            
+            # CRITICAL FIX: Enhanced audio validation to prevent failures
+            if CRITICAL_FIXES_AVAILABLE:
+                is_valid, validation_reason = audio_processor.validate_audio_chunk(audio_bytes)
+                if not is_valid:
+                    processing_time_ms = (time.time() - request_start_time) * 1000
+                    if QA_SYSTEM_AVAILABLE:
+                        track_chunk_processed(session_id, chunk_number, len(audio_bytes), 
+                                            processing_time_ms, success=False, 
+                                            reason=f"enhanced_validation_failed: {validation_reason}")
+                    logger.warning(f"🚨 Enhanced audio validation failed: {validation_reason}")
+                    return jsonify({
+                        'error': 'validation_error',
+                        'message': 'Audio quality validation failed',
+                        'details': validation_reason,
+                        'session_id': session_id,
+                        'chunk_number': chunk_number,
+                        'status': 'validation_failed'
+                    }), 422
+            elif len(audio_bytes) < 500:  # Enhanced minimum size
                 logger.warning(f"⚠️ Audio chunk {chunk_number} too small: {len(audio_bytes)} bytes")
                 processing_time_ms = (time.time() - request_start_time) * 1000
                 if QA_SYSTEM_AVAILABLE:
@@ -770,10 +806,11 @@ def transcribe_audio():
                                         reason="audio_too_small")
                 return jsonify({
                     'error': 'validation_error',
-                    'message': 'Audio data too small for processing',
-                    'details': f'Minimum 100 bytes required, received {len(audio_bytes)} bytes',
+                    'message': 'Audio data too small for reliable processing',
+                    'details': f'Minimum 500 bytes required for quality transcription, received {len(audio_bytes)} bytes',
                     'session_id': session_id,
-                    'chunk_number': chunk_number
+                    'chunk_number': chunk_number,
+                    'status': 'audio_too_small'
                 }), 422
         except Exception as e:
             logger.error(f"❌ Audio decode error: {e}")
@@ -790,9 +827,38 @@ def transcribe_audio():
                 'chunk_number': chunk_number
             }), 422
         
-        # Transcribe with Whisper (with monitoring)
+        # ENHANCED: Transcribe with robustness protection and retry logic
         transcription_start_time = time.time()
-        transcript = transcribe_audio_sync(audio_bytes)
+        
+        if ROBUSTNESS_AVAILABLE:
+            # Execute with circuit breaker protection
+            transcript = robustness_orchestrator.execute_with_protection(
+                transcribe_audio_sync, session_id, audio_bytes
+            )
+        elif CRITICAL_FIXES_AVAILABLE:
+            # Use enhanced processing with retry logic
+            transcript, success, error_msg = audio_processor.implement_retry_with_backoff(
+                transcribe_audio_sync, audio_bytes
+            )
+            if not success:
+                logger.error(f"🚨 Transcription failed after retries: {error_msg}")
+                processing_time_ms = (time.time() - request_start_time) * 1000
+                if QA_SYSTEM_AVAILABLE:
+                    track_chunk_processed(session_id, chunk_number, len(audio_bytes), 
+                                        processing_time_ms, success=False, 
+                                        reason=f"retry_exhausted: {error_msg}")
+                return jsonify({
+                    'error': 'processing_error',
+                    'message': 'Transcription processing failed',
+                    'details': error_msg,
+                    'session_id': session_id,
+                    'chunk_number': chunk_number,
+                    'status': 'processing_failed'
+                }), 500
+        else:
+            # Fallback to original method
+            transcript = transcribe_audio_sync(audio_bytes)
+            
         transcription_time_ms = (time.time() - transcription_start_time) * 1000
         
         if transcript and transcript.strip():
@@ -823,16 +889,43 @@ def transcribe_audio():
                     'status': 'filtered'
                 })
             
-            # GOOGLE-QUALITY: Apply context-aware processing
+            # CRITICAL FIX: Apply enhanced deduplication engine
+            if CRITICAL_FIXES_AVAILABLE:
+                is_repetitive, dedup_reason = deduplication_engine.is_repetitive(clean_text)
+                if is_repetitive:
+                    # Add to deduplication buffer but don't send repetitive text
+                    deduplication_engine.add_text(clean_text, is_final)
+                    logger.info(f"🔄 DEDUPLICATION: Filtered repetitive text '{clean_text}' - {dedup_reason}")
+                    filter_processing_time_ms = (time.time() - request_start_time) * 1000
+                    if QA_SYSTEM_AVAILABLE:
+                        track_chunk_processed(session_id, chunk_number, len(audio_bytes), 
+                                             filter_processing_time_ms, success=True, 
+                                             reason=f"deduplication_filtered: {dedup_reason}", text=clean_text, confidence=0.0)
+                    return jsonify({
+                        'text': '',  # Empty text to prevent repetitive display
+                        'confidence': 0.0,
+                        'session_id': session_id,
+                        'chunk_number': chunk_number,
+                        'processing_time': filter_processing_time_ms,
+                        'is_final': is_final,
+                        'status': 'filtered_repetitive'
+                    })
+                else:
+                    # Add valid text to deduplication buffer
+                    deduplication_engine.add_text(clean_text, is_final)
+                    logger.info(f"✅ DEDUPLICATION: Valid text '{clean_text}' passed filtering")
+            
+            # GOOGLE-QUALITY: Apply context-aware processing (if available)
             if GOOGLE_CONTEXT_AVAILABLE and apply_google_style_processing is not None:
                 enhanced_text = apply_google_style_processing(clean_text, session_id)
                 if enhanced_text is None:
                     # Transcription was filtered - skip this result and don't send to UI
                     logger.info(f"🔄 GOOGLE-FILTERED: Skipping repetitive transcription '{clean_text}' - awaiting new speech")
                     filter_processing_time_ms = (time.time() - request_start_time) * 1000
-                    track_chunk_processed(session_id, chunk_number, len(audio_bytes), 
-                                         filter_processing_time_ms, success=True, 
-                                         reason="filtered_repetitive", text=clean_text, confidence=0.0)
+                    if QA_SYSTEM_AVAILABLE:
+                        track_chunk_processed(session_id, chunk_number, len(audio_bytes), 
+                                             filter_processing_time_ms, success=True, 
+                                             reason="filtered_repetitive", text=clean_text, confidence=0.0)
                     return jsonify({
                         'text': '',  # Empty text to clear UI
                         'confidence': 0.0,
@@ -860,13 +953,31 @@ def transcribe_audio():
                     'status': 'filtered'
                 })
             
-            # Calculate confidence and stats  
+            # ENHANCED: Calculate confidence and stats with QA integration
             words = clean_text.split()
             word_count = len(words)
             confidence = min(0.98, max(0.75, 0.85 + (word_count * 0.02)))
             
-            # Track successful transcription with monitoring
+            # CRITICAL FIX: Enhanced QA monitoring integration
             total_processing_time_ms = (time.time() - request_start_time) * 1000
+            
+            # Deploy comprehensive QA pipeline
+            try:
+                from qa_pipeline_comprehensive import qa_pipeline
+                qa_pipeline.record_transcript_result(
+                    session_id=session_id,
+                    chunk_number=chunk_number, 
+                    text=clean_text,
+                    confidence=confidence,
+                    is_final=is_final,
+                    latency_ms=total_processing_time_ms,
+                    audio_duration_ms=len(audio_bytes) / 16  # Approximate duration
+                )
+                logger.info(f"🔬 QA Pipeline: Recorded result for session {session_id}")
+            except ImportError:
+                logger.warning("⚠️ QA pipeline not available - using fallback tracking")
+            
+            # Track successful transcription with monitoring
             if QA_SYSTEM_AVAILABLE:
                 track_chunk_processed(session_id, chunk_number, len(audio_bytes), 
                                     total_processing_time_ms, success=True, 
