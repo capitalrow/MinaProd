@@ -64,12 +64,12 @@ def transcribe_audio():
             }), 400
         
         # Get session from database
-        session = Session.query.filter_by(id=session_id).first()
+        session = db.session.query(Session).filter_by(external_id=session_id).first()
         if not session:
             # Create new session if it doesn't exist
             session = Session(
-                id=session_id,
-                created_at=datetime.utcnow(),
+                external_id=session_id,
+                started_at=datetime.utcnow(),
                 status='active'
             )
             db.session.add(session)
@@ -106,20 +106,37 @@ def transcribe_audio():
             
             # Save transcription segments to database
             for i, segment in enumerate(segments):
+                # Handle both dict and object formats
+                if hasattr(segment, 'text'):
+                    # It's an object with attributes
+                    segment_text = getattr(segment, 'text', '')
+                    segment_confidence = getattr(segment, 'avg_logprob', 0.0) if hasattr(segment, 'avg_logprob') else 0.0
+                    segment_start = getattr(segment, 'start', 0.0)
+                    segment_end = getattr(segment, 'end', 0.0)
+                    segment_speaker = getattr(segment, 'speaker', 'unknown') if hasattr(segment, 'speaker') else 'unknown'
+                else:
+                    # It's a dictionary
+                    segment_text = segment.get('text', '')
+                    segment_confidence = segment.get('avg_logprob', 0.0)
+                    segment_start = segment.get('start', 0.0)
+                    segment_end = segment.get('end', 0.0)
+                    segment_speaker = segment.get('speaker', 'unknown')
+                
                 db_segment = Segment(
-                    session_id=session_id,
-                    text=segment.get('text', ''),
-                    confidence=segment.get('avg_logprob', 0.0),
-                    start_time=segment.get('start', 0.0),
-                    end_time=segment.get('end', 0.0),
-                    speaker_id=segment.get('speaker', 'unknown'),
+                    session_id=session.id,  # Use session.id not session_id string
+                    text=segment_text,
+                    confidence=segment_confidence,
+                    start_time=segment_start,
+                    end_time=segment_end,
+                    speaker_id=segment_speaker,
                     sequence_number=i,
                     created_at=datetime.utcnow()
                 )
                 db.session.add(db_segment)
             
             # Update session
-            session.last_activity = datetime.utcnow()
+            if not session.started_at:
+                session.started_at = datetime.utcnow()
             session.total_segments = len(segments)
             db.session.commit()
             
@@ -217,7 +234,7 @@ def health_check():
 def get_session_status(session_id):
     """Get status and metrics for a specific session."""
     try:
-        session = Session.query.filter_by(id=session_id).first()
+        session = db.session.query(Session).filter_by(external_id=session_id).first()
         if not session:
             return jsonify({
                 'error': 'Session not found',
@@ -225,14 +242,14 @@ def get_session_status(session_id):
             }), 404
         
         # Get segment count and latest activity
-        segment_count = Segment.query.filter_by(session_id=session_id).count()
-        latest_segment = Segment.query.filter_by(session_id=session_id).order_by(Segment.created_at.desc()).first()
+        segment_count = db.session.query(Segment).filter_by(session_id=session.id).count()
+        latest_segment = db.session.query(Segment).filter_by(session_id=session.id).order_by(Segment.created_at.desc()).first()
         
         status_data = {
             'session_id': session_id,
             'status': session.status,
-            'created_at': session.created_at.isoformat(),
-            'last_activity': session.last_activity.isoformat() if session.last_activity else None,
+            'created_at': session.started_at.isoformat() if session.started_at else None,
+            'last_activity': session.completed_at.isoformat() if session.completed_at else None,
             'total_segments': segment_count,
             'latest_segment_time': latest_segment.created_at.isoformat() if latest_segment else None,
             'success': True
