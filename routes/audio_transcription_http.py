@@ -38,11 +38,11 @@ def get_openai_client():
         openai_client = openai.OpenAI(api_key=api_key)
     return openai_client
 
-@audio_bp.route('/api/transcribe', methods=['POST'])
-def transcribe_audio():
+@audio_bp.route('/api/transcribe_streaming', methods=['POST'])
+def transcribe_audio_streaming():
     """
-    HTTP endpoint for audio transcription.
-    Accepts audio files and returns transcription results.
+    🚀 STREAMING HTTP endpoint for real-time audio transcription.
+    Processes chunks immediately and broadcasts via WebSocket.
     """
     try:
         start_time = time.time()
@@ -115,7 +115,123 @@ def transcribe_audio():
             logger.warning(f"Using original file format: {temp_path}")
         
         try:
-            # Transcribe with OpenAI Whisper API
+            # 🚀 STREAMING INTEGRATION: Use real-time transcription service
+            try:
+                from services.realtime_transcription import realtime_service, StreamingChunk
+            except ImportError as ie:
+                logger.warning(f"⚠️ Streaming service not available: {ie}")
+                # Fallback to original processing
+                client = get_openai_client()
+                
+                # Use original transcription method as fallback
+                with open(temp_path, "rb") as audio_file:
+                    response = client.audio.transcriptions.create(
+                        model="whisper-1",
+                        file=audio_file,
+                        response_format="verbose_json",
+                        language="en",
+                        temperature=0.2,
+                    )
+                
+                # Handle fallback response
+                text = response.text.strip()
+                
+                # Calculate basic confidence for fallback
+                confidence = 0.8 if len(text) > 10 else 0.5
+                
+                processing_time = time.time() - start_time
+                
+                return jsonify({
+                    "success": True,
+                    "text": text,
+                    "confidence": confidence,
+                    "is_final": True,
+                    "session_id": session_id,
+                    "processing_time": processing_time,
+                    "fallback_mode": True,
+                    "message": "Using fallback transcription"
+                })
+            
+            # Create streaming chunk
+            chunk = StreamingChunk(
+                audio_data=audio_data,
+                session_id=session_id,
+                chunk_id=int(time.time() * 1000),  # Unique chunk ID
+                timestamp=time.time(),
+                duration_ms=len(audio_data) // 32,  # Estimate duration
+                is_final=request.form.get('is_final', 'false').lower() == 'true'
+            )
+            
+            # Process chunk with streaming service
+            import asyncio
+            result = asyncio.run(realtime_service.process_streaming_chunk(chunk))
+            
+            if result:
+                # Broadcast via WebSocket immediately
+                from flask_socketio import socketio
+                socketio.emit('transcription_result', {
+                    "type": "final_result" if result.is_final else "interim_result",
+                    "session_id": result.session_id,
+                    "text": result.text,
+                    "confidence": result.confidence,
+                    "is_final": result.is_final,
+                    "latency_ms": result.latency_ms,
+                    "timestamp": result.timestamp,
+                    "chunk_id": result.chunk_id,
+                    "words": result.words,
+                    "performance_target_met": result.latency_ms < 500
+                }, room=session_id)
+                
+                # Save to database for final results
+                if result.is_final and result.text:
+                    segment = Segment(
+                        session_id=session.id,
+                        text=result.text,
+                        confidence=result.confidence,
+                        start_time=result.timestamp,
+                        end_time=result.timestamp + (result.latency_ms / 1000),
+                        speaker_id="user",
+                        language=result.language,
+                        metadata=json.dumps({
+                            "chunk_id": result.chunk_id,
+                            "latency_ms": result.latency_ms,
+                            "words": result.words
+                        })
+                    )
+                    db.session.add(segment)
+                    db.session.commit()
+                
+                # Return streaming response
+                processing_time = time.time() - start_time
+                return jsonify({
+                    "success": True,
+                    "text": result.text,
+                    "confidence": result.confidence,
+                    "is_final": result.is_final,
+                    "session_id": session_id,
+                    "processing_time": processing_time,
+                    "latency_ms": result.latency_ms,
+                    "performance": {
+                        "target_met": result.latency_ms < 500,
+                        "target_latency_ms": 500,
+                        "actual_latency_ms": result.latency_ms
+                    },
+                    "chunk_id": result.chunk_id,
+                    "timestamp": result.timestamp
+                })
+            else:
+                # No transcription result (filtered out)
+                return jsonify({
+                    "success": True,
+                    "text": "",
+                    "confidence": 0.0,
+                    "is_final": chunk.is_final,
+                    "session_id": session_id,
+                    "processing_time": time.time() - start_time,
+                    "message": "Chunk filtered (too small or low confidence)"
+                })
+            
+            # FALLBACK: Enhanced original transcription code with error handling
             client = get_openai_client()
             
             # Add retry logic with exponential backoff

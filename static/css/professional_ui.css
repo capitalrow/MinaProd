@@ -72,7 +72,7 @@
     50% { opacity: 0.5; }
 }
 
-/* Main Grid Layout */
+/* Main Grid Layout - MOBILE OPTIMIZED */
 .main-grid {
     display: grid;
     grid-template-columns: 320px 1fr;
@@ -83,11 +83,27 @@
     min-height: calc(100vh - 100px);
 }
 
+/* 🚀 MOBILE FIXES: Comprehensive responsive design */
 @media (max-width: 768px) {
     .main-grid {
         grid-template-columns: 1fr;
-        gap: 1.5rem;
+        gap: 1rem;
+        padding: 0.75rem;
+        min-height: calc(100vh - 80px);
+    }
+    
+    .app-header {
         padding: 1rem;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+    
+    .app-title {
+        font-size: 1.25rem;
     }
 }
 
@@ -231,12 +247,31 @@
 }
 
 /* Stats Grid */
+/* 🚀 MOBILE FIX: Stats grid layout optimization */
 .stats-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 0.75rem;
+    margin-bottom: 1rem;
 }
 
+/* Mobile-optimized stats layout to prevent overlapping */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.375rem;
+    }
+}
+
+/* 🚀 MOBILE FIX: Stat card responsive design to prevent overlapping */
 .stat-card {
     background: rgba(59, 130, 246, 0.1);
     border: 1px solid rgba(59, 130, 246, 0.2);
@@ -244,6 +279,52 @@
     padding: 1rem;
     text-align: center;
     transition: all 0.3s ease;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    word-wrap: break-word;
+    overflow: hidden;
+}
+
+/* Mobile stat card optimizations to fix layout issues */
+@media (max-width: 768px) {
+    .stat-card {
+        padding: 0.75rem 0.5rem;
+        min-height: 70px;
+        border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem !important;
+        margin-bottom: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .stat-value {
+        font-size: 1.1rem !important;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+}
+
+@media (max-width: 480px) {
+    .stat-card {
+        padding: 0.5rem 0.375rem;
+        min-height: 60px;
+        font-size: 0.875rem;
+    }
+    
+    .stat-label {
+        font-size: 0.7rem !important;
+    }
+    
+    .stat-value {
+        font-size: 1rem !important;
+    }
 }
 
 .stat-card:hover {

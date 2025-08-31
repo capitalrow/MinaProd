@@ -40,11 +40,20 @@ class RealWhisperIntegration {
             formData.append('chunk_id', this.chunkCount.toString());
             formData.append('timestamp', Date.now().toString());
             
+            // 🚀 STREAMING UPDATE: Use streaming endpoint for real-time transcription
+            const isStreaming = true; // Enable streaming mode
+            const endpoint = isStreaming ? '/api/transcribe_streaming' : this.httpEndpoint;
+            
+            // Add streaming parameters
+            if (isStreaming) {
+                formData.append('is_final', (this.chunkCount % 10 === 0).toString());
+            }
+            
             // Send HTTP POST request with timeout
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            const timeoutId = setTimeout(() => controller.abort(), 8000); // Shorter timeout for streaming
             
-            const response = await fetch(this.httpEndpoint, {
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 body: formData,
                 signal: controller.signal
@@ -760,8 +769,8 @@ class RealWhisperIntegration {
                     
                     // CRITICAL FIX: Re-enabled HTTP chunk processing for real-time transcription
                     try {
-                        // Send audio data via HTTP POST immediately
-                        await this.sendAudioDataHTTP(event.data);
+                        // 🚀 STREAMING: Send audio data via streaming HTTP endpoint
+                        await this.sendAudioDataStreaming(event.data, this.chunkCount % 10 === 0);
                         
                         // Show chunk processing feedback in UI
                         this.showChunkProcessingFeedback(this.chunkCount, event.data.size);
