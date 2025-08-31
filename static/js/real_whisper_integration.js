@@ -411,11 +411,12 @@ class RealWhisperIntegration {
     }
     
     displayProgressiveTranscript(result) {
-        // Find transcript container
+        // ENHANCED: Find transcript container with multiple fallbacks
         const transcriptContainer = document.querySelector('.live-transcript-container') ||
                                   document.getElementById('transcript') || 
                                   document.getElementById('transcriptContent') ||
-                                  document.querySelector('.transcript-content');
+                                  document.querySelector('.transcript-content') ||
+                                  document.querySelector('.transcription-container');
                                   
         if (transcriptContainer) {
             // Remove placeholder if exists
@@ -424,49 +425,135 @@ class RealWhisperIntegration {
                 placeholder.remove();
             }
             
-            // Clear and update with cumulative transcript (PROGRESSIVE DISPLAY)
+            // ENHANCED: Clean scrollable interface with full complete text
             transcriptContainer.innerHTML = '';
             
-            // Create main transcript element
+            // Create enhanced main transcript element
             const mainTranscriptElement = document.createElement('div');
-            mainTranscriptElement.className = 'cumulative-transcript mb-3';
+            mainTranscriptElement.className = 'enhanced-transcript-display';
             mainTranscriptElement.innerHTML = `
-                <div class="transcript-header d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="text-light mb-0">🎤 Live Transcription</h6>
-                    <div class="transcript-stats">
+                <div class="transcript-header d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="text-light mb-0 d-flex align-items-center">
+                        <span class="status-indicator ${result.is_final ? 'text-success' : 'text-warning'}">
+                            ${result.is_final ? '✅' : '🎤'}
+                        </span>
+                        <span class="ms-2">Live Transcription</span>
+                    </h6>
+                    <div class="transcript-stats d-flex flex-column text-end">
                         <small class="text-muted">Chunk: ${this.chunkCount}</small>
-                        <small class="text-muted ms-2">Words: ${result.text.split(' ').length}</small>
+                        <small class="text-muted">Words: ${result.text.split(' ').length}</small>
+                        <small class="text-muted">Total: ${this.cumulativeTranscript.split(' ').length} words</small>
                     </div>
                 </div>
-                <div class="transcript-content p-3 border border-secondary rounded">
-                    <div class="progressive-text ${result.is_final ? 'text-success fw-bold' : 'text-warning'}">
-                        ${result.text}
+                
+                <div class="clean-scrollable-transcript-container p-4 bg-dark border rounded" 
+                     style="max-height: 400px; overflow-y: auto; scroll-behavior: smooth;">
+                    
+                    <div class="complete-transcribed-text">
+                        <div class="full-transcript-text ${result.is_final ? 'text-success fw-bold' : 'text-light'}" 
+                             style="line-height: 1.6; font-size: 1.1rem; white-space: pre-wrap;">
+                            ${this.cumulativeTranscript || result.text}
+                        </div>
+                        
+                        ${!result.is_final ? `
+                        <div class="current-processing mt-3 p-2 bg-warning bg-opacity-10 border-start border-warning">
+                            <small class="text-warning d-flex align-items-center">
+                                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                Processing: "${result.text}"
+                            </small>
+                        </div>
+                        ` : ''}
                     </div>
-                    <div class="transcript-metadata mt-2 pt-2 border-top border-secondary">
-                        <small class="text-muted">
-                            ${result.timestamp} • ${result.confidence}% confidence
-                            ${result.latency ? ` • ${result.latency}ms` : ''}
-                            • ${result.is_final ? 'FINAL' : 'INTERIM'}
-                        </small>
+                    
+                    <div class="transcript-metadata mt-3 pt-3 border-top border-secondary">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">
+                                    <strong>Timestamp:</strong> ${result.timestamp || new Date().toLocaleTimeString()}
+                                </small>
+                                <small class="text-muted d-block">
+                                    <strong>Confidence:</strong> <span class="text-${result.confidence > 80 ? 'success' : result.confidence > 60 ? 'warning' : 'danger'}">${result.confidence}%</span>
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">
+                                    <strong>Latency:</strong> ${result.latency ? `${result.latency}ms` : 'N/A'}
+                                </small>
+                                <small class="text-muted d-block">
+                                    <strong>Status:</strong> <span class="text-${result.is_final ? 'success' : 'warning'}">${result.is_final ? 'FINAL' : 'INTERIM'}</span>
+                                </small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
             
             transcriptContainer.appendChild(mainTranscriptElement);
+            
+            // ENHANCED: Smooth scrolling to bottom with animation
+            const scrollContainer = mainTranscriptElement.querySelector('.clean-scrollable-transcript-container');
+            if (scrollContainer) {
+                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+            }
             transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
             
             // Store for final transcript generation
             this.transcriptionBuffer.push(result);
             
-            // Update word count in performance monitor
-            if (window.performanceMonitor) {
-                window.performanceMonitor.wordCount = result.text.split(' ').filter(w => w.length > 0).length;
-            }
+            // ENHANCED: Update real performance metrics
+            this.updateRealTimeMetrics(result);
             
             // Trigger segment update event
             window.dispatchEvent(new CustomEvent('transcriptionSegment', {
                 detail: result
             }));
+        }
+    }
+    
+    updateRealTimeMetrics(result) {
+        // CRITICAL FIX: Connect to actual backend performance data
+        try {
+            // Update latency metrics with real data
+            const latencyElement = document.querySelector('#latencyMs') || 
+                                 document.querySelector('.latency-value') ||
+                                 document.querySelector('[data-metric="latency"]');
+            if (latencyElement && result.latency) {
+                latencyElement.textContent = `${result.latency}ms`;
+                latencyElement.className = `metric-value ${result.latency < 500 ? 'text-success' : result.latency < 1000 ? 'text-warning' : 'text-danger'}`;
+            }
+            
+            // Update quality score with real confidence data
+            const qualityElement = document.querySelector('#qualityScore') || 
+                                 document.querySelector('.quality-value') ||
+                                 document.querySelector('[data-metric="quality"]');
+            if (qualityElement) {
+                qualityElement.textContent = `${result.confidence}%`;
+                qualityElement.className = `metric-value ${result.confidence > 80 ? 'text-success' : result.confidence > 60 ? 'text-warning' : 'text-danger'}`;
+            }
+            
+            // Update chunk processing success rate
+            const successRateElement = document.querySelector('#successRate') ||
+                                     document.querySelector('.success-rate-value') ||
+                                     document.querySelector('[data-metric="success-rate"]');
+            if (successRateElement) {
+                const successRate = Math.round((this.chunkCount > 0 ? (this.transcriptionBuffer.length / this.chunkCount) * 100 : 100));
+                successRateElement.textContent = `${successRate}%`;
+                successRateElement.className = `metric-value ${successRate > 90 ? 'text-success' : successRate > 70 ? 'text-warning' : 'text-danger'}`;
+            }
+            
+            // Update performance monitor if available
+            if (window.performanceMonitor) {
+                window.performanceMonitor.updateMetrics({
+                    latency: result.latency,
+                    confidence: result.confidence,
+                    wordCount: result.text.split(' ').filter(w => w.length > 0).length,
+                    chunkNumber: this.chunkCount,
+                    successRate: Math.round((this.chunkCount > 0 ? (this.transcriptionBuffer.length / this.chunkCount) * 100 : 100))
+                });
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ Failed to update real-time metrics:', error);
         }
     }
     
