@@ -1177,57 +1177,14 @@ class RealWhisperIntegration {
     }
 }
 
-// Initialize global instance and professional recorder replacement
+// Initialize global instance
 window.realWhisperIntegration = new RealWhisperIntegration();
 
-// Professional Recorder replacement for compatibility
-class ProfessionalRecorder {
-    constructor() {
-        this.isRecording = false;
-        this.sessionId = null;
-        console.log('✅ Professional Recorder initialized with Real Whisper integration');
-    }
-    
-    async startRecording() {
-        try {
-            this.sessionId = `live_${Date.now()}`;
-            await window.realWhisperIntegration.startTranscription(this.sessionId);
-            this.isRecording = true;
-            console.log('✅ Recording started with Real Whisper API');
-            return { success: true, sessionId: this.sessionId };
-        } catch (error) {
-            console.error('❌ Failed to start recording:', error);
-            return { success: false, error: error.message };
-        }
-    }
-    
-    stopRecording() {
-        window.realWhisperIntegration.stopTranscription();
-        this.isRecording = false;
-        console.log('⏹️ Recording stopped');
-        return { success: true };
-    }
-    
-    updateConnectionStatus(status) {
-        const wsStatus = document.querySelector('#wsStatus');
-        if (wsStatus) {
-            wsStatus.textContent = status === 'connected' ? 'Connected' : 'Disconnected';
-            wsStatus.className = `status-indicator ${status}`;
-        }
-    }
-    
-    updateTranscriptionStats(stats) {
-        // Update UI with transcription statistics
-        console.log('📊 Transcription stats:', stats);
-    }
-}
-
-// Initialize professional recorder replacement
-window.professionalRecorder = new ProfessionalRecorder();
-
-// Add CSS for processing feedback
-const style = document.createElement('style');
-style.textContent = `
+// Add CSS for processing feedback if not already added
+if (!document.getElementById('whisper-processing-styles')) {
+    const style = document.createElement('style');
+    style.id = 'whisper-processing-styles';
+    style.textContent = `
     .transcript-segment.processing .processing-text {
         color: #ffc107;
         font-style: italic;
@@ -1256,23 +1213,26 @@ style.textContent = `
         margin-left: 0.5em;
     }
 `;
-document.head.appendChild(style);
-
-// Initialize Real Whisper Integration globally
-window.realWhisperIntegration = new RealWhisperIntegration();
+    document.head.appendChild(style);
+}
 
 // CRITICAL FIX: Button Event Binding for Real Whisper Integration
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🎯 CRITICAL FIX: Binding Real Whisper Integration to UI buttons');
     
-    // Find the recording buttons
+    // Find the recording button (single toggle button)
+    const recordBtn = document.getElementById('recordButton');
+    
+    // Also look for separate start/stop buttons if they exist
     const startBtn = document.getElementById('startRecordingBtn') || 
                     document.querySelector('.start-recording-btn') ||
-                    document.querySelector('[data-action="start"]');
+                    document.querySelector('[data-action="start"]') ||
+                    recordBtn;
                     
     const stopBtn = document.getElementById('stopRecordingBtn') || 
                    document.querySelector('.stop-recording-btn') ||
-                   document.querySelector('[data-action="stop"]');
+                   document.querySelector('[data-action="stop"]') ||
+                   recordBtn;
     
     if (!startBtn || !stopBtn) {
         console.error('❌ CRITICAL: Recording buttons not found in DOM');
