@@ -42,7 +42,7 @@ try:
 except Exception as e:
     logger.error(f"❌ Failed to start Browser WebSocket Server: {e}")
 
-# Use HTTP endpoints for audio processing instead
+# Use HTTP endpoints for audio processing - more reliable than WebSocket for transcription
 socketio = None
 
 def create_app(config_class=Config):
@@ -178,6 +178,14 @@ def create_app(config_class=Config):
         logger.info("✅ HTTP audio endpoints registered")
     except Exception as e:
         logger.error(f"❌ Failed to register HTTP audio endpoints: {e}")
+    
+    # CRITICAL FIX: Register new HTTP transcription endpoint
+    try:
+        from routes.audio_transcription_http import audio_bp
+        app.register_blueprint(audio_bp)
+        logger.info("✅ HTTP transcription endpoints registered")
+    except Exception as e:
+        logger.error(f"❌ Failed to register HTTP transcription endpoints: {e}")
     
     # MANUAL MONITORING RECOMMENDATION #1: Enhanced WebSocket routes already registered
     logger.info("✅ Enhanced WebSocket event handlers active")
