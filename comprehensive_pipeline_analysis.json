@@ -1,6 +1,6 @@
 {
   "executive_summary": {
-    "date": "2025-08-31T18:21:24.366355",
+    "date": "2025-08-31T18:45:20.898907",
     "critical_issue": "Recording fails immediately - MediaRecorder not initializing",
     "pipeline_status": "Backend ready, frontend blocked",
     "success_rate": "0% - no audio captured",
@@ -95,8 +95,8 @@
           "dropped_chunks": 0,
           "retries": 0,
           "interim_final_ratio": "N/A",
-          "memory_usage_mb": 23664.73,
-          "cpu_usage_percent": 44.2,
+          "memory_usage_mb": 26585.96,
+          "cpu_usage_percent": 64.5,
           "event_loop_blocking": "None detected"
         }
       }

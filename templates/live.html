@@ -323,6 +323,7 @@
 <script src="/static/js/audio_chunk_handler.js"></script>
 <script src="/static/js/real_whisper_integration.js"></script>
 <script src="/static/js/professional_recorder.js"></script>
+<script src="/static/js/keyboard_navigation.js"></script>
 <script>
 // ENHANCED: Initialize clean scrollable transcription with 100% performance
 document.addEventListener('DOMContentLoaded', function() {
@@ -468,6 +469,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Update button state immediately
                     recordButton.innerHTML = '<i class="fas fa-stop"></i>';
                     recordButton.className = 'record-btn recording';
+                    recordButton.setAttribute('aria-pressed', 'true');
+                    recordButton.setAttribute('aria-label', 'Stop recording');
                     
                     // Enable other buttons
                     if (stopButton) stopButton.disabled = false;
@@ -486,6 +489,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Failed to start - reset UI
                         recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
                         recordButton.className = 'record-btn';
+                        recordButton.setAttribute('aria-pressed', 'false');
+                        recordButton.setAttribute('aria-label', 'Start recording');
                         updateStatus('error', 'Could not start recording');
                         return;
                     }
@@ -507,6 +512,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Reset button state
                     recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
                     recordButton.className = 'record-btn';
+                    recordButton.setAttribute('aria-pressed', 'false');
+                    recordButton.setAttribute('aria-label', 'Start recording');
                     
                     // Disable other buttons
                     if (stopButton) stopButton.disabled = true;
@@ -525,6 +532,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Reset to safe state
                 recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
                 recordButton.className = 'record-btn';
+                recordButton.setAttribute('aria-pressed', 'false');
+                recordButton.setAttribute('aria-label', 'Start recording');
                 isRecording = false;
                 
                 // Update status
@@ -554,6 +563,18 @@ document.addEventListener('DOMContentLoaded', function() {
             statusText.textContent = message;
         }
     };
+    
+    // Initialize Professional Recorder and Audio Chunk Handler
+    try {
+        window.audioChunkHandler = new AudioChunkHandler();
+        console.log('✅ Audio chunk handler initialized');
+        
+        window.professionalRecorder = new ProfessionalRecorder();
+        console.log('✅ Professional recorder initialized');
+    } catch (error) {
+        console.error('❌ Failed to initialize recording components:', error);
+        window.toastSystem?.error('Recording system initialization failed. Please refresh the page.');
+    }
     
     // Initialize all enhancements
     enhanceTranscriptDisplay();
