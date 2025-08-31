@@ -99,8 +99,8 @@ class ToastSystem {
 window.toastSystem = new ToastSystem();
 
 // Add CSS for animations
-const style = document.createElement('style');
-style.textContent = `
+const toastStyle = document.createElement('style');
+toastStyle.textContent = `
     @keyframes fadeOut {
         from {
             opacity: 1;
@@ -141,6 +141,6 @@ style.textContent = `
         filter: brightness(0) invert(1);
     }
 `;
-document.head.appendChild(style);
+document.head.appendChild(toastStyle);
 
 console.log('✅ Toast notification system initialized');

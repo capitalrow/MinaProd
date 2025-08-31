@@ -471,9 +471,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (stopButton) stopButton.disabled = false;
                     if (pauseButton) pauseButton.disabled = false;
                     
-                    // Start transcription with Real Whisper Integration
-                    const sessionId = `live_${Date.now()}`;
-                    await window.realWhisperIntegration.startTranscription(sessionId);
+                    // Start recording with Professional Recorder
+                    if (!window.professionalRecorder) {
+                        console.error('Professional recorder not initialized');
+                        window.toastSystem?.error('Recorder not ready. Please refresh.');
+                        return;
+                    }
+                    
+                    const success = await window.professionalRecorder.startRecording();
+                    
+                    if (!success) {
+                        // Failed to start - reset UI
+                        recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
+                        recordButton.className = 'record-btn';
+                        updateStatus('error', 'Could not start recording');
+                        return;
+                    }
                     
                     isRecording = true;
                     console.log('✅ Recording started successfully');
@@ -484,8 +497,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     console.log('⏹️ Stopping recording...');
                     
-                    // Stop transcription
-                    window.realWhisperIntegration.stopTranscription();
+                    // Stop recording with professional recorder
+                    if (window.professionalRecorder) {
+                        window.professionalRecorder.stopRecording();
+                    }
                     
                     // Reset button state
                     recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
