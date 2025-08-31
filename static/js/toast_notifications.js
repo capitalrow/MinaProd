@@ -93,6 +93,23 @@ class ToastSystem {
     info(message, duration = 5000) {
         return this.show(message, 'info', duration);
     }
+    
+    // Add aliases for compatibility with different naming conventions
+    showSuccess(message, duration = 5000) {
+        return this.success(message, duration);
+    }
+    
+    showError(message, duration = 8000) {
+        return this.error(message, duration);
+    }
+    
+    showWarning(message, duration = 6000) {
+        return this.warning(message, duration);
+    }
+    
+    showInfo(message, duration = 5000) {
+        return this.info(message, duration);
+    }
 }
 
 // Initialize global toast system
