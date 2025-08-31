@@ -126,7 +126,12 @@ class ProfessionalRecorder {
         // Collect audio data
         this.mediaRecorder.ondataavailable = (event) => {
             if (event.data && event.data.size > 0) {
-                this.audioChunks.push(event.data);
+                // Use the chunk handler to collect chunks properly
+                if (window.audioChunkHandler) {
+                    window.audioChunkHandler.collectChunk(event.data);
+                } else {
+                    this.audioChunks.push(event.data);
+                }
                 console.log(`📦 Audio chunk collected: ${event.data.size} bytes`);
             }
         };
@@ -171,6 +176,11 @@ class ProfessionalRecorder {
             this.audioChunks = [];
             this.sessionId = `session_${Date.now()}`;
             
+            // Start new session in chunk handler
+            if (window.audioChunkHandler) {
+                window.audioChunkHandler.startSession();
+            }
+            
             // Request permission if not already granted
             if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
                 const hasPermission = await this.requestMicrophonePermission();
@@ -179,16 +189,11 @@ class ProfessionalRecorder {
                 }
             }
             
-            // Start recording
-            this.mediaRecorder.start();
+            // Start recording - collect chunks every second but don't send immediately
+            this.mediaRecorder.start(1000);
             
-            // Set up chunking interval
-            this.chunkInterval = setInterval(() => {
-                if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-                    this.mediaRecorder.requestData();
-                    this.sendAudioChunk();
-                }
-            }, this.config.chunkDuration);
+            // Don't send chunks immediately - wait for complete audio
+            // Remove the chunk sending interval
             
             return true;
             
@@ -203,15 +208,15 @@ class ProfessionalRecorder {
         try {
             console.log('⏹️ Stopping recording...');
             
-            // Clear chunk interval
-            if (this.chunkInterval) {
-                clearInterval(this.chunkInterval);
-                this.chunkInterval = null;
-            }
-            
             // Stop media recorder
             if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
                 this.mediaRecorder.stop();
+            }
+            
+            // Process collected chunks
+            if (window.audioChunkHandler) {
+                console.log('📤 Processing collected audio chunks...');
+                window.audioChunkHandler.endSession();
             }
             
             // Stop audio tracks
@@ -221,7 +226,7 @@ class ProfessionalRecorder {
             }
             
             this.isRecording = false;
-            this.updateUIStatus('Stopped');
+            this.updateUIStatus('Processing...');
             
         } catch (error) {
             console.error('❌ Error stopping recording:', error);
@@ -229,53 +234,17 @@ class ProfessionalRecorder {
         }
     }
     
-    async sendAudioChunk() {
-        if (this.audioChunks.length === 0) return;
-        
-        try {
-            // Create blob from chunks
-            const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-            this.audioChunks = []; // Clear sent chunks
-            
-            // Prepare form data
-            const formData = new FormData();
-            formData.append('audio', audioBlob, 'chunk.webm');
-            formData.append('session_id', this.sessionId);
-            formData.append('chunk_index', Date.now().toString());
-            
-            // Send to backend
-            const response = await fetch('/api/transcribe', {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (response.ok) {
-                const result = await response.json();
-                console.log('✅ Chunk transcribed:', result);
-                
-                // Update transcript display
-                if (result.transcript && window.updateTranscriptDisplay) {
-                    window.updateTranscriptDisplay(result);
-                }
-                
-                // Update statistics
-                if (window.updateSessionStats) {
-                    window.updateSessionStats({
-                        words: result.word_count || 0,
-                        chunks: (window.sessionStats?.chunks || 0) + 1,
-                        latency: result.processing_time ? `${Math.round(result.processing_time * 1000)}ms` : '0ms'
-                    });
-                }
-            } else {
-                console.error('❌ Transcription failed:', response.status);
-            }
-            
-        } catch (error) {
-            console.error('❌ Error sending chunk:', error);
-        }
-    }
+    // Removed sendAudioChunk - now handled by audioChunkHandler
+    // The chunk handler collects all chunks and sends complete audio
     
     async processAudioChunks() {
+        if (window.audioChunkHandler) {
+            console.log('Processing audio with chunk handler...');
+            // Handler will process and send the complete audio
+            return;
+        }
+        
+        // Fallback if chunk handler isn't available
         if (this.audioChunks.length === 0) {
             console.log('No audio chunks to process');
             return;
@@ -283,10 +252,6 @@ class ProfessionalRecorder {
         
         try {
             console.log(`Processing ${this.audioChunks.length} audio chunks...`);
-            
-            // Send final chunk
-            await this.sendAudioChunk();
-            
             window.toastSystem?.success('Recording completed successfully');
             this.updateUIStatus('Ready');
             

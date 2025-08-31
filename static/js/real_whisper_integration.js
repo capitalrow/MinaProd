@@ -693,22 +693,26 @@ class RealWhisperIntegration {
                 if (event.data.size > 0) {
                     this.chunkCount++;
                     
-                    console.log(`📤 CHUNK ${this.chunkCount}: ${event.data.size} bytes - sending via HTTP`);
+                    console.log(`📦 Collected chunk ${this.chunkCount}: ${event.data.size} bytes`);
                     
-                    try {
-                        // Send audio data via HTTP POST
-                        await this.sendAudioDataHTTP(event.data);
-                        
-                        // Show chunk processing feedback in UI
-                        this.showChunkProcessingFeedback(this.chunkCount, event.data.size);
-                        
-                        // Update UI with audio transmission feedback
-                        if (this.chunkCount % 2 === 0 && window.toastSystem) {
-                            window.toastSystem.showInfo(`🎵 Processing chunk ${this.chunkCount}...`);
-                        }
-                    } catch (error) {
-                        console.error(`❌ Failed to process chunk ${this.chunkCount}:`, error);
-                    }
+                    // DISABLED: Automatic chunk sending - now handled by audio_chunk_handler.js
+                    // The audio_chunk_handler will collect all chunks and send complete audio
+                    // when recording stops, providing better compatibility with OpenAI API
+                    
+                    // try {
+                    //     // Send audio data via HTTP POST
+                    //     await this.sendAudioDataHTTP(event.data);
+                    //     
+                    //     // Show chunk processing feedback in UI
+                    //     this.showChunkProcessingFeedback(this.chunkCount, event.data.size);
+                    //     
+                    //     // Update UI with audio transmission feedback
+                    //     if (this.chunkCount % 2 === 0 && window.toastSystem) {
+                    //         window.toastSystem.showInfo(`🎵 Processing chunk ${this.chunkCount}...`);
+                    //     }
+                    // } catch (error) {
+                    //     console.error(`❌ Failed to process chunk ${this.chunkCount}:`, error);
+                    // }
                 } else {
                     console.warn('⚠️ Cannot send audio: WebSocket not ready or no data');
                 }
