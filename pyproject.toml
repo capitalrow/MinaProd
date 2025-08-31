@@ -66,6 +66,7 @@ dependencies = [
     "pytest-playwright>=0.7.0",
     "python-socketio>=5.8.0",
     "socketio>=0.2.1",
+    "tenacity>=9.1.2",
 ]
 
 [project.optional-dependencies]

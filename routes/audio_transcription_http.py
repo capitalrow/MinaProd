@@ -102,18 +102,31 @@ def transcribe_audio():
             # Transcribe with OpenAI Whisper API
             client = get_openai_client()
             
-            with open(temp_path, 'rb') as audio_data:
-                logger.info(f"Sending audio to OpenAI Whisper API (format: {filename})...")
-                
-                # Create file tuple with proper name for OpenAI
-                audio_file_tuple = (filename, audio_data, 'audio/webm')
-                
-                transcript_response = client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file_tuple,
-                    response_format="verbose_json",  # Get detailed response with timestamps
-                    language="en"  # Can be made configurable
-                )
+            # Add retry logic with exponential backoff
+            from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+            import openai
+            
+            @retry(
+                stop=stop_after_attempt(3),
+                wait=wait_exponential(multiplier=1, min=2, max=10),
+                retry=retry_if_exception_type((openai.RateLimitError, openai.APITimeoutError, openai.APIConnectionError))
+            )
+            def transcribe_with_retry():
+                with open(temp_path, 'rb') as audio_data:
+                    logger.info(f"Sending audio to OpenAI Whisper API (format: {filename})...")
+                    
+                    # Create file tuple with proper name for OpenAI
+                    audio_file_tuple = (filename, audio_data, 'audio/webm')
+                    
+                    return client.audio.transcriptions.create(
+                        model="whisper-1",
+                        file=audio_file_tuple,
+                        response_format="verbose_json",  # Get detailed response with timestamps
+                        language="en"  # Can be made configurable
+                    )
+            
+            # Call with retry logic
+            transcript_response = transcribe_with_retry()
                 
             # Process transcription response
             transcript_text = transcript_response.text
