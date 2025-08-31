@@ -76,9 +76,23 @@ def transcribe_audio():
             db.session.commit()
             logger.info(f"Created new session: {session_id}")
         
-        # Save audio file temporarily
+        # Save audio file temporarily with proper extension
         temp_dir = tempfile.gettempdir()
-        filename = secure_filename(audio_file.filename) or f"audio_{int(time.time())}.webm"
+        original_filename = audio_file.filename or ''
+        
+        # Ensure proper extension for OpenAI API
+        if original_filename:
+            filename = secure_filename(original_filename)
+            # If no extension or not a supported format, default to webm
+            if not filename or '.' not in filename:
+                filename = f"audio_{int(time.time())}.webm"
+        else:
+            filename = f"audio_{int(time.time())}.webm"
+        
+        # Ensure webm extension for browser recordings
+        if not filename.endswith(('.wav', '.webm', '.mp3', '.m4a', '.mp4')):
+            filename = filename.rsplit('.', 1)[0] + '.webm' if '.' in filename else filename + '.webm'
+            
         temp_path = os.path.join(temp_dir, filename)
         
         audio_file.save(temp_path)
@@ -89,11 +103,14 @@ def transcribe_audio():
             client = get_openai_client()
             
             with open(temp_path, 'rb') as audio_data:
-                logger.info(f"Sending audio to OpenAI Whisper API...")
+                logger.info(f"Sending audio to OpenAI Whisper API (format: {filename})...")
+                
+                # Create file tuple with proper name for OpenAI
+                audio_file_tuple = (filename, audio_data, 'audio/webm')
                 
                 transcript_response = client.audio.transcriptions.create(
                     model="whisper-1",
-                    file=audio_data,
+                    file=audio_file_tuple,
                     response_format="verbose_json",  # Get detailed response with timestamps
                     language="en"  # Can be made configurable
                 )
@@ -125,11 +142,10 @@ def transcribe_audio():
                 db_segment = Segment(
                     session_id=session.id,  # Use session.id not session_id string
                     text=segment_text,
-                    confidence=segment_confidence,
-                    start_time=segment_start,
-                    end_time=segment_end,
-                    speaker_id=segment_speaker,
-                    sequence_number=i,
+                    kind='final',  # Mark as final transcription
+                    avg_confidence=segment_confidence if segment_confidence else None,
+                    start_ms=int(segment_start * 1000) if segment_start else None,  # Convert to milliseconds
+                    end_ms=int(segment_end * 1000) if segment_end else None,  # Convert to milliseconds
                     created_at=datetime.utcnow()
                 )
                 db.session.add(db_segment)
@@ -148,16 +164,16 @@ def transcribe_audio():
                 'transcript': transcript_text,
                 'segments': [
                     {
-                        'text': seg.get('text', ''),
-                        'start': seg.get('start', 0.0),
-                        'end': seg.get('end', 0.0),
-                        'confidence': seg.get('avg_logprob', 0.0)
+                        'text': getattr(seg, 'text', ''),
+                        'start': getattr(seg, 'start', 0.0),
+                        'end': getattr(seg, 'end', 0.0),
+                        'confidence': getattr(seg, 'avg_logprob', 0.0)
                     }
                     for seg in segments
                 ],
                 'session_id': session_id,
                 'processing_time': processing_time,
-                'audio_duration': segments[-1].get('end', 0.0) if segments else 0.0,
+                'audio_duration': getattr(segments[-1], 'end', 0.0) if segments else 0.0,
                 'segment_count': len(segments),
                 'timestamp': time.time(),
                 'api_latency': processing_time
