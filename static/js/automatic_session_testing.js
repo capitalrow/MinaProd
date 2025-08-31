@@ -24,7 +24,7 @@ class AutomaticSessionTesting {
     }
     
     startSessionTesting(sessionId) {
-        """Start comprehensive testing when recording begins."""
+        /*Start comprehensive testing when recording begins./*
         this.isTestingActive = true;
         this.sessionId = sessionId;
         this.startTime = Date.now();
@@ -51,7 +51,7 @@ class AutomaticSessionTesting {
     }
     
     setupErrorMonitoring() {
-        """Monitor JavaScript errors during recording sessions."""
+        /*Monitor JavaScript errors during recording sessions./*
         
         // Override console.error to capture errors
         const originalError = console.error;
@@ -96,7 +96,7 @@ class AutomaticSessionTesting {
     }
     
     setupConnectionMonitoring() {
-        """Monitor WebSocket connection events."""
+        /*Monitor WebSocket connection events./*
         
         // Monitor socket events if available
         if (window.socket) {
@@ -125,7 +125,7 @@ class AutomaticSessionTesting {
     }
     
     setupUIMonitoring() {
-        """Monitor UI responsiveness and interactions."""
+        /*Monitor UI responsiveness and interactions./*
         
         // Monitor button clicks for responsiveness
         document.addEventListener('click', (event) => {
@@ -142,7 +142,7 @@ class AutomaticSessionTesting {
     }
     
     testWebSocketConnection() {
-        """Test WebSocket connection reliability."""
+        /*Test WebSocket connection reliability./*
         
         const connectionTest = {
             timestamp: Date.now(),
@@ -168,7 +168,7 @@ class AutomaticSessionTesting {
     }
     
     testAudioProcessing() {
-        """Test audio processing components."""
+        /*Test audio processing components./*
         
         const audioTest = {
             timestamp: Date.now(),
@@ -204,7 +204,7 @@ class AutomaticSessionTesting {
     }
     
     testUIResponsiveness() {
-        """Test UI element responsiveness."""
+        /*Test UI element responsiveness./*
         
         const uiTest = {
             timestamp: Date.now(),
@@ -246,7 +246,7 @@ class AutomaticSessionTesting {
     }
     
     monitorTranscriptionEvents() {
-        """Monitor transcription events during recording."""
+        /*Monitor transcription events during recording./*
         
         if (window.socket) {
             window.socket.on('transcription_result', (data) => {
@@ -276,7 +276,7 @@ class AutomaticSessionTesting {
     }
     
     measureResponseTime(element) {
-        """Measure UI response time for interactions."""
+        /*Measure UI response time for interactions./*
         const startTime = performance.now();
         
         // Simulate measuring response time
@@ -289,7 +289,7 @@ class AutomaticSessionTesting {
     }
     
     endSessionTesting() {
-        """Complete testing and generate report."""
+        /*Complete testing and generate report./*
         if (!this.isTestingActive) {
             return null;
         }
@@ -332,7 +332,7 @@ class AutomaticSessionTesting {
     }
     
     calculateConnectionSuccessRate() {
-        """Calculate WebSocket connection success rate."""
+        /*Calculate WebSocket connection success rate./*
         const connectionEvents = this.testResults.connectionEvents;
         if (connectionEvents.length === 0) return 0;
         
@@ -344,7 +344,7 @@ class AutomaticSessionTesting {
     }
     
     calculateUIScore() {
-        """Calculate UI responsiveness score."""
+        /*Calculate UI responsiveness score./*
         const uiTests = this.testResults.uiResponsiveness;
         if (uiTests.length === 0) return 0;
         
@@ -353,7 +353,7 @@ class AutomaticSessionTesting {
     }
     
     getCurrentStatus() {
-        """Get current testing status."""
+        /*Get current testing status./*
         if (!this.isTestingActive) {
             return { status: 'inactive' };
         }

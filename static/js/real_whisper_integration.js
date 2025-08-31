@@ -24,7 +24,7 @@ class RealWhisperIntegration {
     }
     
     async sendAudioDataHTTP(audioBlob) {
-        """Send audio data to transcription service via HTTP POST."""
+        // Send audio data to transcription service via HTTP POST
         if (!this.httpEndpoint) {
             console.error('❌ HTTP endpoint not configured');
             return;
@@ -93,7 +93,7 @@ class RealWhisperIntegration {
     }
     
     handleHTTPTranscriptionResult(result) {
-        """Process transcription result from HTTP endpoint."""
+        // Process transcription result from HTTP endpoint
         if (!result.transcript || !result.transcript.trim()) {
             console.log('⚠️ Empty transcript received');
             return;
@@ -119,7 +119,7 @@ class RealWhisperIntegration {
     }
     
     updateTranscriptDisplay(newText, segments) {
-        """Update the live transcript area with new transcription."""
+        // Update the live transcript area with new transcription
         const transcriptArea = document.getElementById('transcriptArea');
         if (!transcriptArea) {
             console.warn('⚠️ Transcript area not found');
@@ -151,7 +151,7 @@ class RealWhisperIntegration {
     }
     
     announceTranscript(text) {
-        """Announce new transcript to screen readers."""
+        // Announce new transcript to screen readers
         let liveRegion = document.getElementById('transcriptLiveRegion');
         if (!liveRegion) {
             // Create live region for screen reader announcements
@@ -168,14 +168,14 @@ class RealWhisperIntegration {
     }
     
     escapeHtml(text) {
-        """Escape HTML characters for safe display."""
+        // Escape HTML characters for safe display
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
     
     updateSessionStats(stats) {
-        """Update session statistics in the UI."""
+        // Update session statistics in the UI
         try {
             // Update word count
             const wordCountElement = document.getElementById('wordCount');
@@ -215,7 +215,7 @@ class RealWhisperIntegration {
     }
     
     updatePerformanceMetrics(metrics) {
-        """Update real-time performance metrics."""
+        // Update real-time performance metrics
         try {
             // Update quality score
             const qualityElement = document.getElementById('quality');
@@ -237,7 +237,7 @@ class RealWhisperIntegration {
     }
     
     showTranscriptionError(message) {
-        """Display user-friendly transcription error."""
+        // Display user-friendly transcription error
         console.error('🚨 Transcription Error:', message);
         
         // Update status indicators
@@ -284,7 +284,7 @@ class RealWhisperIntegration {
     }
     
     announceError(message) {
-        """Announce error to screen readers."""
+        // Announce error to screen readers
         let errorRegion = document.getElementById('errorLiveRegion');
         if (!errorRegion) {
             errorRegion = document.createElement('div');
@@ -299,12 +299,124 @@ class RealWhisperIntegration {
     }
     
     updateErrorStats(error) {
-        """Track error statistics for monitoring."""
+        // Track error statistics for monitoring
         // Simple error counting for now
         if (!this.errorCount) this.errorCount = 0;
         this.errorCount++;
         
         console.warn(`⚠️ Error count: ${this.errorCount}`);
+    }
+    
+    showChunkProcessingFeedback(chunkNumber, chunkSize) {
+        // Update chunk processing feedback in the UI
+        try {
+            const chunksElement = document.getElementById('chunks');
+            if (chunksElement) {
+                chunksElement.textContent = chunkNumber;
+            }
+            
+            // Update processing indicator
+            const processingElement = document.getElementById('currentProcessing');
+            if (processingElement) {
+                processingElement.style.display = 'block';
+                const processingText = processingElement.querySelector('#processingText');
+                if (processingText) {
+                    processingText.textContent = `Processing chunk ${chunkNumber} (${Math.round(chunkSize/1024)}KB)...`;
+                }
+            }
+            
+            console.log(`📊 Chunk ${chunkNumber} feedback updated in UI`);
+        } catch (error) {
+            console.warn('⚠️ Failed to update chunk feedback:', error);
+        }
+    }
+    
+    clearTranscriptArea() {
+        // Clear the transcript area and reset placeholders
+        try {
+            const transcriptArea = document.getElementById('transcriptArea') || 
+                                 document.querySelector('.transcript-container') ||
+                                 document.querySelector('.complete-transcript-display');
+            
+            if (transcriptArea) {
+                // Remove all transcript segments but keep structure
+                const segments = transcriptArea.querySelectorAll('.transcript-segment');
+                segments.forEach(segment => segment.remove());
+                
+                console.log('🧹 Transcript area cleared');
+            }
+        } catch (error) {
+            console.warn('⚠️ Failed to clear transcript area:', error);
+        }
+    }
+    
+    showTranscriptionActive() {
+        // Update UI to show active transcription state
+        try {
+            // Update status indicators
+            const statusText = document.getElementById('statusText');
+            const statusDot = document.getElementById('statusDot');
+            
+            if (statusText) {
+                statusText.textContent = 'Recording...';
+            }
+            
+            if (statusDot) {
+                statusDot.className = 'status-dot recording';
+            }
+            
+            // Show processing indicator
+            const currentProcessing = document.getElementById('currentProcessing');
+            if (currentProcessing) {
+                currentProcessing.style.display = 'block';
+            }
+            
+            console.log('🎤 Active transcription state displayed');
+        } catch (error) {
+            console.warn('⚠️ Failed to update active status:', error);
+        }
+    }
+    
+    async stopTranscription() {
+        // Stop audio recording and transcription
+        try {
+            console.log('🛑 Stopping HTTP transcription...');
+            
+            if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                this.mediaRecorder.stop();
+                console.log('📹 MediaRecorder stopped');
+            }
+            
+            if (this.mediaStream) {
+                this.mediaStream.getTracks().forEach(track => track.stop());
+                console.log('🎤 Media stream stopped');
+            }
+            
+            // Update UI state
+            const statusText = document.getElementById('statusText');
+            const statusDot = document.getElementById('statusDot');
+            
+            if (statusText) {
+                statusText.textContent = 'Ready';
+            }
+            
+            if (statusDot) {
+                statusDot.className = 'status-dot ready';
+            }
+            
+            // Hide processing indicator
+            const currentProcessing = document.getElementById('currentProcessing');
+            if (currentProcessing) {
+                currentProcessing.style.display = 'none';
+            }
+            
+            console.log('✅ HTTP transcription stopped successfully');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Failed to stop transcription:', error);
+            throw error;
+        }
     }
     
     async initializeConnection() {
@@ -441,44 +553,29 @@ class RealWhisperIntegration {
     
     async startTranscription(sessionId) {
         try {
-            console.log('🎯 STARTING REAL WHISPER INTEGRATION');
+            console.log('🎯 STARTING HTTP TRANSCRIPTION');
             
-            // IMMEDIATE FIX: Force HTTP mode if WebSocket fails
+            // Initialize HTTP-based transcription mode
             if (!this.isConnected) {
-                try {
-                    await this.initializeConnection();
-                } catch (error) {
-                    console.log('🔧 WebSocket failed, switching to HTTP mode');
-                    if (window.directAudioTranscription) {
-                        console.log('✅ Activating Direct HTTP Audio Transcription');
-                        return await window.directAudioTranscription.startTranscription(sessionId);
-                    }
-                    throw error;
-                }
+                await this.initializeConnection();
             }
             
-            this.sessionId = sessionId;
+            this.sessionId = sessionId || `session_${Date.now()}`;
             
             // CRITICAL: Reset cumulative transcript for new recording
             this.cumulativeTranscript = '';
             this.chunkCount = 0;
             this.transcriptionBuffer = [];
-            console.log('🎯 RESET: Starting fresh transcription session');
-            
-            // Send session join message via Enhanced WebSocket
-            this.socket.send(JSON.stringify({
-                type: 'join_session',
-                session_id: sessionId
-            }));
+            console.log('🎯 RESET: Starting fresh HTTP transcription session');
             
             // CRITICAL: Clear the transcript area and show active status
             this.clearTranscriptArea();
             this.showTranscriptionActive();
             
-            // Initialize audio recording
-            await this.initializeAudioRecording();
+            // Initialize audio recording for HTTP upload
+            await this.initializeAudioRecordingHTTP();
             
-            console.log('✅ Real-time transcription started');
+            console.log('✅ HTTP-based transcription started');
             return true;
             
         } catch (error) {
@@ -519,7 +616,7 @@ class RealWhisperIntegration {
         }
     }
     
-    async initializeAudioRecording() {
+    async initializeAudioRecordingHTTP() {
         try {
             // Get microphone access
             this.mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -551,15 +648,19 @@ class RealWhisperIntegration {
                     
                     console.log(`📤 CHUNK ${this.chunkCount}: ${event.data.size} bytes - sending via HTTP`);
                     
-                    // Send audio data via HTTP POST
-                    await this.sendAudioDataHTTP(event.data);
-                    
-                    // Show chunk processing feedback in UI
-                    this.showChunkProcessingFeedback(this.chunkCount, event.data.size);
-                    
-                    // Update UI with audio transmission feedback
-                    if (this.chunkCount % 2 === 0 && window.toastSystem) {
-                        window.toastSystem.showInfo(`🎵 Processing chunk ${this.chunkCount}...`);
+                    try {
+                        // Send audio data via HTTP POST
+                        await this.sendAudioDataHTTP(event.data);
+                        
+                        // Show chunk processing feedback in UI
+                        this.showChunkProcessingFeedback(this.chunkCount, event.data.size);
+                        
+                        // Update UI with audio transmission feedback
+                        if (this.chunkCount % 2 === 0 && window.toastSystem) {
+                            window.toastSystem.showInfo(`🎵 Processing chunk ${this.chunkCount}...`);
+                        }
+                    } catch (error) {
+                        console.error(`❌ Failed to process chunk ${this.chunkCount}:`, error);
                     }
                 } else {
                     console.warn('⚠️ Cannot send audio: WebSocket not ready or no data');

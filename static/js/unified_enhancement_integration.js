@@ -14,7 +14,7 @@ class UnifiedEnhancementIntegration {
     }
     
     registerSystem(name, system, startMethod, endMethod) {
-        """Register an enhancement system with the unified integration."""
+        /*Register an enhancement system with the unified integration./*
         this.enhancementSystems.set(name, {
             system: system,
             startMethod: startMethod,
@@ -26,7 +26,7 @@ class UnifiedEnhancementIntegration {
     }
     
     initialize() {
-        """Initialize the unified integration system."""
+        /*Initialize the unified integration system./*
         if (this.isInitialized) return;
         
         // Wait for recordingStates to be available
@@ -48,7 +48,7 @@ class UnifiedEnhancementIntegration {
     }
     
     handleStateChange(state, details) {
-        """Handle recording state changes for all systems."""
+        /*Handle recording state changes for all systems./*
         // Prevent infinite recursion
         if (this.isProcessingStateChange) {
             return;
@@ -77,7 +77,7 @@ class UnifiedEnhancementIntegration {
     }
     
     startAllSystems(details) {
-        """Start all registered enhancement systems."""
+        /*Start all registered enhancement systems./*
         const sessionId = details?.sessionId || `session_${Date.now()}`;
         
         console.info(`🚀 Starting all enhancement systems for session: ${sessionId}`);
@@ -96,7 +96,7 @@ class UnifiedEnhancementIntegration {
     }
     
     endAllSystems() {
-        """End all registered enhancement systems."""
+        /*End all registered enhancement systems./*
         console.info('🏁 Ending all enhancement systems');
         
         this.enhancementSystems.forEach((systemInfo, name) => {
@@ -113,7 +113,7 @@ class UnifiedEnhancementIntegration {
     }
     
     getSystemStatus() {
-        """Get status of all enhancement systems."""
+        /*Get status of all enhancement systems./*
         const status = {};
         this.enhancementSystems.forEach((systemInfo, name) => {
             status[name] = {

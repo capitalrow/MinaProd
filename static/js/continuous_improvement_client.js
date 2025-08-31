@@ -25,7 +25,7 @@ class ContinuousImprovementClient {
     }
     
     startContinuousImprovement(sessionId) {
-        """Start continuous improvement monitoring and optimization."""
+        /*Start continuous improvement monitoring and optimization./*
         this.isActive = true;
         this.sessionId = sessionId;
         this.appliedImprovements = [];
@@ -51,7 +51,7 @@ class ContinuousImprovementClient {
     }
     
     startPerformanceTracking() {
-        """Track performance metrics continuously."""
+        /*Track performance metrics continuously./*
         this.improvementInterval = setInterval(() => {
             if (!this.isActive) return;
             
@@ -78,7 +78,7 @@ class ContinuousImprovementClient {
     }
     
     collectCurrentMetrics() {
-        """Collect current performance metrics."""
+        /*Collect current performance metrics./*
         const metrics = {
             timestamp: Date.now(),
             confidence: this.getLatestConfidence(),
@@ -94,7 +94,7 @@ class ContinuousImprovementClient {
     }
     
     getLatestConfidence() {
-        """Get latest confidence score from transcription events."""
+        /*Get latest confidence score from transcription events./*
         // Check for latest transcription confidence
         if (window.liveMonitoringClient) {
             const status = window.liveMonitoringClient.getCurrentMetrics();
@@ -107,7 +107,7 @@ class ContinuousImprovementClient {
     }
     
     getLatestLatency() {
-        """Get latest processing latency."""
+        /*Get latest processing latency./*
         // Estimate latency based on UI responsiveness
         const performanceEntries = performance.getEntriesByType('measure');
         if (performanceEntries.length > 0) {
@@ -118,7 +118,7 @@ class ContinuousImprovementClient {
     }
     
     getConnectionStability() {
-        """Get WebSocket connection stability."""
+        /*Get WebSocket connection stability./*
         if (window.socket && window.socket.connected) {
             return 100;
         }
@@ -126,7 +126,7 @@ class ContinuousImprovementClient {
     }
     
     getUIResponsiveness() {
-        """Get UI responsiveness score."""
+        /*Get UI responsiveness score./*
         // Measure UI responsiveness based on interaction timing
         const now = performance.now();
         const measureStart = now - 1000; // Last 1 second
@@ -143,7 +143,7 @@ class ContinuousImprovementClient {
     }
     
     getTranscriptionQuality() {
-        """Estimate transcription quality."""
+        /*Estimate transcription quality./*
         // Get transcription text and estimate quality
         const transcriptionElements = document.querySelectorAll('[class*="transcript"], .transcription-text, #transcriptionOutput');
         
@@ -173,7 +173,7 @@ class ContinuousImprovementClient {
     }
     
     getMemoryUsage() {
-        """Get memory usage efficiency."""
+        /*Get memory usage efficiency./*
         if (performance.memory) {
             const used = performance.memory.usedJSHeapSize;
             const limit = performance.memory.jsHeapSizeLimit;
@@ -184,7 +184,7 @@ class ContinuousImprovementClient {
     }
     
     getErrorRate() {
-        """Get current error rate."""
+        /*Get current error rate./*
         if (window.liveMonitoringClient) {
             const status = window.liveMonitoringClient.getCurrentMetrics();
             if (status) {
@@ -196,7 +196,7 @@ class ContinuousImprovementClient {
     }
     
     updatePerformanceMetrics(metrics) {
-        """Update performance metrics history."""
+        /*Update performance metrics history./*
         // Update confidence history
         if (metrics.confidence !== undefined) {
             this.performanceMetrics.confidence.push(metrics.confidence);
@@ -220,7 +220,7 @@ class ContinuousImprovementClient {
     }
     
     calculatePerformanceScore() {
-        """Calculate overall performance score."""
+        /*Calculate overall performance score./*
         try {
             const confidence = this.getAverageConfidence() * 100;
             const latency = Math.max(0, 100 - (this.getAverageLatency() / 10));
@@ -243,21 +243,21 @@ class ContinuousImprovementClient {
     }
     
     getAverageConfidence() {
-        """Get average confidence from recent history."""
+        /*Get average confidence from recent history./*
         if (this.performanceMetrics.confidence.length === 0) return 0.5;
         const sum = this.performanceMetrics.confidence.reduce((a, b) => a + b, 0);
         return sum / this.performanceMetrics.confidence.length;
     }
     
     getAverageLatency() {
-        """Get average latency from recent history."""
+        /*Get average latency from recent history./*
         if (this.performanceMetrics.latency.length === 0) return 300;
         const sum = this.performanceMetrics.latency.reduce((a, b) => a + b, 0);
         return sum / this.performanceMetrics.latency.length;
     }
     
     shouldApplyImprovements() {
-        """Determine if improvements should be applied."""
+        /*Determine if improvements should be applied./*
         const timeSinceLastImprovement = Date.now() - this.lastImprovement;
         const cooldownPeriod = 15000; // 15 seconds
         
@@ -265,7 +265,7 @@ class ContinuousImprovementClient {
     }
     
     applyPerformanceImprovements() {
-        """Apply performance improvements based on current metrics."""
+        /*Apply performance improvements based on current metrics./*
         const improvements = this.determineNeededImprovements();
         
         improvements.forEach(improvement => {
@@ -282,7 +282,7 @@ class ContinuousImprovementClient {
     }
     
     determineNeededImprovements() {
-        """Determine which improvements are needed."""
+        /*Determine which improvements are needed./*
         const improvements = [];
         
         const avgConfidence = this.getAverageConfidence();
@@ -319,7 +319,7 @@ class ContinuousImprovementClient {
     }
     
     applySpecificImprovement(improvement) {
-        """Apply a specific improvement."""
+        /*Apply a specific improvement./*
         try {
             switch (improvement) {
                 case 'enhance_audio_processing':
@@ -356,7 +356,7 @@ class ContinuousImprovementClient {
     }
     
     enhanceAudioProcessing() {
-        """Enhance audio processing settings."""
+        /*Enhance audio processing settings./*
         console.info('🔧 Enhancing audio processing settings');
         
         // Optimize audio constraints if getUserMedia is available
@@ -376,7 +376,7 @@ class ContinuousImprovementClient {
     }
     
     optimizeSpeechDetection() {
-        """Optimize speech detection sensitivity."""
+        /*Optimize speech detection sensitivity./*
         console.info('🔧 Optimizing speech detection sensitivity');
         
         // Send optimization request to backend
@@ -389,7 +389,7 @@ class ContinuousImprovementClient {
     }
     
     optimizeProcessingSpeed() {
-        """Optimize processing speed."""
+        /*Optimize processing speed./*
         console.info('🔧 Optimizing processing speed');
         
         // Reduce DOM updates frequency
@@ -400,7 +400,7 @@ class ContinuousImprovementClient {
     }
     
     reduceBufferSize() {
-        """Reduce audio buffer size for lower latency."""
+        /*Reduce audio buffer size for lower latency./*
         console.info('🔧 Reducing buffer size for lower latency');
         
         // Send buffer optimization request
@@ -413,7 +413,7 @@ class ContinuousImprovementClient {
     }
     
     stabilizeConnection() {
-        """Stabilize WebSocket connection."""
+        /*Stabilize WebSocket connection./*
         console.info('🔧 Stabilizing WebSocket connection');
         
         // Implement connection stability measures
@@ -423,13 +423,13 @@ class ContinuousImprovementClient {
     }
     
     optimizeUIUpdates() {
-        """Optimize UI update frequency."""
+        /*Optimize UI update frequency./*
         console.info('🔧 Optimizing UI update frequency');
         this.reduceUIUpdateFrequency();
     }
     
     reduceUIUpdateFrequency() {
-        """Reduce UI update frequency to improve performance."""
+        /*Reduce UI update frequency to improve performance./*
         // Throttle UI updates
         const elements = document.querySelectorAll('[data-live-update]');
         elements.forEach(element => {
@@ -438,7 +438,7 @@ class ContinuousImprovementClient {
     }
     
     optimizeMemoryUsage() {
-        """Optimize memory usage."""
+        /*Optimize memory usage./*
         // Clear old performance entries
         if (performance.clearMeasures) {
             performance.clearMeasures();
@@ -454,7 +454,7 @@ class ContinuousImprovementClient {
     }
     
     enhanceTextProcessing() {
-        """Enhance text processing and display."""
+        /*Enhance text processing and display./*
         console.info('🔧 Enhancing text processing');
         
         // Optimize text rendering
@@ -466,7 +466,7 @@ class ContinuousImprovementClient {
     }
     
     startQualityMonitoring() {
-        """Start continuous quality monitoring."""
+        /*Start continuous quality monitoring./*
         // Monitor transcription quality indicators
         setInterval(() => {
             if (!this.isActive) return;
@@ -483,7 +483,7 @@ class ContinuousImprovementClient {
     }
     
     startAdaptiveOptimization() {
-        """Start adaptive optimization based on performance trends."""
+        /*Start adaptive optimization based on performance trends./*
         // Monitor performance trends and apply predictive optimizations
         setInterval(() => {
             if (!this.isActive) return;
@@ -497,7 +497,7 @@ class ContinuousImprovementClient {
     }
     
     analyzePerformanceTrend() {
-        """Analyze performance trend over recent history."""
+        /*Analyze performance trend over recent history./*
         if (this.performanceMetrics.confidence.length < 5) return 'stable';
         
         const recent = this.performanceMetrics.confidence.slice(-3);
@@ -514,7 +514,7 @@ class ContinuousImprovementClient {
     }
     
     applyPreventiveOptimizations() {
-        """Apply preventive optimizations to prevent performance decline."""
+        /*Apply preventive optimizations to prevent performance decline./*
         const preventiveImprovements = [
             'optimize_memory_usage',
             'reduce_ui_overhead',
@@ -530,7 +530,7 @@ class ContinuousImprovementClient {
     }
     
     sendImprovementEvent(eventType, data) {
-        """Send improvement event to monitoring system."""
+        /*Send improvement event to monitoring system./*
         if (window.socket && window.socket.connected) {
             window.socket.emit('continuous_improvement_event', {
                 sessionId: this.sessionId,
@@ -542,7 +542,7 @@ class ContinuousImprovementClient {
     }
     
     getCurrentStatus() {
-        """Get current improvement status."""
+        /*Get current improvement status./*
         if (!this.isActive) {
             return { status: 'inactive' };
         }
@@ -560,7 +560,7 @@ class ContinuousImprovementClient {
     }
     
     endContinuousImprovement() {
-        """End continuous improvement and generate report."""
+        /*End continuous improvement and generate report./*
         if (!this.isActive) return null;
         
         this.isActive = false;
