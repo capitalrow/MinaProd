@@ -23,6 +23,290 @@ class RealWhisperIntegration {
         console.log('Real Whisper Integration initialized');
     }
     
+    async sendAudioDataHTTP(audioBlob) {
+        """Send audio data to transcription service via HTTP POST."""
+        if (!this.httpEndpoint) {
+            console.error('❌ HTTP endpoint not configured');
+            return;
+        }
+        
+        try {
+            console.log(`📤 Uploading audio chunk ${this.chunkCount}: ${audioBlob.size} bytes`);
+            
+            // Create FormData for HTTP upload
+            const formData = new FormData();
+            formData.append('audio', audioBlob, `chunk_${this.chunkCount}.webm`);
+            formData.append('session_id', this.sessionId || 'default');
+            formData.append('chunk_id', this.chunkCount.toString());
+            formData.append('timestamp', Date.now().toString());
+            
+            // Send HTTP POST request with timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            
+            const response = await fetch(this.httpEndpoint, {
+                method: 'POST',
+                body: formData,
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                console.log(`✅ Chunk ${this.chunkCount} transcribed: "${result.transcript}"`);
+                
+                // Process transcription result
+                this.handleHTTPTranscriptionResult(result);
+                
+                // Update performance metrics
+                this.updatePerformanceMetrics({
+                    processing_time: result.processing_time,
+                    segment_count: result.segment_count,
+                    confidence: result.segments?.[0]?.confidence || 0
+                });
+                
+                return result;
+                
+            } else {
+                throw new Error(result.error || 'Transcription failed');
+            }
+            
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                console.error(`❌ Chunk ${this.chunkCount} timeout after 10 seconds`);
+                this.showTranscriptionError('Transcription timeout - please try again');
+            } else {
+                console.error(`❌ Chunk ${this.chunkCount} failed:`, error);
+                this.showTranscriptionError(`Transcription failed: ${error.message}`);
+            }
+            
+            // Update error statistics
+            this.updateErrorStats(error);
+            throw error;
+        }
+    }
+    
+    handleHTTPTranscriptionResult(result) {
+        """Process transcription result from HTTP endpoint."""
+        if (!result.transcript || !result.transcript.trim()) {
+            console.log('⚠️ Empty transcript received');
+            return;
+        }
+        
+        // Add to cumulative transcript
+        const newText = result.transcript.trim();
+        this.cumulativeTranscript += newText + ' ';
+        
+        // Update transcript display in real-time
+        this.updateTranscriptDisplay(newText, result.segments || []);
+        
+        // Update session statistics
+        this.updateSessionStats({
+            wordCount: this.cumulativeTranscript.split(' ').filter(w => w.length > 0).length,
+            duration: result.audio_duration || 0,
+            accuracy: result.segments?.[0]?.confidence || 0,
+            chunks: this.chunkCount,
+            latency: result.processing_time || 0
+        });
+        
+        console.log(`📝 Updated transcript: ${this.cumulativeTranscript.length} characters total`);
+    }
+    
+    updateTranscriptDisplay(newText, segments) {
+        """Update the live transcript area with new transcription."""
+        const transcriptArea = document.getElementById('transcriptArea');
+        if (!transcriptArea) {
+            console.warn('⚠️ Transcript area not found');
+            return;
+        }
+        
+        // Remove placeholder if present
+        const placeholder = transcriptArea.querySelector('.transcript-placeholder');
+        if (placeholder) {
+            placeholder.remove();
+        }
+        
+        // Create new segment element
+        const segmentDiv = document.createElement('div');
+        segmentDiv.className = 'transcript-segment';
+        segmentDiv.innerHTML = `
+            <span class="segment-text">${this.escapeHtml(newText)}</span>
+            <span class="segment-time">${new Date().toLocaleTimeString()}</span>
+        `;
+        
+        // Add to transcript area
+        transcriptArea.appendChild(segmentDiv);
+        
+        // Auto-scroll to bottom for real-time updates
+        transcriptArea.scrollTop = transcriptArea.scrollHeight;
+        
+        // Announce to screen readers
+        this.announceTranscript(newText);
+    }
+    
+    announceTranscript(text) {
+        """Announce new transcript to screen readers."""
+        let liveRegion = document.getElementById('transcriptLiveRegion');
+        if (!liveRegion) {
+            // Create live region for screen reader announcements
+            liveRegion = document.createElement('div');
+            liveRegion.id = 'transcriptLiveRegion';
+            liveRegion.setAttribute('aria-live', 'polite');
+            liveRegion.setAttribute('aria-atomic', 'false');
+            liveRegion.className = 'sr-only';
+            document.body.appendChild(liveRegion);
+        }
+        
+        // Announce new transcript text
+        liveRegion.textContent = `New transcript: ${text}`;
+    }
+    
+    escapeHtml(text) {
+        """Escape HTML characters for safe display."""
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    updateSessionStats(stats) {
+        """Update session statistics in the UI."""
+        try {
+            // Update word count
+            const wordCountElement = document.getElementById('wordCount');
+            if (wordCountElement && stats.wordCount !== undefined) {
+                wordCountElement.textContent = stats.wordCount;
+            }
+            
+            // Update duration
+            const sessionTimeElement = document.getElementById('sessionTime');
+            if (sessionTimeElement && stats.duration !== undefined) {
+                const minutes = Math.floor(stats.duration / 60);
+                const seconds = Math.floor(stats.duration % 60);
+                sessionTimeElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            // Update confidence/accuracy
+            const confidenceElement = document.getElementById('confidenceScore');
+            if (confidenceElement && stats.accuracy !== undefined) {
+                confidenceElement.textContent = `${Math.round(stats.accuracy * 100)}%`;
+            }
+            
+            // Update chunk count
+            const chunksElement = document.getElementById('chunks');
+            if (chunksElement && stats.chunks !== undefined) {
+                chunksElement.textContent = stats.chunks;
+            }
+            
+            // Update latency
+            const latencyElement = document.getElementById('latency');
+            if (latencyElement && stats.latency !== undefined) {
+                latencyElement.textContent = `${Math.round(stats.latency * 1000)}ms`;
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ Failed to update session stats:', error);
+        }
+    }
+    
+    updatePerformanceMetrics(metrics) {
+        """Update real-time performance metrics."""
+        try {
+            // Update quality score
+            const qualityElement = document.getElementById('quality');
+            if (qualityElement && metrics.confidence !== undefined) {
+                qualityElement.textContent = `${Math.round(Math.abs(metrics.confidence) * 100)}%`;
+            }
+            
+            // Update processing time
+            const latencyElement = document.getElementById('latency');
+            if (latencyElement && metrics.processing_time !== undefined) {
+                latencyElement.textContent = `${Math.round(metrics.processing_time * 1000)}ms`;
+            }
+            
+            console.log(`📊 Performance updated: ${Math.round(metrics.processing_time * 1000)}ms latency`);
+            
+        } catch (error) {
+            console.warn('⚠️ Failed to update performance metrics:', error);
+        }
+    }
+    
+    showTranscriptionError(message) {
+        """Display user-friendly transcription error."""
+        console.error('🚨 Transcription Error:', message);
+        
+        // Update status indicators
+        const statusText = document.getElementById('statusText');
+        const statusDot = document.getElementById('statusDot');
+        
+        if (statusText) {
+            statusText.textContent = 'Error';
+        }
+        
+        if (statusDot) {
+            statusDot.className = 'status-dot error';
+        }
+        
+        // Show error notification
+        const header = document.querySelector('.app-header .header-content');
+        if (header) {
+            // Remove existing errors
+            const existing = header.querySelector('.transcription-error');
+            if (existing) existing.remove();
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'transcription-error alert alert-danger mt-2';
+            errorDiv.setAttribute('role', 'alert');
+            errorDiv.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>
+                    <span class="flex-grow-1">${message}</span>
+                    <button type="button" class="btn-close" aria-label="Close error message" onclick="this.parentElement.parentElement.remove()"></button>
+                </div>
+            `;
+            header.appendChild(errorDiv);
+            
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                if (errorDiv.parentElement) {
+                    errorDiv.remove();
+                }
+            }, 10000);
+        }
+        
+        // Announce error to screen readers
+        this.announceError(message);
+    }
+    
+    announceError(message) {
+        """Announce error to screen readers."""
+        let errorRegion = document.getElementById('errorLiveRegion');
+        if (!errorRegion) {
+            errorRegion = document.createElement('div');
+            errorRegion.id = 'errorLiveRegion';
+            errorRegion.setAttribute('aria-live', 'assertive');
+            errorRegion.setAttribute('aria-atomic', 'true');
+            errorRegion.className = 'sr-only';
+            document.body.appendChild(errorRegion);
+        }
+        
+        errorRegion.textContent = `Error: ${message}`;
+    }
+    
+    updateErrorStats(error) {
+        """Track error statistics for monitoring."""
+        // Simple error counting for now
+        if (!this.errorCount) this.errorCount = 0;
+        this.errorCount++;
+        
+        console.warn(`⚠️ Error count: ${this.errorCount}`);
+    }
+    
     async initializeConnection() {
         try {
             console.log('🔗 Initializing real-time transcription connection...');
@@ -37,61 +321,44 @@ class RealWhisperIntegration {
             
             console.log(`🔍 Connecting to host: ${host} (not localhost)`);
             
-            let connected = false;
-            for (const port of portsToTry) {
-                try {
-                    const wsUrl = `${protocol}//${host}:${port}`;
-                    console.log(`🔧 Attempting Enhanced WebSocket connection: ${wsUrl}`);
-                    
-                    this.socket = new WebSocket(wsUrl);
-                    
-                    // Test connection with timeout
-                    await new Promise((resolve, reject) => {
-                        const timeout = setTimeout(() => {
-                            reject(new Error(`Port ${port} timeout`));
-                        }, 2000);
-                        
-                        this.socket.onopen = () => {
-                            clearTimeout(timeout);
-                            console.log(`✅ Connected to Enhanced WebSocket on port ${port}`);
-                            connected = true;
-                            resolve();
-                        };
-                        
-                        this.socket.onerror = () => {
-                            clearTimeout(timeout);
-                            reject(new Error(`Port ${port} failed`));
-                        };
-                    });
-                    
-                    if (connected) break;
-                    
-                } catch (error) {
-                    console.warn(`⚠️ Port ${port} failed: ${error.message}`);
-                    continue;
+            // CRITICAL FIX: Skip WebSocket, use HTTP-based transcription directly
+            console.log('🌐 Switching to HTTP-based transcription for maximum reliability');
+            
+            // Test basic connectivity to Flask server
+            const baseUrl = `${window.location.protocol}//${window.location.host}`;
+            console.log(`🔍 Testing Flask server connectivity: ${baseUrl}`);
+            
+            try {
+                const response = await fetch(`${baseUrl}/health`);
+                if (response.ok) {
+                    console.log('✅ Flask server connectivity verified');
+                } else {
+                    console.warn('⚠️ Flask server responding but may have issues');
                 }
+            } catch (error) {
+                console.error('❌ Flask server connectivity failed:', error);
+                throw new Error('Cannot connect to transcription service');
             }
             
-            if (!connected) {
-                throw new Error('Enhanced WebSocket server not available on any port');
+            // Initialize HTTP-based transcription mode
+            this.useHttpMode = true;
+            this.httpEndpoint = `${baseUrl}/api/transcribe`;
+            console.log(`📡 HTTP transcription endpoint: ${this.httpEndpoint}`);
+            
+            // CRITICAL FIX: HTTP mode setup, no WebSocket handlers needed
+            this.isConnected = true;
+            this.connectionAttempts = 0;
+            console.log('✅ HTTP transcription mode ready');
+            
+            // Update UI with connection status
+            if (window.professionalRecorder) {
+                window.professionalRecorder.updateConnectionStatus('connected');
             }
             
-            // MANUAL MONITORING RECOMMENDATION #2: Enhanced WebSocket event handlers
-            this.socket.onopen = () => {
-                this.isConnected = true;
-                this.connectionAttempts = 0;
-                console.log('✅ Real-time transcription connected via Enhanced WebSocket');
-                
-                // Update UI with connection status
-                if (window.professionalRecorder) {
-                    window.professionalRecorder.updateConnectionStatus('connected');
-                }
-                
-                // Show success notification
-                if (window.toastSystem) {
-                    window.toastSystem.showSuccess('🔗 Enhanced transcription service connected');
-                }
-            };
+            // Show success notification
+            if (window.toastSystem) {
+                window.toastSystem.showSuccess('🔗 HTTP transcription service ready');
+            }
             
             // Message handler will be set up after connection handshake
             
@@ -277,19 +544,20 @@ class RealWhisperIntegration {
             
             this.mediaRecorder = new MediaRecorder(this.mediaStream, options);
             
-            // Handle audio data
-            this.mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0 && this.socket && this.socket.readyState === WebSocket.OPEN) {
+            // CRITICAL FIX: Handle audio data via HTTP upload
+            this.mediaRecorder.ondataavailable = async (event) => {
+                if (event.data.size > 0) {
                     this.chunkCount++;
                     
-                    // Send audio data directly as binary
-                    this.socket.send(event.data);
-                    console.log(`📤 CHUNK ${this.chunkCount}: ${event.data.size} bytes sent (Real Whisper Integration)`);
+                    console.log(`📤 CHUNK ${this.chunkCount}: ${event.data.size} bytes - sending via HTTP`);
+                    
+                    // Send audio data via HTTP POST
+                    await this.sendAudioDataHTTP(event.data);
                     
                     // Show chunk processing feedback in UI
                     this.showChunkProcessingFeedback(this.chunkCount, event.data.size);
                     
-                    // Update UI with audio transmission feedback (less frequent)
+                    // Update UI with audio transmission feedback
                     if (this.chunkCount % 2 === 0 && window.toastSystem) {
                         window.toastSystem.showInfo(`🎵 Processing chunk ${this.chunkCount}...`);
                     }
