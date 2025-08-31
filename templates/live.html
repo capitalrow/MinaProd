@@ -437,9 +437,106 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
     
+    // CRITICAL FIX: Connect recording buttons to Real Whisper Integration
+    const connectRecordingButtons = () => {
+        const recordButton = document.getElementById('recordButton');
+        const stopButton = document.getElementById('stopButton');
+        const pauseButton = document.getElementById('pauseButton');
+        
+        if (!recordButton) {
+            console.error('❌ CRITICAL: Recording buttons not found in DOM');
+            return;
+        }
+        
+        console.log('🎯 CRITICAL FIX: Binding Real Whisper Integration to UI buttons');
+        
+        let isRecording = false;
+        
+        // Record button click handler
+        recordButton.addEventListener('click', async () => {
+            try {
+                if (!isRecording) {
+                    console.log('🎤 Starting recording...');
+                    
+                    // Update button state immediately
+                    recordButton.innerHTML = '<i class="fas fa-stop"></i>';
+                    recordButton.className = 'record-btn recording';
+                    
+                    // Enable other buttons
+                    if (stopButton) stopButton.disabled = false;
+                    if (pauseButton) pauseButton.disabled = false;
+                    
+                    // Start transcription with Real Whisper Integration
+                    const sessionId = `live_${Date.now()}`;
+                    await window.realWhisperIntegration.startTranscription(sessionId);
+                    
+                    isRecording = true;
+                    console.log('✅ Recording started successfully');
+                    
+                    // Update status
+                    updateStatus('recording', 'Recording in progress...');
+                    
+                } else {
+                    console.log('⏹️ Stopping recording...');
+                    
+                    // Stop transcription
+                    window.realWhisperIntegration.stopTranscription();
+                    
+                    // Reset button state
+                    recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
+                    recordButton.className = 'record-btn';
+                    
+                    // Disable other buttons
+                    if (stopButton) stopButton.disabled = true;
+                    if (pauseButton) pauseButton.disabled = true;
+                    
+                    isRecording = false;
+                    console.log('✅ Recording stopped successfully');
+                    
+                    // Update status
+                    updateStatus('ready', 'Ready to record');
+                }
+                
+            } catch (error) {
+                console.error('❌ Recording operation failed:', error);
+                
+                // Reset to safe state
+                recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
+                recordButton.className = 'record-btn';
+                isRecording = false;
+                
+                // Update status
+                updateStatus('error', 'Recording failed - try again');
+            }
+        });
+        
+        // Stop button handler
+        if (stopButton) {
+            stopButton.addEventListener('click', () => {
+                if (isRecording) {
+                    recordButton.click(); // Trigger the stop logic
+                }
+            });
+        }
+        
+        console.log('✅ Recording buttons connected to Real Whisper Integration');
+    };
+    
+    // Function to update connection status
+    const updateStatus = (status, message) => {
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        
+        if (statusDot && statusText) {
+            statusDot.className = `status-dot ${status}`;
+            statusText.textContent = message;
+        }
+    };
+    
     // Initialize all enhancements
     enhanceTranscriptDisplay();
     connectRealMetrics();
+    connectRecordingButtons();
     
     console.log('✅ MINA Enhanced Live Transcription System ready for 100% performance');
 });
