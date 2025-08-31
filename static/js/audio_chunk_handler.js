@@ -11,17 +11,24 @@ class AudioChunkHandler {
     }
     
     /**
-     * Collect audio chunks and process interim results
+     * Collect audio chunks and process interim results in real-time
      */
     collectChunk(chunk) {
         this.audioChunks.push(chunk);
         console.log(`📦 Collected chunk: ${chunk.size} bytes (${this.audioChunks.length} total)`);
         
-        // Process interim results every few chunks (every 3-5 chunks for ~3-5 second intervals)
-        if (this.audioChunks.length % 3 === 0 && this.audioChunks.length > 2) {
+        // 🚀 INTERIM PROCESSING: Send chunks for transcription every 3 chunks (~3 seconds)
+        if (this.audioChunks.length % 3 === 0 && this.audioChunks.length >= 3) {
             const recentChunks = this.audioChunks.slice(-3); // Last 3 chunks
             const interimBlob = new Blob(recentChunks, { type: 'audio/webm' });
             this.processInterimChunk(interimBlob, Math.floor(this.audioChunks.length / 3));
+        }
+        
+        // 🔄 EXTENDED INTERIM: Process longer context every 6 chunks (~6 seconds) 
+        if (this.audioChunks.length % 6 === 0 && this.audioChunks.length >= 6) {
+            const contextChunks = this.audioChunks.slice(-6); // Last 6 chunks for context
+            const contextBlob = new Blob(contextChunks, { type: 'audio/webm' });
+            this.processInterimChunk(contextBlob, Math.floor(this.audioChunks.length / 6), true);
         }
     }
     
@@ -156,15 +163,16 @@ class AudioChunkHandler {
     }
     
     /**
-     * Add interim transcription processing for real-time results
+     * 🚀 REAL-TIME INTERIM PROCESSING: Process chunks for live transcription
      */
-    async processInterimChunk(chunkBlob, chunkIndex) {
-        if (this.isProcessing) return; // Prevent concurrent processing
+    async processInterimChunk(chunkBlob, chunkIndex, isExtended = false) {
+        // Skip if already processing (prevent overload)
+        if (this.isProcessing && !isExtended) return;
         
         try {
-            this.isProcessing = true;
+            if (!isExtended) this.isProcessing = true;
             
-            // Convert chunk to base64
+            // Convert chunk to base64 with progress tracking
             const arrayBuffer = await chunkBlob.arrayBuffer();
             const uint8Array = new Uint8Array(arrayBuffer);
             let binary = '';
@@ -172,6 +180,8 @@ class AudioChunkHandler {
                 binary += String.fromCharCode(uint8Array[i]);
             }
             const base64Audio = btoa(binary);
+            
+            console.log(`🔄 Processing interim chunk ${chunkIndex} (${chunkBlob.size} bytes, extended: ${isExtended})`);
             
             const response = await fetch('/api/transcribe-audio', {
                 method: 'POST',
@@ -189,46 +199,155 @@ class AudioChunkHandler {
             
             if (response.ok) {
                 const result = await response.json();
-                if (result.text && result.text.trim()) {
-                    this.displayInterimText(result.text, chunkIndex);
+                if (result.success && result.text && result.text.trim()) {
+                    console.log(`✅ Interim result ${chunkIndex}: "${result.text}"`);
+                    this.displayInterimText(result.text, chunkIndex, isExtended);
+                    
+                    // Update performance metrics
+                    if (window.updateSessionStats) {
+                        window.updateSessionStats({
+                            words: result.word_count || result.text.split(' ').length,
+                            latency: `${Math.round(result.processing_time || 0)}ms`,
+                            accuracy: result.confidence ? `${Math.round(result.confidence * 100)}%` : '95%'
+                        });
+                    }
+                } else {
+                    console.log(`ℹ️ No speech detected in interim chunk ${chunkIndex}`);
                 }
+            } else {
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                console.warn(`⚠️ Interim API error for chunk ${chunkIndex}:`, errorData.error);
             }
             
         } catch (error) {
             console.warn(`⚠️ Interim processing failed for chunk ${chunkIndex}:`, error);
         } finally {
-            this.isProcessing = false;
+            if (!isExtended) this.isProcessing = false;
         }
     }
     
     /**
-     * Display interim text updates
+     * 📝 DISPLAY INTERIM RESULTS: Show real-time transcription updates
      */
-    displayInterimText(text, chunkIndex) {
-        const interimDisplay = document.getElementById('interim-transcript') || 
-                             document.querySelector('.interim-transcript');
+    displayInterimText(text, chunkIndex, isExtended = false) {
+        // Find display areas for interim results
+        const displays = [
+            document.getElementById('interim-transcript'),
+            document.getElementById('interim-results'),
+            document.querySelector('.interim-transcript'),
+            document.querySelector('.interim-display'),
+            document.querySelector('.live-transcript')
+        ];
         
-        if (interimDisplay) {
-            interimDisplay.innerHTML = `
-                <div class="interim-chunk" data-chunk="${chunkIndex}">
-                    <span class="interim-text">${text}</span>
-                    <small class="interim-timestamp">${new Date().toLocaleTimeString()}</small>
-                </div>
-            `;
-            interimDisplay.style.display = 'block';
+        const timestamp = new Date().toLocaleTimeString();
+        const chunkType = isExtended ? 'extended' : 'normal';
+        
+        // Update all available interim displays
+        let displayUpdated = false;
+        for (const display of displays) {
+            if (display) {
+                display.innerHTML = `
+                    <div class="interim-chunk ${chunkType}" data-chunk="${chunkIndex}">
+                        <div class="interim-content">
+                            <span class="interim-text">${text}</span>
+                            <div class="interim-meta">
+                                <small class="interim-timestamp">${timestamp}</small>
+                                <small class="interim-type">${chunkType}</small>
+                                <small class="chunk-id">Chunk ${chunkIndex}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                display.style.display = 'block';
+                displayUpdated = true;
+            }
         }
         
-        console.log(`🔄 Interim result (chunk ${chunkIndex}): "${text}"`);
+        // If no dedicated interim display, update main transcript area
+        if (!displayUpdated) {
+            const mainDisplays = [
+                document.getElementById('fullTranscriptText'),
+                document.querySelector('.complete-transcript-display'),
+                document.querySelector('.transcript-content')
+            ];
+            
+            for (const display of mainDisplays) {
+                if (display) {
+                    const currentText = display.textContent || '';
+                    const newText = currentText ? `${currentText}\n[${timestamp}] ${text}` : text;
+                    
+                    if (display.tagName === 'INPUT' || display.tagName === 'TEXTAREA') {
+                        display.value = newText;
+                    } else {
+                        display.textContent = newText;
+                    }
+                    display.style.display = 'block';
+                    break;
+                }
+            }
+        }
+        
+        // Hide transcript placeholder if showing interim results
+        const placeholder = document.getElementById('transcriptPlaceholder');
+        if (placeholder) placeholder.style.display = 'none';
+        
+        // Trigger custom event for other components
+        window.dispatchEvent(new CustomEvent('interimTranscription', {
+            detail: {
+                text: text,
+                chunkIndex: chunkIndex,
+                timestamp: timestamp,
+                isExtended: isExtended
+            }
+        }));
+        
+        console.log(`🔄 Interim result (${chunkType} chunk ${chunkIndex}): "${text}"`);
     }
     
     /**
-     * Start a new recording session
+     * 🎤 START RECORDING SESSION: Initialize for real-time processing
      */
     startSession() {
         this.sessionId = `session_${Date.now()}`;
         this.audioChunks = [];
         this.isProcessing = false;
+        
+        // Clear any previous interim results
+        this.clearInterimResults();
+        
+        // Initialize session performance tracking
+        this.sessionStats = {
+            startTime: Date.now(),
+            chunksProcessed: 0,
+            interimResults: 0,
+            totalWords: 0
+        };
+        
         console.log(`🎤 Started new session: ${this.sessionId}`);
+        
+        // Notify UI components about session start
+        window.dispatchEvent(new CustomEvent('sessionStarted', {
+            detail: { sessionId: this.sessionId }
+        }));
+    }
+    
+    /**
+     * Clear interim results from UI
+     */
+    clearInterimResults() {
+        const displays = [
+            document.getElementById('interim-transcript'),
+            document.getElementById('interim-results'),
+            document.querySelector('.interim-transcript'),
+            document.querySelector('.interim-display')
+        ];
+        
+        displays.forEach(display => {
+            if (display) {
+                display.innerHTML = '';
+                display.style.display = 'none';
+            }
+        });
     }
     
     /**

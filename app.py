@@ -171,29 +171,37 @@ def create_app(config_class=Config):
     except Exception as e:
         logger.error(f"❌ Failed to register WebSocket routes: {e}")
     
-    # Register HTTP audio endpoints for direct processing
+    # 🎯 UNIFIED TRANSCRIPTION API: Single endpoint for all transcription needs
     try:
-        from routes.audio_http import audio_http_bp
-        app.register_blueprint(audio_http_bp)
-        logger.info("✅ HTTP audio endpoints registered")
+        from routes.unified_transcription_api import unified_api_bp
+        app.register_blueprint(unified_api_bp)
+        logger.info("✅ Unified transcription API registered")
     except Exception as e:
-        logger.error(f"❌ Failed to register HTTP audio endpoints: {e}")
+        logger.error(f"❌ Failed to register unified transcription API: {e}")
     
-    # CRITICAL FIX: Register new HTTP transcription endpoint
-    try:
-        from routes.audio_transcription_http import audio_bp
-        app.register_blueprint(audio_bp)
-        logger.info("✅ HTTP transcription endpoints registered")
-    except Exception as e:
-        logger.error(f"❌ Failed to register HTTP transcription endpoints: {e}")
+    # DISABLED: Conflicting endpoints that cause format confusion
+    # try:
+    #     from routes.audio_http import audio_http_bp
+    #     app.register_blueprint(audio_http_bp)
+    #     logger.info("✅ HTTP audio endpoints registered")
+    # except Exception as e:
+    #     logger.error(f"❌ Failed to register HTTP audio endpoints: {e}")
     
-    # 🚀 PRIORITY FIX: Register robust transcription endpoint
-    try:
-        from routes.transcription_endpoint_fix import transcription_fix_bp
-        app.register_blueprint(transcription_fix_bp)
-        logger.info("✅ Robust transcription endpoint registered")
-    except Exception as e:
-        logger.error(f"❌ Failed to register robust transcription endpoint: {e}")
+    # DISABLED: Old transcription endpoints (replaced by unified API)
+    # try:
+    #     from routes.audio_transcription_http import audio_bp
+    #     app.register_blueprint(audio_bp)
+    #     logger.info("✅ HTTP transcription endpoints registered")
+    # except Exception as e:
+    #     logger.error(f"❌ Failed to register HTTP transcription endpoints: {e}")
+    
+    # DISABLED: Legacy transcription fix endpoint (replaced by unified API)
+    # try:
+    #     from routes.transcription_endpoint_fix import transcription_fix_bp
+    #     app.register_blueprint(transcription_fix_bp)
+    #     logger.info("✅ Robust transcription endpoint registered")
+    # except Exception as e:
+    #     logger.error(f"❌ Failed to register robust transcription endpoint: {e}")
     
     # MANUAL MONITORING RECOMMENDATION #1: Enhanced WebSocket routes already registered
     logger.info("✅ Enhanced WebSocket event handlers active")

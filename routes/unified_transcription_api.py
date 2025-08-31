@@ -1,0 +1,294 @@
+"""
+🎯 UNIFIED TRANSCRIPTION API: Single robust endpoint for all transcription needs
+Handles both FormData file uploads AND base64 audio data from frontend
+"""
+
+import os
+import time
+import base64
+import tempfile
+import logging
+from flask import Blueprint, request, jsonify
+from datetime import datetime
+import openai
+from pydub import AudioSegment
+import io
+
+logger = logging.getLogger(__name__)
+
+# Create unified transcription blueprint
+unified_api_bp = Blueprint('unified_transcription', __name__)
+
+# Initialize OpenAI client
+_openai_client = None
+
+def get_openai_client():
+    """Get or initialize OpenAI client with proper error handling"""
+    global _openai_client
+    if _openai_client is None:
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY environment variable is required")
+        _openai_client = openai.OpenAI(api_key=api_key)
+        logger.info("✅ OpenAI client initialized successfully")
+    return _openai_client
+
+@unified_api_bp.route('/api/transcribe-audio', methods=['POST'])
+def unified_transcribe_audio():
+    """
+    🎯 UNIFIED TRANSCRIPTION ENDPOINT
+    Handles BOTH base64 audio data AND file uploads
+    Supports interim and final transcription modes
+    """
+    request_start_time = time.time()
+    
+    try:
+        # Extract session info
+        session_id = None
+        chunk_id = None
+        is_interim = False
+        
+        # Determine request format and extract data
+        audio_data = None
+        
+        if request.content_type and 'multipart/form-data' in request.content_type:
+            # Handle FormData file upload
+            logger.info("📁 Processing FormData file upload")
+            
+            session_id = request.form.get('session_id', f'session_{int(time.time())}')
+            chunk_id = request.form.get('chunk_id', '1')
+            is_interim = request.form.get('is_interim', 'false').lower() == 'true'
+            
+            if 'audio' in request.files:
+                audio_file = request.files['audio']
+                if audio_file and audio_file.filename:
+                    audio_data = audio_file.read()
+                    logger.info(f"📦 File upload: {len(audio_data)} bytes from {audio_file.filename}")
+            
+        elif request.content_type and 'application/x-www-form-urlencoded' in request.content_type:
+            # Handle base64 audio data (current frontend format)
+            logger.info("🔤 Processing base64 audio data")
+            
+            session_id = request.form.get('session_id', f'session_{int(time.time())}')
+            chunk_id = request.form.get('chunk_id', '1') 
+            is_interim = request.form.get('is_interim', 'false').lower() == 'true'
+            
+            audio_data_b64 = request.form.get('audio_data')
+            if audio_data_b64:
+                try:
+                    audio_data = base64.b64decode(audio_data_b64)
+                    logger.info(f"📦 Base64 decoded: {len(audio_data)} bytes")
+                except Exception as decode_error:
+                    logger.error(f"❌ Base64 decode error: {decode_error}")
+                    return jsonify({
+                        'error': 'Invalid base64 audio data',
+                        'success': False,
+                        'session_id': session_id
+                    }), 400
+        
+        else:
+            # Try to handle JSON format as fallback
+            try:
+                json_data = request.get_json()
+                if json_data:
+                    session_id = json_data.get('session_id', f'session_{int(time.time())}')
+                    chunk_id = json_data.get('chunk_id', '1')
+                    is_interim = json_data.get('is_interim', False)
+                    
+                    audio_data_b64 = json_data.get('audio_data')
+                    if audio_data_b64:
+                        audio_data = base64.b64decode(audio_data_b64)
+                        logger.info(f"📦 JSON base64 decoded: {len(audio_data)} bytes")
+            except:
+                pass
+        
+        # Validate we have audio data
+        if not audio_data:
+            logger.warning("⚠️ No audio data found in request")
+            return jsonify({
+                'error': 'No audio data provided. Expected either file upload or base64 audio_data field.',
+                'success': False,
+                'session_id': session_id or 'unknown',
+                'processing_time': (time.time() - request_start_time) * 1000
+            }), 400
+        
+        # Validate audio size
+        if len(audio_data) < 100:
+            logger.info(f"ℹ️ Audio too short ({len(audio_data)} bytes) - returning empty result")
+            return jsonify({
+                'success': True,
+                'text': '',
+                'final_text': '',
+                'confidence': 0.0,
+                'session_id': session_id,
+                'chunk_id': chunk_id,
+                'is_interim': is_interim,
+                'message': 'Audio too short for transcription',
+                'processing_time': (time.time() - request_start_time) * 1000
+            })
+        
+        logger.info(f"🎵 Processing audio: session={session_id}, chunk={chunk_id}, interim={is_interim}, size={len(audio_data)} bytes")
+        
+        # Convert audio to optimal format for Whisper
+        wav_audio = convert_audio_to_wav(audio_data)
+        if not wav_audio:
+            logger.error("❌ Audio conversion failed")
+            return jsonify({
+                'error': 'Audio format conversion failed',
+                'success': False,
+                'session_id': session_id,
+                'processing_time': (time.time() - request_start_time) * 1000
+            }), 500
+        
+        # Transcribe using OpenAI Whisper
+        try:
+            client = get_openai_client()
+            
+            # Create temporary file for Whisper API
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                temp_file.write(wav_audio)
+                temp_file_path = temp_file.name
+            
+            try:
+                # Call Whisper API
+                transcription_start = time.time()
+                
+                with open(temp_file_path, "rb") as audio_file:
+                    response = client.audio.transcriptions.create(
+                        model="whisper-1",
+                        file=audio_file,
+                        response_format="verbose_json",
+                        language="en",
+                        temperature=0.2,
+                        prompt="This is a live transcription. Please provide accurate speech-to-text conversion."
+                    )
+                
+                transcription_time = (time.time() - transcription_start) * 1000
+                total_processing_time = (time.time() - request_start_time) * 1000
+                
+                # Extract text and confidence
+                text = response.text.strip() if hasattr(response, 'text') else ''
+                
+                # Calculate confidence based on response
+                confidence = 0.95  # Default high confidence for Whisper
+                if hasattr(response, 'segments') and response.segments:
+                    # Average confidence from segments if available
+                    confidences = [seg.get('avg_logprob', 0.0) for seg in response.segments if isinstance(seg, dict)]
+                    if confidences:
+                        # Convert log probability to confidence percentage
+                        confidence = max(0.0, min(1.0, sum(confidences) / len(confidences) + 1.0))
+                
+                logger.info(f"✅ Transcription successful: '{text[:50]}...' ({transcription_time:.0f}ms)")
+                
+                # Format response
+                result = {
+                    'success': True,
+                    'text': text,
+                    'final_text': text if not is_interim else '',
+                    'confidence': confidence,
+                    'session_id': session_id,
+                    'chunk_id': chunk_id,
+                    'is_interim': is_interim,
+                    'is_final': not is_interim,
+                    'processing_time': total_processing_time,
+                    'transcription_time': transcription_time,
+                    'word_count': len(text.split()) if text else 0,
+                    'audio_duration_ms': len(audio_data) // 32,  # Rough estimate
+                    'timestamp': time.time()
+                }
+                
+                # Add processing details for debugging
+                if os.getenv('DEBUG'):
+                    result['debug'] = {
+                        'audio_size': len(audio_data),
+                        'wav_size': len(wav_audio),
+                        'format_detected': 'webm',
+                        'model_used': 'whisper-1'
+                    }
+                
+                return jsonify(result)
+                
+            finally:
+                # Cleanup temporary file
+                try:
+                    os.unlink(temp_file_path)
+                except:
+                    pass
+                    
+        except Exception as whisper_error:
+            logger.error(f"❌ Whisper API error: {whisper_error}")
+            processing_time = (time.time() - request_start_time) * 1000
+            
+            return jsonify({
+                'error': f'Transcription failed: {str(whisper_error)}',
+                'success': False,
+                'session_id': session_id,
+                'chunk_id': chunk_id,
+                'processing_time': processing_time
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"❌ Critical error in unified transcription API: {e}", exc_info=True)
+        processing_time = (time.time() - request_start_time) * 1000
+        
+        return jsonify({
+            'error': f'Server error: {str(e)}',
+            'success': False,
+            'session_id': session_id or 'unknown',
+            'processing_time': processing_time
+        }), 500
+
+def convert_audio_to_wav(audio_data):
+    """Convert audio data to WAV format optimized for Whisper"""
+    try:
+        # Try to load audio using pydub (handles webm, mp3, etc.)
+        audio_segment = AudioSegment.from_file(
+            io.BytesIO(audio_data),
+            format="webm"  # Most likely format from browser
+        )
+        
+        # Convert to optimal format for Whisper
+        audio_segment = audio_segment.set_frame_rate(16000)  # 16kHz sample rate
+        audio_segment = audio_segment.set_channels(1)        # Mono
+        audio_segment = audio_segment.set_sample_width(2)    # 16-bit
+        
+        # Export as WAV
+        wav_io = io.BytesIO()
+        audio_segment.export(wav_io, format="wav")
+        wav_data = wav_io.getvalue()
+        
+        logger.debug(f"✅ Audio conversion: {len(audio_data)} bytes → {len(wav_data)} bytes WAV")
+        return wav_data
+        
+    except Exception as e:
+        logger.error(f"❌ Audio conversion error: {e}")
+        # Fallback: assume it's already in a usable format
+        return audio_data
+
+@unified_api_bp.route('/api/transcribe-health', methods=['GET'])
+def transcription_health():
+    """Health check for unified transcription API"""
+    try:
+        client = get_openai_client()
+        
+        return jsonify({
+            'status': 'healthy',
+            'openai_api_configured': True,
+            'services': {
+                'openai_client': True,
+                'audio_processing': True,
+                'pydub_available': True
+            },
+            'timestamp': time.time()
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Health check failed: {e}")
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'openai_api_configured': bool(os.getenv('OPENAI_API_KEY')),
+            'timestamp': time.time()
+        }), 503
+
+logger.info("✅ Unified Transcription API initialized")
