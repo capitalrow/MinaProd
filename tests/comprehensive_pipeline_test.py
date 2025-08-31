@@ -115,17 +115,19 @@ class ComprehensivePipelineTest:
         results = []
         for test in tests:
             try:
-                # Prepare form data
-                files = {'audio': ('test.webm', test["audio_data"], 'audio/webm')}
+                # Prepare form data with base64 encoding as expected by endpoint
+                import base64
+                audio_b64 = base64.b64encode(test["audio_data"]).decode('utf-8')
                 data = {
                     'session_id': test["session_id"],
-                    'chunk_id': str(len(results) + 1)
+                    'chunk_id': str(len(results) + 1),
+                    'audio_data': audio_b64,
+                    'action': 'transcribe'
                 }
                 
                 start_time = time.time()
                 response = requests.post(
                     f"{self.base_url}/api/transcribe-audio", 
-                    files=files, 
                     data=data,
                     timeout=30
                 )
@@ -175,17 +177,28 @@ class ComprehensivePipelineTest:
         results = []
         
         for chunk_size in chunk_sizes:
-            test_audio = self.test_audio_data[:chunk_size] if chunk_size <= len(self.test_audio_data) else self.test_audio_data * (chunk_size // len(self.test_audio_data) + 1)[:chunk_size]
+            if chunk_size <= len(self.test_audio_data):
+                test_audio = self.test_audio_data[:chunk_size]
+            else:
+                # Repeat the test audio to reach desired size
+                repeat_count = (chunk_size // len(self.test_audio_data)) + 1
+                repeated_audio = self.test_audio_data * repeat_count
+                test_audio = repeated_audio[:chunk_size]
             
             # Single request test
             start_time = time.time()
             try:
-                files = {'audio': ('test.webm', test_audio, 'audio/webm')}
-                data = {'session_id': f"{self.session_id}_perf", 'chunk_id': '1'}
+                import base64
+                audio_b64 = base64.b64encode(test_audio).decode('utf-8')
+                data = {
+                    'session_id': f"{self.session_id}_perf", 
+                    'chunk_id': '1',
+                    'audio_data': audio_b64,
+                    'action': 'transcribe'
+                }
                 
                 response = requests.post(
                     f"{self.base_url}/api/transcribe-audio",
-                    files=files,
                     data=data,
                     timeout=30
                 )
@@ -220,15 +233,15 @@ class ComprehensivePipelineTest:
             {
                 "name": "missing_audio_file",
                 "method": "POST",
-                "data": {"session_id": "test"},
+                "data": {"session_id": "test", "action": "transcribe"},
                 "files": None,
                 "expected_status": 400
             },
             {
                 "name": "invalid_content_type", 
                 "method": "POST",
-                "data": None,
-                "files": {'audio': ('test.txt', b'not audio', 'text/plain')},
+                "data": {"session_id": "test", "audio_data": "aW52YWxpZA==", "action": "transcribe"},
+                "files": None,
                 "expected_status": [200, 400, 500]  # May handle gracefully
             },
             {
@@ -282,15 +295,17 @@ class ComprehensivePipelineTest:
         # Test multiple chunks in same session
         for chunk_id in range(1, 4):
             try:
-                files = {'audio': ('test.webm', self.test_audio_data, 'audio/webm')}
+                import base64
+                audio_b64 = base64.b64encode(self.test_audio_data).decode('utf-8')
                 data = {
                     'session_id': test_session,
-                    'chunk_id': str(chunk_id)
+                    'chunk_id': str(chunk_id),
+                    'audio_data': audio_b64,
+                    'action': 'transcribe'
                 }
                 
                 response = requests.post(
                     f"{self.base_url}/api/transcribe-audio",
-                    files=files,
                     data=data,
                     timeout=15
                 )
