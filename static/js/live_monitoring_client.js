@@ -23,7 +23,7 @@ class LiveMonitoringClient {
     }
     
     startMonitoring(sessionId) {
-        """Start comprehensive live monitoring for the session."""
+        /*Start comprehensive live monitoring for the session./*
         this.isMonitoring = true;
         this.sessionId = sessionId;
         this.startTime = Date.now();
@@ -58,7 +58,7 @@ class LiveMonitoringClient {
     }
     
     startPerformanceMonitoring() {
-        """Monitor performance metrics every second."""
+        /*Monitor performance metrics every second./*
         this.monitoringInterval = setInterval(() => {
             if (!this.isMonitoring) return;
             
@@ -84,7 +84,7 @@ class LiveMonitoringClient {
     }
     
     getMemoryUsage() {
-        """Get memory usage information."""
+        /*Get memory usage information./*
         if (performance.memory) {
             return {
                 used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024),
@@ -96,7 +96,7 @@ class LiveMonitoringClient {
     }
     
     getPageTiming() {
-        """Get page performance timing."""
+        /*Get page performance timing./*
         const navigation = performance.getEntriesByType('navigation')[0];
         if (navigation) {
             return {
@@ -109,7 +109,7 @@ class LiveMonitoringClient {
     }
     
     monitorUIUpdates() {
-        """Monitor UI updates and changes."""
+        /*Monitor UI updates and changes./*
         
         // Monitor DOM mutations
         const observer = new MutationObserver((mutations) => {
@@ -144,7 +144,7 @@ class LiveMonitoringClient {
     }
     
     monitorTranscriptionContainer() {
-        """Monitor transcription text display."""
+        /*Monitor transcription text display./*
         const transcriptionContainer = document.querySelector('.transcription-text') || 
                                      document.getElementById('transcriptionOutput') ||
                                      document.querySelector('[class*=\"transcript\"]');
@@ -184,7 +184,7 @@ class LiveMonitoringClient {
     }
     
     monitorStatusIndicators() {
-        """Monitor status indicators (connection, recording, etc.)."""
+        /*Monitor status indicators (connection, recording, etc.)./*
         const statusElements = [
             document.getElementById('wsStatus'),
             document.getElementById('micStatus'),
@@ -214,7 +214,7 @@ class LiveMonitoringClient {
     }
     
     monitorMetricsDisplay() {
-        """Monitor metrics display elements."""
+        /*Monitor metrics display elements./*
         const metricsElements = [
             document.getElementById('segmentCount'),
             document.getElementById('avgConfidence'),
@@ -241,7 +241,7 @@ class LiveMonitoringClient {
     }
     
     monitorTranscriptionDisplay() {
-        """Monitor transcription text visibility and performance."""
+        /*Monitor transcription text visibility and performance./*
         
         // Check transcription display performance every 2 seconds
         setInterval(() => {
@@ -270,7 +270,7 @@ class LiveMonitoringClient {
     }
     
     recordConnectionEvent(eventType, isConnected) {
-        """Record WebSocket connection event."""
+        /*Record WebSocket connection event./*
         if (!this.isMonitoring) return;
         
         const event = {
@@ -287,7 +287,7 @@ class LiveMonitoringClient {
     }
     
     recordJavaScriptError(error, source = '') {
-        """Record JavaScript error."""
+        /*Record JavaScript error./*
         if (!this.isMonitoring) return;
         
         const errorData = {
@@ -305,7 +305,7 @@ class LiveMonitoringClient {
     }
     
     sendMonitoringEvent(eventType, data) {
-        """Send monitoring event to server."""
+        /*Send monitoring event to server./*
         if (window.socket && window.socket.connected) {
             window.socket.emit('live_monitoring_event', {
                 sessionId: this.sessionId,
@@ -317,7 +317,7 @@ class LiveMonitoringClient {
     }
     
     getCurrentMetrics() {
-        """Get current monitoring metrics."""
+        /*Get current monitoring metrics./*
         if (!this.isMonitoring) return null;
         
         const duration = (Date.now() - this.startTime) / 1000;
@@ -338,13 +338,13 @@ class LiveMonitoringClient {
     }
     
     getLatestWordCount() {
-        """Get latest word count from transcription events."""
+        /*Get latest word count from transcription events./*
         const latest = this.metrics.transcriptionEvents[this.metrics.transcriptionEvents.length - 1];
         return latest ? latest.wordCount : 0;
     }
     
     endMonitoring() {
-        """End monitoring and generate final report."""
+        /*End monitoring and generate final report./*
         if (!this.isMonitoring) return null;
         
         this.isMonitoring = false;
@@ -390,7 +390,7 @@ class LiveMonitoringClient {
     }
     
     calculateAverageMemory() {
-        """Calculate average memory usage."""
+        /*Calculate average memory usage./*
         const memoryData = this.metrics.performanceData
             .map(data => data.memory?.used)
             .filter(val => val !== undefined);
@@ -400,7 +400,7 @@ class LiveMonitoringClient {
     }
     
     calculatePeakMemory() {
-        """Calculate peak memory usage."""
+        /*Calculate peak memory usage./*
         const memoryData = this.metrics.performanceData
             .map(data => data.memory?.used)
             .filter(val => val !== undefined);
