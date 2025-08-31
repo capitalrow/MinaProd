@@ -61,6 +61,9 @@ class RealWhisperIntegration {
             if (result.success) {
                 console.log(`✅ Chunk ${this.chunkCount} transcribed: "${result.transcript}"`);
                 
+                // Display the transcript in real-time
+                this.displayTranscript(result.transcript, result.segments || [], this.chunkCount);
+                
                 // Process transcription result
                 this.handleHTTPTranscriptionResult(result);
                 
@@ -120,7 +123,9 @@ class RealWhisperIntegration {
     
     updateTranscriptDisplay(newText, segments) {
         // Update the live transcript area with new transcription
-        const transcriptArea = document.getElementById('transcriptArea');
+        const transcriptArea = document.getElementById('transcriptContainer') || 
+                              document.getElementById('transcriptArea') ||
+                              document.querySelector('.transcript-content');
         if (!transcriptArea) {
             console.warn('⚠️ Transcript area not found');
             return;
@@ -132,13 +137,39 @@ class RealWhisperIntegration {
             placeholder.remove();
         }
         
-        // Create new segment element
+        // Create new segment element with better styling
         const segmentDiv = document.createElement('div');
-        segmentDiv.className = 'transcript-segment';
+        segmentDiv.className = 'transcript-segment mb-2 p-2 border-start border-3 border-info';
+        segmentDiv.style.animation = 'fadeIn 0.3s ease-in';
+        
+        const timestamp = new Date().toLocaleTimeString();
         segmentDiv.innerHTML = `
-            <span class="segment-text">${this.escapeHtml(newText)}</span>
-            <span class="segment-time">${new Date().toLocaleTimeString()}</span>
+            <div class="d-flex justify-content-between align-items-start">
+                <span class="segment-text flex-grow-1">${this.escapeHtml(newText)}</span>
+                <small class="segment-time text-muted ms-2">${timestamp}</small>
+            </div>
         `;
+        
+        // Add confidence indicator if available
+        if (segments && segments.length > 0 && segments[0].confidence !== undefined) {
+            const confidence = Math.abs(segments[0].confidence);
+            const confidencePercent = Math.round((1 - confidence) * 100);
+            
+            // Update confidence score display
+            const confidenceScore = document.getElementById('confidenceScore');
+            if (confidenceScore) {
+                confidenceScore.textContent = `${confidencePercent}%`;
+            }
+            
+            // Add visual confidence indicator
+            if (confidence < 0.5) {
+                segmentDiv.classList.add('border-success');
+            } else if (confidence < 1.0) {
+                segmentDiv.classList.add('border-warning');
+            } else {
+                segmentDiv.classList.add('border-danger');
+            }
+        }
         
         // Add to transcript area
         transcriptArea.appendChild(segmentDiv);
@@ -146,8 +177,24 @@ class RealWhisperIntegration {
         // Auto-scroll to bottom for real-time updates
         transcriptArea.scrollTop = transcriptArea.scrollHeight;
         
+        // Update statistics
+        const wordCount = newText.split(' ').filter(w => w.length > 0).length;
+        const wordsElement = document.getElementById('wordsCount');
+        if (wordsElement) {
+            const currentCount = parseInt(wordsElement.textContent) || 0;
+            wordsElement.textContent = currentCount + wordCount;
+        }
+        
+        // Update chunks processed
+        const chunksElement = document.getElementById('chunksProcessed');
+        if (chunksElement) {
+            chunksElement.textContent = this.chunkCount;
+        }
+        
         // Announce to screen readers
         this.announceTranscript(newText);
+        
+        console.log(`📝 Displayed transcript: ${newText.substring(0, 50)}...`);
     }
     
     announceTranscript(text) {
