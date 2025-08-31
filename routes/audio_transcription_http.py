@@ -10,10 +10,12 @@ import time
 import tempfile
 import logging
 import traceback
+import io
 from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app
 from werkzeug.utils import secure_filename
 import openai
+from pydub import AudioSegment
 
 from models import Session, Segment
 from app import db
@@ -63,6 +65,10 @@ def transcribe_audio():
                 'timestamp': time.time()
             }), 400
         
+        # Read audio data into memory
+        audio_data = audio_file.read()
+        original_filename = audio_file.filename or 'chunk.webm'
+        
         # Get session from database
         session = db.session.query(Session).filter_by(external_id=session_id).first()
         if not session:
@@ -76,27 +82,37 @@ def transcribe_audio():
             db.session.commit()
             logger.info(f"Created new session: {session_id}")
         
-        # Save audio file temporarily with proper extension
+        # Convert webm to wav for better compatibility
         temp_dir = tempfile.gettempdir()
-        original_filename = audio_file.filename or ''
+        wav_filename = f"audio_{session_id}_{int(time.time())}.wav"
+        temp_path = os.path.join(temp_dir, wav_filename)
         
-        # Ensure proper extension for OpenAI API
-        if original_filename:
-            filename = secure_filename(original_filename)
-            # If no extension or not a supported format, default to webm
-            if not filename or '.' not in filename:
-                filename = f"audio_{int(time.time())}.webm"
-        else:
-            filename = f"audio_{int(time.time())}.webm"
-        
-        # Ensure webm extension for browser recordings
-        if not filename.endswith(('.wav', '.webm', '.mp3', '.m4a', '.mp4')):
-            filename = filename.rsplit('.', 1)[0] + '.webm' if '.' in filename else filename + '.webm'
+        try:
+            # Convert webm to wav using pydub
+            logger.info(f"Converting audio from {original_filename} to WAV format...")
             
-        temp_path = os.path.join(temp_dir, filename)
-        
-        audio_file.save(temp_path)
-        logger.info(f"Saved audio file: {temp_path} ({os.path.getsize(temp_path)} bytes)")
+            # Load audio from bytes
+            audio_segment = AudioSegment.from_file(
+                io.BytesIO(audio_data),
+                format="webm" if original_filename.endswith('.webm') else None
+            )
+            
+            # Convert to optimal format for Whisper
+            audio_segment = audio_segment.set_frame_rate(16000)
+            audio_segment = audio_segment.set_channels(1)
+            audio_segment = audio_segment.set_sample_width(2)  # 16-bit
+            
+            # Export as WAV
+            audio_segment.export(temp_path, format="wav")
+            logger.info(f"Converted and saved audio file: {temp_path} ({os.path.getsize(temp_path)} bytes)")
+            
+        except Exception as conv_error:
+            logger.error(f"Audio conversion failed: {conv_error}")
+            # Fallback: save original file
+            temp_path = os.path.join(temp_dir, original_filename)
+            with open(temp_path, 'wb') as f:
+                f.write(audio_data)
+            logger.warning(f"Using original file format: {temp_path}")
         
         try:
             # Transcribe with OpenAI Whisper API
@@ -113,10 +129,14 @@ def transcribe_audio():
             )
             def transcribe_with_retry():
                 with open(temp_path, 'rb') as audio_data:
-                    logger.info(f"Sending audio to OpenAI Whisper API (format: {filename})...")
+                    # Determine the file format
+                    file_format = "audio/wav" if temp_path.endswith('.wav') else "audio/webm"
+                    file_name = os.path.basename(temp_path)
                     
-                    # Create file tuple with proper name for OpenAI
-                    audio_file_tuple = (filename, audio_data, 'audio/webm')
+                    logger.info(f"Sending audio to OpenAI Whisper API (format: {file_name}, type: {file_format})...")
+                    
+                    # Create file tuple with proper name and MIME type
+                    audio_file_tuple = (file_name, audio_data, file_format)
                     
                     return client.audio.transcriptions.create(
                         model="whisper-1",
