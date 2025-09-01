@@ -8,6 +8,8 @@ class PerformanceIntegrationBridge {
         this.realWhisperIntegration = null;
         this.originalMethods = {};
         this.isIntegrated = false;
+        this.connectionAttempts = 0;
+        this.fallbackMode = false;
         
         console.log('🔗 Performance Integration Bridge initializing...');
     }
@@ -16,9 +18,15 @@ class PerformanceIntegrationBridge {
      * Integrate all optimization systems with RealWhisperIntegration
      */
     integrateWithTranscriptionSystem() {
-        // Wait for RealWhisperIntegration to be available
+        // Wait for RealWhisperIntegration to be available with retry limit
         if (!window.realWhisperIntegration) {
-            console.log('⏳ Waiting for RealWhisperIntegration...');
+            this.connectionAttempts = (this.connectionAttempts || 0) + 1;
+            if (this.connectionAttempts > 20) { // Max 10 seconds
+                console.error('❌ RealWhisperIntegration not available after 10 seconds - using fallback mode');
+                this.setupFallbackMode();
+                return;
+            }
+            console.log(`⏳ Waiting for RealWhisperIntegration... (attempt ${this.connectionAttempts}/20)`);
             setTimeout(() => this.integrateWithTranscriptionSystem(), 500);
             return;
         }
@@ -184,6 +192,131 @@ class PerformanceIntegrationBridge {
         }
         
         console.log('🔗 Performance monitoring setup complete');
+    }
+    
+    /**
+     * Setup fallback mode when RealWhisperIntegration is not available
+     */
+    setupFallbackMode() {
+        this.fallbackMode = true;
+        console.log('🔄 Activating fallback performance monitoring mode');
+        
+        // Find the record button and hook into its events
+        const recordButton = document.getElementById('recordButton');
+        if (recordButton) {
+            recordButton.addEventListener('click', () => {
+                if (recordButton.textContent.includes('Start')) {
+                    this.onRecordingStart();
+                } else {
+                    this.onRecordingStop();
+                }
+            });
+        }
+        
+        // Monitor HTTP transcription requests
+        this.interceptHTTPRequests();
+        
+        this.isIntegrated = true;
+        console.log('✅ Fallback mode activated - monitoring HTTP transcription flow');
+    }
+    
+    /**
+     * Intercept HTTP transcription requests for fallback monitoring
+     */
+    interceptHTTPRequests() {
+        const originalFetch = window.fetch;
+        window.fetch = async (url, options) => {
+            const startTime = Date.now();
+            
+            if (url.includes('/api/transcribe')) {
+                console.log('📤 Intercepted transcription request');
+                
+                try {
+                    const response = await originalFetch(url, options);
+                    const endTime = Date.now();
+                    const latency = endTime - startTime;
+                    
+                    // Clone response to read it
+                    const responseClone = response.clone();
+                    const result = await responseClone.json();
+                    
+                    // Record performance metrics
+                    if (window.performanceDashboard) {
+                        window.performanceDashboard.recordTranscriptionMetrics({
+                            processingTime: latency,
+                            confidence: result.segments?.[0]?.confidence || 0.8,
+                            text: result.transcript || ''
+                        });
+                    }
+                    
+                    // Record QA metrics
+                    if (window.automatedQA && window.automatedQA.qaSession) {
+                        window.automatedQA.addTranscriptSegment(
+                            result.transcript || '',
+                            result.segments?.[0]?.confidence || 0.8,
+                            latency,
+                            false,
+                            endTime
+                        );
+                    }
+                    
+                    console.log(`✅ HTTP transcription completed in ${latency}ms`);
+                    return response;
+                    
+                } catch (error) {
+                    console.error('❌ HTTP transcription failed:', error);
+                    throw error;
+                }
+            }
+            
+            return originalFetch(url, options);
+        };
+    }
+    
+    /**
+     * Handle recording start in fallback mode
+     */
+    onRecordingStart() {
+        console.log('🎙️ Recording started (fallback mode)');
+        
+        // Start QA session
+        if (window.automatedQA) {
+            const sessionId = `session_${Date.now()}`;
+            window.automatedQA.startQASession(sessionId);
+        }
+        
+        // Reset performance systems
+        if (window.vadOptimization) window.vadOptimization.reset();
+        if (window.adaptiveChunking) window.adaptiveChunking.reset();
+        
+        // Emit recording started event
+        window.dispatchEvent(new CustomEvent('recordingStarted', {
+            detail: { timestamp: Date.now(), fallbackMode: true }
+        }));
+    }
+    
+    /**
+     * Handle recording stop in fallback mode
+     */
+    onRecordingStop() {
+        console.log('🎙️ Recording stopped (fallback mode)');
+        
+        // End QA session and generate report
+        if (window.automatedQA) {
+            const report = window.automatedQA.endQASession();
+            if (report) {
+                console.log('📊 Final QA Report (Fallback):', report);
+                this.displayQAReport(report);
+            }
+        }
+        
+        // Generate performance statistics
+        this.generatePerformanceReport();
+        
+        // Emit recording stopped event
+        window.dispatchEvent(new CustomEvent('recordingStopped', {
+            detail: { timestamp: Date.now(), fallbackMode: true }
+        }));
     }
     
     /**
