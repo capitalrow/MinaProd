@@ -8,6 +8,8 @@ import time
 import base64
 import tempfile
 import logging
+import struct
+import subprocess
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 import openai
@@ -129,16 +131,33 @@ def unified_transcribe_audio():
         
         logger.info(f"🎵 Processing audio: session={session_id}, chunk={chunk_id}, interim={is_interim}, size={len(audio_data)} bytes")
         
-        # Convert audio to optimal format for Whisper
-        wav_audio = convert_audio_to_wav(audio_data)
-        if not wav_audio:
-            logger.error("❌ Audio conversion failed")
+        # 🔥 CRITICAL FIX: Use robust AudioProcessor service for conversion
+        try:
+            from services.audio_processor import AudioProcessor
+            audio_processor = AudioProcessor()
+            wav_audio = audio_processor.convert_to_wav(audio_data, 'webm')
+            
+            if not wav_audio or len(wav_audio) < 44:
+                logger.error("❌ AudioProcessor conversion failed")
+                # Fallback to basic conversion
+                wav_audio = convert_audio_to_wav_enhanced(audio_data)
+                
+        except ImportError:
+            logger.warning("⚠️ AudioProcessor service not available, using fallback")
+            wav_audio = convert_audio_to_wav_enhanced(audio_data)
+        except Exception as conversion_error:
+            logger.error(f"❌ Audio conversion error: {conversion_error}")
+            wav_audio = convert_audio_to_wav_enhanced(audio_data)
+        
+        if not wav_audio or len(wav_audio) < 44:
+            logger.error("❌ All audio conversion methods failed")
             return jsonify({
-                'error': 'Audio format conversion failed',
+                'error': 'Audio format not supported. Please ensure your browser is recording in a compatible format.',
+                'details': 'WebM/Opus format conversion failed. Try refreshing the page or using a different browser.',
                 'success': False,
                 'session_id': session_id,
                 'processing_time': (time.time() - request_start_time) * 1000
-            }), 500
+            }), 400
         
         # Transcribe using OpenAI Whisper
         try:
@@ -238,32 +257,145 @@ def unified_transcribe_audio():
             'processing_time': processing_time
         }), 500
 
-def convert_audio_to_wav(audio_data):
-    """Convert audio data to WAV format optimized for Whisper"""
+def convert_audio_to_wav_enhanced(audio_data):
+    """Enhanced audio conversion with multiple fallback strategies"""
+    
+    if not audio_data or len(audio_data) < 100:
+        logger.warning(f"⚠️ Invalid audio data: {len(audio_data) if audio_data else 0} bytes")
+        return None
+    
+    # Strategy 1: PyDub with WebM/Opus
     try:
-        # Try to load audio using pydub (handles webm, mp3, etc.)
+        from pydub import AudioSegment
+        logger.info(f"🔧 Strategy 1: PyDub WebM conversion ({len(audio_data)} bytes)")
+        
         audio_segment = AudioSegment.from_file(
             io.BytesIO(audio_data),
-            format="webm"  # Most likely format from browser
+            format="webm"
         )
         
-        # Convert to optimal format for Whisper
-        audio_segment = audio_segment.set_frame_rate(16000)  # 16kHz sample rate
-        audio_segment = audio_segment.set_channels(1)        # Mono
-        audio_segment = audio_segment.set_sample_width(2)    # 16-bit
+        # Optimize for Whisper
+        audio_segment = audio_segment.set_frame_rate(16000)
+        audio_segment = audio_segment.set_channels(1)
+        audio_segment = audio_segment.set_sample_width(2)
         
-        # Export as WAV
+        # Apply noise reduction for better transcription
+        audio_segment = audio_segment.normalize()
+        
         wav_io = io.BytesIO()
         audio_segment.export(wav_io, format="wav")
         wav_data = wav_io.getvalue()
         
-        logger.debug(f"✅ Audio conversion: {len(audio_data)} bytes → {len(wav_data)} bytes WAV")
+        logger.info(f"✅ Strategy 1 successful: {len(wav_data)} bytes WAV")
         return wav_data
         
-    except Exception as e:
-        logger.error(f"❌ Audio conversion error: {e}")
-        # Fallback: assume it's already in a usable format
-        return audio_data
+    except Exception as e1:
+        logger.warning(f"⚠️ Strategy 1 failed: {e1}")
+    
+    # Strategy 2: Try with Opus codec hint
+    try:
+        audio_segment = AudioSegment.from_file(
+            io.BytesIO(audio_data),
+            format="webm",
+            codec="opus"
+        )
+        
+        audio_segment = audio_segment.set_frame_rate(16000)
+        audio_segment = audio_segment.set_channels(1)
+        audio_segment = audio_segment.set_sample_width(2)
+        audio_segment = audio_segment.normalize()
+        
+        wav_io = io.BytesIO()
+        audio_segment.export(wav_io, format="wav")
+        wav_data = wav_io.getvalue()
+        
+        logger.info(f"✅ Strategy 2 successful: {len(wav_data)} bytes WAV")
+        return wav_data
+        
+    except Exception as e2:
+        logger.warning(f"⚠️ Strategy 2 failed: {e2}")
+    
+    # Strategy 3: FFmpeg fallback using temporary files
+    try:
+        import subprocess
+        import tempfile
+        
+        logger.info("🔧 Strategy 3: FFmpeg conversion")
+        
+        with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as webm_file:
+            webm_file.write(audio_data)
+            webm_path = webm_file.name
+        
+        wav_path = webm_path.replace('.webm', '.wav')
+        
+        # FFmpeg command optimized for Whisper
+        cmd = [
+            'ffmpeg', '-y', '-i', webm_path,
+            '-ar', '16000',  # 16kHz
+            '-ac', '1',      # Mono
+            '-c:a', 'pcm_s16le',  # 16-bit PCM
+            '-f', 'wav',
+            '-loglevel', 'error',
+            wav_path
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, timeout=10)
+        
+        if result.returncode == 0 and os.path.exists(wav_path):
+            with open(wav_path, 'rb') as f:
+                wav_data = f.read()
+            
+            # Cleanup
+            for path in [webm_path, wav_path]:
+                try:
+                    os.unlink(path)
+                except:
+                    pass
+            
+            logger.info(f"✅ Strategy 3 successful: {len(wav_data)} bytes WAV")
+            return wav_data
+        else:
+            logger.error(f"❌ FFmpeg failed: {result.stderr.decode()}")
+            
+    except Exception as e3:
+        logger.warning(f"⚠️ Strategy 3 failed: {e3}")
+    
+    # Strategy 4: Assume it's raw PCM and create WAV header
+    try:
+        logger.info("🔧 Strategy 4: Raw PCM to WAV")
+        wav_data = create_wav_from_pcm(audio_data, 16000, 1)
+        
+        if wav_data and len(wav_data) > 44:
+            logger.info(f"✅ Strategy 4 successful: {len(wav_data)} bytes WAV")
+            return wav_data
+            
+    except Exception as e4:
+        logger.warning(f"⚠️ Strategy 4 failed: {e4}")
+    
+    logger.error("❌ All conversion strategies failed")
+    return None
+
+def create_wav_from_pcm(pcm_data, sample_rate=16000, channels=1):
+    """Create WAV file from raw PCM data"""
+    import struct
+    
+    # Calculate values
+    byte_rate = sample_rate * channels * 2  # 16-bit = 2 bytes
+    block_align = channels * 2
+    data_size = len(pcm_data)
+    file_size = 36 + data_size
+    
+    # Create WAV header
+    header = struct.pack('<4sI4s4sIHHIIHH4sI',
+        b'RIFF', file_size, b'WAVE',
+        b'fmt ', 16,           # PCM format
+        1, channels,           # Format type, channels
+        sample_rate, byte_rate, # Sample rate, byte rate
+        block_align, 16,       # Block align, bits per sample
+        b'data', data_size
+    )
+    
+    return header + pcm_data
 
 @unified_api_bp.route('/api/transcribe-health', methods=['GET'])
 def transcription_health():
