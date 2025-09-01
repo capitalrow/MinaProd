@@ -37,6 +37,8 @@ class UIAccessibilityEnhancements {
         this.setupResponsiveDesign();
         this.setupAccessibilityFeatures();
         this.setupScreenReaderSupport();
+        this.implementWCAGCompliance();
+        this.setupMobileOptimizations();
         
         console.log('✅ Accessibility enhancements activated');
     }

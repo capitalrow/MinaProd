@@ -32,6 +32,8 @@ class RobustnessEnhancements {
         this.setupRetryMechanisms();
         this.setupStructuredLogging();
         this.preventDuplicateConnections();
+        this.setupErrorRecovery();
+        this.setupPerformanceMonitoring();
         
         console.log('✅ Robustness systems activated');
     }
