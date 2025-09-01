@@ -40,9 +40,9 @@ class RealWhisperIntegration {
             formData.append('chunk_id', this.chunkCount.toString());
             formData.append('timestamp', Date.now().toString());
             
-            // 🚀 STREAMING UPDATE: Use streaming endpoint for real-time transcription
+            // 🚀 STREAMING UPDATE: Use correct unified transcription endpoint
             const isStreaming = true; // Enable streaming mode
-            const endpoint = isStreaming ? '/api/transcribe_streaming' : this.httpEndpoint;
+            const endpoint = isStreaming ? '/api/transcribe-audio' : this.httpEndpoint;
             
             // Add streaming parameters
             if (isStreaming) {
