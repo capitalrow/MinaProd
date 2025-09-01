@@ -152,6 +152,9 @@ def create_app(config_class=Config):
     app.register_blueprint(export_bp)
     app.register_blueprint(api_performance)
     
+    from routes.api_profiler import api_profiler_bp
+    app.register_blueprint(api_profiler_bp)
+    
     # Register API endpoints for advanced features
     try:
         from routes.api import api_bp
