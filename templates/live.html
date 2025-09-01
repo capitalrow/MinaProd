@@ -1,1 +1,544 @@
-"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mina - Live Transcription</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/static/css/professional_ui.css" rel="stylesheet">
+    
+    <style>
+        .accessibility-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .accessibility-controls button {
+            margin: 2px;
+            padding: 5px 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .skip-link {
+            position: absolute;
+            left: -9999px;
+            z-index: 999;
+            padding: 8px 16px;
+            background: #000;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .skip-link:focus {
+            left: 6px;
+            top: 7px;
+        }
+        
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            white-space: nowrap;
+            border: 0;
+        }
+        
+        .error-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .error-dialog-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .error-actions {
+            margin-top: 15px;
+            text-align: right;
+        }
+        
+        .error-actions button {
+            margin-left: 10px;
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .error-actions button:first-child {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+    </style>
+</head>
+<body class="bg-dark text-light ui-state-idle">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <div class="container-fluid" role="main" aria-label="Mina Live Transcription Application">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center py-3 border-bottom border-secondary">
+                    <div>
+                        <h1 class="h3 mb-0">
+                            <i class="bi bi-mic-fill text-primary"></i>
+                            Mina Live Transcription
+                        </h1>
+                        <small class="text-muted">Real-time AI-powered speech transcription</small>
+                    </div>
+                    <div>
+                        <button id="diagnosticsBtn" class="btn btn-outline-info btn-sm diagnostics-button" 
+                                aria-label="Show system diagnostics">
+                            <i class="bi bi-speedometer2"></i> Diagnostics
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="main-content" class="row">
+            <!-- Recording Controls -->
+            <div class="col-lg-4">
+                <div class="card bg-secondary border-secondary h-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-record-circle"></i> Recording Controls
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Recording Status -->
+                        <div id="recording-status" class="alert alert-secondary mb-3" role="status" 
+                             aria-live="polite" aria-label="Recording status">
+                            <i class="bi bi-circle-fill text-secondary"></i>
+                            <span>Ready to start recording</span>
+                        </div>
+
+                        <!-- Record Button -->
+                        <div class="d-grid gap-2 mb-3">
+                            <button id="recordButton" class="btn btn-primary btn-lg" 
+                                    aria-label="Start or stop audio recording for transcription"
+                                    aria-describedby="recording-status">
+                                <i class="bi bi-mic"></i>
+                                <span>Start Recording</span>
+                            </button>
+                        </div>
+
+                        <!-- Additional Controls -->
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button id="clearButton" class="btn btn-outline-warning btn-sm w-100"
+                                        aria-label="Clear transcript">
+                                    <i class="bi bi-trash"></i> Clear
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button id="downloadButton" class="btn btn-outline-success btn-sm w-100"
+                                        aria-label="Download transcript">
+                                    <i class="bi bi-download"></i> Export
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Session Statistics -->
+                        <div class="mt-4">
+                            <h6>Session Statistics</h6>
+                            <div class="stats-container" role="region" 
+                                 aria-label="Session statistics and performance metrics">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="stat-item">
+                                            <div id="durationCounter" class="stat-value">00:00</div>
+                                            <small class="stat-label">Duration</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="stat-item">
+                                            <div id="wordCounter" class="stat-value">0</div>
+                                            <small class="stat-label">Words</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="stat-item">
+                                            <div id="confidenceLevel" class="stat-value">--</div>
+                                            <small class="stat-label">Accuracy</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transcript Display -->
+            <div class="col-lg-8">
+                <div class="card bg-secondary border-secondary h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-chat-text"></i> Live Transcript
+                        </h5>
+                        <div class="text-muted">
+                            <small>
+                                <i class="bi bi-circle-fill" id="statusIndicator"></i>
+                                <span id="connectionStatus">Connecting...</span>
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="transcriptDisplay" 
+                             class="transcript-area p-3 bg-dark border border-secondary rounded"
+                             role="log"
+                             aria-label="Live transcription output"
+                             aria-live="polite"
+                             aria-atomic="false"
+                             style="height: 400px; overflow-y: auto; white-space: pre-wrap; line-height: 1.5;">
+                            <div class="text-muted text-center">
+                                <i class="bi bi-mic-mute"></i>
+                                <p>Click "Start Recording" to begin transcription...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Health Dashboard -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card bg-secondary border-secondary">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="bi bi-activity"></i> System Health
+                        </h6>
+                    </div>
+                    <div class="card-body system-health" role="status" 
+                         aria-label="System health and connection status" aria-live="polite">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="health-indicator">
+                                    <span class="badge bg-secondary" id="micStatus">
+                                        <i class="bi bi-mic"></i> Microphone: Unknown
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="health-indicator">
+                                    <span class="badge bg-secondary" id="wsStatus">
+                                        <i class="bi bi-wifi"></i> Connection: Unknown
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="health-indicator">
+                                    <span class="badge bg-secondary" id="transcriptionStatus">
+                                        <i class="bi bi-cpu"></i> Transcription: Unknown
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="health-indicator">
+                                    <span class="badge bg-secondary" id="performanceStatus">
+                                        <i class="bi bi-speedometer2"></i> Performance: Unknown
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen reader only elements -->
+    <div id="error-messages" role="alert" aria-live="assertive" class="sr-only"></div>
+    <div id="screen-reader-announcements" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+    <div id="ui-status" role="status" aria-live="polite" class="sr-only">Ready to start recording</div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Core Application Scripts -->
+    <script src="/static/js/real_whisper_integration.js"></script>
+    <script src="/static/js/performance_integration_bridge.js"></script>
+    <script src="/static/js/pipeline_performance_integration.js"></script>
+    <script src="/static/js/comprehensive_qa_pipeline.js"></script>
+    <script src="/static/js/robustness_enhancements.js"></script>
+    <script src="/static/js/ui_accessibility_enhancements.js"></script>
+    <script src="/static/js/final_integration_verification.js"></script>
+
+    <script>
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Mina Live Transcription System Loading...');
+            
+            // Initialize core systems
+            if (window.realWhisperIntegration) {
+                console.log('✅ RealWhisperIntegration available');
+            }
+            
+            if (window.performanceIntegrationBridge) {
+                console.log('✅ Performance Integration Bridge available');
+            }
+            
+            if (window.pipelinePerformance) {
+                console.log('✅ Pipeline Performance available');
+            }
+            
+            if (window.comprehensiveQA) {
+                console.log('✅ Comprehensive QA available');
+            }
+            
+            if (window.robustnessEnhancements) {
+                console.log('✅ Robustness Enhancements available');
+            }
+            
+            if (window.uiAccessibility) {
+                console.log('✅ UI Accessibility available');
+            }
+            
+            // Setup recording button
+            const recordButton = document.getElementById('recordButton');
+            if (recordButton) {
+                recordButton.addEventListener('click', handleRecordingToggle);
+            }
+            
+            // Setup other controls
+            setupApplicationControls();
+            
+            console.log('🎯 Mina Live Transcription System Ready');
+        });
+        
+        function handleRecordingToggle() {
+            const button = document.getElementById('recordButton');
+            const icon = button.querySelector('i');
+            const text = button.querySelector('span');
+            const status = document.getElementById('recording-status');
+            
+            if (button.textContent.includes('Start')) {
+                // Start recording
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-danger');
+                icon.className = 'bi bi-stop-fill';
+                text.textContent = 'Stop Recording';
+                
+                status.innerHTML = '<i class="bi bi-record-fill text-danger"></i><span>Recording...</span>';
+                status.className = 'alert alert-danger mb-3';
+                
+                // Start transcription
+                startTranscription();
+                
+            } else {
+                // Stop recording
+                button.classList.remove('btn-danger');
+                button.classList.add('btn-primary');
+                icon.className = 'bi bi-mic';
+                text.textContent = 'Start Recording';
+                
+                status.innerHTML = '<i class="bi bi-circle-fill text-secondary"></i><span>Ready to start recording</span>';
+                status.className = 'alert alert-secondary mb-3';
+                
+                // Stop transcription
+                stopTranscription();
+            }
+        }
+        
+        function startTranscription() {
+            console.log('🎤 Starting transcription...');
+            
+            // Update UI state
+            if (window.uiAccessibility) {
+                window.uiAccessibility.updateUIState('recording');
+            }
+            
+            // Start QA session
+            if (window.comprehensiveQA) {
+                const sessionId = `session_${Date.now()}`;
+                window.comprehensiveQA.startQASession(sessionId);
+            }
+            
+            // Start pipeline performance monitoring
+            if (window.pipelinePerformance) {
+                const sessionId = `session_${Date.now()}`;
+                window.pipelinePerformance.startSession(sessionId);
+            }
+            
+            // Start actual transcription
+            if (window.realWhisperIntegration) {
+                window.realWhisperIntegration.startTranscription();
+            }
+        }
+        
+        function stopTranscription() {
+            console.log('🛑 Stopping transcription...');
+            
+            // Update UI state
+            if (window.uiAccessibility) {
+                window.uiAccessibility.updateUIState('idle');
+            }
+            
+            // End QA session and generate report
+            if (window.comprehensiveQA) {
+                const report = window.comprehensiveQA.endQASession();
+                if (report) {
+                    console.log('📊 QA Report:', report);
+                    showQAReport(report);
+                }
+            }
+            
+            // End pipeline performance monitoring
+            if (window.pipelinePerformance) {
+                const report = window.pipelinePerformance.endSession();
+                if (report) {
+                    console.log('📈 Performance Report:', report);
+                }
+            }
+            
+            // Stop actual transcription
+            if (window.realWhisperIntegration) {
+                window.realWhisperIntegration.stopTranscription();
+            }
+        }
+        
+        function setupApplicationControls() {
+            // Clear button
+            const clearButton = document.getElementById('clearButton');
+            if (clearButton) {
+                clearButton.addEventListener('click', () => {
+                    const transcriptDisplay = document.getElementById('transcriptDisplay');
+                    if (transcriptDisplay) {
+                        transcriptDisplay.innerHTML = `
+                            <div class="text-muted text-center">
+                                <i class="bi bi-mic-mute"></i>
+                                <p>Click "Start Recording" to begin transcription...</p>
+                            </div>
+                        `;
+                    }
+                    
+                    // Reset counters
+                    document.getElementById('wordCounter').textContent = '0';
+                    document.getElementById('durationCounter').textContent = '00:00';
+                    document.getElementById('confidenceLevel').textContent = '--';
+                });
+            }
+            
+            // Download button
+            const downloadButton = document.getElementById('downloadButton');
+            if (downloadButton) {
+                downloadButton.addEventListener('click', downloadTranscript);
+            }
+            
+            // Diagnostics button
+            const diagnosticsBtn = document.getElementById('diagnosticsBtn');
+            if (diagnosticsBtn) {
+                diagnosticsBtn.addEventListener('click', showDiagnostics);
+            }
+        }
+        
+        function downloadTranscript() {
+            const transcriptDisplay = document.getElementById('transcriptDisplay');
+            const content = transcriptDisplay.textContent || transcriptDisplay.innerText || '';
+            
+            if (!content.trim() || content.includes('Click "Start Recording"')) {
+                alert('No transcript available to download');
+                return;
+            }
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `transcript-${new Date().toISOString().slice(0,19).replace(/[:.]/g, '-')}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function showDiagnostics() {
+            // Run comprehensive system diagnostics
+            if (window.integrationVerification) {
+                window.integrationVerification.runFullVerification();
+            }
+            
+            // Show current system status
+            const status = {
+                realWhisperIntegration: !!window.realWhisperIntegration,
+                performanceIntegration: !!window.performanceIntegrationBridge,
+                pipelinePerformance: !!window.pipelinePerformance,
+                comprehensiveQA: !!window.comprehensiveQA,
+                robustnessEnhancements: !!window.robustnessEnhancements,
+                uiAccessibility: !!window.uiAccessibility
+            };
+            
+            console.log('🔍 System Diagnostics:', status);
+            
+            // Show performance snapshot if available
+            if (window.pipelinePerformance) {
+                const snapshot = window.pipelinePerformance.getPerformanceSnapshot();
+                console.log('📊 Performance Snapshot:', snapshot);
+            }
+            
+            // Show QA statistics if available
+            if (window.comprehensiveQA) {
+                const stats = window.comprehensiveQA.getStatistics();
+                console.log('🔬 QA Statistics:', stats);
+            }
+        }
+        
+        function showQAReport(report) {
+            const summary = `
+QA Session Report:
+- WER: ${report.metrics.wer}% (Target: ≤10%)
+- Accuracy: ${report.metrics.accuracy}% (Target: ≥95%)
+- Latency: ${report.metrics.latency}ms (Target: <500ms)
+- Completeness: ${report.metrics.completeness}% (Target: ≥90%)
+
+Overall Status: ${report.passed.overall ? 'PASSED' : 'NEEDS IMPROVEMENT'}
+            `;
+            
+            console.log('📊 QA Report Summary:\n' + summary);
+            
+            // Show notification if available
+            if (window.showNotification) {
+                window.showNotification(
+                    'QA Report Generated',
+                    `WER: ${report.metrics.wer}%, Accuracy: ${report.metrics.accuracy}%, Latency: ${report.metrics.latency}ms`,
+                    report.passed.overall ? 'success' : 'warning'
+                );
+            }
+        }
+    </script>
+</body>
+</html>
