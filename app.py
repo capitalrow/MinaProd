@@ -6,7 +6,7 @@ Modified for better Gunicorn compatibility
 import os
 import logging
 from flask import Flask
-# Keep SocketIO disabled due to dependency conflicts, use HTTP endpoints instead
+# Keep SocketIO disabled due to dependency conflicts, use optimized HTTP endpoints instead
 # from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
@@ -42,7 +42,7 @@ try:
 except Exception as e:
     logger.error(f"❌ Failed to start Browser WebSocket Server: {e}")
 
-# Use HTTP endpoints for audio processing - more reliable than WebSocket for transcription
+# Use optimized HTTP endpoints for streaming audio - more reliable than WebSocket for transcription
 socketio = None
 
 def create_app(config_class=Config):
@@ -177,10 +177,12 @@ def create_app(config_class=Config):
     # 🎯 UNIFIED TRANSCRIPTION API: Single endpoint for all transcription needs
     try:
         from routes.unified_transcription_api import unified_api_bp
+        from routes.streaming_transcription_api import streaming_bp
         app.register_blueprint(unified_api_bp)
-        logger.info("✅ Unified transcription API registered")
+        app.register_blueprint(streaming_bp)
+        logger.info("✅ Unified and streaming transcription APIs registered")
     except Exception as e:
-        logger.error(f"❌ Failed to register unified transcription API: {e}")
+        logger.error(f"❌ Failed to register transcription APIs: {e}")
     
     # DISABLED: Conflicting endpoints that cause format confusion
     # try:
