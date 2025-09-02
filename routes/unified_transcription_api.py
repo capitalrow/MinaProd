@@ -72,7 +72,7 @@ def unified_transcribe_audio():
             logger.info("🔤 Processing base64 audio data")
             
             session_id = request.form.get('session_id', f'session_{int(time.time())}')
-            chunk_id = request.form.get('chunk_id', '1') 
+            chunk_id = request.form.get('chunk_id', '1')
             is_interim = request.form.get('is_interim', 'false').lower() == 'true'
             
             audio_data_b64 = request.form.get('audio_data')

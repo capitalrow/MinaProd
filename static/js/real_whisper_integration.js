@@ -673,10 +673,9 @@ class RealWhisperIntegration {
         try {
             console.log('🎯 STARTING HTTP TRANSCRIPTION');
             
-            // Initialize HTTP-based transcription mode
-            if (!this.isConnected) {
-                await this.initializeConnection();
-            }
+            // FIXED: Skip WebSocket connection - use HTTP-only mode
+            this.isConnected = true; // Mark as connected for HTTP mode
+            console.log('✅ Using HTTP-only transcription mode');
             
             this.sessionId = sessionId || `session_${Date.now()}`;
             
@@ -693,13 +692,47 @@ class RealWhisperIntegration {
             // Initialize audio recording for HTTP upload
             await this.initializeAudioRecordingHTTP();
             
+            // Update UI status indicators
+            this.updateConnectionStatus('Connected');
+            this.updateMicrophoneStatus('Active');
+            
+            // Start recording with 1-second chunks
+            this.mediaRecorder.start(1000);
+            this.isRecording = true;
+            
             console.log('✅ HTTP-based transcription started');
             return true;
             
         } catch (error) {
             console.error('Failed to start transcription:', error);
+            this.updateConnectionStatus('Error');
+            this.updateMicrophoneStatus('Permission Required');
             throw error;
         }
+    }
+    
+    updateConnectionStatus(status) {
+        const elements = document.querySelectorAll('[data-status="connection"], #connectionStatus, .connection-status');
+        elements.forEach(element => {
+            if (element) {
+                element.textContent = status;
+                element.className = element.className.replace(/status-(connected|disconnected|error|connecting)/g, '');
+                element.classList.add(`status-${status.toLowerCase()}`);
+            }
+        });
+        console.log(`🔗 Connection status updated: ${status}`);
+    }
+    
+    updateMicrophoneStatus(status) {
+        const elements = document.querySelectorAll('[data-status="microphone"], #microphoneStatus, .microphone-status');
+        elements.forEach(element => {
+            if (element) {
+                element.textContent = status;
+                element.className = element.className.replace(/mic-(active|required|error|denied)/g, '');
+                element.classList.add(`mic-${status.toLowerCase().replace(' ', '-')}`);
+            }
+        });
+        console.log(`🎤 Microphone status updated: ${status}`);
     }
     
     clearTranscriptArea() {
