@@ -73,39 +73,193 @@ class EnhancedIntegrationBridge {
         try {
             console.log('🎤 Initializing RealWhisperIntegration...');
             
-            // Wait for RealWhisperIntegration class to be available
-            let attempts = 0;
-            while (typeof RealWhisperIntegration === 'undefined' && attempts < 10) {
-                console.log(`⏳ Waiting for RealWhisperIntegration class... (attempt ${attempts + 1}/10)`);
-                await new Promise(resolve => setTimeout(resolve, 500));
-                attempts++;
-            }
-            
-            if (typeof RealWhisperIntegration === 'undefined') {
-                throw new Error('RealWhisperIntegration class not loaded after 10 attempts');
-            }
-            
-            // Create instance if not exists
-            if (!window.realWhisperIntegration) {
-                window.realWhisperIntegration = new RealWhisperIntegration();
-                console.log('✅ RealWhisperIntegration instance created');
-            }
-            
-            // Configure correct endpoints
-            if (window.realWhisperIntegration) {
-                window.realWhisperIntegration.httpEndpoint = '/api/transcribe-audio';
-                window.realWhisperIntegration.streamingEndpoint = '/api/transcribe-audio';
+            // Direct initialization - skip waiting for class
+            try {
+                // Create instance directly
+                if (!window.realWhisperIntegration) {
+                    window.realWhisperIntegration = new RealWhisperIntegration();
+                    console.log('✅ RealWhisperIntegration instance created');
+                }
                 
+                // Configure for HTTP mode
+                if (window.realWhisperIntegration) {
+                    window.realWhisperIntegration.httpEndpoint = '/api/transcribe-audio';
+                    window.realWhisperIntegration.streamingEndpoint = '/api/transcribe-audio';
+                    window.realWhisperIntegration.isConnected = true; // Enable HTTP mode
+                    
+                    // Test required methods exist
+                    if (typeof window.realWhisperIntegration.startTranscription === 'function') {
+                        this.systems.realWhisperIntegration = true;
+                        console.log('✅ RealWhisperIntegration fully functional');
+                        
+                        // Update system status
+                        this.updateSystemStatus('transcription', 'Ready');
+                    } else {
+                        throw new Error('Missing required methods');
+                    }
+                } else {
+                    throw new Error('Failed to create instance');
+                }
+                
+            } catch (directError) {
+                console.error('❌ Direct initialization failed:', directError);
+                
+                // Create minimal fallback
+                window.realWhisperIntegration = this.createMinimalTranscription();
                 this.systems.realWhisperIntegration = true;
-                console.log('✅ RealWhisperIntegration initialized with correct endpoints');
-            } else {
-                throw new Error('Failed to create RealWhisperIntegration instance');
+                console.log('⚠️ Using minimal transcription fallback');
+                this.updateSystemStatus('transcription', 'Fallback');
             }
             
         } catch (error) {
             console.error('❌ RealWhisperIntegration initialization failed:', error);
             this.systems.realWhisperIntegration = false;
+            this.updateSystemStatus('transcription', 'Failed');
         }
+    }
+    
+    /**
+     * Create minimal transcription fallback
+     */
+    createMinimalTranscription() {
+        return {
+            isConnected: true,
+            isRecording: false,
+            sessionId: null,
+            
+            async startTranscription(sessionId) {
+                console.log('🔄 Starting minimal transcription fallback');
+                this.sessionId = sessionId;
+                this.isRecording = true;
+                
+                // Request microphone permission and start basic recording
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        }
+                    });
+                    
+                    // Update status to show microphone is active
+                    window.enhancedIntegrationBridge?.updateSystemStatus('microphone', 'Active');
+                    window.enhancedIntegrationBridge?.updateSystemStatus('connection', 'Connected');
+                    
+                    // Simple audio recording setup
+                    this.mediaRecorder = new MediaRecorder(stream);
+                    this.mediaRecorder.ondataavailable = async (event) => {
+                        if (event.data.size > 0) {
+                            await this.sendAudioChunk(event.data);
+                        }
+                    };
+                    
+                    this.mediaRecorder.start(1000); // 1-second chunks
+                    console.log('✅ Minimal transcription started');
+                    
+                    return true;
+                    
+                } catch (error) {
+                    console.error('❌ Minimal transcription failed:', error);
+                    window.enhancedIntegrationBridge?.updateSystemStatus('microphone', 'Permission Required');
+                    throw error;
+                }
+            },
+            
+            async stopTranscription() {
+                if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                    this.mediaRecorder.stop();
+                }
+                this.isRecording = false;
+                console.log('🛑 Minimal transcription stopped');
+            },
+            
+            async sendAudioChunk(audioBlob) {
+                try {
+                    const formData = new FormData();
+                    formData.append('audio_data', await this.blobToBase64(audioBlob));
+                    formData.append('session_id', this.sessionId || 'minimal');
+                    
+                    const response = await fetch('/api/transcribe-audio', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.transcript) {
+                            this.displayTranscript(result.transcript);
+                        }
+                    }
+                    
+                } catch (error) {
+                    console.warn('⚠️ Audio chunk failed:', error);
+                }
+            },
+            
+            async blobToBase64(blob) {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.readAsDataURL(blob);
+                });
+            },
+            
+            displayTranscript(text) {
+                const transcriptContainer = document.querySelector('.live-transcript-container') ||
+                                          document.getElementById('transcript') || 
+                                          document.getElementById('transcriptContent');
+                if (transcriptContainer) {
+                    transcriptContainer.innerHTML += `<p>${text}</p>`;
+                    transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
+                }
+            }
+        };
+    }
+    
+    /**
+     * Update system status indicators
+     */
+    updateSystemStatus(component, status) {
+        console.log(`📊 Updating ${component} status: ${status}`);
+        
+        // Update system health badges
+        const healthElement = document.querySelector(`[data-health="${component}"]`);
+        if (healthElement) {
+            healthElement.textContent = status;
+            healthElement.className = `badge ${this.getStatusClass(status)}`;
+        }
+        
+        // Update specific status elements
+        const statusElements = document.querySelectorAll(`[data-status="${component}"], .${component}-status`);
+        statusElements.forEach(element => {
+            element.textContent = status;
+            element.className = element.className.replace(/status-\w+/g, '');
+            element.classList.add(`status-${status.toLowerCase().replace(' ', '-')}`);
+        });
+        
+        // Emit status change event
+        document.dispatchEvent(new CustomEvent('systemStatusChange', {
+            detail: { component, status }
+        }));
+    }
+    
+    /**
+     * Get CSS class for status
+     */
+    getStatusClass(status) {
+        const statusMap = {
+            'Active': 'badge-success',
+            'Ready': 'badge-success', 
+            'Connected': 'badge-success',
+            'Permission Required': 'badge-warning',
+            'Initializing': 'badge-warning',
+            'Fallback': 'badge-warning',
+            'Disconnected': 'badge-danger',
+            'Failed': 'badge-danger',
+            'Error': 'badge-danger'
+        };
+        return statusMap[status] || 'badge-secondary';
     }
     
     /**
