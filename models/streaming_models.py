@@ -1,19 +1,10 @@
+"""
+Streaming-specific database models for real-time transcription
+"""
+
 from app import db
 from datetime import datetime
 from sqlalchemy import JSON
-from sqlalchemy.dialects.postgresql import UUID
-import uuid
-
-
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    # ensure password hash field has length of at least 256
-    password_hash = db.Column(db.String(256))
-    
-    # Relationships
-    sessions = db.relationship('TranscriptionSession', backref='user', lazy='dynamic')
 
 
 class TranscriptionSession(db.Model):
@@ -22,7 +13,7 @@ class TranscriptionSession(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.String(255), unique=True, nullable=False, index=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    user_id = db.Column(db.Integer, nullable=True)  # Remove FK constraint for now
     
     # Session metadata
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
