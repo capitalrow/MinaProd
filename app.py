@@ -178,9 +178,12 @@ def create_app(config_class=Config):
     try:
         from routes.unified_transcription_api import unified_api_bp
         from routes.streaming_transcription_api import streaming_bp
+        from routes.monitoring_dashboard import monitoring_bp
         app.register_blueprint(unified_api_bp)
         app.register_blueprint(streaming_bp)
+        app.register_blueprint(monitoring_bp)
         logger.info("✅ Unified and streaming transcription APIs registered")
+        logger.info("✅ Monitoring dashboard registered")
     except Exception as e:
         logger.error(f"❌ Failed to register transcription APIs: {e}")
     

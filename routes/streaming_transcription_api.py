@@ -11,6 +11,7 @@ from datetime import datetime
 from app import db
 from models.streaming_models import TranscriptionSession, TranscriptionChunk
 from services.streaming_audio_processor import get_streaming_processor, ProcessingResult
+from services.real_time_qa_bridge import get_qa_bridge
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,15 @@ def start_streaming_session():
         
         # Start streaming processor session
         processor = get_streaming_processor()
+        qa_bridge = get_qa_bridge()
+        
+        # Start performance monitoring
+        from services.performance_monitor import get_performance_monitor
+        performance_monitor = get_performance_monitor()
+        performance_monitor.record_session_start(session_id)
+        
+        # Start QA monitoring
+        qa_bridge.start_qa_session(session_id)
         
         def result_callback(result: ProcessingResult):
             """Handle processing results"""
@@ -340,7 +350,19 @@ def handle_transcription_result(session_id: str, result: ProcessingResult):
         db.session.add(chunk)
         db.session.commit()
         
-        logger.debug(f"✅ Saved transcription result: {result.chunk_id}")
+        # Process with QA bridge for real-time metrics
+        qa_bridge = get_qa_bridge()
+        qa_result = {
+            'text': result.transcript,
+            'confidence': result.confidence,
+            'processing_time_ms': result.processing_time_ms,
+            'chunk_id': result.chunk_id,
+            'is_final': not result.is_interim,
+            'word_count': result.word_count
+        }
+        qa_metrics = qa_bridge.process_transcription_result(qa_result)
+        
+        logger.debug(f"✅ Saved transcription result: {result.chunk_id} | QA: WER={qa_metrics.wer:.1f}% Latency={qa_metrics.latency_ms:.0f}ms")
         
     except Exception as e:
         logger.error(f"❌ Failed to save transcription result: {e}", exc_info=True)

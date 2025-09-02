@@ -259,6 +259,10 @@ class PerformanceMonitor:
             "timestamp": time.time()
         }
     
+    def get_alerts(self) -> List[Dict[str, str]]:
+        """Get current system alerts."""
+        return self._generate_alerts()
+    
     def _generate_alerts(self) -> List[Dict[str, str]]:
         """Generate performance alerts based on thresholds."""
         alerts = []
@@ -307,3 +311,7 @@ class PerformanceMonitor:
 
 # Global instance
 performance_monitor = PerformanceMonitor()
+
+def get_performance_monitor() -> PerformanceMonitor:
+    """Get global performance monitor instance"""
+    return performance_monitor
