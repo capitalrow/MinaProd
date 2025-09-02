@@ -211,21 +211,46 @@
                         <div class="text-muted">
                             <small>
                                 <i class="bi bi-circle-fill" id="statusIndicator"></i>
-                                <span id="connectionStatus">Connecting...</span>
+                                <span id="connectionStatus" data-status="connection">Ready</span>
                             </small>
                         </div>
                     </div>
                     <div class="card-body">
                         <div id="transcriptDisplay" 
-                             class="transcript-area p-3 bg-dark border border-secondary rounded"
+                             class="transcript-area p-3 bg-dark border border-secondary rounded live-transcript-container"
                              role="log"
                              aria-label="Live transcription output"
                              aria-live="polite"
                              aria-atomic="false"
                              style="height: 400px; overflow-y: auto; white-space: pre-wrap; line-height: 1.5;">
-                            <div class="text-muted text-center">
+                            <div class="text-muted text-center" id="initialMessage">
                                 <i class="bi bi-mic-mute"></i>
                                 <p>Click "Start Recording" to begin transcription...</p>
+                            </div>
+                            
+                            <!-- System Health Indicators -->
+                            <div id="systemHealth" class="mt-3 d-none">
+                                <h6 class="text-info mb-2">
+                                    <i class="bi bi-shield-check"></i> System Health
+                                </h6>
+                                <div class="row">
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <span class="badge bg-warning" data-health="microphone">Permission Required</span>
+                                        <br><small class="text-muted">Microphone</small>
+                                    </div>
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <span class="badge bg-danger" data-health="connection">Disconnected</span>
+                                        <br><small class="text-muted">Connection</small>
+                                    </div>
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <span class="badge bg-warning" data-health="transcription">Initializing</span>
+                                        <br><small class="text-muted">Transcription</small>
+                                    </div>
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <span class="badge bg-success" data-health="performance">Monitoring</span>
+                                        <br><small class="text-muted">Performance</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -293,10 +318,13 @@
     <script src="/static/js/performance_integration_bridge.js"></script>
     <script src="/static/js/pipeline_performance_integration.js"></script>
     <script src="/static/js/comprehensive_qa_pipeline.js"></script>
+    <script src="/static/js/comprehensive_qa_metrics.js"></script>
     <script src="/static/js/robustness_enhancements.js"></script>
     <script src="/static/js/ui_accessibility_enhancements.js"></script>
     <script src="/static/js/final_integration_verification.js"></script>
     <script src="/static/js/integration_bridge_enhanced.js"></script>
+    <script src="/static/js/robust_error_handling.js"></script>
+    <script src="/static/js/accessibility_mobile_optimization.js"></script>
     
     <!-- Fix Pack Implementation Scripts -->
     <script src="/static/js/fix_pack_2_performance_monitoring.js"></script>

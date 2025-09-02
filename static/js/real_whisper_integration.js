@@ -754,16 +754,26 @@ class RealWhisperIntegration {
                                   document.querySelector('.transcript-content');
                                   
         if (transcriptContainer) {
+            // Clear the "Connecting..." message and show active status
             transcriptContainer.innerHTML = `
-                <div class="transcription-active p-3 text-center">
+                <div class="transcription-active p-3 text-center" id="activeStatus">
                     <div class="spinner-border text-success mb-2" role="status">
                         <span class="visually-hidden">Processing...</span>
                     </div>
                     <h6 class="text-success">🎤 Live Transcription Active</h6>
                     <p class="text-muted mb-0">Listening for speech...</p>
+                    <div class="mt-2">
+                        <small class="text-success">✅ Connected</small> | 
+                        <small class="text-success">🎤 Microphone Active</small>
+                    </div>
                 </div>
+                <div id="transcriptText" class="mt-3"></div>
             `;
-            console.log('🎤 Showing active transcription status');
+            console.log('🎤 Showing active transcription status with connection indicators');
+            
+            // Update connection status in UI
+            this.updateConnectionStatus('Connected');
+            this.updateMicrophoneStatus('Active');
         }
     }
     
