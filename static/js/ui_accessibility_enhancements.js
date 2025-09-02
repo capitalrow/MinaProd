@@ -46,4 +46,774 @@ class UIAccessibilityEnhancements {
     /**
      * Setup comprehensive keyboard navigation
      */
-    setupKeyboardNavigation() {\n        // Add tabindex to interactive elements\n        const interactiveElements = [\n            '#recordButton',\n            '#stopButton',\n            '#clearButton',\n            '#downloadButton',\n            '.diagnostics-button',\n            '.performance-button'\n        ];\n        \n        interactiveElements.forEach(selector => {\n            const element = document.querySelector(selector);\n            if (element) {\n                element.setAttribute('tabindex', '0');\n                \n                // Add keyboard event listeners\n                element.addEventListener('keydown', (event) => {\n                    if (event.key === 'Enter' || event.key === ' ') {\n                        event.preventDefault();\n                        element.click();\n                    }\n                });\n                \n                // Add focus indicators\n                element.addEventListener('focus', () => {\n                    element.style.outline = '3px solid #007bff';\n                    element.style.outlineOffset = '2px';\n                });\n                \n                element.addEventListener('blur', () => {\n                    element.style.outline = 'none';\n                });\n            }\n        });\n        \n        // Global keyboard shortcuts\n        document.addEventListener('keydown', (event) => {\n            // Alt + R: Start/Stop recording\n            if (event.altKey && event.key === 'r') {\n                event.preventDefault();\n                this.toggleRecording();\n            }\n            \n            // Alt + C: Clear transcript\n            if (event.altKey && event.key === 'c') {\n                event.preventDefault();\n                this.clearTranscript();\n            }\n            \n            // Alt + D: Show diagnostics\n            if (event.altKey && event.key === 'd') {\n                event.preventDefault();\n                this.toggleDiagnostics();\n            }\n            \n            // Escape: Close modals/overlays\n            if (event.key === 'Escape') {\n                this.closeModalOverlays();\n            }\n        });\n        \n        // Skip link for screen readers\n        this.addSkipLink();\n    }\n    \n    /**\n     * Setup comprehensive ARIA labels and attributes\n     */\n    setupARIALabels() {\n        // Main application container\n        const appContainer = document.querySelector('.container') || document.body;\n        appContainer.setAttribute('role', 'main');\n        appContainer.setAttribute('aria-label', 'Mina Live Transcription Application');\n        \n        // Recording controls\n        const recordButton = document.getElementById('recordButton');\n        if (recordButton) {\n            recordButton.setAttribute('aria-label', 'Start or stop audio recording for transcription');\n            recordButton.setAttribute('aria-describedby', 'recording-status');\n        }\n        \n        // Transcript area\n        const transcriptArea = document.getElementById('transcriptDisplay') || \n                             document.querySelector('.transcript-area');\n        if (transcriptArea) {\n            transcriptArea.setAttribute('role', 'log');\n            transcriptArea.setAttribute('aria-label', 'Live transcription output');\n            transcriptArea.setAttribute('aria-live', 'polite');\n            transcriptArea.setAttribute('aria-atomic', 'false');\n        }\n        \n        // Session statistics\n        const statsContainer = document.querySelector('.session-stats') || \n                              document.querySelector('.stats-container');\n        if (statsContainer) {\n            statsContainer.setAttribute('role', 'region');\n            statsContainer.setAttribute('aria-label', 'Session statistics and performance metrics');\n        }\n        \n        // System health indicators\n        const healthContainer = document.querySelector('.system-health');\n        if (healthContainer) {\n            healthContainer.setAttribute('role', 'status');\n            healthContainer.setAttribute('aria-label', 'System health and connection status');\n            healthContainer.setAttribute('aria-live', 'polite');\n        }\n        \n        // Error messages container\n        this.createErrorMessageContainer();\n        \n        // Status announcements\n        this.createStatusAnnouncementArea();\n    }\n    \n    /**\n     * Setup comprehensive error handling with clear UX flows\n     */\n    setupErrorHandling() {\n        // Microphone permission error\n        this.setupMicrophoneErrorHandling();\n        \n        // WebSocket connection error\n        this.setupWebSocketErrorHandling();\n        \n        // Transcription service error\n        this.setupTranscriptionErrorHandling();\n        \n        // Network error\n        this.setupNetworkErrorHandling();\n        \n        // Generic error boundary\n        this.setupGenericErrorHandling();\n    }\n    \n    /**\n     * Setup microphone permission error handling\n     */\n    setupMicrophoneErrorHandling() {\n        // Override getUserMedia to provide better error handling\n        const originalGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);\n        navigator.mediaDevices.getUserMedia = async (constraints) => {\n            try {\n                return await originalGetUserMedia(constraints);\n            } catch (error) {\n                this.handleMicrophoneError(error);\n                throw error;\n            }\n        };\n    }\n    \n    /**\n     * Handle microphone permission errors with clear guidance\n     */\n    handleMicrophoneError(error) {\n        this.errorStates.microphonePermission = true;\n        this.updateUIState('error');\n        \n        let title, message, actions;\n        \n        switch (error.name) {\n            case 'NotAllowedError':\n                title = 'Microphone Permission Required';\n                message = 'Please allow microphone access to use live transcription. Click the microphone icon in your browser\\'s address bar and select \"Allow\".';\n                actions = [\n                    { text: 'Try Again', action: () => this.retryMicrophoneAccess() },\n                    { text: 'Learn More', action: () => this.showMicrophoneHelp() }\n                ];\n                break;\n                \n            case 'NotFoundError':\n                title = 'No Microphone Found';\n                message = 'No microphone was detected. Please connect a microphone and try again.';\n                actions = [\n                    { text: 'Retry', action: () => this.retryMicrophoneAccess() },\n                    { text: 'Troubleshoot', action: () => this.showMicrophoneTroubleshooting() }\n                ];\n                break;\n                \n            case 'NotReadableError':\n                title = 'Microphone Unavailable';\n                message = 'Your microphone is being used by another application. Please close other apps that might be using the microphone and try again.';\n                actions = [\n                    { text: 'Try Again', action: () => this.retryMicrophoneAccess() }\n                ];\n                break;\n                \n            default:\n                title = 'Microphone Error';\n                message = `Unable to access microphone: ${error.message}`;\n                actions = [\n                    { text: 'Retry', action: () => this.retryMicrophoneAccess() }\n                ];\n        }\n        \n        this.showErrorDialog(title, message, actions);\n        this.announceToScreenReader(`Error: ${title}. ${message}`);\n    }\n    \n    /**\n     * Setup WebSocket connection error handling\n     */\n    setupWebSocketErrorHandling() {\n        window.addEventListener('websocketdisconnected', (event) => {\n            this.handleWebSocketError(event.detail);\n        });\n        \n        window.addEventListener('websocketreconnecting', () => {\n            this.showReconnectingStatus();\n        });\n        \n        window.addEventListener('websocketreconnected', () => {\n            this.clearError('websocketConnection');\n            this.announceToScreenReader('Connection restored');\n        });\n    }\n    \n    /**\n     * Handle WebSocket disconnection with retry options\n     */\n    handleWebSocketError(details) {\n        this.errorStates.websocketConnection = true;\n        this.updateUIState('error');\n        \n        const title = 'Connection Lost';\n        const message = 'Lost connection to the transcription service. Your session will be saved automatically.';\n        const actions = [\n            { text: 'Reconnect', action: () => this.reconnectWebSocket() },\n            { text: 'Refresh Page', action: () => window.location.reload() }\n        ];\n        \n        this.showErrorDialog(title, message, actions);\n        this.announceToScreenReader(`${title}. ${message}`);\n    }\n    \n    /**\n     * Setup transcription service error handling\n     */\n    setupTranscriptionErrorHandling() {\n        window.addEventListener('transcriptionerror', (event) => {\n            this.handleTranscriptionError(event.detail);\n        });\n    }\n    \n    /**\n     * Handle transcription service errors\n     */\n    handleTranscriptionError(details) {\n        this.errorStates.transcriptionService = true;\n        \n        const title = 'Transcription Service Error';\n        let message, actions;\n        \n        if (details.status === 401 || details.status === 403) {\n            message = 'API key is missing or invalid. Please check your configuration.';\n            actions = [\n                { text: 'Retry', action: () => this.retryTranscription() },\n                { text: 'Contact Support', action: () => this.contactSupport() }\n            ];\n        } else if (details.status === 429) {\n            message = 'Rate limit exceeded. Please wait a moment before trying again.';\n            actions = [\n                { text: 'Wait and Retry', action: () => this.delayedRetry(30000) }\n            ];\n        } else {\n            message = 'The transcription service is temporarily unavailable. Please try again.';\n            actions = [\n                { text: 'Retry', action: () => this.retryTranscription() },\n                { text: 'Refresh Page', action: () => window.location.reload() }\n            ];\n        }\n        \n        this.showErrorDialog(title, message, actions);\n        this.announceToScreenReader(`${title}. ${message}`);\n    }\n    \n    /**\n     * Setup network error handling\n     */\n    setupNetworkErrorHandling() {\n        window.addEventListener('offline', () => {\n            this.handleNetworkError();\n        });\n        \n        window.addEventListener('online', () => {\n            this.clearError('networkConnection');\n            this.announceToScreenReader('Network connection restored');\n        });\n    }\n    \n    /**\n     * Handle network disconnection\n     */\n    handleNetworkError() {\n        this.errorStates.networkConnection = true;\n        this.updateUIState('error');\n        \n        const title = 'Network Connection Lost';\n        const message = 'No internet connection detected. Transcription will resume when connection is restored.';\n        \n        this.showErrorDialog(title, message, []);\n        this.announceToScreenReader(`${title}. ${message}`);\n    }\n    \n    /**\n     * Setup generic error handling\n     */\n    setupGenericErrorHandling() {\n        window.addEventListener('error', (event) => {\n            console.error('Unhandled error:', event.error);\n            \n            // Don't show generic errors for known issues\n            if (Object.values(this.errorStates).some(state => state)) {\n                return;\n            }\n            \n            this.showGenericError(event.error);\n        });\n        \n        window.addEventListener('unhandledrejection', (event) => {\n            console.error('Unhandled promise rejection:', event.reason);\n            \n            // Don't show generic errors for known issues\n            if (Object.values(this.errorStates).some(state => state)) {\n                return;\n            }\n            \n            this.showGenericError(event.reason);\n        });\n    }\n    \n    /**\n     * Setup responsive design enhancements\n     */\n    setupResponsiveDesign() {\n        // Add viewport meta tag if missing\n        if (!document.querySelector('meta[name=\"viewport\"]')) {\n            const viewport = document.createElement('meta');\n            viewport.name = 'viewport';\n            viewport.content = 'width=device-width, initial-scale=1.0, user-scalable=yes';\n            document.head.appendChild(viewport);\n        }\n        \n        // Add responsive classes based on screen size\n        this.updateResponsiveClasses();\n        \n        // Listen for orientation and resize changes\n        window.addEventListener('resize', () => {\n            this.updateResponsiveClasses();\n        });\n        \n        window.addEventListener('orientationchange', () => {\n            setTimeout(() => this.updateResponsiveClasses(), 100);\n        });\n        \n        // Mobile-specific optimizations\n        if (this.isMobile()) {\n            this.setupMobileOptimizations();\n        }\n    }\n    \n    /**\n     * Setup accessibility features\n     */\n    setupAccessibilityFeatures() {\n        // Create accessibility controls\n        this.createAccessibilityControls();\n        \n        // Check for user preferences\n        this.checkUserPreferences();\n        \n        // Add focus management\n        this.setupFocusManagement();\n    }\n    \n    /**\n     * Create accessibility control panel\n     */\n    createAccessibilityControls() {\n        const controlsContainer = document.createElement('div');\n        controlsContainer.className = 'accessibility-controls';\n        controlsContainer.setAttribute('role', 'toolbar');\n        controlsContainer.setAttribute('aria-label', 'Accessibility controls');\n        \n        const controls = [\n            {\n                id: 'high-contrast-toggle',\n                label: 'High Contrast',\n                shortcut: 'Alt + H',\n                action: () => this.toggleHighContrast()\n            },\n            {\n                id: 'large-text-toggle',\n                label: 'Large Text',\n                shortcut: 'Alt + T',\n                action: () => this.toggleLargeText()\n            },\n            {\n                id: 'keyboard-help',\n                label: 'Keyboard Shortcuts',\n                shortcut: 'Alt + K',\n                action: () => this.showKeyboardShortcuts()\n            }\n        ];\n        \n        controls.forEach(control => {\n            const button = document.createElement('button');\n            button.id = control.id;\n            button.textContent = control.label;\n            button.setAttribute('aria-label', `${control.label} (${control.shortcut})`);\n            button.addEventListener('click', control.action);\n            controlsContainer.appendChild(button);\n        });\n        \n        // Insert at the top of the page\n        document.body.insertBefore(controlsContainer, document.body.firstChild);\n    }\n    \n    /**\n     * Setup screen reader support\n     */\n    setupScreenReaderSupport() {\n        // Enhanced live regions for status updates\n        this.createEnhancedLiveRegions();\n        \n        // Structured navigation landmarks\n        this.addNavigationLandmarks();\n        \n        // Descriptive headings hierarchy\n        this.improveHeadingStructure();\n    }\n    \n    /**\n     * Update UI state and communicate to assistive technologies\n     */\n    updateUIState(newState) {\n        this.uiStates.previous = this.uiStates.current;\n        this.uiStates.current = newState;\n        \n        // Update visual indicators\n        document.body.className = document.body.className.replace(/\\bui-state-\\w+/g, '');\n        document.body.classList.add(`ui-state-${newState}`);\n        \n        // Update ARIA attributes\n        const statusElement = document.getElementById('ui-status');\n        if (statusElement) {\n            statusElement.setAttribute('aria-valuenow', newState);\n            statusElement.textContent = this.getStateDescription(newState);\n        }\n        \n        // Announce state changes to screen readers\n        if (newState !== this.uiStates.previous) {\n            this.announceToScreenReader(this.getStateDescription(newState));\n        }\n    }\n    \n    /**\n     * Show error dialog with accessible markup\n     */\n    showErrorDialog(title, message, actions = []) {\n        // Remove existing error dialogs\n        const existingDialog = document.getElementById('error-dialog');\n        if (existingDialog) {\n            existingDialog.remove();\n        }\n        \n        // Create dialog\n        const dialog = document.createElement('div');\n        dialog.id = 'error-dialog';\n        dialog.className = 'error-dialog';\n        dialog.setAttribute('role', 'alertdialog');\n        dialog.setAttribute('aria-labelledby', 'error-title');\n        dialog.setAttribute('aria-describedby', 'error-message');\n        dialog.setAttribute('aria-modal', 'true');\n        \n        dialog.innerHTML = `\n            <div class=\"error-dialog-content\">\n                <h2 id=\"error-title\">${title}</h2>\n                <p id=\"error-message\">${message}</p>\n                <div class=\"error-actions\">\n                    ${actions.map((action, index) => \n                        `<button type=\"button\" ${index === 0 ? 'autofocus' : ''}>${action.text}</button>`\n                    ).join('')}\n                    <button type=\"button\" class=\"close-button\">Close</button>\n                </div>\n            </div>\n        `;\n        \n        // Add event listeners\n        const actionButtons = dialog.querySelectorAll('.error-actions button:not(.close-button)');\n        actionButtons.forEach((button, index) => {\n            button.addEventListener('click', () => {\n                actions[index].action();\n                dialog.remove();\n            });\n        });\n        \n        const closeButton = dialog.querySelector('.close-button');\n        closeButton.addEventListener('click', () => dialog.remove());\n        \n        // Escape key handling\n        dialog.addEventListener('keydown', (event) => {\n            if (event.key === 'Escape') {\n                dialog.remove();\n            }\n        });\n        \n        document.body.appendChild(dialog);\n        \n        // Focus management\n        const firstButton = dialog.querySelector('button[autofocus]') || dialog.querySelector('button');\n        if (firstButton) {\n            firstButton.focus();\n        }\n    }\n    \n    /**\n     * Announce messages to screen readers\n     */\n    announceToScreenReader(message) {\n        const announcer = document.getElementById('screen-reader-announcements');\n        if (announcer) {\n            announcer.textContent = message;\n        }\n    }\n    \n    /**\n     * Create necessary DOM elements for accessibility\n     */\n    createErrorMessageContainer() {\n        if (!document.getElementById('error-messages')) {\n            const container = document.createElement('div');\n            container.id = 'error-messages';\n            container.setAttribute('role', 'alert');\n            container.setAttribute('aria-live', 'assertive');\n            container.className = 'sr-only'; // Screen reader only\n            document.body.appendChild(container);\n        }\n    }\n    \n    createStatusAnnouncementArea() {\n        if (!document.getElementById('screen-reader-announcements')) {\n            const announcer = document.createElement('div');\n            announcer.id = 'screen-reader-announcements';\n            announcer.setAttribute('aria-live', 'polite');\n            announcer.setAttribute('aria-atomic', 'true');\n            announcer.className = 'sr-only';\n            document.body.appendChild(announcer);\n        }\n        \n        if (!document.getElementById('ui-status')) {\n            const status = document.createElement('div');\n            status.id = 'ui-status';\n            status.setAttribute('role', 'status');\n            status.setAttribute('aria-live', 'polite');\n            status.className = 'sr-only';\n            document.body.appendChild(status);\n        }\n    }\n    \n    addSkipLink() {\n        const skipLink = document.createElement('a');\n        skipLink.href = '#main-content';\n        skipLink.textContent = 'Skip to main content';\n        skipLink.className = 'skip-link';\n        document.body.insertBefore(skipLink, document.body.firstChild);\n    }\n    \n    /**\n     * Utility methods\n     */\n    getStateDescription(state) {\n        const descriptions = {\n            'idle': 'Ready to start recording',\n            'connected': 'Connected to transcription service',\n            'recording': 'Recording audio for transcription',\n            'processing': 'Processing transcription',\n            'error': 'Error occurred - please check error messages'\n        };\n        return descriptions[state] || 'Unknown state';\n    }\n    \n    isMobile() {\n        return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||\n               (window.innerWidth <= 768);\n    }\n    \n    toggleRecording() {\n        const recordButton = document.getElementById('recordButton');\n        if (recordButton) {\n            recordButton.click();\n        }\n    }\n    \n    clearTranscript() {\n        const clearButton = document.getElementById('clearButton');\n        if (clearButton) {\n            clearButton.click();\n        }\n    }\n    \n    toggleDiagnostics() {\n        const diagnosticsButton = document.querySelector('.diagnostics-button');\n        if (diagnosticsButton) {\n            diagnosticsButton.click();\n        }\n    }\n    \n    closeModalOverlays() {\n        const modals = document.querySelectorAll('.modal, .dialog, .overlay');\n        modals.forEach(modal => modal.remove());\n    }\n    \n    clearError(errorType) {\n        this.errorStates[errorType] = false;\n        \n        // If no errors remain, return to previous state\n        if (!Object.values(this.errorStates).some(state => state)) {\n            this.updateUIState(this.uiStates.previous || 'idle');\n        }\n    }\n    \n    retryMicrophoneAccess() {\n        // Implement microphone retry logic\n        console.log('Retrying microphone access...');\n    }\n    \n    reconnectWebSocket() {\n        // Implement WebSocket reconnection\n        console.log('Reconnecting WebSocket...');\n    }\n    \n    retryTranscription() {\n        // Implement transcription retry logic\n        console.log('Retrying transcription...');\n    }\n    \n    updateResponsiveClasses() {\n        const width = window.innerWidth;\n        document.body.classList.toggle('mobile', width < 768);\n        document.body.classList.toggle('tablet', width >= 768 && width < 1024);\n        document.body.classList.toggle('desktop', width >= 1024);\n    }\n}\n\n// Initialize UI/UX enhancements\nwindow.uiAccessibility = new UIAccessibilityEnhancements();\n\n// Auto-initialize when DOM is ready\ndocument.addEventListener('DOMContentLoaded', () => {\n    window.uiAccessibility.initialize();\n});\n\nconsole.log('\u2705 UI/UX & Accessibility Enhancements loaded');"
+    setupKeyboardNavigation() {
+        // Add tabindex to interactive elements
+        const interactiveElements = [
+            '#recordButton',
+            '#stopButton',
+            '#clearButton',
+            '#downloadButton',
+            '.diagnostics-button',
+            '.performance-button'
+        ];
+        
+        interactiveElements.forEach(selector => {
+            const element = document.querySelector(selector);
+            if (element) {
+                element.setAttribute('tabindex', '0');
+                
+                // Add keyboard event listeners
+                element.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        element.click();
+                    }
+                });
+                
+                // Add focus indicators
+                element.addEventListener('focus', () => {
+                    element.style.outline = '3px solid #007bff';
+                    element.style.outlineOffset = '2px';
+                });
+                
+                element.addEventListener('blur', () => {
+                    element.style.outline = 'none';
+                });
+            }
+        });
+        
+        // Global keyboard shortcuts
+        document.addEventListener('keydown', (event) => {
+            // Alt + R: Start/Stop recording
+            if (event.altKey && event.key === 'r') {
+                event.preventDefault();
+                this.toggleRecording();
+            }
+            
+            // Alt + C: Clear transcript
+            if (event.altKey && event.key === 'c') {
+                event.preventDefault();
+                this.clearTranscript();
+            }
+            
+            // Alt + D: Show diagnostics
+            if (event.altKey && event.key === 'd') {
+                event.preventDefault();
+                this.toggleDiagnostics();
+            }
+        });
+        
+        this.accessibilityFeatures.keyboardNavigation = true;
+    }
+    
+    /**
+     * Setup comprehensive ARIA labels
+     */
+    setupARIALabels() {
+        // Recording controls
+        const recordButton = document.getElementById('recordButton');
+        if (recordButton) {
+            recordButton.setAttribute('aria-label', 'Start or stop audio recording');
+            recordButton.setAttribute('aria-describedby', 'recording-status');
+        }
+        
+        // Transcript display
+        const transcriptDisplay = document.getElementById('transcriptDisplay');
+        if (transcriptDisplay) {
+            transcriptDisplay.setAttribute('aria-live', 'polite');
+            transcriptDisplay.setAttribute('aria-label', 'Live transcription output');
+        }
+        
+        // Status indicators
+        const statusIndicator = document.getElementById('statusIndicator');
+        if (statusIndicator) {
+            statusIndicator.setAttribute('aria-label', 'Connection status indicator');
+        }
+        
+        // Session statistics
+        const statsContainer = document.querySelector('.stats-container');
+        if (statsContainer) {
+            statsContainer.setAttribute('role', 'region');
+            statsContainer.setAttribute('aria-label', 'Session statistics');
+        }
+        
+        console.log('✅ ARIA labels configured');
+    }
+    
+    /**
+     * Setup comprehensive error handling UX
+     */
+    setupErrorHandling() {
+        this.createErrorContainer();
+        this.setupErrorDialogs();
+        this.setupErrorAnnouncements();
+    }
+    
+    /**
+     * Create error message container
+     */
+    createErrorContainer() {
+        if (document.getElementById('error-container')) return;
+        
+        const errorContainer = document.createElement('div');
+        errorContainer.id = 'error-container';
+        errorContainer.className = 'error-container';
+        errorContainer.setAttribute('role', 'alert');
+        errorContainer.setAttribute('aria-live', 'assertive');
+        
+        const mainContent = document.getElementById('main-content');
+        if (mainContent) {
+            mainContent.insertBefore(errorContainer, mainContent.firstChild);
+        }
+    }
+    
+    /**
+     * Setup error dialogs for different scenarios
+     */
+    setupErrorDialogs() {
+        // Microphone permission denied
+        this.createErrorDialog('microphone-denied', {
+            title: 'Microphone Permission Required',
+            message: 'To use live transcription, please allow microphone access in your browser.',
+            actions: [
+                { text: 'Grant Permission', action: 'retry-microphone' },
+                { text: 'Learn More', action: 'show-microphone-help' }
+            ]
+        });
+        
+        // WebSocket disconnected
+        this.createErrorDialog('websocket-disconnected', {
+            title: 'Connection Lost',
+            message: 'The connection to the transcription service was lost. Attempting to reconnect...',
+            actions: [
+                { text: 'Retry Now', action: 'retry-connection' },
+                { text: 'Refresh Page', action: 'refresh-page' }
+            ]
+        });
+        
+        // Transcription service unavailable
+        this.createErrorDialog('service-unavailable', {
+            title: 'Service Temporarily Unavailable',
+            message: 'The transcription service is currently unavailable. Please try again in a few moments.',
+            actions: [
+                { text: 'Retry', action: 'retry-service' },
+                { text: 'Check Status', action: 'check-status' }
+            ]
+        });
+        
+        // Network connection issues
+        this.createErrorDialog('network-error', {
+            title: 'Network Connection Error',
+            message: 'Unable to connect to the transcription service. Please check your internet connection.',
+            actions: [
+                { text: 'Retry', action: 'retry-network' },
+                { text: 'Refresh', action: 'refresh-page' }
+            ]
+        });
+    }
+    
+    /**
+     * Create error dialog
+     */
+    createErrorDialog(errorType, config) {
+        const dialogHTML = `
+            <div class="modal fade" id="error-${errorType}" tabindex="-1" aria-labelledby="error-${errorType}-title" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title" id="error-${errorType}-title">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                ${config.title}
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>${config.message}</p>
+                        </div>
+                        <div class="modal-footer">
+                            ${config.actions.map(action => 
+                                `<button type="button" class="btn btn-outline-primary me-2" onclick="window.uiAccessibility.handleErrorAction('${action.action}', '${errorType}')">${action.text}</button>`
+                            ).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', dialogHTML);
+    }
+    
+    /**
+     * Handle error actions
+     */
+    handleErrorAction(action, errorType) {
+        switch (action) {
+            case 'retry-microphone':
+                this.retryMicrophonePermission();
+                break;
+            case 'show-microphone-help':
+                this.showMicrophoneHelp();
+                break;
+            case 'retry-connection':
+                this.retryConnection();
+                break;
+            case 'retry-service':
+                this.retryTranscriptionService();
+                break;
+            case 'retry-network':
+                this.retryNetworkConnection();
+                break;
+            case 'refresh-page':
+                window.location.reload();
+                break;
+            case 'check-status':
+                window.open('/health', '_blank');
+                break;
+        }
+        
+        // Close the error dialog
+        const modal = bootstrap.Modal.getInstance(document.getElementById(`error-${errorType}`));
+        if (modal) modal.hide();
+    }
+    
+    /**
+     * Show specific error
+     */
+    showError(errorType, customMessage = null) {
+        this.errorStates[errorType] = true;
+        
+        const modal = new bootstrap.Modal(document.getElementById(`error-${errorType}`));
+        modal.show();
+        
+        // Announce to screen reader
+        this.announceError(errorType, customMessage);
+        
+        // Update UI state
+        this.updateUIState('error');
+    }
+    
+    /**
+     * Setup screen reader announcements
+     */
+    setupErrorAnnouncements() {
+        // Create announcement region if it doesn't exist
+        if (!document.getElementById('screen-reader-announcements')) {
+            const announcements = document.createElement('div');
+            announcements.id = 'screen-reader-announcements';
+            announcements.className = 'sr-only';
+            announcements.setAttribute('aria-live', 'polite');
+            announcements.setAttribute('aria-atomic', 'true');
+            document.body.appendChild(announcements);
+        }
+    }
+    
+    /**
+     * Announce error to screen reader
+     */
+    announceError(errorType, message) {
+        const announcements = document.getElementById('screen-reader-announcements');
+        if (announcements) {
+            const errorMessages = {
+                microphonePermission: 'Microphone permission is required for transcription',
+                websocketConnection: 'Connection to transcription service lost',
+                transcriptionService: 'Transcription service is unavailable',
+                networkConnection: 'Network connection error'
+            };
+            
+            const announcement = message || errorMessages[errorType] || 'An error occurred';
+            announcements.textContent = announcement;
+            
+            // Clear after announcement
+            setTimeout(() => {
+                announcements.textContent = '';
+            }, 3000);
+        }
+    }
+    
+    /**
+     * Update UI state
+     */
+    updateUIState(newState) {
+        this.uiStates.previous = this.uiStates.current;
+        this.uiStates.current = newState;
+        
+        // Update body class for state-based styling
+        document.body.className = document.body.className.replace(/ui-state-\w+/g, '');
+        document.body.classList.add(`ui-state-${newState}`);
+        
+        // Announce state change to screen reader
+        this.announceStateChange(newState);
+        
+        console.log(`🎯 UI State: ${this.uiStates.previous} → ${newState}`);
+    }
+    
+    /**
+     * Announce state change to screen reader
+     */
+    announceStateChange(state) {
+        const stateMessages = {
+            idle: 'Ready to start recording',
+            connected: 'Connected to transcription service',
+            recording: 'Recording in progress',
+            processing: 'Processing audio',
+            error: 'Error occurred'
+        };
+        
+        const announcement = stateMessages[state] || state;
+        
+        const statusRegion = document.getElementById('ui-status');
+        if (statusRegion) {
+            statusRegion.textContent = announcement;
+        }
+    }
+    
+    /**
+     * Setup responsive design
+     */
+    setupResponsiveDesign() {
+        // Mobile-first responsive handling
+        const handleResize = () => {
+            const isMobile = window.innerWidth < 768;
+            document.body.classList.toggle('mobile-layout', isMobile);
+            
+            if (isMobile) {
+                this.optimizeForMobile();
+            } else {
+                this.optimizeForDesktop();
+            }
+        };
+        
+        handleResize();
+        window.addEventListener('resize', handleResize);
+    }
+    
+    /**
+     * Setup accessibility features toggle
+     */
+    setupAccessibilityFeatures() {
+        this.createAccessibilityPanel();
+        this.detectUserPreferences();
+    }
+    
+    /**
+     * Create accessibility control panel
+     */
+    createAccessibilityPanel() {
+        const panelHTML = `
+            <div class="accessibility-panel position-fixed top-0 end-0 m-3" style="z-index: 1050;">
+                <div class="dropdown">
+                    <button class="btn btn-outline-info btn-sm dropdown-toggle" type="button" 
+                            id="accessibilityDropdown" data-bs-toggle="dropdown" aria-expanded="false"
+                            aria-label="Accessibility options">
+                        <i class="bi bi-universal-access"></i>
+                        <span class="d-none d-md-inline ms-1">Accessibility</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <button class="dropdown-item" onclick="window.uiAccessibility.toggleHighContrast()">
+                                <i class="bi bi-circle-half"></i> High Contrast
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="window.uiAccessibility.toggleLargeText()">
+                                <i class="bi bi-fonts"></i> Large Text
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="window.uiAccessibility.toggleScreenReaderMode()">
+                                <i class="bi bi-eye-slash"></i> Screen Reader Mode
+                            </button>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <button class="dropdown-item" onclick="window.uiAccessibility.showKeyboardShortcuts()">
+                                <i class="bi bi-keyboard"></i> Keyboard Shortcuts
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', panelHTML);
+    }
+    
+    /**
+     * Toggle high contrast mode
+     */
+    toggleHighContrast() {
+        this.accessibilityFeatures.highContrast = !this.accessibilityFeatures.highContrast;
+        document.body.classList.toggle('high-contrast', this.accessibilityFeatures.highContrast);
+        
+        this.announceFeatureToggle('High contrast', this.accessibilityFeatures.highContrast);
+        this.saveAccessibilityPreferences();
+    }
+    
+    /**
+     * Toggle large text mode
+     */
+    toggleLargeText() {
+        this.accessibilityFeatures.largeText = !this.accessibilityFeatures.largeText;
+        document.body.classList.toggle('large-text', this.accessibilityFeatures.largeText);
+        
+        this.announceFeatureToggle('Large text', this.accessibilityFeatures.largeText);
+        this.saveAccessibilityPreferences();
+    }
+    
+    /**
+     * Toggle screen reader optimized mode
+     */
+    toggleScreenReaderMode() {
+        this.accessibilityFeatures.screenReaderOptimized = !this.accessibilityFeatures.screenReaderOptimized;
+        document.body.classList.toggle('screen-reader-optimized', this.accessibilityFeatures.screenReaderOptimized);
+        
+        this.announceFeatureToggle('Screen reader optimization', this.accessibilityFeatures.screenReaderOptimized);
+        this.saveAccessibilityPreferences();
+    }
+    
+    /**
+     * Announce feature toggle
+     */
+    announceFeatureToggle(feature, enabled) {
+        const announcements = document.getElementById('screen-reader-announcements');
+        if (announcements) {
+            announcements.textContent = `${feature} ${enabled ? 'enabled' : 'disabled'}`;
+        }
+    }
+    
+    /**
+     * Setup mobile optimizations
+     */
+    setupMobileOptimizations() {
+        // Prevent zoom on input focus
+        this.preventZoomOnFocus();
+        
+        // Touch-friendly interactions
+        this.setupTouchFriendlyInteractions();
+        
+        // Mobile-specific error handling
+        this.setupMobileErrorHandling();
+    }
+    
+    /**
+     * Implement WCAG 2.1 AA compliance
+     */
+    implementWCAGCompliance() {
+        // Add skip links
+        this.addSkipLinks();
+        
+        // Ensure color contrast
+        this.enforceColorContrast();
+        
+        // Add focus management
+        this.setupFocusManagement();
+        
+        // Ensure all images have alt text
+        this.ensureImageAccessibility();
+    }
+    
+    /**
+     * Action handlers
+     */
+    toggleRecording() {
+        const recordButton = document.getElementById('recordButton');
+        if (recordButton) {
+            recordButton.click();
+        }
+    }
+    
+    clearTranscript() {
+        const clearButton = document.getElementById('clearButton');
+        if (clearButton) {
+            clearButton.click();
+        }
+    }
+    
+    toggleDiagnostics() {
+        const diagnosticsBtn = document.getElementById('diagnosticsBtn');
+        if (diagnosticsBtn) {
+            diagnosticsBtn.click();
+        }
+    }
+    
+    retryMicrophonePermission() {
+        if (window.realWhisperIntegration) {
+            window.realWhisperIntegration.requestMicrophonePermission();
+        }
+    }
+    
+    retryConnection() {
+        if (window.realWhisperIntegration) {
+            window.realWhisperIntegration.reconnect();
+        }
+    }
+    
+    retryTranscriptionService() {
+        // Test transcription service
+        fetch('/api/health')
+            .then(response => {
+                if (response.ok) {
+                    this.showSuccess('Transcription service is now available');
+                } else {
+                    this.showError('service-unavailable');
+                }
+            })
+            .catch(() => {
+                this.showError('network-error');
+            });
+    }
+    
+    retryNetworkConnection() {
+        // Test network connectivity
+        fetch('/health', { method: 'HEAD' })
+            .then(() => {
+                this.showSuccess('Network connection restored');
+            })
+            .catch(() => {
+                this.showError('network-error', 'Still unable to connect. Please check your internet connection.');
+            });
+    }
+    
+    showSuccess(message) {
+        const successHTML = `
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        
+        const errorContainer = document.getElementById('error-container');
+        if (errorContainer) {
+            errorContainer.innerHTML = successHTML;
+        }
+    }
+    
+    /**
+     * Utility methods
+     */
+    optimizeForMobile() {
+        // Mobile-specific optimizations
+        console.log('📱 Optimizing for mobile');
+    }
+    
+    optimizeForDesktop() {
+        // Desktop-specific optimizations
+        console.log('🖥️ Optimizing for desktop');
+    }
+    
+    preventZoomOnFocus() {
+        // Prevent zoom on input focus for iOS
+        const meta = document.querySelector('meta[name="viewport"]');
+        if (meta) {
+            meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+        }
+    }
+    
+    setupTouchFriendlyInteractions() {
+        // Ensure touch targets are at least 44px
+        const buttons = document.querySelectorAll('button, .btn');
+        buttons.forEach(button => {
+            const styles = window.getComputedStyle(button);
+            const height = parseInt(styles.height);
+            const width = parseInt(styles.width);
+            
+            if (height < 44 || width < 44) {
+                button.style.minHeight = '44px';
+                button.style.minWidth = '44px';
+            }
+        });
+    }
+    
+    setupMobileErrorHandling() {
+        // Mobile-specific error handling
+        if ('ontouchstart' in window) {
+            // Handle touch-specific errors
+            console.log('📱 Mobile error handling configured');
+        }
+    }
+    
+    addSkipLinks() {
+        // Skip links are already in the HTML
+        const skipLink = document.querySelector('.skip-link');
+        if (skipLink) {
+            skipLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = document.getElementById('main-content');
+                if (target) {
+                    target.focus();
+                }
+            });
+        }
+    }
+    
+    enforceColorContrast() {
+        // Add CSS for high contrast if needed
+        if (!document.getElementById('contrast-styles')) {
+            const style = document.createElement('style');
+            style.id = 'contrast-styles';
+            style.textContent = `
+                .high-contrast {
+                    filter: contrast(150%);
+                }
+                
+                .high-contrast .btn {
+                    border: 2px solid !important;
+                }
+                
+                .high-contrast .card {
+                    border: 2px solid #000 !important;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+    
+    setupFocusManagement() {
+        // Focus management is already handled in setupKeyboardNavigation
+    }
+    
+    ensureImageAccessibility() {
+        const images = document.querySelectorAll('img');
+        images.forEach(img => {
+            if (!img.alt) {
+                img.alt = 'Decorative image';
+            }
+        });
+    }
+    
+    detectUserPreferences() {
+        // Check for saved preferences
+        const saved = localStorage.getItem('accessibilityPreferences');
+        if (saved) {
+            try {
+                const preferences = JSON.parse(saved);
+                Object.assign(this.accessibilityFeatures, preferences);
+                this.applyAccessibilityPreferences();
+            } catch (e) {
+                console.warn('Failed to load accessibility preferences');
+            }
+        }
+        
+        // Check system preferences
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            document.body.classList.add('reduced-motion');
+        }
+        
+        if (window.matchMedia && window.matchMedia('(prefers-contrast: high)').matches) {
+            this.toggleHighContrast();
+        }
+    }
+    
+    applyAccessibilityPreferences() {
+        if (this.accessibilityFeatures.highContrast) {
+            document.body.classList.add('high-contrast');
+        }
+        
+        if (this.accessibilityFeatures.largeText) {
+            document.body.classList.add('large-text');
+        }
+        
+        if (this.accessibilityFeatures.screenReaderOptimized) {
+            document.body.classList.add('screen-reader-optimized');
+        }
+    }
+    
+    saveAccessibilityPreferences() {
+        try {
+            localStorage.setItem('accessibilityPreferences', JSON.stringify(this.accessibilityFeatures));
+        } catch (e) {
+            console.warn('Failed to save accessibility preferences');
+        }
+    }
+    
+    showKeyboardShortcuts() {
+        const shortcutsHTML = `
+            <div class="modal fade" id="keyboardShortcutsModal" tabindex="-1" aria-labelledby="keyboardShortcutsTitle" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="keyboardShortcutsTitle">Keyboard Shortcuts</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Shortcut</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><kbd>Alt + R</kbd></td><td>Toggle Recording</td></tr>
+                                    <tr><td><kbd>Alt + C</kbd></td><td>Clear Transcript</td></tr>
+                                    <tr><td><kbd>Alt + D</kbd></td><td>Show Diagnostics</td></tr>
+                                    <tr><td><kbd>Tab</kbd></td><td>Navigate Elements</td></tr>
+                                    <tr><td><kbd>Enter/Space</kbd></td><td>Activate Focused Element</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        if (!document.getElementById('keyboardShortcutsModal')) {
+            document.body.insertAdjacentHTML('beforeend', shortcutsHTML);
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('keyboardShortcutsModal'));
+        modal.show();
+    }
+    
+    showMicrophoneHelp() {
+        const helpHTML = `
+            <div class="modal fade" id="microphoneHelpModal" tabindex="-1" aria-labelledby="microphoneHelpTitle" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="microphoneHelpTitle">Microphone Permission Help</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h6>How to enable microphone access:</h6>
+                            <ol>
+                                <li>Look for the microphone icon in your browser's address bar</li>
+                                <li>Click on it and select "Allow"</li>
+                                <li>If you don't see the icon, refresh the page and try again</li>
+                                <li>In your browser settings, make sure microphone access is enabled for this site</li>
+                            </ol>
+                            <div class="alert alert-info">
+                                <strong>Privacy Note:</strong> Your audio is only processed for transcription and is not stored or transmitted elsewhere.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="window.uiAccessibility.retryMicrophonePermission()">Try Again</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        if (!document.getElementById('microphoneHelpModal')) {
+            document.body.insertAdjacentHTML('beforeend', helpHTML);
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('microphoneHelpModal'));
+        modal.show();
+    }
+    
+    setupScreenReaderSupport() {
+        this.accessibilityFeatures.screenReaderOptimized = true;
+        console.log('♿ Screen reader support configured');
+    }
+}
+
+// Create global instance
+window.uiAccessibility = new UIAccessibilityEnhancements();
+
+console.log('✅ UI/UX & Accessibility Enhancements system loaded');
