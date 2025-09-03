@@ -1,0 +1,75 @@
+{
+  "test_session": {
+    "start_time": "2025-09-03T21:33:59.995117",
+    "end_time": "2025-09-03T21:34:06.456603",
+    "duration_seconds": 6.46,
+    "total_suites": 5,
+    "successful_suites": 0,
+    "failed_suites": 5,
+    "success_rate": 0.0
+  },
+  "suite_results": [
+    {
+      "name": "Smoke Tests",
+      "module": "tests/e2e/test_01_smoke_tests.py",
+      "duration_seconds": 1.63,
+      "exit_code": 4,
+      "success": false,
+      "stdout": "",
+      "stderr": "ERROR: usage: __main__.py [options] [file_or_dir] [file_or_dir] [...]\n__main__.py: error: unrecognized arguments: --timeout=300\n  inifile: /home/runner/workspace/pytest.ini\n  rootdir: /home/runner/workspace\n\n",
+      "timestamp": "2025-09-03T21:34:01.622705"
+    },
+    {
+      "name": "Critical User Journeys",
+      "module": "tests/e2e/test_02_critical_user_journeys.py",
+      "duration_seconds": 1.22,
+      "exit_code": 4,
+      "success": false,
+      "stdout": "",
+      "stderr": "ERROR: usage: __main__.py [options] [file_or_dir] [file_or_dir] [...]\n__main__.py: error: unrecognized arguments: --timeout=600\n  inifile: /home/runner/workspace/pytest.ini\n  rootdir: /home/runner/workspace\n\n",
+      "timestamp": "2025-09-03T21:34:02.844425"
+    },
+    {
+      "name": "Edge Cases",
+      "module": "tests/e2e/test_03_edge_cases.py",
+      "duration_seconds": 1.18,
+      "exit_code": 4,
+      "success": false,
+      "stdout": "",
+      "stderr": "ERROR: usage: __main__.py [options] [file_or_dir] [file_or_dir] [...]\n__main__.py: error: unrecognized arguments: --timeout=900\n  inifile: /home/runner/workspace/pytest.ini\n  rootdir: /home/runner/workspace\n\n",
+      "timestamp": "2025-09-03T21:34:04.022611"
+    },
+    {
+      "name": "Mobile Testing",
+      "module": "tests/e2e/test_04_mobile_testing.py",
+      "duration_seconds": 1.2,
+      "exit_code": 4,
+      "success": false,
+      "stdout": "",
+      "stderr": "ERROR: usage: __main__.py [options] [file_or_dir] [file_or_dir] [...]\n__main__.py: error: unrecognized arguments: --timeout=600\n  inifile: /home/runner/workspace/pytest.ini\n  rootdir: /home/runner/workspace\n\n",
+      "timestamp": "2025-09-03T21:34:05.226629"
+    },
+    {
+      "name": "Accessibility Testing",
+      "module": "tests/e2e/test_05_accessibility.py",
+      "duration_seconds": 1.23,
+      "exit_code": 4,
+      "success": false,
+      "stdout": "",
+      "stderr": "ERROR: usage: __main__.py [options] [file_or_dir] [file_or_dir] [...]\n__main__.py: error: unrecognized arguments: --timeout=400\n  inifile: /home/runner/workspace/pytest.ini\n  rootdir: /home/runner/workspace\n\n",
+      "timestamp": "2025-09-03T21:34:06.456153"
+    }
+  ],
+  "environment": {
+    "python_version": "3.11.13 (main, Jun  3 2025, 18:38:25) [GCC 14.3.0]",
+    "platform": "linux",
+    "working_directory": "/home/runner/workspace/tests"
+  },
+  "recommendations": [
+    "CRITICAL: Basic functionality failing - fix core features before proceeding",
+    "CRITICAL: Core user flows broken - fix primary use cases",
+    "System robustness needs improvement - fix error handling",
+    "Mobile experience needs improvement - fix responsive design issues",
+    "Accessibility compliance issues - implement WCAG 2.1 AA fixes"
+  ]
+}
