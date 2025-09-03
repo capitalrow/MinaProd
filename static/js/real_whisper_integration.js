@@ -1580,7 +1580,8 @@ document.addEventListener('DOMContentLoaded', function() {
         event.preventDefault();
         event.stopImmediatePropagation();
         
-        console.log(`🎯 Recording button clicked - Current state: ${isCurrentlyRecording ? 'Recording' : 'Ready'}`);
+        console.log(`🎯 BUTTON CLICK DETECTED - Current state: ${isCurrentlyRecording ? 'Recording' : 'Ready'}`);
+        console.log('🔍 Button event triggered, window.realWhisperIntegration exists:', !!window.realWhisperIntegration);
         
         if (!isCurrentlyRecording) {
             // START RECORDING
@@ -1692,6 +1693,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     console.log('🎯 CRITICAL FIX COMPLETE: Real Whisper Integration bound to buttons');
+    
+    // 🔍 DEBUG: Log button state for debugging
+    console.log('🔍 DEBUGGING INFO:');
+    console.log('📍 Recording button found:', !!recordBtn);
+    console.log('📍 Button disabled state:', recordBtn?.disabled);
+    console.log('📍 Button classes:', recordBtn?.className);
+    console.log('📍 Global instance available:', !!window.realWhisperIntegration);
 });
 
 console.log('Real Whisper Integration loaded successfully');
@@ -1700,6 +1708,30 @@ console.log('Real Whisper Integration loaded successfully');
 if (!window.realWhisperIntegration) {
     window.realWhisperIntegration = new RealWhisperIntegration();
     console.log('🚀 Global RealWhisperIntegration instance created for system integration');
+    
+    // 🔧 COMPATIBILITY FIX: Add method aliases for compatibility with other systems
+    window.realWhisperIntegration.sendAudioData = window.realWhisperIntegration.sendAudioDataHTTP.bind(window.realWhisperIntegration);
+    window.realWhisperIntegration.displayTranscript = window.realWhisperIntegration.updateTranscriptDisplay.bind(window.realWhisperIntegration);
+    
 } else {
     console.log('✅ RealWhisperIntegration instance already exists, using existing one');
 }
+
+// 🚀 CRITICAL FIX: Add global methods for fallback systems
+window.sendAudioDataHTTP = function(...args) {
+    console.log('🔧 Global sendAudioDataHTTP called - routing to RealWhisperIntegration');
+    if (window.realWhisperIntegration && window.realWhisperIntegration.sendAudioDataHTTP) {
+        return window.realWhisperIntegration.sendAudioDataHTTP(...args);
+    } else {
+        console.warn('⚠️ RealWhisperIntegration not available for sendAudioDataHTTP');
+    }
+};
+
+window.updateTranscriptDisplay = function(...args) {
+    console.log('🔧 Global updateTranscriptDisplay called - routing to RealWhisperIntegration');
+    if (window.realWhisperIntegration && window.realWhisperIntegration.updateTranscriptDisplay) {
+        return window.realWhisperIntegration.updateTranscriptDisplay(...args);
+    } else {
+        console.warn('⚠️ RealWhisperIntegration not available for updateTranscriptDisplay');
+    }
+};
