@@ -44,8 +44,13 @@ class PerformanceIntegrationBridge {
      * Patch audio processing methods to include VAD and adaptive chunking
      */
     patchAudioProcessing() {
-        // Store original method
-        this.originalMethods.sendAudioDataHTTP = this.realWhisperIntegration.sendAudioDataHTTP.bind(this.realWhisperIntegration);
+        // 🔒 DEFENSIVE BINDING: Validate method exists before binding
+        if (typeof this.realWhisperIntegration.sendAudioDataHTTP !== 'function') {
+            console.warn('⚠️ sendAudioDataHTTP method not found, using fallback');
+            this.originalMethods.sendAudioDataHTTP = () => Promise.resolve();
+        } else {
+            this.originalMethods.sendAudioDataHTTP = this.realWhisperIntegration.sendAudioDataHTTP.bind(this.realWhisperIntegration);
+        }
         
         // Patch sendAudioDataHTTP to include VAD optimization
         this.realWhisperIntegration.sendAudioDataHTTP = async (audioBlob) => {
@@ -99,11 +104,17 @@ class PerformanceIntegrationBridge {
      * Patch transcription handling to include performance monitoring
      */
     patchTranscriptionHandling() {
-        // Store original method
-        this.originalMethods.displayTranscript = this.realWhisperIntegration.displayTranscript.bind(this.realWhisperIntegration);
+        // 🔒 DEFENSIVE BINDING: Fix method name and validate existence
+        const methodName = 'updateTranscriptDisplay'; // Correct method name
+        if (typeof this.realWhisperIntegration[methodName] !== 'function') {
+            console.warn(`⚠️ ${methodName} method not found, using fallback`);
+            this.originalMethods.displayTranscript = () => {};
+        } else {
+            this.originalMethods.displayTranscript = this.realWhisperIntegration[methodName].bind(this.realWhisperIntegration);
+        }
         
-        // Patch displayTranscript to include performance monitoring
-        this.realWhisperIntegration.displayTranscript = (transcript, segments, chunkIndex) => {
+        // Patch updateTranscriptDisplay to include performance monitoring  
+        this.realWhisperIntegration.updateTranscriptDisplay = (transcript, segments) => {
             const timestamp = Date.now();
             
             // Record performance metrics
@@ -130,7 +141,7 @@ class PerformanceIntegrationBridge {
             this.lastChunkTime = timestamp;
             
             // Proceed with original method
-            return this.originalMethods.displayTranscript(transcript, segments, chunkIndex);
+            return this.originalMethods.displayTranscript(transcript, segments);
         };
         
         console.log('🔗 Transcription handling methods patched');
@@ -140,10 +151,11 @@ class PerformanceIntegrationBridge {
      * Setup comprehensive performance monitoring
      */
     setupPerformanceMonitoring() {
-        // Monitor recording start/stop events
-        const originalStartRecording = this.realWhisperIntegration.startRecording?.bind(this.realWhisperIntegration);
-        if (originalStartRecording) {
-            this.realWhisperIntegration.startRecording = async () => {
+        // 🔒 DEFENSIVE BINDING: Fix method names and validate existence
+        const startMethodName = 'startTranscription'; // Correct method name
+        const originalStartRecording = this.realWhisperIntegration[startMethodName]?.bind?.(this.realWhisperIntegration);
+        if (originalStartRecording && typeof originalStartRecording === 'function') {
+            this.realWhisperIntegration[startMethodName] = async (sessionId) => {
                 console.log('🎙️ Recording started - activating performance systems');
                 
                 // Start QA session
@@ -165,9 +177,10 @@ class PerformanceIntegrationBridge {
             };
         }
         
-        const originalStopRecording = this.realWhisperIntegration.stopRecording?.bind(this.realWhisperIntegration);
-        if (originalStopRecording) {
-            this.realWhisperIntegration.stopRecording = () => {
+        const stopMethodName = 'stopTranscription'; // Correct method name
+        const originalStopRecording = this.realWhisperIntegration[stopMethodName]?.bind?.(this.realWhisperIntegration);
+        if (originalStopRecording && typeof originalStopRecording === 'function') {
+            this.realWhisperIntegration[stopMethodName] = () => {
                 console.log('🎙️ Recording stopped - finalizing performance metrics');
                 
                 // End QA session and generate report
