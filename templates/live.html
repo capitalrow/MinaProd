@@ -1,16 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mina - Live Transcription</title>
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link href="/static/css/professional_ui.css" rel="stylesheet">
+{% extends "base_modern.html" %}
+
+{% block title %}Live Transcription - Mina Professional{% endblock %}
+
+{% block description %}Professional real-time speech transcription with Google Recorder-level performance, <400ms latency, and AI-powered accuracy.{% endblock %}
+
+{% block keywords %}live transcription, real-time speech to text, AI transcription, voice recognition{% endblock %}
+
+{% block extra_css %}
     
     <style>
         .accessibility-controls {
@@ -94,33 +90,98 @@
             border-radius: 4px;
         }
         
-        .error-actions button:first-child {
-            background: #007bff;
+        .mina-live-container {
+            background: linear-gradient(135deg, var(--mina-neutral-50) 0%, var(--mina-primary-50) 100%);
+            min-height: 100vh;
+            padding: var(--mina-space-6) 0;
+        }
+        
+        .mina-recording-panel {
+            background: var(--mina-neutral-0);
+            border: 1px solid var(--mina-neutral-200);
+            border-radius: var(--mina-radius-2xl);
+            box-shadow: var(--mina-shadow-xl);
+            overflow: hidden;
+        }
+        
+        .mina-recording-panel-header {
+            background: linear-gradient(135deg, var(--mina-primary-500) 0%, var(--mina-secondary-500) 100%);
             color: white;
-            border-color: #007bff;
+            padding: var(--mina-space-6);
+            text-align: center;
+        }
+        
+        .mina-transcript-panel {
+            background: var(--mina-neutral-900);
+            border: 1px solid var(--mina-neutral-700);
+            border-radius: var(--mina-radius-2xl);
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .mina-transcript-header {
+            background: var(--mina-neutral-800);
+            padding: var(--mina-space-4) var(--mina-space-6);
+            border-bottom: 1px solid var(--mina-neutral-700);
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+        
+        .mina-metrics-bar {
+            background: var(--mina-neutral-800);
+            padding: var(--mina-space-3) var(--mina-space-6);
+            border-bottom: 1px solid var(--mina-neutral-700);
+        }
+        
+        .mina-live-metric {
+            text-align: center;
+            color: var(--mina-neutral-300);
+        }
+        
+        .mina-live-metric-value {
+            font-size: var(--mina-text-xl);
+            font-weight: 700;
+            color: var(--mina-neutral-100);
+            margin-bottom: var(--mina-space-1);
+        }
+        
+        .mina-live-metric-label {
+            font-size: var(--mina-text-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
     </style>
-</head>
-<body class="bg-dark text-light ui-state-idle">
-    <a href="#main-content" class="skip-link">Skip to main content</a>
-    
-    <div class="container-fluid" role="main" aria-label="Mina Live Transcription Application">
-        <!-- Header -->
-        <div class="row mb-4">
+{% endblock %}
+
+{% block content %}
+<div class="mina-live-container">
+    <div class="container">
+        <!-- Page Header -->
+        <div class="row mb-5">
             <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center py-3 border-bottom border-secondary">
-                    <div>
-                        <h1 class="h3 mb-0">
-                            <i class="bi bi-mic-fill text-primary"></i>
-                            Mina Live Transcription
-                        </h1>
-                        <small class="text-muted">Real-time AI-powered speech transcription</small>
-                    </div>
-                    <div>
-                        <button id="diagnosticsBtn" class="btn btn-outline-info btn-sm diagnostics-button" 
-                                aria-label="Show system diagnostics">
-                            <i class="bi bi-speedometer2"></i> Diagnostics
-                        </button>
+                <div class="text-center">
+                    <h1 class="mina-heading-1 mb-3">
+                        <i class="bi bi-mic-fill text-primary me-3"></i>
+                        Live Transcription
+                    </h1>
+                    <p class="mina-text-lg text-muted mb-4">
+                        Professional real-time speech transcription with Google Recorder-level performance
+                    </p>
+                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                        <span class="mina-badge mina-badge-success">
+                            <i class="bi bi-lightning-fill me-1"></i>
+                            < 400ms Latency
+                        </span>
+                        <span class="mina-badge mina-badge-info">
+                            <i class="bi bi-robot me-1"></i>
+                            AI-Powered
+                        </span>
+                        <span class="mina-badge mina-badge-warning">
+                            <i class="bi bi-shield-check me-1"></i>
+                            Enterprise Grade
+                        </span>
                     </div>
                 </div>
             </div>
