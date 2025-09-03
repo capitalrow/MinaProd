@@ -20,6 +20,11 @@ class RealWhisperIntegration {
         this.chunkCount = 0;  // Track number of chunks processed
         this.processingFeedback = false;
         
+        // 🚀 STREAMING: Reset retry system state to prevent exhaustion loops
+        this.streamingRetryCount = 0;
+        this.lastErrorTime = 0;
+        this.consecutiveErrors = 0;
+        
         console.log('Real Whisper Integration initialized');
     }
     
@@ -860,7 +865,8 @@ class RealWhisperIntegration {
             
             this.sessionId = sessionId || `session_${Date.now()}`;
             
-            // CRITICAL: Reset cumulative transcript for new recording
+            // 🚀 CRITICAL FIX: Reset all state for new recording session
+            this.resetRetryState(); // Clear retry exhaustion
             this.cumulativeTranscript = '';
             this.chunkCount = 0;
             this.transcriptionBuffer = [];
@@ -1469,6 +1475,20 @@ class RealWhisperIntegration {
         }
     }
     
+    resetRetryState() {
+        /**
+         * 🚀 CRITICAL FIX: Reset retry system state to prevent exhaustion loops
+         * This method clears all retry counters and error states for a fresh start
+         */
+        this.streamingRetryCount = 0;
+        this.connectionAttempts = 0;
+        this.lastErrorTime = 0;
+        this.consecutiveErrors = 0;
+        this.lastFailedChunk = null;
+        
+        console.log('🔄 Retry system state reset - ready for fresh transcription session');
+    }
+
     stopTranscription() {
         if (this.mediaRecorder && this.isRecording) {
             this.mediaRecorder.stop();
@@ -1480,7 +1500,10 @@ class RealWhisperIntegration {
             this.mediaStream = null;
         }
         
-        console.log('⏹️ Transcription stopped');
+        // 🚀 CRITICAL FIX: Reset retry state on stop to ensure clean next session
+        this.resetRetryState();
+        
+        console.log('⏹️ Transcription stopped and retry state reset');
     }
     
     disconnect() {

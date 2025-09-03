@@ -388,10 +388,12 @@
                 console.log('✅ UI Accessibility available');
             }
             
-            // Setup recording button
+            // Setup recording button - DISABLED: Handled by RealWhisperIntegration
+            // to prevent duplicate event handlers and conflicts
             const recordButton = document.getElementById('recordButton');
             if (recordButton) {
-                recordButton.addEventListener('click', handleRecordingToggle);
+                console.log('✅ Recording button found - will be managed by RealWhisperIntegration');
+                // recordButton.addEventListener('click', handleRecordingToggle); // DISABLED
             }
             
             // Setup other controls
