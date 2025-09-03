@@ -83,6 +83,10 @@ class PerformanceMonitor:
         self.global_metrics['total_sessions'] += 1
         logger.info(f"Started performance monitoring for session {session_id}")
     
+    def record_session_start(self, session_id: str):
+        """Alias for start_session_monitoring for compatibility."""
+        return self.start_session_monitoring(session_id)
+    
     def record_chunk_latency(self, session_id: str, latency_ms: float):
         """Record processing latency for an audio chunk."""
         if session_id in self.metrics:
