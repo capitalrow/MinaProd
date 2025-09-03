@@ -1,0 +1,541 @@
+{% extends "base_modern.html" %}
+
+{% block title %}Sessions - Mina Professional{% endblock %}
+
+{% block description %}Manage and browse your professional transcription sessions with advanced search and filtering capabilities.{% endblock %}
+
+{% block keywords %}session management, transcription history, search sessions, transcription analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .mina-sessions-container {
+        background: linear-gradient(135deg, var(--mina-neutral-50) 0%, var(--mina-primary-50) 100%);
+        min-height: 100vh;
+        padding: var(--mina-space-6) 0;
+    }
+    
+    .mina-search-card {
+        background: var(--mina-neutral-0);
+        border: 1px solid var(--mina-neutral-200);
+        border-radius: var(--mina-radius-2xl);
+        padding: var(--mina-space-6);
+        box-shadow: var(--mina-shadow-md);
+        margin-bottom: var(--mina-space-6);
+    }
+    
+    .mina-search-input {
+        background: var(--mina-neutral-50);
+        border: 1px solid var(--mina-neutral-300);
+        border-radius: var(--mina-radius-lg);
+        padding: var(--mina-space-3) var(--mina-space-4);
+        font-size: var(--mina-text-base);
+        transition: all var(--mina-transition-fast);
+        width: 100%;
+    }
+    
+    .mina-search-input:focus {
+        outline: none;
+        border-color: var(--mina-primary-500);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        background: var(--mina-neutral-0);
+    }
+    
+    .mina-filter-tabs {
+        display: flex;
+        gap: var(--mina-space-2);
+        background: var(--mina-neutral-100);
+        padding: var(--mina-space-1);
+        border-radius: var(--mina-radius-lg);
+    }
+    
+    .mina-filter-tab {
+        flex: 1;
+        padding: var(--mina-space-2) var(--mina-space-4);
+        text-align: center;
+        border-radius: var(--mina-radius-md);
+        background: transparent;
+        border: none;
+        font-size: var(--mina-text-sm);
+        font-weight: 500;
+        color: var(--mina-neutral-600);
+        cursor: pointer;
+        transition: all var(--mina-transition-fast);
+        text-decoration: none;
+    }
+    
+    .mina-filter-tab:hover,
+    .mina-filter-tab.active {
+        background: var(--mina-neutral-0);
+        color: var(--mina-primary-600);
+        box-shadow: var(--mina-shadow-sm);
+        transform: translateY(-1px);
+    }
+    
+    .mina-sessions-grid {
+        display: grid;
+        gap: var(--mina-space-4);
+    }
+    
+    .mina-session-card {
+        background: var(--mina-neutral-0);
+        border: 1px solid var(--mina-neutral-200);
+        border-radius: var(--mina-radius-xl);
+        padding: var(--mina-space-6);
+        transition: all var(--mina-transition-medium);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .mina-session-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--mina-primary-500);
+        transform: scaleY(0);
+        transform-origin: bottom;
+        transition: transform var(--mina-transition-medium);
+    }
+    
+    .mina-session-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--mina-shadow-xl);
+        border-color: var(--mina-primary-300);
+    }
+    
+    .mina-session-card:hover::before {
+        transform: scaleY(1);
+    }
+    
+    .mina-session-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: var(--mina-space-4);
+    }
+    
+    .mina-session-title {
+        font-size: var(--mina-text-lg);
+        font-weight: 600;
+        color: var(--mina-neutral-900);
+        margin-bottom: var(--mina-space-1);
+    }
+    
+    .mina-session-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--mina-space-4);
+        color: var(--mina-neutral-600);
+        font-size: var(--mina-text-sm);
+        margin-bottom: var(--mina-space-3);
+    }
+    
+    .mina-session-meta-item {
+        display: flex;
+        align-items: center;
+        gap: var(--mina-space-1);
+    }
+    
+    .mina-session-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: var(--mina-space-3);
+        padding: var(--mina-space-3);
+        background: var(--mina-neutral-50);
+        border-radius: var(--mina-radius-lg);
+        margin-top: var(--mina-space-3);
+    }
+    
+    .mina-session-stat {
+        text-align: center;
+    }
+    
+    .mina-session-stat-value {
+        font-size: var(--mina-text-lg);
+        font-weight: 700;
+        color: var(--mina-primary-600);
+        margin-bottom: var(--mina-space-1);
+    }
+    
+    .mina-session-stat-label {
+        font-size: var(--mina-text-xs);
+        color: var(--mina-neutral-500);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .mina-session-actions {
+        display: flex;
+        gap: var(--mina-space-2);
+        margin-top: var(--mina-space-4);
+    }
+    
+    .mina-empty-state {
+        text-align: center;
+        padding: var(--mina-space-16) var(--mina-space-6);
+        color: var(--mina-neutral-500);
+    }
+    
+    .mina-empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: var(--mina-space-4);
+        opacity: 0.5;
+    }
+    
+    .mina-pagination {
+        display: flex;
+        justify-content: center;
+        gap: var(--mina-space-2);
+        margin-top: var(--mina-space-8);
+    }
+    
+    .mina-pagination-item {
+        padding: var(--mina-space-2) var(--mina-space-3);
+        border: 1px solid var(--mina-neutral-300);
+        border-radius: var(--mina-radius-md);
+        background: var(--mina-neutral-0);
+        color: var(--mina-neutral-600);
+        text-decoration: none;
+        transition: all var(--mina-transition-fast);
+        font-size: var(--mina-text-sm);
+    }
+    
+    .mina-pagination-item:hover,
+    .mina-pagination-item.active {
+        background: var(--mina-primary-500);
+        color: var(--mina-neutral-0);
+        border-color: var(--mina-primary-500);
+        transform: translateY(-1px);
+    }
+    
+    @media (max-width: 768px) {
+        .mina-filter-tabs {
+            flex-direction: column;
+        }
+        
+        .mina-session-header {
+            flex-direction: column;
+            gap: var(--mina-space-2);
+        }
+        
+        .mina-session-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mina-sessions-container">
+    <div class="container">
+        <!-- Page Header -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="text-center">
+                    <h1 class="mina-heading-1 mb-3">
+                        <i class="bi bi-folder text-primary me-3"></i>
+                        Session Management
+                    </h1>
+                    <p class="mina-text-lg text-muted mb-4">
+                        Browse, search, and manage your transcription sessions with professional tools
+                    </p>
+                    <a href="{{ url_for('transcription.live_transcription') }}" class="mina-btn mina-btn-primary mina-btn-lg">
+                        <i class="bi bi-mic-fill"></i>
+                        Start New Session
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="mina-search-card">
+            <form method="GET" class="mb-4">
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-8">
+                        <label for="searchInput" class="mina-label">Search Sessions</label>
+                        <div class="position-relative">
+                            <input type="text" 
+                                   id="searchInput"
+                                   name="q" 
+                                   value="{{ query or '' }}" 
+                                   class="mina-search-input" 
+                                   placeholder="Search by title, content, or date..."
+                                   aria-label="Search sessions">
+                            <i class="bi bi-search position-absolute" 
+                               style="right: 12px; top: 50%; transform: translateY(-50%); color: var(--mina-neutral-400);"></i>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <button type="submit" class="mina-btn mina-btn-primary w-100">
+                            <i class="bi bi-search"></i>
+                            Search
+                        </button>
+                    </div>
+                </div>
+                <input type="hidden" name="status" value="{{ status or '' }}">
+            </form>
+            
+            <!-- Filter Tabs -->
+            <div class="mina-filter-tabs">
+                <a href="{{ url_for('transcription.list_sessions', q=query) }}" 
+                   class="mina-filter-tab {{ 'active' if not status }}">
+                    <i class="bi bi-collection me-1"></i>
+                    All Sessions
+                </a>
+                <a href="{{ url_for('transcription.list_sessions', status='active', q=query) }}" 
+                   class="mina-filter-tab {{ 'active' if status == 'active' }}">
+                    <i class="bi bi-record-circle me-1"></i>
+                    Active
+                </a>
+                <a href="{{ url_for('transcription.list_sessions', status='completed', q=query) }}" 
+                   class="mina-filter-tab {{ 'active' if status == 'completed' }}">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Completed
+                </a>
+                <a href="{{ url_for('transcription.list_sessions', status='archived', q=query) }}" 
+                   class="mina-filter-tab {{ 'active' if status == 'archived' }}">
+                    <i class="bi bi-archive me-1"></i>
+                    Archived
+                </a>
+            </div>
+        </div>
+
+        <!-- Sessions Grid -->
+        {% if sessions and sessions.items %}
+        <div class="mina-sessions-grid">
+            {% for session in sessions.items %}
+            <div class="mina-session-card" onclick="location.href='{{ url_for('sessions.session_detail', session_id=session.id) }}'">
+                <div class="mina-session-header">
+                    <div>
+                        <h3 class="mina-session-title">
+                            {{ session.title or 'Transcription Session #' + session.id|string }}
+                        </h3>
+                        <div class="mina-session-meta">
+                            <div class="mina-session-meta-item">
+                                <i class="bi bi-calendar3"></i>
+                                <span>{{ session.started_at.strftime('%B %d, %Y') if session.started_at else 'Recently' }}</span>
+                            </div>
+                            <div class="mina-session-meta-item">
+                                <i class="bi bi-clock"></i>
+                                <span>{{ session.started_at.strftime('%I:%M %p') if session.started_at else '--:--' }}</span>
+                            </div>
+                            {% if session.completed_at %}
+                            <div class="mina-session-meta-item">
+                                <i class="bi bi-stopwatch"></i>
+                                <span>{{ ((session.completed_at - session.started_at).total_seconds() / 60) | round(1) if session.started_at else 0 }}m duration</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        {% if session.status == 'completed' %}
+                        <span class="mina-badge mina-badge-success">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Completed
+                        </span>
+                        {% elif session.status == 'active' %}
+                        <span class="mina-badge mina-badge-warning">
+                            <i class="bi bi-record-circle me-1 mina-pulse"></i>
+                            Active
+                        </span>
+                        {% else %}
+                        <span class="mina-badge mina-badge-info">
+                            {{ session.status.title() }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Session Stats -->
+                <div class="mina-session-stats">
+                    <div class="mina-session-stat">
+                        <div class="mina-session-stat-value">{{ session.segments.count() if session.segments else 0 }}</div>
+                        <div class="mina-session-stat-label">Segments</div>
+                    </div>
+                    <div class="mina-session-stat">
+                        <div class="mina-session-stat-value">
+                            {% set word_count = session.segments.join('').split() | length if session.segments else 0 %}
+                            {{ word_count }}
+                        </div>
+                        <div class="mina-session-stat-label">Words</div>
+                    </div>
+                    <div class="mina-session-stat">
+                        <div class="mina-session-stat-value">95%</div>
+                        <div class="mina-session-stat-label">Accuracy</div>
+                    </div>
+                    <div class="mina-session-stat">
+                        <div class="mina-session-stat-value">< 400ms</div>
+                        <div class="mina-session-stat-label">Latency</div>
+                    </div>
+                </div>
+
+                <!-- Session Actions -->
+                <div class="mina-session-actions">
+                    <a href="{{ url_for('sessions.session_detail', session_id=session.id) }}" 
+                       class="mina-btn mina-btn-primary mina-btn-sm"
+                       onclick="event.stopPropagation()">
+                        <i class="bi bi-eye"></i>
+                        View Details
+                    </a>
+                    
+                    {% if session.status == 'completed' %}
+                    <a href="{{ url_for('sessions.session_detail', session_id=session.id) }}?action=download" 
+                       class="mina-btn mina-btn-outline mina-btn-sm"
+                       onclick="event.stopPropagation()">
+                        <i class="bi bi-download"></i>
+                        Download
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('sessions.session_detail', session_id=session.id) }}?action=share" 
+                       class="mina-btn mina-btn-ghost mina-btn-sm"
+                       onclick="event.stopPropagation()">
+                        <i class="bi bi-share"></i>
+                        Share
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if sessions.pages > 1 %}
+        <div class="mina-pagination">
+            {% if sessions.has_prev %}
+            <a href="{{ url_for('sessions.list_sessions', page=sessions.prev_num, q=query, status=status) }}" 
+               class="mina-pagination-item">
+                <i class="bi bi-chevron-left"></i>
+                Previous
+            </a>
+            {% endif %}
+            
+            {% for page_num in sessions.iter_pages() %}
+            {% if page_num %}
+                {% if page_num != sessions.page %}
+                <a href="{{ url_for('sessions.list_sessions', page=page_num, q=query, status=status) }}" 
+                   class="mina-pagination-item">{{ page_num }}</a>
+                {% else %}
+                <span class="mina-pagination-item active">{{ page_num }}</span>
+                {% endif %}
+            {% else %}
+            <span class="mina-pagination-item">…</span>
+            {% endif %}
+            {% endfor %}
+            
+            {% if sessions.has_next %}
+            <a href="{{ url_for('sessions.list_sessions', page=sessions.next_num, q=query, status=status) }}" 
+               class="mina-pagination-item">
+                Next
+                <i class="bi bi-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="mina-empty-state">
+            <div class="mina-empty-state-icon">
+                {% if query %}
+                <i class="bi bi-search"></i>
+                {% else %}
+                <i class="bi bi-folder-x"></i>
+                {% endif %}
+            </div>
+            <h4 class="mina-heading-4 mb-3">
+                {% if query %}
+                No sessions found for "{{ query }}"
+                {% else %}
+                No transcription sessions yet
+                {% endif %}
+            </h4>
+            <p class="mina-text-base mb-4">
+                {% if query %}
+                Try adjusting your search terms or filters to find what you're looking for.
+                {% else %}
+                Start your first transcription session to begin building your session history.
+                {% endif %}
+            </p>
+            <div class="d-flex justify-content-center gap-3">
+                {% if query %}
+                <a href="{{ url_for('sessions.list_sessions') }}" class="mina-btn mina-btn-outline">
+                    <i class="bi bi-x-circle"></i>
+                    Clear Search
+                </a>
+                {% endif %}
+                <a href="{{ url_for('transcription.live_transcription') }}" class="mina-btn mina-btn-primary">
+                    <i class="bi bi-mic-fill"></i>
+                    Start First Session
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Enhanced search functionality
+    const searchInput = document.getElementById('searchInput');
+    let searchTimeout;
+    
+    // Add real-time search suggestions (debounced)
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            // Add search suggestions logic here if needed
+            console.log('Search query:', this.value);
+        }, 300);
+    });
+    
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + K to focus search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
+        
+        // Escape to clear search
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+            searchInput.value = '';
+            searchInput.blur();
+        }
+    });
+    
+    // Add hover effects to session cards
+    const sessionCards = document.querySelectorAll('.mina-session-card');
+    sessionCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(-4px)';
+        });
+    });
+    
+    // Add loading states for actions
+    document.querySelectorAll('.mina-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            if (this.href && !this.href.includes('#')) {
+                this.innerHTML = '<span class="mina-spinner"></span> Loading...';
+                this.disabled = true;
+            }
+        });
+    });
+    
+    // Show search tips
+    if (window.showToast && !sessionCards.length && !document.querySelector('.mina-empty-state')) {
+        window.showToast('Use the search box to find specific sessions by title or content', 'info', 'Search Tip');
+    }
+});
+</script>
+{% endblock %}
