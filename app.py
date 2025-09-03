@@ -177,15 +177,27 @@ def create_app(config_class=Config):
     # 🎯 UNIFIED TRANSCRIPTION API: Single endpoint for all transcription needs
     try:
         from routes.unified_transcription_api import unified_api_bp
-        from routes.streaming_transcription_api import streaming_bp
-        from routes.monitoring_dashboard import monitoring_bp
         app.register_blueprint(unified_api_bp)
-        app.register_blueprint(streaming_bp)
+        logger.info("✅ Unified transcription API registered")
+    except Exception as e:
+        logger.error(f"❌ Failed to register unified API: {e}")
+    
+    # 📊 MONITORING DASHBOARD: Production health monitoring
+    try:
+        from routes.monitoring_dashboard import monitoring_bp
         app.register_blueprint(monitoring_bp)
-        logger.info("✅ Unified and streaming transcription APIs registered")
         logger.info("✅ Monitoring dashboard registered")
     except Exception as e:
-        logger.error(f"❌ Failed to register transcription APIs: {e}")
+        logger.error(f"❌ Failed to register monitoring dashboard: {e}")
+    
+    # 🚀 STREAMING TRANSCRIPTION API: Real-time streaming with QA bridge
+    try:
+        from routes.streaming_transcription_api import streaming_bp
+        app.register_blueprint(streaming_bp)
+        logger.info("✅ Streaming transcription API registered")
+    except Exception as e:
+        logger.error(f"❌ Failed to register streaming API: {e}")
+        logger.info("ℹ️ Streaming API may have import conflicts, but core functionality preserved")
     
     # DISABLED: Conflicting endpoints that cause format confusion
     # try:

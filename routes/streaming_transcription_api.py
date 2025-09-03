@@ -45,10 +45,13 @@ def start_streaming_session():
         processor = get_streaming_processor()
         qa_bridge = get_qa_bridge()
         
-        # Start performance monitoring
-        from services.performance_monitor import get_performance_monitor
-        performance_monitor = get_performance_monitor()
-        performance_monitor.record_session_start(session_id)
+        # Start performance monitoring (lazy import to avoid circular dependencies)
+        try:
+            from services.performance_monitor import get_performance_monitor
+            performance_monitor = get_performance_monitor()
+            performance_monitor.record_session_start(session_id)
+        except Exception as e:
+            logger.warning(f"Performance monitoring unavailable: {e}")
         
         # Start QA monitoring
         qa_bridge.start_qa_session(session_id)

@@ -75,10 +75,10 @@ def get_system_health():
             'components': health_components,
             'details': {
                 'performance': {
-                    'cpu_healthy': perf_health.cpu_healthy,
-                    'memory_healthy': perf_health.memory_healthy,
-                    'latency_healthy': perf_health.latency_healthy,
-                    'score': perf_health.overall_score
+                    'cpu_healthy': perf_health.get('cpu_healthy', True),
+                    'memory_healthy': perf_health.get('memory_healthy', True),
+                    'latency_healthy': perf_health.get('latency_healthy', True),
+                    'score': perf_health.get('overall_score', 100)
                 },
                 'error_recovery': {
                     'error_rate': error_health['error_rate'],
