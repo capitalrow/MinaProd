@@ -75,10 +75,12 @@ class EnhancedIntegrationBridge {
             
             // Direct initialization - skip waiting for class
             try {
-                // Create instance directly
-                if (!window.realWhisperIntegration) {
+                // 🔒 SINGLETON CHECK: Only create if not already exists
+                if (!window.realWhisperIntegration && typeof RealWhisperIntegration === 'function') {
                     window.realWhisperIntegration = new RealWhisperIntegration();
-                    console.log('✅ RealWhisperIntegration instance created');
+                    console.log('✅ RealWhisperIntegration instance created by bridge');
+                } else if (window.realWhisperIntegration) {
+                    console.log('✅ Using existing RealWhisperIntegration instance');
                 }
                 
                 // Configure for HTTP mode
@@ -104,8 +106,12 @@ class EnhancedIntegrationBridge {
             } catch (directError) {
                 console.error('❌ Direct initialization failed:', directError);
                 
-                // Create minimal fallback
-                window.realWhisperIntegration = this.createMinimalTranscription();
+                // 🔒 SINGLETON CHECK: Only create fallback if needed
+                if (!window.realWhisperIntegration) {
+                    window.realWhisperIntegration = this.createMinimalTranscription();
+                } else {
+                    console.log('✅ Using existing instance instead of fallback');
+                }
                 this.systems.realWhisperIntegration = true;
                 console.log('⚠️ Using minimal transcription fallback');
                 this.updateSystemStatus('transcription', 'Fallback');

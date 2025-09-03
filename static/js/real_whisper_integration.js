@@ -1316,7 +1316,7 @@ class RealWhisperIntegration {
 }
 
 // Initialize global instance
-window.realWhisperIntegration = new RealWhisperIntegration();
+// 🚫 DUPLICATE REMOVED: Instance creation moved to end of file
 
 // Add CSS for processing feedback if not already added
 if (!document.getElementById('whisper-processing-styles')) {
@@ -1492,6 +1492,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 console.log('Real Whisper Integration loaded successfully');
 
-// 🎯 CRITICAL FIX: Create global instance to resolve binding errors
-window.realWhisperIntegration = new RealWhisperIntegration();
-console.log('🚀 Global RealWhisperIntegration instance created for system integration');
+// 🎯 SINGLETON PATTERN: Ensure single instance creation
+if (!window.realWhisperIntegration) {
+    window.realWhisperIntegration = new RealWhisperIntegration();
+    console.log('🚀 Global RealWhisperIntegration instance created for system integration');
+} else {
+    console.log('✅ RealWhisperIntegration instance already exists, using existing one');
+}
