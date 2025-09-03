@@ -104,6 +104,91 @@ class RealWhisperIntegration {
         }
     }
     
+    async sendAudioDataStreaming(audioBlob, isFinal = false) {
+        /**
+         * 🚀 STREAMING: Send audio data via streaming HTTP endpoint
+         * This method handles real-time audio streaming to the transcription service
+         * @param {Blob} audioBlob - The audio data to send
+         * @param {boolean} isFinal - Whether this is a final chunk (for better transcription)
+         */
+        if (!audioBlob || audioBlob.size === 0) {
+            console.warn('⚠️ Empty audio blob, skipping streaming request');
+            return;
+        }
+        
+        try {
+            console.log(`📤 Streaming audio chunk ${this.chunkCount}: ${audioBlob.size} bytes (final: ${isFinal})`);
+            
+            // Create FormData for streaming HTTP upload
+            const formData = new FormData();
+            formData.append('audio', audioBlob, `stream_chunk_${this.chunkCount}.webm`);
+            formData.append('session_id', this.sessionId || `session_${Date.now()}`);
+            formData.append('chunk_id', this.chunkCount.toString());
+            formData.append('timestamp', Date.now().toString());
+            formData.append('is_final', isFinal.toString());
+            formData.append('streaming', 'true'); // Mark as streaming request
+            
+            // Use the enabled /api/transcribe-audio endpoint 
+            const endpoint = '/api/transcribe-audio';
+            
+            // Send HTTP POST request with optimized timeout for streaming
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout for streaming
+            
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData,
+                signal: controller.signal,
+                headers: {
+                    'X-Streaming-Request': 'true' // Help backend identify streaming requests
+                }
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`Streaming HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.success && result.transcript) {
+                console.log(`✅ Streaming chunk ${this.chunkCount} transcribed: "${result.transcript.substring(0, 50)}..."`);
+                
+                // Display the transcript in real-time with streaming context
+                this.displayTranscript(result.transcript, result.segments || [], this.chunkCount, true);
+                
+                // Process streaming transcription result
+                this.handleStreamingTranscriptionResult(result, isFinal);
+                
+                // Update performance metrics for streaming
+                this.updatePerformanceMetrics({
+                    processing_time: result.processing_time || 0,
+                    segment_count: result.segment_count || 1,
+                    confidence: result.confidence || 0.8,
+                    chunk_size: audioBlob.size,
+                    is_streaming: true,
+                    is_final: isFinal
+                });
+                
+            } else if (result.success && !result.transcript) {
+                // Silent chunk - no transcription needed
+                console.log(`🔇 Silent chunk ${this.chunkCount} - no transcription`);
+            } else {
+                console.warn(`⚠️ Streaming transcription partial failure for chunk ${this.chunkCount}:`, result);
+            }
+            
+            return result;
+            
+        } catch (error) {
+            console.error(`❌ Streaming transcription failed for chunk ${this.chunkCount}:`, error);
+            
+            // Enhanced error handling for streaming
+            this.handleStreamingError(error, audioBlob, isFinal);
+            throw error;
+        }
+    }
+    
     handleHTTPTranscriptionResult(result) {
         // Process transcription result from HTTP endpoint
         if (!result.transcript || !result.transcript.trim()) {
@@ -130,7 +215,103 @@ class RealWhisperIntegration {
         console.log(`📝 Updated transcript: ${this.cumulativeTranscript.length} characters total`);
     }
     
-    updateTranscriptDisplay(newText, segments) {
+    handleStreamingTranscriptionResult(result, isFinal) {
+        /**
+         * 🚀 STREAMING: Process transcription result from streaming endpoint
+         * Optimized for real-time streaming with partial and final results
+         */
+        if (!result.transcript || !result.transcript.trim()) {
+            console.log('⚠️ Empty streaming transcript received');
+            return;
+        }
+        
+        const newText = result.transcript.trim();
+        
+        if (isFinal) {
+            // Final chunk - add to cumulative transcript permanently
+            this.cumulativeTranscript += newText + ' ';
+            console.log(`📝 Final streaming transcript added: "${newText}"`);
+            
+            // Update session statistics for final chunks
+            this.updateSessionStats({
+                wordCount: this.cumulativeTranscript.split(' ').filter(w => w.length > 0).length,
+                duration: result.audio_duration || 0,
+                accuracy: result.confidence || 0.8,
+                chunks: this.chunkCount,
+                latency: result.processing_time || 0,
+                streaming: true
+            });
+        } else {
+            // Interim chunk - show but don't add permanently yet
+            console.log(`📝 Interim streaming transcript: "${newText.substring(0, 50)}..."`);
+        }
+        
+        // Update transcript display in real-time (streaming optimized)
+        this.updateTranscriptDisplay(newText, result.segments || [], isFinal);
+        
+        console.log(`📝 Streaming transcript processed: ${newText.length} chars, final: ${isFinal}`);
+    }
+    
+    handleStreamingError(error, audioBlob, isFinal) {
+        /**
+         * 🚀 STREAMING: Enhanced error handling for streaming requests
+         * Implements smart retry logic and fallback strategies
+         */
+        console.error(`❌ Streaming error for chunk ${this.chunkCount}:`, error);
+        
+        // Categorize error types for appropriate handling
+        let errorType = 'unknown';
+        let shouldRetry = true;
+        
+        if (error.name === 'AbortError') {
+            errorType = 'timeout';
+            console.warn(`⏱️ Streaming timeout for chunk ${this.chunkCount} (${audioBlob.size} bytes)`);
+        } else if (error.message.includes('404') || error.message.includes('403')) {
+            errorType = 'endpoint';
+            shouldRetry = false;
+            console.error(`🚫 Streaming endpoint error for chunk ${this.chunkCount}: ${error.message}`);
+        } else if (error.message.includes('Network')) {
+            errorType = 'network';
+            console.warn(`🌐 Network error for streaming chunk ${this.chunkCount}: ${error.message}`);
+        }
+        
+        // Update error statistics with streaming context
+        this.updateErrorStats({
+            ...error,
+            type: errorType,
+            chunk_id: this.chunkCount,
+            chunk_size: audioBlob.size,
+            is_final: isFinal,
+            should_retry: shouldRetry,
+            streaming: true
+        });
+        
+        // Implement intelligent retry strategy
+        if (shouldRetry && this.streamingRetryCount < 2) {
+            this.streamingRetryCount = (this.streamingRetryCount || 0) + 1;
+            console.log(`🔄 Retrying streaming request (attempt ${this.streamingRetryCount + 1}/3)`);
+            
+            // Exponential backoff for retries
+            setTimeout(async () => {
+                try {
+                    await this.sendAudioDataStreaming(audioBlob, isFinal);
+                } catch (retryError) {
+                    console.error(`❌ Streaming retry failed:`, retryError);
+                }
+            }, 1000 * this.streamingRetryCount);
+        } else {
+            // Max retries reached or non-retryable error
+            console.error(`❌ Streaming failed permanently for chunk ${this.chunkCount}`);
+            this.streamingRetryCount = 0; // Reset for next chunk
+            
+            // Show user-friendly error message occasionally
+            if (this.chunkCount % 10 === 0 && window.toastSystem) {
+                window.toastSystem.showError(`⚠️ Audio processing temporarily interrupted - continuing...`);
+            }
+        }
+    }
+    
+    updateTranscriptDisplay(newText, segments, isFinal = false) {
         // Update the live transcript area with new transcription
         const transcriptArea = document.getElementById('transcriptContainer') || 
                               document.getElementById('transcriptArea') ||
