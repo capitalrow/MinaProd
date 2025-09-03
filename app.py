@@ -215,13 +215,13 @@ def create_app(config_class=Config):
     # except Exception as e:
     #     logger.error(f"❌ Failed to register HTTP transcription endpoints: {e}")
     
-    # DISABLED: Legacy transcription fix endpoint (replaced by unified API)
-    # try:
-    #     from routes.transcription_endpoint_fix import transcription_fix_bp
-    #     app.register_blueprint(transcription_fix_bp)
-    #     logger.info("✅ Robust transcription endpoint registered")
-    # except Exception as e:
-    #     logger.error(f"❌ Failed to register robust transcription endpoint: {e}")
+    # ENABLED: Robust transcription fix endpoint (for frontend compatibility)
+    try:
+        from routes.transcription_endpoint_fix import transcription_fix_bp
+        app.register_blueprint(transcription_fix_bp)
+        logger.info("✅ Robust transcription endpoint registered")
+    except Exception as e:
+        logger.error(f"❌ Failed to register robust transcription endpoint: {e}")
     
     # MANUAL MONITORING RECOMMENDATION #1: Enhanced WebSocket routes already registered
     logger.info("✅ Enhanced WebSocket event handlers active")
