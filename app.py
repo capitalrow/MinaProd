@@ -223,13 +223,20 @@ def create_app(config_class=Config):
     except Exception as e:
         logger.error(f"❌ Failed to register robust transcription endpoint: {e}")
     
-    # 🎯 ENHANCED WEBSOCKET: Google Recorder-level transcription
+    # 🎯 ENHANCED WEBSOCKET: Google Recorder-level transcription (Eventlet Compatible)
     try:
-        from routes.enhanced_websocket_routes import enhanced_ws_bp
-        app.register_blueprint(enhanced_ws_bp, url_prefix='/api')
-        logger.info("✅ Enhanced WebSocket routes registered (Google Recorder-level)")
+        from routes.enhanced_websocket_eventlet_routes import enhanced_eventlet_bp
+        app.register_blueprint(enhanced_eventlet_bp, url_prefix='/api')
+        logger.info("✅ Enhanced WebSocket routes registered (Eventlet-compatible, Google Recorder-level)")
     except Exception as e:
         logger.error(f"❌ Failed to register enhanced WebSocket routes: {e}")
+        # Fallback to original enhanced routes
+        try:
+            from routes.enhanced_websocket_routes import enhanced_ws_bp
+            app.register_blueprint(enhanced_ws_bp, url_prefix='/api')
+            logger.info("✅ Fallback enhanced WebSocket routes registered")
+        except Exception as fallback_e:
+            logger.error(f"❌ Fallback enhanced WebSocket routes also failed: {fallback_e}")
     
     # MANUAL MONITORING RECOMMENDATION #1: Enhanced WebSocket routes already registered
     logger.info("✅ Enhanced WebSocket event handlers active")
