@@ -8,7 +8,6 @@ from sqlalchemy import JSON
 
 
 class TranscriptionSession(db.Model):
-    """Model for tracking transcription sessions with comprehensive analytics"""
     __tablename__ = 'transcription_sessions'
     
     id = db.Column(db.Integer, primary_key=True)

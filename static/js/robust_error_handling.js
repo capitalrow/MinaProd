@@ -205,7 +205,10 @@ class RobustErrorHandling {
             if (existingRetry.count < this.retryConfig.maxRetries) {
                 setTimeout(() => this.attemptRecovery(errorRecord, originalError), 1000);
             } else {
-                this.showUserFriendlyError(errorRecord.type, 'Unable to recover automatically. Please check your connection and try again.');
+                // Only show error if it's been persistent for more than 30 seconds
+                if (Date.now() - errorRecord.timestamp > 30000) {
+                    this.showUserFriendlyError(errorRecord.type, 'Unable to recover automatically. Please check your connection and try again.');
+                }
             }
         }
     }
