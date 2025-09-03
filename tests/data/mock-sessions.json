@@ -1,0 +1,43 @@
+{
+  "validSessions": [
+    {
+      "title": "Team Standup Meeting",
+      "language": "en",
+      "enable_speaker_detection": true,
+      "description": "Daily team standup discussion"
+    },
+    {
+      "title": "Client Presentation",
+      "language": "en",
+      "enable_speaker_detection": true,
+      "enable_sentiment_analysis": true,
+      "description": "Quarterly client review presentation"
+    },
+    {
+      "title": "Brainstorming Session",
+      "language": "en",
+      "enable_speaker_detection": false,
+      "description": "Product feature brainstorming"
+    }
+  ],
+  "invalidSessions": [
+    {
+      "title": "",
+      "language": "invalid-lang",
+      "enable_speaker_detection": "not-boolean"
+    },
+    {
+      "title": null,
+      "language": 123,
+      "enable_speaker_detection": true
+    }
+  ],
+  "stressTestSessions": [
+    {
+      "title": "A".repeat(1000),
+      "language": "en",
+      "description": "B".repeat(5000),
+      "enable_speaker_detection": true
+    }
+  ]
+}
