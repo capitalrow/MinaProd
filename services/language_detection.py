@@ -888,3 +888,35 @@ def initialize_language_detection_service(config: Optional[LanguageDetectionConf
     global _language_service
     _language_service = LanguageDetectionService(config)
     return _language_service
+
+# Tiny heuristic: if LANGUAGE_HINT is set, we use it.
+# Otherwise we inspect first few hundred chars of interims and finals (held in memory by caller),
+# and return a best-guess ISO code for OpenAI (supported: 'en', 'es', 'fr', 'de', 'it', 'pt', 'nl', 'sv').
+# This avoids mis-hinting English when the user speaks another major language.
+
+VOCABS = {
+    "en": r"\b(the|and|you|that|for|with|this|have|was|are)\b",
+    "es": r"\b(el|la|de|que|y|en|los|del|se|por)\b",
+    "fr": r"\b(le|la|et|les|des|est|pour|que|une|dans)\b",
+    "de": r"\b(der|die|und|das|ist|mit|den|nicht|ein|zu)\b",
+    "it": r"\b(il|la|e|di|che|per|un|una|del|dei)\b",
+    "pt": r"\b(o|a|de|que|e|em|os|do|da|um)\b",
+    "nl": r"\b(de|het|en|van|een|dat|is|op|te|voor)\b",
+    "sv": r"\b(och|att|det|som|en|är|på|av|för|med)\b",
+}
+
+COMPILED = {k: re.compile(v, re.I) for k, v in VOCABS.items()}
+
+def guess_lang(text: str) -> str | None:
+    if not text or len(text) < 20:
+        return None
+    scores = Counter()
+    for code, rx in COMPILED.items():
+        hits = rx.findall(text)
+        if hits:
+            scores[code] = len(hits)
+    if not scores:
+        return None
+    # return top-1 if strong enough
+    code, n = scores.most_common(1)[0]
+    return code if n >= 2 else None
