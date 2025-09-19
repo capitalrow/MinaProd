@@ -11,7 +11,7 @@ from services.performance_monitor import get_performance_monitor
 from services.error_recovery_system import get_error_recovery
 from services.accessibility_validator import get_accessibility_validator
 from models.streaming_models import TranscriptionSession, TranscriptionChunk
-from app import db
+from app_refactored import db
 
 logger = logging.getLogger(__name__)
 

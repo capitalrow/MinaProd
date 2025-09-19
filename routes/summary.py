@@ -10,7 +10,7 @@ from flask import Blueprint, request, jsonify, current_app
 # from flask_socketio import emit  # Disabled for native WebSocket testing
 
 from services.analysis_service import AnalysisService
-# from app import socketio  # Disabled for native WebSocket testing
+# from app_refactored import socketio  # Disabled for native WebSocket testing
 
 logger = logging.getLogger(__name__)
 

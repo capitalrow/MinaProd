@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Meetings</h2>
+<div class="grid">
+  {% for m in meetings %}
+    <div class="card">
+      <a href="/meetings/{{m.id}}"><h3>{{ m.title }}</h3></a>
+      <div>{{ m.started_at.strftime("%Y-%m-%d %H:%M") if m.started_at else "" }}</div>
+      <div>Status: {{ m.status }}</div>
+    </div>
+  {% else %}
+    <p class="muted">No meetings yet. Record in <a href="/live">Live</a> or create via API.</p>
+  {% endfor %}
+</div>
+{% endblock %}

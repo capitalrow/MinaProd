@@ -1,0 +1,31 @@
+<!-- templates/tasks_fallback.html -->
+<!doctype html>
+<html><head>
+  <meta charset="utf-8">
+  <title>Mina — Tasks</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mina_ui.css') }}">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand"><div class="logo"></div><h1>Mina</h1></div>
+      <nav class="nav">
+        <a href="{{ url_for('pages.dashboard') }}">🏠 Dashboard</a>
+        <a href="{{ url_for('pages.live') }}">🎙️ Live Transcription</a>
+        <a href="{{ url_for('pages.meetings') }}">📅 Meeting Library</a>
+        <a class="active" href="{{ url_for('pages.tasks') }}">✅ Tasks</a>
+        <a href="{{ url_for('pages.calendar') }}">📆 Calendar</a>
+        <a href="{{ url_for('pages.settings') }}">⚙️ Settings</a>
+      </nav>
+    </aside>
+    <header class="header"><div class="search"><input placeholder="Search…"><span class="hint">⌘K</span></div></header>
+    <main class="main">
+      <div class="h1">Tasks <span class="sub">This is a fallback view</span></div>
+      <div class="kanban">
+        <div class="col"><div class="title">To do</div><div class="task">Prep Q3 report</div></div>
+        <div class="col"><div class="title">Doing</div><div class="task">Tune summarizer prompts</div></div>
+        <div class="col"><div class="title">Done</div><div class="task">Export page polish</div></div>
+      </div>
+    </main>
+  </div>
+</body></html>

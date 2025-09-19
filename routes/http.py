@@ -9,7 +9,3 @@ def health():
 @http_bp.route("/")
 def root():
     return redirect(url_for("http.live"))
-
-@http_bp.route("/live")
-def live():
-    return render_template("live.html")

@@ -17,7 +17,7 @@ import traceback
 
 # Import models and services
 from models import Session, Segment
-from app import db
+from app_refactored import db
 
 logger = logging.getLogger(__name__)
 

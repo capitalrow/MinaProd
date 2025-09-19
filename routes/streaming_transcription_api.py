@@ -8,7 +8,7 @@ import logging
 import time
 from flask import Blueprint, request, jsonify
 from datetime import datetime
-from app import db
+from app_refactored import db
 from models.streaming_models import TranscriptionSession, TranscriptionChunk
 from services.streaming_audio_processor import get_streaming_processor, ProcessingResult
 from services.real_time_qa_bridge import get_qa_bridge

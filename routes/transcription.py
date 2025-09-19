@@ -17,7 +17,7 @@ from models.segment import Segment
 from services.transcription_service import TranscriptionService, TranscriptionServiceConfig
 from services.session_service import SessionService
 from services.whisper_streaming import WhisperStreamingService, TranscriptionConfig
-from app import db
+from app_refactored import db
 
 logger = logging.getLogger(__name__)
 

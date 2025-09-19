@@ -14,7 +14,7 @@ import base64
 
 # Import basic models only
 from models import Session, Segment
-from app import db
+from app_refactored import db
 
 logger = logging.getLogger(__name__)
 

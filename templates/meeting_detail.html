@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ meeting.title }}</h2>
+<p class="muted">{{ meeting.started_at }}</p>
+
+<section class="two">
+  <div>
+    <h3>Transcript</h3>
+    <pre class="mono">{{ meeting.transcript or "No transcript saved yet." }}</pre>
+  </div>
+  <div>
+    <h3>Summary</h3>
+    {% if summary %}
+      <h4>TL;DR</h4><p>{{ summary.tldr }}</p>
+      <h4>Key Points</h4><pre>{{ summary.bullets }}</pre>
+      <h4>Decisions</h4><pre>{{ summary.decisions }}</pre>
+      <h4>Risks</h4><pre>{{ summary.risks }}</pre>
+      <h4>Open Questions</h4><pre>{{ summary.questions }}</pre>
+    {% else %}
+      <p class="muted">No summary yet.</p>
+    {% endif %}
+    <button id="extractTasks">Extract Tasks</button>
+    <button id="shareLink">Create Share Link</button>
+    <div id="shareOut" class="muted"></div>
+  </div>
+</section>
+
+<h3>Tasks</h3>
+<ul>
+{% for t in tasks %}
+  <li>[{{ t.status }}] {{ t.title }} {% if t.owner %}— @{{ t.owner }}{% endif %}</li>
+{% else %}
+  <li class="muted">No tasks yet.</li>
+{% endfor %}
+</ul>
+
+<script>
+  const mid = {{ meeting.id }};
+  document.getElementById('extractTasks').onclick = async () => {
+    await fetch(`/api/meetings/${mid}/extract_tasks`, {method:'POST'});
+    location.reload();
+  };
+  document.getElementById('shareLink').onclick = async () => {
+    const r = await fetch(`/api/meetings/${mid}/share`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({redact_pii:true})});
+    const j = await r.json();
+    document.getElementById('shareOut').textContent = `Share URL: ${location.origin}${j.url}`;
+  };
+</script>
+{% endblock %}

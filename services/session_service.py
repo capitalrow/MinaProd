@@ -8,7 +8,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
-from app import db
+from app_refactored import db
 from models.session import Session
 from models.segment import Segment
 

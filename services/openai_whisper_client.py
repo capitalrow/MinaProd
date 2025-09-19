@@ -1,21 +1,19 @@
-# services/openai_whisper_client.py
+# services/openai_whisper_client.py – resilient Whisper client (v1 SDK safe)
 import io
 import os
 import time
 from typing import Optional, Tuple
 
 from openai import OpenAI
-from openai._exceptions import OpenAIError
 
 _CLIENT: Optional[OpenAI] = None
 
 def _client() -> OpenAI:
     global _CLIENT
     if _CLIENT is None:
-        _CLIENT = OpenAI()  # reads OPENAI_API_KEY from env
+        _CLIENT = OpenAI()  # reads OPENAI_API_KEY
     return _CLIENT
 
-# Map the mime that comes from MediaRecorder to extensions Whisper accepts
 _EXT_FROM_MIME = {
     "audio/webm": "webm",
     "audio/webm;codecs=opus": "webm",
@@ -28,13 +26,7 @@ _EXT_FROM_MIME = {
     "audio/flac": "flac",
     "audio/mp4": "m4a",
     "audio/aac": "m4a",
-    # fallbacks
-    "webm": "webm",
-    "ogg": "ogg",
-    "mp3": "mp3",
-    "wav": "wav",
-    "flac": "flac",
-    "m4a": "m4a",
+    "webm": "webm", "ogg": "ogg", "mp3": "mp3", "wav": "wav", "flac": "flac", "m4a": "m4a",
 }
 
 def _filename_and_mime(mime_hint: Optional[str]) -> Tuple[str, str]:
@@ -53,29 +45,35 @@ def transcribe_bytes(
     retry_backoff: float = 0.8,
 ) -> str:
     """
-    Send a self-contained audio file (e.g., a small webm blob) to Whisper and return text.
-    This is used for both interim (small) chunks and the final full buffer.
+    Blocking Whisper call with retries.
+    IMPORTANT: OpenAI v1 expects a file-like with a .name; do NOT pass a (filename, file, mime) tuple.
     """
     if not audio_bytes:
         return ""
-
     client = _client()
     model = model or os.getenv("WHISPER_MODEL", "whisper-1")
-    filename, mime = _filename_and_mime(mime_hint)
-    file_tuple = (filename, io.BytesIO(audio_bytes), mime)
+    language = language or os.getenv("LANGUAGE_HINT") or None
+    filename, _mime = _filename_and_mime(mime_hint)
+
+    bio = io.BytesIO(audio_bytes)
+    bio.name = filename  # v1 SDK inspects .name for file extension
 
     attempt = 0
     while True:
         attempt += 1
         try:
             resp = client.audio.transcriptions.create(
-                file=file_tuple,
+                file=bio,
                 model=model,
-                language=language or os.getenv("LANGUAGE_HINT") or None,
+                language=language,
             )
             return getattr(resp, "text", "") or ""
-        except OpenAIError as e:
+        except Exception:
             if attempt >= max_retries:
                 raise
+            # rewind buffer for retry
+            try:
+                bio.seek(0)
+            except Exception:
+                bio = io.BytesIO(audio_bytes); bio.name = filename
             time.sleep(retry_backoff * attempt)
-            

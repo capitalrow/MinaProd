@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from .performance_optimizer import PerformanceOptimizer, ResourceLimits
 # FIXED: Import models properly
 from models import Session, Segment
-from app import db
+from app_refactored import db
 from services.session_service import SessionService
 from datetime import datetime
 import numpy as np
@@ -102,7 +102,7 @@ class TranscriptionService:
         from .performance_optimizer import PerformanceOptimizer, ResourceLimits
         
         # Import app and db for database operations with context management
-        from app import db
+        from app_refactored import db
         
         # Initialize memory management
         self._last_cleanup = time.time()
@@ -1288,7 +1288,7 @@ class TranscriptionService:
         """
         try:
             from models.segment import Segment
-            from app import db
+            from app_refactored import db
             
             # Get database session
             db_session = SessionService.get_session_by_external(session_id)

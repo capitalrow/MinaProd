@@ -1,0 +1,64 @@
+<!-- templates/calendar.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mina — Calendar</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mina_ui.css') }}">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo"></div><h1>Mina</h1>
+      </div>
+      <div class="search-mini"><input placeholder="Quick search…"/><kbd>⌘K</kbd></div>
+      <nav class="nav">
+        <a href="{{ url_for('pages.dashboard') }}">🏠 Dashboard</a>
+        <a href="{{ url_for('pages.live') }}">🎙️ Live Transcription</a>
+        <a href="{{ url_for('pages.meetings') }}">📅 Meeting Library</a>
+        <a href="{{ url_for('pages.tasks') }}">✅ Tasks</a>
+        <a class="active" href="{{ url_for('pages.calendar') }}">📆 Calendar</a>
+        <a href="{{ url_for('pages.settings') }}">⚙️ Settings</a>
+      </nav>
+      <div class="footer">
+        <div class="user">
+          <img src="https://i.pravatar.cc/50?img=12" alt="" />
+          <div><div class="name">Alex Morgan</div><div class="role">Pro • Team</div></div>
+        </div>
+      </div>
+    </aside>
+
+    <header class="header">
+      <div class="search"><input placeholder="Search meetings, people, actions…"/><span class="hint">⌘K</span></div>
+      <div class="head-actions">
+        <a class="btn" href="{{ url_for('pages.meetings') }}">+ New</a>
+        <a class="btn cta" href="{{ url_for('pages.live') }}">Start recording</a>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="h1">Calendar <span class="sub">agenda • week • month</span></div>
+
+      <div class="card" style="margin-bottom:14px">
+        <div class="hd">
+          <div>
+            <a class="btn" href="#">‹</a>
+            <a class="btn" href="#">›</a>
+          </div>
+          <span class="sub">September 2025</span>
+          <a class="btn cta" href="{{ url_for('pages.live') }}">🎙 Start from next event</a>
+        </div>
+        <div class="bd">
+          <div class="calendar">
+            {% for i in range(1,31) %}
+              <div class="day">{{ i }}</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

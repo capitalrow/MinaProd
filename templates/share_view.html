@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ meeting.title }}</h2>
+<p class="muted">{{ meeting.started_at }}</p>
+<h3>Summary</h3>
+{% if summary %}
+  <p><strong>TL;DR:</strong> {{ summary.tldr }}</p>
+  <h4>Key Points</h4><pre>{{ summary.bullets }}</pre>
+  <h4>Decisions</h4><pre>{{ summary.decisions }}</pre>
+  <h4>Risks</h4><pre>{{ summary.risks }}</pre>
+  <h4>Open Questions</h4><pre>{{ summary.questions }}</pre>
+{% else %}
+  <p class="muted">Summary unavailable.</p>
+{% endif %}
+<h3>Tasks</h3>
+<ul>
+{% for t in tasks %}
+  <li>{{ t.title }} {% if t.owner %}— @{{ t.owner }}{% endif %}</li>
+{% else %}
+  <li class="muted">No tasks.</li>
+{% endfor %}
+</ul>
+{% endblock %}

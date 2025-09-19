@@ -19,7 +19,7 @@ except ImportError:
 # Import models
 try:
     from models import Session
-    from app import db
+    from app_refactored import db
     MODELS_AVAILABLE = True
 except ImportError:
     MODELS_AVAILABLE = False

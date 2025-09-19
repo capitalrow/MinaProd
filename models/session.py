@@ -9,6 +9,7 @@ from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, DateTime, Text, JSON, Boolean, Float, func
 from .base import Base
+from extensions import db
 
 # Forward reference for type checking
 if TYPE_CHECKING:

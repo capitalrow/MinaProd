@@ -1,10 +1,23 @@
 import os
 from datetime import timedelta
 
+def _normalize_pg(uri: str) -> str:
+    # SQLAlchemy accepts postgresql+psycopg2://; normalize if needed
+    if uri and uri.startswith("postgresql://"):
+        return uri.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return uri
+
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
     ENV = os.getenv("FLASK_ENV", "development")
     DEBUG = ENV == "development"
+
+    # Prefer DATABASE_URL from Replit Secrets; fall back to SQLALCHEMY_DATABASE_URI; else use local SQLite
+    _env_uri = os.getenv("DATABASE_URL") or os.getenv("SQLALCHEMY_DATABASE_URI")
+    SQLALCHEMY_DATABASE_URI = _normalize_pg(_env_uri) if _env_uri else "sqlite:///mina.db"
+
+    # Neon often requires SSL; keep query string as-is (you already have ?sslmode=require)
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Sessions / limits
     SESSION_TTL_MINUTES = int(os.getenv("SESSION_TTL_MINUTES", "60"))

@@ -8,6 +8,7 @@ from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, BigInteger, DateTime, Text, ForeignKey, Float, Boolean, func
 from .base import Base
+from extensions import db
 
 # Forward reference for type checking
 from typing import TYPE_CHECKING

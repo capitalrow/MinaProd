@@ -6,6 +6,8 @@ import eventlet
 eventlet.monkey_patch()
 
 from app_refactored import create_app, socketio
+# main.py – gunicorn entrypoint
+from app import app  # exposes "app" so gunicorn can load main:app
 
 app = create_app()
 

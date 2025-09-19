@@ -2,10 +2,9 @@
 (() => {
   let socket;
   const SESSION_ID = String(Date.now());
-  let stream, mediaRecorder;
+  let stream = null, mediaRecorder = null, starting = false;
   let audioCtx, analyser, dataArray, rafId = null;
 
-  // UI helpers
   const $ = sel => document.querySelector(sel);
   const log = (...a) => {
     const s = a.map(x => (typeof x === "object" ? JSON.stringify(x) : String(x))).join(" ");
@@ -26,14 +25,21 @@
   };
   if (ui.sess) ui.sess.textContent = SESSION_ID;
 
-  // ---- Socket.IO (polling only is fine on Replit)
+  function transports() {
+    const force = !!(window.MINA && window.MINA.FORCE_POLLING);
+    return force ? ["polling"] : ["websocket","polling"];
+  }
+
   function initSocket() {
     if (socket && socket.connected) return;
 
+    const path = (window.MINA && window.MINA.SOCKETIO_PATH) || "/socket.io";
+    const force = !!(window.MINA && window.MINA.FORCE_POLLING);
+
     socket = io(window.location.origin, {
-      path: "/socket.io",
-      transports: ["polling"],
-      upgrade: false,
+      path,
+      transports: transports(),
+      upgrade: !force,
       reconnection: true,
       reconnectionAttempts: 30,
       reconnectionDelay: 500,
@@ -42,22 +48,19 @@
 
     socket.on("connect", () => {
       ui.ws.textContent = "Connected";
-      log("socket connected id=", socket.id, "transport=", socket.io.engine.transport.name);
+      log("socket connected", { id: socket.id, transport: socket.io.engine.transport.name });
       socket.emit("join_session", { session_id: SESSION_ID });
     });
     socket.on("disconnect", (r) => { ui.ws.textContent = "Disconnected"; log("socket disconnected", r); });
     socket.on("connect_error", (e) => { ui.ws.textContent = "Conn error"; log("connect_error", e?.message || e); });
 
     socket.on("server_hello", (m) => log("server_hello", m));
-    socket.on("ack", () => { /* rtt tracking if needed */ });
-
+    socket.on("ack", () => {});
     socket.on("error", (e) => log("socket error", e));
     socket.on("socket_error", (e) => log("transcription error", e));
+    socket.on("debug", (m) => log("DEBUG", m?.message || m));
 
-    socket.on("interim_transcript", (p) => {
-      ui.interim.textContent = p?.text || "";
-    });
-
+    socket.on("interim_transcript", (p) => { ui.interim.textContent = p?.text || ""; });
     socket.on("final_transcript", (p) => {
       const t = (p?.text || "").trim();
       if (!t) return;
@@ -67,7 +70,6 @@
     });
   }
 
-  // ---- Audio meter
   function startMeter() {
     if (!stream) return;
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -79,14 +81,13 @@
 
     const tick = () => {
       analyser.getByteTimeDomainData(dataArray);
-      // RMS-like level
       let sum = 0;
       for (let i = 0; i < dataArray.length; i++) {
         const v = (dataArray[i] - 128) / 128;
         sum += v*v;
       }
       const rms = Math.sqrt(sum / dataArray.length);
-      const pct = Math.min(100, Math.max(0, Math.round(rms * 140))); // 0..~140%
+      const pct = Math.min(100, Math.max(0, Math.round(rms * 140)));
       if (ui.meter) ui.meter.style.width = pct + "%";
       rafId = requestAnimationFrame(tick);
     };
@@ -100,64 +101,74 @@
     if (ui.meter) ui.meter.style.width = "0%";
   }
 
-  // ---- Recording
   async function startRecording() {
+    if (starting || (mediaRecorder && mediaRecorder.state === "recording")) return;
+    starting = true;
+
     initSocket();
-    if (!socket || !socket.connected) {
-      log("socket not connected yet");
+    if (!socket || !socket.connected) log("socket not connected yet (will buffer events)");
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+      starting = false;
+      ui.mic.textContent = "Mic denied";
+      log("❌ microphone permission denied", e);
+      return;
     }
 
-    // Ask mic
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     ui.mic.textContent = "Recording…";
 
-    // Try webm/opus (widest support); fall back if needed
     let mime = "audio/webm;codecs=opus";
     if (!MediaRecorder.isTypeSupported(mime)) {
       if (MediaRecorder.isTypeSupported("audio/webm")) mime = "audio/webm";
       else if (MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")) mime = "audio/ogg;codecs=opus";
-      else mime = ""; // let browser decide
+      else mime = "";
     }
 
     mediaRecorder = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 128000 });
 
     mediaRecorder.ondataavailable = async (e) => {
       if (!e.data || e.data.size === 0) return;
-      // Convert Blob -> base64
-      const buf = await e.data.arrayBuffer();
-      const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
-      socket.emit("audio_chunk", {
-        session_id: SESSION_ID,
-        audio_data_b64: b64,
-        mime: e.data.type || mime || "audio/webm",
-        duration_ms: 0
-      });
+      try {
+        const buf = await e.data.arrayBuffer();
+        const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+        socket.emit("audio_chunk", {
+          session_id: SESSION_ID,
+          audio_data_b64: b64,
+          mime: e.data.type || mime || "audio/webm",
+          duration_ms: 0
+        });
+        log("chunk ->", { size: e.data.size });
+      } catch (err) {
+        log("chunk encode error", err);
+      }
     };
 
     mediaRecorder.onstop = () => {
       stopMeter();
       ui.mic.textContent = "Stopped";
-      // ask server to finalize (full pass)
-      socket.emit("finalize_session", { session_id: SESSION_ID, mime: mediaRecorder.mimeType || mime || "audio/webm" });
+      socket.emit("finalize_session", {
+        session_id: SESSION_ID,
+        mime: mediaRecorder.mimeType || mime || "audio/webm"
+      });
       try { stream.getTracks().forEach(t => t.stop()); } catch {}
       stream = null;
+      log("recording stopped");
+      starting = false;
     };
 
-    // Emit blobs every ~1.2s (balanced latency/cost)
-    mediaRecorder.start(1200);
+    mediaRecorder.start(1200); // ~1.2s slices -> matches server cadence
     startMeter();
+    log("recording started", { mime });
+    starting = false;
   }
 
   function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-      mediaRecorder.stop();
-    }
+    if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
   }
 
-  // ---- Wire UI
   ui.start?.addEventListener("click", startRecording);
   ui.stop?.addEventListener("click", stopRecording);
-
-  // connect early so join_session is ready before recording
   initSocket();
 })();

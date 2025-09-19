@@ -1,1 +1,1 @@
-web: gunicorn -k eventlet -w 1 app:app
+gunicorn wsgi:app -k eventlet -w 1 --bind 0.0.0.0:8000 --timeout 120

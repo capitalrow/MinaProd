@@ -18,7 +18,7 @@ import openai
 from pydub import AudioSegment
 
 from models import Session, Segment
-from app import db
+from app_refactored import db
 
 logger = logging.getLogger(__name__)
 

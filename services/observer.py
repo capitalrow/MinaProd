@@ -24,7 +24,7 @@ from models.segment import Segment
 from models.metrics import ChunkMetric, SessionMetric
 from services.performance_monitor import PerformanceMonitor, TranscriptionMetrics
 from services.qa_pipeline import QAPipeline, TranscriptQualityMetrics
-from app import db
+from app_refactored import db
 import os
 
 logger = logging.getLogger(__name__)

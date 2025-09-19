@@ -13,7 +13,7 @@ from datetime import datetime
 from flask import current_app
 from sqlalchemy.orm import Session as DbSession
 
-from app import db
+from app_refactored import db
 from models.session import Session
 from models.segment import Segment
 from models.summary import Summary
