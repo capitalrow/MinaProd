@@ -25,10 +25,10 @@
         <h1 class="text-xl font-semibold">Mina</h1>
       </div>
       <nav class="flex items-center gap-3">
-        <a href="#/library" class="text-slate-300 hover:text-white">Library</a>
-        <a href="#/live" class="text-slate-300 hover:text-white">Live</a>
-        <a href="#/upload" class="text-slate-300 hover:text-white">Upload</a>
-        <a href="#/settings" class="text-slate-300 hover:text-white">Settings</a>
+        <a href="#/library" data-nav class="text-slate-300 hover:text-white">Library</a>
+        <a href="#/live" data-nav class="text-slate-300 hover:text-white">Live</a>
+        <a href="#/upload" data-nav class="text-slate-300 hover:text-white">Upload</a>
+        <a href="#/settings" data-nav class="text-slate-300 hover:text-white">Settings</a>
         <button id="nav-auth" class="btn hidden">Login</button>
         <div id="nav-user" class="hidden text-sm text-slate-300"></div>
       </nav>
@@ -133,7 +133,7 @@
     // ---------- Library ----------
     async function renderLibrary() {
       const res = await API.conv.list();
-      view.innerHTML = `
+      document.getElementById('view-library').innerHTML = `
         <div class="flex items-center justify-between">
           <h2 class="text-lg font-semibold">Library</h2>
           <a href="#/live" class="btn">Start recording</a>
@@ -155,7 +155,7 @@
     // ---------- Live (real WS -> DB) ----------
     function renderLive() {
       state.live=false; state.convId=null;
-      view.innerHTML = `
+      document.getElementById('view-live').innerHTML = `
         <div class="flex items-center gap-2">
           <span class="badge bg-emerald-700" id="badge-live">Idle</span>
         </div>
@@ -209,7 +209,7 @@
     // ---------- Conversation ----------
     async function renderConversation(id){
       const r = await API.conv.get(id);
-      view.innerHTML = `
+      document.getElementById('view-library').innerHTML = `
         <div class="card">
           <div class="flex items-center justify-between">
             <input id="title" class="input font-semibold" value="${r.conversation.title}"/>
@@ -261,7 +261,7 @@
 
     // ---------- Upload ----------
     function renderUpload(){
-      view.innerHTML = `
+      document.getElementById('view-upload').innerHTML = `
         <div class="card space-y-4">
           <h2 class="text-lg font-semibold">Upload audio/video</h2>
           <input id="file" type="file" accept=".mp3,.wav,.m4a,.mp4,.webm,.ogg,.aac,.flac" class="block"/>
@@ -280,7 +280,7 @@
 
     // ---------- Settings ----------
     function renderSettings() {
-      view.innerHTML = `
+      document.getElementById('view-settings').innerHTML = `
         <div class="card space-y-4">
           <h2 class="text-lg font-semibold">Settings</h2>
           <div class="grid gap-4">
@@ -305,32 +305,47 @@
             </div>
           </div>
         </div>`;
-      btn-logout.onclick = async ()=>{ try{ await API.auth.logout(); location.hash="#/login"; }catch(e){ alert(e.message);} };
-      btn-change-pw.onclick = async ()=>{
-        try{ await API.auth.changePassword(old-pw.value, new-pw.value); alert("Password updated");}
+      document.getElementById('btn-logout').onclick = async ()=>{ try{ await API.auth.logout(); location.hash="#/login"; }catch(e){ alert(e.message);} };
+      document.getElementById('btn-change-pw').onclick = async ()=>{
+        try{ await API.auth.changePassword(document.getElementById('old-pw').value, document.getElementById('new-pw').value); alert("Password updated");}
         catch(e){ alert("Failed: "+e.message); }
       };
     }
 
-    // ---------- Router ----------
-    async function route(){
+    // ---------- Integration with CTO Router ---------- 
+    // Let CTO router handle show/hide, we handle content rendering
+    async function handleRouteChange() {
       await ensureUser();
       const [_, path, arg] = location.hash.split("/");
+      
+      // Handle authentication routes in main view
+      if (path === "login") return renderLogin();
+      if (path === "register") return renderRegister();
+      if (path === "forgot") return renderForgot();
+      if (path === "reset") return renderReset();
+      if (path === "verify") return renderVerify();
+      
+      // Apply authentication guard for protected routes
       if (!guard()) return;
-      if (!path || path==="library") return renderLibrary();
-      if (path==="login") return renderLogin();
-      if (path==="register") return renderRegister();
-      if (path==="forgot") return renderForgot();
-      if (path==="reset") return renderReset();
-      if (path==="verify") return renderVerify();
-      if (path==="live") return renderLive();
-      if (path==="conversation") return renderConversation(arg);
-      if (path==="upload") return renderUpload();
-      if (path==="settings") return renderSettings();
-      view.innerHTML = `<div class="card">Not found</div>`;
+      
+      // Handle content rendering for data-view sections
+      if (!path || path === "library") {
+        if (arg) {
+          return renderConversation(arg); // conversation view in library section
+        } else {
+          return renderLibrary();
+        }
+      }
+      if (path === "live") return renderLive();
+      if (path === "upload") return renderUpload();
+      if (path === "settings") return renderSettings();
     }
-    window.addEventListener("hashchange", route);
-    route();
+    
+    // Listen for hash changes and handle content rendering
+    window.addEventListener('hashchange', handleRouteChange);
+    
+    // Initial load
+    handleRouteChange();
   </script>
   <main class="container" style="min-height:60vh">
     <section id="view-welcome" data-view hidden></section>
