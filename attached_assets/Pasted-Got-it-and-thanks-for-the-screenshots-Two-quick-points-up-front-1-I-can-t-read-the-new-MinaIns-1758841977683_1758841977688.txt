@@ -1,0 +1,306 @@
+Got it — and thanks for the screenshots. Two quick points up front:
+
+1. I can’t read the new MinaInsight (11).zip from here anymore. Earlier in our thread the uploads were still live; now those file handles have expired, so I don’t have direct access to that archive. No hallucinations — just a permissions/lifetime change on the upload.
+
+
+2. We don’t need to stall. I’ll drive the Replit Agent again (you copy-paste), verify the current code on your workspace, and fix the “pages not changing” issue + add SendGrid cleanly.
+
+
+
+
+---
+
+A) Tell the Replit Agent this (copy–paste)
+
+Purpose: export the current tree, show the routing/JS errors (if any), and give me an exact snapshot to reason about. It also adds a tiny router hotfix if the router is missing or not firing on hash changes.
+
+# === CTO: Inspect SPA navigation + package snapshot (non-destructive) ===
+set -euo pipefail
+export LANG=C.UTF-8
+
+echo "== 1) Summarize repo =="
+if command -v tree >/dev/null 2>&1; then tree -L 3; else find . -maxdepth 3 -print; fi
+
+echo "== 2) Show key UI + JS files (first 200 lines) =="
+for f in static/ui/index.html static/ui/live.html static/ui/welcome.html \
+         static/ui/terms.html static/ui/privacy.html \
+         static/js/mina.api.js static/js/mina.socket.js static/js/router.js \
+         app.py __init__.py api.py auth.py uploads.py config.py models.py; do
+  echo "----- FILE: $f -----"
+  [ -f "$f" ] && sed -n '1,200p' "$f" || echo "(missing)"
+done
+
+echo "== 3) Print Flask route map =="
+python3 - <<'PY'
+import importlib, sys
+app=None
+try:
+    from app import app as a
+    app=a
+except Exception:
+    try:
+        from __init__ import create_app
+        app=create_app()
+    except Exception as e:
+        print("could not import app:", e); sys.exit(0)
+print("URL MAP:")
+for r in app.url_map.iter_rules():
+    methods=",".join(sorted(m for m in r.methods if m not in ("HEAD","OPTIONS")))
+    print(f"{r.rule:40s} {methods:12s} endpoint={r.endpoint}")
+PY
+
+echo "== 4) Verify health/auth endpoints exist =="
+BASE="http://localhost:${PORT:-5000}"
+for ep in / /app /healthz /readyz /api/conversations; do
+  code=$(curl -s -o /dev/null -w "%{http_code}" "$BASE$ep" || true)
+  echo "$ep -> $code"
+done
+
+echo "== 5) Router sanity check: create static/js/router.js if missing =="
+mkdir -p static/js
+if [ ! -f static/js/router.js ]; then
+cat > static/js/router.js <<'JS'
+/* Minimal hash router: #/library, #/live, #/upload, #/settings */
+(function(){
+  const routes = {
+    '': 'view-welcome',
+    '#/library': 'view-library',
+    '#/live': 'view-live',
+    '#/upload': 'view-upload',
+    '#/settings': 'view-settings'
+  };
+  function show(id){
+    document.querySelectorAll('[data-view]').forEach(n=>n.hidden=true);
+    const el = document.getElementById(id);
+    if (el) el.hidden = false;
+    // active nav
+    document.querySelectorAll('[data-nav]').forEach(a=>{
+      a.classList.toggle('active', a.getAttribute('href') === location.hash);
+    });
+  }
+  function resolve(){
+    const hash = location.hash || '';
+    const id = routes[hash] || routes[''];
+    show(id);
+  }
+  window.addEventListener('hashchange', resolve);
+  window.addEventListener('DOMContentLoaded', resolve);
+})();
+JS
+echo "[router] created static/js/router.js"
+else
+  echo "[router] static/js/router.js already present"
+fi
+
+echo "== 6) Ensure index.html includes router.js and view containers =="
+if grep -q 'static/js/router.js' static/ui/index.html 2>/dev/null; then
+  echo "[index] router.js already referenced"
+else
+  cp static/ui/index.html .mina_index_backup_$(date +%Y%m%d_%H%M%S).html || true
+  awk '
+    /<\/head>/ && !x { print "  <script src=\"/static/js/router.js\" defer></script>"; x=1 }
+    { print }
+  ' static/ui/index.html > static/ui/index.html.tmp && mv static/ui/index.html.tmp static/ui/index.html
+  echo "[index] injected router.js reference"
+fi
+
+# If index doesn’t have view placeholders, add harmless ones at the end of body.
+if ! grep -q 'data-view' static/ui/index.html 2>/dev/null; then
+  cp static/ui/index.html .mina_index_views_backup_$(date +%Y%m%d_%H%M%S).html || true
+  awk '
+    /<\/body>/ && !x {
+      print "  <main class=\"container\" style=\"min-height:60vh\">";
+      print "    <section id=\"view-welcome\" data-view hidden></section>";
+      print "    <section id=\"view-library\" data-view hidden></section>";
+      print "    <section id=\"view-live\" data-view hidden></section>";
+      print "    <section id=\"view-upload\" data-view hidden></section>";
+      print "    <section id=\"view-settings\" data-view hidden></section>";
+      print "  </main>";
+      x=1
+    }
+    { print }
+  ' static/ui/index.html > static/ui/index.html.tmp && mv static/ui/index.html.tmp static/ui/index.html
+  echo "[index] injected minimal view placeholders"
+else
+  echo "[index] view placeholders already present"
+fi
+
+echo "== 7) Zip snapshot to workspace (excludes venv/node_modules) =="
+ZIP="Mina_v11_snapshot_$(date +%Y%m%d_%H%M%S).zip"
+zip -qr "$ZIP" . -x "venv/*" "node_modules/*" ".git/*" || true
+ls -lh "$ZIP"
+echo "== DONE: paste all this output back to CTO =="
+
+What I expect from the output (so I can reason fast):
+
+The URL MAP (to confirm /app, /api/*, etc. are wired).
+
+The first 200 lines of static/ui/index.html and static/js/mina.api.js|mina.socket.js.
+
+Whether router.js was created/injected.
+
+The new snapshot filename (so we know the export succeeded).
+
+
+
+---
+
+B) Why your tabs look “empty” (what the screenshots tell me)
+
+You’re on URLs like .replit.dev/app#/upload / #/live / #/settings. The top nav shows the sections, but the content region is blank.
+
+This is classic SPA behavior when:
+
+there’s no client-side hash router listening for hashchange, or
+
+the router exists but the page doesn’t render different sections (no [data-view] containers to show/hide), or
+
+an early JS error prevents the router (or any subsequent JS) from running (e.g., a missing import path, CSP, or syntax error).
+
+
+
+The agent script above (A) both diagnoses and adds a minimal, safe router + view placeholders without breaking your current UI. That should make Library/Live/Upload/Settings visibly switch.
+
+> We’ll still keep your prettier components; this router is a guardrail, not a redesign.
+
+
+
+
+---
+
+C) SendGrid integration plan (production-ready, no mocks)
+
+Use-cases we’ll wire now:
+
+1. Email verification on signup (optional for MVP, recommended).
+
+
+2. Password reset flow.
+
+
+3. Share conversation (send a conversation link and highlights).
+
+
+4. Daily/weekly digest (optional; can be cron or a Replit task).
+
+
+
+1) Account setup
+
+In SendGrid: create an API key with “Mail Send” permissions.
+
+Verify a single sender (or your domain) in SendGrid.
+
+Add to Replit Secrets (or .env):
+
+SENDGRID_API_KEY=...
+
+SENDGRID_FROM_EMAIL=no-reply@yourdomain
+
+SENDGRID_FROM_NAME=Mina
+
+
+
+2) Backend module (mail.py)
+
+Create a tiny, reusable mailer.
+
+# mail.py
+import os
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, From, To, Personalization
+
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "no-reply@example.com")
+FROM_NAME = os.getenv("SENDGRID_FROM_NAME", "Mina")
+
+def send_email(to_email: str, subject: str, html: str, plain: str = None):
+    if not SENDGRID_API_KEY:
+        raise RuntimeError("SENDGRID_API_KEY missing")
+    message = Mail(
+        from_email=From(FROM_EMAIL, FROM_NAME),
+        to_emails=[To(to_email)],
+        subject=subject,
+        html_content=html,
+        plain_text_content=plain or ""
+    )
+    sg = SendGridAPIClient(SENDGRID_API_KEY)
+    return sg.send(message)
+
+def send_verification_email(to_email: str, token: str):
+    link = f"{os.getenv('PUBLIC_BASE_URL','https://yourapp.example')}/verify?token={token}"
+    return send_email(
+        to_email,
+        "Verify your Mina account",
+        f"<p>Welcome to Mina!</p><p>Verify your email: <a href=\"{link}\">{link}</a></p>"
+    )
+
+def send_reset_email(to_email: str, token: str):
+    link = f"{os.getenv('PUBLIC_BASE_URL','https://yourapp.example')}/reset?token={token}"
+    return send_email(
+        to_email,
+        "Reset your Mina password",
+        f"<p>Reset your password:</p><p><a href=\"{link}\">{link}</a></p>"
+    )
+
+def send_share_email(to_email: str, conv_title: str, share_url: str, snippet: str = ""):
+    html = f"""
+      <h2>{conv_title}</h2>
+      <p>{snippet}</p>
+      <p>Open conversation: <a href="{share_url}">{share_url}</a></p>
+    """
+    return send_email(to_email, f"[Mina] {conv_title}", html)
+
+Env you’ll add:
+
+PUBLIC_BASE_URL=https://<your-replit-subdomain>.replit.dev
+
+
+3) Auth endpoints that call SendGrid
+
+On signup (after user row created): create a short-lived verification token, store it (or sign a JWT), and call send_verification_email.
+
+/verify?token=…: validates token → sets user.email_verified=True.
+
+/auth/request-reset (POST email): generate token + send_reset_email.
+
+/reset (POST): accept token + new_password.
+
+
+If you already have auth.py, I’ll patch only the mail calls (once I see the file content via the agent output).
+
+4) Share conversation email
+
+Add a backend endpoint (auth required) to send a share:
+
+POST /api/conversations/<id>/share
+{
+  "emails": ["a@b.com", "x@y.com"],
+  "snippet": "Key decision: launch next Friday"
+}
+
+Server resolves the canonical share URL (e.g., /app#conversation/<id>, or a public /share/<slug> if you implement public shares), and calls send_share_email for each recipient.
+
+5) Frontend hooks
+
+From the Conversation page, “Share” opens a modal with email input (comma-separated), optional notes/snippet → POST to the endpoint → toast success.
+
+In Settings, add “Resend verification” and “Request password reset”.
+
+
+
+---
+
+D) What I’ll do next once you paste the agent output
+
+Confirm whether router.js was injected and if the view placeholders exist; if not, I’ll adjust specifically to your HTML structure so Library / Live / Upload / Settings render immediately.
+
+Drop in the SendGrid mailer exactly where your current auth.py and conversation routes expect it (no duplication).
+
+If your SPA already has a router (e.g., inside mina.api.js), I’ll reconcile with that rather than introducing two routers.
+
+
+If you prefer, I can also give you a one-liner to open the browser console and capture errors so I can pinpoint any JS crash that’s blocking your pages — but the agent script above will likely be enough to fix navigation right away.
+
+Your move: paste the Agent output back here.
+
