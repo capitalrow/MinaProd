@@ -12,29 +12,58 @@
   <style>
     html,body{height:100%} .btn{ @apply px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-white}
     .card{ @apply bg-slate-800/60 rounded-2xl p-4 border border-slate-700}
-    .input{ @apply w-full bg-slate-900/60 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-400}
-    .badge{ @apply px-2 py-0.5 rounded-full text-xs font-medium}
+    .input{ @apply w-full bg-slate-900/70 border border-slate-600 rounded-xl p-3 text-white placeholder-slate-400 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors}
+    .input:focus{ @apply outline-none ring-2 ring-violet-500 border-violet-500}
+    .badge{ @apply px-3 py-1 rounded-full text-xs font-medium}
+    .nav-link{ @apply text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-slate-800/50 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500}
+    .nav-link.active{ @apply text-violet-400 bg-slate-800/50}
+    /* Screen reader only class */
+    .sr-only{ @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0}
+    .focus\:not-sr-only:focus{ @apply static w-auto h-auto p-2 m-0 overflow-visible whitespace-normal}
+    /* Loading states */
+    .loading{ @apply animate-pulse}
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+      .btn{ @apply border-2 border-current}
+      .input{ @apply border-2 border-slate-400}
+    }
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+      .transition-colors{ @apply transition-none}
+      .animate-pulse{ @apply animate-none}
+    }
   </style>
   <script src="/static/js/router.js" defer></script>
+  <!-- Performance: Preload critical resources -->
+  <link rel="preload" href="https://cdn.socket.io/4.7.5/socket.io.min.js" as="script">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="AI-powered real-time transcription platform with speaker identification and advanced features">
 </head>
-<body class="bg-slate-950 text-slate-100">
-  <div id="app" class="max-w-3xl mx-auto p-4 space-y-4">
-    <header class="flex items-center justify-between">
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <!-- Skip to main content for accessibility -->
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-blue-600 text-white px-4 py-2 rounded z-50">Skip to main content</a>
+  
+  <div id="app" class="max-w-4xl mx-auto p-4 space-y-6">
+    <header class="flex items-center justify-between border-b border-slate-800 pb-4" role="banner">
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500"></div>
-        <h1 class="text-xl font-semibold">Mina</h1>
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center" aria-hidden="true">
+          <span class="text-white font-bold text-sm">M</span>
+        </div>
+        <h1 class="text-2xl font-bold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">Mina</h1>
       </div>
-      <nav class="flex items-center gap-3">
-        <a href="#/library" data-nav class="text-slate-300 hover:text-white">Library</a>
-        <a href="#/live" data-nav class="text-slate-300 hover:text-white">Live</a>
-        <a href="#/upload" data-nav class="text-slate-300 hover:text-white">Upload</a>
-        <a href="#/settings" data-nav class="text-slate-300 hover:text-white">Settings</a>
-        <button id="nav-auth" class="btn hidden">Login</button>
-        <div id="nav-user" class="hidden text-sm text-slate-300"></div>
+      <nav role="navigation" aria-label="Main navigation" class="flex items-center gap-4">
+        <a href="#/library" data-nav class="nav-link" aria-label="View transcription library">Library</a>
+        <a href="#/live" data-nav class="nav-link" aria-label="Start live transcription">Live</a>
+        <a href="#/upload" data-nav class="nav-link" aria-label="Upload audio files">Upload</a>
+        <a href="#/settings" data-nav class="nav-link" aria-label="Account settings">Settings</a>
+        <button id="nav-auth" class="btn hidden" aria-label="Sign in to your account">Sign In</button>
+        <div id="nav-user" class="hidden text-sm text-slate-300" role="status" aria-label="Current user"></div>
       </nav>
     </header>
 
-    <main id="view"></main>
+    <main id="main-content" role="main" aria-live="polite" aria-label="Main application content">
+      <div id="view"></div>
+    </main>
   </div>
 
   <script>
@@ -42,6 +71,78 @@
     const navAuth = document.getElementById('nav-auth');
     const navUser = document.getElementById('nav-user');
     let state = { user:null, convId:null, live:false };
+
+    // Security: HTML escape function to prevent XSS
+    function escapeHtml(unsafe) {
+      if (typeof unsafe !== 'string') return '';
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Accessibility: Create element with proper ARIA attributes
+    function createAccessibleInput(options) {
+      const { id, type = 'text', placeholder, value = '', label, required = false, disabled = false } = options;
+      const container = document.createElement('div');
+      container.className = 'space-y-1';
+      
+      // Create proper label
+      const labelEl = document.createElement('label');
+      labelEl.htmlFor = id;
+      labelEl.className = 'block text-sm font-medium text-slate-300';
+      labelEl.textContent = label;
+      if (required) {
+        const req = document.createElement('span');
+        req.className = 'text-red-400 ml-1';
+        req.textContent = '*';
+        req.setAttribute('aria-label', 'required');
+        labelEl.appendChild(req);
+      }
+      
+      // Create input with security
+      const input = document.createElement('input');
+      input.id = id;
+      input.type = type;
+      input.className = 'input';
+      input.placeholder = placeholder || '';
+      input.value = escapeHtml(value);
+      input.disabled = disabled;
+      input.setAttribute('aria-label', label);
+      if (required) input.setAttribute('aria-required', 'true');
+      
+      container.appendChild(labelEl);
+      container.appendChild(input);
+      return container;
+    }
+
+    // Security: Safe DOM text insertion
+    function safeSetText(element, text) {
+      if (element) element.textContent = text || '';
+    }
+
+    // Security: Safe DOM content creation
+    function createSafeCard(title, content) {
+      const card = document.createElement('div');
+      card.className = 'card space-y-4';
+      
+      if (title) {
+        const titleEl = document.createElement('h2');
+        titleEl.className = 'text-lg font-semibold';
+        titleEl.textContent = title;
+        card.appendChild(titleEl);
+      }
+      
+      if (content) {
+        const contentEl = document.createElement('div');
+        contentEl.appendChild(content);
+        card.appendChild(contentEl);
+      }
+      
+      return card;
+    }
 
     async function ensureUser() {
       try { const r = await API.auth.me(); state.user = r.user; } catch(e){ state.user = null; }
@@ -59,21 +160,111 @@
 
     // ---------- Auth views ----------
     function renderLogin() {
-      view.innerHTML = `
-        <div class="card space-y-4">
-          <h2 class="text-lg font-semibold">Log in</h2>
-          <input id="login-email" class="input" placeholder="Email"/>
-          <input id="login-password" class="input" placeholder="Password" type="password"/>
-          <div class="flex gap-2">
-            <button id="btn-login" class="btn">Login</button>
-            <a href="#/register" class="text-sky-400">Create account</a>
-            <a href="#/forgot" class="text-sky-400">Forgot password?</a>
-          </div>
-        </div>`;
-      document.getElementById('btn-login').onclick = async ()=>{
-        try{ await API.auth.login(document.getElementById('login-email').value, document.getElementById('login-password').value); location.hash="#/library"; }
-        catch(e){ alert("Login failed: "+e.message); }
+      // Create accessible login form
+      const container = createSafeCard('Log in');
+      
+      const emailInput = createAccessibleInput({
+        id: 'login-email',
+        type: 'email',
+        label: 'Email Address',
+        placeholder: 'Enter your email',
+        required: true
+      });
+      
+      const passwordInput = createAccessibleInput({
+        id: 'login-password',
+        type: 'password',
+        label: 'Password',
+        placeholder: 'Enter your password',
+        required: true
+      });
+      
+      const buttonContainer = document.createElement('div');
+      buttonContainer.className = 'flex gap-2 flex-wrap';
+      
+      const loginBtn = document.createElement('button');
+      loginBtn.id = 'btn-login';
+      loginBtn.className = 'btn';
+      loginBtn.textContent = 'Log In';
+      loginBtn.type = 'submit';
+      loginBtn.setAttribute('aria-describedby', 'login-help');
+      
+      const registerLink = document.createElement('a');
+      registerLink.href = '#/register';
+      registerLink.className = 'text-sky-400 hover:text-sky-300 underline';
+      registerLink.textContent = 'Create account';
+      
+      const forgotLink = document.createElement('a');
+      forgotLink.href = '#/forgot';
+      forgotLink.className = 'text-sky-400 hover:text-sky-300 underline';
+      forgotLink.textContent = 'Forgot password?';
+      
+      const helpText = document.createElement('div');
+      helpText.id = 'login-help';
+      helpText.className = 'text-sm text-slate-400';
+      helpText.textContent = 'Sign in to access your transcription library';
+      
+      buttonContainer.appendChild(loginBtn);
+      buttonContainer.appendChild(registerLink);
+      buttonContainer.appendChild(forgotLink);
+      
+      const form = document.createElement('form');
+      form.className = 'space-y-4';
+      form.appendChild(emailInput);
+      form.appendChild(passwordInput);
+      form.appendChild(buttonContainer);
+      form.appendChild(helpText);
+      
+      container.appendChild(form);
+      view.innerHTML = '';
+      view.appendChild(container);
+      
+      // Enhanced form submission with accessibility
+      const handleLogin = async (e) => {
+        e.preventDefault();
+        const emailEl = document.getElementById('login-email');
+        const passwordEl = document.getElementById('login-password');
+        
+        if (!emailEl.value.trim()) {
+          emailEl.focus();
+          emailEl.setAttribute('aria-invalid', 'true');
+          return;
+        }
+        if (!passwordEl.value.trim()) {
+          passwordEl.focus();
+          passwordEl.setAttribute('aria-invalid', 'true');
+          return;
+        }
+        
+        try {
+          loginBtn.disabled = true;
+          loginBtn.textContent = 'Logging in...';
+          await API.auth.login(emailEl.value, passwordEl.value);
+          location.hash = '#/library';
+        } catch(e) {
+          // Better error handling
+          const errorMsg = document.createElement('div');
+          errorMsg.className = 'text-red-400 text-sm mt-2';
+          errorMsg.setAttribute('role', 'alert');
+          errorMsg.textContent = 'Login failed: ' + e.message;
+          
+          // Remove previous error if exists
+          const prevError = form.querySelector('[role="alert"]');
+          if (prevError) prevError.remove();
+          
+          form.appendChild(errorMsg);
+          emailEl.focus();
+        } finally {
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Log In';
+        }
       };
+      
+      form.addEventListener('submit', handleLogin);
+      loginBtn.addEventListener('click', handleLogin);
+      
+      // Focus management
+      setTimeout(() => emailEl.querySelector('input').focus(), 100);
     }
 
     function renderRegister() {
@@ -212,13 +403,13 @@
       document.getElementById('view-library').innerHTML = `
         <div class="card">
           <div class="flex items-center justify-between">
-            <input id="title" class="input font-semibold" value="${r.conversation.title}"/>
+            <input id="title" class="input font-semibold" aria-label="Conversation title"/>
             <div class="flex gap-2">
               <button id="btn-share" class="btn">Share</button>
               <button id="btn-export" class="btn">Export .txt</button>
             </div>
           </div>
-          <div class="mt-3 whitespace-pre-wrap">${r.segments.map(s=>s.text).join("")}</div>
+          <div id="transcript-content" class="mt-3 whitespace-pre-wrap" role="main" aria-live="polite" aria-label="Conversation transcript"></div>
           <div class="mt-4">
             <h3 class="font-semibold mb-1">Highlights</h3>
             <div class="flex gap-2">
@@ -236,9 +427,22 @@
             <div id="tlist" class="mt-2 text-sm"></div>
           </div>
         </div>`;
+      // Safely set title and transcript content
+      const titleInput = document.getElementById('title');
+      if (titleInput) titleInput.value = r.conversation.title || '';
+      
+      const transcriptEl = document.getElementById('transcript-content');
+      if (transcriptEl) {
+        transcriptEl.textContent = r.segments.map(s => s.text).join('');
+      }
+      
       document.getElementById('btn-export').onclick = ()=>{
-        const blob = new Blob([r.segments.map(s=>s.text).join("")], {type:"text/plain"});
-        const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(r.conversation.title||"conversation")+".txt"; a.click();
+        const content = r.segments.map(s => s.text).join('');
+        const blob = new Blob([content], {type:"text/plain"});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = escapeHtml(r.conversation.title || 'conversation') + '.txt';
+        a.click();
       };
       document.getElementById('btn-share').onclick = async ()=>{
         const s = await API.conv.share(id);
@@ -254,8 +458,39 @@
         const t = ttext.value.trim(); if(!t) return;
         await API.conv.addTask(id, { text:t }); ttext.value=""; loadTasks();
       };
-      async function loadHL(){ const r2 = await API.conv.listHighlights(id); hllist.innerHTML = r2.items.map(i=>`<div class="card my-1">${i.text}</div>`).join(""); }
-      async function loadTasks(){ const r3 = await API.conv.listTasks(id); tlist.innerHTML = r3.items.map(i=>`<div class="card my-1 flex items-center justify-between"><span>${i.text}</span><span class="badge bg-slate-700">${i.status}</span></div>`).join(""); }
+      // Secure highlight and task loading
+      async function loadHL() {
+        const r2 = await API.conv.listHighlights(id);
+        const hllist = document.getElementById('hllist');
+        hllist.innerHTML = ''; // Clear existing
+        r2.items.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'card my-1';
+          div.textContent = item.text; // Safe text insertion
+          hllist.appendChild(div);
+        });
+      }
+      
+      async function loadTasks() {
+        const r3 = await API.conv.listTasks(id);
+        const tlist = document.getElementById('tlist');
+        tlist.innerHTML = ''; // Clear existing
+        r3.items.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'card my-1 flex items-center justify-between';
+          
+          const textSpan = document.createElement('span');
+          textSpan.textContent = item.text; // Safe text insertion
+          
+          const statusSpan = document.createElement('span');
+          statusSpan.className = 'badge bg-slate-700';
+          statusSpan.textContent = item.status; // Safe text insertion
+          
+          div.appendChild(textSpan);
+          div.appendChild(statusSpan);
+          tlist.appendChild(div);
+        });
+      }
       loadHL(); loadTasks();
     }
 
@@ -280,35 +515,146 @@
 
     // ---------- Settings ----------
     function renderSettings() {
-      document.getElementById('view-settings').innerHTML = `
-        <div class="card space-y-4">
-          <h2 class="text-lg font-semibold">Settings</h2>
-          <div class="grid gap-4">
-            <div>
-              <div class="text-sm text-slate-400 mb-1">Email</div>
-              <input class="input" disabled value="${state.user?.email || ''}"/>
-            </div>
-            <div>
-              <div class="text-sm text-slate-400 mb-1">Name</div>
-              <input id="set-name" class="input" placeholder="Your name" value="${state.user?.name||''}"/>
-            </div>
-            <details class="card">
-              <summary class="cursor-pointer">Change password</summary>
-              <div class="mt-3 grid gap-2">
-                <input id="old-pw" type="password" class="input" placeholder="Current password"/>
-                <input id="new-pw" type="password" class="input" placeholder="New password"/>
-                <button id="btn-change-pw" class="btn w-max">Update password</button>
-              </div>
-            </details>
-            <div class="flex gap-2">
-              <button id="btn-logout" class="btn bg-rose-700 hover:bg-rose-600">Logout</button>
-            </div>
-          </div>
-        </div>`;
-      document.getElementById('btn-logout').onclick = async ()=>{ try{ await API.auth.logout(); location.hash="#/login"; }catch(e){ alert(e.message);} };
-      document.getElementById('btn-change-pw').onclick = async ()=>{
-        try{ await API.auth.changePassword(document.getElementById('old-pw').value, document.getElementById('new-pw').value); alert("Password updated");}
-        catch(e){ alert("Failed: "+e.message); }
+      const container = createSafeCard('Settings');
+      const settingsDiv = document.createElement('div');
+      settingsDiv.className = 'grid gap-4';
+      
+      // Email field (read-only)
+      const emailContainer = createAccessibleInput({
+        id: 'user-email',
+        type: 'email',
+        label: 'Email Address',
+        value: state.user?.email || '',
+        disabled: true
+      });
+      
+      // Name field (editable)
+      const nameContainer = createAccessibleInput({
+        id: 'set-name',
+        label: 'Display Name',
+        placeholder: 'Enter your display name',
+        value: state.user?.name || ''
+      });
+      
+      // Password change section
+      const passwordCard = document.createElement('details');
+      passwordCard.className = 'card';
+      
+      const summary = document.createElement('summary');
+      summary.className = 'cursor-pointer font-medium';
+      summary.textContent = 'Change Password';
+      summary.setAttribute('aria-expanded', 'false');
+      
+      const passwordForm = document.createElement('div');
+      passwordForm.className = 'mt-3 space-y-3';
+      
+      const currentPwContainer = createAccessibleInput({
+        id: 'old-pw',
+        type: 'password',
+        label: 'Current Password',
+        placeholder: 'Enter current password',
+        required: true
+      });
+      
+      const newPwContainer = createAccessibleInput({
+        id: 'new-pw',
+        type: 'password',
+        label: 'New Password',
+        placeholder: 'Enter new password (min 8 characters)',
+        required: true
+      });
+      
+      const changePwBtn = document.createElement('button');
+      changePwBtn.id = 'btn-change-pw';
+      changePwBtn.className = 'btn w-max';
+      changePwBtn.textContent = 'Update Password';
+      changePwBtn.type = 'button';
+      
+      passwordForm.appendChild(currentPwContainer);
+      passwordForm.appendChild(newPwContainer);
+      passwordForm.appendChild(changePwBtn);
+      
+      passwordCard.appendChild(summary);
+      passwordCard.appendChild(passwordForm);
+      
+      // Logout section
+      const logoutContainer = document.createElement('div');
+      logoutContainer.className = 'flex gap-2';
+      
+      const logoutBtn = document.createElement('button');
+      logoutBtn.id = 'btn-logout';
+      logoutBtn.className = 'btn bg-rose-700 hover:bg-rose-600';
+      logoutBtn.textContent = 'Sign Out';
+      logoutBtn.type = 'button';
+      logoutBtn.setAttribute('aria-describedby', 'logout-help');
+      
+      const logoutHelp = document.createElement('div');
+      logoutHelp.id = 'logout-help';
+      logoutHelp.className = 'text-sm text-slate-400';
+      logoutHelp.textContent = 'You will be signed out of your account';
+      
+      logoutContainer.appendChild(logoutBtn);
+      logoutContainer.appendChild(logoutHelp);
+      
+      settingsDiv.appendChild(emailContainer);
+      settingsDiv.appendChild(nameContainer);
+      settingsDiv.appendChild(passwordCard);
+      settingsDiv.appendChild(logoutContainer);
+      
+      container.appendChild(settingsDiv);
+      
+      const viewSettings = document.getElementById('view-settings');
+      viewSettings.innerHTML = '';
+      viewSettings.appendChild(container);
+      
+      // Enhanced event handlers with better UX
+      logoutBtn.onclick = async () => {
+        if (confirm('Are you sure you want to sign out?')) {
+          try {
+            await API.auth.logout();
+            location.hash = '#/login';
+          } catch(e) {
+            alert('Sign out failed: ' + e.message);
+          }
+        }
+      };
+      
+      changePwBtn.onclick = async () => {
+        const oldPw = document.getElementById('old-pw').value;
+        const newPw = document.getElementById('new-pw').value;
+        
+        if (!oldPw.trim()) {
+          document.getElementById('old-pw').focus();
+          return;
+        }
+        if (!newPw.trim() || newPw.length < 8) {
+          document.getElementById('new-pw').focus();
+          alert('New password must be at least 8 characters long');
+          return;
+        }
+        
+        try {
+          changePwBtn.disabled = true;
+          changePwBtn.textContent = 'Updating...';
+          await API.auth.changePassword(oldPw, newPw);
+          
+          // Clear fields and show success
+          document.getElementById('old-pw').value = '';
+          document.getElementById('new-pw').value = '';
+          
+          const successMsg = document.createElement('div');
+          successMsg.className = 'text-green-400 text-sm mt-2';
+          successMsg.setAttribute('role', 'status');
+          successMsg.textContent = 'Password updated successfully';
+          passwordForm.appendChild(successMsg);
+          
+          setTimeout(() => successMsg.remove(), 3000);
+        } catch(e) {
+          alert('Password change failed: ' + e.message);
+        } finally {
+          changePwBtn.disabled = false;
+          changePwBtn.textContent = 'Update Password';
+        }
       };
     }
 
