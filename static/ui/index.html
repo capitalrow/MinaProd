@@ -71,7 +71,7 @@
           </div>
         </div>`;
       document.getElementById('btn-login').onclick = async ()=>{
-        try{ await API.auth.login(login-email.value, login-password.value); location.hash="#/library"; }
+        try{ await API.auth.login(document.getElementById('login-email').value, document.getElementById('login-password').value); location.hash="#/library"; }
         catch(e){ alert("Login failed: "+e.message); }
       };
     }
@@ -89,7 +89,7 @@
           </div>
         </div>`;
       document.getElementById('btn-register').onclick = async ()=>{
-        try{ await API.auth.register(reg-email.value, reg-password.value, reg-name.value); alert("Verification email sent (check your inbox)"); location.hash="#/library"; }
+        try{ await API.auth.register(document.getElementById('reg-email').value, document.getElementById('reg-password').value, document.getElementById('reg-name').value); alert("Verification email sent (check your inbox)"); location.hash="#/library"; }
         catch(e){ alert("Register failed: "+e.message); }
       };
     }
@@ -102,8 +102,8 @@
           <button id="btn-fp" class="btn">Send reset link</button>
           <div class="text-slate-400 text-sm">You'll receive an email with a reset link.</div>
         </div>`;
-      btn-fp.onclick = async ()=>{
-        try{ await API.auth.requestReset(fp-email.value); alert("If your email exists, a link was sent."); location.hash="#/login"; }
+      document.getElementById('btn-fp').onclick = async ()=>{
+        try{ await API.auth.requestReset(document.getElementById('fp-email').value); alert("If your email exists, a link was sent."); location.hash="#/login"; }
         catch(e){ alert("Error: "+e.message); }
       };
     }
@@ -116,8 +116,8 @@
           <input id="rpw" type="password" class="input" placeholder="New password"/>
           <button id="btn-rpw" class="btn">Update password</button>
         </div>`;
-      btn-rpw.onclick = async ()=>{
-        try{ await API.auth.resetPassword(token, rpw.value); alert("Password updated. Login again."); location.hash="#/login"; }
+      document.getElementById('btn-rpw').onclick = async ()=>{
+        try{ await API.auth.resetPassword(token, document.getElementById('rpw').value); alert("Password updated. Login again."); location.hash="#/login"; }
         catch(e){ alert("Reset failed: "+e.message); }
       };
     }
@@ -268,8 +268,8 @@
           <button id="btn-up" class="btn">Upload</button>
           <div id="upmsg" class="text-sm text-slate-400"></div>
         </div>`;
-      btn-up.onclick = async ()=>{
-        const f = file.files[0]; if(!f) return alert("Choose a file");
+      document.getElementById('btn-up').onclick = async ()=>{
+        const f = document.getElementById('file').files[0]; if(!f) return alert("Choose a file");
         try{
           const r = await API.uploadFile(f);
           upmsg.innerText = `Uploaded. Conversation #${r.id}. Opening…`;
