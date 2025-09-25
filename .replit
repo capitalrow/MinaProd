@@ -6,7 +6,8 @@ packages = ["cargo", "ffmpeg", "ffmpeg-full", "freetype", "gitFull", "glibcLocal
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
+# run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
+run = "python main.py"
 
 [workflows]
 runButton = "Project"
@@ -28,6 +29,10 @@ author = "agent"
 task = "shell.exec"
 args = "gunicorn --bind 0.0.0.0:5000 --reuse-port --reload main:app"
 waitForPort = 5000
+
+[[ports]]
+localPort = 3000
+externalPort = 8008
 
 [[ports]]
 localPort = 5000
@@ -72,5 +77,9 @@ externalPort = 6800
 [[ports]]
 localPort = 8774
 externalPort = 8000
+
+[[ports]]
+localPort = 42423
+externalPort = 8080
 
 [agent]

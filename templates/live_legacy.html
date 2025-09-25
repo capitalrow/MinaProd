@@ -1,0 +1,1115 @@
+{% extends "base_modern.html" %}
+
+{% block title %}Live Transcription - Mina Professional{% endblock %}
+
+{% block description %}Professional real-time speech transcription with Google Recorder-level performance, <400ms latency, and AI-powered accuracy.{% endblock %}
+
+{% block keywords %}live transcription, real-time speech to text, AI transcription, voice recognition{% endblock %}
+
+{% block extra_css %}
+    
+    <style>
+        .accessibility-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .accessibility-controls button {
+            margin: 2px;
+            padding: 5px 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .skip-link {
+            position: absolute;
+            left: -9999px;
+            z-index: 999;
+            padding: 8px 16px;
+            background: #000;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .skip-link:focus {
+            left: 6px;
+            top: 7px;
+        }
+        
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            white-space: nowrap;
+            border: 0;
+        }
+        
+        .error-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .error-dialog-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .error-actions {
+            margin-top: 15px;
+            text-align: right;
+        }
+        
+        .error-actions button {
+            margin-left: 10px;
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .mina-live-container {
+            background: linear-gradient(135deg, var(--mina-neutral-50) 0%, var(--mina-primary-50) 100%);
+            min-height: 100vh;
+            padding: var(--mina-space-6) 0;
+        }
+        
+        .mina-recording-panel {
+            background: var(--mina-neutral-0);
+            border: 1px solid var(--mina-neutral-200);
+            border-radius: var(--mina-radius-2xl);
+            box-shadow: var(--mina-shadow-xl);
+            overflow: hidden;
+        }
+        
+        .mina-recording-panel-header {
+            background: linear-gradient(135deg, var(--mina-primary-500) 0%, var(--mina-secondary-500) 100%);
+            color: white;
+            padding: var(--mina-space-6);
+            text-align: center;
+        }
+        
+        .mina-transcript-panel {
+            background: var(--mina-neutral-900);
+            border: 1px solid var(--mina-neutral-700);
+            border-radius: var(--mina-radius-2xl);
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .mina-transcript-header {
+            background: var(--mina-neutral-800);
+            padding: var(--mina-space-4) var(--mina-space-6);
+            border-bottom: 1px solid var(--mina-neutral-700);
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+        
+        .mina-metrics-bar {
+            background: var(--mina-neutral-800);
+            padding: var(--mina-space-3) var(--mina-space-6);
+            border-bottom: 1px solid var(--mina-neutral-700);
+        }
+        
+        .mina-live-metric {
+            text-align: center;
+            color: var(--mina-neutral-300);
+        }
+        
+        .mina-live-metric-value {
+            font-size: var(--mina-text-xl);
+            font-weight: 700;
+            color: var(--mina-neutral-100);
+            margin-bottom: var(--mina-space-1);
+        }
+        
+        .mina-live-metric-label {
+            font-size: var(--mina-text-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="mina-live-container">
+    <div class="container">
+        <!-- Page Header -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="text-center">
+                    <h1 class="mina-heading-1 mb-3">
+                        <i class="bi bi-mic-fill text-primary me-3"></i>
+                        Live Transcription
+                    </h1>
+                    <p class="mina-text-lg text-muted mb-4">
+                        Professional real-time speech transcription with Google Recorder-level performance
+                    </p>
+                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                        <span class="mina-badge mina-badge-success">
+                            <i class="bi bi-lightning-fill me-1"></i>
+                            < 400ms Latency
+                        </span>
+                        <span class="mina-badge mina-badge-info">
+                            <i class="bi bi-robot me-1"></i>
+                            AI-Powered
+                        </span>
+                        <span class="mina-badge mina-badge-warning">
+                            <i class="bi bi-shield-check me-1"></i>
+                            Enterprise Grade
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="main-content" class="row">
+            <!-- Recording Controls -->
+            <div class="col-lg-4">
+                <div class="card bg-secondary border-secondary h-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-record-circle"></i> Recording Controls
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Recording Status -->
+                        <div id="recording-status" class="alert alert-secondary mb-3" role="status" 
+                             aria-live="polite" aria-label="Recording status">
+                            <i class="bi bi-circle-fill text-secondary"></i>
+                            <span>Ready to start recording</span>
+                        </div>
+
+                        <!-- Record Button -->
+                        <div class="d-grid gap-2 mb-3">
+                            <button id="recordButton" class="btn btn-primary btn-lg" 
+                                    aria-label="Start or stop audio recording for transcription"
+                                    aria-describedby="recording-status">
+                                <i class="bi bi-mic"></i>
+                                <span>Start Recording</span>
+                            </button>
+                        </div>
+
+                        <!-- Additional Controls -->
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button id="clearButton" class="btn btn-outline-warning btn-sm w-100"
+                                        aria-label="Clear transcript">
+                                    <i class="bi bi-trash"></i> Clear
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button id="downloadButton" class="btn btn-outline-success btn-sm w-100"
+                                        aria-label="Download transcript">
+                                    <i class="bi bi-download"></i> Export
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Session Statistics -->
+                        <div class="mt-4">
+                            <h6>Session Statistics</h6>
+                            <div class="stats-container" role="region" 
+                                 aria-label="Session statistics and performance metrics">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="stat-item">
+                                            <div id="durationCounter" class="stat-value">00:00</div>
+                                            <small class="stat-label">Duration</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="stat-item">
+                                            <div id="wordCounter" class="stat-value">0</div>
+                                            <small class="stat-label">Words</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="stat-item">
+                                            <div id="confidenceLevel" class="stat-value">--</div>
+                                            <small class="stat-label">Accuracy</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transcript Display -->
+            <div class="col-lg-8">
+                <div class="card bg-secondary border-secondary h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-chat-text"></i> Live Transcript
+                        </h5>
+                        <div class="text-muted">
+                            <small>
+                                <i class="bi bi-circle-fill" id="statusIndicator"></i>
+                                <span id="connectionStatus" data-status="connection">Ready</span>
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="transcriptDisplay" 
+                             class="transcript-area p-3 bg-dark border border-secondary rounded live-transcript-container"
+                             role="log"
+                             aria-label="Live transcription output"
+                             aria-live="polite"
+                             aria-atomic="false"
+                             style="height: 400px; overflow-y: auto; white-space: pre-wrap; line-height: 1.5;">
+                            <div class="text-muted text-center" id="initialMessage">
+                                <i class="bi bi-mic-mute"></i>
+                                <p>Click "Start Recording" to begin transcription...</p>
+                            </div>
+                            
+                            <!-- System Health Indicators -->
+                            <div id="systemHealth" class="mt-3 d-none">
+                                <h6 class="text-info mb-2">
+                                    <i class="bi bi-shield-check"></i> System Health
+                                </h6>
+                                <div class="row">
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <span class="badge bg-warning" data-health="microphone">Permission Required</span>
+                                        <br><small class="text-muted">Microphone</small>
+                                    </div>
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <span class="badge bg-danger" data-health="connection">Disconnected</span>
+                                        <br><small class="text-muted">Connection</small>
+                                    </div>
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <span class="badge bg-warning" data-health="transcription">Initializing</span>
+                                        <br><small class="text-muted">Transcription</small>
+                                    </div>
+                                    <div class="col-6 col-md-3 mb-2">
+                                        <span class="badge bg-success" data-health="performance">Monitoring</span>
+                                        <br><small class="text-muted">Performance</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Health Dashboard -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card bg-secondary border-secondary">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="bi bi-activity"></i> System Health
+                        </h6>
+                    </div>
+                    <div class="card-body system-health" role="status" 
+                         aria-label="System health and connection status" aria-live="polite">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="health-indicator">
+                                    <span class="badge bg-secondary" id="micStatus">
+                                        <i class="bi bi-mic"></i> Microphone: Unknown
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="health-indicator">
+                                    <span class="badge bg-secondary" id="wsStatus">
+                                        <i class="bi bi-wifi"></i> Connection: Unknown
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="health-indicator">
+                                    <span class="badge bg-secondary" id="transcriptionStatus">
+                                        <i class="bi bi-cpu"></i> Transcription: Unknown
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="health-indicator">
+                                    <span class="badge bg-secondary" id="performanceStatus">
+                                        <i class="bi bi-speedometer2"></i> Performance: Unknown
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen reader only elements -->
+    <div id="error-messages" role="alert" aria-live="assertive" class="sr-only"></div>
+    <div id="screen-reader-announcements" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+    <div id="ui-status" role="status" aria-live="polite" class="sr-only">Ready to start recording</div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- 📜 DEPENDENCY-ORDERED SCRIPT LOADING -->
+    <!-- Phase 1: Enhanced Core Foundation -->
+    <script src="/static/js/enhanced_websocket_client_v2.js"></script>
+    <script src="/static/js/mobile_enhanced_optimizations.js"></script>
+    <script src="/static/js/audio_quality_assessment.js"></script>
+    <script src="/static/js/comprehensive_system_validation.js"></script>
+    
+    <!-- Phase 2: Core Services (depend on foundation) -->
+    <script src="/static/js/streaming_audio_client.js"></script>
+    <script src="/static/js/streaming_integration.js"></script>
+    
+    <!-- Phase 3: Performance & QA Systems -->
+    <script src="/static/js/pipeline_performance_monitor.js"></script>
+    <script src="/static/js/pipeline_performance_integration.js"></script>
+    <script src="/static/js/comprehensive_qa_pipeline.js"></script>
+    <script src="/static/js/comprehensive_qa_metrics.js"></script>
+    
+    <!-- Phase 4: Enhancement Layers -->
+    <script src="/static/js/robustness_enhancements.js"></script>
+    <script src="/static/js/ui_accessibility_enhancements.js"></script>
+    
+    <!-- Phase 5: Integration Bridges (depend on everything above) -->
+    <script src="/static/js/performance_integration_bridge.js"></script>
+    <script src="/static/js/integration_bridge_enhanced.js"></script>
+    <script src="/static/js/final_integration_verification.js"></script>
+    <script src="/static/js/robust_error_handling.js"></script>
+    <script src="/static/js/accessibility_mobile_optimization.js"></script>
+    
+    <!-- Fix Pack Implementation Scripts -->
+    <script src="/static/js/fix_pack_2_performance_monitoring.js"></script>
+    <script src="/static/js/fix_pack_3_qa_pipeline_complete.js"></script>
+    <script src="/static/js/fix_pack_4_robustness_complete.js"></script>
+    <script src="/static/js/fix_pack_5_ui_accessibility_complete.js"></script>
+
+    <script>
+        // 🔄 SYNCHRONIZED INITIALIZATION
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Mina Live Transcription System Loading...');
+            
+            // Wait for core integration to be ready
+            let attempts = 0;
+            while (!window.realWhisperIntegration && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (window.realWhisperIntegration) {
+                console.log('✅ RealWhisperIntegration ready');
+                
+                // Initialize integration bridge
+                if (window.performanceIntegrationBridge) {
+                    window.performanceIntegrationBridge.integrateWithTranscriptionSystem();
+                    console.log('✅ Performance bridge initialized');
+                }
+            } else {
+                console.error('❌ RealWhisperIntegration failed to initialize');
+            }
+            
+            if (window.performanceIntegrationBridge) {
+                console.log('✅ Performance Integration Bridge available');
+            }
+            
+            if (window.pipelinePerformance) {
+                console.log('✅ Pipeline Performance available');
+            }
+            
+            if (window.comprehensiveQA) {
+                console.log('✅ Comprehensive QA available');
+            }
+            
+            if (window.robustnessEnhancements) {
+                console.log('✅ Robustness Enhancements available');
+            }
+            
+            if (window.uiAccessibility) {
+                console.log('✅ UI Accessibility available');
+            }
+            
+            // Setup recording button - DISABLED: Handled by RealWhisperIntegration
+            // to prevent duplicate event handlers and conflicts
+            const recordButton = document.getElementById('recordButton');
+            if (recordButton) {
+                console.log('✅ Recording button found - will be managed by RealWhisperIntegration');
+                // recordButton.addEventListener('click', handleRecordingToggle); // DISABLED
+            }
+            
+            // Setup other controls
+            setupApplicationControls();
+            
+            // Run initial system health check
+            setTimeout(() => {
+                runSystemHealthCheck();
+            }, 2000);
+            
+            console.log('🎯 Mina Live Transcription System Ready');
+        });
+        
+        function handleRecordingToggle() {
+            const button = document.getElementById('recordButton');
+            const icon = button.querySelector('i');
+            const text = button.querySelector('span');
+            const status = document.getElementById('recording-status');
+            
+            if (button.textContent.includes('Start')) {
+                // Start recording
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-danger');
+                icon.className = 'bi bi-stop-fill';
+                text.textContent = 'Stop Recording';
+                
+                status.innerHTML = '<i class="bi bi-record-fill text-danger"></i><span>Recording...</span>';
+                status.className = 'alert alert-danger mb-3';
+                
+                // Start transcription
+                startTranscription();
+                
+            } else {
+                // Stop recording
+                button.classList.remove('btn-danger');
+                button.classList.add('btn-primary');
+                icon.className = 'bi bi-mic';
+                text.textContent = 'Start Recording';
+                
+                status.innerHTML = '<i class="bi bi-circle-fill text-secondary"></i><span>Ready to start recording</span>';
+                status.className = 'alert alert-secondary mb-3';
+                
+                // Stop transcription
+                stopTranscription();
+            }
+        }
+        
+        function startTranscription() {
+            console.log('🎤 Starting transcription...');
+            
+            const sessionId = `session_${Date.now()}`;
+            
+            // Update UI state
+            if (window.uiAccessibility) {
+                window.uiAccessibility.updateUIState('recording');
+            }
+            
+            // Start QA session
+            if (window.comprehensiveQAMetrics) {
+                window.comprehensiveQAMetrics.startQASession(sessionId);
+            }
+            
+            // Start pipeline performance monitoring
+            if (window.pipelinePerformanceMonitor) {
+                window.pipelinePerformanceMonitor.startSession(sessionId);
+            }
+            
+            // Initialize robustness systems
+            if (window.robustnessEnhancements) {
+                window.robustnessEnhancements.initialize();
+            }
+            
+            // Initialize accessibility systems
+            if (window.uiAccessibility) {
+                window.uiAccessibility.initialize();
+            }
+            
+            // Start actual transcription
+            if (window.enhancedIntegrationBridge) {
+                window.enhancedIntegrationBridge.startTranscription(sessionId);
+            } else if (window.realWhisperIntegration) {
+                window.realWhisperIntegration.startTranscription(sessionId);
+            } else {
+                console.warn('⚠️ No transcription system available, using fallback');
+                startFallbackTranscription(sessionId);
+            }
+        }
+        
+        function startFallbackTranscription(sessionId) {
+            console.log('🔄 Starting fallback transcription');
+            
+            // Request microphone permission
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    // Update status indicators
+                    updateSystemStatus('microphone', 'Active');
+                    updateSystemStatus('connection', 'Connected');
+                    updateSystemStatus('transcription', 'Fallback');
+                    
+                    // Create simple MediaRecorder
+                    const mediaRecorder = new MediaRecorder(stream);
+                    let chunkCount = 0;
+                    
+                    mediaRecorder.ondataavailable = async (event) => {
+                        if (event.data.size > 0) {
+                            chunkCount++;
+                            await sendAudioChunk(event.data, chunkCount, sessionId);
+                        }
+                    };
+                    
+                    mediaRecorder.start(1000); // 1-second chunks
+                    window.fallbackRecorder = mediaRecorder;
+                    
+                    console.log('✅ Fallback transcription started');
+                })
+                .catch(error => {
+                    console.error('❌ Fallback transcription failed:', error);
+                    updateSystemStatus('microphone', 'Permission Required');
+                    showMicrophoneError();
+                });
+        }
+        
+        async function sendAudioChunk(audioBlob, chunkId, sessionId) {
+            try {
+                const formData = new FormData();
+                formData.append('audio_data', await blobToBase64(audioBlob));
+                formData.append('session_id', sessionId);
+                formData.append('chunk_id', chunkId);
+                
+                const startTime = Date.now();
+                const response = await fetch('/api/transcribe-audio', {
+                    method: 'POST',
+                    body: formData
+                });
+                const endTime = Date.now();
+                const latency = endTime - startTime;
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    // Record performance metrics
+                    if (window.pipelinePerformanceMonitor) {
+                        window.pipelinePerformanceMonitor.recordTranscriptChunk(result, chunkId, latency, false);
+                    }
+                    
+                    if (result.transcript) {
+                        displayTranscript(result.transcript, chunkId);
+                    }
+                    
+                    console.log(`✅ Chunk ${chunkId} processed in ${latency}ms`);
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                }
+                
+            } catch (error) {
+                console.error(`❌ Failed to process chunk ${chunkId}:`, error);
+                
+                // Record error
+                if (window.pipelinePerformanceMonitor) {
+                    window.pipelinePerformanceMonitor.recordDroppedChunk(chunkId, error.message);
+                }
+            }
+        }
+        
+        function displayTranscript(text, chunkId) {
+            const transcriptContainer = document.querySelector('.live-transcript-container') ||
+                                      document.getElementById('transcriptDisplay');
+            
+            if (transcriptContainer) {
+                // Remove initial message if present
+                const initialMessage = document.getElementById('initialMessage');
+                if (initialMessage) {
+                    initialMessage.remove();
+                }
+                
+                // Create transcript segment
+                const segment = document.createElement('div');
+                segment.className = 'transcript-segment mb-2 p-2 bg-light rounded border-start border-success border-3';
+                segment.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="transcript-text flex-grow-1 text-dark">${text}</div>
+                        <small class="text-muted ms-2 badge bg-secondary">Chunk ${chunkId}</small>
+                    </div>
+                    <div class="text-muted small mt-1">
+                        <span class="me-2">⏱️ ${new Date().toLocaleTimeString()}</span>
+                        <span class="text-success">✅ Processed</span>
+                    </div>
+                `;
+                
+                transcriptContainer.appendChild(segment);
+                transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
+                
+                // Update word count
+                updateWordCount(text);
+                
+                console.log(`📝 Displayed transcript chunk ${chunkId}: "${text}"`);
+            }
+        }
+        
+        function updateWordCount(text) {
+            const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
+            const wordCounter = document.getElementById('wordCounter');
+            if (wordCounter) {
+                const currentCount = parseInt(wordCounter.textContent) || 0;
+                wordCounter.textContent = currentCount + wordCount;
+            }
+        }
+        
+        function updateSystemStatus(component, status) {
+            const healthElement = document.querySelector(`[data-health="${component}"]`);
+            if (healthElement) {
+                healthElement.textContent = status;
+                healthElement.className = `badge ${getStatusClass(status)}`;
+            }
+            
+            // Update connection status in header
+            if (component === 'connection') {
+                const connectionStatus = document.getElementById('connectionStatus');
+                if (connectionStatus) {
+                    connectionStatus.textContent = status;
+                }
+            }
+            
+            console.log(`📊 Updated ${component} status: ${status}`);
+        }
+        
+        function getStatusClass(status) {
+            const statusMap = {
+                'Active': 'bg-success',
+                'Connected': 'bg-success',
+                'Ready': 'bg-success',
+                'Fallback': 'bg-warning',
+                'Permission Required': 'bg-warning',
+                'Error': 'bg-danger',
+                'Disconnected': 'bg-danger'
+            };
+            return statusMap[status] || 'bg-secondary';
+        }
+        
+        async function blobToBase64(blob) {
+            return new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.readAsDataURL(blob);
+            });
+        }
+        
+        function showMicrophoneError() {
+            if (window.uiAccessibility) {
+                window.uiAccessibility.showError('microphonePermission');
+            } else {
+                alert('Microphone permission is required for live transcription. Please allow microphone access and try again.');
+            }
+            
+            // Show system health indicators when error occurs
+            const systemHealth = document.getElementById('systemHealth');
+            if (systemHealth) {
+                systemHealth.classList.remove('d-none');
+            }
+        }
+        
+        function showQAReport(report) {
+            console.log('📊 QA Report Summary:', {
+                WER: `${report.metrics.wer}%`,
+                Accuracy: `${report.metrics.accuracy}%`,
+                Latency: `${report.metrics.latency}ms`,
+                Quality: report.passed.overall ? 'PASS' : 'FAIL'
+            });
+            
+            // Update UI with final metrics
+            const accuracyElement = document.getElementById('confidenceLevel');
+            if (accuracyElement) {
+                accuracyElement.textContent = `${report.metrics.accuracy}%`;
+                accuracyElement.className = report.metrics.accuracy >= 95 ? 'stat-value text-success' : 'stat-value text-warning';
+            }
+        }
+        
+        function showPerformanceReport(report) {
+            console.log('📊 Performance Report Summary:', {
+                AverageLatency: `${Math.round(report.metrics.averageLatency)}ms`,
+                TotalChunks: report.metrics.totalChunks,
+                ErrorRate: `${((report.metrics.errorCount / Math.max(report.metrics.totalChunks, 1)) * 100).toFixed(1)}%`,
+                Performance: report.summary.performance
+            });
+        }
+        
+        // Comprehensive testing functions
+        function runSystemHealthCheck() {
+            console.log('🔍 Running system health check...');
+            
+            const healthChecks = [];
+            
+            // Check microphone access
+            healthChecks.push(checkMicrophoneAccess());
+            
+            // Check transcription endpoint
+            healthChecks.push(checkTranscriptionEndpoint());
+            
+            // Check WebSocket connectivity
+            healthChecks.push(checkWebSocketConnectivity());
+            
+            // Check performance monitoring
+            healthChecks.push(checkPerformanceMonitoring());
+            
+            Promise.all(healthChecks)
+                .then(results => {
+                    const allPassed = results.every(result => result.passed);
+                    console.log('🔍 Health check complete:', {
+                        overallStatus: allPassed ? 'HEALTHY' : 'ISSUES_DETECTED',
+                        details: results
+                    });
+                    
+                    updateHealthCheckDisplay(results);
+                })
+                .catch(error => {
+                    console.error('🔍 Health check failed:', error);
+                });
+        }
+        
+        async function checkMicrophoneAccess() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+                
+                return {
+                    component: 'microphone',
+                    passed: true,
+                    message: 'Microphone access available'
+                };
+            } catch (error) {
+                return {
+                    component: 'microphone',
+                    passed: false,
+                    message: `Microphone access denied: ${error.message}`
+                };
+            }
+        }
+        
+        async function checkTranscriptionEndpoint() {
+            try {
+                const response = await fetch('/api/transcribe-audio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ test: true })
+                });
+                
+                return {
+                    component: 'transcription',
+                    passed: response.status !== 500,
+                    message: `Transcription endpoint responded with status ${response.status}`
+                };
+            } catch (error) {
+                return {
+                    component: 'transcription',
+                    passed: false,
+                    message: `Transcription endpoint error: ${error.message}`
+                };
+            }
+        }
+        
+        async function checkWebSocketConnectivity() {
+            try {
+                // Basic connectivity test
+                const response = await fetch('/health', { method: 'HEAD' });
+                
+                return {
+                    component: 'websocket',
+                    passed: response.ok,
+                    message: response.ok ? 'WebSocket connectivity available' : 'WebSocket connectivity issues'
+                };
+            } catch (error) {
+                return {
+                    component: 'websocket',
+                    passed: false,
+                    message: `WebSocket connectivity error: ${error.message}`
+                };
+            }
+        }
+        
+        async function checkPerformanceMonitoring() {
+            const performanceAvailable = window.pipelinePerformanceMonitor && 
+                                       window.comprehensiveQAMetrics &&
+                                       window.robustnessEnhancements &&
+                                       window.uiAccessibility;
+            
+            return {
+                component: 'performance',
+                passed: performanceAvailable,
+                message: performanceAvailable ? 'All monitoring systems available' : 'Some monitoring systems missing'
+            };
+        }
+        
+        function updateHealthCheckDisplay(results) {
+            results.forEach(result => {
+                updateSystemStatus(result.component, result.passed ? 'Ready' : 'Error');
+            });
+            
+            // Show system health section
+            const systemHealth = document.getElementById('systemHealth');
+            if (systemHealth) {
+                systemHealth.classList.remove('d-none');
+            }
+        }
+            
+            // Show system health indicators
+            const systemHealth = document.getElementById('systemHealth');
+            if (systemHealth) {
+                systemHealth.classList.remove('d-none');
+            }
+        }
+        
+        function stopTranscription() {
+            console.log('🛑 Stopping transcription...');
+            
+            // Stop fallback recorder if active
+            if (window.fallbackRecorder && window.fallbackRecorder.state !== 'inactive') {
+                window.fallbackRecorder.stop();
+                
+                // Stop all tracks
+                window.fallbackRecorder.stream?.getTracks().forEach(track => track.stop());
+            }
+            
+            // Stop other transcription systems
+            if (window.enhancedIntegrationBridge) {
+                window.enhancedIntegrationBridge.stopTranscription();
+            } else if (window.realWhisperIntegration) {
+                window.realWhisperIntegration.stopTranscription();
+            }
+            
+            // Update UI state
+            if (window.uiAccessibility) {
+                window.uiAccessibility.updateUIState('idle');
+            }
+            
+            // End QA session and generate report
+            if (window.comprehensiveQAMetrics) {
+                const report = window.comprehensiveQAMetrics.endQASession();
+                if (report) {
+                    console.log('📊 QA Report:', report);
+                    showQAReport(report);
+                }
+            }
+            
+            // End performance monitoring
+            if (window.pipelinePerformanceMonitor) {
+                const performanceReport = window.pipelinePerformanceMonitor.endSession();
+                if (performanceReport) {
+                    console.log('📊 Performance Report:', performanceReport);
+                    showPerformanceReport(performanceReport);
+                }
+            }
+            
+            // Update system status
+            updateSystemStatus('microphone', 'Ready');
+            updateSystemStatus('connection', 'Ready');
+            updateSystemStatus('transcription', 'Ready');
+            
+            console.log('✅ Transcription stopped successfully');
+            
+            // End pipeline performance monitoring
+            if (window.pipelinePerformance) {
+                const report = window.pipelinePerformance.endSession();
+                if (report) {
+                    console.log('📈 Performance Report:', report);
+                }
+            }
+            
+            // Stop actual transcription
+            if (window.realWhisperIntegration) {
+                window.realWhisperIntegration.stopTranscription();
+            }
+        }
+        
+        function setupApplicationControls() {
+            // Clear button
+            const clearButton = document.getElementById('clearButton');
+            if (clearButton) {
+                clearButton.addEventListener('click', () => {
+                    const transcriptDisplay = document.getElementById('transcriptDisplay');
+                    if (transcriptDisplay) {
+                        transcriptDisplay.innerHTML = `
+                            <div class="text-muted text-center">
+                                <i class="bi bi-mic-mute"></i>
+                                <p>Click "Start Recording" to begin transcription...</p>
+                            </div>
+                        `;
+                    }
+                    
+                    // Reset counters
+                    document.getElementById('wordCounter').textContent = '0';
+                    document.getElementById('durationCounter').textContent = '00:00';
+                    document.getElementById('confidenceLevel').textContent = '--';
+                });
+            }
+            
+            // Download button
+            const downloadButton = document.getElementById('downloadButton');
+            if (downloadButton) {
+                downloadButton.addEventListener('click', downloadTranscript);
+            }
+            
+            // Diagnostics button
+            const diagnosticsBtn = document.getElementById('diagnosticsBtn');
+            if (diagnosticsBtn) {
+                diagnosticsBtn.addEventListener('click', showDiagnostics);
+            }
+            
+            // Setup clear and download buttons
+            const clearButton = document.getElementById('clearButton');
+            if (clearButton) {
+                clearButton.addEventListener('click', clearTranscript);
+            }
+            
+            const downloadButton = document.getElementById('downloadButton');
+            if (downloadButton) {
+                downloadButton.addEventListener('click', downloadTranscript);
+            }
+        }
+        
+        function clearTranscript() {
+            const transcriptContainer = document.querySelector('.live-transcript-container') ||
+                                      document.getElementById('transcriptDisplay');
+            if (transcriptContainer) {
+                transcriptContainer.innerHTML = `
+                    <div class="text-muted text-center" id="initialMessage">
+                        <i class="bi bi-mic-mute"></i>
+                        <p>Click "Start Recording" to begin transcription...</p>
+                    </div>
+                `;
+                
+                // Reset word counter
+                const wordCounter = document.getElementById('wordCounter');
+                if (wordCounter) {
+                    wordCounter.textContent = '0';
+                }
+                
+                console.log('🧹 Transcript cleared');
+            }
+        }
+        
+        function downloadTranscript() {
+            const transcriptContainer = document.querySelector('.live-transcript-container') ||
+                                      document.getElementById('transcriptDisplay');
+            if (transcriptContainer) {
+                const transcriptText = Array.from(transcriptContainer.querySelectorAll('.transcript-text'))
+                    .map(element => element.textContent.trim())
+                    .filter(text => text.length > 0)
+                    .join('\n\n');
+                
+                if (transcriptText) {
+                    const blob = new Blob([transcriptText], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `transcript-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    console.log('📥 Transcript downloaded');
+                } else {
+                    alert('No transcript content to download');
+                }
+            }
+        }
+        
+        function showDiagnostics() {
+            console.log('🔍 Showing diagnostics...');
+            runSystemHealthCheck();
+            
+            // Show system health section
+            const systemHealth = document.getElementById('systemHealth');
+            if (systemHealth) {
+                systemHealth.classList.remove('d-none');
+            }
+        }
+        
+        function downloadTranscript() {
+            const transcriptDisplay = document.getElementById('transcriptDisplay');
+            const content = transcriptDisplay.textContent || transcriptDisplay.innerText || '';
+            
+            if (!content.trim() || content.includes('Click "Start Recording"')) {
+                alert('No transcript available to download');
+                return;
+            }
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `transcript-${new Date().toISOString().slice(0,19).replace(/[:.]/g, '-')}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function showDiagnostics() {
+            // Run comprehensive system diagnostics
+            if (window.integrationVerification) {
+                window.integrationVerification.runFullVerification();
+            }
+            
+            // Show current system status
+            const status = {
+                realWhisperIntegration: !!window.realWhisperIntegration,
+                performanceIntegration: !!window.performanceIntegrationBridge,
+                pipelinePerformance: !!window.pipelinePerformance,
+                comprehensiveQA: !!window.comprehensiveQA,
+                robustnessEnhancements: !!window.robustnessEnhancements,
+                uiAccessibility: !!window.uiAccessibility
+            };
+            
+            console.log('🔍 System Diagnostics:', status);
+            
+            // Show performance snapshot if available
+            if (window.pipelinePerformance) {
+                const snapshot = window.pipelinePerformance.getPerformanceSnapshot();
+                console.log('📊 Performance Snapshot:', snapshot);
+            }
+            
+            // Show QA statistics if available
+            if (window.comprehensiveQA) {
+                const stats = window.comprehensiveQA.getStatistics();
+                console.log('🔬 QA Statistics:', stats);
+            }
+        }
+        
+        function showQAReport(report) {
+            const summary = `
+QA Session Report:
+- WER: ${report.metrics.wer}% (Target: ≤10%)
+- Accuracy: ${report.metrics.accuracy}% (Target: ≥95%)
+- Latency: ${report.metrics.latency}ms (Target: <500ms)
+- Completeness: ${report.metrics.completeness}% (Target: ≥90%)
+
+Overall Status: ${report.passed.overall ? 'PASSED' : 'NEEDS IMPROVEMENT'}
+            `;
+            
+            console.log('📊 QA Report Summary:\n' + summary);
+            
+            // Show notification if available
+            if (window.showNotification) {
+                window.showNotification(
+                    'QA Report Generated',
+                    `WER: ${report.metrics.wer}%, Accuracy: ${report.metrics.accuracy}%, Latency: ${report.metrics.latency}ms`,
+                    report.passed.overall ? 'success' : 'warning'
+                );
+            }
+        }
+    </script>
+</body>
+</html>
