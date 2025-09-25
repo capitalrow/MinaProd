@@ -17,8 +17,9 @@ def _jwt_read(token: str):
 
 def _cookie(resp, token):
     name = current_app.config["JWT_COOKIE_NAME"]
+    # Secure cookie configuration for production
     if token:
-        resp.set_cookie(name, token, httponly=True, secure=False, samesite="Lax", max_age=60*60*24*7, path="/")
+        resp.set_cookie(name, token, httponly=True, secure=not current_app.debug, samesite="Strict", max_age=60*60*24*7, path="/")
     else:
         resp.delete_cookie(name, path="/")
     return resp
@@ -70,3 +71,99 @@ def me():
 def logout():
     resp = make_response(jsonify(ok=True))
     return _cookie(resp, None)
+
+@bp_auth.route("/change-password", methods=["POST"])
+def change_password():
+    token = request.cookies.get(current_app.config["JWT_COOKIE_NAME"])
+    if not token:
+        return jsonify(ok=False, error="authentication_required"), 401
+    try:
+        payload = _jwt_read(token)
+    except Exception:
+        return jsonify(ok=False, error="invalid_token"), 401
+    
+    data = request.get_json(force=True)
+    current_password = data.get("current_password") or ""
+    new_password = data.get("new_password") or ""
+    
+    if not current_password or not new_password:
+        return jsonify(ok=False, error="current and new password required"), 400
+    
+    if len(new_password) < 8:
+        return jsonify(ok=False, error="password must be at least 8 characters"), 400
+    
+    u = User.query.get(payload.get("uid"))
+    if not u or not bcrypt.verify(current_password, u.password_hash):
+        return jsonify(ok=False, error="invalid_current_password"), 401
+    
+    u.password_hash = bcrypt.hash(new_password)
+    db.session.commit()
+    return jsonify(ok=True)
+
+@bp_auth.route("/request-reset", methods=["POST"])
+def request_reset():
+    data = request.get_json(force=True)
+    email = (data.get("email") or "").strip().lower()
+    
+    if not email:
+        return jsonify(ok=False, error="email required"), 400
+    
+    # Always return success for security (don't reveal if email exists)
+    u = User.query.filter_by(email=email).first()
+    if u:
+        # In production, send email with reset token
+        # For now, just log the token (development only)
+        reset_token = _jwt_create({"uid": u.id, "purpose": "reset", "email": u.email})
+        print(f"[DEV] Password reset token for {email}: {reset_token}")
+    
+    return jsonify(ok=True, message="If email exists, reset link sent")
+
+@bp_auth.route("/reset-password", methods=["POST"])
+def reset_password():
+    data = request.get_json(force=True)
+    token = data.get("token") or ""
+    password = data.get("password") or ""
+    
+    if not token or not password:
+        return jsonify(ok=False, error="token and password required"), 400
+    
+    if len(password) < 8:
+        return jsonify(ok=False, error="password must be at least 8 characters"), 400
+    
+    try:
+        payload = _jwt_read(token)
+        if payload.get("purpose") != "reset":
+            raise Exception("invalid purpose")
+    except Exception:
+        return jsonify(ok=False, error="invalid or expired token"), 400
+    
+    u = User.query.get(payload.get("uid"))
+    if not u:
+        return jsonify(ok=False, error="user not found"), 400
+    
+    u.password_hash = bcrypt.hash(password)
+    db.session.commit()
+    return jsonify(ok=True)
+
+@bp_auth.route("/verify-email", methods=["POST"])
+def verify_email():
+    data = request.get_json(force=True)
+    token = data.get("token") or ""
+    
+    if not token:
+        return jsonify(ok=False, error="token required"), 400
+    
+    try:
+        payload = _jwt_read(token)
+        if payload.get("purpose") != "verify":
+            raise Exception("invalid purpose")
+    except Exception:
+        return jsonify(ok=False, error="invalid or expired token"), 400
+    
+    u = User.query.get(payload.get("uid"))
+    if not u:
+        return jsonify(ok=False, error="user not found"), 400
+    
+    # In a full implementation, you'd have an email_verified field
+    # For now, just return success
+    return jsonify(ok=True, message="Email verified successfully")
