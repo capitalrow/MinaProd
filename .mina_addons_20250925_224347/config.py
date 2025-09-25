@@ -4,7 +4,7 @@ from datetime import timedelta
 class Config:
     # Core
     SECRET_KEY = os.environ.get("SECRET_KEY", "change-me")
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL") or os.environ.get("MINA_DB_URL", "sqlite:///mina.db")
+    SQLALCHEMY_DATABASE_URI = os.environ.get("MINA_DB_URL", "sqlite:///data/mina.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Live only (no mocks)
@@ -15,8 +15,6 @@ class Config:
     ACCESS_COOKIE_NAME = "mina_access"
     REFRESH_COOKIE_NAME = "mina_refresh"
     CSRF_COOKIE_NAME = "mina_csrf"
-    JWT_COOKIE_NAME = "mina_jwt"
-    JWT_EXPIRE_MINUTES = int(os.environ.get("JWT_EXPIRE_MINUTES", "4320"))  # 3 days
     COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "false").lower() == "true"  # set true on HTTPS
     COOKIE_SAMESITE = os.environ.get("COOKIE_SAMESITE", "Lax")
     ACCESS_EXPIRES = timedelta(minutes=int(os.environ.get("ACCESS_EXPIRES_MIN", "20")))
