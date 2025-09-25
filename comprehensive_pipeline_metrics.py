@@ -257,7 +257,7 @@ class ComprehensivePipelineAnalyzer:
             status="FAIL",
             execution_time_ms=5.0,
             issues=["Database import error: cannot import name 'db' from 'main'"],
-            recommendations=["Fix database import to use 'from app_refactored import db'"]
+            recommendations=["Fix database import to use 'from app import db'"]
         ))
         
         # Test 4: Frontend UI Responsiveness
@@ -300,7 +300,7 @@ class ComprehensivePipelineAnalyzer:
                 {
                     'priority': 'CRITICAL',
                     'title': 'Fix Database Import Error',
-                    'description': 'Change import from "from main import db" to "from app_refactored import db"',
+                    'description': 'Change import from "from main import db" to "from app import db"',
                     'estimated_time': '10 minutes',
                     'acceptance_criteria': 'Transcription text appears in UI after recording'
                 },
@@ -401,7 +401,7 @@ class ComprehensivePipelineAnalyzer:
             ],
             
             'immediate_recommendations': [
-                'CRITICAL: Fix database import (from app_refactored import db)',
+                'CRITICAL: Fix database import (from app import db)',
                 'HIGH: Test complete recording flow after fix',
                 'HIGH: Implement user error feedback',
                 'MEDIUM: Add interim transcription streaming'

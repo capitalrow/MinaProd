@@ -20,7 +20,7 @@ from services.hallucination_prevention_system import HallucinationPreventionSyst
 
 # Import existing models and services
 from models import Session, Segment
-from app_refactored import db
+from app import db
 from services.session_service import SessionService
 
 logger = logging.getLogger(__name__)

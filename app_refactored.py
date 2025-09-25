@@ -1,76 +1,48 @@
 # app_refactored.py
 import os
 from flask import Flask
-from werkzeug.middleware.proxy_fix import ProxyFix
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_socketio import SocketIO
+from flask_cors import CORS
 
-# --- config flags from env
-FORCE_POLLING = os.getenv("FORCE_POLLING", "false").lower() == "true"
-SOCKETIO_PATH = os.getenv("SOCKETIO_PATH", "/socket.io")
+try:
+    from flask_socketio import SocketIO
+    HAVE_SOCKET = True
+except Exception:
+    SocketIO = None
+    HAVE_SOCKET = False
 
-db = SQLAlchemy()
-migrate = Migrate()
+socketio = None
 
-# IMPORTANT: eventlet to match gunicorn -k eventlet
-socketio = SocketIO(
-    async_mode="eventlet",
-    cors_allowed_origins="*",
-    ping_interval=25,
-    ping_timeout=60,
-    logger=False,
-    engineio_logger=False,
-    path=SOCKETIO_PATH,
-)
+def create_app():
+    global socketio
+    base_dir = os.path.dirname(__file__)
 
-class DefaultConfig:
-    SECRET_KEY = os.getenv("SECRET_KEY", "change-me")
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///instance/mina_dev.db")
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    app = Flask(
+        __name__,
+        static_folder=os.path.join(base_dir, "static"),
+        static_url_path="/static",
+        template_folder=os.path.join(base_dir, "templates"),
+    )
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
-def create_app() -> Flask:
-    app = Flask(__name__, static_folder="static", template_folder="templates")
-    app.config.from_object(DefaultConfig)
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+    # Zero-cache so the preview can’t serve stale HTML
+    @app.after_request
+    def _nocache(resp):
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        return resp
 
-    db.init_app(app)
-    migrate.init_app(app, db)
+    if HAVE_SOCKET:
+        socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+        try:
+            import routes.websocket  # noqa: F401 (your @socketio.on handlers)
+        except Exception as e:
+            print("[mina] websocket module not loaded:", e)
+    else:
+        socketio = None
 
-    # Init Socket.IO
-    socketio.init_app(app)
+    # Register ONLY the new UI blueprint
+    from routes.ui import ui_bp
+    app.register_blueprint(ui_bp)
 
-    # HTTP blueprints
-    from routes.pages import pages_bp
-    from routes.meetings import meetings_bp
-    from routes.tasks import tasks_bp
-    from routes.share import share_bp
-    from routes.settings import settings_bp
-    app.register_blueprint(pages_bp)
-    app.register_blueprint(meetings_bp)
-    app.register_blueprint(tasks_bp)
-    app.register_blueprint(share_bp)
-    app.register_blueprint(settings_bp)
-
-    # Live page route (template under templates/pages/live.html)
-    from flask import render_template
-    @app.get("/live")
-    def live():
-        return render_template(
-            "pages/live.html",
-            force_polling=FORCE_POLLING,
-            sio_path=SOCKETIO_PATH,
-        )
-
-    # Register websocket handlers AFTER socketio is ready (no circular import)
-    from routes.websocket import ws_bp, register_socketio_handlers
-    app.register_blueprint(ws_bp)
-    register_socketio_handlers(socketio)
-
+    # Do NOT register any other legacy blueprints that map "/" or "/live"
     return app
-
-app = create_app()
-
-if __name__ == "__main__":
-    # Local dev runner; Replit uses gunicorn
-    socketio.run(app, host="0.0.0.0", port=5000)

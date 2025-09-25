@@ -10,7 +10,6 @@ from typing import Optional, Dict, Any, TYPE_CHECKING
 from sqlalchemy import Integer, Float, String, Text, DateTime, JSON, ForeignKey, BigInteger, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
-from extensions import db
 
 if TYPE_CHECKING:
     from .session import Session

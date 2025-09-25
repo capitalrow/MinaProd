@@ -1,16 +1,13 @@
-"""
-Mina — entrypoint (single Socket.IO runtime)
-"""
+# main.py
 import os
-import eventlet
-eventlet.monkey_patch()
-
 from app_refactored import create_app, socketio
-# main.py – gunicorn entrypoint
-from app import app  # exposes "app" so gunicorn can load main:app
 
 app = create_app()
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "5000"))
-    socketio.run(app, host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", "5000"))
+    host = "0.0.0.0"
+    if socketio:
+        socketio.run(app, host=host, port=port)
+    else:
+        app.run(host=host, port=port, debug=False)

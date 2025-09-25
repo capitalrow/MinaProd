@@ -32,7 +32,7 @@ def health_check():
         
         # Add database connectivity check
         try:
-            from app_refactored import db
+            from app import db
             # Simple query to check database connectivity
             from sqlalchemy import text
             db.session.execute(text('SELECT 1')).fetchone()
@@ -73,7 +73,7 @@ def detailed_health_check():
         JSON response with detailed health and performance metrics
     """
     try:
-        from app_refactored import db
+        from app import db
         import psutil
         import sys
         
@@ -162,7 +162,7 @@ def readiness_check():
     """
     try:
         # Check critical dependencies
-        from app_refactored import db
+        from app import db
         
         # Test database connection
         from sqlalchemy import text
@@ -218,7 +218,7 @@ def api_health_check():
         
         # Check database connectivity
         try:
-            from app_refactored import db
+            from app import db
             from sqlalchemy import text
             db.session.execute(text('SELECT 1')).fetchone()
             status["database"] = "connected"

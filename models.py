@@ -1,9 +1,8 @@
-from app_refactored import db
+from app import db
 from datetime import datetime
 from sqlalchemy import JSON
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
-from db import db
 
 
 class User(db.Model):
@@ -195,63 +194,3 @@ class SessionAnalytics(db.Model):
     
     def __repr__(self):
         return f'<SessionAnalytics {self.date} {self.hour:02d}:00>'
-
-class Workspace(db.Model):
-    __tablename__ = "workspaces"
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
-    retention_days = db.Column(db.Integer, default=90)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class User(db.Model):
-    __tablename__ = "users"
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(255), unique=True, nullable=False)
-    name = db.Column(db.String(120))
-    tz = db.Column(db.String(64), default="UTC")
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Meeting(db.Model):
-    __tablename__ = "meetings"
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255), default="Untitled Meeting")
-    started_at = db.Column(db.DateTime, default=datetime.utcnow)
-    ended_at = db.Column(db.DateTime)
-    duration_s = db.Column(db.Integer)
-    source = db.Column(db.String(32), default="live")       # live|upload
-    status = db.Column(db.String(32), default="processed")  # draft|processing|processed
-    participants = db.Column(db.Text)  # CSV or JSON
-    tags = db.Column(db.Text)
-    transcript = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Summary(db.Model):
-    __tablename__ = "summaries"
-    id = db.Column(db.Integer, primary_key=True)
-    meeting_id = db.Column(db.Integer, db.ForeignKey("meetings.id"), nullable=False)
-    tldr = db.Column(db.Text)
-    bullets = db.Column(db.Text)
-    decisions = db.Column(db.Text)
-    risks = db.Column(db.Text)
-    questions = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Task(db.Model):
-    __tablename__ = "tasks"
-    id = db.Column(db.Integer, primary_key=True)
-    meeting_id = db.Column(db.Integer, db.ForeignKey("meetings.id"), nullable=False)
-    title = db.Column(db.String(500), nullable=False)
-    owner = db.Column(db.String(120))
-    due_at = db.Column(db.DateTime)
-    status = db.Column(db.String(32), default="open")  # open|next|doing|done
-    start_s = db.Column(db.Integer)
-    end_s = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class ShareLink(db.Model):
-    __tablename__ = "share_links"
-    id = db.Column(db.Integer, primary_key=True)
-    meeting_id = db.Column(db.Integer, db.ForeignKey("meetings.id"), nullable=False)
-    token = db.Column(db.String(64), unique=True, nullable=False)
-    redact_pii = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)

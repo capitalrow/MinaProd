@@ -182,7 +182,7 @@ class SessionPersistenceManager:
     def _backup_to_database(self, session_id: str, state: Dict[str, Any]):
         """Backup session state to database."""
         try:
-            from app_refactored import db
+            from app import db
             from models.session import Session
             
             # Update existing session or create backup entry

@@ -1,94 +1,320 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{{ title or "Mina" }}</title>
-
-  <!-- Core styles (use the one you prefer / have) -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/enhanced_ui.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/professional_ui.css') }}">
-  <style>
-    :root{
-      --bg:#0e1014;--panel:#131620;--ink:#2f6df9;--text:#e8eefc;--muted:#93a0b4;--line:#1d2230;
-    }
-    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;}
-    .shell{display:grid;grid-template-columns:260px 1fr;min-height:100vh;}
-    .sidebar{background:linear-gradient(180deg,#0f121a,#0e1118);border-right:1px solid var(--line);padding:16px;position:sticky;top:0;height:100vh;}
-    .brand{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
-    .brand .logo{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#22d3ee);}
-    .brand .name{font-weight:600;letter-spacing:.3px}
-    .search{margin:10px 0 14px}
-    .search input{width:100%;background:#0b0e14;border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:10px;outline:none}
-    nav a{display:flex;align-items:center;gap:10px;color:var(--muted);text-decoration:none;padding:10px 12px;border-radius:10px;margin:4px 0}
-    nav a:hover{background:#0b0e14}
-    nav a.active{background:#101522;border:1px solid #1b2440;color:#cfe0ff}
-    .content{padding:24px}
-    .page-head{display:flex;align-items:center;gap:10px;margin:0 0 16px}
-    .page-head h1{font-size:24px;margin:0}
-    .pill{font-size:12px;padding:4px 10px;border-radius:999px;background:#101522;color:#bcd2ff;border:1px solid #1b2440}
-    .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
-    .grid{display:grid;gap:16px}
-    .grid.cols-2{grid-template-columns:1fr 1fr}
-    .grid.cols-3{grid-template-columns:repeat(3,1fr)}
-    .toolbar{display:flex;gap:8px}
-    .btn{background:#101522;border:1px solid #1b2440;color:#cfe0ff;padding:10px 12px;border-radius:10px;cursor:pointer}
-    .btn.primary{background:linear-gradient(90deg,#3b82f6,#22d3ee);color:#00112c;border:none}
-    .footer-space{height:32px}
-    @media (max-width:1100px){.shell{grid-template-columns:64px 1fr}.label{display:none}}
-    @media (max-width:720px){.content{padding:16px}.grid.cols-3{grid-template-columns:1fr}}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mina - Meeting Insights & Action{% endblock %}</title>
+    
+    <!-- Bootstrap CSS with Replit Dark Theme -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <!-- Clean Professional CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/clean.css') }}">
+    
+    <!-- Socket.IO Client -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    
+    {% block head %}{% endblock %}
 </head>
 <body>
-  <div class="shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="logo"></div>
-        <div class="name">Mina</div>
-      </div>
-      <div class="search"><input placeholder="Search meetings, people, actions…" /></div>
-      <nav>
-        <a href="{{ url_for('pages.dashboard') }}" class="{% if request.path.startswith('/dashboard') %}active{% endif %}">🏠 <span class="label">Dashboard</span></a>
-        <a href="{{ url_for('pages.live') }}" class="{% if request.path.startswith('/live') %}active{% endif %}">🎙️ <span class="label">Live</span></a>
-        <a href="{{ url_for('pages.meetings') }}" class="{% if request.path.startswith('/meetings') %}active{% endif %}">📅 <span class="label">Meeting Library</span></a>
-        <a href="{{ url_for('pages.tasks') }}" class="{% if request.path.startswith('/tasks') %}active{% endif %}">✅ <span class="label">Tasks</span></a>
-        <a href="{{ url_for('pages.calendar') }}" class="{% if request.path.startswith('/calendar') %}active{% endif %}">🗓️ <span class="label">Calendar</span></a>
-        <a href="{{ url_for('pages.settings') }}" class="{% if request.path.startswith('/settings') %}active{% endif %}">⚙️ <span class="label">Settings</span></a>
-      </nav>
-    </aside>
-
-    <main class="content">
-      <header class="page-head">
-        <h1>{{ title or "" }}</h1>
-        {% if tagline %}<span class="pill">{{ tagline }}</span>{% endif %}
-        <div class="spacer"></div>
-        <div class="toolbar">
-          <button class="btn">Bell</button>
-          <button class="btn">Help</button>
-          <button class="btn">Alex</button>
+    <!-- Skip Link for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Industry-Standard Navigation with Optimized Information Architecture -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top" role="navigation" aria-label="Main navigation">
+        <div class="container-fluid px-4">
+            <!-- Left: Brand and Primary Navigation (F-Pattern Left Side) -->
+            <div class="d-flex align-items-center flex-grow-1">
+                <a class="navbar-brand d-flex align-items-center me-4" href="{{ url_for('transcription.index') }}" aria-label="Mina - Meeting Insights Platform">
+                    <div class="brand-icon-container me-2">
+                        <i class="fas fa-microphone" aria-hidden="true"></i>
+                    </div>
+                    <div class="brand-text">
+                        <span class="fw-bold">Mina</span>
+                        <small class="d-none d-lg-block text-muted">AI Transcription</small>
+                    </div>
+                </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+                <!-- Primary Actions (Industry Standard: Most Important Actions Visible) -->
+                <div class="primary-actions d-none d-lg-flex ms-3">
+                    <a href="{{ url_for('transcription.live_transcription') }}" 
+                       class="btn btn-primary btn-sm me-2 d-flex align-items-center"
+                       aria-label="Start new transcription session">
+                        <i class="fas fa-plus me-1" aria-hidden="true"></i>
+                        <span>New Session</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Right: Navigation and User Actions (F-Pattern Right Side) -->
+            <div class="d-flex align-items-center gap-3">
+                <!-- Navigation Menu -->
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav" role="menubar">
+                        <li class="nav-item" role="none">
+                            <a class="nav-link d-flex align-items-center" href="{{ url_for('transcription.index') }}" role="menuitem" 
+                               aria-current="{% if request.endpoint == 'transcription.index' %}page{% else %}false{% endif %}">
+                                <i class="fas fa-tachometer-alt me-2" aria-hidden="true"></i>
+                                <span class="d-lg-none">Dashboard</span>
+                                <span class="d-none d-lg-inline">Dashboard</span>
+                            </a>
+                        </li>
+                        <li class="nav-item" role="none">
+                            <a class="nav-link d-flex align-items-center" href="{{ url_for('sessions.list_sessions') }}" role="menuitem"
+                               aria-current="{% if request.endpoint == 'sessions.list_sessions' %}page{% else %}false{% endif %}">
+                                <i class="fas fa-history me-2" aria-hidden="true"></i>
+                                <span>Sessions</span>
+                            </a>
+                        </li>
+                    </ul>
+                
+                </div>
+                
+                <!-- User Actions Dropdown (Industry Standard: Right-Side User Menu) -->
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center px-2" href="#" role="button" 
+                       data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" id="userMenuDropdown">
+                        <div class="user-avatar me-2">
+                            <i class="fas fa-user-circle fa-lg" aria-hidden="true"></i>
+                        </div>
+                        <div class="user-info d-none d-md-block">
+                            <small class="text-muted d-block">User</small>
+                        </div>
+                        <i class="fas fa-chevron-down ms-2" aria-hidden="true"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" role="menu" aria-labelledby="userMenuDropdown">
+                        <li role="none">
+                            <div class="dropdown-header">
+                                <strong>Account</strong>
+                            </div>
+                        </li>
+                        <li role="none">
+                            <a class="dropdown-item d-flex align-items-center" href="#" role="menuitem"
+                               data-bs-toggle="modal" data-bs-target="#settingsModal">
+                                <i class="fas fa-sliders-h me-2" aria-hidden="true"></i>
+                                <span>Preferences</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a class="dropdown-item d-flex align-items-center" href="#" role="menuitem">
+                                <i class="fas fa-bell me-2" aria-hidden="true"></i>
+                                <span>Notifications</span>
+                                <span class="badge bg-primary ms-auto">3</span>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider" role="separator"></li>
+                        <li role="none">
+                            <div class="dropdown-header">
+                                <strong>System</strong>
+                            </div>
+                        </li>
+                        <li role="none">
+                            <a class="dropdown-item d-flex align-items-center" href="{{ url_for('health.health_check') }}" 
+                               target="_blank" role="menuitem">
+                                <i class="fas fa-heartbeat me-2" aria-hidden="true"></i>
+                                <span>System Health</span>
+                                <i class="fas fa-external-link-alt ms-auto" aria-hidden="true" title="Opens in new tab"></i>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a class="dropdown-item d-flex align-items-center" href="#" role="menuitem">
+                                <i class="fas fa-question-circle me-2" aria-hidden="true"></i>
+                                <span>Help & Support</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            </div>
         </div>
-      </header>
+    </nav>
+    
+    <!-- Industry Standard: Status/Alert Bar (Below Navigation) -->
+    <div id="global-status-bar" class="status-bar d-none" role="alert" aria-live="polite">
+        <div class="container-fluid px-4">
+            <div class="d-flex align-items-center justify-content-between py-2">
+                <div class="d-flex align-items-center">
+                    <i class="status-icon me-2" aria-hidden="true"></i>
+                    <span class="status-message"></span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" onclick="hideStatusBar()" aria-label="Dismiss notification"></button>
+            </div>
+        </div>
+    </div>
 
-      {% block body %}{% endblock %}
-      <div class="footer-space"></div>
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main id="main-content" class="container my-4" role="main" tabindex="-1">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="Breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{{ url_for('transcription.index') }}" class="text-decoration-none">
+                        <i class="fas fa-home me-1" aria-hidden="true"></i>Dashboard
+                    </a>
+                </li>
+                {% block breadcrumb %}{% endblock %}
+            </ol>
+        </nav>
+        
+        {% block content %}{% endblock %}
     </main>
-  </div>
-  <script>
-  (function(){
-    const KEY = 'mina:sidebar:collapsed';
-    const root = document.querySelector('.shell');
-    const collapsed = localStorage.getItem(KEY)==='1';
-    if (collapsed) root.style.gridTemplateColumns = '64px 1fr';
 
-    document.addEventListener('keydown', (e)=>{
-      if (e.altKey && e.key.toLowerCase()==='s'){
-        const isCollapsed = root.style.gridTemplateColumns==='64px 1fr';
-        root.style.gridTemplateColumns = isCollapsed ? '260px 1fr' : '64px 1fr';
-        localStorage.setItem(KEY, isCollapsed ? '0' : '1');
-      }
-    });
-    console.log('Tip: Alt+S toggles the sidebar');
-  })();
-  </script>
+    <!-- Enhanced Footer -->
+    <footer class="mt-5" role="contentinfo" aria-label="Site footer">
+        <div class="container py-4">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-microphone me-2 text-primary" aria-hidden="true"></i>
+                        <h6 class="mb-0 fw-bold">Mina Platform</h6>
+                    </div>
+                    <p class="text-muted small mb-0">
+                        Real-time meeting transcription and AI-powered insights
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-md-end gap-3">
+                        <span class="text-muted small">Version 0.1.0</span>
+                        <a href="{{ url_for('health.health_check') }}" 
+                           class="btn btn-outline-secondary btn-sm d-flex align-items-center" 
+                           target="_blank" aria-label="Check system health status">
+                            <i class="fas fa-heartbeat me-1" aria-hidden="true"></i>
+                            <span>Status</span>
+                            <i class="fas fa-external-link-alt ms-1" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Settings Modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-cog me-2"></i>Settings
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="settingsForm">
+                        <div class="mb-3">
+                            <label for="defaultLanguage" class="form-label">Default Language</label>
+                            <select class="form-select" id="defaultLanguage">
+                                <option value="en" selected>English</option>
+                                <option value="es">Spanish</option>
+                                <option value="fr">French</option>
+                                <option value="de">German</option>
+                                <option value="zh">Chinese</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="vadSensitivity" class="form-label">VAD Sensitivity</label>
+                            <input type="range" class="form-range" id="vadSensitivity" 
+                                   min="0.1" max="1.0" step="0.1" value="0.5">
+                            <div class="form-text">Adjust voice activity detection sensitivity</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="enableSpeakerDetection" checked>
+                                <label class="form-check-label" for="enableSpeakerDetection">
+                                    Enable Speaker Detection
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="enableSentimentAnalysis">
+                                <label class="form-check-label" for="enableSentimentAnalysis">
+                                    Enable Sentiment Analysis
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveSettings">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Application JavaScript -->
+    {% block scripts %}{% endblock %}
+    
+    <script>
+        // Global settings management
+        document.getElementById('saveSettings')?.addEventListener('click', function() {
+            const settings = {
+                defaultLanguage: document.getElementById('defaultLanguage').value,
+                vadSensitivity: parseFloat(document.getElementById('vadSensitivity').value),
+                enableSpeakerDetection: document.getElementById('enableSpeakerDetection').checked,
+                enableSentimentAnalysis: document.getElementById('enableSentimentAnalysis').checked
+            };
+            
+            // Save to localStorage
+            localStorage.setItem('minaSettings', JSON.stringify(settings));
+            
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
+            
+            // Show success message
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                Settings saved successfully!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('main').insertBefore(alertDiv, document.querySelector('main').firstChild);
+        });
+        
+        // Load saved settings
+        function loadSettings() {
+            const saved = localStorage.getItem('minaSettings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                document.getElementById('defaultLanguage').value = settings.defaultLanguage || 'en';
+                document.getElementById('vadSensitivity').value = settings.vadSensitivity || 0.5;
+                document.getElementById('enableSpeakerDetection').checked = settings.enableSpeakerDetection !== false;
+                document.getElementById('enableSentimentAnalysis').checked = settings.enableSentimentAnalysis || false;
+            }
+        }
+        
+        // Initialize settings on page load
+        document.addEventListener('DOMContentLoaded', loadSettings);
+    </script>
 </body>
 </html>

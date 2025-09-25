@@ -2,10 +2,10 @@
 Streaming-specific database models for real-time transcription
 """
 
-from app_refactored import db
+from app import db
 from datetime import datetime
 from sqlalchemy import JSON
-from extensions import db
+
 
 class TranscriptionSession(db.Model):
     __tablename__ = 'transcription_sessions'

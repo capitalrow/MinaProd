@@ -7,7 +7,7 @@ from datetime import datetime
 from sqlalchemy import String, Integer, Boolean, DateTime, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from models.base import Base
-from extensions import db
+
 
 class SharedLink(Base):
     """Model for session sharing links with expiration support."""
