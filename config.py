@@ -2,44 +2,48 @@ import os
 from datetime import timedelta
 
 class Config:
-    # Core
-    SECRET_KEY = os.environ.get("SECRET_KEY", "change-me")
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL") or os.environ.get("MINA_DB_URL", "sqlite:///mina.db")
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
+    ENV = os.getenv("FLASK_ENV", "development")
+    DEBUG = ENV == "development"
 
-    # Live only (no mocks)
-    USE_TRANSCRIPTION_PIPELINE = os.environ.get("USE_TRANSCRIPTION_PIPELINE", "true").lower() == "true"
-    ENABLE_MOCK = False  # hard off – real world only
+    # Sessions / limits
+    SESSION_TTL_MINUTES = int(os.getenv("SESSION_TTL_MINUTES", "60"))
+    PERMANENT_SESSION_LIFETIME = timedelta(minutes=SESSION_TTL_MINUTES)
+    MAX_SESSION_SECONDS = int(os.getenv("MAX_SESSION_SECONDS", "1800"))
+    MAX_CHUNKS_PER_MINUTE = int(os.getenv("MAX_CHUNKS_PER_MINUTE", "120"))
 
-    # Cookies & CSRF
-    ACCESS_COOKIE_NAME = "mina_access"
-    REFRESH_COOKIE_NAME = "mina_refresh"
-    CSRF_COOKIE_NAME = "mina_csrf"
-    JWT_COOKIE_NAME = "mina_jwt"
-    JWT_EXPIRE_MINUTES = int(os.environ.get("JWT_EXPIRE_MINUTES", "4320"))  # 3 days
-    COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "false").lower() == "true"  # set true on HTTPS
-    COOKIE_SAMESITE = os.environ.get("COOKIE_SAMESITE", "Lax")
-    ACCESS_EXPIRES = timedelta(minutes=int(os.environ.get("ACCESS_EXPIRES_MIN", "20")))
-    REFRESH_EXPIRES = timedelta(days=int(os.environ.get("REFRESH_EXPIRES_DAYS", "14")))
+    # HTTP request safety
+    MAX_JSON_BODY_BYTES = int(os.getenv("MAX_JSON_BODY_BYTES", "200000"))   # ~200 KB
+    MAX_FORM_BODY_BYTES = int(os.getenv("MAX_FORM_BODY_BYTES", "20000000")) # ~20 MB for final upload
+    RATE_LIMIT_PER_IP_MIN = int(os.getenv("RATE_LIMIT_PER_IP_MIN", "120"))
 
-    # Sharing
-    SHARE_TOKEN_BYTES = int(os.environ.get("SHARE_TOKEN_BYTES", "16"))
+    # OpenAI
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+    WHISPER_MODEL = os.getenv("WHISPER_MODEL", "whisper-1")
+    SUMMARY_MODEL = os.getenv("SUMMARY_MODEL", "gpt-4o-mini")
+    AUTO_SUMMARY = os.getenv("AUTO_SUMMARY", "true").lower() == "true"
+    LANGUAGE_HINT = os.getenv("LANGUAGE_HINT") or None  # None => auto-detect
 
-    # Limits
-    MAX_JSON_BYTES = int(os.environ.get("MAX_JSON_BYTES", "1048576"))  # 1MB JSON
-    MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "100"))        # 100MB audio/video
+    # Realtime
+    INTERIM_INTERVAL_MS = int(os.getenv("INTERIM_INTERVAL_MS", "800"))
+    MAX_CHUNK_BYTES = int(os.getenv("MAX_CHUNK_BYTES", "350000"))
 
-    # CORS (set your Replit origin in prod)
-    CORS_ALLOW = os.environ.get("CORS_ALLOW", "*")
+    # Safety / Redaction
+    REDACT_PII = os.getenv("REDACT_PII", "true").lower() == "true"
 
-    # Security headers
-    ENABLE_CSP_REPORT_ONLY = os.environ.get("CSP_REPORT_ONLY", "true").lower() == "true"
+    # Circuit breaker (interims)
+    CB_WINDOW_SEC = int(os.getenv("CB_WINDOW_SEC", "20"))
+    CB_FAIL_THRESHOLD = int(os.getenv("CB_FAIL_THRESHOLD", "3"))
+    CB_COOLDOWN_SEC = int(os.getenv("CB_COOLDOWN_SEC", "10"))
 
-    # Mail
-    SMTP_HOST = os.environ.get("SMTP_HOST", "")
-    SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
-    SMTP_USERNAME = os.environ.get("SMTP_USERNAME", "")
-    SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
-    SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "true").lower() == "true"
-    MAIL_FROM = os.environ.get("MAIL_FROM", "noreply@mina.app")
-    PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "http://localhost:8080")  # set your public URL
+    # Metrics
+    METRICS_DIR = os.getenv("METRICS_DIR", "./data")
+
+    # Internal endpoints
+    INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY", "")  # empty => disabled
+
+    # Logging
+    JSON_LOGS = os.getenv("JSON_LOGS", "false").lower() == "true"
+
+    # CORS
+    ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else []

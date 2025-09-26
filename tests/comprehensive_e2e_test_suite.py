@@ -73,17 +73,16 @@ class MinaE2ETestSuite:
         """Test that the homepage loads successfully"""
         self.log_test_start("Homepage Load Test")
         try:
-            # Follow redirect to /app
-            response = self.session.get(f"{self.base_url}/", allow_redirects=True)
+            response = self.session.get(f"{self.base_url}/")
             
             if response.status_code == 200:
-                # Check for key elements in the SPA HTML
+                # Check for key elements in the HTML
                 html = response.text
                 required_elements = [
                     '<title>Mina',
-                    'id="app"',
-                    'Library',
-                    'Live'
+                    'Dashboard',
+                    'Recent Sessions',
+                    'Live Transcription'
                 ]
                 
                 missing_elements = [elem for elem in required_elements if elem not in html]
@@ -103,29 +102,28 @@ class MinaE2ETestSuite:
                                "Failed to connect to homepage", str(e))
 
     def test_live_transcription_page(self):
-        """Test live transcription page loads (SPA architecture)"""
+        """Test live transcription page loads"""
         self.log_test_start("Live Transcription Page Test")
         try:
-            # Test the main app route since it's now a SPA
-            response = self.session.get(f"{self.base_url}/app")
+            response = self.session.get(f"{self.base_url}/live")
             
             if response.status_code == 200:
                 html = response.text
                 required_elements = [
-                    'href="#/live"',
-                    'id="view"',
-                    'Live',
-                    'mina.socket.js'
+                    'recordButton',
+                    'transcript',
+                    'Real-time Transcription',
+                    'Start Recording'
                 ]
                 
                 missing_elements = [elem for elem in required_elements if elem not in html]
                 
                 if not missing_elements:
                     self.log_test_result("Live Transcription Page Test", "PASS", 
-                                       "SPA architecture supports live transcription")
+                                       "Live page loaded with all transcription elements")
                 else:
                     self.log_test_result("Live Transcription Page Test", "FAIL", 
-                                       f"Missing SPA elements: {missing_elements}")
+                                       f"Missing transcription elements: {missing_elements}")
             else:
                 self.log_test_result("Live Transcription Page Test", "FAIL", 
                                    f"HTTP {response.status_code}: {response.reason}")
@@ -135,29 +133,27 @@ class MinaE2ETestSuite:
                                "Failed to load live transcription page", str(e))
 
     def test_sessions_page(self):
-        """Test sessions listing page (SPA architecture)"""
+        """Test sessions listing page"""
         self.log_test_start("Sessions Page Test")
         try:
-            # Test the main app route and check for library navigation
-            response = self.session.get(f"{self.base_url}/app")
+            response = self.session.get(f"{self.base_url}/sessions")
             
             if response.status_code == 200:
                 html = response.text
                 required_elements = [
-                    'href="#/library"',
-                    'id="view"',
-                    'Library',
-                    'API.conv.list'
+                    'Sessions',
+                    'Recent Activity',
+                    'All Sessions'
                 ]
                 
                 present_elements = [elem for elem in required_elements if elem in html]
                 
                 if len(present_elements) >= 2:
                     self.log_test_result("Sessions Page Test", "PASS", 
-                                       f"SPA library support loaded with {len(present_elements)}/4 elements")
+                                       f"Sessions page loaded with {len(present_elements)}/3 elements")
                 else:
                     self.log_test_result("Sessions Page Test", "FAIL", 
-                                       f"Only {len(present_elements)}/4 required SPA elements found")
+                                       f"Only {len(present_elements)}/3 required elements found")
             else:
                 self.log_test_result("Sessions Page Test", "FAIL", 
                                    f"HTTP {response.status_code}: {response.reason}")
@@ -169,41 +165,45 @@ class MinaE2ETestSuite:
     # ==================== API ENDPOINT TESTS ====================
     
     def test_websocket_info_endpoint(self):
-        """Test API endpoints and application responsiveness"""
-        self.log_test_start("API Endpoints Test")
+        """Test WebSocket info API endpoint"""
+        self.log_test_start("WebSocket Info API Test")
         try:
-            # Test the main application routes are responsive
-            response = self.session.get(f"{self.base_url}/app")
+            response = self.session.get(f"{self.base_url}/api/enhanced-ws/info")
             
             if response.status_code == 200:
-                html = response.text
-                # Check if JavaScript APIs are loaded
-                if 'mina.api.js' in html and 'mina.socket.js' in html:
-                    self.log_test_result("API Endpoints Test", "PASS", 
-                                       f"Application API structure is properly loaded")
+                data = response.json()
+                required_fields = ['enhanced_websocket', 'features', 'status']
+                
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if not missing_fields:
+                    features = data.get('enhanced_websocket', {}).get('features', {})
+                    feature_count = len(features)
+                    self.log_test_result("WebSocket Info API Test", "PASS", 
+                                       f"API responds correctly with {feature_count} features")
                 else:
-                    self.log_test_result("API Endpoints Test", "PASS", 
-                                       f"Application is responsive")
+                    self.log_test_result("WebSocket Info API Test", "FAIL", 
+                                       f"Missing API fields: {missing_fields}")
             else:
-                self.log_test_result("API Endpoints Test", "FAIL", 
-                                   f"Application returned HTTP {response.status_code}")
+                self.log_test_result("WebSocket Info API Test", "FAIL", 
+                                   f"API returned HTTP {response.status_code}")
                 
         except Exception as e:
-            self.log_test_result("API Endpoints Test", "FAIL", 
-                               "Failed to test application responsiveness", str(e))
+            self.log_test_result("WebSocket Info API Test", "FAIL", 
+                               "Failed to call WebSocket info API", str(e))
 
     # ==================== PERFORMANCE TESTS ====================
     
     def test_page_load_performance(self):
         """Test page load performance across all routes"""
         self.log_test_start("Page Load Performance Test")
-        routes = ["/", "/app"]  # Only test existing SPA routes
+        routes = ["/", "/live", "/sessions"]
         performance_data = {}
         
         try:
             for route in routes:
                 start_time = time.time()
-                response = self.session.get(f"{self.base_url}{route}", allow_redirects=True)
+                response = self.session.get(f"{self.base_url}{route}")
                 load_time = time.time() - start_time
                 
                 performance_data[route] = {
@@ -237,10 +237,10 @@ class MinaE2ETestSuite:
                 user_session = requests.Session()
                 start_time = time.time()
                 
-                # User journey: SPA routes only
-                routes = ["/", "/app"]  # Only test existing routes
+                # User journey: Dashboard -> Live -> Sessions
+                routes = ["/", "/live", "/sessions"]
                 for route in routes:
-                    response = user_session.get(f"{self.base_url}{route}", allow_redirects=True)
+                    response = user_session.get(f"{self.base_url}{route}")
                     if response.status_code != 200:
                         return {"user_id": user_id, "success": False, "error": f"Route {route} failed"}
                     time.sleep(0.1)  # Brief pause between requests
@@ -279,17 +279,17 @@ class MinaE2ETestSuite:
         """Test HTML structure for accessibility compliance"""
         self.log_test_start("HTML Accessibility Structure Test")
         try:
-            response = self.session.get(f"{self.base_url}/app")
+            response = self.session.get(f"{self.base_url}/live")
             html = response.text
             
-            # Check for accessibility elements in SPA
+            # Check for accessibility elements
             accessibility_checks = {
+                'aria-label': 'aria-label=' in html,
+                'role attributes': 'role=' in html,
                 'semantic navigation': '<nav' in html,
                 'heading structure': '<h1' in html or '<h2' in html,
-                'proper labeling': 'Live' in html and 'Library' in html,
-                'button elements': '<button' in html,
-                'structured content': 'id=' in html,
-                'viewport meta': 'viewport' in html
+                'skip links': 'skip' in html.lower(),
+                'alt attributes': 'alt=' in html
             }
             
             passed_checks = sum(accessibility_checks.values())
@@ -313,15 +313,15 @@ class MinaE2ETestSuite:
         """Test mobile responsiveness by checking CSS and meta tags"""
         self.log_test_start("Mobile Responsiveness Test")
         try:
-            response = self.session.get(f"{self.base_url}/app")
+            response = self.session.get(f"{self.base_url}/live")
             html = response.text
             
             mobile_checks = {
                 'viewport meta': 'viewport' in html,
-                'responsive css': 'tailwindcss' in html,  # Uses Tailwind CSS
-                'mobile classes': 'max-w-' in html or 'mx-auto' in html,
-                'flexible layout': 'flex' in html,
-                'responsive grid': 'gap-' in html or 'space-y' in html
+                'responsive css': 'media' in html or '@media' in html,
+                'mobile optimization': 'mobile' in html.lower(),
+                'touch friendly': 'touch' in html.lower(),
+                'responsive grid': 'col-' in html or 'grid' in html
             }
             
             passed_checks = sum(mobile_checks.values())
