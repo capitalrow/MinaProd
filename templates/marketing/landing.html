@@ -831,6 +831,57 @@
             transform: scale(0.8);
         }
 
+        /* ✨ ENHANCED: Form Focus States and Loading Animations */
+        input, textarea, select {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid var(--neutral-200);
+            border-radius: var(--mina-radius-md);
+            padding: var(--mina-space-3) var(--mina-space-4);
+            font-size: var(--mina-font-size-base);
+            background: white;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-500);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .loading-state {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading-state::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(37, 99, 235, 0.1), 
+                transparent);
+            animation: shimmer-load 2s infinite;
+        }
+
+        @keyframes shimmer-load {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        /* ✨ ENHANCED: Smooth Scroll for Internal Links */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* ✨ ENHANCED: Interactive Elements Cursor Enhancement */
+        .cta-button, .nav-link, .feature-card, .pricing-card, 
+        .testimonial, .hero-badge, .stat-item, .trust-item {
+            cursor: pointer;
+        }
+
         .hero-stats {
             display: flex;
             justify-content: center;
@@ -3858,6 +3909,69 @@
                         scale: 1.05,
                         duration: 0.2,
                         ease: 'back.out(1.7)'
+                    });
+                });
+            });
+
+            // ✨ ENHANCED: Testimonial Hover Micro-interactions
+            document.querySelectorAll('.testimonial').forEach(testimonial => {
+                testimonial.addEventListener('mouseenter', () => {
+                    gsap.to(testimonial, {
+                        y: -6,
+                        boxShadow: '0 12px 35px rgba(15, 23, 42, 0.1)',
+                        duration: 0.3,
+                        ease: 'power2.out'
+                    });
+                });
+                
+                testimonial.addEventListener('mouseleave', () => {
+                    gsap.to(testimonial, {
+                        y: 0,
+                        boxShadow: '0 4px 20px rgba(15, 23, 42, 0.06)',
+                        duration: 0.3,
+                        ease: 'power2.out'
+                    });
+                });
+            });
+
+            // ✨ ENHANCED: Badge and Stats Micro-interactions
+            document.querySelectorAll('.hero-badge, .stat-item, .trust-item').forEach(element => {
+                element.addEventListener('mouseenter', () => {
+                    gsap.to(element, {
+                        scale: 1.05,
+                        duration: 0.2,
+                        ease: 'back.out(1.7)'
+                    });
+                });
+                
+                element.addEventListener('mouseleave', () => {
+                    gsap.to(element, {
+                        scale: 1,
+                        duration: 0.2,
+                        ease: 'power2.out'
+                    });
+                });
+            });
+
+            // ✨ ENHANCED: Form Focus States and Interactions
+            document.querySelectorAll('input, textarea, select').forEach(input => {
+                input.addEventListener('focus', () => {
+                    gsap.to(input, {
+                        scale: 1.02,
+                        borderColor: 'var(--primary-500)',
+                        boxShadow: '0 0 0 3px rgba(37, 99, 235, 0.1)',
+                        duration: 0.2,
+                        ease: 'power2.out'
+                    });
+                });
+                
+                input.addEventListener('blur', () => {
+                    gsap.to(input, {
+                        scale: 1,
+                        borderColor: 'var(--neutral-200)',
+                        boxShadow: '0 0 0 0px rgba(37, 99, 235, 0)',
+                        duration: 0.2,
+                        ease: 'power2.out'
                     });
                 });
             });
