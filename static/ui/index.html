@@ -12,7 +12,7 @@
   <style>
     html,body{height:100%} .btn{ @apply px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-white}
     .card{ @apply bg-slate-800/60 rounded-2xl p-4 border border-slate-700}
-    .input{ @apply w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors}
+    .input{ @apply w-full bg-white border border-gray-300 rounded-xl p-3 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors shadow-sm}
     .input:focus{ @apply outline-none ring-2 ring-violet-500 border-violet-500}
     .badge{ @apply px-3 py-1 rounded-full text-xs font-medium}
     .nav-link{ @apply text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-slate-800/50 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500}
@@ -24,11 +24,16 @@
     .loading{ @apply animate-pulse}
     /* Mobile and high contrast support */
     @media (max-width: 768px) {
-      .input{ @apply bg-slate-800 text-slate-200 placeholder-slate-500}
+      .input{ @apply bg-white text-gray-900 placeholder-gray-500 border-gray-400}
     }
     @media (prefers-contrast: high) {
       .btn{ @apply border-2 border-current}
-      .input{ @apply border-2 border-slate-400 bg-slate-800 text-slate-200}
+      .input{ @apply border-2 border-gray-600 bg-white text-black placeholder-gray-600}
+    }
+    /* Force dark text in inputs */
+    .input, .input:focus, input[type="text"], input[type="email"], input[type="password"] {
+      color: #111827 !important;
+      background-color: #ffffff !important;
     }
     /* Reduced motion support */
     @media (prefers-reduced-motion: reduce) {
@@ -394,8 +399,8 @@
       registerBtn.addEventListener('click', handleRegister);
       
       setTimeout(() => {
-        const nameInput = nameInput.querySelector('input');
-        if (nameInput) nameInput.focus();
+        const nameInputEl = nameInput.querySelector('input');
+        if (nameInputEl) nameInputEl.focus();
       }, 100);
     }
 
