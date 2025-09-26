@@ -207,6 +207,32 @@
             color: var(--color-gray-600);
         }
         
+        .loading-state {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .meeting-actions, .task-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .btn-sm {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            font-size: var(--font-size-sm);
+        }
+        
+        .btn-secondary {
+            background: var(--color-gray-100);
+            color: var(--color-gray-700);
+            border: 1px solid var(--color-gray-300);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--color-gray-200);
+        }
+        
         .btn {
             padding: var(--spacing-sm) var(--spacing-md);
             border-radius: var(--border-radius-md);
@@ -281,21 +307,29 @@
             </header>
             
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value">{{ stats.total_meetings }}</div>
+                <div class="stat-card" data-stat="total-meetings">
+                    <div class="stat-value">{{ stats.total_meetings if stats else 0 }}</div>
                     <div class="stat-label">Total Meetings</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{ stats.total_tasks }}</div>
+                <div class="stat-card" data-stat="total-tasks">
+                    <div class="stat-value">{{ stats.total_tasks if stats else 0 }}</div>
                     <div class="stat-label">Total Tasks</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{ stats.task_completion_rate }}%</div>
+                <div class="stat-card" data-stat="task-completion-rate">
+                    <div class="stat-value">{{ stats.task_completion_rate if stats else 0 }}%</div>
                     <div class="stat-label">Task Completion Rate</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{ stats.this_week_meetings }}</div>
+                <div class="stat-card" data-stat="this-week-meetings">
+                    <div class="stat-value">{{ stats.this_week_meetings if stats else 0 }}</div>
                     <div class="stat-label">This Week's Meetings</div>
+                </div>
+                <div class="stat-card" data-stat="active-meetings">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Active Meetings</div>
+                </div>
+                <div class="stat-card" data-stat="my-active-tasks">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">My Active Tasks</div>
                 </div>
             </div>
             
@@ -303,50 +337,48 @@
                 <section class="content-section">
                     <div class="section-header">
                         <h2 class="section-title">Recent Meetings</h2>
+                        <button id="refresh-dashboard" class="btn btn-sm btn-secondary">
+                            <i data-feather="refresh-cw"></i> Refresh
+                        </button>
                     </div>
                     <div class="section-content">
-                        {% if recent_meetings %}
-                            {% for meeting in recent_meetings %}
-                                <div class="meeting-item">
-                                    <div>
-                                        <div class="meeting-title">{{ meeting.title }}</div>
-                                        <div class="meeting-date">{{ meeting.created_at.strftime('%B %d, %Y') }}</div>
-                                    </div>
-                                    <span class="meeting-status status-{{ meeting.status }}">
-                                        {{ meeting.status|title }}
-                                    </span>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            <p class="text-gray-500">No meetings yet. <a href="{{ url_for('pages.live') }}" class="btn btn-primary">Start your first meeting</a></p>
-                        {% endif %}
+                        <div id="recent-meetings-list">
+                            <!-- Dynamic content will be loaded here -->
+                            <div class="loading-state">
+                                <p class="text-gray-500">Loading meetings...</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
                 
                 <section class="content-section">
                     <div class="section-header">
                         <h2 class="section-title">Your Tasks</h2>
+                        <a href="{{ url_for('dashboard.tasks') }}" class="btn btn-sm btn-primary">View All</a>
                     </div>
                     <div class="section-content">
-                        {% if user_tasks %}
-                            {% for task in user_tasks %}
-                                <div class="task-item">
-                                    <div class="task-title">{{ task.title }}</div>
-                                    <div class="task-meta">
-                                        {{ task.status|title }} • {{ task.priority|title }} priority
-                                        {% if task.due_date %}
-                                            • Due {{ task.due_date.strftime('%m/%d') }}
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            <p class="text-gray-500">No tasks assigned. Tasks will appear here when created from meetings.</p>
-                        {% endif %}
+                        <div id="my-tasks-list">
+                            <!-- Dynamic content will be loaded here -->
+                            <div class="loading-state">
+                                <p class="text-gray-500">Loading tasks...</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
             </div>
         </main>
     </div>
+    <!-- Notifications container -->
+    <div id="notifications"></div>
+
+    <!-- Load dashboard JavaScript -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    
+    <!-- Initialize feather icons -->
+    <script>
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    </script>
 </body>
 </html>

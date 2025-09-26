@@ -6,7 +6,7 @@ REST API endpoints for task management, CRUD operations, and status updates.
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from models import db, Task, Meeting, User
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from sqlalchemy import func, and_, or_
 
 
