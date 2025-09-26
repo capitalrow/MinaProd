@@ -17,13 +17,67 @@
     <style id="critical-css">
         /* Critical above-the-fold styles for instant content visibility */
         :root {
-            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --gradient-accent: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            --gradient-success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            /* 🎨 PROFESSIONAL COLOR SYSTEM */
+            /* Primary Professional Blue Theme */
+            --primary-50: #eff6ff;
+            --primary-100: #dbeafe;
+            --primary-500: #3b82f6;
+            --primary-600: #2563eb;
+            --primary-700: #1d4ed8;
+            --primary-900: #1e3a8a;
+            
+            /* Neutral Professional Grays */
+            --neutral-50: #f8fafc;
+            --neutral-100: #f1f5f9;
+            --neutral-500: #64748b;
+            --neutral-700: #334155;
+            --neutral-900: #0f172a;
+            
+            /* Professional Gradients */
+            --gradient-primary: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            --gradient-accent: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --gradient-subtle: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            
+            /* Success and Accent Colors */
+            --success: #10b981;
+            --warning: #f59e0b;
         }
         
-        html { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
-        body { margin: 0; padding: 0; line-height: 1.6; overflow-x: hidden; }
+        /* 📚 PROFESSIONAL TYPOGRAPHY */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        html { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            --font-size-xs: 0.75rem;
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
+            --font-size-lg: 1.125rem;
+            --font-size-xl: 1.25rem;
+            --font-size-2xl: 1.5rem;
+            --font-size-3xl: 1.875rem;
+            --font-size-4xl: 2.25rem;
+            --font-size-5xl: 3rem;
+            --font-size-6xl: 4rem;
+        }
+        body { 
+            margin: 0; 
+            padding: 0; 
+            line-height: 1.6; 
+            overflow-x: hidden;
+            color: var(--neutral-900);
+            background: var(--neutral-50);
+            
+            /* Professional Spacing System */
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            --space-12: 3rem;
+            --space-16: 4rem;
+        }
         
         /* Essential hero styles for immediate visibility */
         .hero { 
@@ -32,7 +86,12 @@
             align-items: center; 
             justify-content: center; 
             position: relative;
-            background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
+            background: var(--gradient-primary);
+            /* Subtle professional overlay */
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
         }
         
         .hero-content { 
@@ -45,19 +104,23 @@
         }
         
         .hero-title { 
-            font-size: clamp(2.5rem, 8vw, 5rem); 
+            font-size: clamp(3rem, 8vw, 5rem); 
             font-weight: 700; 
             margin-bottom: 1.5rem;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            letter-spacing: -0.02em;
+            line-height: 1.1;
         }
         
         .hero-subtitle { 
-            font-size: clamp(1.2rem, 4vw, 1.6rem); 
-            opacity: 0.9; 
+            font-size: clamp(1.125rem, 4vw, 1.375rem); 
+            opacity: 0.95; 
             margin-bottom: 2.5rem;
-            max-width: 700px;
+            max-width: 600px;
             margin-left: auto;
             margin-right: auto;
+            font-weight: 400;
+            line-height: 1.5;
         }
         
         .cta-button { 
@@ -73,9 +136,16 @@
         }
         
         .cta-primary { 
-            background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%); 
+            background: var(--primary-600); 
             color: white; 
-            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
+            border: none;
+        }
+        
+        .cta-primary:hover {
+            background: var(--primary-700);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(37, 99, 235, 0.4);
         }
         
         .cta-secondary {
@@ -83,6 +153,12 @@
             color: white;
             border: 2px solid rgba(255, 255, 255, 0.3);
             backdrop-filter: blur(10px);
+        }
+        
+        .cta-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
         }
         
         /* Loading indicator */
@@ -122,7 +198,7 @@
         .hero-title-main { display: block; }
         .hero-title-accent { 
             display: block;
-            background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%);
+            background: var(--gradient-success);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -131,7 +207,7 @@
         .hero-title-underline {
             width: 60px;
             height: 4px;
-            background: var(--gradient-success);
+            background: var(--success);
             margin: 1rem auto 0;
             border-radius: 2px;
         }
@@ -159,8 +235,8 @@
         .proof-number {
             font-size: clamp(1.8rem, 4vw, 2.5rem);
             font-weight: 700;
-            color: #4FACFE;
-            text-shadow: 0 2px 10px rgba(79, 172, 254, 0.3);
+            color: var(--primary-600);
+            text-shadow: 0 2px 10px rgba(37, 99, 235, 0.2);
         }
         
         .proof-label {
@@ -190,7 +266,7 @@
         
         .quote-mark {
             font-size: 3rem;
-            color: #4FACFE;
+            color: var(--primary-500);
             position: absolute;
             top: -0.5rem;
             left: 1rem;
@@ -264,7 +340,7 @@
         }
         
         .urgency-badge {
-            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            background: var(--gradient-success);
             color: white;
             font-weight: 600;
             animation: pulse 2s infinite;
@@ -350,7 +426,7 @@
         
         /* Enhanced scroll progress */
         #scrollProgress {
-            background: linear-gradient(90deg, #4FACFE, #00F2FE, #4FACFE);
+            background: var(--gradient-primary);
             background-size: 200% 100%;
             animation: shimmer 2s linear infinite;
         }
@@ -366,7 +442,7 @@
         
         /* Navigation active states */
         .nav-item.active {
-            color: #4FACFE;
+            color: var(--primary-600);
             position: relative;
         }
         
@@ -377,7 +453,7 @@
             left: 0;
             width: 100%;
             height: 2px;
-            background: var(--gradient-success);
+            background: var(--success);
             border-radius: 2px;
         }
         
