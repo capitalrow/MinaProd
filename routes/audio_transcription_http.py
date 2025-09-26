@@ -69,19 +69,25 @@ def transcribe_audio_streaming():
         audio_data = audio_file.read()
         original_filename = audio_file.filename or 'chunk.webm'
         
-        # Get conversation from database (using current model structure)
-        conversation = db.session.query(Conversation).filter_by(id=session_id).first()
+        # Create or get conversation using session_id as title reference
+        # Look for existing conversation with this session_id in title
+        conversation = db.session.query(Conversation).filter(
+            Conversation.title.like(f"%{session_id}%")
+        ).first()
+        
         if not conversation:
             # Create new conversation if it doesn't exist
             conversation = Conversation(
                 user_id=1,  # Default user for now
-                title=f"Meeting {session_id}",
+                title=f"Live Session {session_id}",
                 created_at=datetime.utcnow()
             )
             db.session.add(conversation)
             db.session.commit()
-            logger.info(f"Created new conversation: {session_id}")
+            logger.info(f"Created new conversation: {conversation.id} for session {session_id}")
+        
         conversation_id = conversation.id
+        logger.info(f"Using conversation_id: {conversation_id} for session: {session_id}")
         
         # Convert webm to wav for better compatibility
         temp_dir = tempfile.gettempdir()
@@ -396,7 +402,10 @@ def health_check():
 def get_session_status(session_id):
     """Get status and metrics for a specific session."""
     try:
-        conversation = db.session.query(Conversation).filter_by(id=session_id).first()
+        # Look for conversation by session_id in title
+        conversation = db.session.query(Conversation).filter(
+            Conversation.title.like(f"%{session_id}%")
+        ).first()
         if not conversation:
             return jsonify({
                 'error': 'Session not found',
