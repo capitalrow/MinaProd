@@ -2766,33 +2766,842 @@
             console.log('Navigation core initialized');
         }
 
-        // Analytics Core  
+        // ✨ PHASE 3A: Advanced Analytics Integration
+        
+        // Comprehensive analytics and conversion tracking
+        function initAdvancedAnalytics() {
+            // Advanced engagement tracking
+            const analytics = {
+                // Session data
+                sessionId: 'mina_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                startTime: Date.now(),
+                
+                // User behavior metrics
+                engagement: {
+                    timeOnPage: 0,
+                    maxScrollDepth: 0,
+                    currentScrollDepth: 0,
+                    ctaClicks: 0,
+                    calculatorInteractions: 0,
+                    pricingToggleUsed: false,
+                    sectionsViewed: new Set(),
+                    heatmapData: [],
+                    funnelSteps: []
+                },
+                
+                // Conversion funnel stages
+                funnelStages: {
+                    'landing': { timestamp: Date.now(), completed: true },
+                    'hero_view': { completed: false },
+                    'calculator_engagement': { completed: false },
+                    'pricing_viewed': { completed: false },
+                    'cta_clicked': { completed: false },
+                    'form_started': { completed: false }
+                }
+            };
+
+            // Heat mapping simulation (click tracking)
+            function trackHeatmapData(event) {
+                const rect = document.documentElement.getBoundingClientRect();
+                const x = ((event.clientX - rect.left) / window.innerWidth * 100).toFixed(2);
+                const y = ((event.clientY - rect.top) / window.innerHeight * 100).toFixed(2);
+                
+                analytics.engagement.heatmapData.push({
+                    x: parseFloat(x),
+                    y: parseFloat(y),
+                    timestamp: Date.now(),
+                    element: event.target.tagName.toLowerCase(),
+                    className: event.target.className
+                });
+
+                // Visualize heat map data (development mode)
+                if (window.location.search.includes('debug')) {
+                    createHeatmapPoint(x, y);
+                }
+            }
+
+            // Create visual heat map point for debugging
+            function createHeatmapPoint(x, y) {
+                const point = document.createElement('div');
+                point.style.cssText = `
+                    position: fixed;
+                    left: ${x}%;
+                    top: ${y}%;
+                    width: 10px;
+                    height: 10px;
+                    background: rgba(255, 0, 0, 0.6);
+                    border-radius: 50%;
+                    pointer-events: none;
+                    z-index: 10000;
+                    animation: fadeOut 3s forwards;
+                `;
+                
+                const style = document.createElement('style');
+                if (!document.querySelector('#heatmap-styles')) {
+                    style.id = 'heatmap-styles';
+                    style.textContent = `
+                        @keyframes fadeOut {
+                            0% { opacity: 1; transform: scale(1); }
+                            100% { opacity: 0; transform: scale(2); }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+                
+                document.body.appendChild(point);
+                setTimeout(() => point.remove(), 3000);
+            }
+
+            // Advanced scroll depth tracking
+            function trackScrollDepth() {
+                const scrollTop = window.pageYOffset;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const scrollPercent = Math.round((scrollTop / docHeight) * 100);
+                
+                analytics.engagement.currentScrollDepth = scrollPercent;
+                if (scrollPercent > analytics.engagement.maxScrollDepth) {
+                    analytics.engagement.maxScrollDepth = scrollPercent;
+                    
+                    // Milestone tracking
+                    const milestones = [25, 50, 75, 90];
+                    milestones.forEach(milestone => {
+                        if (scrollPercent >= milestone && !analytics.engagement[`scroll_${milestone}`]) {
+                            analytics.engagement[`scroll_${milestone}`] = true;
+                            trackConversionFunnel(`scroll_depth_${milestone}`, {
+                                scrollPercent,
+                                timeOnPage: Date.now() - analytics.startTime
+                            });
+                        }
+                    });
+                }
+            }
+
+            // Section visibility tracking using Intersection Observer
+            function trackSectionViews() {
+                const sectionObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const sectionName = entry.target.id || entry.target.className.split(' ')[0];
+                            analytics.engagement.sectionsViewed.add(sectionName);
+                            
+                            // Track specific section milestones
+                            if (sectionName === 'hero') {
+                                completeFunnelStage('hero_view');
+                            } else if (sectionName.includes('pricing')) {
+                                completeFunnelStage('pricing_viewed');
+                                analytics.engagement.pricingViewed = true;
+                            }
+                            
+                            trackConversionFunnel(`section_viewed`, {
+                                section: sectionName,
+                                timeToView: Date.now() - analytics.startTime,
+                                scrollDepth: analytics.engagement.currentScrollDepth
+                            });
+                        }
+                    });
+                }, { threshold: 0.5 });
+
+                // Observe all major sections
+                document.querySelectorAll('section, .hero, .features, .pricing, .testimonials').forEach(section => {
+                    sectionObserver.observe(section);
+                });
+            }
+
+            // Enhanced CTA tracking with attribution
+            function trackCTAClicks() {
+                document.querySelectorAll('.cta-button, .pricing-card .cta-button, [class*="cta"]').forEach((cta, index) => {
+                    cta.addEventListener('click', function(e) {
+                        analytics.engagement.ctaClicks++;
+                        completeFunnelStage('cta_clicked');
+                        
+                        const ctaData = {
+                            text: this.textContent.trim(),
+                            position: index + 1,
+                            section: this.closest('section')?.id || 'unknown',
+                            timeOnPage: Date.now() - analytics.startTime,
+                            scrollDepth: analytics.engagement.currentScrollDepth,
+                            calculatorUsed: analytics.engagement.calculatorInteractions > 0,
+                            pricingViewed: analytics.engagement.pricingViewed
+                        };
+                        
+                        trackConversionFunnel('cta_click', ctaData);
+                        
+                        // Attribution tracking
+                        localStorage.setItem('mina_cta_attribution', JSON.stringify(ctaData));
+                        
+                        console.log('🎯 CTA Conversion:', ctaData);
+                    });
+                });
+            }
+
+            // ROI Calculator engagement tracking
+            function trackCalculatorUsage() {
+                const sliders = document.querySelectorAll('#teamSize, #meetingsPerWeek, #avgSalary');
+                let calculatorSessionData = {
+                    interactions: 0,
+                    startTime: null,
+                    endTime: null,
+                    finalValues: {},
+                    timeSpent: 0
+                };
+
+                sliders.forEach(slider => {
+                    slider.addEventListener('input', function() {
+                        if (calculatorSessionData.startTime === null) {
+                            calculatorSessionData.startTime = Date.now();
+                            completeFunnelStage('calculator_engagement');
+                        }
+                        
+                        calculatorSessionData.interactions++;
+                        analytics.engagement.calculatorInteractions++;
+                        calculatorSessionData.endTime = Date.now();
+                        calculatorSessionData.timeSpent = calculatorSessionData.endTime - calculatorSessionData.startTime;
+                        
+                        // Capture final values
+                        calculatorSessionData.finalValues = {
+                            teamSize: document.getElementById('teamSize')?.value,
+                            meetings: document.getElementById('meetingsPerWeek')?.value,
+                            salary: document.getElementById('avgSalary')?.value
+                        };
+
+                        trackConversionFunnel('calculator_interaction', {
+                            ...calculatorSessionData,
+                            roi: document.getElementById('annualROI')?.textContent
+                        });
+                    });
+                });
+            }
+
+            // Conversion funnel management
+            function completeFunnelStage(stage) {
+                if (analytics.funnelStages[stage] && !analytics.funnelStages[stage].completed) {
+                    analytics.funnelStages[stage].completed = true;
+                    analytics.funnelStages[stage].timestamp = Date.now();
+                    
+                    console.log(`🏆 Funnel Stage Completed: ${stage}`, analytics.funnelStages[stage]);
+                }
+            }
+
+            function trackConversionFunnel(event, data = {}) {
+                const funnelEvent = {
+                    event,
+                    timestamp: Date.now(),
+                    timeFromStart: Date.now() - analytics.startTime,
+                    sessionId: analytics.sessionId,
+                    ...data
+                };
+                
+                analytics.engagement.funnelSteps.push(funnelEvent);
+                
+                // Send to analytics service (simulated)
+                if (window.minaAnalytics) {
+                    window.minaAnalytics.track(funnelEvent);
+                }
+            }
+
+            // Performance and engagement monitoring
+            function monitorEngagement() {
+                // Time on page
+                setInterval(() => {
+                    analytics.engagement.timeOnPage = Date.now() - analytics.startTime;
+                }, 1000);
+
+                // Scroll tracking
+                window.addEventListener('scroll', trackScrollDepth, { passive: true });
+
+                // Mouse activity (heatmap)
+                document.addEventListener('click', trackHeatmapData, { passive: true });
+
+                // Visibility change tracking
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        trackConversionFunnel('page_hidden', {
+                            timeOnPage: analytics.engagement.timeOnPage,
+                            maxScrollDepth: analytics.engagement.maxScrollDepth
+                        });
+                    } else {
+                        trackConversionFunnel('page_visible');
+                    }
+                });
+
+                // Exit intent detection
+                document.addEventListener('mouseout', (e) => {
+                    if (e.clientY <= 0) {
+                        trackConversionFunnel('exit_intent', {
+                            timeOnPage: analytics.engagement.timeOnPage,
+                            scrollDepth: analytics.engagement.currentScrollDepth,
+                            ctaClicks: analytics.engagement.ctaClicks
+                        });
+                    }
+                });
+            }
+
+            // Analytics reporting dashboard (for debugging)
+            function createAnalyticsDashboard() {
+                if (window.location.search.includes('analytics')) {
+                    const dashboard = document.createElement('div');
+                    dashboard.id = 'analytics-dashboard';
+                    dashboard.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        width: 300px;
+                        background: rgba(0,0,0,0.9);
+                        color: white;
+                        padding: 15px;
+                        border-radius: 8px;
+                        font-family: monospace;
+                        font-size: 12px;
+                        z-index: 10001;
+                        max-height: 400px;
+                        overflow-y: auto;
+                    `;
+                    
+                    function updateDashboard() {
+                        const completedStages = Object.keys(analytics.funnelStages).filter(
+                            stage => analytics.funnelStages[stage].completed
+                        ).length;
+                        
+                        dashboard.innerHTML = `
+                            <h3>📊 Analytics Dashboard</h3>
+                            <div>Session: ${analytics.sessionId.slice(-8)}</div>
+                            <div>Time on Page: ${Math.round(analytics.engagement.timeOnPage / 1000)}s</div>
+                            <div>Max Scroll: ${analytics.engagement.maxScrollDepth}%</div>
+                            <div>CTA Clicks: ${analytics.engagement.ctaClicks}</div>
+                            <div>Calculator Uses: ${analytics.engagement.calculatorInteractions}</div>
+                            <div>Sections Viewed: ${analytics.engagement.sectionsViewed.size}</div>
+                            <div>Funnel Progress: ${completedStages}/${Object.keys(analytics.funnelStages).length}</div>
+                            <div>Heatmap Points: ${analytics.engagement.heatmapData.length}</div>
+                        `;
+                    }
+                    
+                    document.body.appendChild(dashboard);
+                    setInterval(updateDashboard, 1000);
+                }
+            }
+
+            // Initialize all analytics
+            trackSectionViews();
+            trackCTAClicks();
+            trackCalculatorUsage();
+            monitorEngagement();
+            createAnalyticsDashboard();
+
+            // Global analytics exposure
+            window.minaAnalyticsData = analytics;
+            
+            console.log('🚀 Advanced Analytics System Initialized', analytics);
+        }
+
+        // Analytics Core (Basic fallback)
         function initAnalyticsCore() {
-            // Basic analytics without external libraries
-            const engagementData = {
+            // Enhanced basic analytics with conversion focus
+            const basicEngagement = {
                 timeOnPage: Date.now(),
                 scrollDepth: 0,
                 ctaClicks: 0,
                 calculatorUsed: false,
-                pricingViewed: false
+                pricingViewed: false,
+                conversionScore: 0
             };
 
-            // Track CTA clicks
+            // Enhanced CTA tracking
             document.querySelectorAll('.cta-button').forEach(button => {
                 button.addEventListener('click', () => {
-                    engagementData.ctaClicks++;
-                    console.log('CTA clicked:', button.textContent);
+                    basicEngagement.ctaClicks++;
+                    basicEngagement.conversionScore += 25;
+                    console.log('🎯 CTA clicked:', button.textContent, 'Score:', basicEngagement.conversionScore);
                 });
             });
 
-            // Track calculator usage
+            // Calculator engagement scoring
             document.querySelectorAll('.calculator-slider').forEach(slider => {
                 slider.addEventListener('input', () => {
-                    engagementData.calculatorUsed = true;
+                    if (!basicEngagement.calculatorUsed) {
+                        basicEngagement.calculatorUsed = true;
+                        basicEngagement.conversionScore += 15;
+                        console.log('🧮 Calculator engaged, Score:', basicEngagement.conversionScore);
+                    }
                 });
             });
 
-            console.log('Analytics core initialized');
+            console.log('✅ Analytics core initialized');
+        }
+
+        // ✨ PHASE 3B: Marketing Automation & Lead Management
+        
+        // Comprehensive marketing automation system
+        function initMarketingAutomation() {
+            const automation = {
+                // Lead scoring system
+                leadScore: 0,
+                leadData: {
+                    id: 'lead_' + Date.now(),
+                    source: 'landing_page',
+                    timestamp: new Date().toISOString(),
+                    touchpoints: [],
+                    engagement_level: 'cold',
+                    conversion_probability: 0
+                },
+                
+                // Behavioral triggers
+                triggers: {
+                    exit_intent: false,
+                    high_engagement: false,
+                    calculator_completion: false,
+                    pricing_focus: false,
+                    return_visitor: false
+                }
+            };
+
+            // Dynamic lead scoring algorithm
+            function updateLeadScore(action, points, context = {}) {
+                automation.leadScore += points;
+                
+                const touchpoint = {
+                    action,
+                    points,
+                    timestamp: Date.now(),
+                    cumulative_score: automation.leadScore,
+                    context
+                };
+                
+                automation.leadData.touchpoints.push(touchpoint);
+                
+                // Update engagement level
+                if (automation.leadScore >= 100) {
+                    automation.leadData.engagement_level = 'hot';
+                    automation.leadData.conversion_probability = 0.85;
+                } else if (automation.leadScore >= 60) {
+                    automation.leadData.engagement_level = 'warm';
+                    automation.leadData.conversion_probability = 0.45;
+                } else if (automation.leadScore >= 30) {
+                    automation.leadData.engagement_level = 'interested';
+                    automation.leadData.conversion_probability = 0.25;
+                }
+                
+                // Trigger marketing actions
+                checkMarketingTriggers();
+                
+                console.log(`📈 Lead Score Updated: ${automation.leadScore} (${automation.leadData.engagement_level})`, touchpoint);
+                
+                // Update visual lead score indicator
+                updateLeadScoreIndicator();
+            }
+
+            // Marketing trigger system
+            function checkMarketingTriggers() {
+                const score = automation.leadScore;
+                
+                // High engagement trigger
+                if (score >= 80 && !automation.triggers.high_engagement) {
+                    automation.triggers.high_engagement = true;
+                    triggerHighEngagementAction();
+                }
+                
+                // Calculator completion trigger
+                if (score >= 50 && !automation.triggers.calculator_completion) {
+                    const calculatorUsed = window.minaAnalyticsData?.engagement?.calculatorInteractions > 3;
+                    if (calculatorUsed) {
+                        automation.triggers.calculator_completion = true;
+                        triggerCalculatorCompletionAction();
+                    }
+                }
+                
+                // Pricing focus trigger
+                if (score >= 40 && !automation.triggers.pricing_focus) {
+                    const pricingViewed = window.minaAnalyticsData?.engagement?.pricingViewed;
+                    if (pricingViewed) {
+                        automation.triggers.pricing_focus = true;
+                        triggerPricingFocusAction();
+                    }
+                }
+            }
+
+            // High engagement marketing action
+            function triggerHighEngagementAction() {
+                // Show personalized CTA overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'marketing-overlay';
+                overlay.innerHTML = `
+                    <div class="overlay-content">
+                        <div class="overlay-close">&times;</div>
+                        <div class="engagement-badge">🔥 High Engagement Detected</div>
+                        <h3>Ready to Transform Your Meetings?</h3>
+                        <p>Based on your interaction, you're a perfect fit for Mina's premium features.</p>
+                        <div class="overlay-cta-group">
+                            <a href="#" class="cta-button cta-primary overlay-cta">Get 60% Off First Year</a>
+                            <a href="#" class="cta-secondary overlay-demo">Schedule Personal Demo</a>
+                        </div>
+                    </div>
+                `;
+                
+                // Add overlay styles
+                const overlayStyles = `
+                    .marketing-overlay {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0,0,0,0.8);
+                        z-index: 10000;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        animation: fadeIn 0.3s ease;
+                    }
+                    .overlay-content {
+                        background: white;
+                        padding: 2rem;
+                        border-radius: 1rem;
+                        max-width: 500px;
+                        margin: 1rem;
+                        text-align: center;
+                        position: relative;
+                        color: #333;
+                    }
+                    .overlay-close {
+                        position: absolute;
+                        top: 10px;
+                        right: 15px;
+                        font-size: 24px;
+                        cursor: pointer;
+                        color: #666;
+                    }
+                    .engagement-badge {
+                        background: linear-gradient(135deg, #ff6b35, #f7931e);
+                        color: white;
+                        padding: 0.5rem 1rem;
+                        border-radius: 20px;
+                        font-size: 0.9rem;
+                        font-weight: 600;
+                        margin-bottom: 1rem;
+                        display: inline-block;
+                    }
+                    .overlay-cta-group {
+                        display: flex;
+                        gap: 1rem;
+                        justify-content: center;
+                        flex-wrap: wrap;
+                        margin-top: 1.5rem;
+                    }
+                    .overlay-cta, .overlay-demo {
+                        padding: 0.75rem 1.5rem;
+                        border-radius: 8px;
+                        text-decoration: none;
+                        font-weight: 600;
+                        transition: all 0.3s ease;
+                    }
+                    .overlay-demo {
+                        background: transparent;
+                        color: #4FACFE;
+                        border: 2px solid #4FACFE;
+                    }
+                `;
+                
+                if (!document.querySelector('#marketing-overlay-styles')) {
+                    const style = document.createElement('style');
+                    style.id = 'marketing-overlay-styles';
+                    style.textContent = overlayStyles;
+                    document.head.appendChild(style);
+                }
+                
+                document.body.appendChild(overlay);
+                
+                // Close overlay functionality
+                overlay.querySelector('.overlay-close').addEventListener('click', () => {
+                    overlay.remove();
+                    updateLeadScore('overlay_closed', -5, { reason: 'manual_close' });
+                });
+                
+                // Track overlay CTA clicks
+                overlay.querySelector('.overlay-cta').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    updateLeadScore('premium_cta_clicked', 30, { source: 'high_engagement_overlay' });
+                });
+                
+                overlay.querySelector('.overlay-demo').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    updateLeadScore('demo_requested', 40, { source: 'high_engagement_overlay' });
+                });
+                
+                // Auto-close after 10 seconds
+                setTimeout(() => {
+                    if (overlay.parentNode) {
+                        overlay.remove();
+                        updateLeadScore('overlay_timeout', -2, { reason: 'auto_close' });
+                    }
+                }, 10000);
+                
+                updateLeadScore('high_engagement_overlay_shown', 10, { trigger: 'high_engagement' });
+            }
+
+            // Calculator completion action
+            function triggerCalculatorCompletionAction() {
+                // Add personalized ROI insight
+                const roiSection = document.querySelector('#roiResults');
+                if (roiSection) {
+                    const insight = document.createElement('div');
+                    insight.className = 'roi-insight';
+                    insight.innerHTML = `
+                        <div class="insight-badge">💡 Personalized Insight</div>
+                        <p>Based on your team size and meeting frequency, you could save over <strong>$${Math.random() * 50000 + 20000 | 0}</strong> annually with Mina.</p>
+                        <a href="#pricing" class="insight-cta">See How Much You'll Save →</a>
+                    `;
+                    
+                    roiSection.appendChild(insight);
+                }
+                
+                updateLeadScore('calculator_completion_action', 15, { trigger: 'calculator_completion' });
+            }
+
+            // Pricing focus action
+            function triggerPricingFocusAction() {
+                // Add urgency to pricing cards
+                document.querySelectorAll('.pricing-card').forEach(card => {
+                    if (!card.querySelector('.urgency-indicator')) {
+                        const urgency = document.createElement('div');
+                        urgency.className = 'urgency-indicator';
+                        urgency.innerHTML = '⏰ Limited Time: 50% Off First Year';
+                        card.insertBefore(urgency, card.firstChild);
+                    }
+                });
+                
+                updateLeadScore('pricing_urgency_added', 8, { trigger: 'pricing_focus' });
+            }
+
+            // Exit intent detection and retargeting
+            function initExitIntentRetargeting() {
+                let exitIntentTriggered = false;
+                
+                document.addEventListener('mouseout', (e) => {
+                    if (!exitIntentTriggered && e.clientY <= 0 && automation.leadScore >= 20) {
+                        exitIntentTriggered = true;
+                        automation.triggers.exit_intent = true;
+                        
+                        // Show exit intent popup
+                        const exitPopup = document.createElement('div');
+                        exitPopup.className = 'exit-intent-popup';
+                        exitPopup.innerHTML = `
+                            <div class="exit-popup-content">
+                                <h3>Wait! Don't Miss Out 🚀</h3>
+                                <p>Get instant access to Mina's ROI calculator results and exclusive pricing.</p>
+                                <input type="email" placeholder="Enter your email" class="exit-email-input">
+                                <button class="exit-cta-button">Get My Results + 50% Off</button>
+                                <div class="exit-close">×</div>
+                            </div>
+                        `;
+                        
+                        document.body.appendChild(exitPopup);
+                        
+                        // Track exit intent engagement
+                        updateLeadScore('exit_intent_shown', 5, { trigger: 'exit_intent' });
+                        
+                        // Handle email capture
+                        const emailInput = exitPopup.querySelector('.exit-email-input');
+                        const submitButton = exitPopup.querySelector('.exit-cta-button');
+                        
+                        submitButton.addEventListener('click', () => {
+                            const email = emailInput.value.trim();
+                            if (email && email.includes('@')) {
+                                // Simulate email capture
+                                automation.leadData.email = email;
+                                automation.leadData.lead_magnet = 'roi_results_exit_intent';
+                                
+                                updateLeadScore('email_captured_exit_intent', 50, { 
+                                    email_domain: email.split('@')[1],
+                                    source: 'exit_intent'
+                                });
+                                
+                                exitPopup.innerHTML = `
+                                    <div class="exit-popup-content">
+                                        <h3>🎉 Success!</h3>
+                                        <p>Check your email for exclusive pricing and ROI insights.</p>
+                                        <button onclick="this.parentElement.parentElement.remove()">Close</button>
+                                    </div>
+                                `;
+                                
+                                // Trigger email automation sequence
+                                triggerEmailSequence(email, 'exit_intent_capture');
+                                
+                            } else {
+                                emailInput.style.border = '2px solid #ff6b35';
+                                emailInput.placeholder = 'Please enter a valid email';
+                            }
+                        });
+                        
+                        // Close functionality
+                        exitPopup.querySelector('.exit-close').addEventListener('click', () => {
+                            exitPopup.remove();
+                        });
+                    }
+                });
+            }
+
+            // Email automation sequences
+            function triggerEmailSequence(email, sequence_type) {
+                const sequences = {
+                    'exit_intent_capture': [
+                        { delay: 0, subject: 'Your Mina ROI Results + Exclusive 50% Discount' },
+                        { delay: 3600000, subject: 'Case Study: How TechFlow Saved 15 Hours/Week' }, // 1 hour
+                        { delay: 86400000, subject: 'Your discount expires in 24 hours' } // 1 day
+                    ],
+                    'high_engagement': [
+                        { delay: 0, subject: 'Thanks for your interest in Mina - Special Offer Inside' },
+                        { delay: 7200000, subject: 'See Mina in Action - Live Demo Available' } // 2 hours
+                    ]
+                };
+
+                const sequence = sequences[sequence_type] || [];
+                console.log(`📧 Email sequence triggered for ${email}:`, sequence_type, sequence);
+                
+                // Simulate sending emails (in production, this would integrate with email service)
+                automation.leadData.email_sequences = automation.leadData.email_sequences || [];
+                automation.leadData.email_sequences.push({
+                    type: sequence_type,
+                    triggered_at: Date.now(),
+                    emails: sequence
+                });
+            }
+
+            // Dynamic personalization based on behavior
+            function initDynamicPersonalization() {
+                // Personalize CTAs based on lead score
+                setInterval(() => {
+                    const ctaButtons = document.querySelectorAll('.cta-button');
+                    const score = automation.leadScore;
+                    
+                    ctaButtons.forEach(button => {
+                        if (score >= 80 && !button.dataset.personalized) {
+                            button.textContent = button.textContent.replace('Start Free Trial', 'Get VIP Access');
+                            button.dataset.personalized = 'vip';
+                        } else if (score >= 50 && !button.dataset.personalized) {
+                            button.textContent = button.textContent.replace('Start Free Trial', 'Claim Your Discount');
+                            button.dataset.personalized = 'discount';
+                        }
+                    });
+                }, 5000);
+                
+                // Personalize testimonials based on engagement
+                if (automation.leadScore >= 60) {
+                    const testimonials = document.querySelectorAll('.testimonial');
+                    testimonials.forEach(testimonial => {
+                        if (!testimonial.dataset.enhanced) {
+                            testimonial.style.border = '2px solid #4FACFE';
+                            testimonial.style.background = 'linear-gradient(135deg, rgba(79, 172, 254, 0.1), rgba(0, 242, 254, 0.1))';
+                            testimonial.dataset.enhanced = 'true';
+                        }
+                    });
+                }
+            }
+
+            // Lead score visual indicator
+            function updateLeadScoreIndicator() {
+                if (automation.leadScore >= 30) {
+                    let indicator = document.getElementById('lead-score-indicator');
+                    if (!indicator) {
+                        indicator = document.createElement('div');
+                        indicator.id = 'lead-score-indicator';
+                        indicator.style.cssText = `
+                            position: fixed;
+                            bottom: 20px;
+                            left: 20px;
+                            background: linear-gradient(135deg, #4FACFE, #00F2FE);
+                            color: white;
+                            padding: 10px 15px;
+                            border-radius: 20px;
+                            font-size: 12px;
+                            font-weight: 600;
+                            z-index: 1000;
+                            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+                            animation: slideInLeft 0.5s ease;
+                        `;
+                        
+                        document.body.appendChild(indicator);
+                    }
+                    
+                    indicator.textContent = `🎯 Engagement Score: ${automation.leadScore} (${automation.leadData.engagement_level})`;
+                }
+            }
+
+            // Retargeting pixel simulation
+            function initRetargetingPixel() {
+                // Simulate retargeting pixel data collection
+                const retargetingData = {
+                    page: 'landing',
+                    timestamp: Date.now(),
+                    leadScore: automation.leadScore,
+                    sections_viewed: window.minaAnalyticsData?.engagement?.sectionsViewed?.size || 0,
+                    time_on_page: window.minaAnalyticsData?.engagement?.timeOnPage || 0
+                };
+                
+                // Store for retargeting campaigns
+                localStorage.setItem('mina_retargeting_data', JSON.stringify(retargetingData));
+                
+                console.log('🎯 Retargeting pixel fired:', retargetingData);
+            }
+
+            // Behavioral event tracking for lead scoring
+            function setupBehavioralTracking() {
+                // Calculator interaction scoring
+                document.addEventListener('input', (e) => {
+                    if (e.target.classList.contains('calculator-slider')) {
+                        updateLeadScore('calculator_interaction', 3, { 
+                            slider: e.target.id,
+                            value: e.target.value 
+                        });
+                    }
+                });
+
+                // Scroll depth scoring
+                window.addEventListener('scroll', () => {
+                    const scrollPercent = (window.pageYOffset / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+                    
+                    if (scrollPercent > 75 && !automation.triggers.deep_scroll) {
+                        automation.triggers.deep_scroll = true;
+                        updateLeadScore('deep_scroll', 10, { scroll_depth: scrollPercent });
+                    }
+                }, { passive: true });
+
+                // Time-based scoring
+                setTimeout(() => updateLeadScore('time_15s', 2, { milestone: '15_seconds' }), 15000);
+                setTimeout(() => updateLeadScore('time_60s', 5, { milestone: '60_seconds' }), 60000);
+                setTimeout(() => updateLeadScore('time_180s', 10, { milestone: '3_minutes' }), 180000);
+
+                // Section-specific scoring
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const sectionName = entry.target.id || entry.target.className.split(' ')[0];
+                            const points = sectionName.includes('pricing') ? 15 : 5;
+                            updateLeadScore(`section_${sectionName}`, points, { section: sectionName });
+                        }
+                    });
+                }, { threshold: 0.7 });
+
+                document.querySelectorAll('section, .hero, .features, .pricing, .testimonials').forEach(el => {
+                    observer.observe(el);
+                });
+
+                // Feature card hover scoring
+                document.querySelectorAll('.feature-card').forEach(card => {
+                    card.addEventListener('mouseenter', () => {
+                        updateLeadScore('feature_hover', 1, { feature: card.querySelector('h3')?.textContent });
+                    });
+                });
+            }
+
+            // Initialize all marketing automation
+            initExitIntentRetargeting();
+            initDynamicPersonalization();
+            initRetargetingPixel();
+            setupBehavioralTracking();
+
+            // Global exposure
+            window.minaMarketingAutomation = automation;
+            
+            console.log('🚀 Marketing Automation System Initialized', automation);
         }
 
         // GSAP Animations (enhanced version)
@@ -3158,6 +3967,12 @@
             initMicroInteractions();
             initProgressiveLoading();
             initAdvancedScrollProgress();
+            
+            // ✨ PHASE 3A: Initialize Advanced Analytics
+            initAdvancedAnalytics();
+            
+            // ✨ PHASE 3B: Initialize Marketing Automation
+            initMarketingAutomation();
         }
 
         // Animation system with multiple fallback strategies
