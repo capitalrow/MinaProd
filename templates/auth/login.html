@@ -3,129 +3,314 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Mina</title>
+    <title>Sign In - Mina</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
     <style>
-        .auth-container {
+        /* Enhanced Modern Authentication Layout */
+        body {
+            margin: 0;
+            padding: 0;
             min-height: 100vh;
+            background: linear-gradient(135deg, var(--mina-brand-primary) 0%, var(--mina-brand-secondary) 100%);
+            font-family: var(--mina-font-family-sans);
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--color-primary-50) 0%, var(--color-primary-100) 100%);
-            padding: var(--spacing-md);
         }
-        
-        .auth-card {
-            background: white;
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-lg);
-            padding: var(--spacing-2xl);
+
+        .auth-container {
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
+            margin: var(--mina-space-4);
+            animation: fadeInUp 0.6s ease-out;
         }
-        
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--mina-radius-xl);
+            padding: var(--mina-space-10);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.1),
+                0 10px 20px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
         .auth-header {
             text-align: center;
-            margin-bottom: var(--spacing-xl);
+            margin-bottom: var(--mina-space-8);
         }
-        
+
         .auth-logo {
-            font-size: 2rem;
-            font-weight: var(--font-weight-bold);
-            color: var(--color-primary-600);
-            margin-bottom: var(--spacing-sm);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
+            border-radius: var(--mina-radius-lg);
+            margin-bottom: var(--mina-space-4);
+            box-shadow: var(--mina-shadow-lg);
         }
-        
+
+        .auth-logo-text {
+            font-size: var(--mina-font-size-2xl);
+            font-weight: var(--mina-font-weight-bold);
+            color: white;
+            font-family: var(--mina-font-family-display);
+        }
+
+        .auth-title {
+            font-size: var(--mina-font-size-3xl);
+            font-weight: var(--mina-font-weight-bold);
+            color: var(--mina-text-primary);
+            margin: 0 0 var(--mina-space-2) 0;
+            font-family: var(--mina-font-family-display);
+        }
+
+        .auth-subtitle {
+            font-size: var(--mina-font-size-base);
+            color: var(--mina-text-secondary);
+            margin: 0 0 var(--mina-space-6) 0;
+            line-height: var(--mina-line-height-relaxed);
+        }
+
+        /* Enhanced Form Styling */
         .form-group {
-            margin-bottom: var(--spacing-lg);
+            margin-bottom: var(--mina-space-6);
         }
-        
+
         .form-label {
             display: block;
-            margin-bottom: var(--spacing-xs);
-            font-weight: var(--font-weight-medium);
-            color: var(--color-gray-700);
+            font-size: var(--mina-font-size-sm);
+            font-weight: var(--mina-font-weight-medium);
+            color: var(--mina-text-primary);
+            margin-bottom: var(--mina-space-2);
+            letter-spacing: var(--mina-letter-spacing-wide);
         }
-        
+
         .form-input {
             width: 100%;
-            padding: var(--spacing-md);
-            border: 1px solid var(--color-gray-300);
-            border-radius: var(--border-radius-md);
-            font-size: var(--font-size-base);
-            transition: all 0.2s ease;
+            padding: var(--mina-space-4);
+            border: 2px solid var(--mina-border-primary);
+            border-radius: var(--mina-radius-md);
+            font-size: var(--mina-font-size-base);
+            color: var(--mina-text-primary);
+            background: var(--mina-bg-primary);
+            transition: all var(--mina-transition-base);
+            font-family: var(--mina-font-family-sans);
+            box-sizing: border-box;
         }
-        
+
         .form-input:focus {
             outline: none;
-            border-color: var(--color-primary-500);
-            box-shadow: 0 0 0 3px var(--color-primary-100);
+            border-color: var(--mina-brand-primary);
+            box-shadow: 
+                0 0 0 3px rgba(var(--mina-brand-primary-rgb), 0.1),
+                var(--mina-shadow-sm);
+            transform: translateY(-1px);
         }
-        
-        .form-checkbox {
+
+        .form-input::placeholder {
+            color: var(--mina-text-muted);
+        }
+
+        .form-checkbox-group {
             display: flex;
             align-items: center;
-            gap: var(--spacing-sm);
-            margin-bottom: var(--spacing-lg);
+            gap: var(--mina-space-3);
+            margin-bottom: var(--mina-space-6);
         }
-        
+
+        .form-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--mina-border-secondary);
+            border-radius: var(--mina-radius-sm);
+            cursor: pointer;
+            position: relative;
+            background: var(--mina-bg-primary);
+            transition: all var(--mina-transition-fast);
+        }
+
+        .form-checkbox:checked {
+            background: var(--mina-brand-primary);
+            border-color: var(--mina-brand-primary);
+        }
+
+        .form-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .form-checkbox-label {
+            font-size: var(--mina-font-size-sm);
+            color: var(--mina-text-secondary);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Enhanced Button */
         .btn-primary {
             width: 100%;
-            padding: var(--spacing-md);
-            background: var(--color-primary-600);
+            padding: var(--mina-space-4) var(--mina-space-6);
+            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
             color: white;
             border: none;
-            border-radius: var(--border-radius-md);
-            font-size: var(--font-size-base);
-            font-weight: var(--font-weight-medium);
+            border-radius: var(--mina-radius-md);
+            font-size: var(--mina-font-size-base);
+            font-weight: var(--mina-font-weight-semibold);
+            font-family: var(--mina-font-family-sans);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all var(--mina-transition-base);
+            text-transform: none;
+            letter-spacing: var(--mina-letter-spacing-normal);
+            box-shadow: var(--mina-shadow-sm);
+            min-height: 48px;
         }
-        
+
         .btn-primary:hover {
-            background: var(--color-primary-700);
+            transform: translateY(-2px);
+            box-shadow: var(--mina-shadow-lg);
+            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-secondary));
         }
-        
+
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: var(--mina-shadow-base);
+        }
+
+        .btn-primary:focus {
+            outline: none;
+            box-shadow: 
+                0 0 0 3px rgba(var(--mina-brand-primary-rgb), 0.3),
+                var(--mina-shadow-lg);
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: var(--mina-space-4);
+            border-radius: var(--mina-radius-md);
+            margin-bottom: var(--mina-space-6);
+            font-size: var(--mina-font-size-sm);
+            line-height: var(--mina-line-height-normal);
+            border: 1px solid transparent;
+        }
+
+        .alert-error {
+            background: rgba(var(--mina-danger-rgb), 0.1);
+            color: var(--mina-danger-dark);
+            border-color: rgba(var(--mina-danger-rgb), 0.3);
+        }
+
+        .alert-success {
+            background: rgba(var(--mina-success-rgb), 0.1);
+            color: var(--mina-success-dark);
+            border-color: rgba(var(--mina-success-rgb), 0.3);
+        }
+
+        .alert-info {
+            background: rgba(var(--mina-info-rgb), 0.1);
+            color: var(--mina-info-dark);
+            border-color: rgba(var(--mina-info-rgb), 0.3);
+        }
+
+        /* Footer */
         .auth-footer {
             text-align: center;
-            margin-top: var(--spacing-xl);
-            padding-top: var(--spacing-lg);
-            border-top: 1px solid var(--color-gray-200);
+            margin-top: var(--mina-space-8);
+            padding-top: var(--mina-space-6);
+            border-top: 1px solid var(--mina-border-primary);
         }
-        
+
         .auth-link {
-            color: var(--color-primary-600);
+            color: var(--mina-brand-primary);
             text-decoration: none;
+            font-weight: var(--mina-font-weight-medium);
+            transition: color var(--mina-transition-fast);
         }
-        
+
         .auth-link:hover {
+            color: var(--mina-brand-secondary);
             text-decoration: underline;
         }
-        
-        .alert {
-            padding: var(--spacing-md);
-            border-radius: var(--border-radius-md);
-            margin-bottom: var(--spacing-lg);
+
+        /* Responsive Design */
+        @media (max-width: 640px) {
+            .auth-container {
+                margin: var(--mina-space-2);
+            }
+            
+            .auth-card {
+                padding: var(--mina-space-6);
+            }
+            
+            .auth-title {
+                font-size: var(--mina-font-size-2xl);
+            }
         }
-        
-        .alert-error {
-            background: var(--color-red-50);
-            color: var(--color-red-700);
-            border: 1px solid var(--color-red-200);
+
+        /* Loading State */
+        .btn-primary.loading {
+            position: relative;
+            color: transparent;
         }
-        
-        .alert-success {
-            background: var(--color-green-50);
-            color: var(--color-green-700);
-            border: 1px solid var(--color-green-200);
+
+        .btn-primary.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
-        
-        .alert-info {
-            background: var(--color-blue-50);
-            color: var(--color-blue-700);
-            border: 1px solid var(--color-blue-200);
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Accessibility improvements */
+        .form-input:focus,
+        .form-checkbox:focus,
+        .btn-primary:focus {
+            outline: 2px solid var(--mina-brand-primary);
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .auth-container,
+            .form-input,
+            .btn-primary {
+                animation: none;
+                transition: none;
+            }
         }
     </style>
 </head>
@@ -133,9 +318,11 @@
     <div class="auth-container">
         <div class="auth-card">
             <div class="auth-header">
-                <div class="auth-logo">Mina</div>
-                <h1>Welcome Back</h1>
-                <p class="text-gray-600">Sign in to your account to continue</p>
+                <div class="auth-logo">
+                    <span class="auth-logo-text">M</span>
+                </div>
+                <h1 class="auth-title">Welcome Back</h1>
+                <p class="auth-subtitle">Sign in to transform your meetings into actionable moments</p>
             </div>
             
             <!-- Flash Messages -->
@@ -147,7 +334,7 @@
                 {% endif %}
             {% endwith %}
             
-            <form method="POST" action="{{ url_for('auth.login') }}">
+            <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm">
                 <div class="form-group">
                     <label for="email_or_username" class="form-label">Email or Username</label>
                     <input 
@@ -175,18 +362,51 @@
                     >
                 </div>
                 
-                <div class="form-checkbox">
-                    <input type="checkbox" id="remember_me" name="remember_me">
-                    <label for="remember_me">Remember me</label>
+                <div class="form-checkbox-group">
+                    <input type="checkbox" id="remember_me" name="remember_me" class="form-checkbox">
+                    <label for="remember_me" class="form-checkbox-label">Keep me signed in</label>
                 </div>
                 
-                <button type="submit" class="btn-primary">Sign In</button>
+                <button type="submit" class="btn-primary" id="loginButton">Sign In</button>
             </form>
             
             <div class="auth-footer">
-                <p>Don't have an account? <a href="{{ url_for('auth.register') }}" class="auth-link">Sign up</a></p>
+                <p style="color: var(--mina-text-secondary); margin: 0;">
+                    Don't have an account? 
+                    <a href="{{ url_for('auth.register') }}" class="auth-link">Create one now</a>
+                </p>
             </div>
         </div>
     </div>
+
+    <script>
+        // Enhanced form handling
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const button = document.getElementById('loginButton');
+            button.classList.add('loading');
+            button.disabled = true;
+        });
+
+        // Auto-focus first empty field
+        document.addEventListener('DOMContentLoaded', function() {
+            const emailField = document.getElementById('email_or_username');
+            const passwordField = document.getElementById('password');
+            
+            if (!emailField.value) {
+                emailField.focus();
+            } else if (!passwordField.value) {
+                passwordField.focus();
+            }
+        });
+
+        // Enhanced error handling
+        {% if get_flashed_messages() %}
+            document.addEventListener('DOMContentLoaded', function() {
+                const button = document.getElementById('loginButton');
+                button.classList.remove('loading');
+                button.disabled = false;
+            });
+        {% endif %}
+    </script>
 </body>
 </html>
