@@ -763,14 +763,7 @@
       const viewLibrary = document.getElementById('view-library');
       viewLibrary.innerHTML = '';
       viewLibrary.appendChild(container);
-      // Safely set title and transcript content
-      const titleInput = document.getElementById('title');
-      if (titleInput) titleInput.value = r.conversation.title || '';
-      
-      const transcriptEl = document.getElementById('transcript-content');
-      if (transcriptEl) {
-        transcriptEl.textContent = r.segments.map(s => s.text).join('');
-      }
+      // Title and transcript are already set in the secure DOM implementation above
       
       document.getElementById('btn-export').onclick = ()=>{
         const content = r.segments.map(s => s.text).join('');
