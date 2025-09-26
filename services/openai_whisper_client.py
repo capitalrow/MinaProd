@@ -12,7 +12,10 @@ _CLIENT: Optional[OpenAI] = None
 def _client() -> OpenAI:
     global _CLIENT
     if _CLIENT is None:
-        _CLIENT = OpenAI()  # reads OPENAI_API_KEY from env
+        api_key = os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY environment variable not set")
+        _CLIENT = OpenAI(api_key=api_key)
     return _CLIENT
 
 # Map the mime that comes from MediaRecorder to extensions Whisper accepts
