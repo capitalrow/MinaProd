@@ -1406,9 +1406,9 @@
       
       container.appendChild(settingsDiv);
       
-      const viewSettings = document.getElementById('view-settings');
-      viewSettings.innerHTML = '';
-      viewSettings.appendChild(container);
+      // Clear view and render
+      view.innerHTML = '';
+      view.appendChild(container);
       
       // Enhanced event handlers with better UX
       logoutBtn.onclick = async () => {
