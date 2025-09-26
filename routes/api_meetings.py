@@ -5,7 +5,7 @@ REST API endpoints for meeting management, processing, and data retrieval.
 
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
-from models import db, Meeting, Session, Task, Participant, Analytics, Workspace
+from models import db, Meeting, Session, Task, Participant, Analytics, Workspace, Segment
 from services.task_extraction_service import task_extraction_service
 from services.meeting_metadata_service import meeting_metadata_service
 from services.analytics_service import analytics_service
