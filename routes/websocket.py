@@ -52,10 +52,21 @@ def handle_join_session(data):
     # Create conversation record with Flask app context
     try:
         with current_app.app_context():
+            # Get first available user for live sessions (or create anonymous user)
+            from models import User
+            user = User.query.first()
+            if not user:
+                # Create anonymous user for live sessions
+                user = User()
+                user.email = 'anonymous@mina.ai'
+                user.name = 'Anonymous User'
+                user.password_hash = 'N/A'  # No login for anonymous user
+                db.session.add(user)
+                db.session.commit()
+            
             conversation = Conversation()
+            conversation.user_id = user.id  # CRITICAL FIX: Set required user_id
             conversation.title = f"Live Session {session_id}"
-            conversation.status = "live"
-            conversation.source = "realtime"
             
             db.session.add(conversation)
             db.session.commit()
