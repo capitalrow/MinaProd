@@ -90,6 +90,8 @@ def transcribe_chunk_streaming():
         # Enhanced request logging
         if audio_file:
             print(f"[LIVE-API] 🎵 Audio file: {audio_file.filename}, size: {audio_file.content_length or 'unknown'}")
+            print(f"[LIVE-API] 🎵 Audio content-type: {audio_file.content_type}")
+            print(f"[LIVE-API] 🎵 Audio mimetype: {audio_file.mimetype}")
         
         # Log all form data for debugging
         print(f"[LIVE-API] 📋 Form data: {dict(request.form)}")
@@ -145,11 +147,37 @@ def transcribe_chunk_streaming():
                 'type': 'error'
             }), 400
         
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
-            temp_file.write(audio_data)
-            temp_file.flush()
-            temp_file_path = temp_file.name
-            print(f"[LIVE-API] 💾 Temp file created: {temp_file_path}, size: {len(audio_data)} bytes")
+        # Create temporary WebM file first
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as webm_file:
+            webm_file.write(audio_data)
+            webm_file.flush()
+            webm_file_path = webm_file.name
+            print(f"[LIVE-API] 💾 WebM temp file created: {webm_file_path}, size: {len(audio_data)} bytes")
+        
+        # Convert WebM to WAV using pydub for OpenAI compatibility
+        try:
+            from pydub import AudioSegment
+            print(f"[LIVE-API] 🔄 Converting WebM chunk to WAV...")
+            
+            # Load WebM and convert to WAV
+            audio_segment = AudioSegment.from_file(webm_file_path, format="webm")
+            
+            # Create WAV temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as wav_file:
+                temp_file_path = wav_file.name
+            
+            # Export as WAV
+            audio_segment.export(temp_file_path, format="wav")
+            print(f"[LIVE-API] ✅ WebM converted to WAV: {temp_file_path}")
+            
+            # Clean up WebM file
+            import os
+            os.unlink(webm_file_path)
+            
+        except Exception as e:
+            print(f"[LIVE-API] ❌ WebM to WAV conversion failed: {str(e)}")
+            # Fallback to original WebM file if conversion fails
+            temp_file_path = webm_file_path
         
         try:
             # Call OpenAI Whisper API
