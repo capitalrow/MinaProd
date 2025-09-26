@@ -1,20 +1,25 @@
 /* Design Tokens - Foundation CSS Custom Properties */
 :root {
-  /* Color System - Semantic Palette */
-  --mina-primary: #0d6efd;
-  --mina-primary-rgb: 13, 110, 253;
-  --mina-primary-dark: #0b5ed7;
-  --mina-primary-light: #9ec5fe;
+  /* 🎨 PROFESSIONAL BLUE COLOR SYSTEM */
+  --mina-primary: #2563eb;
+  --mina-primary-rgb: 37, 99, 235;
+  --mina-primary-dark: #1d4ed8;
+  --mina-primary-light: #93c5fd;
+  --mina-primary-50: #eff6ff;
+  --mina-primary-100: #dbeafe;
+  --mina-primary-600: #2563eb;
+  --mina-primary-700: #1d4ed8;
+  --mina-primary-900: #1e3a8a;
   
   --mina-secondary: #6c757d;
   --mina-secondary-rgb: 108, 117, 125;
   --mina-secondary-dark: #495057;
   --mina-secondary-light: #adb5bd;
   
-  --mina-success: #198754;
-  --mina-success-rgb: 25, 135, 84;
-  --mina-success-dark: #146c43;
-  --mina-success-light: #75b798;
+  --mina-success: #10b981;
+  --mina-success-rgb: 16, 185, 129;
+  --mina-success-dark: #059669;
+  --mina-success-light: #6ee7b7;
   
   --mina-warning: #ffc107;
   --mina-warning-rgb: 255, 193, 7;
@@ -31,11 +36,11 @@
   --mina-info-dark: #087990;
   --mina-info-light: #9eeaf9;
 
-  /* Brand Colors */
-  --mina-brand-primary: #6366f1;
-  --mina-brand-primary-rgb: 99, 102, 241;
-  --mina-brand-secondary: #8b5cf6;
-  --mina-brand-accent: #06b6d4;
+  /* Professional Brand Colors */
+  --mina-brand-primary: #2563eb;
+  --mina-brand-primary-rgb: 37, 99, 235;
+  --mina-brand-secondary: #1d4ed8;
+  --mina-brand-accent: #10b981;
 
   /* Neutral Scale */
   --mina-gray-50: #f8fafc;
@@ -165,8 +170,8 @@
   --mina-border-accent: var(--mina-gray-500);
 
   /* Adjust brand colors for dark mode */
-  --mina-primary: #4c82f7;
-  --mina-success: #22c55e;
+  --mina-primary: #60a5fa;
+  --mina-success: #34d399;
   --mina-warning: #f59e0b;
   --mina-danger: #ef4444;
   --mina-info: #06b6d4;
@@ -189,8 +194,8 @@
     --mina-border-secondary: var(--mina-gray-600);
     --mina-border-accent: var(--mina-gray-500);
 
-    --mina-primary: #4c82f7;
-    --mina-success: #22c55e;
+    --mina-primary: #60a5fa;
+    --mina-success: #34d399;
     --mina-warning: #f59e0b;
     --mina-danger: #ef4444;
     --mina-info: #06b6d4;
