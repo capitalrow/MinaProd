@@ -1055,6 +1055,141 @@
             color: rgba(255, 255, 255, 0.8);
         }
 
+        /* Dark Mode Styles */
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: var(--mina-space-2);
+            border-radius: var(--mina-radius-md);
+            transition: all 0.3s ease;
+            position: relative;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.1);
+        }
+
+        .theme-icon {
+            position: absolute;
+            transition: all 0.3s ease;
+            width: 20px;
+            height: 20px;
+        }
+
+        .sun-icon {
+            opacity: 1;
+            transform: rotate(0deg);
+        }
+
+        .moon-icon {
+            opacity: 0;
+            transform: rotate(180deg);
+        }
+
+        /* Dark theme activated */
+        [data-theme="dark"] .sun-icon {
+            opacity: 0;
+            transform: rotate(180deg);
+        }
+
+        [data-theme="dark"] .moon-icon {
+            opacity: 1;
+            transform: rotate(0deg);
+        }
+
+        /* Dark theme variables */
+        [data-theme="dark"] {
+            --mina-bg-primary: #0f0f23;
+            --mina-bg-secondary: #1a1a2e;
+            --mina-bg-tertiary: #16213e;
+            --mina-text-primary: #ffffff;
+            --mina-text-secondary: #b8b8b8;
+            --mina-border-primary: #2a2a3a;
+            --mina-border-secondary: #3a3a4a;
+            --glassmorphism-bg: rgba(255, 255, 255, 0.05);
+            --glassmorphism-border: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Dark theme specific adjustments */
+        [data-theme="dark"] .animated-background {
+            background: linear-gradient(45deg, #1a1a2e, #16213e, #0f0f23, #1a1a2e);
+            background-size: 400% 400%;
+        }
+
+        [data-theme="dark"] .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        [data-theme="dark"] .pricing-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        [data-theme="dark"] .testimonial {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Accessibility Enhancements */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        .skip-to-content {
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            background: var(--mina-brand-primary);
+            color: white;
+            padding: 8px;
+            text-decoration: none;
+            border-radius: 4px;
+            z-index: 9999;
+        }
+
+        .skip-to-content:focus {
+            top: 6px;
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .cta-button {
+                border: 2px solid currentColor;
+            }
+            
+            .feature-card, .pricing-card {
+                border: 2px solid var(--mina-text-primary);
+            }
+        }
+
+        /* Focus styles for better accessibility */
+        .cta-button:focus,
+        .nav-link:focus,
+        .theme-toggle:focus {
+            outline: 2px solid var(--mina-brand-accent);
+            outline-offset: 2px;
+        }
+
+        .calculator-slider:focus {
+            outline: 2px solid var(--mina-brand-primary);
+            outline-offset: 2px;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .hero-cta {
@@ -1110,6 +1245,9 @@
     </style>
 </head>
 <body>
+    <!-- Accessibility Skip Link -->
+    <a href="#main-content" class="skip-to-content">Skip to main content</a>
+
     <!-- Animated Background -->
     <div class="animated-background"></div>
     <div class="particles-container" id="particles"></div>
@@ -1125,6 +1263,11 @@
                 <span>Mina</span>
             </a>
             <div class="nav-actions">
+                <!-- Dark Mode Toggle -->
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <i data-feather="sun" class="theme-icon sun-icon"></i>
+                    <i data-feather="moon" class="theme-icon moon-icon"></i>
+                </button>
                 <a href="{{ url_for('auth.login') }}" class="nav-link">Sign In</a>
                 <a href="{{ url_for('auth.register') }}" class="cta-button cta-primary" style="padding: var(--mina-space-2) var(--mina-space-4); font-size: var(--mina-font-size-sm);">
                     Get Started
@@ -1135,7 +1278,7 @@
 
     <!-- Hero Section -->
     <section class="hero">
-        <div class="hero-container">
+        <div class="hero-container" id="main-content">
             <h1 class="hero-title" id="heroTitle">Transform Your Meetings Into Actionable Moments</h1>
             <p class="hero-subtitle" id="heroSubtitle">
                 Real-time transcription, AI-powered insights, and intelligent task extraction. 
@@ -1713,6 +1856,9 @@
             initPricingToggle();
             initCountdownTimer();
             initLiveCounter();
+            initDarkModeToggle();
+            initAnalytics();
+            initPerformanceOptimization();
 
             // Animate counters
             animateCounters();
@@ -1908,6 +2054,15 @@
             
             // Live signup counter
             initLiveCounter();
+
+            // Dark mode toggle
+            initDarkModeToggle();
+
+            // Analytics tracking
+            initAnalytics();
+
+            // Performance optimization
+            initPerformanceOptimization();
         });
 
         // ROI Calculator Logic
@@ -2093,6 +2248,110 @@
             }
 
             scheduleNextUpdate();
+        }
+
+        // Dark Mode Toggle Functionality
+        function initDarkModeToggle() {
+            const themeToggle = document.getElementById('themeToggle');
+            const currentTheme = localStorage.getItem('theme') || 
+                (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+            // Set initial theme
+            document.documentElement.setAttribute('data-theme', currentTheme);
+
+            themeToggle.addEventListener('click', () => {
+                const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+            });
+
+            // Listen for system theme changes
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!localStorage.getItem('theme')) {
+                    document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+                }
+            });
+        }
+
+        // Analytics and Performance Tracking
+        function initAnalytics() {
+            // Track page engagement
+            let engagementData = {
+                timeOnPage: 0,
+                scrollDepth: 0,
+                ctaClicks: 0,
+                calculatorUsed: false,
+                pricingViewed: false
+            };
+
+            // Track time on page
+            const startTime = Date.now();
+            window.addEventListener('beforeunload', () => {
+                engagementData.timeOnPage = Date.now() - startTime;
+                // Send analytics data (would be sent to analytics service)
+                console.log('Engagement Data:', engagementData);
+            });
+
+            // Track scroll depth
+            window.addEventListener('scroll', () => {
+                const scrolled = window.scrollY;
+                const total = document.documentElement.scrollHeight - window.innerHeight;
+                const scrollPercent = Math.round((scrolled / total) * 100);
+                engagementData.scrollDepth = Math.max(engagementData.scrollDepth, scrollPercent);
+            });
+
+            // Track CTA clicks
+            document.querySelectorAll('.cta-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    engagementData.ctaClicks++;
+                });
+            });
+
+            // Track calculator usage
+            document.querySelectorAll('.calculator-slider').forEach(slider => {
+                slider.addEventListener('input', () => {
+                    engagementData.calculatorUsed = true;
+                });
+            });
+
+            // Track pricing section view
+            const pricingObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        engagementData.pricingViewed = true;
+                    }
+                });
+            });
+
+            const pricingSection = document.getElementById('pricing');
+            if (pricingSection) {
+                pricingObserver.observe(pricingSection);
+            }
+        }
+
+        // Performance Optimization
+        function initPerformanceOptimization() {
+            // Lazy load images
+            const images = document.querySelectorAll('img[data-src]');
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        img.classList.remove('lazy');
+                        imageObserver.unobserve(img);
+                    }
+                });
+            });
+
+            images.forEach(img => imageObserver.observe(img));
+
+            // Preload critical resources
+            const preloadLink = document.createElement('link');
+            preloadLink.rel = 'preload';
+            preloadLink.as = 'script';
+            preloadLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js';
+            document.head.appendChild(preloadLink);
         }
     </script>
 </body>
