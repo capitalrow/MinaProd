@@ -19,7 +19,10 @@ def _cookie(resp, token):
     name = current_app.config["JWT_COOKIE_NAME"]
     # Secure cookie configuration for production
     if token:
-        resp.set_cookie(name, token, httponly=True, secure=not current_app.debug, samesite="Strict", max_age=60*60*24*7, path="/")
+        # In debug mode, don't use secure flag for HTTP testing
+        secure = not current_app.debug and current_app.config.get("COOKIE_SECURE", False)
+        samesite = "Lax" if current_app.debug else "Strict"
+        resp.set_cookie(name, token, httponly=True, secure=secure, samesite=samesite, max_age=60*60*24*7, path="/")
     else:
         resp.delete_cookie(name, path="/")
     return resp
