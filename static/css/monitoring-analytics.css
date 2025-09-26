@@ -1,0 +1,564 @@
+/*
+MONITORING & ANALYTICS EXCELLENCE - INDUSTRY STANDARD IMPLEMENTATION
+- Performance monitoring integration
+- Error tracking and reporting
+- User analytics and insights
+- Real-time health monitoring
+- Accessibility compliance tracking
+- Business metrics dashboard
+*/
+
+/* Performance Monitoring Indicators */
+.mina-perf-monitor {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: var(--mina-space-2);
+  border-radius: var(--mina-radius-md);
+  font-family: var(--mina-font-family-mono);
+  font-size: var(--mina-font-size-xs);
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity var(--mina-transition-base);
+}
+
+.mina-perf-monitor.is-visible {
+  opacity: 1;
+}
+
+.mina-perf-metric {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--mina-space-2);
+  margin-bottom: var(--mina-space-1);
+}
+
+.mina-perf-value {
+  font-weight: var(--mina-font-weight-bold);
+}
+
+.mina-perf-value.is-good {
+  color: #4ade80;
+}
+
+.mina-perf-value.is-warning {
+  color: #fbbf24;
+}
+
+.mina-perf-value.is-critical {
+  color: #f87171;
+}
+
+/* Error Boundary Styling */
+.mina-error-boundary {
+  background: var(--mina-bg-primary);
+  border: 2px solid var(--mina-danger);
+  border-radius: var(--mina-radius-lg);
+  padding: var(--mina-space-8);
+  margin: var(--mina-space-4);
+  text-align: center;
+}
+
+.mina-error-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--mina-space-4);
+  color: var(--mina-danger);
+}
+
+.mina-error-title {
+  font-size: var(--mina-font-size-xl);
+  font-weight: var(--mina-font-weight-bold);
+  color: var(--mina-text-primary);
+  margin-bottom: var(--mina-space-2);
+}
+
+.mina-error-message {
+  color: var(--mina-text-secondary);
+  font-size: var(--mina-font-size-base);
+  margin-bottom: var(--mina-space-4);
+  max-width: 60ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.mina-error-id {
+  font-family: var(--mina-font-family-mono);
+  font-size: var(--mina-font-size-sm);
+  color: var(--mina-text-muted);
+  background: var(--mina-bg-accent);
+  padding: var(--mina-space-1) var(--mina-space-2);
+  border-radius: var(--mina-radius-sm);
+  display: inline-block;
+  margin-bottom: var(--mina-space-4);
+}
+
+/* Analytics Event Tracking */
+.mina-track-event {
+  /* Used for analytics event tracking */
+  position: relative;
+}
+
+.mina-track-event::after {
+  /* Debug indicator for tracked elements */
+  content: '📊';
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  font-size: 10px;
+  opacity: 0;
+  transition: opacity var(--mina-transition-base);
+  pointer-events: none;
+}
+
+.mina-debug-analytics .mina-track-event::after {
+  opacity: 0.5;
+}
+
+/* Health Status Indicators */
+.mina-health-status {
+  display: flex;
+  align-items: center;
+  gap: var(--mina-space-2);
+  padding: var(--mina-space-2) var(--mina-space-3);
+  border-radius: var(--mina-radius-full);
+  font-size: var(--mina-font-size-sm);
+  font-weight: var(--mina-font-weight-medium);
+}
+
+.mina-health-status.is-healthy {
+  background: rgba(var(--mina-success-rgb), 0.1);
+  color: var(--mina-success-dark);
+}
+
+.mina-health-status.is-degraded {
+  background: rgba(var(--mina-warning-rgb), 0.1);
+  color: var(--mina-warning-dark);
+}
+
+.mina-health-status.is-down {
+  background: rgba(var(--mina-danger-rgb), 0.1);
+  color: var(--mina-danger-dark);
+}
+
+.mina-health-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: healthPulse 2s ease-in-out infinite;
+}
+
+@keyframes healthPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Real-time Metrics Dashboard */
+.mina-metrics-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--mina-space-6);
+  margin: var(--mina-space-6) 0;
+}
+
+.mina-metric-card {
+  background: var(--mina-bg-primary);
+  border: 1px solid var(--mina-border-primary);
+  border-radius: var(--mina-radius-lg);
+  padding: var(--mina-space-6);
+  box-shadow: var(--mina-shadow-base);
+}
+
+.mina-metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--mina-space-4);
+}
+
+.mina-metric-title {
+  font-size: var(--mina-font-size-sm);
+  font-weight: var(--mina-font-weight-medium);
+  color: var(--mina-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--mina-letter-spacing-wide);
+}
+
+.mina-metric-trend {
+  font-size: var(--mina-font-size-xs);
+  padding: var(--mina-space-1) var(--mina-space-2);
+  border-radius: var(--mina-radius-sm);
+}
+
+.mina-metric-trend.is-up {
+  background: rgba(var(--mina-success-rgb), 0.1);
+  color: var(--mina-success-dark);
+}
+
+.mina-metric-trend.is-down {
+  background: rgba(var(--mina-danger-rgb), 0.1);
+  color: var(--mina-danger-dark);
+}
+
+.mina-metric-value {
+  font-size: var(--mina-font-size-3xl);
+  font-weight: var(--mina-font-weight-bold);
+  color: var(--mina-text-primary);
+  line-height: 1;
+  margin-bottom: var(--mina-space-2);
+}
+
+.mina-metric-description {
+  font-size: var(--mina-font-size-sm);
+  color: var(--mina-text-muted);
+}
+
+/* A/B Testing Indicators */
+.mina-ab-test {
+  position: relative;
+}
+
+.mina-ab-test::before {
+  content: attr(data-variant);
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--mina-primary);
+  color: white;
+  font-size: var(--mina-font-size-xs);
+  padding: 2px 6px;
+  border-radius: var(--mina-radius-sm);
+  font-weight: var(--mina-font-weight-bold);
+  opacity: 0;
+  transition: opacity var(--mina-transition-base);
+  pointer-events: none;
+}
+
+.mina-debug-ab .mina-ab-test::before {
+  opacity: 1;
+}
+
+/* User Flow Tracking */
+.mina-flow-step {
+  position: relative;
+}
+
+.mina-flow-step[data-step]::after {
+  content: attr(data-step);
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: var(--mina-info);
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: var(--mina-font-size-xs);
+  font-weight: var(--mina-font-weight-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--mina-transition-base);
+}
+
+.mina-debug-flow .mina-flow-step[data-step]::after {
+  opacity: 1;
+}
+
+/* Conversion Tracking */
+.mina-conversion-goal {
+  border: 2px dashed transparent;
+  transition: border-color var(--mina-transition-base);
+}
+
+.mina-debug-conversion .mina-conversion-goal {
+  border-color: var(--mina-success);
+}
+
+.mina-conversion-goal[data-goal]::before {
+  content: '🎯 ' attr(data-goal);
+  position: absolute;
+  top: -30px;
+  left: 0;
+  background: var(--mina-success);
+  color: white;
+  padding: var(--mina-space-1) var(--mina-space-2);
+  border-radius: var(--mina-radius-sm);
+  font-size: var(--mina-font-size-xs);
+  opacity: 0;
+  transition: opacity var(--mina-transition-base);
+}
+
+.mina-debug-conversion .mina-conversion-goal[data-goal]::before {
+  opacity: 1;
+}
+
+/* Accessibility Compliance Monitoring */
+.mina-a11y-indicator {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: var(--mina-info);
+  color: white;
+  padding: var(--mina-space-2) var(--mina-space-3);
+  border-radius: var(--mina-radius-full);
+  font-size: var(--mina-font-size-xs);
+  font-weight: var(--mina-font-weight-bold);
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity var(--mina-transition-base);
+}
+
+.mina-a11y-indicator.is-visible {
+  opacity: 1;
+}
+
+.mina-a11y-indicator.has-violations {
+  background: var(--mina-danger);
+}
+
+.mina-a11y-indicator.has-warnings {
+  background: var(--mina-warning);
+}
+
+/* Console Log Styling */
+.mina-console-log {
+  font-family: var(--mina-font-family-mono);
+  font-size: var(--mina-font-size-sm);
+  padding: var(--mina-space-2);
+  margin: var(--mina-space-1) 0;
+  border-radius: var(--mina-radius-sm);
+  border-left: 4px solid;
+}
+
+.mina-console-log.is-info {
+  background: rgba(var(--mina-info-rgb), 0.1);
+  border-color: var(--mina-info);
+  color: var(--mina-info-dark);
+}
+
+.mina-console-log.is-warn {
+  background: rgba(var(--mina-warning-rgb), 0.1);
+  border-color: var(--mina-warning);
+  color: var(--mina-warning-dark);
+}
+
+.mina-console-log.is-error {
+  background: rgba(var(--mina-danger-rgb), 0.1);
+  border-color: var(--mina-danger);
+  color: var(--mina-danger-dark);
+}
+
+/* Network Status Indicators */
+.mina-network-status {
+  display: flex;
+  align-items: center;
+  gap: var(--mina-space-2);
+  font-size: var(--mina-font-size-sm);
+  color: var(--mina-text-muted);
+}
+
+.mina-network-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--mina-border-accent);
+}
+
+.mina-network-status.is-online .mina-network-indicator {
+  background: var(--mina-success);
+  animation: networkPulse 2s ease-in-out infinite;
+}
+
+.mina-network-status.is-offline .mina-network-indicator {
+  background: var(--mina-danger);
+}
+
+.mina-network-status.is-slow .mina-network-indicator {
+  background: var(--mina-warning);
+}
+
+@keyframes networkPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Feature Flag Indicators */
+.mina-feature-flag {
+  position: relative;
+}
+
+.mina-feature-flag[data-flag]::after {
+  content: '🏳️ ' attr(data-flag);
+  position: absolute;
+  bottom: -25px;
+  left: 0;
+  background: var(--mina-purple);
+  color: white;
+  padding: 2px 8px;
+  border-radius: var(--mina-radius-sm);
+  font-size: var(--mina-font-size-xs);
+  opacity: 0;
+  transition: opacity var(--mina-transition-base);
+  white-space: nowrap;
+}
+
+.mina-debug-flags .mina-feature-flag[data-flag]::after {
+  opacity: 1;
+}
+
+/* Performance Budget Warnings */
+.mina-budget-warning {
+  position: fixed;
+  top: 50px;
+  right: 10px;
+  background: var(--mina-warning);
+  color: white;
+  padding: var(--mina-space-3);
+  border-radius: var(--mina-radius-md);
+  font-size: var(--mina-font-size-sm);
+  max-width: 300px;
+  box-shadow: var(--mina-shadow-lg);
+  z-index: 9999;
+  transform: translateX(100%);
+  transition: transform var(--mina-transition-base);
+}
+
+.mina-budget-warning.is-visible {
+  transform: translateX(0);
+}
+
+.mina-budget-warning.is-critical {
+  background: var(--mina-danger);
+}
+
+/* User Session Replay Indicators */
+.mina-session-replay {
+  position: fixed;
+  bottom: 60px;
+  left: 20px;
+  background: var(--mina-purple);
+  color: white;
+  padding: var(--mina-space-2);
+  border-radius: var(--mina-radius-full);
+  font-size: var(--mina-font-size-xs);
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity var(--mina-transition-base);
+}
+
+.mina-session-replay.is-recording {
+  opacity: 1;
+  animation: recordingPulse 2s ease-in-out infinite;
+}
+
+@keyframes recordingPulse {
+  0%, 100% {
+    background: var(--mina-purple);
+  }
+  50% {
+    background: var(--mina-danger);
+  }
+}
+
+/* Business Metrics Visualization */
+.mina-metric-chart {
+  height: 200px;
+  background: var(--mina-bg-secondary);
+  border-radius: var(--mina-radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.mina-metric-chart::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--chart-height, 50%);
+  background: linear-gradient(
+    to top,
+    var(--mina-primary),
+    rgba(var(--mina-primary-rgb), 0.3)
+  );
+  border-radius: var(--mina-radius-sm) var(--mina-radius-sm) 0 0;
+}
+
+/* Debug Mode Styles */
+.mina-debug-mode {
+  border: 2px dashed #ff0000;
+  position: relative;
+}
+
+.mina-debug-mode::before {
+  content: 'DEBUG MODE';
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: #ff0000;
+  color: white;
+  padding: var(--mina-space-1) var(--mina-space-2);
+  font-size: var(--mina-font-size-xs);
+  font-weight: var(--mina-font-weight-bold);
+  z-index: 10000;
+}
+
+/* Development Environment Indicator */
+.mina-env-indicator {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--mina-warning);
+  color: white;
+  padding: var(--mina-space-1) var(--mina-space-4);
+  font-size: var(--mina-font-size-xs);
+  font-weight: var(--mina-font-weight-bold);
+  z-index: 10000;
+  border-radius: 0 0 var(--mina-radius-sm) var(--mina-radius-sm);
+}
+
+.mina-env-indicator.is-production {
+  background: var(--mina-danger);
+}
+
+.mina-env-indicator.is-staging {
+  background: var(--mina-warning);
+}
+
+.mina-env-indicator.is-development {
+  background: var(--mina-info);
+}
+
+/* Print Styles for Reports */
+@media print {
+  .mina-perf-monitor,
+  .mina-debug-mode::before,
+  .mina-env-indicator,
+  .mina-a11y-indicator,
+  .mina-session-replay {
+    display: none !important;
+  }
+  
+  .mina-metrics-dashboard {
+    page-break-inside: avoid;
+  }
+  
+  .mina-metric-card {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+}
