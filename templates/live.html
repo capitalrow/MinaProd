@@ -21,8 +21,10 @@
   <!-- Socket.IO -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
   
-  <!-- Custom Design System -->
+  <!-- Custom Design System - Production Optimized -->
   <link rel="stylesheet" href="/static/css/design-tokens.css">
+  <link rel="stylesheet" href="/static/css/typography.css">
+  <link rel="stylesheet" href="/static/css/mobile-excellence.css">
   <link rel="stylesheet" href="/static/css/components.css">
   
   <!-- PWA Meta Tags -->
@@ -331,6 +333,64 @@
         this.loaded[dependency] = true;
         console.log(`[Mina] ${dependency} loaded successfully`);
         this.checkReady();
+      },
+      
+      loadBootstrapFallback() {
+        console.warn('[Mina] Bootstrap CDN failed, loading fallback');
+        // Try alternative CDN
+        const fallbackScript = document.createElement('script');
+        fallbackScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js';
+        fallbackScript.onload = () => this.markLoaded('bootstrap');
+        fallbackScript.onerror = () => {
+          console.error('[Mina] Bootstrap fallback failed, creating minimal implementation');
+          // Create minimal Bootstrap Toast implementation
+          window.bootstrap = {
+            Toast: class {
+              constructor(element) {
+                this.element = element;
+              }
+              show() {
+                if (this.element) {
+                  this.element.style.display = 'block';
+                  this.element.classList.add('show');
+                  setTimeout(() => {
+                    this.element.style.display = 'none';
+                    this.element.classList.remove('show');
+                  }, 5000);
+                }
+              }
+            }
+          };
+          this.markLoaded('bootstrap');
+        };
+        document.head.appendChild(fallbackScript);
+      },
+      
+      loadFeatherFallback() {
+        console.warn('[Mina] Feather icons CDN failed, loading fallback');
+        // Try alternative CDN
+        const fallbackScript = document.createElement('script');
+        fallbackScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js';
+        fallbackScript.onload = () => this.markLoaded('feather');
+        fallbackScript.onerror = () => {
+          console.error('[Mina] Feather fallback failed, creating minimal implementation');
+          // Create minimal Feather implementation
+          window.feather = {
+            replace() {
+              // Replace data-feather attributes with Unicode icons
+              document.querySelectorAll('[data-feather]').forEach(el => {
+                const iconName = el.getAttribute('data-feather');
+                const iconMap = {
+                  'mic': '🎤', 'mic-off': '🔇', 'zap': '⚡', 'shield': '🛡️',
+                  'bell': '🔔', 'moon': '🌙', 'sun': '☀️', 'settings': '⚙️'
+                };
+                el.innerHTML = iconMap[iconName] || '●';
+              });
+            }
+          };
+          this.markLoaded('feather');
+        };
+        document.head.appendChild(fallbackScript);
       }
     };
     
@@ -340,17 +400,17 @@
     }
   </script>
 
-  <!-- Bootstrap 5 JavaScript with proper loading detection -->
+  <!-- Bootstrap 5 JavaScript with fallback -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" 
           integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" 
           crossorigin="anonymous"
           onload="window.MinaDependencies.markLoaded('bootstrap')"
-          onerror="console.error('[Mina] Bootstrap failed to load')"></script>
+          onerror="window.MinaDependencies.loadBootstrapFallback()"></script>
 
-  <!-- Feather Icons with loading detection -->
+  <!-- Feather Icons with fallback -->
   <script src="https://unpkg.com/feather-icons" 
           onload="window.MinaDependencies.markLoaded('feather')"
-          onerror="console.error('[Mina] Feather icons failed to load')"></script>
+          onerror="window.MinaDependencies.loadFeatherFallback()"></script>
 
   <!-- Main Application Script - Waits for Dependencies -->
   <script>

@@ -17,18 +17,20 @@ from models import db, Session, Segment
 # Create blueprint
 transcription_api_bp = Blueprint('transcription_api', __name__)
 
-# Initialize OpenAI client
+# Initialize OpenAI client using centralized manager
 try:
-    OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-    if OPENAI_API_KEY:
-        openai_client = OpenAI(api_key=OPENAI_API_KEY)  # Explicit initialization
+    from services.openai_client_manager import openai_manager
+    
+    # Test initialization
+    openai_client = openai_manager.get_client()
+    if openai_client:
         print(f"[LIVE-API] ✅ OpenAI client initialized successfully")
     else:
-        openai_client = None
-        print(f"[LIVE-API] ❌ OpenAI API key not found")
+        error = openai_manager.get_initialization_error()
+        print(f"[LIVE-API] ❌ OpenAI client not available: {error}")
 except Exception as e:
     openai_client = None
-    print(f"[LIVE-API] ❌ OpenAI initialization failed: {e}")
+    print(f"[LIVE-API] ❌ OpenAI manager initialization failed: {e}")
 
 @transcription_api_bp.route('/api/transcribe_chunk_streaming', methods=['POST', 'GET', 'OPTIONS'])
 def transcribe_chunk_streaming():
