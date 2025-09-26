@@ -120,19 +120,28 @@ def create_app() -> Flask:
     os.makedirs(metrics_dir, exist_ok=True)
     os.makedirs(os.path.join(metrics_dir, "sessions"), exist_ok=True)
 
-    # Database configuration first
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_recycle": 300,
-        "pool_pre_ping": True,
-    }
-    
-    # Initialize database models
-    from models import db
-    db.init_app(app)
-    
-    with app.app_context():
-        db.create_all()
+    # Database configuration (optional for graceful degradation)
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "pool_recycle": 300,
+            "pool_pre_ping": True,
+        }
+        
+        # Initialize database models
+        try:
+            from models import db
+            db.init_app(app)
+            
+            with app.app_context():
+                db.create_all()
+            app.logger.info("Database connected and initialized")
+        except Exception as e:
+            app.logger.warning(f"Database initialization failed: {e}")
+            app.logger.info("Continuing without database persistence")
+    else:
+        app.logger.info("No DATABASE_URL found, running without database persistence")
 
     # pages blueprint or fallback /live
     try:
