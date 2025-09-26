@@ -278,3 +278,12 @@ if (window.realWhisperIntegration) {
     window.realWhisperIntegration.startTranscription = window.directAudioTranscription.startTranscription.bind(window.directAudioTranscription);
     window.realWhisperIntegration.stopTranscription = window.directAudioTranscription.stopTranscription.bind(window.directAudioTranscription);
 }
+
+// [CTO] Defaults to ensure live interim is visible & frequent
+window.MINA_FEATURES = Object.assign({
+  ENABLE_INTERIM: true,
+  SHOW_INTERIM: true,
+  REPLACE_INTERIM_ON_FINAL: true,
+  INTERIM_THROTTLE_MS: 250,
+  RECORDER_TIMESLICE_MS: 250,
+}, window.MINA_FEATURES || {});
