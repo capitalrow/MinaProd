@@ -27,13 +27,26 @@ def handle_disconnect():
 @socketio.on('join_session')
 def handle_join_session(data):
     """Handle session initialization - create conversation record"""
-    session_id = data.get('session_id')
+    logger.info(f'[websocket] Received join_session request: {data}')
+    
+    session_id = data.get('session_id') if data else None
     if not session_id:
-        logger.error('[websocket] No session_id provided')
+        logger.error('[websocket] No session_id provided in join_session')
         emit('session_error', {'error': 'No session ID provided'})
         return
     
     logger.info(f'[websocket] Joining session: {session_id}')
+    
+    # Validate OpenAI API first
+    from services.openai_whisper_client import check_openai
+    api_status = check_openai()
+    if not api_status.get('ok'):
+        error_msg = f"OpenAI API not available: {api_status.get('reason', 'Unknown error')}"
+        logger.error(f'[websocket] {error_msg}')
+        emit('session_error', {'error': error_msg})
+        return
+    
+    logger.info('[websocket] OpenAI API validation successful')
     
     # Create conversation record with Flask app context
     try:
@@ -100,8 +113,14 @@ def handle_audio_chunk(data):
             logger.error(f'[websocket] Failed to process raw audio data: {e}')
             return
     
-    if not session_id or session_id not in active_sessions:
-        logger.warning(f'[websocket] No active session found for audio chunk')
+    if not session_id:
+        logger.warning(f'[websocket] No session_id extracted from audio chunk data')
+        emit('transcription_error', {'error': 'No session ID in audio chunk'})
+        return
+        
+    if session_id not in active_sessions:
+        logger.warning(f'[websocket] Session {session_id} not in active_sessions: {list(active_sessions.keys())}')
+        emit('transcription_error', {'error': f'Session {session_id} not active'})
         return
     
     if not audio_data or len(audio_data) == 0:
@@ -134,11 +153,13 @@ def handle_audio_chunk(data):
             
             # Real OpenAI Whisper transcription
             try:
+                logger.info(f'[websocket] Calling OpenAI transcribe_bytes for session {session_id}')
                 transcript_text = transcribe_bytes(
                     session_info['audio_buffer'],
                     mime_hint='audio/webm',
                     language='en'
                 )
+                logger.info(f'[websocket] OpenAI response received: {len(transcript_text) if transcript_text else 0} chars')
                 
                 session_info['last_process_time'] = current_time
                 session_info['audio_buffer'] = b''  # Clear buffer after processing
@@ -186,9 +207,15 @@ def handle_audio_chunk(data):
                     logger.info(f'[websocket] No transcription result for session {session_id}')
                     
             except Exception as e:
-                logger.error(f'[websocket] Transcription failed for session {session_id}: {e}')
-                # Send error to client
-                emit('transcription_error', {'error': 'Transcription service unavailable'})
+                logger.error(f'[websocket] Transcription failed for session {session_id}: {type(e).__name__}: {e}')
+                import traceback
+                logger.error(f'[websocket] Transcription error traceback: {traceback.format_exc()}')
+                # Send detailed error to client
+                emit('transcription_error', {
+                    'error': f'Transcription failed: {type(e).__name__}', 
+                    'detail': str(e)[:200],
+                    'session_id': session_id
+                })
     
     except Exception as e:
         logger.error(f'[websocket] Error processing audio chunk for session {session_id}: {e}')
