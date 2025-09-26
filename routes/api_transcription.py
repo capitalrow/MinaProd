@@ -130,10 +130,26 @@ def transcribe_chunk_streaming():
                     'type': 'error'
                 }), 413
         
-        # Create temporary file for OpenAI processing
+        # Create temporary file for OpenAI processing  
+        # Fix: Read the file data directly instead of saving to path
+        audio_data = audio_file.read()
+        print(f"[LIVE-API] 📏 Raw audio data size: {len(audio_data)} bytes")
+        
+        if len(audio_data) == 0:
+            return jsonify({
+                'error': 'Empty audio file received',
+                'text': '',
+                'confidence': 0,
+                'processing_time': time.time() - start_time,
+                'chunk_id': chunk_id,
+                'type': 'error'
+            }), 400
+        
         with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
-            audio_file.save(temp_file.name)
+            temp_file.write(audio_data)
+            temp_file.flush()
             temp_file_path = temp_file.name
+            print(f"[LIVE-API] 💾 Temp file created: {temp_file_path}, size: {len(audio_data)} bytes")
         
         try:
             # Call OpenAI Whisper API
