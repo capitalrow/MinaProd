@@ -31,3 +31,6 @@ websockets
 beautifulsoup4
 requests
 werkzeug
+argon2-cffi
+itsdangerous
+python-dotenv
