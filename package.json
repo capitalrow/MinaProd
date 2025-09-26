@@ -3,7 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "description": "Monorepo for Mina (workspace + server).",
-  "workspaces": ["server"],
+  "workspaces": [
+    "server"
+  ],
   "scripts": {
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "jest",
@@ -14,6 +16,12 @@
     "@playwright/test": "^1.55.0",
     "jest": "^30.1.3"
   },
-  "engines": { "node": ">=18.18" },
-  "license": "ISC"
+  "engines": {
+    "node": ">=18.18"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "gsap": "^3.13.0",
+    "lottie-web": "^5.13.0"
+  }
 }
