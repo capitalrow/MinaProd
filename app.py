@@ -146,6 +146,14 @@ def create_app() -> Flask:
     # WebSocket routes (required) - import to bind handlers
     import routes.websocket  # noqa: F401
 
+    # Register transcription API
+    try:
+        from routes.transcription_api import transcription_api_bp
+        app.register_blueprint(transcription_api_bp)
+        app.logger.info("Transcription API registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register transcription API: {e}")
+
     # other blueprints (guarded)
     _optional = [
         ("routes.final_upload", "final_bp", "/api"),
