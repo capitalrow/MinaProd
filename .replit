@@ -77,4 +77,8 @@ externalPort = 6800
 localPort = 8774
 externalPort = 8000
 
+[[ports]]
+localPort = 44725
+externalPort = 8080
+
 [agent]
