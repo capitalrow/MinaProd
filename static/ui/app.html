@@ -267,6 +267,7 @@
           currentSocket.on('server_hello',()=>{});
           currentSocket.on('interim_transcript',(data)=>{
             if(!data||!data.text) return;
+            console.log('📝 Interim transcript:', data.text.substring(0, 50) + '...');
             interimStream += ' ' + data.text;
             els.transcript.textContent=interimStream;
             // Auto-scroll to bottom
@@ -275,19 +276,35 @@
           
           currentSocket.on('final_transcript',(data)=>{
             if(!data||!data.text) return;
+            console.log('✅ Final transcript received:', data.text.substring(0, 50) + '...');
             const finalText = interimStream + ' ' + data.text;
             els.transcript.textContent=finalText;
             Store.save({id:Date.now(),text:finalText,created:new Date().toISOString()});
             els.transcript.scrollTop = els.transcript.scrollHeight;
+            toast('Transcription completed');
           });
 
           currentSocket.on('session_joined',(data)=>{
-            console.log('Session joined:', data);
+            console.log('✅ Session joined successfully:', data);
+            toast('Session connected and ready for transcription');
+          });
+          
+          currentSocket.on('session_error',(data)=>{
+            console.error('❌ Session error:', data);
+            els.note.classList.remove('hidden');
+            els.note.textContent='Session error: ' + (data.error || 'Failed to start session');
+            toast('Failed to start session: ' + (data.error || 'Unknown error'), 'error');
           });
 
           currentSocket.on('transcription_error',(data)=>{
+            console.error('🚨 Transcription error received:', data);
             els.note.classList.remove('hidden');
             els.note.textContent='Transcription error: ' + (data.error || 'Unknown error');
+            if(data.detail) {
+              console.error('Error details:', data.detail);
+            }
+            // Show error notification
+            toast('Transcription failed: ' + (data.error || 'Unknown error'), 'error');
           });
 
           try{
