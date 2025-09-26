@@ -155,7 +155,7 @@ def transcribe_bytes(
         print(f"[DEBUG] First bytes: {first_bytes}")
 
     # Build fileobj for OpenAI
-    ext = _mime_to_ext(mime_hint)
+    ext = _ext_from_mime(mime_hint)
     fileobj = io.BytesIO(audio_bytes)
     fileobj.name = f"audio.{ext}"
 
