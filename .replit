@@ -91,3 +91,4 @@ localPort = 39449
 externalPort = 8099
 
 [agent]
+integrations = ["python_database:1.0.0"]
