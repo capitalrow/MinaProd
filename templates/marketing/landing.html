@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mina - Transform Your Meetings Into Actionable Moments</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        /* Modern Landing Page Styles */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--mina-font-family-sans);
+            line-height: var(--mina-line-height-normal);
+            color: var(--mina-text-primary);
+            background: var(--mina-bg-primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--mina-brand-primary) 0%, var(--mina-brand-secondary) 100%);
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        }
+
+        .hero-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--mina-space-6);
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: var(--mina-font-weight-bold);
+            color: white;
+            margin-bottom: var(--mina-space-6);
+            font-family: var(--mina-font-family-display);
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: var(--mina-space-10);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            font-weight: var(--mina-font-weight-medium);
+            line-height: var(--mina-line-height-relaxed);
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: var(--mina-space-4);
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: var(--mina-space-12);
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--mina-space-3);
+            padding: clamp(1rem, 3vw, 1.25rem) clamp(1.5rem, 4vw, 2rem);
+            border-radius: var(--mina-radius-lg);
+            font-size: clamp(1rem, 3vw, 1.125rem);
+            font-weight: var(--mina-font-weight-semibold);
+            text-decoration: none;
+            transition: all var(--mina-transition-base);
+            cursor: pointer;
+            border: 2px solid transparent;
+            min-height: 56px;
+            font-family: var(--mina-font-family-sans);
+        }
+
+        .cta-primary {
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--mina-brand-primary);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .cta-primary:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+
+        .cta-secondary {
+            background: transparent;
+            color: white;
+            border-color: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .cta-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Features Section */
+        .features {
+            padding: var(--mina-space-20) var(--mina-space-6);
+            background: var(--mina-bg-secondary);
+        }
+
+        .features-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: var(--mina-font-weight-bold);
+            text-align: center;
+            margin-bottom: var(--mina-space-4);
+            color: var(--mina-text-primary);
+            font-family: var(--mina-font-family-display);
+        }
+
+        .section-subtitle {
+            font-size: clamp(1.1rem, 3vw, 1.25rem);
+            color: var(--mina-text-secondary);
+            text-align: center;
+            margin-bottom: var(--mina-space-12);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: var(--mina-space-8);
+        }
+
+        .feature-card {
+            background: var(--mina-bg-primary);
+            padding: var(--mina-space-8);
+            border-radius: var(--mina-radius-xl);
+            text-align: center;
+            box-shadow: var(--mina-shadow-sm);
+            border: 1px solid var(--mina-border-primary);
+            transition: all var(--mina-transition-base);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--mina-shadow-lg);
+            border-color: var(--mina-border-secondary);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
+            border-radius: var(--mina-radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto var(--mina-space-6);
+            color: white;
+        }
+
+        .feature-title {
+            font-size: var(--mina-font-size-xl);
+            font-weight: var(--mina-font-weight-semibold);
+            margin-bottom: var(--mina-space-3);
+            color: var(--mina-text-primary);
+        }
+
+        .feature-description {
+            color: var(--mina-text-secondary);
+            line-height: var(--mina-line-height-relaxed);
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--mina-space-4) var(--mina-space-6);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: var(--mina-space-3);
+            color: white;
+            text-decoration: none;
+            font-weight: var(--mina-font-weight-bold);
+            font-size: var(--mina-font-size-xl);
+        }
+
+        .nav-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: var(--mina-radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--mina-font-size-lg);
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: var(--mina-space-4);
+            align-items: center;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-weight: var(--mina-font-weight-medium);
+            padding: var(--mina-space-2) var(--mina-space-4);
+            border-radius: var(--mina-radius-md);
+            transition: all var(--mina-transition-fast);
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero-cta {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .cta-button {
+                width: 100%;
+                max-width: 280px;
+                justify-content: center;
+            }
+
+            .nav-actions {
+                gap: var(--mina-space-2);
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .nav-container {
+                padding: var(--mina-space-3) var(--mina-space-4);
+            }
+
+            .hero-container {
+                padding: 0 var(--mina-space-4);
+            }
+
+            .features {
+                padding: var(--mina-space-12) var(--mina-space-4);
+            }
+
+            .feature-card {
+                padding: var(--mina-space-6);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="#" class="nav-logo">
+                <div class="nav-logo-icon">M</div>
+                <span>Mina</span>
+            </a>
+            <div class="nav-actions">
+                <a href="{{ url_for('auth.login') }}" class="nav-link">Sign In</a>
+                <a href="{{ url_for('auth.register') }}" class="cta-button cta-primary" style="padding: var(--mina-space-2) var(--mina-space-4); font-size: var(--mina-font-size-sm);">
+                    Get Started
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <h1 class="hero-title">Transform Your Meetings Into Actionable Moments</h1>
+            <p class="hero-subtitle">
+                Real-time transcription, AI-powered insights, and intelligent task extraction. 
+                Turn every conversation into productivity with Mina's comprehensive meeting platform.
+            </p>
+            <div class="hero-cta">
+                <a href="{{ url_for('auth.register') }}" class="cta-button cta-primary">
+                    <i data-feather="mic"></i>
+                    Start Free Trial
+                </a>
+                <a href="#features" class="cta-button cta-secondary">
+                    <i data-feather="play"></i>
+                    See How It Works
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="features-container">
+            <h2 class="section-title">Everything You Need for Productive Meetings</h2>
+            <p class="section-subtitle">
+                From live transcription to intelligent analytics, Mina provides enterprise-grade tools 
+                to make every meeting count.
+            </p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="mic"></i>
+                    </div>
+                    <h3 class="feature-title">Real-Time Transcription</h3>
+                    <p class="feature-description">
+                        Crystal-clear, accurate transcription powered by advanced AI. 
+                        Never miss a word with industry-leading speech recognition.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="check-square"></i>
+                    </div>
+                    <h3 class="feature-title">Smart Task Extraction</h3>
+                    <p class="feature-description">
+                        Automatically identify action items, deadlines, and responsibilities. 
+                        Turn conversations into trackable tasks instantly.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="bar-chart-2"></i>
+                    </div>
+                    <h3 class="feature-title">Meeting Analytics</h3>
+                    <p class="feature-description">
+                        Deep insights into meeting patterns, participant engagement, 
+                        and productivity metrics to optimize your team's performance.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="users"></i>
+                    </div>
+                    <h3 class="feature-title">Team Collaboration</h3>
+                    <p class="feature-description">
+                        Seamless sharing, commenting, and workflow integration. 
+                        Keep your entire team aligned and productive.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="shield"></i>
+                    </div>
+                    <h3 class="feature-title">Enterprise Security</h3>
+                    <p class="feature-description">
+                        Bank-level encryption, compliance-ready features, 
+                        and complete data control for enterprise peace of mind.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-feather="zap"></i>
+                    </div>
+                    <h3 class="feature-title">AI-Powered Insights</h3>
+                    <p class="feature-description">
+                        Intelligent summaries, sentiment analysis, and decision tracking. 
+                        Let AI handle the details while you focus on what matters.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Initialize Feather Icons -->
+    <script>
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
