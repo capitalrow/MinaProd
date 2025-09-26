@@ -238,6 +238,52 @@
       
       function stopWave(){ if(raf) cancelAnimationFrame(raf), raf=null }
 
+      // Display transcription results in real-time
+      function displayTranscriptionResult(result) {
+        try {
+          // Find or create the live transcript container
+          let transcriptContainer = $('#live-transcript');
+          if (!transcriptContainer) {
+            // Create container if it doesn't exist
+            const pageSection = $('#page');
+            transcriptContainer = document.createElement('div');
+            transcriptContainer.id = 'live-transcript';
+            transcriptContainer.className = 'mt-6 space-y-2 p-4 border border-white/10 rounded-xl bg-slate-900/30';
+            transcriptContainer.innerHTML = '<h3 class="text-sm font-medium text-slate-300 mb-3">Live Transcription</h3>';
+            pageSection.appendChild(transcriptContainer);
+          }
+          
+          // Create transcript segment
+          const segment = document.createElement('div');
+          segment.className = 'transcript-segment p-3 rounded-lg bg-slate-800/40 border border-white/5';
+          segment.innerHTML = `
+            <div class="flex justify-between items-start mb-2">
+              <span class="text-xs text-slate-400">Chunk ${result.chunk_id}</span>
+              <div class="flex gap-2">
+                <span class="text-xs px-2 py-1 rounded bg-emerald-600/20 text-emerald-400">${(result.confidence * 100).toFixed(1)}%</span>
+                <span class="text-xs text-slate-500">${new Date().toLocaleTimeString()}</span>
+              </div>
+            </div>
+            <div class="text-slate-100">${result.text}</div>
+            ${result.segments && result.segments.length > 0 ? 
+              '<div class="mt-2 text-xs text-slate-400">Processing time: ' + result.processing_time.toFixed(2) + 's</div>' : ''}
+          `;
+          
+          transcriptContainer.appendChild(segment);
+          
+          // Auto-scroll to bottom
+          transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
+          
+          // Emit via WebSocket for any connected clients
+          if (currentSocket) {
+            currentSocket.emit('transcription_update', result);
+          }
+          
+        } catch (error) {
+          console.error('❌ Failed to display transcription result:', error);
+        }
+      }
+
       let isRecording = false;
       let currentSocket = null;
       let currentSessionId = null;
@@ -335,26 +381,46 @@
             console.log('🎵 Using MediaRecorder with:', options);
             mediaRecorder = new MediaRecorder(stream, options);
             
+            // Track chunks for HTTP POST transcription
+            let chunkId = 0;
+            const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
             mediaRecorder.ondataavailable=async (e)=>{
-              if(e.data.size>0 && currentSocket) {
+              if(e.data.size>0) {
+                chunkId++;
                 try {
-                  // Convert Blob to ArrayBuffer for WebSocket transmission
-                  const arrayBuffer = await e.data.arrayBuffer();
-                  const audioBytes = new Uint8Array(arrayBuffer);
+                  console.log(`🎵 Sending audio chunk ${chunkId}: ${e.data.size} bytes`);
                   
-                  console.log(`🎵 Sending audio chunk: ${audioBytes.length} bytes`);
-                  currentSocket.emit('audio_chunk', audioBytes);
+                  // Send audio chunk via HTTP POST (proven working method)
+                  const formData = new FormData();
+                  formData.append('audio', e.data, `chunk_${chunkId}.wav`);
+                  formData.append('session_id', sessionId);
+                  formData.append('chunk_id', chunkId.toString());
+                  
+                  const response = await fetch('/api/transcribe_chunk_streaming', {
+                    method: 'POST',
+                    body: formData
+                  });
+                  
+                  const result = await response.json();
+                  
+                  if (result.text && result.text.trim()) {
+                    console.log(`✅ Transcription chunk ${chunkId}: "${result.text}"`);
+                    // Display transcription result in real-time
+                    displayTranscriptionResult(result);
+                  } else {
+                    console.log(`⏳ Chunk ${chunkId} processed, waiting for speech...`);
+                  }
+                  
                 } catch(error) {
-                  console.error('❌ Failed to process audio chunk:', error);
+                  console.error(`❌ Failed to transcribe chunk ${chunkId}:`, error);
                 }
               }
             };
             
             mediaRecorder.onstop = () => {
-              // Finalize session when recording stops
-              if(currentSocket && currentSessionId) {
-                currentSocket.emit('finalize_session', {session_id: currentSessionId});
-              }
+              console.log('🛑 Recording stopped - session finalized');
+              chunkId = 0; // Reset for next session
             };
             
             const timeslice = window.MINA_FEATURES?.RECORDER_TIMESLICE_MS || 250;

@@ -27,6 +27,7 @@ def create_app():
     _try_register("server.auth", "bp_auth")
     _try_register("api", "bp_api")
     _try_register("uploads", "bp_uploads")
+    _try_register("routes.api_transcription", "transcription_bp")
     
     # Initialize WebSocket routes
     try:
