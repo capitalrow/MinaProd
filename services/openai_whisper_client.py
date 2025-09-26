@@ -68,11 +68,15 @@ def transcribe_bytes(
     while True:
         attempt += 1
         try:
-            resp = client.audio.transcriptions.create(
-                file=file_tuple,
-                model=model,
-                language=language or os.getenv("LANGUAGE_HINT") or None,
-            )
+            kwargs = {
+                "file": file_tuple,
+                "model": model,
+            }
+            # Only include language if explicitly provided
+            if language or os.getenv("LANGUAGE_HINT"):
+                kwargs["language"] = language or os.getenv("LANGUAGE_HINT")
+            
+            resp = client.audio.transcriptions.create(**kwargs)
             return getattr(resp, "text", "") or ""
         except OpenAIError as e:
             if attempt >= max_retries:
