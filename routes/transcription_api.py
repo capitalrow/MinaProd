@@ -21,7 +21,7 @@ transcription_api_bp = Blueprint('transcription_api', __name__)
 try:
     OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
     if OPENAI_API_KEY:
-        openai_client = OpenAI()  # reads OPENAI_API_KEY from env automatically
+        openai_client = OpenAI(api_key=OPENAI_API_KEY)  # Explicit initialization
         print(f"[LIVE-API] ✅ OpenAI client initialized successfully")
     else:
         openai_client = None

@@ -1,0 +1,53 @@
+{
+  "name": "Mina - Live Transcription",
+  "short_name": "Mina",
+  "description": "Real-time live transcription powered by OpenAI Whisper",
+  "start_url": "/live",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "categories": ["productivity", "utilities"],
+  "lang": "en",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iNDgiIGZpbGw9IiM2MzY2ZjEiLz4KPHBhdGggZD0iTTk2IDQ4Yy0xMy4yNTUgMC0yNCAxMC43NDUtMjQgMjR2NDhjMCAxMy4yNTUgMTAuNzQ1IDI0IDI0IDI0czI0LTEwLjc0NSAyNC0yNFY3MmMwLTEzLjI1NS0xMC43NDUtMjQtMjQtMjR6IiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNNjAgOTZjMC0xOS44ODIgMTYuMTE4LTM2IDM2LTM2czM2IDE2LjExOCAzNiAzNnYyNGMwIDE5Ljg4Mi0xNi4xMTggMzYtMzYgMzZzLTM2LTE2LjExOC0zNi0zNlY5NnoiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIvPgo8cGF0aCBkPSJNOTYgMTU2djEyIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8cGF0aCBkPSJNODQgMTY4aDI0IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iMTI4IiBmaWxsPSIjNjM2NmYxIi8+CjxwYXRoIGQ9Ik0yNTYgMTI4Yy0zNS4zNDYgMC02NCAyOC42NTQtNjQgNjR2MTI4YzAgMzUuMzQ2IDI4LjY1NCA2NCA2NCA2NHM2NC0yOC42NTQgNjQtNjRWMTkyYzAtMzUuMzQ2LTI4LjY1NC02NC02NC02NHoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNjAgMjU2YzAtNTMuMDIgNDIuOTgtOTYgOTYtOTZzOTYgNDIuOTggOTYgOTZ2NjRjMCA1My4wMi00Mi45OCA5Ni05NiA5NnMtOTYtNDIuOTgtOTYtOTZWMjU2eiIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxMCIgZmlsbD0ibm9uZSIvPgo8cGF0aCBkPSJNMjU2IDQxNnYzMiIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CjxwYXRoIGQ9Ik0yMjQgNDQ4aDY0IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cg==",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4MCIgaGVpZ2h0PSI3MjAiIHZpZXdCb3g9IjAgMCAxMjgwIDcyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjEyODAiIGhlaWdodD0iNzIwIiBmaWxsPSIjZjhmYWZjIi8+CjxyZWN0IHg9IjQwIiB5PSI0MCIgd2lkdGg9IjEyMDAiIGhlaWdodD0iNjQwIiByeD0iMjQiIGZpbGw9IndoaXRlIiBzdHJva2U9IiNlMmU4ZjAiIHN0cm9rZS13aWR0aD0iMiIvPgo8dGV4dCB4PSI2NDAiIHk9IjM2MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjQ4IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzMzNDE1NSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TWluYSBMaXZlIFRyYW5zY3JpcHRpb248L3RleHQ+Cjx0ZXh0IHg9IjY0MCIgeT0iNDIwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM2NDc0OGIiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlJlYWwtdGltZSB0cmFuc2NyaXB0aW9uIHBvd2VyZWQgYnkgT3BlbkFJIFdoaXNwZXI8L3RleHQ+CjwvN3ZnPgo=",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "Mina Live Transcription Interface"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Recording",
+      "short_name": "Record",
+      "description": "Start a new transcription session",
+      "url": "/live?action=start",
+      "icons": [
+        {
+          "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iNDgiIGN5PSI0OCIgcj0iNDgiIGZpbGw9IiMyMmM1NWUiLz4KPHBhdGggZD0iTTM2IDMybDI0IDEydjRsLTI0IDEyVjMyeiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cg==",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
