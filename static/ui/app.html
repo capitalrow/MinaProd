@@ -303,8 +303,19 @@
             
             mediaRecorder=new MediaRecorder(stream,{mimeType:'audio/webm;codecs=opus'});
             
-            mediaRecorder.ondataavailable=(e)=>{
-              if(e.data.size>0 && currentSocket) currentSocket.emit('audio_chunk',e.data);
+            mediaRecorder.ondataavailable=async (e)=>{
+              if(e.data.size>0 && currentSocket) {
+                try {
+                  // Convert Blob to ArrayBuffer for WebSocket transmission
+                  const arrayBuffer = await e.data.arrayBuffer();
+                  const audioBytes = new Uint8Array(arrayBuffer);
+                  
+                  console.log(`🎵 Sending audio chunk: ${audioBytes.length} bytes`);
+                  currentSocket.emit('audio_chunk', audioBytes);
+                } catch(error) {
+                  console.error('❌ Failed to process audio chunk:', error);
+                }
+              }
             };
             
             mediaRecorder.onstop = () => {
