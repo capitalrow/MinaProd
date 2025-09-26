@@ -171,7 +171,6 @@ def transcribe_chunk_streaming():
             print(f"[LIVE-API] ✅ WebM converted to WAV: {temp_file_path}")
             
             # Clean up WebM file
-            import os
             os.unlink(webm_file_path)
             
         except Exception as e:
