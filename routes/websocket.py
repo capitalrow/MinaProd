@@ -8,7 +8,8 @@ from extensions import socketio
 from flask_socketio import emit
 from flask import current_app
 from services.openai_whisper_client import transcribe_bytes
-from server.models import db, Conversation, Segment
+# Use the root models that match the actual database schema (integer IDs)
+from models import db, Conversation, Segment
 
 logger = logging.getLogger(__name__)
 
