@@ -17,15 +17,15 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .vad_service import VADService, VADConfig
-    from .whisper_streaming_enhanced import M1WhisperStreamingService, M1TranscriptionConfig, M1TranscriptionResult  
+    from .whisper_streaming import WhisperStreamingService, TranscriptionConfig, TranscriptionResult  
     from .audio_processor import AudioProcessor
     from .audio_quality_monitor import AudioQualityMonitor, AudioQualityConfig, AGCConfig
     from .confidence_scoring import AdvancedConfidenceScorer, ConfidenceConfig
     from .audio_quality_analyzer import AudioQualityAnalyzer, QualityEnhancementConfig
     from .performance_optimizer import PerformanceOptimizer, ResourceLimits
-# FIXED: Import models from correct location
-from server.models import db, Conversation, Segment
-from __init__ import create_app
+# FIXED: Import models properly
+from models import Session, Segment
+from app import db
 from services.session_service import SessionService
 from datetime import datetime
 import numpy as np
@@ -395,8 +395,8 @@ class TranscriptionService:
         
         # Create database session - FIXED model fields
         def get_session_model():
-            from server.models import Conversation
-            return Conversation
+            from models.session import Session
+            return Session
         
         db_session = get_session_model()(
             external_id=session_id,  # FIXED: Use external_id instead of session_id
@@ -514,8 +514,8 @@ class TranscriptionService:
         
         # Create database session - FIXED model fields
         def get_session_model():
-            from server.models import Conversation
-            return Conversation
+            from models.session import Session
+            return Session
         
         db_session = get_session_model()(
             external_id=session_id,  # FIXED: Use external_id instead of session_id
@@ -867,7 +867,7 @@ class TranscriptionService:
         
         # Get database session ID from external ID
         from sqlalchemy import select
-        from server.models import Conversation as DbSession
+        from models.session import Session as DbSession
         
         stmt = select(DbSession).filter_by(external_id=session_id)
         db_session_obj = db.session.execute(stmt).scalar_one_or_none()
@@ -877,7 +877,7 @@ class TranscriptionService:
             return
             
         # Create segment using correct database schema
-        # Segment already imported at top
+        from models.segment import Segment
         
         segment = Segment(
             session_id=db_session_obj.id,  # Use database ID, not external ID
@@ -1287,7 +1287,8 @@ class TranscriptionService:
             timestamp: Timestamp
         """
         try:
-            # Segment and db already imported at top
+            from models.segment import Segment
+            from app import db
             
             # Get database session
             db_session = SessionService.get_session_by_external(session_id)

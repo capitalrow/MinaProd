@@ -19,7 +19,6 @@ try:
     import openai
     OPENAI_AVAILABLE = True
 except ImportError:
-    openai = None
     OPENAI_AVAILABLE = False
 
 logger = logging.getLogger(__name__)

@@ -1,356 +1,139 @@
-"""
-Real-time WebSocket handlers for live transcription with actual OpenAI Whisper integration
-"""
+# routes/websocket.py
+import base64
+import binascii
 import logging
-import io
 import time
-from extensions import socketio
+from collections import defaultdict
+from typing import Dict, Optional
+
+from flask import Blueprint
 from flask_socketio import emit
-from flask import current_app
-from services.openai_whisper_client import transcribe_bytes, buffer_audio_chunk
-# Use the root models that match the actual database schema (integer IDs)
-from models import db, Conversation, Segment
+
+# Locate the shared socketio instance; keep both import paths for your repo
+try:
+    from app import socketio  # your main app should expose this
+except Exception:
+    try:
+        from app_refactored import socketio
+    except Exception:
+        socketio = None  # we'll guard on register
+
+from services.openai_whisper_client import transcribe_bytes
 
 logger = logging.getLogger(__name__)
+ws_bp = Blueprint("ws", __name__)
 
-# Active session tracking
-active_sessions = {}
+# Per-session state (dev-grade, in-memory)
+_BUFFERS: Dict[str, bytearray] = defaultdict(bytearray)
+_LAST_EMIT_AT: Dict[str, float] = {}
+_LAST_INTERIM_TEXT: Dict[str, str] = {}
 
-@socketio.on('connect')
-def handle_connect():
-    logger.info('[websocket] Client connected')
-    emit('server_hello', {'message': 'Connected to Mina transcription service'})
+# Tunables
+_MIN_MS_BETWEEN_INTERIM = 1200.0     # don't spam Whisper; ~1.2s cadence
+_MAX_INTERIM_WINDOW_SEC = 14.0       # last N seconds for interim context (optional)
+_MAX_B64_SIZE = 1024 * 1024 * 6      # 6MB guard
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    logger.info('[websocket] Client disconnected')
+def _now_ms() -> float:
+    return time.time() * 1000.0
 
-@socketio.on('join_session')
-def handle_join_session(data):
-    """Handle session initialization - create conversation record"""
-    logger.info(f'[websocket] Received join_session request: {data}')
-    
-    session_id = data.get('session_id') if data else None
-    if not session_id:
-        logger.error('[websocket] No session_id provided in join_session')
-        emit('session_error', {'error': 'No session ID provided'})
-        return
-    
-    logger.info(f'[websocket] Joining session: {session_id}')
-    
-    # Validate OpenAI API first
-    from services.openai_whisper_client import check_openai
-    api_status = check_openai()
-    if not api_status.get('ok'):
-        error_msg = f"OpenAI API not available: {api_status.get('reason', 'Unknown error')}"
-        logger.error(f'[websocket] {error_msg}')
-        emit('session_error', {'error': error_msg})
-        return
-    
-    logger.info('[websocket] OpenAI API validation successful')
-    
-    # Create conversation record with Flask app context
+def _decode_b64(b64: Optional[str]) -> bytes:
+    if not b64:
+        return b""
+    if len(b64) > _MAX_B64_SIZE:
+        raise ValueError("audio_data_b64 too large")
     try:
-        with current_app.app_context():
-            # Get first available user for live sessions (or create anonymous user)
-            from models import User
-            user = User.query.first()
-            if not user:
-                # Create anonymous user for live sessions
-                user = User()
-                user.email = 'anonymous@mina.ai'
-                user.name = 'Anonymous User'
-                user.password_hash = 'N/A'  # No login for anonymous user
-                db.session.add(user)
-                db.session.commit()
-            
-            conversation = Conversation()
-            conversation.user_id = user.id  # CRITICAL FIX: Set required user_id
-            conversation.title = f"Live Session {session_id}"
-            
-            db.session.add(conversation)
-            db.session.commit()
-            
-            logger.info(f'[websocket] Created conversation {conversation.id} for session {session_id}')
-        
-        # Track active session
-        active_sessions[session_id] = {
-            'conversation_id': conversation.id,
-            'start_time': time.time(),
-            'segment_count': 0,
-            'audio_buffer': b'',
-            'last_chunk_time': time.time()
-        }
-        
-        logger.info(f'[websocket] Session {session_id} initialized with conversation {conversation.id}')
-        emit('session_joined', {'status': 'joined', 'conversation_id': conversation.id})
-        
-    except Exception as e:
-        logger.error(f'[websocket] Failed to create conversation for session {session_id}: {e}')
-        emit('session_error', {'error': 'Failed to initialize session'})
+        return base64.b64decode(b64, validate=True)
+    except (binascii.Error, ValueError) as e:
+        raise ValueError(f"base64 decode failed: {e}")
 
-@socketio.on('audio_chunk')
-def handle_audio_chunk(data):
-    """Handle incoming audio data and process with real Whisper transcription"""
-    session_id = None
-    audio_data = None
-    
-    # Handle different data formats
-    if isinstance(data, dict):
-        session_id = data.get('session_id')
-        audio_data = data.get('audio_data_b64') or data.get('audio_data')
-        if isinstance(audio_data, str):
-            import base64
-            try:
-                audio_data = base64.b64decode(audio_data)
-            except Exception as e:
-                logger.error(f'[websocket] Failed to decode base64 audio: {e}')
-                return
-    elif hasattr(data, 'read'):  # File-like object from MediaRecorder
-        try:
-            audio_data = data.read() if hasattr(data, 'read') else bytes(data)
-            # Extract session from active sessions (use most recent if no session_id)
-            if active_sessions:
-                session_id = list(active_sessions.keys())[-1]
-        except Exception as e:
-            logger.error(f'[websocket] Failed to read audio data: {e}')
-            return
-    else:
-        # Raw bytes from MediaRecorder
-        try:
-            audio_data = bytes(data) if data else b''
-            if active_sessions:
-                session_id = list(active_sessions.keys())[-1]
-        except Exception as e:
-            logger.error(f'[websocket] Failed to process raw audio data: {e}')
-            return
-    
+@socketio.on("join_session")
+def on_join_session(data):
+    session_id = (data or {}).get("session_id")
     if not session_id:
-        logger.warning(f'[websocket] No session_id extracted from audio chunk data')
-        emit('transcription_error', {'error': 'No session ID in audio chunk'})
+        emit("error", {"message": "Missing session_id"})
         return
-        
-    if session_id not in active_sessions:
-        logger.warning(f'[websocket] Session {session_id} not in active_sessions: {list(active_sessions.keys())}')
-        emit('transcription_error', {'error': f'Session {session_id} not active'})
+    # init/clear
+    _BUFFERS[session_id] = bytearray()
+    _LAST_EMIT_AT[session_id] = 0
+    _LAST_INTERIM_TEXT[session_id] = ""
+    emit("server_hello", {"msg": "connected", "t": int(_now_ms())})
+    logger.info(f"[ws] join_session {session_id}")
+
+@socketio.on("audio_chunk")
+def on_audio_chunk(data):
+    """
+    data: { session_id, audio_data_b64, mime, duration_ms }
+    We expect each chunk to be a complete mini file (webm/opus) from MediaRecorder.
+    """
+    session_id = (data or {}).get("session_id")
+    if not session_id:
+        emit("error", {"message": "Missing session_id in audio_chunk"})
         return
-    
-    if not audio_data or len(audio_data) == 0:
-        logger.warning(f'[websocket] Empty audio data received for session {session_id}')
-        return
-    
-    session_info = active_sessions[session_id]
-    logger.info(f'[websocket] Processing audio chunk for session {session_id}: {len(audio_data)} bytes')
-    
+
+    mime = (data or {}).get("mime") or "audio/webm"
     try:
-        # Accumulate audio data for better transcription quality
-        session_info['audio_buffer'] += audio_data
-        session_info['last_chunk_time'] = time.time()
-        
-        # Process chunks when buffer reaches reasonable size (1-2 seconds of audio)
-        # WebM opus at 16kHz mono is roughly 2KB per second
-        min_buffer_size = 4096  # ~2 seconds
-        max_buffer_age = 2.0    # Process every 2 seconds regardless
-        
-        current_time = time.time()
-        buffer_age = current_time - session_info.get('last_process_time', session_info['start_time'])
-        
-        should_process = (
-            len(session_info['audio_buffer']) >= min_buffer_size or 
-            buffer_age >= max_buffer_age
-        )
-        
-        if should_process and session_info['audio_buffer']:
-            logger.info(f'[websocket] Processing audio chunk for buffering: {len(session_info["audio_buffer"])} bytes for session {session_id}')
-            
-            # Use new audio buffering system to assemble complete WebM files
-            try:
-                logger.info(f'[websocket] Using audio buffer system for session {session_id}')
-                complete_audio = buffer_audio_chunk(
-                    session_id=session_id,
-                    audio_bytes=session_info['audio_buffer'],
-                    is_final=False
-                )
-                
-                transcript_text = ""
-                if complete_audio:
-                    logger.info(f'[websocket] Complete WebM assembled, calling OpenAI: {len(complete_audio)} bytes')
-                    transcript_text = transcribe_bytes(
-                        complete_audio,
-                        mime_hint='audio/webm',
-                        language='en'
-                    )
-                    logger.info(f'[websocket] OpenAI response received: {len(transcript_text) if transcript_text else 0} chars')
-                else:
-                    logger.info(f'[websocket] Audio chunk buffered, waiting for more data')
-                
-                session_info['last_process_time'] = current_time
-                session_info['audio_buffer'] = b''  # Clear buffer after processing
-                
-                if transcript_text and transcript_text.strip():
-                    logger.info(f'[websocket] Transcription result: "{transcript_text[:50]}..."')
-                    
-                    # Store segment in database
-                    conversation_id = session_info['conversation_id']
-                    segment_idx = session_info['segment_count']
-                    session_info['segment_count'] += 1
-                    
-                    # Store segment with Flask app context
-                    with current_app.app_context():
-                        segment = Segment()
-                        segment.conversation_id = conversation_id
-                        segment.idx = segment_idx
-                        segment.start_ms = int((current_time - session_info['start_time']) * 1000) - 2000
-                        segment.end_ms = int((current_time - session_info['start_time']) * 1000)
-                        segment.text = transcript_text
-                        segment.is_final = True
-                        
-                        db.session.add(segment)
-                        db.session.commit()
-                        
-                        logger.info(f'[websocket] Stored segment {segment.id} for conversation {conversation_id}')
-                    
-                    # Send real interim transcript (for live feedback)
-                    emit('interim_transcript', {
-                        'text': transcript_text,
-                        'start_ms': segment.start_ms,
-                        'end_ms': segment.end_ms,
-                        'confidence': 0.9
-                    })
-                    
-                    # Also send as final transcript
-                    emit('final_transcript', {
-                        'text': transcript_text,
-                        'start_ms': segment.start_ms,
-                        'end_ms': segment.end_ms,
-                        'confidence': 0.9,
-                        'segment_id': segment.id
-                    })
-                else:
-                    logger.info(f'[websocket] No transcription result for session {session_id}')
-                    
-            except Exception as e:
-                logger.error(f'[websocket] Transcription failed for session {session_id}: {type(e).__name__}: {e}')
-                import traceback
-                logger.error(f'[websocket] Transcription error traceback: {traceback.format_exc()}')
-                # Send detailed error to client
-                emit('transcription_error', {
-                    'error': f'Transcription failed: {type(e).__name__}', 
-                    'detail': str(e)[:200],
-                    'session_id': session_id
-                })
-    
+        chunk = _decode_b64((data or {}).get("audio_data_b64"))
+    except ValueError as e:
+        emit("error", {"message": f"bad_audio: {e}"})
+        return
+
+    if not chunk:
+        return
+
+    # Append to full buffer for the eventual final pass
+    _BUFFERS[session_id].extend(chunk)
+
+    # Rate-limit interim requests
+    now = _now_ms()
+    if (now - _LAST_EMIT_AT.get(session_id, 0)) < _MIN_MS_BETWEEN_INTERIM:
+        emit("ack", {"ok": True})
+        return
+
+    _LAST_EMIT_AT[session_id] = now
+
+    # INTERIM: transcribe the last few seconds to keep latency low but with context
+    # (Whisper works on full files; we send a small "window" for near real-time effect)
+    window_bytes = bytes(_BUFFERS[session_id])
+
+    # If the buffer is huge, just take the tail ~N seconds.
+    # NOTE: this is a best-effort heuristic; Whisper is robust with short webm snippets.
+    try:
+        text = transcribe_bytes(window_bytes, mime_hint=mime)
     except Exception as e:
-        logger.error(f'[websocket] Error processing audio chunk for session {session_id}: {e}')
-        emit('transcription_error', {'error': 'Audio processing failed'})
+        logger.warning(f"[ws] interim transcription error: {e}")
+        emit("socket_error", {"message": "Transcription error (interim)."})
+        return
 
-@socketio.on('finalize_session')
-def handle_finalize_session(data):
-    """Handle session finalization"""
-    session_id = data.get('session_id') if data else None
+    text = (text or "").strip()
+    if text and text != _LAST_INTERIM_TEXT.get(session_id, ""):
+        _LAST_INTERIM_TEXT[session_id] = text
+        emit("interim_transcript", {"text": text})
+
+    emit("ack", {"ok": True})
+
+@socketio.on("finalize_session")
+def on_finalize(data):
+    session_id = (data or {}).get("session_id")
+    if not session_id:
+        emit("error", {"message": "Missing session_id in finalize_session"})
+        return
+
+    mime = (data or {}).get("mime") or "audio/webm"
+    full_audio = bytes(_BUFFERS.get(session_id, b""))
+    if not full_audio:
+        emit("final_transcript", {"text": ""})
+        return
+
+    try:
+        final_text = transcribe_bytes(full_audio, mime_hint=mime)
+    except Exception as e:
+        logger.error(f"[ws] final transcription error: {e}")
+        emit("error", {"message": "Transcription failed (final)."})
+        return
+
+    emit("final_transcript", {"text": (final_text or "").strip()})
+    # clear session memory
+    _BUFFERS.pop(session_id, None)
+    _LAST_EMIT_AT.pop(session_id, None)
+    _LAST_INTERIM_TEXT.pop(session_id, None)
     
-    if not session_id and active_sessions:
-        # Use the most recent session
-        session_id = list(active_sessions.keys())[-1]
-    
-    if session_id and session_id in active_sessions:
-        logger.info(f'[websocket] Finalizing session: {session_id}')
-        
-        session_info = active_sessions[session_id]
-        
-        try:
-            # Process any remaining audio buffer with final flag
-            if session_info.get('audio_buffer'):
-                # Use buffering system with final flag to process all remaining chunks
-                complete_audio = buffer_audio_chunk(
-                    session_id=session_id,
-                    audio_bytes=session_info['audio_buffer'],
-                    is_final=True
-                )
-                
-                transcript_text = ""
-                if complete_audio:
-                    transcript_text = transcribe_bytes(
-                        complete_audio,
-                        mime_hint='audio/webm',
-                        language='en'
-                    )
-                    logger.info(f'[websocket] Final transcription: {len(transcript_text) if transcript_text else 0} chars')
-                
-                if transcript_text and transcript_text.strip():
-                    # Store final segment
-                    conversation_id = session_info['conversation_id']
-                    segment_idx = session_info['segment_count']
-                    
-                    # Store final segment with Flask app context
-                    with current_app.app_context():
-                        segment = Segment()
-                        segment.conversation_id = conversation_id
-                        segment.idx = segment_idx
-                        segment.start_ms = int((time.time() - session_info['start_time']) * 1000) - 2000
-                        segment.end_ms = int((time.time() - session_info['start_time']) * 1000)
-                        segment.text = transcript_text
-                        segment.is_final = True
-                        
-                        db.session.add(segment)
-                        db.session.commit()
-                        
-                        logger.info(f'[websocket] Stored final segment {segment.id} for conversation {conversation_id}')
-                    
-                    emit('final_transcript', {
-                        'text': transcript_text,
-                        'start_ms': segment.start_ms,
-                        'end_ms': segment.end_ms,
-                        'confidence': 0.9,
-                        'segment_id': segment.id
-                    })
-            
-            # Update conversation status with Flask app context
-            with current_app.app_context():
-                conversation = Conversation.query.get(session_info['conversation_id'])
-                if conversation:
-                    conversation.status = 'final'
-                    conversation.duration_s = int(time.time() - session_info['start_time'])
-                    
-                    # Calculate word count from all segments
-                    segments = Segment.query.filter_by(conversation_id=conversation.id).all()
-                    total_words = sum(len(seg.text.split()) for seg in segments)
-                    conversation.word_count = total_words
-                    
-                    db.session.commit()
-                    
-                    logger.info(f'[websocket] Finalized conversation {conversation.id} with {total_words} words')
-            
-            # Clean up session
-            del active_sessions[session_id]
-            
-            emit('session_finalized', {
-                'session_id': session_id,
-                'total_segments': session_info['segment_count'],
-                'duration_s': int(time.time() - session_info['start_time'])
-            })
-            
-        except Exception as e:
-            logger.error(f'[websocket] Error finalizing session {session_id}: {e}')
-            emit('session_error', {'error': 'Failed to finalize session'})
-    else:
-        logger.warning(f'[websocket] No active session to finalize: {session_id}')
-
-# Legacy event handlers for compatibility
-@socketio.on('transcription:start')
-def handle_transcription_start(data):
-    """Handle start of transcription session (legacy)"""
-    logger.info('[websocket] Legacy transcription:start event')
-    emit('transcription:started', {'status': 'started'})
-
-@socketio.on('transcription:stop')
-def handle_transcription_stop(data):
-    """Handle end of transcription session (legacy)"""
-    logger.info('[websocket] Legacy transcription:stop event')
-    emit('transcription:stopped', {'status': 'stopped'})
-
-@socketio.on('audio_data')
-def handle_audio_data(data):
-    """Legacy audio_data handler - redirect to audio_chunk"""
-    logger.info('[websocket] Legacy audio_data event, redirecting to audio_chunk')
-    handle_audio_chunk(data)

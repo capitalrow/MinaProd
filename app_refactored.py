@@ -1,48 +1,34 @@
-# app_refactored.py
-import os
+"""
+Mina — Flask app factory with Socket.IO
+"""
 from flask import Flask
-from flask_cors import CORS
+from flask_socketio import SocketIO
+from werkzeug.middleware.proxy_fix import ProxyFix
+from config import Config
 
-try:
-    from flask_socketio import SocketIO
-    HAVE_SOCKET = True
-except Exception:
-    SocketIO = None
-    HAVE_SOCKET = False
+# One global Socket.IO
+socketio = SocketIO(
+    cors_allowed_origins="*",
+    async_mode="eventlet",
+    ping_interval=25,
+    ping_timeout=60,
+    logger=False,
+    engineio_logger=False,
+)
 
-socketio = None
+def create_app() -> Flask:
+    app = Flask(__name__, static_folder="static", template_folder="templates")
+    app.config.from_object(Config)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
-def create_app():
-    global socketio
-    base_dir = os.path.dirname(__file__)
+    # init socket once
+    socketio.init_app(app)
 
-    app = Flask(
-        __name__,
-        static_folder=os.path.join(base_dir, "static"),
-        static_url_path="/static",
-        template_folder=os.path.join(base_dir, "templates"),
-    )
-    CORS(app, resources={r"/*": {"origins": "*"}})
+    # register HTTP routes
+    from routes.http import http_bp
+    app.register_blueprint(http_bp)
 
-    # Zero-cache so the preview can’t serve stale HTML
-    @app.after_request
-    def _nocache(resp):
-        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-        resp.headers["Pragma"] = "no-cache"
-        return resp
+    # import WS handlers so decorators bind
+    import routes.websocket  # noqa: F401
 
-    if HAVE_SOCKET:
-        socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
-        try:
-            import routes.websocket  # noqa: F401 (your @socketio.on handlers)
-        except Exception as e:
-            print("[mina] websocket module not loaded:", e)
-    else:
-        socketio = None
-
-    # Register ONLY the new UI blueprint
-    from routes.ui import ui_bp
-    app.register_blueprint(ui_bp)
-
-    # Do NOT register any other legacy blueprints that map "/" or "/live"
     return app
