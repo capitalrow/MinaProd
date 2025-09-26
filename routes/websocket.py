@@ -9,14 +9,8 @@ from typing import Dict, Optional
 from flask import Blueprint
 from flask_socketio import emit
 
-# Locate the shared socketio instance; keep both import paths for your repo
-try:
-    from app import socketio  # your main app should expose this
-except Exception:
-    try:
-        from app_refactored import socketio
-    except Exception:
-        socketio = None  # we'll guard on register
+# Import the socketio instance from the consolidated app
+from app import socketio
 
 from services.openai_whisper_client import transcribe_bytes
 

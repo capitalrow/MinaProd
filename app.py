@@ -120,6 +120,20 @@ def create_app() -> Flask:
     os.makedirs(metrics_dir, exist_ok=True)
     os.makedirs(os.path.join(metrics_dir, "sessions"), exist_ok=True)
 
+    # Database configuration first
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_recycle": 300,
+        "pool_pre_ping": True,
+    }
+    
+    # Initialize database models
+    from models import db
+    db.init_app(app)
+    
+    with app.app_context():
+        db.create_all()
+
     # pages blueprint or fallback /live
     try:
         from routes.pages import pages_bp  # type: ignore
@@ -129,9 +143,8 @@ def create_app() -> Flask:
         def live():
             return render_template("live.html")
 
-    # WebSocket routes (required)
-    from routes.websocket import ws_bp  # your file
-    app.register_blueprint(ws_bp)
+    # WebSocket routes (required) - import to bind handlers
+    import routes.websocket  # noqa: F401
 
     # other blueprints (guarded)
     _optional = [
