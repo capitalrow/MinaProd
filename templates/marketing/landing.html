@@ -975,7 +975,7 @@
         /* Features Section with Enhanced Design */
         .features {
             padding: var(--mina-space-20) var(--mina-space-6);
-            background: var(--mina-bg-secondary);
+            background: var(--neutral-50);
             position: relative;
             overflow: hidden;
         }
@@ -1036,18 +1036,19 @@
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: var(--mina-space-8);
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: var(--mina-space-10);
+            margin-top: var(--mina-space-12);
         }
 
         .feature-card {
-            background: var(--mina-bg-primary);
-            padding: var(--mina-space-8);
+            background: white;
+            padding: var(--mina-space-10);
             border-radius: var(--mina-radius-xl);
             text-align: center;
-            box-shadow: var(--mina-shadow-sm);
-            border: 1px solid var(--mina-border-primary);
-            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+            border: 1px solid var(--neutral-100);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
             /* Content-first approach: visible by default */
@@ -1077,23 +1078,24 @@
         }
 
         .feature-card:hover {
-            transform: translateY(-8px) rotateX(5deg);
-            box-shadow: var(--mina-shadow-lg);
-            border-color: var(--mina-border-secondary);
+            transform: translateY(-12px);
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+            border-color: var(--primary-100);
         }
 
         .feature-icon {
-            width: 70px;
-            height: 70px;
+            width: 80px;
+            height: 80px;
             background: var(--gradient-primary);
-            border-radius: var(--mina-radius-lg);
+            border-radius: var(--mina-radius-xl);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto var(--mina-space-6);
+            margin: 0 auto var(--mina-space-8);
             color: white;
             transition: all 0.3s ease;
             position: relative;
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.25);
         }
 
         .feature-icon::after {
@@ -1111,8 +1113,8 @@
         }
 
         .feature-card:hover .feature-icon {
-            transform: scale(1.1) rotateY(10deg);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transform: scale(1.05);
+            box-shadow: 0 12px 35px rgba(37, 99, 235, 0.35);
         }
 
         .feature-card:hover .feature-icon::after {
@@ -1120,15 +1122,16 @@
         }
 
         .feature-title {
-            font-size: var(--mina-font-size-xl);
+            font-size: var(--mina-font-size-2xl);
             font-weight: var(--mina-font-weight-semibold);
-            margin-bottom: var(--mina-space-3);
-            color: var(--mina-text-primary);
+            margin-bottom: var(--mina-space-4);
+            color: var(--neutral-900);
+            line-height: 1.3;
             transition: color 0.3s ease;
         }
 
         .feature-card:hover .feature-title {
-            color: var(--mina-brand-primary);
+            color: var(--primary-600);
         }
 
         .feature-description {
