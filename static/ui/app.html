@@ -318,7 +318,22 @@
             src.connect(analyser);
             startWave();
             
-            mediaRecorder=new MediaRecorder(stream,{mimeType:'audio/webm;codecs=opus'});
+            // Use WAV format instead of WebM for better streaming compatibility
+            let options = {mimeType: 'audio/wav'};
+            
+            // Fallback options if WAV is not supported
+            if (!MediaRecorder.isTypeSupported('audio/wav')) {
+                console.log('🎵 WAV not supported, trying WebM...');
+                if (MediaRecorder.isTypeSupported('audio/webm')) {
+                    options = {mimeType: 'audio/webm'};
+                } else {
+                    console.log('🎵 Using default MediaRecorder format');
+                    options = {};
+                }
+            }
+            
+            console.log('🎵 Using MediaRecorder with:', options);
+            mediaRecorder = new MediaRecorder(stream, options);
             
             mediaRecorder.ondataavailable=async (e)=>{
               if(e.data.size>0 && currentSocket) {

@@ -5,7 +5,7 @@
 import io
 import os
 import time
-from typing import Optional
+from typing import Optional, Dict, List
 
 import httpx
 from openai import OpenAI
@@ -13,6 +13,10 @@ from openai._exceptions import OpenAIError
 
 
 _CLIENT: Optional[OpenAI] = None
+
+# Audio buffer storage for assembling complete WebM files
+_AUDIO_BUFFERS: Dict[str, List[bytes]] = {}
+_BUFFER_MAX_SIZE = 10  # Maximum chunks to buffer before transcribing
 
 
 def _make_http_client() -> httpx.Client:
@@ -77,6 +81,52 @@ def check_openai() -> dict:
         return {"ok": False, "reason": type(e).__name__, "detail": str(e)[:200]}
 
 
+def buffer_audio_chunk(
+    session_id: str,
+    audio_bytes: bytes,
+    is_final: bool = False
+) -> Optional[bytes]:
+    """
+    Buffer audio chunks for a session and return complete WebM when ready.
+    
+    Args:
+        session_id: Unique session identifier
+        audio_bytes: Raw audio chunk from MediaRecorder
+        is_final: True when recording is finished
+    
+    Returns:
+        Complete WebM bytes when buffer is full or session is final, None otherwise
+    """
+    global _AUDIO_BUFFERS
+    
+    # Initialize buffer for new session
+    if session_id not in _AUDIO_BUFFERS:
+        _AUDIO_BUFFERS[session_id] = []
+    
+    # Add chunk to buffer
+    _AUDIO_BUFFERS[session_id].append(audio_bytes)
+    
+    # Check if we should process the buffer
+    buffer = _AUDIO_BUFFERS[session_id]
+    should_process = is_final or len(buffer) >= _BUFFER_MAX_SIZE
+    
+    if should_process:
+        # Combine all chunks into complete WebM
+        complete_audio = b''.join(buffer)
+        
+        # Clear buffer if final, otherwise keep recent chunks for context
+        if is_final:
+            del _AUDIO_BUFFERS[session_id]
+        else:
+            # Keep last few chunks for continuity
+            _AUDIO_BUFFERS[session_id] = buffer[-3:]
+        
+        print(f"[DEBUG] Assembled complete WebM: {len(complete_audio)} bytes from {len(buffer)} chunks")
+        return complete_audio
+    
+    return None
+
+
 def transcribe_bytes(
     audio_bytes: bytes,
     mime_hint: Optional[str] = None,
@@ -96,26 +146,18 @@ def transcribe_bytes(
     client = _client()
     mdl = model or os.getenv("WHISPER_MODEL", "whisper-1")
 
-    # CRITICAL FIX: Create proper WebM file structure for OpenAI
-    # MediaRecorder sends raw data chunks that need proper container headers
-    
-    # Create a BytesIO object with the raw audio data
-    fileobj = io.BytesIO(audio_bytes)
-    
-    # Set appropriate filename based on mime type
-    # OpenAI accepts webm format, so let's use that
-    fileobj.name = "chunk.webm"
-    
-    # Ensure we're at the beginning of the buffer
-    fileobj.seek(0)
-    
-    # Debug: Log audio data info for troubleshooting
-    print(f"[DEBUG] Audio chunk: {len(audio_bytes)} bytes, mime_hint: {mime_hint}")
+    # LIVE TRANSCRIPTION: Using assembled complete WebM files via buffering system
+    print(f"[DEBUG] Transcribing complete audio: {len(audio_bytes)} bytes, mime_hint: {mime_hint}")
     
     # Check if this looks like actual WebM data by examining first few bytes
     if len(audio_bytes) > 0:
         first_bytes = audio_bytes[:8].hex() if len(audio_bytes) >= 8 else audio_bytes.hex()
         print(f"[DEBUG] First bytes: {first_bytes}")
+
+    # Build fileobj for OpenAI
+    ext = _mime_to_ext(mime_hint)
+    fileobj = io.BytesIO(audio_bytes)
+    fileobj.name = f"audio.{ext}"
 
     attempt = 0
     while True:
@@ -136,5 +178,5 @@ def transcribe_bytes(
         except Exception as e:
             # Non-OpenAI exceptions: don't spin forever  
             print(f"[DEBUG] Transcription failed with error: {e}")
-            print(f"[DEBUG] Audio data size: {len(audio_bytes)}, fileobj.name: {fileobj.name}")
+            print(f"[DEBUG] Audio data size: {len(audio_bytes)}")
             raise

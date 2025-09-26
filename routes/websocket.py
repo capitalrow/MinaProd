@@ -7,7 +7,7 @@ import time
 from extensions import socketio
 from flask_socketio import emit
 from flask import current_app
-from services.openai_whisper_client import transcribe_bytes
+from services.openai_whisper_client import transcribe_bytes, buffer_audio_chunk
 # Use the root models that match the actual database schema (integer IDs)
 from models import db, Conversation, Segment
 
@@ -161,17 +161,28 @@ def handle_audio_chunk(data):
         )
         
         if should_process and session_info['audio_buffer']:
-            logger.info(f'[websocket] Transcribing {len(session_info["audio_buffer"])} bytes for session {session_id}')
+            logger.info(f'[websocket] Processing audio chunk for buffering: {len(session_info["audio_buffer"])} bytes for session {session_id}')
             
-            # Real OpenAI Whisper transcription
+            # Use new audio buffering system to assemble complete WebM files
             try:
-                logger.info(f'[websocket] Calling OpenAI transcribe_bytes for session {session_id}')
-                transcript_text = transcribe_bytes(
-                    session_info['audio_buffer'],
-                    mime_hint='audio/webm',
-                    language='en'
+                logger.info(f'[websocket] Using audio buffer system for session {session_id}')
+                complete_audio = buffer_audio_chunk(
+                    session_id=session_id,
+                    audio_bytes=session_info['audio_buffer'],
+                    is_final=False
                 )
-                logger.info(f'[websocket] OpenAI response received: {len(transcript_text) if transcript_text else 0} chars')
+                
+                transcript_text = ""
+                if complete_audio:
+                    logger.info(f'[websocket] Complete WebM assembled, calling OpenAI: {len(complete_audio)} bytes')
+                    transcript_text = transcribe_bytes(
+                        complete_audio,
+                        mime_hint='audio/webm',
+                        language='en'
+                    )
+                    logger.info(f'[websocket] OpenAI response received: {len(transcript_text) if transcript_text else 0} chars')
+                else:
+                    logger.info(f'[websocket] Audio chunk buffered, waiting for more data')
                 
                 session_info['last_process_time'] = current_time
                 session_info['audio_buffer'] = b''  # Clear buffer after processing
@@ -248,13 +259,23 @@ def handle_finalize_session(data):
         session_info = active_sessions[session_id]
         
         try:
-            # Process any remaining audio buffer
+            # Process any remaining audio buffer with final flag
             if session_info.get('audio_buffer'):
-                transcript_text = transcribe_bytes(
-                    session_info['audio_buffer'],
-                    mime_hint='audio/webm',
-                    language='en'
+                # Use buffering system with final flag to process all remaining chunks
+                complete_audio = buffer_audio_chunk(
+                    session_id=session_id,
+                    audio_bytes=session_info['audio_buffer'],
+                    is_final=True
                 )
+                
+                transcript_text = ""
+                if complete_audio:
+                    transcript_text = transcribe_bytes(
+                        complete_audio,
+                        mime_hint='audio/webm',
+                        language='en'
+                    )
+                    logger.info(f'[websocket] Final transcription: {len(transcript_text) if transcript_text else 0} chars')
                 
                 if transcript_text and transcript_text.strip():
                     # Store final segment
