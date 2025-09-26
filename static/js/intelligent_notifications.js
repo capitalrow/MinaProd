@@ -747,3 +747,12 @@ if (window.showNotification) {
     return window.intelligentNotifications.show(type, message, { duration });
   };
 }
+
+// [CTO] Defaults to ensure live interim is visible & frequent
+window.MINA_FEATURES = Object.assign({
+  ENABLE_INTERIM: true,
+  SHOW_INTERIM: true,
+  REPLACE_INTERIM_ON_FINAL: true,
+  INTERIM_THROTTLE_MS: 250,
+  RECORDER_TIMESLICE_MS: 250,
+}, window.MINA_FEATURES || {});
