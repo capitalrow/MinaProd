@@ -41,7 +41,6 @@
       .animate-pulse{ @apply animate-none}
     }
   </style>
-  <script src="/static/js/router.js" defer></script>
   <!-- Performance: Preload critical resources -->
   <link rel="preload" href="https://cdn.socket.io/4.7.5/socket.io.min.js" as="script">
   <meta name="theme-color" content="#0f172a">
@@ -611,40 +610,176 @@
 
     // ---------- Live (real WS -> DB) ----------
     function renderLive() {
-      state.live=false; state.convId=null;
-      // renderLive function was replaced with secure DOM implementation above
-
-      const txt = document.getElementById('txt');
-
-      MinaSocket.connect(); // connects to your /socket.io server
-
-      MinaSocket.onInterim(({text})=>{
-        document.getElementById('live-badge').innerText="Receiving…";
-        txt.textContent += text || "";
-      });
-      MinaSocket.onFinal(({text})=>{
-        txt.textContent += text || "";
-      });
-      MinaSocket.onError((e)=>{
-        document.getElementById('live-badge').innerText="Error";
-      });
-
-      document.getElementById('btn-start').onclick = async ()=>{
-        const id = await MinaSocket.startSession("Live session");
-        state.convId = id; state.live=true;
-        document.getElementById('badge-live').innerText="Recording…";
-        document.getElementById('live-badge').innerText="Connected";
+      state.live = false;
+      state.convId = null;
+      
+      const container = createSafeCard('Live Transcription');
+      
+      // Status header
+      const statusDiv = document.createElement('div');
+      statusDiv.className = 'flex items-center justify-between mb-4';
+      
+      const statusBadge = document.createElement('span');
+      statusBadge.id = 'live-badge';
+      statusBadge.className = 'badge bg-slate-700';
+      statusBadge.textContent = 'Ready';
+      statusBadge.setAttribute('role', 'status');
+      statusBadge.setAttribute('aria-live', 'polite');
+      
+      const recordingBadge = document.createElement('span');
+      recordingBadge.id = 'badge-live';
+      recordingBadge.className = 'badge bg-slate-700';
+      recordingBadge.textContent = 'Stopped';
+      recordingBadge.setAttribute('role', 'status');
+      recordingBadge.setAttribute('aria-live', 'polite');
+      
+      statusDiv.appendChild(statusBadge);
+      statusDiv.appendChild(recordingBadge);
+      
+      // Controls
+      const controlsDiv = document.createElement('div');
+      controlsDiv.className = 'flex gap-2 mb-4 flex-wrap';
+      
+      const startBtn = document.createElement('button');
+      startBtn.id = 'btn-start';
+      startBtn.className = 'btn btn-primary';
+      startBtn.textContent = '🎙️ Start Recording';
+      startBtn.setAttribute('aria-label', 'Start live transcription');
+      
+      const stopBtn = document.createElement('button');
+      stopBtn.id = 'btn-stop';
+      stopBtn.className = 'btn bg-red-700 hover:bg-red-600';
+      stopBtn.textContent = '⏹️ Stop Recording';
+      stopBtn.disabled = true;
+      stopBtn.setAttribute('aria-label', 'Stop live transcription');
+      
+      const saveBtn = document.createElement('button');
+      saveBtn.id = 'btn-save';
+      saveBtn.className = 'btn';
+      saveBtn.textContent = '💾 Save Session';
+      saveBtn.disabled = true;
+      saveBtn.setAttribute('aria-label', 'Save transcription session');
+      
+      controlsDiv.appendChild(startBtn);
+      controlsDiv.appendChild(stopBtn);
+      controlsDiv.appendChild(saveBtn);
+      
+      // Transcription display
+      const transcriptContainer = document.createElement('div');
+      transcriptContainer.className = 'card bg-slate-900 min-h-64 p-4';
+      
+      const transcriptTitle = document.createElement('h3');
+      transcriptTitle.className = 'text-sm font-medium text-slate-400 mb-2';
+      transcriptTitle.textContent = 'Real-time Transcription';
+      
+      const transcriptText = document.createElement('div');
+      transcriptText.id = 'txt';
+      transcriptText.className = 'text-slate-100 leading-relaxed';
+      transcriptText.setAttribute('aria-live', 'polite');
+      transcriptText.setAttribute('aria-label', 'Live transcription text');
+      transcriptText.innerHTML = '<span class="text-slate-500">Click "Start Recording" to begin transcription...</span>';
+      
+      transcriptContainer.appendChild(transcriptTitle);
+      transcriptContainer.appendChild(transcriptText);
+      
+      // Permissions info
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'text-sm text-slate-400 mt-4 p-3 bg-slate-800/50 rounded-lg';
+      infoDiv.innerHTML = '🎤 <strong>Microphone Access Required:</strong> Click "Start Recording" and allow microphone permissions when prompted.';
+      
+      container.appendChild(statusDiv);
+      container.appendChild(controlsDiv);
+      container.appendChild(transcriptContainer);
+      container.appendChild(infoDiv);
+      
+      // Clear view and render
+      view.innerHTML = '';
+      view.appendChild(container);
+      
+      // Now setup WebSocket connections
+      const txt = transcriptText;
+      
+      try {
+        MinaSocket.connect();
+        
+        MinaSocket.onInterim(({text}) => {
+          statusBadge.textContent = "Receiving…";
+          statusBadge.className = 'badge bg-blue-600';
+          if (txt.querySelector('.text-slate-500')) txt.innerHTML = '';
+          txt.textContent += text || "";
+        });
+        
+        MinaSocket.onFinal(({text}) => {
+          if (txt.querySelector('.text-slate-500')) txt.innerHTML = '';
+          txt.textContent += text || "";
+          statusBadge.textContent = "Connected";
+          statusBadge.className = 'badge bg-green-600';
+        });
+        
+        MinaSocket.onError((e) => {
+          statusBadge.textContent = "Error";
+          statusBadge.className = 'badge bg-red-600';
+          console.error('MinaSocket error:', e);
+        });
+      } catch (error) {
+        console.error('Failed to initialize MinaSocket:', error);
+        statusBadge.textContent = "Connection Failed";
+        statusBadge.className = 'badge bg-red-600';
+      }
+      
+      // Event handlers
+      startBtn.onclick = async () => {
+        try {
+          startBtn.disabled = true;
+          startBtn.textContent = 'Starting...';
+          
+          const id = await MinaSocket.startSession("Live session");
+          state.convId = id;
+          state.live = true;
+          
+          recordingBadge.textContent = "Recording…";
+          recordingBadge.className = 'badge bg-red-600';
+          statusBadge.textContent = "Connected";
+          statusBadge.className = 'badge bg-green-600';
+          
+          stopBtn.disabled = false;
+          saveBtn.disabled = false;
+          txt.innerHTML = '<span class="text-slate-500">Listening for audio...</span>';
+          
+        } catch (error) {
+          alert('Failed to start recording: ' + error.message);
+          statusBadge.textContent = "Error";
+          statusBadge.className = 'badge bg-red-600';
+        } finally {
+          startBtn.disabled = false;
+          startBtn.textContent = '🎙️ Start Recording';
+        }
       };
-
-      document.getElementById('btn-stop').onclick = async ()=>{
-        state.live=false;
-        await MinaSocket.stopSession();
-        document.getElementById('badge-live').innerText="Stopped";
+      
+      stopBtn.onclick = async () => {
+        try {
+          state.live = false;
+          await MinaSocket.stopSession();
+          
+          recordingBadge.textContent = "Stopped";
+          recordingBadge.className = 'badge bg-slate-700';
+          statusBadge.textContent = "Ready";
+          statusBadge.className = 'badge bg-slate-700';
+          
+          startBtn.disabled = false;
+          stopBtn.disabled = true;
+          
+        } catch (error) {
+          console.error('Error stopping session:', error);
+        }
       };
-
-      document.getElementById('btn-save').onclick = ()=>{
-        if (!state.convId) return alert("Start first");
-        location.hash = `#/conversation/${state.convId}`;
+      
+      saveBtn.onclick = () => {
+        if (!state.convId) {
+          alert("Start a recording session first");
+          return;
+        }
+        location.hash = `#/library/${state.convId}`;
       };
     }
 
@@ -833,15 +968,352 @@
 
     // ---------- Upload ----------
     function renderUpload(){
-      // renderUpload function was replaced with secure DOM implementation above
-      document.getElementById('btn-up').onclick = async ()=>{
-        const f = document.getElementById('file').files[0]; if(!f) return alert("Choose a file");
-        try{
-          const r = await API.uploadFile(f);
-          upmsg.innerText = `Uploaded. Conversation #${r.id}. Opening…`;
-          location.hash = `#/conversation/${r.id}`;
-        }catch(e){ alert("Upload failed: "+e.message); }
+      const container = createSafeCard('Upload Audio File');
+      
+      // Upload content
+      const uploadDiv = document.createElement('div');
+      uploadDiv.className = 'space-y-4';
+      
+      // File input section
+      const fileSection = document.createElement('div');
+      fileSection.className = 'space-y-2';
+      
+      const fileLabel = document.createElement('label');
+      fileLabel.className = 'block text-sm font-medium text-slate-300';
+      fileLabel.htmlFor = 'file-upload';
+      fileLabel.textContent = 'Select Audio File';
+      
+      const fileInput = document.createElement('input');
+      fileInput.id = 'file';
+      fileInput.type = 'file';
+      fileInput.accept = 'audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac';
+      fileInput.className = 'block w-full text-slate-300 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500';
+      fileInput.setAttribute('aria-label', 'Choose audio file for transcription');
+      
+      const fileHelp = document.createElement('div');
+      fileHelp.className = 'text-xs text-slate-400';
+      fileHelp.textContent = 'Supported formats: MP3, WAV, M4A, AAC, OGG, FLAC (Max 100MB)';
+      
+      fileSection.appendChild(fileLabel);
+      fileSection.appendChild(fileInput);
+      fileSection.appendChild(fileHelp);
+      
+      // Drag and drop area
+      const dropZone = document.createElement('div');
+      dropZone.className = 'border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:border-slate-600 transition-colors cursor-pointer';
+      dropZone.innerHTML = `
+        <div class="text-4xl mb-2">📁</div>
+        <p class="text-slate-300 font-medium">Drag & Drop Audio File</p>
+        <p class="text-slate-400 text-sm">Or click to browse files</p>
+      `;
+      
+      // Upload button and status
+      const uploadControls = document.createElement('div');
+      uploadControls.className = 'flex items-center gap-4';
+      
+      const uploadBtn = document.createElement('button');
+      uploadBtn.id = 'btn-up';
+      uploadBtn.className = 'btn btn-primary';
+      uploadBtn.textContent = '📤 Upload & Transcribe';
+      uploadBtn.disabled = true;
+      uploadBtn.setAttribute('aria-label', 'Upload file for transcription');
+      
+      const progressDiv = document.createElement('div');
+      progressDiv.className = 'flex-1';
+      
+      const statusMsg = document.createElement('div');
+      statusMsg.id = 'upload-status';
+      statusMsg.className = 'text-sm text-slate-400';
+      statusMsg.setAttribute('role', 'status');
+      statusMsg.setAttribute('aria-live', 'polite');
+      
+      const progressBar = document.createElement('div');
+      progressBar.className = 'w-full bg-slate-800 rounded-full h-2 mt-2 hidden';
+      
+      const progressFill = document.createElement('div');
+      progressFill.className = 'bg-violet-600 h-2 rounded-full transition-all';
+      progressFill.style.width = '0%';
+      
+      progressBar.appendChild(progressFill);
+      progressDiv.appendChild(statusMsg);
+      progressDiv.appendChild(progressBar);
+      
+      uploadControls.appendChild(uploadBtn);
+      uploadControls.appendChild(progressDiv);
+      
+      // Tips section
+      const tipsDiv = document.createElement('div');
+      tipsDiv.className = 'bg-slate-800/50 rounded-lg p-4 text-sm';
+      tipsDiv.innerHTML = `
+        <h4 class="font-medium text-slate-300 mb-2">📝 Tips for better transcription:</h4>
+        <ul class="space-y-1 text-slate-400">
+          <li>• Use clear, high-quality audio recordings</li>
+          <li>• Minimize background noise when possible</li>
+          <li>• Speak clearly and at a moderate pace</li>
+          <li>• Files are processed securely and privately</li>
+        </ul>
+      `;
+      
+      uploadDiv.appendChild(fileSection);
+      uploadDiv.appendChild(dropZone);
+      uploadDiv.appendChild(uploadControls);
+      uploadDiv.appendChild(tipsDiv);
+      container.appendChild(uploadDiv);
+      
+      // Clear view and render
+      view.innerHTML = '';
+      view.appendChild(container);
+      
+      // Event handlers
+      fileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+          uploadBtn.disabled = false;
+          statusMsg.textContent = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`;
+          statusMsg.className = 'text-sm text-slate-300';
+          dropZone.innerHTML = `
+            <div class="text-2xl mb-2">✅</div>
+            <p class="text-slate-300 font-medium">${file.name}</p>
+            <p class="text-slate-400 text-sm">${(file.size / 1024 / 1024).toFixed(1)}MB</p>
+          `;
+        } else {
+          uploadBtn.disabled = true;
+          statusMsg.textContent = '';
+          resetDropZone();
+        }
+      });
+      
+      // Drag and drop functionality
+      dropZone.addEventListener('click', () => fileInput.click());
+      
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-violet-500');
+      });
+      
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('border-violet-500');
+      });
+      
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-violet-500');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          fileInput.files = files;
+          fileInput.dispatchEvent(new Event('change'));
+        }
+      });
+      
+      function resetDropZone() {
+        dropZone.innerHTML = `
+          <div class="text-4xl mb-2">📁</div>
+          <p class="text-slate-300 font-medium">Drag & Drop Audio File</p>
+          <p class="text-slate-400 text-sm">Or click to browse files</p>
+        `;
+      }
+      
+      // Upload functionality
+      uploadBtn.onclick = async () => {
+        const file = fileInput.files[0];
+        if (!file) {
+          alert("Please choose a file first");
+          return;
+        }
+        
+        // Validate file size (100MB limit)
+        if (file.size > 100 * 1024 * 1024) {
+          alert("File too large. Maximum size is 100MB.");
+          return;
+        }
+        
+        try {
+          uploadBtn.disabled = true;
+          uploadBtn.textContent = 'Uploading...';
+          
+          statusMsg.textContent = 'Uploading file...';
+          statusMsg.className = 'text-sm text-blue-400';
+          progressBar.classList.remove('hidden');
+          
+          // Simulate progress for better UX
+          let progress = 0;
+          const progressInterval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 90) progress = 90;
+            progressFill.style.width = progress + '%';
+          }, 200);
+          
+          const r = await API.uploadFile(file);
+          
+          clearInterval(progressInterval);
+          progressFill.style.width = '100%';
+          
+          statusMsg.textContent = `Upload successful! Opening transcription...`;
+          statusMsg.className = 'text-sm text-green-400';
+          
+          setTimeout(() => {
+            location.hash = `#/library/${r.id}`;
+          }, 1000);
+          
+        } catch (error) {
+          statusMsg.textContent = `Upload failed: ${error.message}`;
+          statusMsg.className = 'text-sm text-red-400';
+          progressBar.classList.add('hidden');
+          
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = '📤 Upload & Transcribe';
+          
+          console.error('Upload error:', error);
+        }
       };
+    }
+
+    // ---------- Library ----------
+    async function renderLibrary() {
+      const container = createSafeCard('Transcription Library');
+      
+      // Create library content
+      const libraryDiv = document.createElement('div');
+      libraryDiv.className = 'space-y-4';
+      
+      // Add new transcription button
+      const newTranscriptionDiv = document.createElement('div');
+      newTranscriptionDiv.className = 'flex gap-2';
+      
+      const newLiveBtn = document.createElement('button');
+      newLiveBtn.className = 'btn btn-primary';
+      newLiveBtn.textContent = '🎙️ Start Live Transcription';
+      newLiveBtn.setAttribute('aria-label', 'Start new live transcription session');
+      newLiveBtn.onclick = () => { location.hash = '#/live'; };
+      
+      const newUploadBtn = document.createElement('button');
+      newUploadBtn.className = 'btn';
+      newUploadBtn.textContent = '📁 Upload Audio File';
+      newUploadBtn.setAttribute('aria-label', 'Upload audio file for transcription');
+      newUploadBtn.onclick = () => { location.hash = '#/upload'; };
+      
+      newTranscriptionDiv.appendChild(newLiveBtn);
+      newTranscriptionDiv.appendChild(newUploadBtn);
+      
+      // Sessions container
+      const sessionsContainer = document.createElement('div');
+      sessionsContainer.id = 'sessions-container';
+      sessionsContainer.className = 'space-y-3';
+      
+      // Loading indicator
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'text-center py-4 text-slate-400';
+      loadingDiv.textContent = 'Loading your transcriptions...';
+      loadingDiv.setAttribute('role', 'status');
+      loadingDiv.setAttribute('aria-live', 'polite');
+      
+      sessionsContainer.appendChild(loadingDiv);
+      
+      libraryDiv.appendChild(newTranscriptionDiv);
+      libraryDiv.appendChild(sessionsContainer);
+      container.appendChild(libraryDiv);
+      
+      // Clear view and add content
+      view.innerHTML = '';
+      view.appendChild(container);
+      
+      // Load user sessions
+      try {
+        // API call to get user sessions/conversations
+        const sessions = await API.getSessions ? await API.getSessions() : [];
+        
+        // Clear loading
+        sessionsContainer.innerHTML = '';
+        
+        if (sessions.length === 0) {
+          // Empty state
+          const emptyStateDiv = document.createElement('div');
+          emptyStateDiv.className = 'text-center py-8 text-slate-400';
+          emptyStateDiv.innerHTML = `
+            <div class="text-4xl mb-4">📝</div>
+            <h3 class="text-lg font-medium mb-2">No transcriptions yet</h3>
+            <p class="text-sm">Start your first transcription to see it here</p>
+          `;
+          sessionsContainer.appendChild(emptyStateDiv);
+        } else {
+          // Display sessions
+          const sessionsTitle = document.createElement('h3');
+          sessionsTitle.className = 'text-lg font-medium mb-3';
+          sessionsTitle.textContent = 'Recent Transcriptions';
+          sessionsContainer.appendChild(sessionsTitle);
+          
+          sessions.forEach(session => {
+            const sessionCard = document.createElement('div');
+            sessionCard.className = 'card cursor-pointer hover:bg-slate-800/80 transition-colors';
+            sessionCard.setAttribute('role', 'button');
+            sessionCard.setAttribute('tabindex', '0');
+            sessionCard.setAttribute('aria-label', `Open transcription: ${session.title || 'Untitled'}`);
+            
+            const sessionHeader = document.createElement('div');
+            sessionHeader.className = 'flex items-center justify-between mb-2';
+            
+            const sessionTitle = document.createElement('h4');
+            sessionTitle.className = 'font-medium';
+            sessionTitle.textContent = session.title || `Session ${session.id}`;
+            
+            const sessionDate = document.createElement('span');
+            sessionDate.className = 'text-sm text-slate-400';
+            sessionDate.textContent = new Date(session.created_at).toLocaleDateString();
+            
+            sessionHeader.appendChild(sessionTitle);
+            sessionHeader.appendChild(sessionDate);
+            
+            const sessionPreview = document.createElement('p');
+            sessionPreview.className = 'text-sm text-slate-300 line-clamp-2';
+            sessionPreview.textContent = session.preview || 'No preview available';
+            
+            const sessionMeta = document.createElement('div');
+            sessionMeta.className = 'flex items-center gap-4 mt-2 text-xs text-slate-500';
+            
+            const durationSpan = document.createElement('span');
+            durationSpan.textContent = `⏱️ ${session.duration || 'Unknown'}`;
+            
+            const statusSpan = document.createElement('span');
+            statusSpan.className = 'badge bg-slate-700';
+            statusSpan.textContent = session.status || 'completed';
+            
+            sessionMeta.appendChild(durationSpan);
+            sessionMeta.appendChild(statusSpan);
+            
+            sessionCard.appendChild(sessionHeader);
+            sessionCard.appendChild(sessionPreview);
+            sessionCard.appendChild(sessionMeta);
+            
+            // Click handler
+            const openSession = () => {
+              location.hash = `#/library/${session.id}`;
+            };
+            sessionCard.onclick = openSession;
+            sessionCard.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openSession();
+              }
+            });
+            
+            sessionsContainer.appendChild(sessionCard);
+          });
+        }
+      } catch (error) {
+        // Error state
+        sessionsContainer.innerHTML = '';
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'text-center py-4 text-red-400';
+        errorDiv.setAttribute('role', 'alert');
+        errorDiv.innerHTML = `
+          <div class="text-2xl mb-2">⚠️</div>
+          <p>Failed to load transcriptions</p>
+          <button class="btn mt-2" onclick="location.reload()">Retry</button>
+        `;
+        sessionsContainer.appendChild(errorDiv);
+        console.error('Failed to load sessions:', error);
+      }
     }
 
     // ---------- Settings ----------
@@ -1024,12 +1496,5 @@
     // Initial load
     handleRouteChange();
   </script>
-  <main class="container" style="min-height:60vh">
-    <section id="view-welcome" data-view hidden></section>
-    <section id="view-library" data-view hidden></section>
-    <section id="view-live" data-view hidden></section>
-    <section id="view-upload" data-view hidden></section>
-    <section id="view-settings" data-view hidden></section>
-  </main>
 </body>
 </html>
