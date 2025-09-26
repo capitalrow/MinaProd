@@ -52,14 +52,14 @@ def register():
             errors.append("Email is required")
         elif not is_valid_email(email):
             errors.append("Please enter a valid email address")
-        elif User.query.filter_by(email=email).first():
+        elif db.session.query(User).filter_by(email=email).first():
             errors.append("An account with this email already exists")
         
         if not username:
             errors.append("Username is required")
         elif len(username) < 3:
             errors.append("Username must be at least 3 characters long")
-        elif User.query.filter_by(username=username).first():
+        elif db.session.query(User).filter_by(username=username).first():
             errors.append("This username is already taken")
         
         if not password:
@@ -88,7 +88,7 @@ def register():
             user.set_password(password)
             
             # For first user, create personal workspace
-            if User.query.count() == 0:
+            if db.session.query(User).count() == 0:
                 user.role = 'owner'
             
             db.session.add(user)
@@ -136,9 +136,9 @@ def login():
         # Find user by email or username
         user = None
         if '@' in email_or_username:
-            user = User.query.filter_by(email=email_or_username.lower()).first()
+            user = db.session.query(User).filter_by(email=email_or_username.lower()).first()
         else:
-            user = User.query.filter_by(username=email_or_username).first()
+            user = db.session.query(User).filter_by(username=email_or_username).first()
         
         if user and user.check_password(password):
             if not user.active:
@@ -259,7 +259,7 @@ def api_check_username():
     if len(username) < 3:
         return jsonify({'available': False, 'message': 'Username must be at least 3 characters'})
     
-    user = User.query.filter_by(username=username).first()
+    user = db.session.query(User).filter_by(username=username).first()
     if user:
         return jsonify({'available': False, 'message': 'Username is already taken'})
     
@@ -276,7 +276,7 @@ def api_check_email():
     if not is_valid_email(email):
         return jsonify({'available': False, 'message': 'Invalid email format'})
     
-    user = User.query.filter_by(email=email).first()
+    user = db.session.query(User).filter_by(email=email).first()
     if user:
         return jsonify({'available': False, 'message': 'Email is already registered'})
     
