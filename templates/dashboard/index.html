@@ -7,250 +7,419 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
+    <script src="https://unpkg.com/feather-icons"></script>
     <style>
+        /* Enhanced Modern Dashboard Layout */
         body {
-            background: var(--color-gray-50);
+            background: var(--mina-bg-secondary);
             margin: 0;
-            font-family: var(--font-family-primary);
+            font-family: var(--mina-font-family-sans);
+            color: var(--mina-text-primary);
+            line-height: var(--mina-line-height-normal);
         }
         
         .dashboard-layout {
             display: grid;
-            grid-template-columns: 250px 1fr;
+            grid-template-columns: 280px 1fr;
             min-height: 100vh;
         }
         
+        /* Enhanced Sidebar */
         .sidebar {
-            background: white;
-            border-right: 1px solid var(--color-gray-200);
-            padding: var(--spacing-xl);
+            background: linear-gradient(180deg, var(--mina-bg-primary) 0%, var(--mina-bg-secondary) 100%);
+            border-right: 1px solid var(--mina-border-primary);
+            padding: var(--mina-space-6);
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--mina-shadow-sm);
         }
         
         .sidebar-logo {
-            font-size: 1.5rem;
-            font-weight: var(--font-weight-bold);
-            color: var(--color-primary-600);
-            margin-bottom: var(--spacing-xl);
+            display: flex;
+            align-items: center;
+            gap: var(--mina-space-3);
+            margin-bottom: var(--mina-space-8);
+            padding-bottom: var(--mina-space-6);
+            border-bottom: 1px solid var(--mina-border-primary);
+        }
+
+        .sidebar-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
+            border-radius: var(--mina-radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: var(--mina-font-weight-bold);
+            font-size: var(--mina-font-size-lg);
+        }
+
+        .sidebar-logo-text {
+            font-size: var(--mina-font-size-xl);
+            font-weight: var(--mina-font-weight-bold);
+            color: var(--mina-text-primary);
+            font-family: var(--mina-font-family-display);
         }
         
         .nav-menu {
             list-style: none;
             padding: 0;
             margin: 0;
+            flex: 1;
         }
         
         .nav-item {
-            margin-bottom: var(--spacing-sm);
+            margin-bottom: var(--mina-space-2);
         }
         
         .nav-link {
-            display: block;
-            padding: var(--spacing-md);
-            color: var(--color-gray-700);
+            display: flex;
+            align-items: center;
+            gap: var(--mina-space-3);
+            padding: var(--mina-space-3) var(--mina-space-4);
+            color: var(--mina-text-secondary);
             text-decoration: none;
-            border-radius: var(--border-radius-md);
-            transition: all 0.2s ease;
+            border-radius: var(--mina-radius-md);
+            transition: all var(--mina-transition-fast);
+            font-weight: var(--mina-font-weight-medium);
+            font-size: var(--mina-font-size-sm);
         }
         
-        .nav-link:hover,
+        .nav-link:hover {
+            background: var(--mina-bg-accent);
+            color: var(--mina-text-primary);
+            transform: translateX(2px);
+        }
+        
         .nav-link.active {
-            background: var(--color-primary-50);
-            color: var(--color-primary-700);
+            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
+            color: white;
+            font-weight: var(--mina-font-weight-semibold);
+        }
+
+        .nav-link i {
+            width: 18px;
+            height: 18px;
         }
         
+        /* Main Content Area */
         .main-content {
-            padding: var(--spacing-xl);
+            padding: var(--mina-space-8);
+            overflow-y: auto;
         }
         
         .dashboard-header {
-            margin-bottom: var(--spacing-xl);
+            margin-bottom: var(--mina-space-8);
         }
         
         .dashboard-title {
-            font-size: 2rem;
-            font-weight: var(--font-weight-bold);
-            color: var(--color-gray-900);
-            margin-bottom: var(--spacing-sm);
+            font-size: var(--mina-font-size-4xl);
+            font-weight: var(--mina-font-weight-bold);
+            color: var(--mina-text-primary);
+            margin-bottom: var(--mina-space-2);
+            font-family: var(--mina-font-family-display);
+        }
+
+        .dashboard-subtitle {
+            font-size: var(--mina-font-size-lg);
+            color: var(--mina-text-secondary);
+            margin: 0;
         }
         
+        /* Enhanced Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: var(--spacing-lg);
-            margin-bottom: var(--spacing-xl);
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--mina-space-6);
+            margin-bottom: var(--mina-space-10);
         }
         
         .stat-card {
-            background: white;
-            padding: var(--spacing-lg);
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--color-gray-200);
+            background: var(--mina-bg-primary);
+            padding: var(--mina-space-6);
+            border-radius: var(--mina-radius-lg);
+            box-shadow: var(--mina-shadow-sm);
+            border: 1px solid var(--mina-border-primary);
+            transition: all var(--mina-transition-base);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--mina-brand-primary), var(--mina-brand-accent));
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--mina-shadow-lg);
+            border-color: var(--mina-border-secondary);
         }
         
         .stat-value {
-            font-size: 2rem;
-            font-weight: var(--font-weight-bold);
-            color: var(--color-primary-600);
-            margin-bottom: var(--spacing-xs);
+            font-size: var(--mina-font-size-3xl);
+            font-weight: var(--mina-font-weight-bold);
+            color: var(--mina-brand-primary);
+            margin-bottom: var(--mina-space-2);
+            font-family: var(--mina-font-family-display);
         }
         
         .stat-label {
-            color: var(--color-gray-600);
-            font-size: var(--font-size-sm);
+            color: var(--mina-text-secondary);
+            font-size: var(--mina-font-size-sm);
+            font-weight: var(--mina-font-weight-medium);
+            text-transform: uppercase;
+            letter-spacing: var(--mina-letter-spacing-wide);
         }
         
+        /* Content Grid */
         .content-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
-            gap: var(--spacing-xl);
+            gap: var(--mina-space-8);
         }
         
         .content-section {
-            background: white;
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--color-gray-200);
+            background: var(--mina-bg-primary);
+            border-radius: var(--mina-radius-lg);
+            box-shadow: var(--mina-shadow-sm);
+            border: 1px solid var(--mina-border-primary);
+            overflow: hidden;
         }
         
         .section-header {
-            padding: var(--spacing-lg);
-            border-bottom: 1px solid var(--color-gray-200);
+            padding: var(--mina-space-6);
+            border-bottom: 1px solid var(--mina-border-primary);
+            background: var(--mina-bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         
         .section-title {
-            font-size: 1.25rem;
-            font-weight: var(--font-weight-semibold);
-            color: var(--color-gray-900);
+            font-size: var(--mina-font-size-xl);
+            font-weight: var(--mina-font-weight-semibold);
+            color: var(--mina-text-primary);
+            margin: 0;
+            font-family: var(--mina-font-family-display);
         }
         
         .section-content {
-            padding: var(--spacing-lg);
+            padding: var(--mina-space-6);
         }
         
-        .meeting-item {
+        /* Enhanced Item Styling */
+        .meeting-item, .task-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: var(--spacing-md);
-            border-bottom: 1px solid var(--color-gray-100);
+            padding: var(--mina-space-4);
+            border-bottom: 1px solid var(--mina-border-primary);
+            transition: all var(--mina-transition-fast);
+            border-radius: var(--mina-radius-sm);
+            margin-bottom: var(--mina-space-2);
         }
         
-        .meeting-item:last-child {
+        .meeting-item:last-child,
+        .task-item:last-child {
             border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .meeting-item:hover,
+        .task-item:hover {
+            background: var(--mina-bg-secondary);
+            transform: translateX(4px);
         }
         
-        .meeting-title {
-            font-weight: var(--font-weight-medium);
-            color: var(--color-gray-900);
+        .meeting-info, .task-content {
+            flex: 1;
         }
         
-        .meeting-date {
-            font-size: var(--font-size-sm);
-            color: var(--color-gray-500);
+        .meeting-title, .task-title {
+            font-weight: var(--mina-font-weight-semibold);
+            color: var(--mina-text-primary);
+            margin-bottom: var(--mina-space-1);
+            font-size: var(--mina-font-size-base);
         }
         
-        .meeting-status {
-            padding: var(--spacing-xs) var(--spacing-sm);
-            border-radius: var(--border-radius-full);
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-medium);
-        }
-        
-        .status-completed {
-            background: var(--color-green-100);
-            color: var(--color-green-700);
-        }
-        
-        .status-live {
-            background: var(--color-red-100);
-            color: var(--color-red-700);
-        }
-        
-        .status-scheduled {
-            background: var(--color-blue-100);
-            color: var(--color-blue-700);
-        }
-        
-        .task-item {
-            padding: var(--spacing-sm);
-            border-left: 3px solid var(--color-primary-300);
-            margin-bottom: var(--spacing-sm);
-            background: var(--color-gray-50);
-            border-radius: var(--border-radius-md);
-        }
-        
-        .task-title {
-            font-weight: var(--font-weight-medium);
-            color: var(--color-gray-900);
-            margin-bottom: var(--spacing-xs);
-        }
-        
-        .task-meta {
-            font-size: var(--font-size-sm);
-            color: var(--color-gray-600);
-        }
-        
-        .user-info {
-            padding: var(--spacing-lg);
-            border-top: 1px solid var(--color-gray-200);
-            margin-top: auto;
-        }
-        
-        .user-name {
-            font-weight: var(--font-weight-medium);
-            color: var(--color-gray-900);
-        }
-        
-        .user-email {
-            font-size: var(--font-size-sm);
-            color: var(--color-gray-600);
-        }
-        
-        .loading-state {
-            text-align: center;
-            padding: 20px;
+        .meeting-date, .task-meta {
+            font-size: var(--mina-font-size-sm);
+            color: var(--mina-text-muted);
         }
         
         .meeting-actions, .task-actions {
             display: flex;
             align-items: center;
-            gap: var(--spacing-sm);
+            gap: var(--mina-space-2);
         }
         
-        .btn-sm {
-            padding: var(--spacing-xs) var(--spacing-sm);
-            font-size: var(--font-size-sm);
+        /* Enhanced Status Pills */
+        .meeting-status, .task-status {
+            padding: var(--mina-space-1) var(--mina-space-3);
+            border-radius: var(--mina-radius-full);
+            font-size: var(--mina-font-size-xs);
+            font-weight: var(--mina-font-weight-semibold);
+            text-transform: uppercase;
+            letter-spacing: var(--mina-letter-spacing-wide);
+            border: 1px solid transparent;
         }
         
-        .btn-secondary {
-            background: var(--color-gray-100);
-            color: var(--color-gray-700);
-            border: 1px solid var(--color-gray-300);
+        .status-completed {
+            background: rgba(var(--mina-success-rgb), 0.1);
+            color: var(--mina-success-dark);
+            border-color: rgba(var(--mina-success-rgb), 0.3);
         }
         
-        .btn-secondary:hover {
-            background: var(--color-gray-200);
+        .status-live {
+            background: rgba(var(--mina-danger-rgb), 0.1);
+            color: var(--mina-danger-dark);
+            border-color: rgba(var(--mina-danger-rgb), 0.3);
         }
         
+        .status-scheduled {
+            background: rgba(var(--mina-info-rgb), 0.1);
+            color: var(--mina-info-dark);
+            border-color: rgba(var(--mina-info-rgb), 0.3);
+        }
+
+        .status-todo {
+            background: rgba(var(--mina-warning-rgb), 0.1);
+            color: var(--mina-warning-dark);
+            border-color: rgba(var(--mina-warning-rgb), 0.3);
+        }
+
+        .status-in_progress {
+            background: rgba(var(--mina-info-rgb), 0.1);
+            color: var(--mina-info-dark);
+            border-color: rgba(var(--mina-info-rgb), 0.3);
+        }
+        
+        /* Enhanced Buttons */
         .btn {
-            padding: var(--spacing-sm) var(--spacing-md);
-            border-radius: var(--border-radius-md);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--mina-space-2);
+            padding: var(--mina-space-2) var(--mina-space-4);
+            border-radius: var(--mina-radius-md);
             text-decoration: none;
-            font-weight: var(--font-weight-medium);
-            transition: all 0.2s ease;
+            font-weight: var(--mina-font-weight-medium);
+            font-size: var(--mina-font-size-sm);
+            transition: all var(--mina-transition-fast);
+            border: 1px solid transparent;
+            cursor: pointer;
+            min-height: 36px;
         }
         
         .btn-primary {
-            background: var(--color-primary-600);
+            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
             color: white;
-            border: 1px solid var(--color-primary-600);
         }
-        
+
         .btn-primary:hover {
-            background: var(--color-primary-700);
+            transform: translateY(-1px);
+            box-shadow: var(--mina-shadow-md);
         }
         
+        .btn-secondary {
+            background: var(--mina-bg-secondary);
+            color: var(--mina-text-secondary);
+            border-color: var(--mina-border-secondary);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--mina-bg-accent);
+            color: var(--mina-text-primary);
+            border-color: var(--mina-border-accent);
+        }
+
+        .btn-sm {
+            padding: var(--mina-space-1) var(--mina-space-3);
+            font-size: var(--mina-font-size-xs);
+            min-height: 28px;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            padding: var(--mina-space-2);
+            cursor: pointer;
+            color: var(--mina-text-muted);
+            border-radius: var(--mina-radius-sm);
+            transition: all var(--mina-transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background: var(--mina-bg-accent);
+            color: var(--mina-text-primary);
+        }
+        
+        /* User Info in Sidebar */
+        .user-info {
+            padding: var(--mina-space-6);
+            border-top: 1px solid var(--mina-border-primary);
+            margin-top: auto;
+            background: var(--mina-bg-accent);
+            border-radius: var(--mina-radius-md);
+        }
+        
+        .user-name {
+            font-weight: var(--mina-font-weight-semibold);
+            color: var(--mina-text-primary);
+            margin-bottom: var(--mina-space-1);
+        }
+        
+        .user-email {
+            font-size: var(--mina-font-size-sm);
+            color: var(--mina-text-muted);
+            margin-bottom: var(--mina-space-4);
+        }
+        
+        /* Loading and Empty States */
+        .loading-state, .empty-state {
+            text-align: center;
+            padding: var(--mina-space-8);
+            color: var(--mina-text-muted);
+        }
+
+        .empty-state .btn {
+            margin-top: var(--mina-space-4);
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--mina-border-primary);
+            border-top: 2px solid var(--mina-brand-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto var(--mina-space-4);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 768px) {
             .dashboard-layout {
                 grid-template-columns: 1fr;
@@ -259,11 +428,61 @@
             .sidebar {
                 order: 2;
                 border-right: none;
-                border-top: 1px solid var(--color-gray-200);
+                border-top: 1px solid var(--mina-border-primary);
+                padding: var(--mina-space-4);
+            }
+
+            .main-content {
+                padding: var(--mina-space-4);
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: var(--mina-space-4);
+            }
+
+            .dashboard-title {
+                font-size: var(--mina-font-size-3xl);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
             
-            .content-grid {
-                grid-template-columns: 1fr;
+            .stat-card {
+                padding: var(--mina-space-4);
+            }
+
+            .stat-value {
+                font-size: var(--mina-font-size-2xl);
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            .sidebar {
+                background: linear-gradient(180deg, var(--mina-bg-primary) 0%, var(--mina-bg-secondary) 100%);
+            }
+        }
+
+        /* Accessibility improvements */
+        @media (prefers-reduced-motion: reduce) {
+            .stat-card,
+            .meeting-item,
+            .task-item,
+            .btn {
+                transition: none;
+                transform: none !important;
+            }
+        }
+
+        /* High contrast mode */
+        @media (prefers-contrast: high) {
+            .stat-card,
+            .content-section {
+                border-width: 2px;
             }
         }
     </style>
@@ -271,39 +490,60 @@
 <body>
     <div class="dashboard-layout">
         <aside class="sidebar">
-            <div class="sidebar-logo">Mina</div>
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">M</div>
+                <div class="sidebar-logo-text">Mina</div>
+            </div>
             
             <nav>
                 <ul class="nav-menu">
                     <li class="nav-item">
-                        <a href="{{ url_for('dashboard.index') }}" class="nav-link active">Dashboard</a>
+                        <a href="{{ url_for('dashboard.index') }}" class="nav-link active">
+                            <i data-feather="home"></i>
+                            Dashboard
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ url_for('pages.live') }}" class="nav-link">Live Meeting</a>
+                        <a href="{{ url_for('pages.live') }}" class="nav-link">
+                            <i data-feather="mic"></i>
+                            Live Meeting
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ url_for('dashboard.meetings') }}" class="nav-link">Meetings</a>
+                        <a href="{{ url_for('dashboard.meetings') }}" class="nav-link">
+                            <i data-feather="users"></i>
+                            Meetings
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ url_for('dashboard.tasks') }}" class="nav-link">Tasks</a>
+                        <a href="{{ url_for('dashboard.tasks') }}" class="nav-link">
+                            <i data-feather="check-square"></i>
+                            Tasks
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ url_for('dashboard.analytics') }}" class="nav-link">Analytics</a>
+                        <a href="{{ url_for('dashboard.analytics') }}" class="nav-link">
+                            <i data-feather="bar-chart-2"></i>
+                            Analytics
+                        </a>
                     </li>
                 </ul>
             </nav>
             
             <div class="user-info">
-                <div class="user-name">{{ current_user.full_name }}</div>
+                <div class="user-name">{{ current_user.first_name or current_user.username }}</div>
                 <div class="user-email">{{ current_user.email }}</div>
-                <a href="{{ url_for('auth.logout') }}" class="nav-link">Logout</a>
+                <a href="{{ url_for('auth.logout') }}" class="nav-link">
+                    <i data-feather="log-out"></i>
+                    Sign Out
+                </a>
             </div>
         </aside>
         
         <main class="main-content">
             <header class="dashboard-header">
                 <h1 class="dashboard-title">Welcome back, {{ current_user.first_name or current_user.username }}!</h1>
-                <p class="text-gray-600">Here's what's happening with your meetings and tasks today.</p>
+                <p class="dashboard-subtitle">Here's what's happening with your meetings and tasks today.</p>
             </header>
             
             <div class="stats-grid">
@@ -338,14 +578,15 @@
                     <div class="section-header">
                         <h2 class="section-title">Recent Meetings</h2>
                         <button id="refresh-dashboard" class="btn btn-sm btn-secondary">
-                            <i data-feather="refresh-cw"></i> Refresh
+                            <i data-feather="refresh-cw"></i> 
+                            Refresh
                         </button>
                     </div>
                     <div class="section-content">
                         <div id="recent-meetings-list">
-                            <!-- Dynamic content will be loaded here -->
                             <div class="loading-state">
-                                <p class="text-gray-500">Loading meetings...</p>
+                                <div class="loading-spinner"></div>
+                                <p>Loading meetings...</p>
                             </div>
                         </div>
                     </div>
@@ -354,13 +595,16 @@
                 <section class="content-section">
                     <div class="section-header">
                         <h2 class="section-title">Your Tasks</h2>
-                        <a href="{{ url_for('dashboard.tasks') }}" class="btn btn-sm btn-primary">View All</a>
+                        <a href="{{ url_for('dashboard.tasks') }}" class="btn btn-sm btn-primary">
+                            <i data-feather="external-link"></i>
+                            View All
+                        </a>
                     </div>
                     <div class="section-content">
                         <div id="my-tasks-list">
-                            <!-- Dynamic content will be loaded here -->
                             <div class="loading-state">
-                                <p class="text-gray-500">Loading tasks...</p>
+                                <div class="loading-spinner"></div>
+                                <p>Loading tasks...</p>
                             </div>
                         </div>
                     </div>
@@ -368,6 +612,7 @@
             </div>
         </main>
     </div>
+
     <!-- Notifications container -->
     <div id="notifications"></div>
 
