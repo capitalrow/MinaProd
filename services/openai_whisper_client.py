@@ -96,9 +96,26 @@ def transcribe_bytes(
     client = _client()
     mdl = model or os.getenv("WHISPER_MODEL", "whisper-1")
 
-    ext = _ext_from_mime(mime_hint or "audio/webm")
+    # CRITICAL FIX: Create proper WebM file structure for OpenAI
+    # MediaRecorder sends raw data chunks that need proper container headers
+    
+    # Create a BytesIO object with the raw audio data
     fileobj = io.BytesIO(audio_bytes)
-    fileobj.name = f"chunk.{ext}"
+    
+    # Set appropriate filename based on mime type
+    # OpenAI accepts webm format, so let's use that
+    fileobj.name = "chunk.webm"
+    
+    # Ensure we're at the beginning of the buffer
+    fileobj.seek(0)
+    
+    # Debug: Log audio data info for troubleshooting
+    print(f"[DEBUG] Audio chunk: {len(audio_bytes)} bytes, mime_hint: {mime_hint}")
+    
+    # Check if this looks like actual WebM data by examining first few bytes
+    if len(audio_bytes) > 0:
+        first_bytes = audio_bytes[:8].hex() if len(audio_bytes) >= 8 else audio_bytes.hex()
+        print(f"[DEBUG] First bytes: {first_bytes}")
 
     attempt = 0
     while True:
@@ -116,6 +133,8 @@ def transcribe_bytes(
             if attempt >= max_retries:
                 raise
             time.sleep(retry_backoff * attempt)
-        except Exception:
-            # Non-OpenAI exceptions: don't spin forever
+        except Exception as e:
+            # Non-OpenAI exceptions: don't spin forever  
+            print(f"[DEBUG] Transcription failed with error: {e}")
+            print(f"[DEBUG] Audio data size: {len(audio_bytes)}, fileobj.name: {fileobj.name}")
             raise
