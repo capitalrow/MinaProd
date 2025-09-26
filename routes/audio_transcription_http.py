@@ -17,8 +17,8 @@ from werkzeug.utils import secure_filename
 import openai
 from pydub import AudioSegment
 
-from models import Session, Segment
-from app import db
+from models import Segment, Conversation
+from models import db
 
 logger = logging.getLogger(__name__)
 
@@ -69,18 +69,19 @@ def transcribe_audio_streaming():
         audio_data = audio_file.read()
         original_filename = audio_file.filename or 'chunk.webm'
         
-        # Get session from database
-        session = db.session.query(Session).filter_by(external_id=session_id).first()
-        if not session:
-            # Create new session if it doesn't exist
-            session = Session(
-                external_id=session_id,
-                started_at=datetime.utcnow(),
-                status='active'
+        # Get conversation from database (using current model structure)
+        conversation = db.session.query(Conversation).filter_by(id=session_id).first()
+        if not conversation:
+            # Create new conversation if it doesn't exist
+            conversation = Conversation(
+                user_id=1,  # Default user for now
+                title=f"Meeting {session_id}",
+                created_at=datetime.utcnow()
             )
-            db.session.add(session)
+            db.session.add(conversation)
             db.session.commit()
-            logger.info(f"Created new session: {session_id}")
+            logger.info(f"Created new conversation: {session_id}")
+        conversation_id = conversation.id
         
         # Convert webm to wav for better compatibility
         temp_dir = tempfile.gettempdir()
@@ -168,7 +169,7 @@ def transcribe_audio_streaming():
             
             if result:
                 # Broadcast via WebSocket immediately
-                from flask_socketio import socketio
+                from extensions import socketio
                 socketio.emit('transcription_result', {
                     "type": "final_result" if result.is_final else "interim_result",
                     "session_id": result.session_id,
@@ -184,19 +185,16 @@ def transcribe_audio_streaming():
                 
                 # Save to database for final results
                 if result.is_final and result.text:
+                    # Find the next segment index
+                    max_idx = db.session.query(db.func.max(Segment.idx)).filter_by(conversation_id=conversation_id).scalar() or 0
+                    
                     segment = Segment(
-                        session_id=session.id,
+                        conversation_id=conversation_id,
+                        idx=max_idx + 1,
+                        start_ms=int(result.timestamp * 1000),
+                        end_ms=int((result.timestamp + (result.latency_ms / 1000)) * 1000),
                         text=result.text,
-                        confidence=result.confidence,
-                        start_time=result.timestamp,
-                        end_time=result.timestamp + (result.latency_ms / 1000),
-                        speaker_id="user",
-                        language=result.language,
-                        metadata=json.dumps({
-                            "chunk_id": result.chunk_id,
-                            "latency_ms": result.latency_ms,
-                            "words": result.words
-                        })
+                        is_final=result.is_final
                     )
                     db.session.add(segment)
                     db.session.commit()
@@ -288,21 +286,20 @@ def transcribe_audio_streaming():
                     segment_end = segment.get('end', 0.0)
                     segment_speaker = segment.get('speaker', 'unknown')
                 
+                # Find the next segment index
+                max_idx = db.session.query(db.func.max(Segment.idx)).filter_by(conversation_id=conversation_id).scalar() or 0
+                
                 db_segment = Segment(
-                    session_id=session.id,  # Use session.id not session_id string
+                    conversation_id=conversation_id,
+                    idx=max_idx + i + 1,
                     text=segment_text,
-                    kind='final',  # Mark as final transcription
-                    avg_confidence=segment_confidence if segment_confidence else None,
-                    start_ms=int(segment_start * 1000) if segment_start else None,  # Convert to milliseconds
-                    end_ms=int(segment_end * 1000) if segment_end else None,  # Convert to milliseconds
-                    created_at=datetime.utcnow()
+                    start_ms=int(segment_start * 1000) if segment_start else 0,
+                    end_ms=int(segment_end * 1000) if segment_end else 0,
+                    is_final=True
                 )
                 db.session.add(db_segment)
             
-            # Update session
-            if not session.started_at:
-                session.started_at = datetime.utcnow()
-            session.total_segments = len(segments)
+            # Update conversation
             db.session.commit()
             
             # Calculate performance metrics
@@ -399,24 +396,24 @@ def health_check():
 def get_session_status(session_id):
     """Get status and metrics for a specific session."""
     try:
-        session = db.session.query(Session).filter_by(external_id=session_id).first()
-        if not session:
+        conversation = db.session.query(Conversation).filter_by(id=session_id).first()
+        if not conversation:
             return jsonify({
                 'error': 'Session not found',
                 'success': False
             }), 404
         
         # Get segment count and latest activity
-        segment_count = db.session.query(Segment).filter_by(session_id=session.id).count()
-        latest_segment = db.session.query(Segment).filter_by(session_id=session.id).order_by(Segment.created_at.desc()).first()
+        segment_count = db.session.query(Segment).filter_by(conversation_id=conversation.id).count()
+        latest_segment = db.session.query(Segment).filter_by(conversation_id=conversation.id).order_by(Segment.id.desc()).first()
         
         status_data = {
             'session_id': session_id,
-            'status': session.status,
-            'created_at': session.started_at.isoformat() if session.started_at else None,
-            'last_activity': session.completed_at.isoformat() if session.completed_at else None,
+            'status': 'active',
+            'created_at': conversation.created_at.isoformat() if conversation.created_at else None,
+            'last_activity': None,
             'total_segments': segment_count,
-            'latest_segment_time': latest_segment.created_at.isoformat() if latest_segment else None,
+            'latest_segment_time': None,
             'success': True
         }
         
