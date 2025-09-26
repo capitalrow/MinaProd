@@ -4,16 +4,179 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mina - Transform Your Meetings Into Actionable Moments</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    
+    <!-- ✨ PHASE 1C: ADVANCED PERFORMANCE OPTIMIZATION -->
+    
+    <!-- Critical resource preconnections for faster loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    
+    <!-- Critical CSS inlined for immediate rendering -->
+    <style id="critical-css">
+        /* Critical above-the-fold styles for instant content visibility */
+        :root {
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-accent: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        html { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
+        body { margin: 0; padding: 0; line-height: 1.6; overflow-x: hidden; }
+        
+        /* Essential hero styles for immediate visibility */
+        .hero { 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            position: relative;
+            background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
+        }
+        
+        .hero-content { 
+            text-align: center; 
+            color: white; 
+            z-index: 10; 
+            position: relative; 
+            max-width: 1000px;
+            padding: 0 2rem;
+        }
+        
+        .hero-title { 
+            font-size: clamp(2.5rem, 8vw, 5rem); 
+            font-weight: 700; 
+            margin-bottom: 1.5rem;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .hero-subtitle { 
+            font-size: clamp(1.2rem, 4vw, 1.6rem); 
+            opacity: 0.9; 
+            margin-bottom: 2.5rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .cta-button { 
+            display: inline-flex; 
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem; 
+            border-radius: 12px; 
+            font-weight: 600; 
+            text-decoration: none; 
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+        }
+        
+        .cta-primary { 
+            background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%); 
+            color: white; 
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
+        }
+        
+        .cta-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Loading indicator */
+        .loading-indicator { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            height: 3px; 
+            background: var(--gradient-success);
+            z-index: 9999; 
+            transition: all 0.3s ease;
+        }
+    </style>
+    
+    <!-- Async CSS loading for non-critical styles -->
+    <link rel="preload" href="{{ url_for('static', filename='css/design-tokens.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="{{ url_for('static', filename='css/typography.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">  
+    <link rel="preload" href="{{ url_for('static', filename='css/components.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    
+    <!-- Fallbacks for no-JS environments -->
+    <noscript>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    </noscript>
+    
+    <!-- Optimized font loading -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"></noscript>
+    
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
     
-    <!-- External Dependencies -->
-    <script src="https://unpkg.com/feather-icons"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <script src="https://unpkg.com/lottie-web/build/player/lottie.min.js"></script>
+    <!-- Critical JavaScript for instant functionality -->
+    <script id="critical-js">
+        // ⚡ Critical performance and functionality - executes immediately
+        (function() {
+            // Performance monitoring
+            window.minaPerf = { 
+                start: performance.now(),
+                marks: {},
+                mark: function(name) {
+                    this.marks[name] = performance.now() - this.start;
+                    console.log(`📊 ${name}: ${this.marks[name].toFixed(2)}ms`);
+                }
+            };
+            window.minaPerf.mark('Critical JS Start');
+            
+            // Theme system (prevent flash of unstyled content)
+            const savedTheme = localStorage.getItem('theme');
+            const systemDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (systemDarkMode ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+            
+            // Progressive loading indicator
+            const loadingEl = document.createElement('div');
+            loadingEl.className = 'loading-indicator';
+            loadingEl.style.width = '15%';
+            document.head.appendChild(loadingEl);
+            
+            let progress = 15;
+            const progressInterval = setInterval(() => {
+                if (progress < 85) {
+                    progress += Math.random() * 15 + 5;
+                    loadingEl.style.width = Math.min(progress, 85) + '%';
+                }
+            }, 150);
+            
+            // Complete loading states
+            document.addEventListener('DOMContentLoaded', () => {
+                window.minaPerf.mark('DOM Ready');
+                clearInterval(progressInterval);
+                loadingEl.style.width = '95%';
+                
+                // Final completion
+                window.addEventListener('load', () => {
+                    window.minaPerf.mark('Window Load');
+                    loadingEl.style.width = '100%';
+                    setTimeout(() => {
+                        loadingEl.style.opacity = '0';
+                        setTimeout(() => loadingEl.remove(), 300);
+                    }, 200);
+                });
+            });
+            
+            window.minaPerf.mark('Critical JS End');
+        })();
+    </script>
+    
+    <!-- External Dependencies - Async loading with fallbacks -->
+    <script async src="https://unpkg.com/feather-icons" onerror="window.minaFallbacks = window.minaFallbacks || []; window.minaFallbacks.push('feather-icons');"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" onerror="window.minaFallbacks = window.minaFallbacks || []; window.minaFallbacks.push('gsap');"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" onerror="window.minaFallbacks = window.minaFallbacks || []; window.minaFallbacks.push('scrolltrigger');"></script>
+    <script async src="https://unpkg.com/lottie-web/build/player/lottie.min.js" onerror="window.minaFallbacks = window.minaFallbacks || []; window.minaFallbacks.push('lottie');"></script>
 
     <style>
         :root {
