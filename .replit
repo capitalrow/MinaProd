@@ -86,5 +86,9 @@ externalPort = 8080
 localPort = 34527
 externalPort = 8081
 
+[[ports]]
+localPort = 45117
+externalPort = 8099
+
 [agent]
 integrations = ["python_database:1.0.0"]
