@@ -594,6 +594,467 @@
             transition: width 0.3s ease;
         }
 
+        /* ROI Calculator Section */
+        .roi-calculator {
+            padding: var(--mina-space-20) var(--mina-space-6);
+            background: var(--mina-bg-primary);
+        }
+
+        .roi-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .calculator-card {
+            background: var(--glassmorphism-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glassmorphism-border);
+            border-radius: var(--mina-radius-xl);
+            padding: var(--mina-space-8);
+            margin-top: var(--mina-space-8);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--mina-space-8);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .calculator-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: var(--mina-space-6);
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--mina-space-3);
+        }
+
+        .input-label {
+            font-weight: var(--mina-font-weight-semibold);
+            color: var(--mina-text-primary);
+            font-size: var(--mina-font-size-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .calculator-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background: var(--gradient-primary);
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .calculator-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border: 3px solid var(--mina-brand-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .calculator-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border: 3px solid var(--mina-brand-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .slider-value {
+            font-weight: var(--mina-font-weight-bold);
+            color: var(--mina-brand-primary);
+            font-size: var(--mina-font-size-lg);
+        }
+
+        .calculator-results {
+            display: flex;
+            flex-direction: column;
+            gap: var(--mina-space-6);
+        }
+
+        .primary-result {
+            text-align: center;
+            padding: var(--mina-space-6);
+            background: var(--gradient-success);
+            border-radius: var(--mina-radius-lg);
+            color: white;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--mina-space-4);
+        }
+
+        .result-item {
+            text-align: center;
+            padding: var(--mina-space-4);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--mina-radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .result-label {
+            font-size: var(--mina-font-size-sm);
+            color: var(--mina-text-secondary);
+            margin-bottom: var(--mina-space-2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-value {
+            font-size: var(--mina-font-size-xl);
+            font-weight: var(--mina-font-weight-bold);
+            color: var(--mina-text-primary);
+        }
+
+        .primary-result .result-value {
+            font-size: var(--mina-font-size-3xl);
+            color: white;
+        }
+
+        .calculator-cta {
+            text-align: center;
+            margin-top: var(--mina-space-4);
+        }
+
+        .calculator-note {
+            margin-top: var(--mina-space-4);
+            font-size: var(--mina-font-size-sm);
+            color: var(--mina-text-secondary);
+            font-style: italic;
+        }
+
+        /* Pricing Section */
+        .pricing {
+            padding: var(--mina-space-20) var(--mina-space-6);
+            background: var(--mina-bg-secondary);
+        }
+
+        .pricing-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .offer-banner {
+            background: var(--gradient-accent);
+            border-radius: var(--mina-radius-lg);
+            padding: var(--mina-space-4);
+            margin: var(--mina-space-8) 0;
+            text-align: center;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .offer-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: var(--mina-space-4);
+            flex-wrap: wrap;
+            color: white;
+        }
+
+        .offer-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: var(--mina-space-1) var(--mina-space-3);
+            border-radius: var(--mina-radius-md);
+            font-size: var(--mina-font-size-sm);
+            font-weight: var(--mina-font-weight-bold);
+        }
+
+        .offer-text {
+            font-weight: var(--mina-font-weight-semibold);
+            font-size: var(--mina-font-size-lg);
+        }
+
+        .offer-countdown {
+            font-weight: var(--mina-font-weight-bold);
+            font-family: monospace;
+        }
+
+        .pricing-toggle {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: var(--mina-space-4);
+            margin: var(--mina-space-8) 0;
+        }
+
+        .toggle-label {
+            font-weight: var(--mina-font-weight-medium);
+            color: var(--mina-text-primary);
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--mina-bg-tertiary);
+            border-radius: 34px;
+            transition: 0.4s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.4s;
+        }
+
+        input:checked + .toggle-slider {
+            background: var(--mina-brand-primary);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .discount-badge {
+            background: var(--gradient-success);
+            color: white;
+            padding: var(--mina-space-1) var(--mina-space-2);
+            border-radius: var(--mina-radius-sm);
+            font-size: var(--mina-font-size-xs);
+            font-weight: var(--mina-font-weight-bold);
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: var(--mina-space-6);
+            margin-top: var(--mina-space-8);
+        }
+
+        .pricing-card {
+            background: var(--mina-bg-primary);
+            border: 2px solid var(--mina-border-primary);
+            border-radius: var(--mina-radius-xl);
+            padding: var(--mina-space-8);
+            position: relative;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--mina-shadow-lg);
+        }
+
+        .pricing-card.featured {
+            border-color: var(--mina-brand-primary);
+            transform: scale(1.05) translateY(-10px);
+            box-shadow: 0 20px 40px rgba(103, 126, 234, 0.3);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gradient-accent);
+            color: white;
+            padding: var(--mina-space-2) var(--mina-space-4);
+            border-radius: var(--mina-radius-md);
+            font-size: var(--mina-font-size-sm);
+            font-weight: var(--mina-font-weight-bold);
+        }
+
+        .plan-header {
+            text-align: center;
+            margin-bottom: var(--mina-space-6);
+        }
+
+        .plan-name {
+            font-size: var(--mina-font-size-2xl);
+            font-weight: var(--mina-font-weight-bold);
+            color: var(--mina-text-primary);
+            margin-bottom: var(--mina-space-2);
+        }
+
+        .plan-description {
+            color: var(--mina-text-secondary);
+            margin-bottom: var(--mina-space-4);
+        }
+
+        .plan-price {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: var(--mina-space-1);
+            margin-bottom: var(--mina-space-2);
+        }
+
+        .price-currency {
+            font-size: var(--mina-font-size-xl);
+            font-weight: var(--mina-font-weight-semibold);
+            color: var(--mina-brand-primary);
+        }
+
+        .price-amount {
+            font-size: var(--mina-font-size-4xl);
+            font-weight: var(--mina-font-weight-bold);
+            color: var(--mina-brand-primary);
+        }
+
+        .price-period {
+            font-size: var(--mina-font-size-sm);
+            color: var(--mina-text-secondary);
+        }
+
+        .annual-savings {
+            font-size: var(--mina-font-size-sm);
+            color: var(--mina-success);
+            font-weight: var(--mina-font-weight-medium);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .plan-features {
+            display: flex;
+            flex-direction: column;
+            gap: var(--mina-space-3);
+            margin-bottom: var(--mina-space-6);
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: var(--mina-space-3);
+            color: var(--mina-text-secondary);
+        }
+
+        .feature-icon {
+            color: var(--mina-success);
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .plan-cta {
+            width: 100%;
+            text-align: center;
+            padding: var(--mina-space-4);
+            font-weight: var(--mina-font-weight-semibold);
+        }
+
+        .pricing-trust {
+            display: flex;
+            justify-content: center;
+            gap: var(--mina-space-8);
+            margin-top: var(--mina-space-12);
+            flex-wrap: wrap;
+        }
+
+        .pricing-trust .trust-item {
+            display: flex;
+            align-items: center;
+            gap: var(--mina-space-2);
+            color: var(--mina-text-secondary);
+            font-size: var(--mina-font-size-sm);
+        }
+
+        .pricing-trust .trust-icon {
+            color: var(--mina-success);
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Final CTA Section */
+        .final-cta {
+            padding: var(--mina-space-20) var(--mina-space-6);
+            background: var(--gradient-primary);
+            color: white;
+            text-align: center;
+        }
+
+        .final-cta-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .final-cta .section-title {
+            color: white;
+            margin-bottom: var(--mina-space-4);
+        }
+
+        .final-cta .section-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: var(--mina-space-8);
+        }
+
+        .urgency-indicators {
+            display: flex;
+            justify-content: center;
+            gap: var(--mina-space-8);
+            margin-bottom: var(--mina-space-8);
+            flex-wrap: wrap;
+        }
+
+        .urgency-item {
+            text-align: center;
+        }
+
+        .urgency-number {
+            font-size: var(--mina-font-size-3xl);
+            font-weight: var(--mina-font-weight-bold);
+            color: #4facfe;
+            text-shadow: 0 0 20px rgba(79, 172, 254, 0.5);
+            display: block;
+        }
+
+        .urgency-label {
+            font-size: var(--mina-font-size-sm);
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: var(--mina-space-1);
+        }
+
+        .final-cta-actions {
+            margin-top: var(--mina-space-8);
+        }
+
+        .cta-button.large {
+            padding: var(--mina-space-5) var(--mina-space-8);
+            font-size: var(--mina-font-size-xl);
+        }
+
+        .cta-note {
+            margin-top: var(--mina-space-4);
+            font-size: var(--mina-font-size-sm);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .hero-cta {
@@ -848,6 +1309,296 @@
         </div>
     </section>
 
+    <!-- ROI Calculator Section -->
+    <section class="roi-calculator">
+        <div class="roi-container">
+            <h2 class="section-title" id="roiTitle">Calculate Your ROI with Mina</h2>
+            <p class="section-subtitle" id="roiSubtitle">
+                See exactly how much time and money Mina can save your organization.
+            </p>
+            
+            <div class="calculator-card">
+                <div class="calculator-inputs">
+                    <div class="input-group">
+                        <label for="teamSize" class="input-label">Team Size</label>
+                        <input type="range" id="teamSize" class="calculator-slider" min="5" max="500" value="25">
+                        <span class="slider-value" id="teamSizeValue">25</span> people
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="meetingsPerWeek" class="input-label">Meetings per Week</label>
+                        <input type="range" id="meetingsPerWeek" class="calculator-slider" min="5" max="50" value="15">
+                        <span class="slider-value" id="meetingsValue">15</span> meetings
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="avgSalary" class="input-label">Average Hourly Rate</label>
+                        <input type="range" id="avgSalary" class="calculator-slider" min="25" max="200" value="75">
+                        $<span class="slider-value" id="salaryValue">75</span> per hour
+                    </div>
+                </div>
+                
+                <div class="calculator-results">
+                    <div class="result-item primary-result">
+                        <div class="result-label">Monthly Savings</div>
+                        <div class="result-value" id="monthlySavings">$12,500</div>
+                    </div>
+                    
+                    <div class="result-grid">
+                        <div class="result-item">
+                            <div class="result-label">Time Saved</div>
+                            <div class="result-value" id="timeSaved">50 hours</div>
+                        </div>
+                        
+                        <div class="result-item">
+                            <div class="result-label">Annual ROI</div>
+                            <div class="result-value" id="annualROI">1,847%</div>
+                        </div>
+                        
+                        <div class="result-item">
+                            <div class="result-label">Payback Period</div>
+                            <div class="result-value" id="paybackPeriod">3 days</div>
+                        </div>
+                        
+                        <div class="result-item">
+                            <div class="result-label">Tasks Extracted</div>
+                            <div class="result-value" id="tasksExtracted">180</div>
+                        </div>
+                    </div>
+                    
+                    <div class="calculator-cta">
+                        <a href="{{ url_for('auth.register') }}" class="cta-button cta-primary">
+                            <i data-feather="trending-up"></i>
+                            Start Saving Now
+                        </a>
+                        <div class="calculator-note">
+                            Based on industry averages and actual customer results
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="pricing">
+        <div class="pricing-container">
+            <h2 class="section-title" id="pricingTitle">Simple, Transparent Pricing</h2>
+            <p class="section-subtitle" id="pricingSubtitle">
+                Choose the plan that fits your team. All plans include 14-day free trial.
+            </p>
+            
+            <!-- Special Offer Banner -->
+            <div class="offer-banner">
+                <div class="offer-content">
+                    <span class="offer-badge">🔥 LIMITED TIME</span>
+                    <span class="offer-text">Get 3 months FREE on annual plans - Save up to 40%!</span>
+                    <span class="offer-countdown">
+                        Offer expires in: <span id="countdown">23:59:42</span>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="pricing-toggle">
+                <span class="toggle-label">Monthly</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="pricingToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">Annual <span class="discount-badge">Save 40%</span></span>
+            </div>
+            
+            <div class="pricing-grid">
+                <!-- Starter Plan -->
+                <div class="pricing-card">
+                    <div class="plan-header">
+                        <h3 class="plan-name">Starter</h3>
+                        <p class="plan-description">Perfect for small teams</p>
+                        <div class="plan-price">
+                            <span class="price-currency">$</span>
+                            <span class="price-amount" data-monthly="29" data-annual="17">29</span>
+                            <span class="price-period">/user/month</span>
+                        </div>
+                        <div class="annual-savings">Save $144 annually</div>
+                    </div>
+                    
+                    <div class="plan-features">
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            Up to 10 team members
+                        </div>
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            5 hours recording per month
+                        </div>
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            Real-time transcription
+                        </div>
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            Basic task extraction
+                        </div>
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            Email support
+                        </div>
+                    </div>
+                    
+                    <a href="{{ url_for('auth.register') }}" class="plan-cta cta-secondary">
+                        Start Free Trial
+                    </a>
+                </div>
+                
+                <!-- Professional Plan -->
+                <div class="pricing-card featured">
+                    <div class="popular-badge">Most Popular</div>
+                    <div class="plan-header">
+                        <h3 class="plan-name">Professional</h3>
+                        <p class="plan-description">Best for growing teams</p>
+                        <div class="plan-price">
+                            <span class="price-currency">$</span>
+                            <span class="price-amount" data-monthly="59" data-annual="35">59</span>
+                            <span class="price-period">/user/month</span>
+                        </div>
+                        <div class="annual-savings">Save $288 annually</div>
+                    </div>
+                    
+                    <div class="plan-features">
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            Up to 50 team members
+                        </div>
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            20 hours recording per month
+                        </div>
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            Advanced AI insights
+                        </div>
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            Smart task extraction
+                        </div>
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            Integrations (Slack, Teams, etc.)
+                        </div>
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            Priority support
+                        </div>
+                    </div>
+                    
+                    <a href="{{ url_for('auth.register') }}" class="plan-cta cta-primary">
+                        Start Free Trial
+                    </a>
+                </div>
+                
+                <!-- Enterprise Plan -->
+                <div class="pricing-card">
+                    <div class="plan-header">
+                        <h3 class="plan-name">Enterprise</h3>
+                        <p class="plan-description">For large organizations</p>
+                        <div class="plan-price">
+                            <span class="price-currency">$</span>
+                            <span class="price-amount" data-monthly="99" data-annual="59">99</span>
+                            <span class="price-period">/user/month</span>
+                        </div>
+                        <div class="annual-savings">Save $480 annually</div>
+                    </div>
+                    
+                    <div class="plan-features">
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            Unlimited team members
+                        </div>
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            Unlimited recording
+                        </div>
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            Custom AI models
+                        </div>
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            Advanced analytics
+                        </div>
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            On-premise deployment
+                        </div>
+                        <div class="feature-item">
+                            <i data-feather="check" class="feature-icon"></i>
+                            Dedicated success manager
+                        </div>
+                    </div>
+                    
+                    <a href="mailto:sales@mina.ai" class="plan-cta cta-secondary">
+                        Contact Sales
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Trust Indicators -->
+            <div class="pricing-trust">
+                <div class="trust-item">
+                    <i data-feather="shield-check" class="trust-icon"></i>
+                    <span>30-day money-back guarantee</span>
+                </div>
+                <div class="trust-item">
+                    <i data-feather="credit-card" class="trust-icon"></i>
+                    <span>No setup fees</span>
+                </div>
+                <div class="trust-item">
+                    <i data-feather="users" class="trust-icon"></i>
+                    <span>Cancel anytime</span>
+                </div>
+                <div class="trust-item">
+                    <i data-feather="headphones" class="trust-icon"></i>
+                    <span>24/7 support</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="final-cta">
+        <div class="final-cta-container">
+            <h2 class="section-title">Ready to Transform Your Meetings?</h2>
+            <p class="section-subtitle">
+                Join over 10,000 teams already using Mina to boost productivity and never miss an important detail.
+            </p>
+            
+            <div class="urgency-indicators">
+                <div class="urgency-item">
+                    <div class="urgency-number" id="signupsToday">1,247</div>
+                    <div class="urgency-label">Teams signed up today</div>
+                </div>
+                <div class="urgency-item">
+                    <div class="urgency-number">4.9/5</div>
+                    <div class="urgency-label">Average customer rating</div>
+                </div>
+                <div class="urgency-item">
+                    <div class="urgency-number">< 2 min</div>
+                    <div class="urgency-label">Average setup time</div>
+                </div>
+            </div>
+            
+            <div class="final-cta-actions">
+                <a href="{{ url_for('auth.register') }}" class="cta-button cta-primary large">
+                    <i data-feather="rocket"></i>
+                    Start Your Free Trial Now
+                </a>
+                <div class="cta-note">
+                    No credit card required • 14-day free trial • Setup in under 2 minutes
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Sticky CTA Bar -->
     <div class="sticky-cta" id="stickyCTA">
         <div class="sticky-cta-content">
@@ -936,8 +1687,44 @@
             });
         }
 
+        // Fallback animations without GSAP
+        function initFallbackAnimations() {
+            // Simple CSS transitions as fallback
+            document.getElementById('heroTitle').style.opacity = '1';
+            document.getElementById('heroTitle').style.transform = 'translateY(0)';
+            document.getElementById('heroSubtitle').style.opacity = '1';
+            document.getElementById('heroSubtitle').style.transform = 'translateY(0)';
+            
+            document.querySelectorAll('.stat-item').forEach(item => {
+                item.style.opacity = '1';
+                item.style.transform = 'translateY(0)';
+            });
+            
+            document.querySelectorAll('.cta-button').forEach(btn => {
+                btn.style.opacity = '1';
+                btn.style.transform = 'translateY(0)';
+            });
+
+            document.querySelector('.trust-indicators').style.opacity = '1';
+            document.querySelector('.trust-indicators').style.transform = 'translateY(0)';
+
+            // Initialize other functionality
+            initROICalculator();
+            initPricingToggle();
+            initCountdownTimer();
+            initLiveCounter();
+
+            // Animate counters
+            animateCounters();
+        }
+
         // GSAP Animations
         function initAnimations() {
+            // Register ScrollTrigger
+            if (typeof ScrollTrigger !== 'undefined') {
+                gsap.registerPlugin(ScrollTrigger);
+            }
+
             // Hero title animation
             gsap.to('#heroTitle', {
                 opacity: 1,
@@ -1048,8 +1835,26 @@
             // Create particles
             createParticles();
 
-            // Initialize animations
-            initAnimations();
+            // Wait for GSAP to load, then initialize animations
+            if (typeof gsap !== 'undefined') {
+                initAnimations();
+            } else {
+                // Wait for GSAP to load with retry mechanism
+                let gsapRetries = 0;
+                const maxRetries = 50;
+                const waitForGSAP = setInterval(() => {
+                    gsapRetries++;
+                    if (typeof gsap !== 'undefined') {
+                        clearInterval(waitForGSAP);
+                        initAnimations();
+                    } else if (gsapRetries >= maxRetries) {
+                        clearInterval(waitForGSAP);
+                        // Fallback: Initialize basic functionality without animations
+                        console.warn('GSAP failed to load, using fallback animations');
+                        initFallbackAnimations();
+                    }
+                }, 100);
+            }
 
             // Scroll event listeners
             window.addEventListener('scroll', () => {
@@ -1091,7 +1896,204 @@
                     });
                 });
             });
+
+            // ROI Calculator functionality
+            initROICalculator();
+            
+            // Pricing toggle functionality
+            initPricingToggle();
+            
+            // Countdown timer
+            initCountdownTimer();
+            
+            // Live signup counter
+            initLiveCounter();
         });
+
+        // ROI Calculator Logic
+        function initROICalculator() {
+            const teamSizeSlider = document.getElementById('teamSize');
+            const meetingsSlider = document.getElementById('meetingsPerWeek');
+            const salarySlider = document.getElementById('avgSalary');
+            
+            const teamSizeValue = document.getElementById('teamSizeValue');
+            const meetingsValue = document.getElementById('meetingsValue');
+            const salaryValue = document.getElementById('salaryValue');
+            
+            const monthlySavings = document.getElementById('monthlySavings');
+            const timeSaved = document.getElementById('timeSaved');
+            const annualROI = document.getElementById('annualROI');
+            const paybackPeriod = document.getElementById('paybackPeriod');
+            const tasksExtracted = document.getElementById('tasksExtracted');
+
+            function updateROI() {
+                const teamSize = parseInt(teamSizeSlider.value);
+                const meetingsPerWeek = parseInt(meetingsSlider.value);
+                const avgSalary = parseInt(salarySlider.value);
+
+                // Update display values
+                teamSizeValue.textContent = teamSize;
+                meetingsValue.textContent = meetingsPerWeek;
+                salaryValue.textContent = avgSalary;
+
+                // ROI Calculation Logic
+                const hoursPerMeeting = 1; // Average meeting duration
+                const timeSavedPerMeeting = 0.3; // 30% time saving
+                const weeklyTimeSaved = meetingsPerWeek * timeSavedPerMeeting;
+                const monthlyTimeSaved = weeklyTimeSaved * 4;
+                const totalMonthlySaved = monthlyTimeSaved * teamSize * avgSalary;
+                
+                const annualSaved = totalMonthlySaved * 12;
+                const minaCost = teamSize * 59 * 12; // Professional plan annual cost
+                const roiPercent = ((annualSaved - minaCost) / minaCost) * 100;
+                const paybackDays = Math.ceil((minaCost / 12) / (totalMonthlySaved / 30));
+                const monthlyTasks = meetingsPerWeek * 4 * 3; // 3 tasks per meeting
+
+                // Update results with animation
+                gsap.to(monthlySavings, {
+                    innerHTML: '$' + Math.round(totalMonthlySaved).toLocaleString(),
+                    duration: 0.5,
+                    ease: 'power2.out'
+                });
+
+                gsap.to(timeSaved, {
+                    innerHTML: Math.round(monthlyTimeSaved) + ' hours',
+                    duration: 0.5,
+                    ease: 'power2.out'
+                });
+
+                gsap.to(annualROI, {
+                    innerHTML: Math.round(roiPercent).toLocaleString() + '%',
+                    duration: 0.5,
+                    ease: 'power2.out'
+                });
+
+                gsap.to(paybackPeriod, {
+                    innerHTML: paybackDays + ' days',
+                    duration: 0.5,
+                    ease: 'power2.out'
+                });
+
+                gsap.to(tasksExtracted, {
+                    innerHTML: monthlyTasks,
+                    duration: 0.5,
+                    ease: 'power2.out'
+                });
+            }
+
+            // Add event listeners
+            [teamSizeSlider, meetingsSlider, salarySlider].forEach(slider => {
+                slider.addEventListener('input', updateROI);
+                slider.addEventListener('change', updateROI);
+            });
+
+            // Initial calculation
+            updateROI();
+        }
+
+        // Pricing Toggle Logic
+        function initPricingToggle() {
+            const toggle = document.getElementById('pricingToggle');
+            const priceAmounts = document.querySelectorAll('.price-amount');
+            const annualSavings = document.querySelectorAll('.annual-savings');
+
+            function updatePricing() {
+                const isAnnual = toggle.checked;
+                
+                priceAmounts.forEach(amount => {
+                    const monthlyPrice = amount.getAttribute('data-monthly');
+                    const annualPrice = amount.getAttribute('data-annual');
+                    const targetPrice = isAnnual ? annualPrice : monthlyPrice;
+                    
+                    gsap.to(amount, {
+                        innerHTML: targetPrice,
+                        duration: 0.3,
+                        ease: 'power2.out'
+                    });
+                });
+
+                annualSavings.forEach(saving => {
+                    gsap.to(saving, {
+                        opacity: isAnnual ? 1 : 0,
+                        duration: 0.3,
+                        ease: 'power2.out'
+                    });
+                });
+            }
+
+            toggle.addEventListener('change', updatePricing);
+            
+            // Animate pricing cards on scroll
+            ScrollTrigger.batch('.pricing-card', {
+                onEnter: (elements) => {
+                    gsap.to(elements, {
+                        opacity: 1,
+                        y: 0,
+                        duration: 0.8,
+                        ease: 'power3.out',
+                        stagger: 0.2
+                    });
+                }
+            });
+        }
+
+        // Countdown Timer Logic
+        function initCountdownTimer() {
+            const countdownElement = document.getElementById('countdown');
+            
+            function updateCountdown() {
+                // Set countdown to 24 hours from now (resets daily)
+                const now = new Date();
+                const tomorrow = new Date(now);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(0, 0, 0, 0);
+                
+                const timeDiff = tomorrow.getTime() - now.getTime();
+                const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+                const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+                
+                const formattedTime = 
+                    String(hours).padStart(2, '0') + ':' + 
+                    String(minutes).padStart(2, '0') + ':' + 
+                    String(seconds).padStart(2, '0');
+                    
+                countdownElement.textContent = formattedTime;
+            }
+
+            // Update immediately and then every second
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        }
+
+        // Live Counter Animation
+        function initLiveCounter() {
+            const signupCounter = document.getElementById('signupsToday');
+            
+            function updateLiveCounter() {
+                // Simulate live signups (increases by 1-3 every 10-30 seconds)
+                const currentCount = parseInt(signupCounter.textContent.replace(',', ''));
+                const increment = Math.floor(Math.random() * 3) + 1;
+                const newCount = currentCount + increment;
+                
+                gsap.to(signupCounter, {
+                    innerHTML: newCount.toLocaleString(),
+                    duration: 0.5,
+                    ease: 'power2.out'
+                });
+            }
+
+            // Start the counter with random intervals
+            function scheduleNextUpdate() {
+                const delay = Math.random() * 20000 + 10000; // 10-30 seconds
+                setTimeout(() => {
+                    updateLiveCounter();
+                    scheduleNextUpdate();
+                }, delay);
+            }
+
+            scheduleNextUpdate();
+        }
     </script>
 </body>
 </html>
