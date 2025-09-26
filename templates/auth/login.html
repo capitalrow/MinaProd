@@ -86,12 +86,13 @@
         }
 
         .auth-subtitle {
-            font-size: clamp(1rem, 3vw, 1.125rem);
-            color: var(--mina-text-secondary);
+            font-size: clamp(1.1rem, 3.5vw, 1.25rem);
+            color: #475569 !important;
             margin: 0 0 var(--mina-space-6) 0;
             line-height: var(--mina-line-height-relaxed);
-            letter-spacing: 0.01em;
-            font-weight: var(--mina-font-weight-medium);
+            letter-spacing: 0.02em;
+            font-weight: var(--mina-font-weight-semibold);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
         /* Enhanced Form Styling */
@@ -101,13 +102,14 @@
 
         .form-label {
             display: block;
-            font-size: clamp(0.875rem, 2.5vw, 1rem);
-            font-weight: var(--mina-font-weight-semibold);
-            color: var(--mina-text-primary);
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            font-weight: var(--mina-font-weight-bold);
+            color: #1e293b !important;
             margin-bottom: var(--mina-space-3);
-            letter-spacing: 0.025em;
+            letter-spacing: 0.05em;
             text-transform: uppercase;
-            font-size: 0.8rem;
+            line-height: 1.4;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
         .form-input {
@@ -127,10 +129,10 @@
 
         .form-input:focus {
             outline: none;
-            border-color: var(--mina-brand-primary);
+            border-color: var(--mina-brand-primary) !important;
             box-shadow: 
-                0 0 0 3px rgba(var(--mina-brand-primary-rgb), 0.1),
-                var(--mina-shadow-sm);
+                0 0 0 3px rgba(99, 102, 241, 0.2),
+                0 4px 12px rgba(0, 0, 0, 0.1);
             transform: translateY(-1px);
         }
 
@@ -173,12 +175,13 @@
         }
 
         .form-checkbox-label {
-            font-size: clamp(0.875rem, 2.5vw, 1rem);
-            color: var(--mina-text-secondary);
+            font-size: clamp(0.95rem, 3vw, 1.05rem);
+            color: #475569 !important;
             cursor: pointer;
             user-select: none;
-            letter-spacing: 0.01em;
-            font-weight: var(--mina-font-weight-medium);
+            letter-spacing: 0.02em;
+            font-weight: var(--mina-font-weight-semibold);
+            text-shadow: 0 1px 1px rgba(0,0,0,0.1);
         }
 
         /* Enhanced Button */
@@ -231,21 +234,27 @@
         }
 
         .alert-error {
-            background: rgba(var(--mina-danger-rgb), 0.1);
-            color: var(--mina-danger-dark);
-            border-color: rgba(var(--mina-danger-rgb), 0.3);
+            background: rgba(220, 53, 69, 0.1);
+            color: #b02a37 !important;
+            border-color: rgba(220, 53, 69, 0.3);
+            font-weight: var(--mina-font-weight-semibold);
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
         }
 
         .alert-success {
-            background: rgba(var(--mina-success-rgb), 0.1);
-            color: var(--mina-success-dark);
-            border-color: rgba(var(--mina-success-rgb), 0.3);
+            background: rgba(25, 135, 84, 0.1);
+            color: #146c43 !important;
+            border-color: rgba(25, 135, 84, 0.3);
+            font-weight: var(--mina-font-weight-semibold);
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
         }
 
         .alert-info {
-            background: rgba(var(--mina-info-rgb), 0.1);
-            color: var(--mina-info-dark);
-            border-color: rgba(var(--mina-info-rgb), 0.3);
+            background: rgba(13, 202, 240, 0.1);
+            color: #087990 !important;
+            border-color: rgba(13, 202, 240, 0.3);
+            font-weight: var(--mina-font-weight-semibold);
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
         }
 
         /* Footer */
@@ -257,10 +266,11 @@
         }
 
         .auth-link {
-            color: var(--mina-brand-primary);
+            color: var(--mina-brand-primary) !important;
             text-decoration: none;
-            font-weight: var(--mina-font-weight-medium);
+            font-weight: var(--mina-font-weight-bold);
             transition: color var(--mina-transition-fast);
+            text-shadow: 0 1px 1px rgba(0,0,0,0.1);
         }
 
         .auth-link:hover {
@@ -383,7 +393,7 @@
             </form>
             
             <div class="auth-footer">
-                <p style="color: var(--mina-text-secondary); margin: 0;">
+                <p style="color: #475569 !important; margin: 0; font-weight: 500; font-size: clamp(0.95rem, 3vw, 1.05rem);">
                     Don't have an account? 
                     <a href="{{ url_for('auth.register') }}" class="auth-link">Create one now</a>
                 </p>
