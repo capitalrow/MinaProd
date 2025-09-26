@@ -3,3 +3,13 @@ flask-socketio==5.3.6
 python-socketio==5.11.1
 python-engineio==4.9.0
 openai>=1.40.0
+flask-login
+numpy
+psutil
+pytest
+redis
+requests
+socketio
+websocket
+websockets
+werkzeug

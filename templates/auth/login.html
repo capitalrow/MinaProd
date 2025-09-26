@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Mina</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--color-primary-50) 0%, var(--color-primary-100) 100%);
+            padding: var(--spacing-md);
+        }
+        
+        .auth-card {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-lg);
+            padding: var(--spacing-2xl);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .auth-logo {
+            font-size: 2rem;
+            font-weight: var(--font-weight-bold);
+            color: var(--color-primary-600);
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: var(--spacing-xs);
+            font-weight: var(--font-weight-medium);
+            color: var(--color-gray-700);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: var(--spacing-md);
+            border: 1px solid var(--color-gray-300);
+            border-radius: var(--border-radius-md);
+            font-size: var(--font-size-base);
+            transition: all 0.2s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--color-primary-500);
+            box-shadow: 0 0 0 3px var(--color-primary-100);
+        }
+        
+        .form-checkbox {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .btn-primary {
+            width: 100%;
+            padding: var(--spacing-md);
+            background: var(--color-primary-600);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-md);
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-medium);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary:hover {
+            background: var(--color-primary-700);
+        }
+        
+        .auth-footer {
+            text-align: center;
+            margin-top: var(--spacing-xl);
+            padding-top: var(--spacing-lg);
+            border-top: 1px solid var(--color-gray-200);
+        }
+        
+        .auth-link {
+            color: var(--color-primary-600);
+            text-decoration: none;
+        }
+        
+        .auth-link:hover {
+            text-decoration: underline;
+        }
+        
+        .alert {
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius-md);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .alert-error {
+            background: var(--color-red-50);
+            color: var(--color-red-700);
+            border: 1px solid var(--color-red-200);
+        }
+        
+        .alert-success {
+            background: var(--color-green-50);
+            color: var(--color-green-700);
+            border: 1px solid var(--color-green-200);
+        }
+        
+        .alert-info {
+            background: var(--color-blue-50);
+            color: var(--color-blue-700);
+            border: 1px solid var(--color-blue-200);
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">Mina</div>
+                <h1>Welcome Back</h1>
+                <p class="text-gray-600">Sign in to your account to continue</p>
+            </div>
+            
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                <div class="form-group">
+                    <label for="email_or_username" class="form-label">Email or Username</label>
+                    <input 
+                        type="text" 
+                        id="email_or_username" 
+                        name="email_or_username" 
+                        class="form-input" 
+                        required 
+                        autocomplete="username"
+                        value="{{ request.form.get('email_or_username', '') }}"
+                        placeholder="Enter your email or username"
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input" 
+                        required 
+                        autocomplete="current-password"
+                        placeholder="Enter your password"
+                    >
+                </div>
+                
+                <div class="form-checkbox">
+                    <input type="checkbox" id="remember_me" name="remember_me">
+                    <label for="remember_me">Remember me</label>
+                </div>
+                
+                <button type="submit" class="btn-primary">Sign In</button>
+            </form>
+            
+            <div class="auth-footer">
+                <p>Don't have an account? <a href="{{ url_for('auth.register') }}" class="auth-link">Sign up</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Mina</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <style>
+        body {
+            background: var(--color-gray-50);
+            margin: 0;
+            font-family: var(--font-family-primary);
+        }
+        
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            background: white;
+            border-right: 1px solid var(--color-gray-200);
+            padding: var(--spacing-xl);
+        }
+        
+        .sidebar-logo {
+            font-size: 1.5rem;
+            font-weight: var(--font-weight-bold);
+            color: var(--color-primary-600);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .nav-item {
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .nav-link {
+            display: block;
+            padding: var(--spacing-md);
+            color: var(--color-gray-700);
+            text-decoration: none;
+            border-radius: var(--border-radius-md);
+            transition: all 0.2s ease;
+        }
+        
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--color-primary-50);
+            color: var(--color-primary-700);
+        }
+        
+        .main-content {
+            padding: var(--spacing-xl);
+        }
+        
+        .dashboard-header {
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .dashboard-title {
+            font-size: 2rem;
+            font-weight: var(--font-weight-bold);
+            color: var(--color-gray-900);
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .stat-card {
+            background: white;
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--color-gray-200);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: var(--font-weight-bold);
+            color: var(--color-primary-600);
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .stat-label {
+            color: var(--color-gray-600);
+            font-size: var(--font-size-sm);
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: var(--spacing-xl);
+        }
+        
+        .content-section {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--color-gray-200);
+        }
+        
+        .section-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--color-gray-200);
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-gray-900);
+        }
+        
+        .section-content {
+            padding: var(--spacing-lg);
+        }
+        
+        .meeting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--color-gray-100);
+        }
+        
+        .meeting-item:last-child {
+            border-bottom: none;
+        }
+        
+        .meeting-title {
+            font-weight: var(--font-weight-medium);
+            color: var(--color-gray-900);
+        }
+        
+        .meeting-date {
+            font-size: var(--font-size-sm);
+            color: var(--color-gray-500);
+        }
+        
+        .meeting-status {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--border-radius-full);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+        }
+        
+        .status-completed {
+            background: var(--color-green-100);
+            color: var(--color-green-700);
+        }
+        
+        .status-live {
+            background: var(--color-red-100);
+            color: var(--color-red-700);
+        }
+        
+        .status-scheduled {
+            background: var(--color-blue-100);
+            color: var(--color-blue-700);
+        }
+        
+        .task-item {
+            padding: var(--spacing-sm);
+            border-left: 3px solid var(--color-primary-300);
+            margin-bottom: var(--spacing-sm);
+            background: var(--color-gray-50);
+            border-radius: var(--border-radius-md);
+        }
+        
+        .task-title {
+            font-weight: var(--font-weight-medium);
+            color: var(--color-gray-900);
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .task-meta {
+            font-size: var(--font-size-sm);
+            color: var(--color-gray-600);
+        }
+        
+        .user-info {
+            padding: var(--spacing-lg);
+            border-top: 1px solid var(--color-gray-200);
+            margin-top: auto;
+        }
+        
+        .user-name {
+            font-weight: var(--font-weight-medium);
+            color: var(--color-gray-900);
+        }
+        
+        .user-email {
+            font-size: var(--font-size-sm);
+            color: var(--color-gray-600);
+        }
+        
+        .btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius-md);
+            text-decoration: none;
+            font-weight: var(--font-weight-medium);
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary {
+            background: var(--color-primary-600);
+            color: white;
+            border: 1px solid var(--color-primary-600);
+        }
+        
+        .btn-primary:hover {
+            background: var(--color-primary-700);
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                order: 2;
+                border-right: none;
+                border-top: 1px solid var(--color-gray-200);
+            }
+            
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">Mina</div>
+            
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.index') }}" class="nav-link active">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('pages.live') }}" class="nav-link">Live Meeting</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.meetings') }}" class="nav-link">Meetings</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.tasks') }}" class="nav-link">Tasks</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.analytics') }}" class="nav-link">Analytics</a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="user-info">
+                <div class="user-name">{{ current_user.full_name }}</div>
+                <div class="user-email">{{ current_user.email }}</div>
+                <a href="{{ url_for('auth.logout') }}" class="nav-link">Logout</a>
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <header class="dashboard-header">
+                <h1 class="dashboard-title">Welcome back, {{ current_user.first_name or current_user.username }}!</h1>
+                <p class="text-gray-600">Here's what's happening with your meetings and tasks today.</p>
+            </header>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{ stats.total_meetings }}</div>
+                    <div class="stat-label">Total Meetings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ stats.total_tasks }}</div>
+                    <div class="stat-label">Total Tasks</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ stats.task_completion_rate }}%</div>
+                    <div class="stat-label">Task Completion Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ stats.this_week_meetings }}</div>
+                    <div class="stat-label">This Week's Meetings</div>
+                </div>
+            </div>
+            
+            <div class="content-grid">
+                <section class="content-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Recent Meetings</h2>
+                    </div>
+                    <div class="section-content">
+                        {% if recent_meetings %}
+                            {% for meeting in recent_meetings %}
+                                <div class="meeting-item">
+                                    <div>
+                                        <div class="meeting-title">{{ meeting.title }}</div>
+                                        <div class="meeting-date">{{ meeting.created_at.strftime('%B %d, %Y') }}</div>
+                                    </div>
+                                    <span class="meeting-status status-{{ meeting.status }}">
+                                        {{ meeting.status|title }}
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-gray-500">No meetings yet. <a href="{{ url_for('pages.live') }}" class="btn btn-primary">Start your first meeting</a></p>
+                        {% endif %}
+                    </div>
+                </section>
+                
+                <section class="content-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Your Tasks</h2>
+                    </div>
+                    <div class="section-content">
+                        {% if user_tasks %}
+                            {% for task in user_tasks %}
+                                <div class="task-item">
+                                    <div class="task-title">{{ task.title }}</div>
+                                    <div class="task-meta">
+                                        {{ task.status|title }} • {{ task.priority|title }} priority
+                                        {% if task.due_date %}
+                                            • Due {{ task.due_date.strftime('%m/%d') }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-gray-500">No tasks assigned. Tasks will appear here when created from meetings.</p>
+                        {% endif %}
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

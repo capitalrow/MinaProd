@@ -8,6 +8,7 @@ from typing import Optional
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, render_template, request, g, jsonify
 from flask_socketio import SocketIO
+from flask_login import LoginManager
 
 # ---------- Config (fallback if config.Config not present)
 try:
@@ -140,6 +141,21 @@ def create_app() -> Flask:
         except Exception as e:
             app.logger.warning(f"Database initialization failed: {e}")
             app.logger.info("Continuing without database persistence")
+        
+        # Initialize Flask-Login
+        login_manager = LoginManager()
+        login_manager.init_app(app)
+        login_manager.login_view = 'auth.login'
+        login_manager.login_message = 'Please log in to access this page.'
+        login_manager.login_message_category = 'info'
+        
+        @login_manager.user_loader
+        def load_user(user_id):
+            try:
+                from models import User
+                return User.query.get(int(user_id))
+            except Exception:
+                return None
     else:
         app.logger.info("No DATABASE_URL found, running without database persistence")
 
@@ -162,6 +178,21 @@ def create_app() -> Flask:
         app.logger.info("Transcription API registered")
     except Exception as e:
         app.logger.warning(f"Failed to register transcription API: {e}")
+
+    # Register authentication and dashboard blueprints
+    try:
+        from routes.auth import auth_bp
+        app.register_blueprint(auth_bp)
+        app.logger.info("Authentication routes registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register auth routes: {e}")
+    
+    try:
+        from routes.dashboard import dashboard_bp
+        app.register_blueprint(dashboard_bp)
+        app.logger.info("Dashboard routes registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register dashboard routes: {e}")
 
     # other blueprints (guarded)
     _optional = [
