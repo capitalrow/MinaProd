@@ -147,7 +147,9 @@
         icon.style.transform = 'scale(0)';
         setTimeout(() => {
           icon.setAttribute('data-feather', theme === 'light' ? 'moon' : 'sun');
-          feather.replace();
+          if (typeof feather !== 'undefined') {
+            feather.replace();
+          }
           icon.style.transform = 'scale(1)';
         }, 150);
       }
@@ -162,17 +164,129 @@
     constructor() {
       this.toastElement = $('#notificationToast');
       this.toastMessage = $('#toastMessage');
-      this.toast = this.toastElement ? new bootstrap.Toast(this.toastElement) : null;
+      this.toast = null;
+      this.fallbackContainer = null;
+      this.initializeToast();
+    }
+
+    initializeToast() {
+      if (typeof bootstrap !== 'undefined' && this.toastElement) {
+        try {
+          this.toast = new bootstrap.Toast(this.toastElement);
+          logger.log('[NotificationManager] Bootstrap Toast initialized');
+        } catch (error) {
+          logger.log('[NotificationManager] Bootstrap Toast initialization failed:', error);
+          this.createFallbackSystem();
+        }
+      } else {
+        logger.log('[NotificationManager] Bootstrap not available, using fallback notifications');
+        this.createFallbackSystem();
+      }
+    }
+
+    createFallbackSystem() {
+      // Create fallback notification container if it doesn't exist
+      if (!this.fallbackContainer) {
+        this.fallbackContainer = document.createElement('div');
+        this.fallbackContainer.className = 'mina-fallback-notifications';
+        this.fallbackContainer.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          z-index: 9999;
+          max-width: 350px;
+        `;
+        document.body.appendChild(this.fallbackContainer);
+        
+        // Add fallback notification styles
+        const style = document.createElement('style');
+        style.textContent = `
+          .mina-fallback-notification {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease-out;
+            position: relative;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          }
+          .mina-fallback-notification--success { border-left: 4px solid #198754; }
+          .mina-fallback-notification--danger { border-left: 4px solid #dc3545; }
+          .mina-fallback-notification--warning { border-left: 4px solid #fd7e14; }
+          .mina-fallback-notification--info { border-left: 4px solid #0d6efd; }
+          @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+          }
+          @media (max-width: 576px) {
+            .mina-fallback-notifications {
+              top: 10px;
+              right: 10px;
+              left: 10px;
+              max-width: none;
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
     }
 
     show(message, type = 'info') {
-      if (!this.toast) return;
+      // Try Bootstrap Toast first
+      if (this.toast && this.toastMessage) {
+        try {
+          this.toastMessage.textContent = message;
+          this.toastElement.className = `toast border-${type}`;
+          this.toast.show();
+          logger.log(`[Toast] ${message}`);
+          return;
+        } catch (error) {
+          logger.log('[NotificationManager] Toast failed, using fallback:', error);
+        }
+      }
       
-      this.toastMessage.textContent = message;
-      this.toastElement.className = `toast border-${type}`;
-      this.toast.show();
+      // Fallback notification system
+      this.showFallback(message, type);
+    }
+
+    showFallback(message, type) {
+      if (!this.fallbackContainer) {
+        this.createFallbackSystem();
+      }
       
-      logger.log(`Notification: ${message}`);
+      const notification = document.createElement('div');
+      notification.className = `mina-fallback-notification mina-fallback-notification--${type}`;
+      notification.innerHTML = `
+        <div style="font-weight: 500; color: #333; font-size: 14px;">
+          ${this.getTypeIcon(type)} ${message}
+        </div>
+      `;
+      
+      this.fallbackContainer.appendChild(notification);
+      
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.style.animation = 'slideIn 0.3s ease-out reverse';
+          setTimeout(() => {
+            notification.remove();
+          }, 300);
+        }
+      }, 5000);
+      
+      logger.log(`[Fallback] ${message}`);
+    }
+
+    getTypeIcon(type) {
+      const icons = {
+        success: '✅',
+        danger: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+      };
+      return icons[type] || icons.info;
     }
 
     success(message) {
@@ -185,6 +299,10 @@
 
     warning(message) {
       this.show(message, 'warning');
+    }
+
+    info(message) {
+      this.show(message, 'info');
     }
   }
 
@@ -604,7 +722,9 @@
           <i data-feather="${isRecording ? 'mic' : 'mic-off'}" class="me-1"></i>
           ${isRecording ? 'Recording...' : 'Ready'}
         `;
-        feather.replace();
+        if (typeof feather !== 'undefined') {
+          feather.replace();
+        }
       }
 
       // Update session timer
