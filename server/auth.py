@@ -34,7 +34,10 @@ def register():
         return jsonify(ok=False, error="email and password required"), 400
     if User.query.filter_by(email=email).first():
         return jsonify(ok=False, error="email_already_exists"), 409
-    u = User(email=email, password_hash=bcrypt.hash(password), name=name)
+    u = User()
+    u.email = email
+    u.password_hash = bcrypt.hash(password)
+    u.name = name
     db.session.add(u)
     db.session.commit()
     token = _jwt_create({"uid": u.id, "email": u.email})
