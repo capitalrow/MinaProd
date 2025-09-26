@@ -1,61 +1,315 @@
-<!-- templates/live.html -->
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
 <head>
-  <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1"
-  />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+  <meta name="description" content="Mina - Real-time live transcription powered by OpenAI Whisper">
+  <meta name="theme-color" content="#6366f1">
+  
   <title>Mina — Live Transcription</title>
-  <link rel="preconnect" href="https://cdn.socket.io" />
+  
+  <!-- Preconnect to improve performance -->
+  <link rel="preconnect" href="https://cdn.socket.io">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  
+  <!-- Feather Icons - Load immediately -->
+  <script src="https://unpkg.com/feather-icons" async defer></script>
+  
+  <!-- Socket.IO -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+  
+  <!-- Custom Design System -->
+  <link rel="stylesheet" href="/static/css/design-tokens.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+  
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Mina">
+  
   <style>
-    body { padding: 16px; }
-    .pill { padding: 6px 10px; border-radius: 999px; background: #2a2a2a; color: #ddd; font-size: 0.85rem; }
-    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .meter { height: 10px; background: #1a1a1a; border-radius: 999px; overflow: hidden; }
-    .meter > span { display: block; height: 100%; width: 0%; background: #6aa6ff; transition: width 100ms linear; }
-    .panel { background:#0e0f12; border:1px solid #23252b; border-radius:12px; padding:12px; min-height:140px; color:#dfe6f3;}
-    .panel h5 { margin: 0 0 8px 0; color:#9bb4ff; }
-    pre#debug { font-size: 12px; height: 130px; overflow:auto; background: #0a0b0e; border:1px solid #1e2026; padding:8px; border-radius:8px;}
-    .badge { background:#0b3d1d; color:#bff0c8; padding:3px 8px; border-radius:999px; font-size:12px; }
-    .muted { color:#9aa3ad; }
-    .stack { display:grid; gap:12px; }
-    .grow { flex:1; }
+    /* Transition overrides for smooth theme switching */
+    * {
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+    
+    /* Enhance Bootstrap components with design tokens */
+    .btn {
+      transition: all var(--mina-transition-fast);
+    }
+    
+    /* Audio visualization enhancements */
+    .audio-visualizer {
+      height: 40px;
+      background: linear-gradient(90deg, var(--mina-bg-tertiary) 0%, var(--mina-bg-secondary) 100%);
+      border-radius: var(--mina-radius-lg);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .audio-waveform {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--mina-success) 0%, var(--mina-warning) 70%, var(--mina-danger) 100%);
+      width: 0%;
+      border-radius: var(--mina-radius-lg);
+      transition: width 100ms ease-out;
+    }
   </style>
 </head>
-<body>
-  <main class="container">
-    <h2><strong>Mina — Live Transcription</strong></h2>
 
-    <section class="stack">
-      <div class="row">
-        <button id="startRecordingBtn">Start Recording</button>
-        <button id="stopRecordingBtn" class="secondary">Stop</button>
-        <span class="pill" id="wsStatus">Disconnected</span>
-        <span class="pill" id="micStatus">Idle</span>
-        <span class="pill"><span class="muted">Session:</span> <span id="sess"></span></span>
-      </div>
+<body class="bg-body-secondary">
+  <!-- Theme Toggle Button -->
+  <button class="mina-theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+    <i data-feather="sun" class="mina-theme-toggle__icon" id="themeIcon"></i>
+  </button>
 
-      <div class="meter"><span id="meterFill"></span></div>
+  <!-- Live Region for Screen Readers -->
+  <div id="liveRegion" class="mina-sr-only" aria-live="polite" aria-atomic="true"></div>
 
-      <div class="row">
-        <div class="panel grow">
-          <h5>Interim</h5>
-          <div id="interimText" class="muted"></div>
+  <div class="mina-container py-4">
+    <!-- Header -->
+    <header class="text-center mb-5">
+      <h1 class="display-4 fw-bold text-primary mb-2">
+        <i data-feather="mic" class="me-2"></i>
+        Mina
+      </h1>
+      <p class="lead text-muted">Real-time Live Transcription</p>
+    </header>
+
+    <!-- Main Application -->
+    <main>
+      <!-- Control Panel -->
+      <section class="mina-card mb-4" role="region" aria-labelledby="controls-heading">
+        <div class="mina-card__header">
+          <h2 id="controls-heading" class="mina-card__title">
+            <i data-feather="settings" class="me-2"></i>
+            Recording Controls
+          </h2>
+          <div class="mina-flex mina-gap-2">
+            <span class="mina-pill" id="wsStatus">
+              <span class="mina-pill__indicator"></span>
+              Disconnected
+            </span>
+            <span class="mina-pill" id="micStatus">
+              <i data-feather="mic-off" class="me-1"></i>
+              Ready
+            </span>
+          </div>
         </div>
-        <div class="panel grow">
-          <h5>Final</h5>
-          <div id="finalText"></div>
+
+        <div class="mina-card__content">
+          <!-- Recording Buttons -->
+          <div class="d-flex gap-3 mb-4 flex-wrap">
+            <button 
+              id="startRecordingBtn" 
+              class="mina-btn mina-btn--success mina-btn--lg"
+              aria-describedby="start-help"
+            >
+              <i data-feather="play" class="me-2"></i>
+              Start Recording
+            </button>
+            
+            <button 
+              id="stopRecordingBtn" 
+              class="mina-btn mina-btn--danger mina-btn--lg" 
+              disabled
+              aria-describedby="stop-help"
+            >
+              <i data-feather="stop" class="me-2"></i>
+              Stop Recording
+            </button>
+
+            <button 
+              id="clearBtn" 
+              class="mina-btn mina-btn--secondary"
+              aria-describedby="clear-help"
+            >
+              <i data-feather="trash-2" class="me-2"></i>
+              Clear
+            </button>
+          </div>
+
+          <!-- Help Text -->
+          <div class="small text-muted">
+            <p id="start-help" class="mb-1">
+              <i data-feather="info" class="me-1"></i>
+              Click Start to begin real-time transcription
+            </p>
+            <p id="stop-help" class="mb-1">
+              <i data-feather="info" class="me-1"></i>
+              Click Stop to end recording and get final transcript
+            </p>
+            <p id="clear-help" class="mb-0">
+              <i data-feather="info" class="me-1"></i>
+              Clear all transcribed text
+            </p>
+          </div>
+
+          <!-- Audio Level Meter -->
+          <div class="mt-4">
+            <label class="form-label small fw-medium">Audio Level</label>
+            <div class="audio-visualizer">
+              <div class="audio-waveform" id="audioWaveform"></div>
+            </div>
+          </div>
         </div>
+      </section>
+
+      <!-- Transcription Display -->
+      <section class="row g-4 mb-4">
+        <div class="col-md-6">
+          <div class="mina-card h-100" role="region" aria-labelledby="interim-heading">
+            <div class="mina-card__header">
+              <h3 id="interim-heading" class="mina-card__title">
+                <i data-feather="edit-3" class="me-2"></i>
+                Live Transcript
+              </h3>
+              <span class="mina-pill mina-pill--info">
+                <span class="mina-pill__indicator"></span>
+                Real-time
+              </span>
+            </div>
+            <div class="mina-card__content">
+              <div 
+                id="interimText" 
+                class="mina-transcript mina-transcript--interim"
+                aria-live="polite"
+                aria-label="Live transcription text"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="mina-card h-100" role="region" aria-labelledby="final-heading">
+            <div class="mina-card__header">
+              <h3 id="final-heading" class="mina-card__title">
+                <i data-feather="check-circle" class="me-2"></i>
+                Final Transcript
+              </h3>
+              <button 
+                id="copyBtn" 
+                class="mina-btn mina-btn--sm mina-btn--secondary"
+                title="Copy to clipboard"
+                aria-label="Copy final transcript to clipboard"
+              >
+                <i data-feather="copy" class="me-1"></i>
+                Copy
+              </button>
+            </div>
+            <div class="mina-card__content">
+              <div 
+                id="finalText" 
+                class="mina-transcript mina-transcript--final"
+                aria-live="polite"
+                aria-label="Final transcription text"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Session Info & Debug -->
+      <section class="row g-4">
+        <div class="col-md-8">
+          <div class="mina-card" role="region" aria-labelledby="session-heading">
+            <div class="mina-card__header">
+              <h3 id="session-heading" class="mina-card__title">
+                <i data-feather="activity" class="me-2"></i>
+                Session Information
+              </h3>
+            </div>
+            <div class="mina-card__content">
+              <dl class="row">
+                <dt class="col-sm-3">Session ID:</dt>
+                <dd class="col-sm-9">
+                  <code id="sessionId" class="small"></code>
+                </dd>
+                <dt class="col-sm-3">Status:</dt>
+                <dd class="col-sm-9">
+                  <span id="sessionStatus" class="mina-pill">Initializing</span>
+                </dd>
+                <dt class="col-sm-3">Duration:</dt>
+                <dd class="col-sm-9">
+                  <span id="sessionDuration">00:00</span>
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="mina-card" role="region" aria-labelledby="debug-heading">
+            <div class="mina-card__header">
+              <h3 id="debug-heading" class="mina-card__title">
+                <i data-feather="terminal" class="me-2"></i>
+                System Log
+              </h3>
+              <button 
+                id="clearLogBtn" 
+                class="mina-btn mina-btn--sm mina-btn--secondary"
+                title="Clear log"
+              >
+                <i data-feather="x"></i>
+              </button>
+            </div>
+            <div class="mina-card__content">
+              <div id="debugConsole" class="mina-console" aria-live="polite"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center mt-5 py-4 text-muted">
+      <p class="mb-0">
+        <i data-feather="zap" class="me-1"></i>
+        Powered by <strong>OpenAI Whisper</strong> • 
+        <i data-feather="shield" class="me-1"></i>
+        Secure & Private
+      </p>
+    </footer>
+  </div>
+
+  <!-- Toast Container for Notifications -->
+  <div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <i data-feather="bell" class="me-2 text-primary"></i>
+        <strong class="me-auto">Mina</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
       </div>
+      <div class="toast-body" id="toastMessage">
+        <!-- Toast message will be inserted here -->
+      </div>
+    </div>
+  </div>
 
-      <pre id="debug"></pre>
-    </section>
-  </main>
-
-  <script src="/static/js/recording_wiring.js"></script>
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  <script src="/static/js/modern-recording-wiring.js"></script>
+  
+  <script>
+    // Initialize Feather icons when loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      // Wait for feather to load if async
+      const checkFeather = () => {
+        if (typeof feather !== 'undefined') {
+          feather.replace();
+        } else {
+          setTimeout(checkFeather, 100);
+        }
+      };
+      checkFeather();
+    });
+  </script>
 </body>
 </html>

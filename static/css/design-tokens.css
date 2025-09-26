@@ -1,0 +1,190 @@
+/* Design Tokens - Foundation CSS Custom Properties */
+:root {
+  /* Color System - Semantic Palette */
+  --mina-primary: #0d6efd;
+  --mina-primary-rgb: 13, 110, 253;
+  --mina-primary-dark: #0b5ed7;
+  --mina-primary-light: #9ec5fe;
+  
+  --mina-secondary: #6c757d;
+  --mina-secondary-rgb: 108, 117, 125;
+  --mina-secondary-dark: #495057;
+  --mina-secondary-light: #adb5bd;
+  
+  --mina-success: #198754;
+  --mina-success-rgb: 25, 135, 84;
+  --mina-success-dark: #146c43;
+  --mina-success-light: #75b798;
+  
+  --mina-warning: #ffc107;
+  --mina-warning-rgb: 255, 193, 7;
+  --mina-warning-dark: #ffb802;
+  --mina-warning-light: #ffe69c;
+  
+  --mina-danger: #dc3545;
+  --mina-danger-rgb: 220, 53, 69;
+  --mina-danger-dark: #b02a37;
+  --mina-danger-light: #ea868f;
+  
+  --mina-info: #0dcaf0;
+  --mina-info-rgb: 13, 202, 240;
+  --mina-info-dark: #087990;
+  --mina-info-light: #9eeaf9;
+
+  /* Brand Colors */
+  --mina-brand-primary: #6366f1;
+  --mina-brand-primary-rgb: 99, 102, 241;
+  --mina-brand-secondary: #8b5cf6;
+  --mina-brand-accent: #06b6d4;
+
+  /* Neutral Scale */
+  --mina-gray-50: #f8fafc;
+  --mina-gray-100: #f1f5f9;
+  --mina-gray-200: #e2e8f0;
+  --mina-gray-300: #cbd5e1;
+  --mina-gray-400: #94a3b8;
+  --mina-gray-500: #64748b;
+  --mina-gray-600: #475569;
+  --mina-gray-700: #334155;
+  --mina-gray-800: #1e293b;
+  --mina-gray-900: #0f172a;
+
+  /* Light Mode Colors */
+  --mina-bg-primary: #ffffff;
+  --mina-bg-secondary: var(--mina-gray-50);
+  --mina-bg-tertiary: var(--mina-gray-100);
+  --mina-bg-accent: var(--mina-gray-200);
+  
+  --mina-text-primary: var(--mina-gray-900);
+  --mina-text-secondary: var(--mina-gray-700);
+  --mina-text-muted: var(--mina-gray-500);
+  --mina-text-inverse: #ffffff;
+  
+  --mina-border-primary: var(--mina-gray-200);
+  --mina-border-secondary: var(--mina-gray-300);
+  --mina-border-accent: var(--mina-gray-400);
+
+  /* Typography Scale */
+  --mina-font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mina-font-family-mono: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  
+  --mina-font-size-xs: 0.75rem;
+  --mina-font-size-sm: 0.875rem;
+  --mina-font-size-base: 1rem;
+  --mina-font-size-lg: 1.125rem;
+  --mina-font-size-xl: 1.25rem;
+  --mina-font-size-2xl: 1.5rem;
+  --mina-font-size-3xl: 1.875rem;
+  --mina-font-size-4xl: 2.25rem;
+  
+  --mina-font-weight-normal: 400;
+  --mina-font-weight-medium: 500;
+  --mina-font-weight-semibold: 600;
+  --mina-font-weight-bold: 700;
+  
+  --mina-line-height-tight: 1.25;
+  --mina-line-height-normal: 1.5;
+  --mina-line-height-relaxed: 1.75;
+
+  /* Spacing Scale */
+  --mina-space-0: 0;
+  --mina-space-1: 0.25rem;
+  --mina-space-2: 0.5rem;
+  --mina-space-3: 0.75rem;
+  --mina-space-4: 1rem;
+  --mina-space-5: 1.25rem;
+  --mina-space-6: 1.5rem;
+  --mina-space-8: 2rem;
+  --mina-space-10: 2.5rem;
+  --mina-space-12: 3rem;
+  --mina-space-16: 4rem;
+  --mina-space-20: 5rem;
+
+  /* Border Radius */
+  --mina-radius-sm: 0.25rem;
+  --mina-radius-base: 0.375rem;
+  --mina-radius-md: 0.5rem;
+  --mina-radius-lg: 0.75rem;
+  --mina-radius-xl: 1rem;
+  --mina-radius-full: 9999px;
+
+  /* Shadows */
+  --mina-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --mina-shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --mina-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --mina-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --mina-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  /* Motion */
+  --mina-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --mina-transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --mina-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-Index Scale */
+  --mina-z-dropdown: 1000;
+  --mina-z-sticky: 1020;
+  --mina-z-fixed: 1030;
+  --mina-z-modal-backdrop: 1040;
+  --mina-z-modal: 1050;
+  --mina-z-popover: 1060;
+  --mina-z-tooltip: 1070;
+  --mina-z-toast: 1080;
+}
+
+/* Dark Mode Color Overrides */
+[data-theme="dark"] {
+  --mina-bg-primary: var(--mina-gray-900);
+  --mina-bg-secondary: var(--mina-gray-800);
+  --mina-bg-tertiary: var(--mina-gray-700);
+  --mina-bg-accent: var(--mina-gray-600);
+  
+  --mina-text-primary: var(--mina-gray-50);
+  --mina-text-secondary: var(--mina-gray-300);
+  --mina-text-muted: var(--mina-gray-400);
+  --mina-text-inverse: var(--mina-gray-900);
+  
+  --mina-border-primary: var(--mina-gray-700);
+  --mina-border-secondary: var(--mina-gray-600);
+  --mina-border-accent: var(--mina-gray-500);
+
+  /* Adjust brand colors for dark mode */
+  --mina-primary: #4c82f7;
+  --mina-success: #22c55e;
+  --mina-warning: #f59e0b;
+  --mina-danger: #ef4444;
+  --mina-info: #06b6d4;
+}
+
+/* System Preference Dark Mode */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --mina-bg-primary: var(--mina-gray-900);
+    --mina-bg-secondary: var(--mina-gray-800);
+    --mina-bg-tertiary: var(--mina-gray-700);
+    --mina-bg-accent: var(--mina-gray-600);
+    
+    --mina-text-primary: var(--mina-gray-50);
+    --mina-text-secondary: var(--mina-gray-300);
+    --mina-text-muted: var(--mina-gray-400);
+    --mina-text-inverse: var(--mina-gray-900);
+    
+    --mina-border-primary: var(--mina-gray-700);
+    --mina-border-secondary: var(--mina-gray-600);
+    --mina-border-accent: var(--mina-gray-500);
+
+    --mina-primary: #4c82f7;
+    --mina-success: #22c55e;
+    --mina-warning: #f59e0b;
+    --mina-danger: #ef4444;
+    --mina-info: #06b6d4;
+  }
+}
+
+/* Motion Preference */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --mina-transition-fast: 0ms;
+    --mina-transition-base: 0ms;
+    --mina-transition-slow: 0ms;
+  }
+}

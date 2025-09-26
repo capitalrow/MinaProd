@@ -1,0 +1,411 @@
+/* Modern Component Library for Mina */
+
+/* Base Theme Application */
+body {
+  font-family: var(--mina-font-family-sans);
+  background-color: var(--mina-bg-primary);
+  color: var(--mina-text-primary);
+  transition: background-color var(--mina-transition-base), color var(--mina-transition-base);
+}
+
+/* Enhanced Container */
+.mina-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--mina-space-4);
+}
+
+/* Modern Button System */
+.mina-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mina-space-2);
+  padding: var(--mina-space-3) var(--mina-space-6);
+  border: 1px solid transparent;
+  border-radius: var(--mina-radius-md);
+  font-size: var(--mina-font-size-sm);
+  font-weight: var(--mina-font-weight-medium);
+  line-height: 1;
+  text-decoration: none;
+  transition: all var(--mina-transition-fast);
+  cursor: pointer;
+  user-select: none;
+  min-height: 44px; /* Touch target */
+}
+
+.mina-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--mina-shadow-md);
+}
+
+.mina-btn:active {
+  transform: translateY(0);
+}
+
+.mina-btn:focus-visible {
+  outline: 2px solid var(--mina-primary);
+  outline-offset: 2px;
+}
+
+.mina-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Button Variants */
+.mina-btn--primary {
+  background-color: var(--mina-primary);
+  color: white;
+  border-color: var(--mina-primary);
+}
+
+.mina-btn--primary:hover {
+  background-color: var(--mina-primary-dark);
+  border-color: var(--mina-primary-dark);
+}
+
+.mina-btn--secondary {
+  background-color: transparent;
+  color: var(--mina-text-primary);
+  border-color: var(--mina-border-secondary);
+}
+
+.mina-btn--secondary:hover {
+  background-color: var(--mina-bg-secondary);
+  border-color: var(--mina-border-accent);
+}
+
+.mina-btn--success {
+  background-color: var(--mina-success);
+  color: white;
+  border-color: var(--mina-success);
+}
+
+.mina-btn--success:hover {
+  background-color: var(--mina-success-dark);
+  border-color: var(--mina-success-dark);
+}
+
+.mina-btn--danger {
+  background-color: var(--mina-danger);
+  color: white;
+  border-color: var(--mina-danger);
+}
+
+.mina-btn--danger:hover {
+  background-color: var(--mina-danger-dark);
+  border-color: var(--mina-danger-dark);
+}
+
+/* Button Sizes */
+.mina-btn--sm {
+  padding: var(--mina-space-2) var(--mina-space-4);
+  font-size: var(--mina-font-size-xs);
+  min-height: 36px;
+}
+
+.mina-btn--lg {
+  padding: var(--mina-space-4) var(--mina-space-8);
+  font-size: var(--mina-font-size-base);
+  min-height: 52px;
+}
+
+/* Status Pills/Badges */
+.mina-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mina-space-2);
+  padding: var(--mina-space-2) var(--mina-space-3);
+  border-radius: var(--mina-radius-full);
+  font-size: var(--mina-font-size-xs);
+  font-weight: var(--mina-font-weight-medium);
+  line-height: 1;
+  background-color: var(--mina-bg-secondary);
+  color: var(--mina-text-secondary);
+  border: 1px solid var(--mina-border-primary);
+}
+
+.mina-pill--success {
+  background-color: rgba(var(--mina-success-rgb), 0.1);
+  color: var(--mina-success-dark);
+  border-color: rgba(var(--mina-success-rgb), 0.2);
+}
+
+.mina-pill--warning {
+  background-color: rgba(var(--mina-warning-rgb), 0.1);
+  color: var(--mina-warning-dark);
+  border-color: rgba(var(--mina-warning-rgb), 0.2);
+}
+
+.mina-pill--danger {
+  background-color: rgba(var(--mina-danger-rgb), 0.1);
+  color: var(--mina-danger-dark);
+  border-color: rgba(var(--mina-danger-rgb), 0.2);
+}
+
+.mina-pill--info {
+  background-color: rgba(var(--mina-info-rgb), 0.1);
+  color: var(--mina-info-dark);
+  border-color: rgba(var(--mina-info-rgb), 0.2);
+}
+
+/* Status Indicator Dots */
+.mina-pill__indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  animation: mina-pulse 2s infinite;
+}
+
+@keyframes mina-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Audio Level Meter */
+.mina-meter {
+  position: relative;
+  height: 8px;
+  background-color: var(--mina-bg-tertiary);
+  border-radius: var(--mina-radius-full);
+  overflow: hidden;
+  border: 1px solid var(--mina-border-primary);
+}
+
+.mina-meter__fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--mina-success) 0%,
+    var(--mina-warning) 70%,
+    var(--mina-danger) 100%
+  );
+  border-radius: var(--mina-radius-full);
+  transition: width var(--mina-transition-fast);
+  min-width: 2px;
+}
+
+/* Modern Cards/Panels */
+.mina-card {
+  background-color: var(--mina-bg-primary);
+  border: 1px solid var(--mina-border-primary);
+  border-radius: var(--mina-radius-lg);
+  padding: var(--mina-space-6);
+  box-shadow: var(--mina-shadow-sm);
+  transition: all var(--mina-transition-base);
+}
+
+.mina-card:hover {
+  box-shadow: var(--mina-shadow-md);
+  border-color: var(--mina-border-secondary);
+}
+
+.mina-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--mina-space-4);
+  padding-bottom: var(--mina-space-4);
+  border-bottom: 1px solid var(--mina-border-primary);
+}
+
+.mina-card__title {
+  margin: 0;
+  font-size: var(--mina-font-size-lg);
+  font-weight: var(--mina-font-weight-semibold);
+  color: var(--mina-text-primary);
+}
+
+.mina-card__subtitle {
+  margin: var(--mina-space-1) 0 0 0;
+  font-size: var(--mina-font-size-sm);
+  color: var(--mina-text-muted);
+}
+
+.mina-card__content {
+  min-height: 120px;
+}
+
+/* Debug/Console Panel */
+.mina-console {
+  background-color: var(--mina-gray-900);
+  color: var(--mina-gray-100);
+  border: 1px solid var(--mina-gray-700);
+  border-radius: var(--mina-radius-md);
+  padding: var(--mina-space-4);
+  font-family: var(--mina-font-family-mono);
+  font-size: var(--mina-font-size-xs);
+  line-height: var(--mina-line-height-normal);
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--mina-gray-600) var(--mina-gray-800);
+}
+
+.mina-console::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mina-console::-webkit-scrollbar-track {
+  background: var(--mina-gray-800);
+}
+
+.mina-console::-webkit-scrollbar-thumb {
+  background: var(--mina-gray-600);
+  border-radius: var(--mina-radius-full);
+}
+
+.mina-console__line {
+  margin-bottom: var(--mina-space-1);
+  word-break: break-word;
+}
+
+/* Transcript Display */
+.mina-transcript {
+  min-height: 100px;
+  padding: var(--mina-space-4);
+  background-color: var(--mina-bg-secondary);
+  border: 1px solid var(--mina-border-primary);
+  border-radius: var(--mina-radius-md);
+  font-size: var(--mina-font-size-base);
+  line-height: var(--mina-line-height-relaxed);
+}
+
+.mina-transcript--interim {
+  color: var(--mina-text-muted);
+  font-style: italic;
+}
+
+.mina-transcript--final {
+  color: var(--mina-text-primary);
+}
+
+.mina-transcript:empty::before {
+  content: "Transcription will appear here...";
+  color: var(--mina-text-muted);
+}
+
+/* Responsive Grid */
+.mina-grid {
+  display: grid;
+  gap: var(--mina-space-4);
+}
+
+.mina-grid--2col {
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 768px) {
+  .mina-grid--2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Utilities */
+.mina-flex {
+  display: flex;
+}
+
+.mina-flex--center {
+  align-items: center;
+  justify-content: center;
+}
+
+.mina-flex--between {
+  justify-content: space-between;
+}
+
+.mina-flex--wrap {
+  flex-wrap: wrap;
+}
+
+.mina-gap-2 { gap: var(--mina-space-2); }
+.mina-gap-3 { gap: var(--mina-space-3); }
+.mina-gap-4 { gap: var(--mina-space-4); }
+
+.mina-grow { flex: 1; }
+
+.mina-text--muted { color: var(--mina-text-muted); }
+.mina-text--center { text-align: center; }
+
+.mina-mb-0 { margin-bottom: 0; }
+.mina-mb-2 { margin-bottom: var(--mina-space-2); }
+.mina-mb-4 { margin-bottom: var(--mina-space-4); }
+.mina-mb-6 { margin-bottom: var(--mina-space-6); }
+
+/* Theme Toggle Button */
+.mina-theme-toggle {
+  position: fixed;
+  top: var(--mina-space-4);
+  right: var(--mina-space-4);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--mina-bg-secondary);
+  border: 1px solid var(--mina-border-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--mina-transition-base);
+  z-index: var(--mina-z-fixed);
+}
+
+.mina-theme-toggle:hover {
+  background-color: var(--mina-bg-accent);
+  transform: scale(1.05);
+}
+
+.mina-theme-toggle__icon {
+  width: 20px;
+  height: 20px;
+  transition: transform var(--mina-transition-base);
+}
+
+/* Loading States */
+.mina-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.mina-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--mina-border-primary);
+  border-top: 2px solid var(--mina-primary);
+  border-radius: 50%;
+  animation: mina-spin 1s linear infinite;
+}
+
+@keyframes mina-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Focus Management */
+.mina-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Responsive Typography */
+@media (max-width: 640px) {
+  .mina-container {
+    padding: 0 var(--mina-space-3);
+  }
+  
+  .mina-card {
+    padding: var(--mina-space-4);
+  }
+}
