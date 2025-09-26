@@ -45,7 +45,7 @@ def create_app():
 
     @app.route("/app")
     def app_spa():
-        return send_from_directory(ui_folder, "index.html")
+        return send_from_directory(ui_folder, "app.html")
 
     @app.route("/terms")
     def terms():

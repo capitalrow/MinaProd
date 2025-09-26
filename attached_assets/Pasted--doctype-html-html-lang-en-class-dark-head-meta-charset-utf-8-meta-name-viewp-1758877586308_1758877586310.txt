@@ -1,0 +1,335 @@
+<!doctype html>
+
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mina — App</title>
+  <meta name="theme-color" content="#111827" />
+  <link rel="manifest" href="/static/manifest.webmanifest" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{colors:{brand:{from:'var(--brand-from)',to:'var(--brand-to)'}}}}}</script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root{--brand-from:#6366f1;--brand-to:#d946ef;--text-scale:1}
+    html{font-size:calc(16px * var(--text-scale))}
+    .kbd{padding:.15rem .4rem;border:1px solid rgba(255,255,255,.15);border-bottom-width:2px;border-radius:.375rem;font-size:.75rem}
+    .chip{padding:.35rem .7rem;border-radius:9999px;background-color:rgb(30 41 59/.8);border:1px solid rgb(255 255 255/.06)}
+    .btn{padding:.5rem .85rem;border-radius:.8rem;background:#0f172a;border:1px solid rgba(255,255,255,.06)}
+    .btn:hover{background:#111827}
+    .selbar{backdrop-filter:blur(6px)}
+    @keyframes shimmer{100%{translate:100% 0}}
+    .shimmer{position:relative;overflow:hidden}
+    .shimmer::after{content:"";position:absolute;inset:0;translate:-100% 0;background:linear-gradient(120deg,transparent 0%,rgba(255,255,255,.15) 50%,transparent 100%);animation:shimmer 1.6s infinite}
+  </style>  <!-- Service Worker registration -->  <script>
+    (function(){
+      if ('serviceWorker' in navigator && location.protocol==='https:') {
+        navigator.serviceWorker.register('/static/sw.js').catch(()=>{});
+      }
+    })();
+  </script>  <!-- MOCK SOCKET: set to false when connecting to backend -->  <script>
+    window.__MINA_USE_MOCK_SOCKET = true; // flip to false to use real Socket.IO server
+    (function(){
+      if (!window.__MINA_USE_MOCK_SOCKET) return;
+      const listeners=new Map();
+      function on(ev,fn){ if(!listeners.has(ev)) listeners.set(ev,[]); listeners.get(ev).push(fn) }
+      function emit(ev,p){ (listeners.get(ev)||[]).forEach(fn=>{try{fn(p)}catch(e){}}) }
+      function handleEmit(ev){ if(ev==='audio_chunk') scheduleInterim(); if(ev==='finalize_session') setTimeout(()=>emit('final_transcript',{text:collectFinal()}),800) }
+      const phrases=['thanks for joining today','we will cover the agenda items','decisions and next steps are as follows','action items will be tracked','the live transcript will be replaced by a final summary','markers can be added during the session','let us confirm the timeline and deliverables','I will summarise risks and dependencies'];
+      let buf=[],timer=null;
+      function nextChunk(){const p=phrases[Math.floor(Math.random()*phrases.length)];const take=2+Math.floor(Math.random()*4);const c=p.split(' ').slice(0,take).join(' ');buf.push(c);return c}
+      function collectFinal(){const full=buf.join(' ');buf=[];return full.charAt(0).toUpperCase()+full.slice(1)+'.'}
+      function scheduleInterim(){ if(timer) return; timer=setInterval(()=>emit('interim_transcript',{text:nextChunk()}),800); setTimeout(()=>{clearInterval(timer);timer=null},10000) }
+      window.io=function(){ // very tiny mocked client
+        let connected=false;
+        const api={
+          on:(ev,fn)=>{ on(ev,fn); if(ev==='connect'&&connected) setTimeout(fn,0); return api; },
+          emit:(ev,data)=>handleEmit(ev,data),
+          timeout:()=>({emit:(_e,_d,cb)=>setTimeout(()=>cb&&cb(null,{ok:true}),10)}),
+          io:{engine:{transport:{name:'mock'}}}, get connected(){return connected;}
+        };
+        setTimeout(()=>{connected=true;emit('connect');emit('server_hello',{msg:'connected',t:Date.now()});},40);
+        return api;
+      }
+    })();
+  </script></head>
+<body class="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+  <div id="app" class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="hidden md:flex md:w-64 flex-col gap-2 p-3 border-r border-white/5">
+      <div class="flex items-center gap-3 px-2 py-2">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--brand-from)] to-[var(--brand-to)] shadow"></div>
+        <div>
+          <div class="font-semibold">Mina</div>
+          <div class="text-xs text-slate-400">Meeting AI</div>
+        </div>
+      </div>
+      <nav id="nav" class="mt-3 grid gap-1"></nav>
+    </aside><!-- Main -->
+<main class="flex-1 min-w-0 pt-12 md:pt-0">
+  <header class="hidden md:flex items-center justify-between px-5 h-14 border-b border-white/5 sticky top-0 backdrop-blur bg-slate-900/60 z-10">
+    <div class="text-xs md:text-sm text-slate-400">Press <span class="kbd">Space</span> start/stop · <span class="kbd">M</span> marker · <span class="kbd">/</span> search</div>
+    <div id="status" class="text-xs text-slate-400"></div>
+  </header>
+  <section id="page" class="p-4 md:p-6 max-w-6xl mx-auto">
+    <div class="text-slate-300">Loading…</div>
+  </section>
+</main>
+
+  </div>  <!-- Selection floating bar -->  <div id="selBar" class="hidden selbar fixed z-40 px-2 py-1 rounded-xl bg-slate-900/80 border border-white/10 shadow-lg text-sm"></div>
+  <div id="toasts" class="fixed bottom-4 right-4 z-50 space-y-2"></div>  <script>
+    // ===== Utilities
+    const $=(q,el=document)=>el.querySelector(q); const $$=(q,el=document)=>Array.from(el.querySelectorAll(q));
+    function toast(msg,kind='info'){ const el=document.createElement('div'); el.className=`rounded-xl px-3 py-2 text-sm shadow-lg ${kind==='error'?'bg-rose-600/90':'bg-slate-800/90'}`; el.textContent=msg; $('#toasts').appendChild(el); setTimeout(()=>el.remove(),3500) }
+
+    // ===== Router & navigation
+    const routes=[
+      {id:'live',label:'Live'},
+      {id:'meetings',label:'Meetings'},
+      {id:'conversation',label:'Conversation'},
+      {id:'upload',label:'Upload'},
+      {id:'summaries',label:'Summaries'},
+      {id:'tasks',label:'Tasks'},
+      {id:'settings',label:'Settings'}
+    ];
+    function renderNav(container){ container.innerHTML=''; routes.forEach(r=>{ const b=document.createElement('button'); b.className='flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-800 text-left'; b.dataset.route=r.id; b.innerHTML=`<span>${r.label}</span>`; b.addEventListener('click',()=>go(r.id)); container.appendChild(b) }) }
+    function go(route){ location.hash=route; renderPage() }
+
+    // ===== Data store (localStorage, can swap to IndexedDB later)
+    const Store={
+      get all(){ try{return JSON.parse(localStorage.getItem('mina_conversations')||'[]')}catch{return[]} },
+      set all(v){ localStorage.setItem('mina_conversations', JSON.stringify(v)) },
+      save(conv){ const list=Store.all.filter(x=>x.id!==conv.id); list.unshift(conv); Store.all=list },
+      byId(id){ return Store.all.find(x=>x.id===id) }
+    };
+
+    // ===== Pages registry
+    const pages={
+      live:{render:renderLive},
+      meetings:{render:renderMeetings},
+      conversation:{render:renderConversation},
+      upload:{render:renderUpload},
+      summaries:{render:renderSummaries},
+      tasks:{render:renderTasks},
+      settings:{render:renderSettings},
+      share:{render:renderShare}
+    };
+
+    // ====== LIVE ======
+    function renderLive(){
+      $('#page').innerHTML=`
+        <div class="space-y-5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 text-sm text-slate-300">
+              <span id="live_ws" class="px-3 py-1 rounded-full bg-slate-700/80">${window.__MINA_USE_MOCK_SOCKET?'Mock':'Disconnected'}</span>
+              <span id="live_mic" class="px-3 py-1 rounded-full bg-slate-700/80">Idle</span>
+              <span id="live_sess" class="px-3 py-1 rounded-full bg-slate-700/80">—</span>
+            </div>
+            <div class="hidden md:flex items-center gap-2">
+              <button id="btnToggle" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[var(--brand-from)] to-[var(--brand-to)] hover:opacity-95 shadow-lg"><span>Start</span></button>
+            </div>
+          </div>
+
+          <div class="h-2 rounded-full bg-slate-800 overflow-hidden"><div id="meterFill" class="h-full transition-[width] duration-150 bg-gradient-to-r from-cyan-400 via-[var(--brand-from)] to-[var(--brand-to)]" style="width:0%"></div></div>
+          <canvas id="wave" height="90" class="w-full rounded-xl bg-slate-900/60 border border-white/5"></canvas>
+
+          <div class="rounded-2xl bg-slate-900/60 border border-white/5 p-4">
+            <div class="flex items-center justify-between mb-2 gap-2">
+              <div class="flex-1 flex items-center gap-2">
+                <h2 class="text-lg font-semibold">Transcript</h2>
+                <div class="relative flex items-center">
+                  <input id="txSearch" placeholder="Search ( / )" class="px-2 py-1 rounded-lg bg-slate-800 text-sm border border-white/10" />
+                  <div id="txCounter" class="ml-2 text-xs text-slate-400"></div>
+                  <div class="ml-2 hidden md:flex gap-1"><button id="txPrev" class="btn text-xs">Prev</button><button id="txNext" class="btn text-xs">Next</button></div>
+                </div>
+              </div>
+              <div><span id="modeBadge" class="px-2 py-0.5 rounded-full text-xs bg-emerald-600/60">Live</span></div>
+            </div>
+            <div id="noteBar" class="hidden mb-3 px-3 py-2 rounded-xl bg-yellow-500/10 text-yellow-200 text-sm border border-yellow-500/20"></div>
+            <div id="transcriptBox" class="min-h-[260px] whitespace-pre-wrap text-slate-100 shimmer"></div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3 pb-16 md:pb-0">
+            <button id="btnCopy" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700">Copy</button>
+            <button id="btnExport" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700">Export .txt</button>
+            <button id="btnClear" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700">Clear</button>
+            <button id="btnMarker" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700">Add marker (M)</button>
+            <button id="btnCopy15" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700">Copy last 15s</button>
+            <button id="btnSaveConv" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500">Save as conversation</button>
+          </div>
+        </div>
+
+        <div class="fixed md:hidden left-0 right-0 bottom-3 flex justify-center">
+          <button id="btnToggleMobile" class="px-6 py-3 rounded-full text-base font-medium bg-gradient-to-r from-[var(--brand-from)] to-[var(--brand-to)] shadow-xl">Start</button>
+        </div>
+      `;
+
+      const els={ ws:$('#live_ws'), mic:$('#live_mic'), sess:$('#live_sess'), meter:$('#meterFill'), wave:$('#wave'), transcript:$('#transcriptBox'), badge:$('#modeBadge'), note:$('#noteBar') };
+      let mediaRecorder=null, analyser=null, raf=null; let interimStream=''; let lastChunkAt=0;
+
+      function ensureIO(){ if(window.io) return Promise.resolve(true); return new Promise(res=>{ const s=document.createElement('script'); s.src='/socket.io/socket.io.js'; s.onload=()=>res(true); s.onerror=()=>{ const cdn=document.createElement('script'); cdn.src='https://cdn.socket.io/4.7.5/socket.io.min.js'; cdn.onload=()=>res(true); cdn.onerror=()=>res(false); document.head.appendChild(cdn) }; document.head.appendChild(s) }) }
+
+      function startWave(){ const c=els.wave, ctx=c.getContext('2d'); const W=c.width=c.clientWidth, H=c.height; const data=new Uint8Array(256); (function draw(){ if(!analyser){ctx.clearRect(0,0,W,H); raf=requestAnimationFrame(draw); return} analyser.getByteTimeDomainData(data); ctx.clearRect(0,0,W,H); ctx.beginPath(); ctx.moveTo(0,H/2); for(let x=0;x<W;x++){ const i=Math.floor((x/W)*data.length); const v=(data[i]-128)/128; const y=H/2+v*(H/2-6); ctx.lineTo(x,y) } ctx.strokeStyle='rgba(148,163,184,0.9)'; ctx.lineWidth=2; ctx.stroke(); raf=requestAnimationFrame(draw) })() }
+      function stopWave(){ if(raf) cancelAnimationFrame(raf), raf=null }
+
+      function bindStart(btn){ btn.addEventListener('click', async ()=>{
+        if(mediaRecorder && mediaRecorder.state!=='inactive'){ try{mediaRecorder.stop()}catch{} return }
+        if(!(await ensureIO())){ els.note.classList.remove('hidden'); els.note.textContent='Socket.IO client missing'; return }
+        const socket=window.io({path:'/socket.io',transports:['polling'],upgrade:false,reconnection:true});
+        socket.on('connect',()=>{ els.ws.textContent=window.__MINA_USE_MOCK_SOCKET?'Mock':'Connected'; const sid=String(Date.now()); els.sess.textContent=sid; socket.emit('join_session',{session_id:sid}) });
+        socket.on('server_hello',()=>{});
+        socket.on('interim_transcript',p=>{ const t=(p?.text||'').trim(); if(!t) return; lastChunkAt=Date.now(); interimStream+=(interimStream?' ':'')+t; els.transcript.classList.remove('shimmer'); els.transcript.textContent=interimStream; els.transcript.scrollTop=els.transcript.scrollHeight });
+        socket.on('final_transcript',p=>{ const final=(p?.text||'').trim(); if(final) els.transcript.textContent=final; els.badge.textContent='Final'; els.badge.className='px-2 py-0.5 rounded-full text-xs bg-sky-600/60'; });
+        socket.on('socket_error',p=>{ els.note.classList.remove('hidden'); els.note.textContent=p?.message||'Socket error'; toast(p?.message||'Socket error','error') });
+
+        // mic
+        const AC=window.AudioContext||window.webkitAudioContext; const ac=new AC(); const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+        analyser=ac.createAnalyser(); analyser.fftSize=512; ac.createMediaStreamSource(stream).connect(analyser); startWave();
+        let mime='audio/webm;codecs=opus'; if(!MediaRecorder.isTypeSupported?.(mime)) mime='audio/webm'; mediaRecorder=new MediaRecorder(stream,{mimeType:mime});
+        mediaRecorder.ondataavailable=async e=>{ if(!e.data||e.data.size===0) return; const buf=await e.data.arrayBuffer(); const b64=btoa(String.fromCharCode(...new Uint8Array(buf))); socket.emit('audio_chunk',{session_id:els.sess.textContent,audio_data_b64:b64,mime:e.data.type||mime}) };
+        mediaRecorder.onstop=()=>{ setTimeout(()=>socket.emit('finalize_session',{session_id:els.sess.textContent}),250); try{stream.getTracks().forEach(t=>t.stop())}catch{} try{ac.close()}catch{} analyser=null; stopWave(); els.mic.textContent='Stopped' };
+        mediaRecorder.start(1200); els.mic.textContent='Recording…';
+      }) }
+
+      bindStart($('#btnToggle')); bindStart($('#btnToggleMobile'));
+
+      // simple actions
+      $('#btnCopy').onclick=()=>navigator.clipboard.writeText((els.transcript.textContent||'').trim()).then(()=>toast('Copied'));
+      $('#btnExport').onclick=()=>{ const blob=new Blob([(els.transcript.textContent||'').trim()],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='mina-transcript.txt'; a.click(); URL.revokeObjectURL(a.href) };
+      $('#btnClear').onclick=()=>{ interimStream=''; els.transcript.textContent=''; els.badge.textContent='Live'; els.badge.className='px-2 py-0.5 rounded-full text-xs bg-emerald-600/60' };
+      $('#btnMarker').onclick=()=>toast('Marker added');
+      $('#btnCopy15').onclick=()=>{ // naive: copy last ~25 words
+        const words=(els.transcript.textContent||'').trim().split(/\s+/); const last=words.slice(-25).join(' '); navigator.clipboard.writeText(last).then(()=>toast('Copied last ~15s')) };
+
+      $('#btnSaveConv').onclick=()=>{
+        const id='rec_'+Date.now(); const conv={ id, title:'Untitled Conversation', created_at:Date.now(), participants:[], segments:[{id:'s1',t0:0,t1:0,text:(els.transcript.textContent||'').trim(),speaker:'S1'}], highlights:[], comments:[], tasks:[], share:{public:false,token:null,redact:true} };
+        Store.save(conv); location.hash='conversation/'+id; renderPage(); toast('Saved as conversation');
+      };
+
+      // keyboard shortcuts
+      window.onkeydown=(e)=>{
+        if(e.key===' '){ e.preventDefault(); ($('#btnToggleMobile')||$('#btnToggle')).click() }
+        if(e.key.toLowerCase()==='/'){ e.preventDefault(); $('#txSearch')?.focus() }
+        if(e.key.toLowerCase()==='m'){ e.preventDefault(); $('#btnMarker').click() }
+      }
+    }
+
+    // ====== CONVERSATION ======
+    function renderConversation(){
+      const id=(location.hash.split('/')[1]||'').trim(); const conv=Store.byId(id);
+      if(!conv){ $('#page').innerHTML='<div class="text-slate-300">Conversation not found.</div>'; return }
+      $('#page').innerHTML=`
+        <div class="space-y-4">
+          <div class="sticky top-14 z-10 p-3 rounded-2xl bg-slate-900/70 border border-white/5 backdrop-blur flex items-start justify-between gap-3">
+            <div class="min-w-0"><div class="text-lg font-semibold truncate">${conv.title||'Untitled Conversation'}</div>
+              <div class="text-xs text-slate-400">${new Date(conv.created_at).toLocaleString()}</div></div>
+            <div class="flex items-center gap-2">
+              <button id="btnShare" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm">Share</button>
+              <div class="relative inline-block">
+                <button id="btnExportMenu" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm">Export</button>
+                <div id="exportMenu" class="hidden absolute right-0 mt-1 w-40 rounded-xl overflow-hidden border border-white/10 bg-slate-900 shadow-xl">
+                  <button class="block w-full text-left px-3 py-2 hover:bg-slate-800 text-sm" data-x="md">Markdown</button>
+                  <button class="block w-full text-left px-3 py-2 hover:bg-slate-800 text-sm" data-x="txt">Text</button>
+                  <button class="block w-full text-left px-3 py-2 hover:bg-slate-800 text-sm" data-x="json">JSON</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+            <div class="md:col-span-9">
+              <div id="convBody" class="rounded-2xl bg-slate-900/60 border border-white/5 p-4 min-h-[320px] whitespace-pre-wrap"></div>
+            </div>
+            <div class="md:col-span-3 space-y-3">
+              <div class="rounded-2xl bg-slate-900/60 border border-white/5 p-3"><div class="text-xs text-slate-400 mb-2">Highlights</div><div id="hlList" class="space-y-2 text-sm"></div></div>
+              <div class="rounded-2xl bg-slate-900/60 border border-white/5 p-3"><div class="text-xs text-slate-400 mb-2">Tasks</div><div id="taskList" class="space-y-2 text-sm"></div></div>
+            </div>
+          </div>
+        </div>`;
+
+      const body=$('#convBody'); body.textContent=conv.segments.map(s=>s.text).join('\n\n');
+
+      // Selection actions
+      const selBar=$('#selBar'); function showSel(){ const sel=window.getSelection(); if(!sel||sel.isCollapsed||!body.contains(sel.anchorNode)){ selBar.classList.add('hidden'); return } const r=sel.getRangeAt(0).getBoundingClientRect(); selBar.style.top=(window.scrollY+r.top-40)+'px'; selBar.style.left=Math.max(8, Math.min(window.innerWidth-240, window.scrollX+r.left))+'px'; selBar.innerHTML=`<button class="btn text-xs" id="qaHL">Highlight</button><button class="btn text-xs" id="qaCM">Comment</button><button class="btn text-xs" id="qaTK">Make Task</button>`; selBar.classList.remove('hidden'); $('#qaHL').onclick=()=>makeHL(sel.toString()); $('#qaCM').onclick=()=>makeCM(sel.toString()); $('#qaTK').onclick=()=>makeTK(sel.toString()) }
+      document.addEventListener('selectionchange',showSel); window.addEventListener('scroll',()=>selBar.classList.add('hidden'));
+
+      function makeHL(text){ if(!text) return; const hl={id:'h'+Date.now(), segment:'s1', range:[0,Math.min(120,text.length)], label:'Note', text}; conv.highlights.push(hl); Store.save(conv); paintSide() }
+      function makeCM(text){ const txt=prompt('Comment for selection:', text.slice(0,80)); if(!txt) return; const cm={id:'c'+Date.now(), target:null, text:txt}; conv.comments=(conv.comments||[]); conv.comments.push(cm); Store.save(conv); toast('Comment added') }
+      function makeTK(text){ const title=prompt('Task title:', text.slice(0,80)||'New action'); if(!title) return; const tk={id:'t'+Date.now(), title, owner:'', due:null, prio:'M', impact:'M', status:'open'}; conv.tasks.push(tk); Store.save(conv); paintSide(); toast('Task added') }
+
+      function paintSide(){ const hlBox=$('#hlList'); hlBox.innerHTML=''; conv.highlights.forEach(h=>{ const el=document.createElement('div'); el.className='rounded-lg bg-slate-800 px-2 py-2'; el.textContent=`${h.label}: ${h.text.slice(0,80)}`; hlBox.appendChild(el) }); const tBox=$('#taskList'); tBox.innerHTML=''; conv.tasks.forEach(t=>{ const el=document.createElement('div'); el.className='rounded-lg bg-slate-800 px-2 py-2 flex items-center justify-between gap-2'; el.innerHTML=`<span>${t.title}</span><span class="text-xs text-slate-400">${t.prio}</span>`; tBox.appendChild(el) }) }
+      paintSide();
+
+      // Export menu
+      $('#btnExportMenu').onclick=(e)=>{ e.stopPropagation(); $('#exportMenu').classList.toggle('hidden') };
+      document.body.addEventListener('click',()=>$('#exportMenu')?.classList.add('hidden'));
+      $$('#exportMenu [data-x]').forEach(b=>b.addEventListener('click',()=>{
+        const kind=b.dataset.x; const text=body.textContent||'';
+        if(kind==='md'){ const blob=new Blob([text],{type:'text/markdown'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`mina-${conv.id}.md`; a.click(); URL.revokeObjectURL(a.href) }
+        if(kind==='txt'){ const blob=new Blob([text],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`mina-${conv.id}.txt`; a.click(); URL.revokeObjectURL(a.href) }
+        if(kind==='json'){ const blob=new Blob([JSON.stringify(conv,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`mina-${conv.id}.json`; a.click(); URL.revokeObjectURL(a.href) }
+      }))
+
+      $('#btnShare').onclick=()=>openShare(conv);
+    }
+
+    // ====== SHARE (public read-only) ======
+    function openShare(conv){
+      const token=conv.share.token||('sh_'+Math.random().toString(36).slice(2)); conv.share.token=token; Store.save(conv);
+      const url=location.origin+location.pathname+'#share/'+token;
+      const dlg=document.createElement('div'); dlg.className='fixed inset-0 z-50'; dlg.innerHTML=`<div class="absolute inset-0 bg-black/60"></div><div class="absolute top-20 left-1/2 -translate-x-1/2 w-[92vw] max-w-2xl rounded-2xl bg-slate-900/90 border border-white/10 p-4"><div class="font-semibold mb-2">Share conversation</div><div class="text-sm mb-3">Public link (read-only)</div><div class="flex gap-2"><input class="flex-1 px-2 py-2 rounded-lg bg-slate-800 border border-white/10" value="${url}" readonly/><button class="btn" id="copyLink">Copy</button></div><label class="flex items-center gap-2 mt-3 text-sm"><input id="redact" type="checkbox" ${conv.share.redact?'checked':''}/> Redact emails/phones for public</label><div class="mt-4 flex justify-end gap-2"><button class="btn" id="closeDlg">Close</button></div></div>`;
+      document.body.appendChild(dlg); $('#copyLink',dlg).onclick=()=>navigator.clipboard.writeText(url).then(()=>toast('Link copied')); $('#redact',dlg).onchange=(e)=>{ conv.share.redact=!!e.target.checked; Store.save(conv) }; $('#closeDlg',dlg).onclick=()=>dlg.remove();
+    }
+
+    function renderShare(){
+      const token=(location.hash.split('/')[1]||'').trim(); const conv=Store.all.find(x=>x.share&&x.share.token===token);
+      if(!conv){ $('#page').innerHTML='<div class="text-slate-300">Shared conversation not found.</div>'; return }
+      const text = conv.share.redact ? (conv.segments.map(s=>s.text).join('\n\n').replace(/[\w.+-]+@[\w.-]+/g,'[redacted]').replace(/\b\+?\d[\d\s()-]{6,}\b/g,'[redacted]')) : conv.segments.map(s=>s.text).join('\n\n');
+      $('#page').innerHTML=`<div class="max-w-4xl mx-auto"><div class="text-2xl font-semibold mb-2">${conv.title||'Conversation'}</div><div class="text-xs text-slate-400 mb-4">Shared view · ${new Date(conv.created_at).toLocaleString()}</div><div class="rounded-2xl bg-slate-900/60 border border-white/5 p-4 whitespace-pre-wrap">${text}</div></div>`;
+    }
+
+    // ====== MEETINGS ======
+    function renderMeetings(){
+      const list=Store.all; $('#page').innerHTML=`
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Meetings</h2>
+            <div class="flex gap-2"><button class="btn" id="newFromLive">From current live</button><button class="btn" id="goUpload">Upload recording</button></div>
+          </div>
+          <div id="grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+        </div>`;
+      const grid=$('#grid'); grid.innerHTML=''; list.forEach(c=>{ const el=document.createElement('button'); el.className='text-left rounded-2xl bg-slate-900/60 border border-white/5 p-3 hover:bg-slate-900'; el.innerHTML=`<div class="font-medium truncate">${c.title||'Untitled'}</div><div class="text-xs text-slate-400">${new Date(c.created_at).toLocaleString()}</div><div class="text-xs mt-2 line-clamp-2 text-slate-300">${(c.segments?.[0]?.text||'').slice(0,140)}</div>`; el.onclick=()=>{ location.hash='conversation/'+c.id; renderPage() }; grid.appendChild(el) })
+      $('#goUpload').onclick=()=>go('upload'); $('#newFromLive').onclick=()=>go('live');
+    }
+
+    // ====== UPLOAD ======
+    function renderUpload(){
+      $('#page').innerHTML=`<div class="max-w-2xl mx-auto space-y-4"><h2 class="text-lg font-semibold">Upload recording</h2><p class="text-slate-300 text-sm">Select an audio/video file. Once your billing is enabled, we will stream it for transcription using the same interim→final pipeline.</p><input id="file" type="file" accept="audio/*,video/*" class="block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border file:border-white/10 file:bg-slate-800 file:text-slate-200 file:hover:bg-slate-700" /><div id="meta" class="text-xs text-slate-400"></div><button id="btnStub" class="btn">Create conversation (stub)</button></div>`;
+      const f=$('#file'); const meta=$('#meta'); f.onchange=()=>{ const file=f.files?.[0]; if(!file){meta.textContent='';return} meta.textContent=`${file.name} · ${(file.size/1024/1024).toFixed(2)} MB` };
+      $('#btnStub').onclick=()=>{ const file=f.files?.[0]; if(!file){ toast('Select a file first','error'); return } const id='rec_'+Date.now(); const conv={ id, title:file.name.replace(/\.[^/.]+$/,''), created_at:Date.now(), participants:[], segments:[{id:'s1',t0:0,t1:0,text:'(Transcript will appear here after processing)',speaker:'S1'}], highlights:[], comments:[], tasks:[], share:{public:false,token:null,redact:true} }; Store.save(conv); location.hash='conversation/'+id; renderPage(); toast('Conversation created') }
+    }
+
+    // ====== SUMMARIES ======
+    function renderSummaries(){ $('#page').innerHTML=`<div class="space-y-3 max-w-3xl"><h2 class="text-lg font-semibold">Summaries</h2><p class="text-slate-300 text-sm">Pick a conversation to generate or refine summaries once server-side billing is enabled. For now, you can draft/edit and export.</p><textarea class="w-full h-64 rounded-xl bg-slate-900/60 border border-white/5 p-3" placeholder="Write or paste a summary…"></textarea><div><button class="btn">Export .md</button></div></div>` }// ====== TASKS ======
+function renderTasks(){
+  const all=Store.all.flatMap(c=> (c.tasks||[]).map(t=>({c,t})) );
+  $('#page').innerHTML=`<div class="space-y-4"><div class="flex items-center justify-between"><h2 class="text-lg font-semibold">Tasks</h2><div class="text-xs text-slate-400">${all.length} total</div></div><div id="board" class="grid md:grid-cols-3 gap-3"></div></div>`;
+  const cols=[{id:'me',label:'Assigned to me'},{id:'soon',label:'Due soon'},{id:'unassigned',label:'Unassigned'}];
+  const board=$('#board'); cols.forEach(col=>{ const wrap=document.createElement('div'); wrap.className='rounded-2xl bg-slate-900/60 border border-white/5 p-3'; wrap.innerHTML=`<div class="text-xs text-slate-400 mb-2">${col.label}</div><div class="space-y-2" id="col-${col.id}"></div>`; board.appendChild(wrap) });
+  all.forEach(({c,t})=>{ const el=document.createElement('div'); el.className='rounded-xl bg-slate-800 px-3 py-2 text-sm'; el.innerHTML=`<div class="font-medium">${t.title}</div><div class="text-xs text-slate-400">${c.title||c.id}</div>`; $('#col-unassigned').appendChild(el) })
+}
+
+// ====== SETTINGS ======
+function renderSettings(){
+  $('#page').innerHTML=`<div class="max-w-2xl space-y-4"><h2 class="text-lg font-semibold">Settings</h2><div class="rounded-2xl bg-slate-900/60 border border-white/5 p-4 space-y-3"><div class="flex items-center justify-between"><div><div class="font-medium">Mock mode</div><div class="text-xs text-slate-400">Stream fake interim/final without server</div></div><label class="inline-flex items-center cursor-pointer"><input id="mockToggle" type="checkbox" class="sr-only" ${window.__MINA_USE_MOCK_SOCKET?'checked':''}/><span class="w-11 h-6 bg-slate-700 rounded-full relative"><span class="dot absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition"></span></span></label></div><div><label class="text-sm text-slate-300">Interface scale</label><input id="scale" type="range" min="0.9" max="1.25" step="0.01" value="1" class="w-full" /></div><div class="text-xs text-slate-400">Version v2.4</div></div></div>`;
+  $('#mockToggle').onchange=(e)=>{ window.__MINA_USE_MOCK_SOCKET=!!e.target.checked; toast('Mock mode '+(window.__MINA_USE_MOCK_SOCKET?'enabled':'disabled')) };
+  $('#scale').oninput=(e)=>{ document.documentElement.style.setProperty('--text-scale', e.target.value) };
+}
+
+// ===== init =====
+function renderPage(){ const hash=location.hash.replace(/^#\/?/,'')||'live'; const id=hash.split('/')[0]; (pages[id]||pages.live).render(); highlightNav(id) }
+function highlightNav(id){ $$('#nav [data-route]').forEach(b=>{ b.classList.toggle('bg-slate-800', b.dataset.route===id) }) }
+renderNav($('#nav')); window.addEventListener('hashchange',renderPage); renderPage();
+
+  </script>
+</body>
+</html>
