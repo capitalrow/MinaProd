@@ -3,8 +3,10 @@ import base64
 import binascii
 import logging
 import time
+import uuid
 from collections import defaultdict
 from typing import Dict, Optional
+from datetime import datetime
 
 from flask import Blueprint
 from flask_socketio import emit
@@ -12,12 +14,15 @@ from flask_socketio import emit
 # Import the socketio instance from the consolidated app
 from app import socketio
 
+# Import database models for persistence
+from models import db, Session, Segment
+
 from services.openai_whisper_client import transcribe_bytes
 
 logger = logging.getLogger(__name__)
 ws_bp = Blueprint("ws", __name__)
 
-# Per-session state (dev-grade, in-memory)
+# Per-session state (dev-grade, in-memory for audio buffering)
 _BUFFERS: Dict[str, bytearray] = defaultdict(bytearray)
 _LAST_EMIT_AT: Dict[str, float] = {}
 _LAST_INTERIM_TEXT: Dict[str, str] = {}
@@ -46,7 +51,27 @@ def on_join_session(data):
     if not session_id:
         emit("error", {"message": "Missing session_id"})
         return
-    # init/clear
+    
+    # Create or get existing session in database
+    try:
+        session = db.session.query(Session).filter_by(external_id=session_id).first()
+        if not session:
+            session = Session(
+                external_id=session_id,
+                title="Live Transcription Session",
+                status="active",
+                started_at=datetime.utcnow()
+            )
+            db.session.add(session)
+            db.session.commit()
+            logger.info(f"[ws] Created new session in DB: {session_id}")
+        else:
+            logger.info(f"[ws] Using existing session: {session_id}")
+    except Exception as e:
+        logger.error(f"[ws] Database error creating session: {e}")
+        # Continue with in-memory only
+    
+    # init/clear in-memory buffers
     _BUFFERS[session_id] = bytearray()
     _LAST_EMIT_AT[session_id] = 0
     _LAST_INTERIM_TEXT[session_id] = ""
@@ -125,7 +150,35 @@ def on_finalize(data):
         emit("error", {"message": "Transcription failed (final)."})
         return
 
-    emit("final_transcript", {"text": (final_text or "").strip()})
+    final_text = (final_text or "").strip()
+    
+    # Save final segment to database
+    try:
+        session = db.session.query(Session).filter_by(external_id=session_id).first()
+        if session and final_text:
+            segment = Segment(
+                session_id=session.id,
+                text=final_text,
+                start_time=0,  # Could be calculated from audio duration
+                end_time=len(full_audio) / 16000,  # Rough estimate
+                confidence=0.9,  # Default confidence
+                is_final=True,
+                segment_type="final"
+            )
+            db.session.add(segment)
+            
+            # Update session status
+            session.status = "completed"
+            session.completed_at = datetime.utcnow()
+            session.total_segments = 1
+            session.total_duration = len(full_audio) / 16000
+            
+            db.session.commit()
+            logger.info(f"[ws] Saved final segment to DB for session: {session_id}")
+    except Exception as e:
+        logger.error(f"[ws] Database error saving segment: {e}")
+
+    emit("final_transcript", {"text": final_text})
     # clear session memory
     _BUFFERS.pop(session_id, None)
     _LAST_EMIT_AT.pop(session_id, None)
