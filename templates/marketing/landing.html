@@ -208,6 +208,14 @@
             letter-spacing: -0.02em;
             line-height: 1.1;
             text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            /* Content-first approach: visible by default */
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.8s ease-out;
+        }
+
+        /* Animation-ready state for progressive enhancement */
+        .hero-title.animate-ready {
             opacity: 0;
             transform: translateY(50px);
         }
@@ -221,6 +229,14 @@
             margin-right: auto;
             font-weight: var(--mina-font-weight-medium);
             line-height: var(--mina-line-height-relaxed);
+            /* Content-first approach: visible by default */
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.8s ease-out 0.2s;
+        }
+
+        /* Animation-ready state for progressive enhancement */
+        .hero-subtitle.animate-ready {
             opacity: 0;
             transform: translateY(30px);
         }
@@ -236,6 +252,14 @@
         .stat-item {
             text-align: center;
             color: white;
+            /* Content-first approach: visible by default */
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.6s ease-out;
+        }
+
+        /* Animation-ready state for progressive enhancement */
+        .stat-item.animate-ready {
             opacity: 0;
             transform: translateY(20px);
         }
@@ -279,6 +303,13 @@
             position: relative;
             overflow: hidden;
             transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+            /* Content-first approach: visible by default */
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Animation-ready state for progressive enhancement */
+        .cta-button.animate-ready {
             opacity: 0;
             transform: translateY(20px);
         }
@@ -344,6 +375,14 @@
             gap: var(--mina-space-6);
             margin-top: var(--mina-space-8);
             flex-wrap: wrap;
+            /* Content-first approach: visible by default */
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.6s ease-out 0.8s;
+        }
+
+        /* Animation-ready state for progressive enhancement */
+        .trust-indicators.animate-ready {
             opacity: 0;
             transform: translateY(20px);
         }
@@ -392,6 +431,14 @@
             margin-bottom: var(--mina-space-4);
             color: var(--mina-text-primary);
             font-family: var(--mina-font-family-display);
+            /* Content-first approach: visible by default */
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.8s ease-out;
+        }
+
+        /* Animation-ready state for progressive enhancement */
+        .section-title.animate-ready {
             opacity: 0;
             transform: translateY(30px);
         }
@@ -404,6 +451,14 @@
             max-width: 700px;
             margin-left: auto;
             margin-right: auto;
+            /* Content-first approach: visible by default */
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.8s ease-out 0.2s;
+        }
+
+        /* Animation-ready state for progressive enhancement */
+        .section-subtitle.animate-ready {
             opacity: 0;
             transform: translateY(20px);
         }
@@ -424,6 +479,13 @@
             transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
             position: relative;
             overflow: hidden;
+            /* Content-first approach: visible by default */
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Animation-ready state for progressive enhancement */
+        .feature-card.animate-ready {
             opacity: 0;
             transform: translateY(50px);
         }
@@ -528,6 +590,14 @@
             border-radius: var(--mina-radius-lg);
             backdrop-filter: blur(10px);
             border: 1px solid var(--glassmorphism-border);
+            /* Content-first approach: visible by default */
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.6s ease-out;
+        }
+
+        /* Animation-ready state for progressive enhancement */
+        .testimonial.animate-ready {
             opacity: 0;
             transform: translateY(30px);
         }
@@ -863,6 +933,13 @@
             padding: var(--mina-space-8);
             position: relative;
             transition: all 0.3s ease;
+            /* Content-first approach: visible by default */
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Animation-ready state for progressive enhancement */
+        .pricing-card.animate-ready {
             opacity: 0;
             transform: translateY(30px);
         }
@@ -1830,43 +1907,345 @@
             });
         }
 
-        // Fallback animations without GSAP
-        function initFallbackAnimations() {
-            // Simple CSS transitions as fallback
-            document.getElementById('heroTitle').style.opacity = '1';
-            document.getElementById('heroTitle').style.transform = 'translateY(0)';
-            document.getElementById('heroSubtitle').style.opacity = '1';
-            document.getElementById('heroSubtitle').style.transform = 'translateY(0)';
-            
-            document.querySelectorAll('.stat-item').forEach(item => {
-                item.style.opacity = '1';
-                item.style.transform = 'translateY(0)';
-            });
-            
-            document.querySelectorAll('.cta-button').forEach(btn => {
-                btn.style.opacity = '1';
-                btn.style.transform = 'translateY(0)';
+        // Basic interactions without external dependencies
+        function initBasicInteractions() {
+            // Smooth scrolling for anchor links (native implementation)
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
             });
 
-            document.querySelector('.trust-indicators').style.opacity = '1';
-            document.querySelector('.trust-indicators').style.transform = 'translateY(0)';
+            // Enhanced hover effects with CSS
+            document.querySelectorAll('.cta-button').forEach(button => {
+                button.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-2px) scale(1.02)';
+                });
 
-            // Initialize other functionality
-            initROICalculator();
-            initPricingToggle();
-            initCountdownTimer();
-            initLiveCounter();
-            initDarkModeToggle();
-            initAnalytics();
-            initPerformanceOptimization();
+                button.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
 
-            // Animate counters
-            animateCounters();
+            // Scroll progress indicator
+            window.addEventListener('scroll', updateScrollProgressCore);
+            
+            // Navigation scroll effects
+            window.addEventListener('scroll', updateNavigationCore);
+            
+            // Sticky CTA visibility
+            window.addEventListener('scroll', updateStickyCTACore);
         }
 
-        // GSAP Animations
-        function initAnimations() {
-            // Register ScrollTrigger
+        // CSS-only animations as ultimate fallback
+        function initCSSOnlyAnimations() {
+            console.log('🎨 Using CSS-only animations');
+            
+            // Add animation classes progressively
+            const animateElements = [
+                { selector: '.hero-title', delay: 0 },
+                { selector: '.hero-subtitle', delay: 200 },
+                { selector: '.stat-item', delay: 400 },
+                { selector: '.cta-button', delay: 600 },
+                { selector: '.trust-indicators', delay: 800 }
+            ];
+
+            animateElements.forEach(({ selector, delay }) => {
+                setTimeout(() => {
+                    const elements = document.querySelectorAll(selector);
+                    elements.forEach(el => {
+                        el.style.transition = 'all 0.8s cubic-bezier(0.23, 1, 0.320, 1)';
+                        el.style.opacity = '1';
+                        el.style.transform = 'translateY(0)';
+                    });
+                }, delay);
+            });
+
+            // Animate counters
+            setTimeout(animateCountersCore, 1000);
+            
+            // Initialize scroll-based animations
+            initScrollBasedAnimations();
+        }
+
+        // Icon fallbacks for when Feather icons fail
+        function initIconFallbacks() {
+            const iconMappings = {
+                'mic': '🎤',
+                'play': '▶️',
+                'video': '📹',
+                'shield': '🛡️',
+                'clock': '⏰',
+                'check-circle': '✅',
+                'trending-up': '📈',
+                'sun': '☀️',
+                'moon': '🌙',
+                'rocket': '🚀'
+            };
+
+            document.querySelectorAll('[data-feather]').forEach(icon => {
+                const iconName = icon.getAttribute('data-feather');
+                if (iconMappings[iconName]) {
+                    icon.innerHTML = iconMappings[iconName];
+                    icon.style.fontSize = '20px';
+                }
+            });
+        }
+
+        // Core functionality methods (no external dependencies)
+        
+        // ROI Calculator - Core version
+        function initROICalculatorCore() {
+            const teamSizeSlider = document.getElementById('teamSize');
+            const meetingsSlider = document.getElementById('meetingsPerWeek');
+            const salarySlider = document.getElementById('avgSalary');
+            
+            if (!teamSizeSlider || !meetingsSlider || !salarySlider) return;
+            
+            const teamSizeValue = document.getElementById('teamSizeValue');
+            const meetingsValue = document.getElementById('meetingsValue');
+            const salaryValue = document.getElementById('salaryValue');
+            
+            const monthlySavings = document.getElementById('monthlySavings');
+            const timeSaved = document.getElementById('timeSaved');
+            const annualROI = document.getElementById('annualROI');
+            const paybackPeriod = document.getElementById('paybackPeriod');
+            const tasksExtracted = document.getElementById('tasksExtracted');
+
+            function updateROI() {
+                const teamSize = parseInt(teamSizeSlider.value);
+                const meetingsPerWeek = parseInt(meetingsSlider.value);
+                const avgSalary = parseInt(salarySlider.value);
+
+                // Update display values
+                if (teamSizeValue) teamSizeValue.textContent = teamSize;
+                if (meetingsValue) meetingsValue.textContent = meetingsPerWeek;
+                if (salaryValue) salaryValue.textContent = avgSalary;
+
+                // ROI Calculation Logic
+                const timeSavedPerMeeting = 0.3;
+                const weeklyTimeSaved = meetingsPerWeek * timeSavedPerMeeting;
+                const monthlyTimeSaved = weeklyTimeSaved * 4;
+                const totalMonthlySaved = monthlyTimeSaved * teamSize * avgSalary;
+                
+                const annualSaved = totalMonthlySaved * 12;
+                const minaCost = teamSize * 59 * 12;
+                const roiPercent = ((annualSaved - minaCost) / minaCost) * 100;
+                const paybackDays = Math.ceil((minaCost / 12) / (totalMonthlySaved / 30));
+                const monthlyTasks = meetingsPerWeek * 4 * 3;
+
+                // Update results with smooth transitions
+                if (monthlySavings) {
+                    monthlySavings.textContent = '$' + Math.round(totalMonthlySaved).toLocaleString();
+                }
+                if (timeSaved) {
+                    timeSaved.textContent = Math.round(monthlyTimeSaved) + ' hours';
+                }
+                if (annualROI) {
+                    annualROI.textContent = Math.round(roiPercent).toLocaleString() + '%';
+                }
+                if (paybackPeriod) {
+                    paybackPeriod.textContent = paybackDays + ' days';
+                }
+                if (tasksExtracted) {
+                    tasksExtracted.textContent = monthlyTasks;
+                }
+            }
+
+            // Add event listeners
+            [teamSizeSlider, meetingsSlider, salarySlider].forEach(slider => {
+                slider.addEventListener('input', updateROI);
+                slider.addEventListener('change', updateROI);
+            });
+
+            // Initial calculation
+            updateROI();
+        }
+
+        // Pricing Toggle - Core version
+        function initPricingToggleCore() {
+            const toggle = document.getElementById('pricingToggle');
+            if (!toggle) return;
+            
+            const priceAmounts = document.querySelectorAll('.price-amount');
+            const annualSavings = document.querySelectorAll('.annual-savings');
+
+            function updatePricing() {
+                const isAnnual = toggle.checked;
+                
+                priceAmounts.forEach(amount => {
+                    const monthlyPrice = amount.getAttribute('data-monthly');
+                    const annualPrice = amount.getAttribute('data-annual');
+                    const targetPrice = isAnnual ? annualPrice : monthlyPrice;
+                    
+                    amount.textContent = targetPrice;
+                });
+
+                annualSavings.forEach(saving => {
+                    saving.style.opacity = isAnnual ? '1' : '0';
+                });
+            }
+
+            toggle.addEventListener('change', updatePricing);
+        }
+
+        // Countdown Timer - Core version
+        function initCountdownTimerCore() {
+            const countdownElement = document.getElementById('countdown');
+            if (!countdownElement) return;
+            
+            function updateCountdown() {
+                const now = new Date();
+                const tomorrow = new Date(now);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(0, 0, 0, 0);
+                
+                const timeDiff = tomorrow.getTime() - now.getTime();
+                const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+                const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+                
+                const formattedTime = 
+                    String(hours).padStart(2, '0') + ':' + 
+                    String(minutes).padStart(2, '0') + ':' + 
+                    String(seconds).padStart(2, '0');
+                    
+                countdownElement.textContent = formattedTime;
+            }
+
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        }
+
+        // Dark Mode Toggle - Core version
+        function initDarkModeToggleCore() {
+            const themeToggle = document.getElementById('themeToggle');
+            if (!themeToggle) return;
+            
+            const currentTheme = localStorage.getItem('theme') || 
+                (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+            document.documentElement.setAttribute('data-theme', currentTheme);
+
+            themeToggle.addEventListener('click', () => {
+                const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+            });
+
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!localStorage.getItem('theme')) {
+                    document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+                }
+            });
+        }
+
+        // Navigation Core Effects
+        function updateScrollProgressCore() {
+            const scrollTop = window.pageYOffset;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = (scrollTop / docHeight) * 100;
+            const progressEl = document.getElementById('scrollProgress');
+            if (progressEl) {
+                progressEl.style.width = progress + '%';
+            }
+        }
+
+        function updateNavigationCore() {
+            const navbar = document.getElementById('navbar');
+            if (navbar) {
+                if (window.scrollY > 100) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            }
+        }
+
+        function updateStickyCTACore() {
+            const stickyCTA = document.getElementById('stickyCTA');
+            if (!stickyCTA) return;
+            
+            const heroHeight = document.querySelector('.hero')?.offsetHeight || 1000;
+            
+            if (window.scrollY > heroHeight) {
+                stickyCTA.classList.add('visible');
+            } else {
+                stickyCTA.classList.remove('visible');
+            }
+        }
+
+        // Counter Animation - Core version
+        function animateCountersCore() {
+            const counters = document.querySelectorAll('.stat-number');
+            
+            counters.forEach(counter => {
+                const target = parseInt(counter.getAttribute('data-target'));
+                if (!target) return;
+                
+                const duration = 2000;
+                const increment = target / (duration / 16);
+                let current = 0;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        counter.textContent = target.toLocaleString();
+                        clearInterval(timer);
+                    } else {
+                        counter.textContent = Math.floor(current).toLocaleString();
+                    }
+                }, 16);
+            });
+        }
+
+        // Navigation Core
+        function initNavigationCore() {
+            // Core navigation functionality without external dependencies
+            console.log('Navigation core initialized');
+        }
+
+        // Analytics Core  
+        function initAnalyticsCore() {
+            // Basic analytics without external libraries
+            const engagementData = {
+                timeOnPage: Date.now(),
+                scrollDepth: 0,
+                ctaClicks: 0,
+                calculatorUsed: false,
+                pricingViewed: false
+            };
+
+            // Track CTA clicks
+            document.querySelectorAll('.cta-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    engagementData.ctaClicks++;
+                    console.log('CTA clicked:', button.textContent);
+                });
+            });
+
+            // Track calculator usage
+            document.querySelectorAll('.calculator-slider').forEach(slider => {
+                slider.addEventListener('input', () => {
+                    engagementData.calculatorUsed = true;
+                });
+            });
+
+            console.log('Analytics core initialized');
+        }
+
+        // GSAP Animations (enhanced version)
+        function initGSAPAnimations() {
+            console.log('🎬 Initializing GSAP animations');
+            
+            // Register ScrollTrigger if available
             if (typeof ScrollTrigger !== 'undefined') {
                 gsap.registerPlugin(ScrollTrigger);
             }
@@ -1971,36 +2350,124 @@
             });
         }
 
-        // Initialize everything
+        // Progressive Enhancement - Initialize Core Functionality First
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Feather Icons
+            // Phase 1: Essential functionality (always works)
+            initCoreFunctionality();
+            
+            // Phase 2: Enhanced features (progressive enhancement)  
+            initEnhancedFeatures();
+            
+            // Phase 3: Advanced animations (optional enhancement)
+            initAnimationSystem();
+        });
+
+        // Core functionality that must work without any external libraries
+        function initCoreFunctionality() {
+            // Initialize basic interactions without external dependencies
+            initBasicInteractions();
+            initROICalculatorCore();
+            initPricingToggleCore();
+            initCountdownTimerCore();
+            initDarkModeToggleCore();
+            initNavigationCore();
+            initAnalyticsCore();
+            
+            console.log('✅ Core functionality initialized');
+        }
+
+        // Enhanced features with graceful degradation
+        function initEnhancedFeatures() {
+            // Initialize Feather Icons with fallback
             if (typeof feather !== 'undefined') {
-                feather.replace();
-            }
-
-            // Create particles
-            createParticles();
-
-            // Wait for GSAP to load, then initialize animations
-            if (typeof gsap !== 'undefined') {
-                initAnimations();
+                try {
+                    feather.replace();
+                    console.log('✅ Feather icons loaded');
+                } catch (e) {
+                    console.warn('Feather icons failed to load:', e);
+                }
             } else {
-                // Wait for GSAP to load with retry mechanism
-                let gsapRetries = 0;
-                const maxRetries = 50;
-                const waitForGSAP = setInterval(() => {
-                    gsapRetries++;
-                    if (typeof gsap !== 'undefined') {
-                        clearInterval(waitForGSAP);
-                        initAnimations();
-                    } else if (gsapRetries >= maxRetries) {
-                        clearInterval(waitForGSAP);
-                        // Fallback: Initialize basic functionality without animations
-                        console.warn('GSAP failed to load, using fallback animations');
-                        initFallbackAnimations();
+                // Retry mechanism for icons
+                let iconRetries = 0;
+                const iconRetryInterval = setInterval(() => {
+                    if (typeof feather !== 'undefined') {
+                        try {
+                            feather.replace();
+                            console.log('✅ Feather icons loaded (retry)');
+                            clearInterval(iconRetryInterval);
+                        } catch (e) {
+                            console.warn('Feather icons error:', e);
+                        }
+                    } else if (++iconRetries >= 30) { // Stop trying after 3 seconds
+                        clearInterval(iconRetryInterval);
+                        console.warn('Feather icons unavailable, using text fallbacks');
+                        initIconFallbacks();
                     }
                 }, 100);
             }
+
+            // Create visual enhancements
+            createParticles();
+            initVisualEffects();
+            initPerformanceOptimization();
+        }
+
+        // Animation system with multiple fallback strategies
+        function initAnimationSystem() {
+            // Strategy 1: Try GSAP with multiple CDN sources
+            if (typeof gsap !== 'undefined') {
+                initGSAPAnimations();
+            } else {
+                // Strategy 2: Dynamic loading with fallback CDNs
+                loadGSAPWithFallbacks();
+            }
+        }
+
+        // Load GSAP from multiple CDN sources
+        function loadGSAPWithFallbacks() {
+            const gsapSources = [
+                'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js',
+                'https://unpkg.com/gsap@3.12.2/dist/gsap.min.js',
+                'https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js'
+            ];
+
+            let sourceIndex = 0;
+
+            function tryNextSource() {
+                if (sourceIndex >= gsapSources.length) {
+                    console.warn('All GSAP sources failed, using CSS-only animations');
+                    initCSSOnlyAnimations();
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = gsapSources[sourceIndex];
+                script.onload = function() {
+                    console.log(`✅ GSAP loaded from source ${sourceIndex + 1}`);
+                    // Give GSAP a moment to initialize
+                    setTimeout(() => {
+                        if (typeof gsap !== 'undefined') {
+                            initGSAPAnimations();
+                        } else {
+                            tryNextSource();
+                        }
+                    }, 100);
+                };
+                script.onerror = function() {
+                    console.warn(`GSAP source ${sourceIndex + 1} failed, trying next...`);
+                    sourceIndex++;
+                    tryNextSource();
+                };
+                document.head.appendChild(script);
+            }
+
+            // Start with a timeout for initial load
+            setTimeout(() => {
+                if (typeof gsap === 'undefined') {
+                    tryNextSource();
+                }
+            }, 2000);
+        }
 
             // Scroll event listeners
             window.addEventListener('scroll', () => {
