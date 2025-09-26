@@ -397,7 +397,7 @@
                   formData.append('session_id', sessionId);
                   formData.append('chunk_id', chunkId.toString());
                   
-                  const response = await fetch('/api/transcribe_chunk_streaming', {
+                  const response = await fetch('/api/transcribe_streaming', {
                     method: 'POST',
                     body: formData
                   });
