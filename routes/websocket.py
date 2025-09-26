@@ -6,6 +6,7 @@ import io
 import time
 from extensions import socketio
 from flask_socketio import emit
+from flask import current_app
 from services.openai_whisper_client import transcribe_bytes
 from server.models import db, Conversation, Segment
 
@@ -29,19 +30,23 @@ def handle_join_session(data):
     session_id = data.get('session_id')
     if not session_id:
         logger.error('[websocket] No session_id provided')
+        emit('session_error', {'error': 'No session ID provided'})
         return
     
     logger.info(f'[websocket] Joining session: {session_id}')
     
-    # Create conversation record
+    # Create conversation record with Flask app context
     try:
-        conversation = Conversation(
-            title=f"Live Session {session_id}",
-            status="live",
-            source="realtime"
-        )
-        db.session.add(conversation)
-        db.session.commit()
+        with current_app.app_context():
+            conversation = Conversation()
+            conversation.title = f"Live Session {session_id}"
+            conversation.status = "live"
+            conversation.source = "realtime"
+            
+            db.session.add(conversation)
+            db.session.commit()
+            
+            logger.info(f'[websocket] Created conversation {conversation.id} for session {session_id}')
         
         # Track active session
         active_sessions[session_id] = {
@@ -146,17 +151,20 @@ def handle_audio_chunk(data):
                     segment_idx = session_info['segment_count']
                     session_info['segment_count'] += 1
                     
-                    segment = Segment(
-                        conversation_id=conversation_id,
-                        idx=segment_idx,
-                        start_ms=int((current_time - session_info['start_time']) * 1000) - 2000,
-                        end_ms=int((current_time - session_info['start_time']) * 1000),
-                        text=transcript_text,
-                        is_final=True
-                    )
-                    
-                    db.session.add(segment)
-                    db.session.commit()
+                    # Store segment with Flask app context
+                    with current_app.app_context():
+                        segment = Segment()
+                        segment.conversation_id = conversation_id
+                        segment.idx = segment_idx
+                        segment.start_ms = int((current_time - session_info['start_time']) * 1000) - 2000
+                        segment.end_ms = int((current_time - session_info['start_time']) * 1000)
+                        segment.text = transcript_text
+                        segment.is_final = True
+                        
+                        db.session.add(segment)
+                        db.session.commit()
+                        
+                        logger.info(f'[websocket] Stored segment {segment.id} for conversation {conversation_id}')
                     
                     # Send real interim transcript (for live feedback)
                     emit('interim_transcript', {
@@ -214,17 +222,20 @@ def handle_finalize_session(data):
                     conversation_id = session_info['conversation_id']
                     segment_idx = session_info['segment_count']
                     
-                    segment = Segment(
-                        conversation_id=conversation_id,
-                        idx=segment_idx,
-                        start_ms=int((time.time() - session_info['start_time']) * 1000) - 2000,
-                        end_ms=int((time.time() - session_info['start_time']) * 1000),
-                        text=transcript_text,
-                        is_final=True
-                    )
-                    
-                    db.session.add(segment)
-                    db.session.commit()
+                    # Store final segment with Flask app context
+                    with current_app.app_context():
+                        segment = Segment()
+                        segment.conversation_id = conversation_id
+                        segment.idx = segment_idx
+                        segment.start_ms = int((time.time() - session_info['start_time']) * 1000) - 2000
+                        segment.end_ms = int((time.time() - session_info['start_time']) * 1000)
+                        segment.text = transcript_text
+                        segment.is_final = True
+                        
+                        db.session.add(segment)
+                        db.session.commit()
+                        
+                        logger.info(f'[websocket] Stored final segment {segment.id} for conversation {conversation_id}')
                     
                     emit('final_transcript', {
                         'text': transcript_text,
@@ -234,18 +245,21 @@ def handle_finalize_session(data):
                         'segment_id': segment.id
                     })
             
-            # Update conversation status
-            conversation = Conversation.query.get(session_info['conversation_id'])
-            if conversation:
-                conversation.status = 'final'
-                conversation.duration_s = int(time.time() - session_info['start_time'])
-                
-                # Calculate word count from all segments
-                segments = Segment.query.filter_by(conversation_id=conversation.id).all()
-                total_words = sum(len(seg.text.split()) for seg in segments)
-                conversation.word_count = total_words
-                
-                db.session.commit()
+            # Update conversation status with Flask app context
+            with current_app.app_context():
+                conversation = Conversation.query.get(session_info['conversation_id'])
+                if conversation:
+                    conversation.status = 'final'
+                    conversation.duration_s = int(time.time() - session_info['start_time'])
+                    
+                    # Calculate word count from all segments
+                    segments = Segment.query.filter_by(conversation_id=conversation.id).all()
+                    total_words = sum(len(seg.text.split()) for seg in segments)
+                    conversation.word_count = total_words
+                    
+                    db.session.commit()
+                    
+                    logger.info(f'[websocket] Finalized conversation {conversation.id} with {total_words} words')
             
             # Clean up session
             del active_sessions[session_id]
