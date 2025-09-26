@@ -145,15 +145,15 @@ def create_app() -> Flask:
         # Initialize Flask-Login
         login_manager = LoginManager()
         login_manager.init_app(app)
-        login_manager.login_view = 'auth.login'
+        login_manager.login_view = 'auth.login'  # type: ignore
         login_manager.login_message = 'Please log in to access this page.'
         login_manager.login_message_category = 'info'
         
         @login_manager.user_loader
         def load_user(user_id):
             try:
-                from models import User
-                return User.query.get(int(user_id))
+                from models import User, db as models_db
+                return models_db.session.query(User).get(int(user_id))
             except Exception:
                 return None
     else:
@@ -285,5 +285,5 @@ signal.signal(signal.SIGINT, _shutdown)
 
 if __name__ == "__main__":
     app.logger.info("🚀 Mina at http://0.0.0.0:5000  (Socket.IO path %s)", app.config.get("SOCKETIO_PATH", "/socket.io"))
-    socketio.run(app, host="0.0.0.0", port=5000)
+    socketio.run(app, host="0.0.0.0", port=5000, use_reloader=False, log_output=True)
     
