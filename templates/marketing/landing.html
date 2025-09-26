@@ -275,6 +275,135 @@
             50% { transform: scale(1.05); }
         }
         
+        /* ✨ PHASE 2B: Advanced UX & Micro-interaction Styles */
+        
+        /* Scroll-based animations */
+        .animate-in {
+            animation: slideInUp 0.8s cubic-bezier(0.23, 1, 0.320, 1) both;
+        }
+        
+        @keyframes slideInUp {
+            0% {
+                opacity: 0;
+                transform: translate3d(0, 50px, 0);
+            }
+            100% {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
+        }
+        
+        /* Skeleton loading states */
+        .skeleton-loading {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 4px;
+            min-height: 20px;
+        }
+        
+        @keyframes loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+        
+        .content-loaded {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Enhanced button states */
+        .cta-button {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .cta-button:hover::before {
+            left: 100%;
+        }
+        
+        /* Pricing card selection states */
+        .pricing-card.selected {
+            border-color: #4FACFE;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+            transform: translateY(-4px);
+        }
+        
+        /* Enhanced scroll progress */
+        #scrollProgress {
+            background: linear-gradient(90deg, #4FACFE, #00F2FE, #4FACFE);
+            background-size: 200% 100%;
+            animation: shimmer 2s linear infinite;
+        }
+        
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+        
+        /* Navigation active states */
+        .nav-item.active {
+            color: #4FACFE;
+            position: relative;
+        }
+        
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--gradient-success);
+            border-radius: 2px;
+        }
+        
+        /* Parallax enhancements */
+        .animated-background {
+            will-change: transform;
+            transition: transform 0.1s ease-out;
+        }
+        
+        /* Particle interactions */
+        .particle {
+            transition: transform 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+            will-change: transform;
+        }
+        
+        /* Advanced hover states for feature cards */
+        .feature-card {
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+            transform-origin: center;
+        }
+        
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1) rotate(5deg);
+            transition: transform 0.3s ease;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .hero-social-proof { margin-bottom: 2rem; }
@@ -282,6 +411,15 @@
             .hero-trust-indicators { gap: 1rem; }
             .trust-item { font-size: 0.8rem; padding: 0.5rem 0.75rem; }
             .testimonial-content { padding: 1rem; }
+            
+            /* Mobile-specific micro-interactions */
+            .cta-button:active {
+                transform: scale(0.95);
+            }
+            
+            .trust-item:active {
+                transform: scale(0.95);
+            }
         }
     </style>
     
@@ -2792,6 +2930,194 @@
             console.log('✅ Core functionality initialized');
         }
 
+        // ✨ PHASE 2B: Advanced User Experience Functions
+        
+        // Scroll-based animations and progressive disclosure
+        function initScrollBasedAnimations() {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                        // Start counter animations when visible
+                        if (entry.target.classList.contains('proof-number') && !entry.target.hasAttribute('data-animated')) {
+                            animateCountUp(entry.target);
+                            entry.target.setAttribute('data-animated', 'true');
+                        }
+                    }
+                });
+            }, observerOptions);
+
+            // Observe elements for scroll-based animations
+            document.querySelectorAll('.section-title, .feature-card, .pricing-card, .testimonial, .proof-number').forEach(el => {
+                observer.observe(el);
+            });
+        }
+
+        // Enhanced counter animation with easing
+        function animateCountUp(element) {
+            const target = parseInt(element.getAttribute('data-target'));
+            if (!target) return;
+
+            const duration = 2000;
+            const startTime = performance.now();
+            
+            function updateCount(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Easing function for smooth animation
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                const current = Math.round(target * easeOut);
+                
+                element.textContent = current.toLocaleString();
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateCount);
+                }
+            }
+            
+            requestAnimationFrame(updateCount);
+        }
+
+        // Advanced micro-interactions
+        function initMicroInteractions() {
+            // Enhanced button interactions
+            document.querySelectorAll('.cta-button').forEach(button => {
+                button.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-3px) scale(1.02)';
+                    this.style.boxShadow = '0 12px 40px rgba(79, 172, 254, 0.4)';
+                });
+
+                button.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                    this.style.boxShadow = '0 8px 25px rgba(79, 172, 254, 0.3)';
+                });
+
+                // Click feedback
+                button.addEventListener('click', function() {
+                    this.style.transform = 'translateY(-1px) scale(0.98)';
+                    setTimeout(() => {
+                        this.style.transform = 'translateY(-3px) scale(1.02)';
+                    }, 150);
+                });
+            });
+
+            // Feature card hover effects
+            document.querySelectorAll('.feature-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px) scale(1.02)';
+                    this.style.boxShadow = '0 20px 50px rgba(0,0,0,0.15)';
+                });
+
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                    this.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+                });
+            });
+
+            // Pricing card selection states
+            document.querySelectorAll('.pricing-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    // Remove selected state from others
+                    document.querySelectorAll('.pricing-card').forEach(c => c.classList.remove('selected'));
+                    // Add selected state to clicked card
+                    this.classList.add('selected');
+                });
+            });
+        }
+
+        // Progressive content loading with skeleton states
+        function initProgressiveLoading() {
+            // Skeleton loading for dynamic content
+            const skeletonElements = document.querySelectorAll('[data-skeleton]');
+            
+            skeletonElements.forEach(element => {
+                element.classList.add('skeleton-loading');
+                
+                // Simulate content loading
+                setTimeout(() => {
+                    element.classList.remove('skeleton-loading');
+                    element.classList.add('content-loaded');
+                }, 1000 + Math.random() * 1000);
+            });
+        }
+
+        // Advanced scroll progress with sections
+        function initAdvancedScrollProgress() {
+            const sections = document.querySelectorAll('section');
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            function updateScrollProgress() {
+                const scrollTop = window.pageYOffset;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const progress = (scrollTop / docHeight) * 100;
+                
+                // Update main progress bar
+                const progressEl = document.getElementById('scrollProgress');
+                if (progressEl) {
+                    progressEl.style.width = progress + '%';
+                }
+                
+                // Update section-based navigation
+                let currentSection = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 100;
+                    const sectionHeight = section.offsetHeight;
+                    
+                    if (scrollTop >= sectionTop && scrollTop < sectionTop + sectionHeight) {
+                        currentSection = section.id;
+                    }
+                });
+                
+                // Update nav highlighting
+                navItems.forEach(item => {
+                    item.classList.toggle('active', item.getAttribute('href') === `#${currentSection}`);
+                });
+            }
+            
+            window.addEventListener('scroll', updateScrollProgress, { passive: true });
+        }
+
+        // Visual enhancements and effects
+        function initVisualEffects() {
+            // Parallax effect for background
+            window.addEventListener('scroll', () => {
+                const scrolled = window.pageYOffset;
+                const parallax = document.querySelector('.animated-background');
+                if (parallax) {
+                    parallax.style.transform = `translateY(${scrolled * 0.2}px)`;
+                }
+            }, { passive: true });
+
+            // Dynamic particle system enhancement
+            function enhanceParticles() {
+                const particles = document.querySelectorAll('.particle');
+                particles.forEach((particle, index) => {
+                    // Add mouse interaction
+                    document.addEventListener('mousemove', (e) => {
+                        const rect = particle.getBoundingClientRect();
+                        const distance = Math.sqrt(
+                            Math.pow(e.clientX - rect.left, 2) + 
+                            Math.pow(e.clientY - rect.top, 2)
+                        );
+                        
+                        if (distance < 100) {
+                            particle.style.transform = `scale(${1.5 - distance/100})`;
+                        } else {
+                            particle.style.transform = 'scale(1)';
+                        }
+                    });
+                });
+            }
+
+            enhanceParticles();
+        }
+
         // Enhanced features with graceful degradation
         function initEnhancedFeatures() {
             // Initialize Feather Icons with fallback
@@ -2826,6 +3152,12 @@
             createParticles();
             initVisualEffects();
             initPerformanceOptimization();
+            
+            // ✨ PHASE 2B: Initialize Advanced UX Features
+            initScrollBasedAnimations();
+            initMicroInteractions();
+            initProgressiveLoading();
+            initAdvancedScrollProgress();
         }
 
         // Animation system with multiple fallback strategies
