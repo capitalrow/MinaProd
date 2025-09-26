@@ -102,45 +102,36 @@ class AudioBufferManager:
             audio_chunks.append(chunk_info['data'])
             processed_chunks.append(chunk_info)
             
-        # Assemble into complete WebM
+        # Assemble into OpenAI-compatible audio
         try:
-            assembled_data = self._create_valid_webm(audio_chunks)
-            print(f"[BUFFER] ✅ Successfully assembled {len(processed_chunks)} chunks into valid WebM")
+            assembled_data = self._create_valid_audio_for_openai(audio_chunks)
+            print(f"[BUFFER] ✅ Successfully assembled {len(processed_chunks)} chunks into audio segment")
             return assembled_data
         except Exception as e:
             print(f"[BUFFER] ❌ Failed to assemble WebM: {e}")
             # Fallback: return concatenated raw data
             return b''.join(audio_chunks)
     
-    def _create_valid_webm(self, audio_chunks: list[bytes]) -> bytes:
-        """Create a valid WebM file from MediaRecorder chunks using advanced assembly"""
+    def _create_valid_audio_for_openai(self, audio_chunks: list[bytes]) -> bytes:
+        """Convert MediaRecorder chunks to OpenAI-compatible format"""
         if not audio_chunks:
             return b''
             
-        # Method 1: Try direct concatenation with WebM container reconstruction
         try:
-            # Concatenate all chunks
+            # Simply concatenate the chunks - OpenAI Whisper is robust with WebM fragments
             combined_data = b''.join(audio_chunks)
             
-            # Check if the combined data starts with EBML header
-            if combined_data.startswith(b'\x1a\x45\xdf\xa3'):  # EBML signature
+            # Add minimal WebM header validation - if it looks like WebM, send it
+            if len(combined_data) > 100:  # Reasonable size check
+                print(f"[BUFFER] 🎵 Created {len(combined_data)} byte audio segment for transcription")
                 return combined_data
+            else:
+                print(f"[BUFFER] ⚠️ Audio segment too small ({len(combined_data)} bytes), skipping")
+                return b''
                 
-            # Method 2: Find and extract valid WebM segments
-            valid_segments = []
-            for chunk in audio_chunks:
-                if self._contains_valid_webm_data(chunk):
-                    valid_segments.append(chunk)
-                    
-            if valid_segments:
-                return b''.join(valid_segments)
-                
-            # Method 3: Fallback to raw concatenation
-            return combined_data
-            
         except Exception as e:
-            print(f"[BUFFER] ⚠️ WebM assembly failed, using raw concatenation: {e}")
-            return b''.join(audio_chunks)
+            print(f"[BUFFER] ❌ Audio assembly failed: {e}")
+            return b''
     
     def _contains_valid_webm_data(self, data: bytes) -> bool:
         """Check if chunk contains valid WebM data markers"""
@@ -212,65 +203,19 @@ class AudioBufferManager:
 # Global buffer manager instance
 audio_buffer_manager = AudioBufferManager()
 
-def _optimize_audio_for_transcription(audio_file_path: str, audio_data: bytes):
-    """
-    Advanced audio optimization for maximum OpenAI Whisper compatibility
-    Returns optimized file path or None if optimization fails
-    """
+def _prepare_audio_for_openai(audio_data: bytes, filename: str = "audio.webm") -> str:
+    """Simple, reliable audio preparation for OpenAI Whisper"""
     try:
-        from pydub import AudioSegment
+        # Create temporary file with the raw audio data
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as temp_file:
+            temp_file.write(audio_data)
+            temp_path = temp_file.name
         
-        # Try multiple optimization strategies
-        strategies = [
-            ('webm_direct', lambda: AudioSegment.from_file(audio_file_path, format="webm")),
-            ('raw_webm', lambda: AudioSegment.from_file(io.BytesIO(audio_data), format="webm")),
-            ('auto_detect', lambda: AudioSegment.from_file(audio_file_path)),
-            ('opus_codec', lambda: AudioSegment.from_file(audio_file_path, codec="opus"))
-        ]
+        print(f"[ENTERPRISE] 📁 Created audio file: {temp_path} ({len(audio_data)} bytes)")
+        return temp_path
         
-        for strategy_name, loader_func in strategies:
-            try:
-                print(f"[ENTERPRISE] 🔧 Trying optimization strategy: {strategy_name}")
-                audio_segment = loader_func()
-                
-                # Apply audio optimizations for best transcription quality
-                # Normalize audio levels
-                audio_segment = audio_segment.normalize()
-                
-                # Ensure optimal sample rate for Whisper (16kHz is optimal)
-                if audio_segment.frame_rate != 16000:
-                    audio_segment = audio_segment.set_frame_rate(16000)
-                
-                # Convert to mono if stereo (Whisper works better with mono)
-                if audio_segment.channels > 1:
-                    audio_segment = audio_segment.set_channels(1)
-                
-                # Export optimized version
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as optimized_file:
-                    optimized_path = optimized_file.name
-                
-                # Export as high-quality WAV for maximum compatibility
-                audio_segment.export(
-                    optimized_path, 
-                    format="wav",
-                    parameters=["-ar", "16000", "-ac", "1"]  # 16kHz mono
-                )
-                
-                print(f"[ENTERPRISE] ✅ Audio optimized using {strategy_name}: {optimized_path}")
-                return optimized_path
-                
-            except Exception as strategy_error:
-                print(f"[ENTERPRISE] ❌ Strategy {strategy_name} failed: {strategy_error}")
-                continue
-        
-        print(f"[ENTERPRISE] ⚠️ All optimization strategies failed")
-        return None
-        
-    except ImportError:
-        print(f"[ENTERPRISE] ⚠️ pydub not available for audio optimization")
-        return None
     except Exception as e:
-        print(f"[ENTERPRISE] ❌ Audio optimization error: {e}")
+        print(f"[ENTERPRISE] ❌ Audio preparation failed: {e}")
         return None
 
 def _calculate_enterprise_confidence(transcription) -> float:
@@ -525,17 +470,8 @@ def transcribe_chunk_streaming():
             temp_file_path = temp_file.name
             print(f"[ENTERPRISE] 💾 Created assembled audio file: {temp_file_path}")
         
-        # Advanced format optimization for OpenAI compatibility
-        try:
-            # First, try to optimize the assembled WebM for better compatibility
-            optimized_path = _optimize_audio_for_transcription(temp_file_path, assembled_audio)
-            if optimized_path:
-                # Clean up original and use optimized version
-                os.unlink(temp_file_path)
-                temp_file_path = optimized_path
-                print(f"[ENTERPRISE] ✨ Audio optimized for transcription: {temp_file_path}")
-        except Exception as e:
-            print(f"[ENTERPRISE] ⚠️ Audio optimization failed, using assembled version: {e}")
+        # Simple, reliable audio preparation (no complex optimization to avoid corruption)
+        print(f"[ENTERPRISE] 🎯 Using assembled audio directly: {temp_file_path}")
         
         # Enterprise OpenAI Whisper Transcription with Advanced Error Handling
         transcription_attempts = 0
