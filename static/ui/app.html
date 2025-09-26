@@ -238,10 +238,15 @@
       
       function stopWave(){ if(raf) cancelAnimationFrame(raf), raf=null }
 
+      let isRecording = false;
+      let currentSocket = null;
+      let currentSessionId = null;
+
       function bindStart(btn){ 
         btn.addEventListener('click', async ()=>{
-          if(mediaRecorder && mediaRecorder.state!=='inactive'){ 
-            try{mediaRecorder.stop()}catch{} 
+          if(isRecording){ 
+            // Stop recording
+            stopRecording();
             return 
           }
           if(!(await ensureIO())){ 
@@ -250,26 +255,39 @@
             return 
           }
           
-          const socket=window.io({path:'/socket.io',transports:['polling'],upgrade:false,reconnection:true});
-          socket.on('connect',()=>{ 
+          currentSocket=window.io({path:'/socket.io',transports:['polling'],upgrade:false,reconnection:true});
+          currentSocket.on('connect',()=>{ 
             els.ws.textContent='Connected'; 
             els.ws.className='px-3 py-1 rounded-full bg-green-600/80';
-            const sid=String(Date.now()); 
-            els.sess.textContent=sid; 
-            socket.emit('join_session',{session_id:sid}) 
+            currentSessionId=String(Date.now()); 
+            els.sess.textContent=currentSessionId; 
+            currentSocket.emit('join_session',{session_id:currentSessionId}) 
           });
           
-          socket.on('server_hello',()=>{});
-          socket.on('interim_transcript',(data)=>{
+          currentSocket.on('server_hello',()=>{});
+          currentSocket.on('interim_transcript',(data)=>{
             if(!data||!data.text) return;
-            interimStream=data.text;
+            interimStream += ' ' + data.text;
             els.transcript.textContent=interimStream;
+            // Auto-scroll to bottom
+            els.transcript.scrollTop = els.transcript.scrollHeight;
           });
           
-          socket.on('final_transcript',(data)=>{
+          currentSocket.on('final_transcript',(data)=>{
             if(!data||!data.text) return;
-            Store.save({id:Date.now(),text:data.text,created:new Date().toISOString()});
-            interimStream='';
+            const finalText = interimStream + ' ' + data.text;
+            els.transcript.textContent=finalText;
+            Store.save({id:Date.now(),text:finalText,created:new Date().toISOString()});
+            els.transcript.scrollTop = els.transcript.scrollHeight;
+          });
+
+          currentSocket.on('session_joined',(data)=>{
+            console.log('Session joined:', data);
+          });
+
+          currentSocket.on('transcription_error',(data)=>{
+            els.note.classList.remove('hidden');
+            els.note.textContent='Transcription error: ' + (data.error || 'Unknown error');
           });
 
           try{
@@ -286,11 +304,19 @@
             mediaRecorder=new MediaRecorder(stream,{mimeType:'audio/webm;codecs=opus'});
             
             mediaRecorder.ondataavailable=(e)=>{
-              if(e.data.size>0) socket.emit('audio_chunk',e.data);
+              if(e.data.size>0 && currentSocket) currentSocket.emit('audio_chunk',e.data);
+            };
+            
+            mediaRecorder.onstop = () => {
+              // Finalize session when recording stops
+              if(currentSocket && currentSessionId) {
+                currentSocket.emit('finalize_session', {session_id: currentSessionId});
+              }
             };
             
             const timeslice = window.MINA_FEATURES?.RECORDER_TIMESLICE_MS || 250;
             mediaRecorder.start(timeslice);
+            isRecording = true;
             btn.textContent='Stop';
             $('#btnToggleMobile').textContent='Stop';
             
@@ -299,6 +325,45 @@
             els.note.textContent='Microphone access denied or unavailable';
           }
         })
+      }
+
+      function stopRecording() {
+        if(mediaRecorder && mediaRecorder.state !== 'inactive') {
+          try {
+            mediaRecorder.stop();
+          } catch(e) {
+            console.error('Error stopping recorder:', e);
+          }
+        }
+        
+        // Stop audio analysis
+        if(analyser) {
+          stopWave();
+          analyser = null;
+        }
+        
+        // Update UI
+        isRecording = false;
+        els.mic.textContent = 'Idle';
+        els.mic.className = 'px-3 py-1 rounded-full bg-slate-700/80';
+        $('#btnToggle').textContent = 'Start';
+        $('#btnToggleMobile').textContent = 'Start';
+        
+        // Disconnect socket after a delay to allow finalization
+        if(currentSocket) {
+          setTimeout(() => {
+            if(currentSocket) {
+              currentSocket.disconnect();
+              currentSocket = null;
+            }
+            els.ws.textContent = 'Disconnected';
+            els.ws.className = 'px-3 py-1 rounded-full bg-slate-700/80';
+          }, 1000);
+        }
+        
+        currentSessionId = null;
+        
+        toast('Recording stopped and session finalized');
       }
 
       bindStart($('#btnToggle'));

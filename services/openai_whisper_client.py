@@ -104,11 +104,13 @@ def transcribe_bytes(
     while True:
         attempt += 1
         try:
-            resp = client.audio.transcriptions.create(
-                model=mdl,
-                file=fileobj,  # correct for modern SDK
-                language=language or os.getenv("LANGUAGE_HINT") or None,
-            )
+            # Build params conditionally to avoid type issues
+            params = {"model": mdl, "file": fileobj}
+            lang = language or os.getenv("LANGUAGE_HINT")
+            if lang:
+                params["language"] = lang
+            
+            resp = client.audio.transcriptions.create(**params)
             return (getattr(resp, "text", "") or "").strip()
         except OpenAIError:
             if attempt >= max_retries:
