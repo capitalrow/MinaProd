@@ -5284,6 +5284,386 @@
                 });
             });
 
+            // 🌟 REVOLUTIONARY PRICING SECTION - JAVASCRIPT SYSTEM
+            
+            // ✨ Cursor-Tracked Ambient Lighting System
+            function initializeCursorTracking() {
+                const pricingSection = document.getElementById('pricing');
+                if (!pricingSection) return;
+
+                pricingSection.addEventListener('mousemove', (e) => {
+                    const rect = pricingSection.getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / rect.width) * 100;
+                    const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+                    // Update ambient lighting for all cards
+                    document.querySelectorAll('.card-ambient-light, .offer-particle-bg, .cta-particles').forEach(element => {
+                        element.style.setProperty('--mouse-x', `${x}%`);
+                        element.style.setProperty('--mouse-y', `${y}%`);
+                    });
+                });
+            }
+
+            // 🧠 Team Intelligence & Smart Recommendations
+            function initializeTeamIntelligence() {
+                const teamSizeSlider = document.getElementById('teamSizeInput');
+                const usageSlider = document.getElementById('usageInput');
+                const teamSizeDisplay = document.getElementById('teamSizeDisplay');
+                const usageDisplay = document.getElementById('usageDisplay');
+                const recommendation = document.getElementById('smartRecommendation');
+                
+                if (!teamSizeSlider || !usageSlider) return;
+
+                function updateRecommendation() {
+                    const teamSize = parseInt(teamSizeSlider.value);
+                    const usage = parseInt(usageSlider.value);
+                    
+                    teamSizeDisplay.textContent = teamSize;
+                    usageDisplay.textContent = usage;
+
+                    let recommendedPlan = 'starter';
+                    let reasonText = 'Starter is perfect for your needs';
+
+                    if (teamSize <= 10 && usage <= 20) {
+                        recommendedPlan = 'starter';
+                        reasonText = `For ${teamSize} users with ${usage}h monthly usage, <strong>Starter</strong> provides excellent value`;
+                    } else if (teamSize <= 50 && usage <= 100) {
+                        recommendedPlan = 'professional';
+                        reasonText = `Your ${teamSize}-person team needs <strong>Professional</strong> for optimal productivity`;
+                    } else {
+                        recommendedPlan = 'enterprise';
+                        reasonText = `Enterprise features are essential for ${teamSize} users and ${usage}h usage`;
+                    }
+
+                    // Show recommendation
+                    recommendation.style.display = 'block';
+                    recommendation.querySelector('.recommendation-text').innerHTML = reasonText;
+
+                    // Highlight recommended card
+                    document.querySelectorAll('.pricing-card-3d').forEach(card => {
+                        card.classList.remove('recommended');
+                    });
+                    
+                    const recommendedCard = document.querySelector(`[data-plan="${recommendedPlan}"]`);
+                    if (recommendedCard) {
+                        recommendedCard.classList.add('recommended');
+                        
+                        gsap.to(recommendedCard, {
+                            scale: 1.02,
+                            duration: 0.4,
+                            ease: 'power2.out'
+                        });
+                        
+                        setTimeout(() => {
+                            gsap.to(recommendedCard, {
+                                scale: 1,
+                                duration: 0.4,
+                                ease: 'power2.out'
+                            });
+                        }, 1000);
+                    }
+
+                    // Update ROI calculations
+                    updateROICalculations(teamSize, usage);
+                }
+
+                teamSizeSlider.addEventListener('input', updateRecommendation);
+                usageSlider.addEventListener('input', updateRecommendation);
+                
+                // Initial calculation
+                updateRecommendation();
+            }
+
+            // 📊 ROI Calculation Engine
+            function updateROICalculations(teamSize, monthlyHours) {
+                const plans = [
+                    { 
+                        id: 'starter', 
+                        price: parseInt(document.querySelector('[data-plan="starter"]').dataset.monthly),
+                        roiBase: parseFloat(document.querySelector('[data-plan="starter"]').dataset.roiBase),
+                        limit: 10
+                    },
+                    { 
+                        id: 'professional', 
+                        price: parseInt(document.querySelector('[data-plan="professional"]').dataset.monthly),
+                        roiBase: parseFloat(document.querySelector('[data-plan="professional"]').dataset.roiBase),
+                        limit: 50
+                    },
+                    { 
+                        id: 'enterprise', 
+                        price: parseInt(document.querySelector('[data-plan="enterprise"]').dataset.monthly),
+                        roiBase: parseFloat(document.querySelector('[data-plan="enterprise"]').dataset.roiBase),
+                        limit: Infinity
+                    }
+                ];
+
+                plans.forEach(plan => {
+                    if (teamSize <= plan.limit) {
+                        const monthlyCost = plan.price * teamSize;
+                        const timeSavedHours = monthlyHours * 0.3; // 30% efficiency gain
+                        const hourlyRate = 75; // Average hourly rate
+                        const monthlySavings = timeSavedHours * hourlyRate * teamSize;
+                        const roi = ((monthlySavings - monthlyCost) / monthlyCost * 100);
+                        const roiPercentage = Math.max(120, Math.min(450, roi * plan.roiBase));
+
+                        const roiMeter = document.querySelector(`#roiPreview${plan.id.charAt(0).toUpperCase() + plan.id.slice(1)} .roi-fill`);
+                        const roiText = document.querySelector(`#roiPreview${plan.id.charAt(0).toUpperCase() + plan.id.slice(1)} .roi-text`);
+                        
+                        if (roiMeter && roiText) {
+                            gsap.to(roiMeter, {
+                                width: `${Math.min(100, roiPercentage / 4)}%`,
+                                duration: 1.2,
+                                ease: 'power2.out'
+                            });
+                            
+                            gsap.to({ value: 0 }, {
+                                duration: 1.2,
+                                value: roiPercentage,
+                                ease: 'power2.out',
+                                onUpdate: function() {
+                                    roiText.textContent = `ROI: ${Math.round(this.targets()[0].value)}%`;
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+
+            // 🎪 Categorized Features Interactive System
+            function initializeCategorizedFeatures() {
+                document.querySelectorAll('.category-header').forEach(header => {
+                    header.addEventListener('click', () => {
+                        const isExpanded = header.getAttribute('aria-expanded') === 'true';
+                        const targetId = header.getAttribute('aria-controls');
+                        const targetContent = document.getElementById(targetId);
+                        const toggle = header.querySelector('.category-toggle');
+                        
+                        if (!targetContent) return;
+
+                        // Toggle state
+                        header.setAttribute('aria-expanded', !isExpanded);
+                        
+                        if (isExpanded) {
+                            // Collapse
+                            gsap.to(targetContent, {
+                                height: 0,
+                                opacity: 0,
+                                duration: 0.3,
+                                ease: 'power2.inOut',
+                                onComplete: () => {
+                                    targetContent.style.display = 'none';
+                                }
+                            });
+                        } else {
+                            // Expand
+                            targetContent.style.display = 'block';
+                            const fullHeight = targetContent.scrollHeight;
+                            
+                            gsap.fromTo(targetContent, 
+                                { height: 0, opacity: 0 },
+                                { 
+                                    height: fullHeight, 
+                                    opacity: 1,
+                                    duration: 0.3,
+                                    ease: 'power2.inOut'
+                                }
+                            );
+                        }
+
+                        // Animate toggle icon
+                        gsap.to(toggle, {
+                            rotation: isExpanded ? 0 : 180,
+                            duration: 0.2,
+                            ease: 'power2.out'
+                        });
+                    });
+                });
+
+                // Feature hover effects
+                document.querySelectorAll('.feature-item-3d').forEach(item => {
+                    item.addEventListener('mouseenter', () => {
+                        gsap.to(item, {
+                            x: 8,
+                            duration: 0.2,
+                            ease: 'power2.out'
+                        });
+                    });
+
+                    item.addEventListener('mouseleave', () => {
+                        gsap.to(item, {
+                            x: 0,
+                            duration: 0.2,
+                            ease: 'power2.out'
+                        });
+                    });
+                });
+            }
+
+            // 🎨 3D Card Interactive System
+            function initialize3DCards() {
+                document.querySelectorAll('.pricing-card-3d').forEach(card => {
+                    card.addEventListener('mouseenter', () => {
+                        gsap.to(card, {
+                            rotationY: 5,
+                            rotationX: 5,
+                            z: 50,
+                            duration: 0.4,
+                            ease: 'power2.out',
+                            transformOrigin: 'center center'
+                        });
+                    });
+
+                    card.addEventListener('mouseleave', () => {
+                        gsap.to(card, {
+                            rotationY: 0,
+                            rotationX: 0,
+                            z: 0,
+                            duration: 0.4,
+                            ease: 'power2.out'
+                        });
+                    });
+
+                    card.addEventListener('mousemove', (e) => {
+                        const rect = card.getBoundingClientRect();
+                        const centerX = rect.left + rect.width / 2;
+                        const centerY = rect.top + rect.height / 2;
+                        const x = e.clientX - centerX;
+                        const y = e.clientY - centerY;
+
+                        const rotateX = (y / rect.height) * -10;
+                        const rotateY = (x / rect.width) * 10;
+
+                        gsap.to(card, {
+                            rotationX: rotateX,
+                            rotationY: rotateY,
+                            duration: 0.1,
+                            ease: 'power1.out'
+                        });
+                    });
+                });
+            }
+
+            // 🚀 Canvas Particle System
+            function initializeParticleSystem() {
+                const canvas = document.getElementById('pricingParticles');
+                if (!canvas) return;
+
+                const ctx = canvas.getContext('2d');
+                const particles = [];
+                const particleCount = 50;
+
+                function resizeCanvas() {
+                    const rect = canvas.parentElement.getBoundingClientRect();
+                    canvas.width = rect.width;
+                    canvas.height = rect.height;
+                }
+
+                function createParticle() {
+                    return {
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        vx: (Math.random() - 0.5) * 0.5,
+                        vy: (Math.random() - 0.5) * 0.5,
+                        size: Math.random() * 2 + 1,
+                        opacity: Math.random() * 0.3 + 0.1,
+                        hue: Math.random() * 60 + 200 // Blue spectrum
+                    };
+                }
+
+                function initParticles() {
+                    for (let i = 0; i < particleCount; i++) {
+                        particles.push(createParticle());
+                    }
+                }
+
+                function updateParticles() {
+                    particles.forEach(particle => {
+                        particle.x += particle.vx;
+                        particle.y += particle.vy;
+
+                        if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
+                        if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
+                    });
+                }
+
+                function renderParticles() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    particles.forEach(particle => {
+                        ctx.beginPath();
+                        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                        ctx.fillStyle = `hsla(${particle.hue}, 70%, 60%, ${particle.opacity})`;
+                        ctx.fill();
+                    });
+
+                    // Draw connections
+                    particles.forEach((particle, i) => {
+                        particles.slice(i + 1).forEach(otherParticle => {
+                            const dx = particle.x - otherParticle.x;
+                            const dy = particle.y - otherParticle.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+
+                            if (distance < 100) {
+                                ctx.beginPath();
+                                ctx.moveTo(particle.x, particle.y);
+                                ctx.lineTo(otherParticle.x, otherParticle.y);
+                                ctx.strokeStyle = `hsla(220, 70%, 60%, ${0.1 * (1 - distance / 100)})`;
+                                ctx.lineWidth = 1;
+                                ctx.stroke();
+                            }
+                        });
+                    });
+                }
+
+                function animate() {
+                    updateParticles();
+                    renderParticles();
+                    requestAnimationFrame(animate);
+                }
+
+                window.addEventListener('resize', resizeCanvas);
+                resizeCanvas();
+                initParticles();
+                animate();
+            }
+
+            // 🎯 Offer Banner Interactions
+            function initializeOfferBanner() {
+                const offerBanner = document.getElementById('offerBanner');
+                const dismissBtn = offerBanner?.querySelector('.offer-dismiss');
+                
+                if (dismissBtn) {
+                    dismissBtn.addEventListener('click', () => {
+                        gsap.to(offerBanner, {
+                            opacity: 0,
+                            height: 0,
+                            marginTop: 0,
+                            marginBottom: 0,
+                            duration: 0.4,
+                            ease: 'power2.inOut',
+                            onComplete: () => {
+                                offerBanner.style.display = 'none';
+                            }
+                        });
+                    });
+                }
+            }
+
+            // 🌟 Initialize All Revolutionary Systems
+            function initializeRevolutionaryPricing() {
+                initializeCursorTracking();
+                initializeTeamIntelligence();
+                initializeCategorizedFeatures();
+                initialize3DCards();
+                initializeParticleSystem();
+                initializeOfferBanner();
+
+                console.log('🌟 Revolutionary Pricing System Initialized!');
+            }
+
+            // Launch the revolutionary system
+            document.addEventListener('DOMContentLoaded', initializeRevolutionaryPricing);
+
             // ✨ ENHANCED: Badge and Stats Micro-interactions
             document.querySelectorAll('.hero-badge, .stat-item, .trust-item').forEach(element => {
                 element.addEventListener('mouseenter', () => {
@@ -5293,12 +5673,12 @@
                         ease: 'back.out(1.7)'
                     });
                 });
-                
+
                 element.addEventListener('mouseleave', () => {
                     gsap.to(element, {
                         scale: 1,
                         duration: 0.2,
-                        ease: 'power2.out'
+                        ease: 'back.out(1.7)'
                     });
                 });
             });
