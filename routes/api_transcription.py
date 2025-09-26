@@ -438,40 +438,35 @@ def transcribe_chunk_streaming():
                 'type': 'error'
             }), 413
         
-        # Enterprise-Grade Audio Buffering and Assembly System
-        print(f"[ENTERPRISE] 📦 Adding chunk {chunk_id} to buffer for session {session_id}")
+        # FINAL FIX: Convert WebM chunks to WAV for OpenAI compatibility
+        print(f"[ENTERPRISE] 🎯 Processing chunk: {len(audio_data)} bytes")
         
-        # Add chunk to buffer and check if we should process
-        should_process, assembled_audio = audio_buffer_manager.add_chunk(session_id, audio_data, chunk_id)
-        
-        if not should_process:
-            # Buffer not ready for processing - return partial response
-            buffer_stats = audio_buffer_manager.get_session_stats(session_id)
-            print(f"[ENTERPRISE] ⏳ Buffering chunk {chunk_id} - {buffer_stats['buffer_size']} chunks pending")
+        try:
+            from pydub import AudioSegment
+            import io
             
+            # Convert WebM chunk to WAV format
+            audio_segment = AudioSegment.from_file(io.BytesIO(audio_data), format="webm")
+            
+            # Create WAV file for OpenAI
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
+                audio_segment.export(temp_file.name, format="wav")
+                temp_file_path = temp_file.name
+                
+            print(f"[ENTERPRISE] ✅ Converted to WAV: {temp_file_path}")
+            
+        except Exception as conversion_error:
+            # If conversion fails, skip this chunk
+            print(f"[ENTERPRISE] ⚠️ Skipping invalid chunk: {conversion_error}")
             return jsonify({
                 'text': '',
                 'confidence': 0,
                 'processing_time': time.time() - start_time,
                 'chunk_id': chunk_id,
                 'session_id': session_id,
-                'type': 'buffering',
-                'message': f'Buffering audio chunks ({buffer_stats["buffer_size"]} pending)',
-                'buffer_stats': buffer_stats
+                'type': 'skipped',
+                'message': 'Invalid audio chunk skipped'
             })
-        
-        # Buffer ready for processing - create temporary file for OpenAI
-        print(f"[ENTERPRISE] 🎯 Processing assembled audio: {len(assembled_audio)} bytes")
-        
-        # Create temporary file with assembled audio
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as temp_file:
-            temp_file.write(assembled_audio)
-            temp_file.flush()
-            temp_file_path = temp_file.name
-            print(f"[ENTERPRISE] 💾 Created assembled audio file: {temp_file_path}")
-        
-        # Simple, reliable audio preparation (no complex optimization to avoid corruption)
-        print(f"[ENTERPRISE] 🎯 Using assembled audio directly: {temp_file_path}")
         
         # Enterprise OpenAI Whisper Transcription with Advanced Error Handling
         transcription_attempts = 0
