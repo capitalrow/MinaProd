@@ -194,6 +194,28 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"Failed to register dashboard routes: {e}")
 
+    # Register API blueprints for REST endpoints
+    try:
+        from routes.api_meetings import api_meetings_bp
+        app.register_blueprint(api_meetings_bp)
+        app.logger.info("Meetings API routes registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register meetings API routes: {e}")
+    
+    try:
+        from routes.api_tasks import api_tasks_bp
+        app.register_blueprint(api_tasks_bp)
+        app.logger.info("Tasks API routes registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register tasks API routes: {e}")
+    
+    try:
+        from routes.api_analytics import api_analytics_bp
+        app.register_blueprint(api_analytics_bp)
+        app.logger.info("Analytics API routes registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register analytics API routes: {e}")
+
     # other blueprints (guarded)
     _optional = [
         ("routes.final_upload", "final_bp", "/api"),
