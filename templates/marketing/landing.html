@@ -812,6 +812,25 @@
             transform: translateY(30px);
         }
 
+        /* ✨ ENHANCED: Animation states for all hero elements */
+        .hero-stats,
+        .hero-cta,
+        .hero-badge {
+            opacity: 0;
+        }
+        
+        .hero-stats {
+            transform: translateY(20px);
+        }
+        
+        .hero-cta {
+            transform: translateY(25px);
+        }
+        
+        .hero-badge {
+            transform: scale(0.8);
+        }
+
         .hero-stats {
             display: flex;
             justify-content: center;
@@ -3723,40 +3742,40 @@
                 delay: 1.7
             });
 
-            // Features section animations
+            // ✨ ENHANCED: Features section animations with improved timing
             ScrollTrigger.batch('.feature-card', {
                 onEnter: (elements) => {
                     gsap.to(elements, {
                         opacity: 1,
                         y: 0,
-                        duration: 0.8,
-                        ease: 'power3.out',
-                        stagger: 0.15
+                        duration: 1.0,
+                        ease: 'power4.out',
+                        stagger: 0.12
                     });
                 }
             });
 
-            // Section titles animations
+            // ✨ ENHANCED: Section titles with sophisticated entrance
             ScrollTrigger.batch('.section-title', {
                 onEnter: (elements) => {
                     gsap.to(elements, {
                         opacity: 1,
                         y: 0,
-                        duration: 0.8,
-                        ease: 'power3.out'
+                        duration: 1.2,
+                        ease: 'power4.out'
                     });
                 }
             });
 
-            // Section subtitles animations
+            // ✨ ENHANCED: Section subtitles with refined timing
             ScrollTrigger.batch('.section-subtitle', {
                 onEnter: (elements) => {
                     gsap.to(elements, {
                         opacity: 1,
                         y: 0,
-                        duration: 0.8,
+                        duration: 1.0,
                         ease: 'power3.out',
-                        delay: 0.2
+                        delay: 0.15
                     });
                 }
             });
@@ -3772,6 +3791,75 @@
                         stagger: 0.2
                     });
                 }
+            });
+
+            // ✨ ENHANCED: Sophisticated Hero Entrance Animations
+            gsap.timeline({ delay: 0.3 })
+                .to('.hero-title', {
+                    opacity: 1,
+                    y: 0,
+                    duration: 1.2,
+                    ease: 'power4.out'
+                })
+                .to('.hero-subtitle', {
+                    opacity: 1,
+                    y: 0,
+                    duration: 1.0,
+                    ease: 'power3.out'
+                }, '-=0.8')
+                .to('.hero-stats', {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.8,
+                    ease: 'power2.out'
+                }, '-=0.6')
+                .to('.hero-cta', {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.8,
+                    ease: 'back.out(1.7)',
+                    stagger: 0.2
+                }, '-=0.4')
+                .to('.hero-badge', {
+                    opacity: 1,
+                    scale: 1,
+                    duration: 0.6,
+                    ease: 'back.out(1.7)'
+                }, '-=0.6');
+
+            // ✨ ENHANCED: Button Micro-interactions
+            document.querySelectorAll('.cta-button').forEach(button => {
+                button.addEventListener('mouseenter', () => {
+                    gsap.to(button, {
+                        scale: 1.05,
+                        duration: 0.3,
+                        ease: 'power2.out'
+                    });
+                });
+                
+                button.addEventListener('mouseleave', () => {
+                    gsap.to(button, {
+                        scale: 1,
+                        duration: 0.3,
+                        ease: 'power2.out'
+                    });
+                });
+                
+                button.addEventListener('mousedown', () => {
+                    gsap.to(button, {
+                        scale: 0.95,
+                        duration: 0.1,
+                        ease: 'power2.out'
+                    });
+                });
+                
+                button.addEventListener('mouseup', () => {
+                    gsap.to(button, {
+                        scale: 1.05,
+                        duration: 0.2,
+                        ease: 'back.out(1.7)'
+                    });
+                });
             });
         }
 
@@ -4270,15 +4358,15 @@
 
             toggle.addEventListener('change', updatePricing);
             
-            // Animate pricing cards on scroll
+            // ✨ ENHANCED: Pricing cards with sophisticated staggering
             ScrollTrigger.batch('.pricing-card', {
                 onEnter: (elements) => {
                     gsap.to(elements, {
                         opacity: 1,
                         y: 0,
-                        duration: 0.8,
-                        ease: 'power3.out',
-                        stagger: 0.2
+                        duration: 1.0,
+                        ease: 'power4.out',
+                        stagger: 0.15
                     });
                 }
             });
