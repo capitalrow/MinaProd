@@ -76,18 +76,22 @@
         }
 
         .auth-title {
-            font-size: var(--mina-font-size-3xl);
+            font-size: clamp(2rem, 5vw, 2.5rem);
             font-weight: var(--mina-font-weight-bold);
             color: var(--mina-text-primary);
-            margin: 0 0 var(--mina-space-2) 0;
+            margin: 0 0 var(--mina-space-3) 0;
             font-family: var(--mina-font-family-display);
+            letter-spacing: -0.02em;
+            line-height: 1.2;
         }
 
         .auth-subtitle {
-            font-size: var(--mina-font-size-base);
+            font-size: clamp(1rem, 3vw, 1.125rem);
             color: var(--mina-text-secondary);
             margin: 0 0 var(--mina-space-6) 0;
             line-height: var(--mina-line-height-relaxed);
+            letter-spacing: 0.01em;
+            font-weight: var(--mina-font-weight-medium);
         }
 
         /* Enhanced Form Styling */
@@ -97,24 +101,28 @@
 
         .form-label {
             display: block;
-            font-size: var(--mina-font-size-sm);
-            font-weight: var(--mina-font-weight-medium);
+            font-size: clamp(0.875rem, 2.5vw, 1rem);
+            font-weight: var(--mina-font-weight-semibold);
             color: var(--mina-text-primary);
-            margin-bottom: var(--mina-space-2);
-            letter-spacing: var(--mina-letter-spacing-wide);
+            margin-bottom: var(--mina-space-3);
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+            font-size: 0.8rem;
         }
 
         .form-input {
             width: 100%;
-            padding: var(--mina-space-4);
+            padding: clamp(1rem, 3vw, 1.25rem);
             border: 2px solid var(--mina-border-primary);
             border-radius: var(--mina-radius-md);
-            font-size: var(--mina-font-size-base);
+            font-size: clamp(1rem, 3vw, 1.125rem);
             color: #1e293b !important;
             background: #ffffff !important;
             transition: all var(--mina-transition-base);
             font-family: var(--mina-font-family-sans);
             box-sizing: border-box;
+            letter-spacing: 0.01em;
+            line-height: 1.5;
         }
 
         .form-input:focus {
@@ -165,29 +173,33 @@
         }
 
         .form-checkbox-label {
-            font-size: var(--mina-font-size-sm);
+            font-size: clamp(0.875rem, 2.5vw, 1rem);
             color: var(--mina-text-secondary);
             cursor: pointer;
             user-select: none;
+            letter-spacing: 0.01em;
+            font-weight: var(--mina-font-weight-medium);
         }
 
         /* Enhanced Button */
         .btn-primary {
             width: 100%;
-            padding: var(--mina-space-4) var(--mina-space-6);
+            padding: clamp(1rem, 3vw, 1.25rem) var(--mina-space-6);
             background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
             color: white;
             border: none;
             border-radius: var(--mina-radius-md);
-            font-size: var(--mina-font-size-base);
-            font-weight: var(--mina-font-weight-semibold);
+            font-size: clamp(1rem, 3vw, 1.125rem);
+            font-weight: var(--mina-font-weight-bold);
             font-family: var(--mina-font-family-sans);
             cursor: pointer;
             transition: all var(--mina-transition-base);
             text-transform: none;
-            letter-spacing: var(--mina-letter-spacing-normal);
+            letter-spacing: 0.025em;
             box-shadow: var(--mina-shadow-sm);
-            min-height: 48px;
+            min-height: clamp(48px, 12vw, 56px);
+            text-transform: uppercase;
+            font-size: 0.9rem;
         }
 
         .btn-primary:hover {
