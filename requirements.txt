@@ -28,3 +28,6 @@ socketio
 sqlalchemy
 websocket
 websockets
+beautifulsoup4
+requests
+werkzeug
