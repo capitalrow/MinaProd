@@ -882,6 +882,979 @@
             cursor: pointer;
         }
 
+        /* 🌟 REVOLUTIONARY PRICING SECTION - 3D SYSTEM */
+        
+        /* ✨ Sophisticated Offer Banner - Replacing Harsh Pink */
+        .offer-banner-3d {
+            background: linear-gradient(135deg, 
+                rgba(37, 99, 235, 0.08) 0%,
+                rgba(59, 130, 246, 0.12) 50%,
+                rgba(37, 99, 235, 0.08) 100%);
+            border: 1px solid rgba(37, 99, 235, 0.15);
+            border-radius: var(--mina-radius-xl);
+            margin: var(--mina-space-6) 0 var(--mina-space-8) 0;
+            backdrop-filter: blur(12px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .offer-content-3d {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--mina-space-4);
+            padding: var(--mina-space-4) var(--mina-space-6);
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 2;
+        }
+
+        .offer-particle-bg {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                rgba(37, 99, 235, 0.05) 0%, 
+                transparent 40%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .offer-banner-3d:hover .offer-particle-bg {
+            opacity: 1;
+        }
+
+        .offer-badge-professional {
+            display: flex;
+            align-items: center;
+            gap: var(--mina-space-2);
+            background: var(--primary-600);
+            color: white;
+            padding: var(--mina-space-2) var(--mina-space-4);
+            border-radius: var(--mina-radius-full);
+            font-size: var(--mina-font-size-sm);
+            font-weight: var(--mina-font-weight-semibold);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        }
+
+        .offer-text-elegant {
+            font-size: var(--mina-font-size-lg);
+            font-weight: var(--mina-font-weight-medium);
+            color: var(--neutral-800);
+        }
+
+        .offer-savings-highlight {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            padding: var(--mina-space-2) var(--mina-space-4);
+            border-radius: var(--mina-radius-md);
+            font-size: var(--mina-font-size-sm);
+            font-weight: var(--mina-font-weight-semibold);
+        }
+
+        .offer-dismiss {
+            background: transparent;
+            border: none;
+            color: var(--neutral-500);
+            cursor: pointer;
+            padding: var(--mina-space-2);
+            border-radius: var(--mina-radius-full);
+            transition: all 0.2s ease;
+            margin-left: auto;
+        }
+
+        .offer-dismiss:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--neutral-700);
+        }
+
+        /* ✨ Team Intelligence & Customization */
+        .pricing-intelligence {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: var(--mina-radius-xl);
+            padding: var(--mina-space-6);
+            margin-bottom: var(--mina-space-8);
+            position: relative;
+        }
+
+        .smart-recommendation {
+            background: linear-gradient(135deg, #EBF4FF, #DBEAFE);
+            border: 1px solid var(--primary-200);
+            border-radius: var(--mina-radius-lg);
+            padding: var(--mina-space-4);
+            margin-bottom: var(--mina-space-4);
+            animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .recommendation-content {
+            display: flex;
+            align-items: center;
+            gap: var(--mina-space-3);
+        }
+
+        .recommendation-icon {
+            width: 20px;
+            height: 20px;
+            color: var(--primary-600);
+        }
+
+        .team-inputs {
+            display: flex;
+            gap: var(--mina-space-8);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .input-group-inline {
+            display: flex;
+            align-items: center;
+            gap: var(--mina-space-3);
+        }
+
+        .input-label-small {
+            font-size: var(--mina-font-size-sm);
+            font-weight: var(--mina-font-weight-medium);
+            color: var(--neutral-700);
+        }
+
+        .smart-slider {
+            width: 100px;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--neutral-200);
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        .smart-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-600);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .slider-display {
+            font-weight: var(--mina-font-weight-semibold);
+            color: var(--primary-600);
+            min-width: 30px;
+            text-align: center;
+        }
+
+        /* 🚀 3D INTERACTIVE PRICING GRID */
+        .pricing-grid-3d {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: var(--mina-space-8);
+            position: relative;
+            perspective: 1200px;
+            margin: var(--mina-space-8) 0;
+        }
+
+        .pricing-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* 🎨 3D PRICING CARDS */
+        .pricing-card-3d {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: var(--mina-radius-xl);
+            position: relative;
+            transform-style: preserve-3d;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 2;
+            overflow: hidden;
+        }
+
+        .pricing-card-3d:hover {
+            transform: translateY(-12px) rotateX(5deg) rotateY(5deg);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15),
+                        0 10px 25px rgba(37, 99, 235, 0.1);
+        }
+
+        .featured-3d {
+            transform: scale(1.05) translateY(-10px);
+            border-color: var(--primary-200);
+            box-shadow: 0 20px 50px rgba(37, 99, 235, 0.15);
+        }
+
+        .featured-3d:hover {
+            transform: scale(1.05) translateY(-20px) rotateX(5deg) rotateY(5deg);
+        }
+
+        .enterprise-3d {
+            border: 2px solid transparent;
+            background: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)) padding-box,
+                        linear-gradient(135deg, #8B5CF6, #3B82F6) border-box;
+        }
+
+        .card-3d-inner {
+            padding: var(--mina-space-8);
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ✨ AMBIENT LIGHTING SYSTEM */
+        .card-ambient-light {
+            position: absolute;
+            inset: 0;
+            border-radius: var(--mina-radius-xl);
+            background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                rgba(37, 99, 235, 0.03) 0%, 
+                transparent 40%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .featured-light {
+            background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                rgba(37, 99, 235, 0.06) 0%, 
+                transparent 40%);
+        }
+
+        .enterprise-light {
+            background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                rgba(139, 92, 246, 0.06) 0%, 
+                transparent 40%);
+        }
+
+        .pricing-card-3d:hover .card-ambient-light {
+            opacity: 1;
+        }
+
+        /* 🎯 TIER INDICATORS */
+        .plan-tier-indicator {
+            position: absolute;
+            top: var(--mina-space-4);
+            right: var(--mina-space-4);
+        }
+
+        .tier-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+        }
+
+        .tier-starter {
+            background: #10B981;
+        }
+
+        .tier-professional {
+            background: var(--primary-600);
+        }
+
+        .tier-enterprise {
+            background: #8B5CF6;
+        }
+
+        /* 🏆 BADGES */
+        .popular-badge-3d, .enterprise-badge-3d {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-600);
+            color: white;
+            padding: var(--mina-space-3) var(--mina-space-6);
+            border-radius: var(--mina-radius-full);
+            font-size: var(--mina-font-size-sm);
+            font-weight: var(--mina-font-weight-bold);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            border: 2px solid white;
+            display: flex;
+            align-items: center;
+            gap: var(--mina-space-2);
+        }
+
+        .enterprise-badge-3d {
+            background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .badge-icon {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* 💰 PRICING DISPLAY */
+        .plan-header-3d {
+            text-align: center;
+            margin-bottom: var(--mina-space-6);
+        }
+
+        .plan-name-3d {
+            font-size: var(--mina-font-size-2xl);
+            font-weight: var(--mina-font-weight-bold);
+            color: var(--neutral-900);
+            margin-bottom: var(--mina-space-2);
+        }
+
+        .featured-name {
+            background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .enterprise-name {
+            background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .plan-description-3d {
+            color: var(--neutral-600);
+            font-size: var(--mina-font-size-lg);
+            margin-bottom: var(--mina-space-4);
+        }
+
+        .price-container {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: var(--mina-space-1);
+            margin-bottom: var(--mina-space-2);
+        }
+
+        .price-currency {
+            font-size: var(--mina-font-size-xl);
+            font-weight: var(--mina-font-weight-semibold);
+            color: var(--neutral-700);
+        }
+
+        .price-amount-3d {
+            font-size: 3.5rem;
+            font-weight: var(--mina-font-weight-black);
+            color: var(--neutral-900);
+            line-height: 1;
+        }
+
+        .price-period {
+            font-size: var(--mina-font-size-lg);
+            color: var(--neutral-600);
+        }
+
+        /* 📊 ROI PREVIEW */
+        .roi-preview {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: var(--mina-radius-lg);
+            padding: var(--mina-space-3);
+            margin-top: var(--mina-space-4);
+        }
+
+        .roi-meter {
+            width: 100%;
+            height: 6px;
+            background: rgba(16, 185, 129, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: var(--mina-space-2);
+        }
+
+        .roi-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10B981, #059669);
+            border-radius: 3px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .enterprise-meter .roi-fill {
+            background: linear-gradient(90deg, #8B5CF6, #7C3AED);
+        }
+
+        .roi-text {
+            font-size: var(--mina-font-size-sm);
+            color: #059669;
+            font-weight: var(--mina-font-weight-medium);
+        }
+
+        /* 🎯 REVOLUTIONARY CATEGORIZED FEATURES */
+        .plan-features-3d {
+            margin-bottom: var(--mina-space-6);
+        }
+
+        .features-category {
+            margin-bottom: var(--mina-space-4);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: var(--mina-radius-lg);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .features-category:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: var(--mina-space-3);
+            width: 100%;
+            padding: var(--mina-space-4);
+            background: rgba(248, 250, 252, 0.8);
+            border: none;
+            cursor: pointer;
+            font-size: var(--mina-font-size-base);
+            font-weight: var(--mina-font-weight-semibold);
+            color: var(--neutral-800);
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+
+        .category-header:hover {
+            background: rgba(241, 245, 249, 0.9);
+        }
+
+        .category-header[aria-expanded="true"] {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(59, 130, 246, 0.08));
+            color: var(--primary-700);
+        }
+
+        .category-icon {
+            width: 18px;
+            height: 18px;
+            color: var(--primary-600);
+        }
+
+        .category-title {
+            flex: 1;
+        }
+
+        .category-badge {
+            background: var(--primary-100);
+            color: var(--primary-700);
+            padding: 2px 8px;
+            border-radius: var(--mina-radius-sm);
+            font-size: var(--mina-font-size-xs);
+            font-weight: var(--mina-font-weight-semibold);
+        }
+
+        .category-badge.enterprise {
+            background: rgba(139, 92, 246, 0.1);
+            color: #7C3AED;
+        }
+
+        .category-badge.security {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+        }
+
+        .category-toggle {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.2s ease;
+        }
+
+        .category-header[aria-expanded="true"] .category-toggle {
+            transform: rotate(180deg);
+        }
+
+        .category-features {
+            padding: 0 var(--mina-space-4) var(--mina-space-4);
+            background: white;
+        }
+
+        /* 🌟 3D FEATURE ITEMS */
+        .feature-item-3d {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--mina-space-3);
+            padding: var(--mina-space-3) 0;
+            transition: all 0.2s ease;
+            border-radius: var(--mina-radius-md);
+            position: relative;
+        }
+
+        .feature-item-3d:hover {
+            background: rgba(37, 99, 235, 0.02);
+            padding-left: var(--mina-space-2);
+            padding-right: var(--mina-space-2);
+        }
+
+        .feature-icon-3d {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: var(--mina-radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .feature-check {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .feature-premium {
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        .feature-enterprise {
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .feature-icon {
+            width: 14px;
+            height: 14px;
+        }
+
+        .feature-check .feature-icon {
+            color: #059669;
+        }
+
+        .feature-premium .feature-icon {
+            color: var(--primary-600);
+        }
+
+        .feature-enterprise .feature-icon {
+            color: #7C3AED;
+        }
+
+        .feature-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .feature-text {
+            font-size: var(--mina-font-size-base);
+            color: var(--neutral-700);
+            font-weight: var(--mina-font-weight-medium);
+            margin-bottom: var(--mina-space-1);
+        }
+
+        .feature-upgrade-indicator {
+            font-size: var(--mina-font-size-xs);
+            color: var(--primary-600);
+            font-weight: var(--mina-font-weight-semibold);
+            background: rgba(37, 99, 235, 0.1);
+            padding: 2px 6px;
+            border-radius: var(--mina-radius-sm);
+            display: inline-block;
+        }
+
+        .feature-included {
+            font-size: var(--mina-font-size-xs);
+            color: #059669;
+            font-weight: var(--mina-font-weight-medium);
+        }
+
+        .feature-unlimited {
+            font-size: var(--mina-font-size-xs);
+            color: #7C3AED;
+            font-weight: var(--mina-font-weight-semibold);
+            background: rgba(139, 92, 246, 0.1);
+            padding: 2px 6px;
+            border-radius: var(--mina-radius-sm);
+            display: inline-block;
+        }
+
+        /* 💬 SOPHISTICATED TOOLTIPS */
+        .feature-tooltip-trigger {
+            position: relative;
+            display: inline-flex;
+            margin-left: var(--mina-space-2);
+            cursor: help;
+        }
+
+        .tooltip-icon {
+            width: 14px;
+            height: 14px;
+            color: var(--neutral-400);
+            transition: color 0.2s ease;
+        }
+
+        .feature-tooltip-trigger:hover .tooltip-icon {
+            color: var(--primary-600);
+        }
+
+        .feature-tooltip-trigger::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--neutral-900);
+            color: white;
+            padding: var(--mina-space-2) var(--mina-space-3);
+            border-radius: var(--mina-radius-md);
+            font-size: var(--mina-font-size-xs);
+            font-weight: var(--mina-font-weight-medium);
+            white-space: nowrap;
+            max-width: 200px;
+            white-space: normal;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .feature-tooltip-trigger::before {
+            content: '';
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid var(--neutral-900);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .feature-tooltip-trigger:hover::after,
+        .feature-tooltip-trigger:hover::before {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* 🔗 INTEGRATION LOGOS */
+        .integration-logos {
+            display: flex;
+            gap: var(--mina-space-2);
+            margin-top: var(--mina-space-1);
+        }
+
+        .integration-logo {
+            width: 20px;
+            height: 20px;
+            border-radius: var(--mina-radius-sm);
+            background: var(--neutral-100);
+            position: relative;
+        }
+
+        .integration-logo.slack::after {
+            content: '#';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #4A154B;
+            font-size: 12px;
+        }
+
+        .integration-logo.teams::after {
+            content: 'T';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #464EB8;
+            font-size: 12px;
+        }
+
+        .integration-logo.asana::after {
+            content: '◉';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #F06A6A;
+            font-size: 10px;
+        }
+
+        /* 🏅 COMPLIANCE BADGES */
+        .compliance-badges {
+            display: flex;
+            gap: var(--mina-space-2);
+            margin-top: var(--mina-space-1);
+            flex-wrap: wrap;
+        }
+
+        .compliance-badge {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            padding: 2px 6px;
+            border-radius: var(--mina-radius-sm);
+            font-size: 10px;
+            font-weight: var(--mina-font-weight-bold);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        /* 🚀 REVOLUTIONARY 3D CTA BUTTONS */
+        .plan-cta-3d {
+            margin-top: var(--mina-space-6);
+            text-align: center;
+        }
+
+        .cta-button-3d {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--mina-space-2);
+            padding: var(--mina-space-4) var(--mina-space-6);
+            border-radius: var(--mina-radius-lg);
+            text-decoration: none;
+            font-weight: var(--mina-font-weight-semibold);
+            font-size: var(--mina-font-size-base);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+        }
+
+        .cta-secondary-3d {
+            background: white;
+            color: var(--primary-600);
+            border: 2px solid var(--primary-200);
+        }
+
+        .cta-secondary-3d:hover {
+            background: var(--primary-50);
+            transform: translateY(-2px) rotateX(5deg);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.15);
+        }
+
+        .cta-primary-3d {
+            background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+            color: white;
+            border: 2px solid transparent;
+        }
+
+        .cta-primary-3d:hover {
+            background: linear-gradient(135deg, var(--primary-700), var(--primary-800));
+            transform: translateY(-2px) rotateX(5deg);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
+        }
+
+        .cta-enterprise-3d {
+            background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+            color: white;
+            border: 2px solid transparent;
+        }
+
+        .cta-enterprise-3d:hover {
+            background: linear-gradient(135deg, #7C3AED, #6D28D9);
+            transform: translateY(-2px) rotateX(5deg);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+        }
+
+        .cta-particles {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                rgba(255, 255, 255, 0.1) 0%, 
+                transparent 40%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .premium-particles {
+            background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                rgba(255, 255, 255, 0.15) 0%, 
+                transparent 40%);
+        }
+
+        .enterprise-particles {
+            background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                rgba(255, 255, 255, 0.2) 0%, 
+                transparent 40%);
+        }
+
+        .cta-button-3d:hover .cta-particles {
+            opacity: 1;
+        }
+
+        .cta-text {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* 👥 SOCIAL PROOF MICRO-ELEMENTS */
+        .social-proof-micro {
+            margin-top: var(--mina-space-4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--mina-space-2);
+        }
+
+        .proof-avatars {
+            display: flex;
+            margin-right: var(--mina-space-2);
+        }
+
+        .proof-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
+            border: 2px solid white;
+            margin-left: -6px;
+            position: relative;
+        }
+
+        .proof-avatar:first-child {
+            margin-left: 0;
+        }
+
+        .enterprise-avatars .proof-avatar {
+            background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+        }
+
+        .proof-text {
+            font-size: var(--mina-font-size-sm);
+            color: var(--neutral-600);
+            font-weight: var(--mina-font-weight-medium);
+        }
+
+        /* 📊 FEATURE COMPARISON OVERLAY */
+        .feature-comparison-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .feature-comparison-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .comparison-content {
+            background: white;
+            border-radius: var(--mina-radius-xl);
+            padding: var(--mina-space-8);
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .comparison-title {
+            font-size: var(--mina-font-size-2xl);
+            font-weight: var(--mina-font-weight-bold);
+            margin-bottom: var(--mina-space-6);
+            text-align: center;
+        }
+
+        .comparison-close {
+            position: absolute;
+            top: var(--mina-space-4);
+            right: var(--mina-space-4);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: var(--mina-space-2);
+            border-radius: var(--mina-radius-full);
+            transition: background 0.2s ease;
+        }
+
+        .comparison-close:hover {
+            background: var(--neutral-100);
+        }
+
+        /* 📱 RESPONSIVE ENHANCEMENTS */
+        @media (max-width: 768px) {
+            .pricing-grid-3d {
+                grid-template-columns: 1fr;
+                gap: var(--mina-space-6);
+            }
+
+            .pricing-card-3d:hover {
+                transform: translateY(-8px);
+            }
+
+            .featured-3d {
+                transform: scale(1) translateY(0);
+            }
+
+            .featured-3d:hover {
+                transform: scale(1) translateY(-8px);
+            }
+
+            .team-inputs {
+                flex-direction: column;
+                gap: var(--mina-space-4);
+            }
+
+            .offer-content-3d {
+                flex-direction: column;
+                text-align: center;
+                gap: var(--mina-space-2);
+            }
+
+            .offer-dismiss {
+                position: absolute;
+                top: var(--mina-space-2);
+                right: var(--mina-space-2);
+                margin: 0;
+            }
+
+            .category-features {
+                display: block !important;
+            }
+        }
+
+        /* ♿ ACCESSIBILITY ENHANCEMENTS */
+        @media (prefers-reduced-motion: reduce) {
+            .pricing-card-3d,
+            .cta-button-3d,
+            .feature-item-3d,
+            .category-header,
+            .smart-recommendation {
+                transition: none !important;
+            }
+
+            .pricing-card-3d:hover,
+            .featured-3d:hover,
+            .cta-button-3d:hover {
+                transform: none !important;
+            }
+
+            .card-ambient-light,
+            .offer-particle-bg,
+            .cta-particles {
+                display: none !important;
+            }
+        }
+
         .hero-stats {
             display: flex;
             justify-content: center;
@@ -2294,14 +3267,19 @@
                 Choose the plan that fits your team. All plans include 14-day free trial.
             </p>
             
-            <!-- Special Offer Banner -->
-            <div class="offer-banner">
-                <div class="offer-content">
-                    <span class="offer-badge">🔥 LIMITED TIME</span>
-                    <span class="offer-text">Get 3 months FREE on annual plans - Save up to 40%!</span>
-                    <span class="offer-countdown">
-                        Offer expires in: <span id="countdown">23:59:42</span>
+            <!-- ✨ REVOLUTIONARY: Sophisticated Offer Presentation -->
+            <div class="offer-banner-3d" id="offerBanner">
+                <div class="offer-content-3d">
+                    <div class="offer-particle-bg"></div>
+                    <span class="offer-badge-professional">
+                        <i data-feather="star" class="offer-icon"></i>
+                        Limited Offer
                     </span>
+                    <span class="offer-text-elegant">3 months FREE on annual plans</span>
+                    <span class="offer-savings-highlight">Save up to 40%</span>
+                    <button class="offer-dismiss" aria-label="Dismiss offer">
+                        <i data-feather="x" class="dismiss-icon"></i>
+                    </button>
                 </div>
             </div>
             
@@ -2314,137 +3292,509 @@
                 <span class="toggle-label">Annual <span class="discount-badge">Save 40%</span></span>
             </div>
             
-            <div class="pricing-grid">
-                <!-- Starter Plan -->
-                <div class="pricing-card">
-                    <div class="plan-header">
-                        <h3 class="plan-name">Starter</h3>
-                        <p class="plan-description">Perfect for small teams</p>
-                        <div class="plan-price">
-                            <span class="price-currency">$</span>
-                            <span class="price-amount" data-monthly="29" data-annual="17">29</span>
-                            <span class="price-period">/user/month</span>
-                        </div>
-                        <div class="annual-savings">Save $144 annually</div>
+            <!-- ✨ REVOLUTIONARY: Team Intelligence & Customization -->
+            <div class="pricing-intelligence" id="pricingIntelligence">
+                <div class="smart-recommendation" id="smartRecommendation" style="display: none;">
+                    <div class="recommendation-content">
+                        <i data-feather="zap" class="recommendation-icon"></i>
+                        <span class="recommendation-text">Based on your team profile, <strong>Professional</strong> is recommended</span>
                     </div>
-                    
-                    <div class="plan-features">
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            Up to 10 team members
-                        </div>
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            5 hours recording per month
-                        </div>
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            Real-time transcription
-                        </div>
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            Basic task extraction
-                        </div>
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            Email support
-                        </div>
-                    </div>
-                    
-                    <a href="{{ url_for('auth.register') }}" class="plan-cta cta-secondary">
-                        Start Free Trial
-                    </a>
                 </div>
                 
-                <!-- Professional Plan -->
-                <div class="pricing-card featured">
-                    <div class="popular-badge">Most Popular</div>
-                    <div class="plan-header">
-                        <h3 class="plan-name">Professional</h3>
-                        <p class="plan-description">Best for growing teams</p>
-                        <div class="plan-price">
-                            <span class="price-currency">$</span>
-                            <span class="price-amount" data-monthly="59" data-annual="35">59</span>
-                            <span class="price-period">/user/month</span>
-                        </div>
-                        <div class="annual-savings">Save $288 annually</div>
+                <div class="team-inputs">
+                    <div class="input-group-inline">
+                        <label for="teamSizeInput" class="input-label-small">Team Size:</label>
+                        <input type="range" id="teamSizeInput" min="1" max="100" value="10" class="smart-slider">
+                        <span class="slider-display" id="teamSizeDisplay">10</span>
                     </div>
+                    <div class="input-group-inline">
+                        <label for="usageInput" class="input-label-small">Monthly Hours:</label>
+                        <input type="range" id="usageInput" min="5" max="200" value="20" class="smart-slider">
+                        <span class="slider-display" id="usageDisplay">20</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ✨ REVOLUTIONARY: 3D Interactive Pricing Grid -->
+            <div class="pricing-grid-3d" id="pricingGrid3D">
+                <canvas class="pricing-particles" id="pricingParticles" aria-hidden="true"></canvas>
+                
+                <!-- Starter Plan - 3D Enhanced -->
+                <div class="pricing-card-3d" 
+                     data-plan="starter" 
+                     data-monthly="29" 
+                     data-annual="17"
+                     data-roi-base="1.2"
+                     data-team-limit="10"
+                     data-features='["transcription", "basic-ai", "email-support"]'>
                     
-                    <div class="plan-features">
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            Up to 50 team members
+                    <div class="card-3d-inner">
+                        <div class="card-ambient-light"></div>
+                        <div class="card-particle-layer"></div>
+                        
+                        <div class="plan-header-3d">
+                            <div class="plan-tier-indicator">
+                                <div class="tier-dot tier-starter"></div>
+                            </div>
+                            <h3 class="plan-name-3d">Starter</h3>
+                            <p class="plan-description-3d">Perfect for small teams getting started</p>
+                            
+                            <div class="plan-price-3d">
+                                <div class="price-container">
+                                    <span class="price-currency">$</span>
+                                    <span class="price-amount-3d" data-monthly="29" data-annual="17">29</span>
+                                    <span class="price-period">/user/month</span>
+                                </div>
+                                <div class="annual-savings-3d">Save $144 annually</div>
+                                <div class="roi-preview" id="roiPreviewStarter">
+                                    <div class="roi-meter">
+                                        <div class="roi-fill" style="width: 0%"></div>
+                                    </div>
+                                    <span class="roi-text">ROI: Calculating...</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            20 hours recording per month
+                    
+                        <!-- ✨ REVOLUTIONARY: Categorized Features with Progressive Disclosure -->
+                        <div class="plan-features-3d">
+                            <div class="features-category" data-category="core">
+                                <button class="category-header" aria-expanded="true" aria-controls="coreFeatures">
+                                    <i data-feather="play-circle" class="category-icon"></i>
+                                    <span class="category-title">Core Features</span>
+                                    <i data-feather="chevron-down" class="category-toggle"></i>
+                                </button>
+                                <div class="category-features" id="coreFeatures">
+                                    <div class="feature-item-3d" data-feature-id="team-members">
+                                        <div class="feature-icon-3d feature-check">
+                                            <i data-feather="users" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">Up to 10 team members</span>
+                                        </div>
+                                    </div>
+                                    <div class="feature-item-3d" data-feature-id="recording-hours">
+                                        <div class="feature-icon-3d feature-check">
+                                            <i data-feather="clock" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">5 hours recording per month</span>
+                                        </div>
+                                    </div>
+                                    <div class="feature-item-3d" data-feature-id="transcription">
+                                        <div class="feature-icon-3d feature-check">
+                                            <i data-feather="type" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">Real-time transcription</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="features-category" data-category="ai">
+                                <button class="category-header" aria-expanded="false" aria-controls="aiFeatures">
+                                    <i data-feather="zap" class="category-icon"></i>
+                                    <span class="category-title">AI & Analytics</span>
+                                    <i data-feather="chevron-down" class="category-toggle"></i>
+                                </button>
+                                <div class="category-features" id="aiFeatures" style="display: none;">
+                                    <div class="feature-item-3d" data-feature-id="basic-ai">
+                                        <div class="feature-icon-3d feature-check">
+                                            <i data-feather="cpu" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">Basic task extraction</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="features-category" data-category="support">
+                                <button class="category-header" aria-expanded="false" aria-controls="supportFeatures">
+                                    <i data-feather="headphones" class="category-icon"></i>
+                                    <span class="category-title">Support</span>
+                                    <i data-feather="chevron-down" class="category-toggle"></i>
+                                </button>
+                                <div class="category-features" id="supportFeatures" style="display: none;">
+                                    <div class="feature-item-3d" data-feature-id="email-support">
+                                        <div class="feature-icon-3d feature-check">
+                                            <i data-feather="mail" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">Email support</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            Advanced AI insights
-                        </div>
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            Smart task extraction
-                        </div>
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            Integrations (Slack, Teams, etc.)
-                        </div>
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            Priority support
+                        
+                        <div class="plan-cta-3d">
+                            <a href="{{ url_for('auth.register') }}" class="cta-button-3d cta-secondary-3d">
+                                <span class="cta-text">Start Free Trial</span>
+                                <div class="cta-particles"></div>
+                            </a>
+                            <div class="social-proof-micro">
+                                <div class="proof-avatars">
+                                    <div class="proof-avatar"></div>
+                                    <div class="proof-avatar"></div>
+                                    <div class="proof-avatar"></div>
+                                </div>
+                                <span class="proof-text">Join 2,847 teams</span>
+                            </div>
                         </div>
                     </div>
-                    
-                    <a href="{{ url_for('auth.register') }}" class="plan-cta cta-primary">
-                        Start Free Trial
-                    </a>
                 </div>
                 
-                <!-- Enterprise Plan -->
-                <div class="pricing-card">
-                    <div class="plan-header">
-                        <h3 class="plan-name">Enterprise</h3>
-                        <p class="plan-description">For large organizations</p>
-                        <div class="plan-price">
-                            <span class="price-currency">$</span>
-                            <span class="price-amount" data-monthly="99" data-annual="59">99</span>
-                            <span class="price-period">/user/month</span>
-                        </div>
-                        <div class="annual-savings">Save $480 annually</div>
+                <!-- ✨ REVOLUTIONARY: Professional Plan - 3D Enhanced -->
+                <div class="pricing-card-3d featured-3d" 
+                     data-plan="professional" 
+                     data-monthly="59" 
+                     data-annual="35"
+                     data-roi-base="2.3"
+                     data-team-limit="50"
+                     data-features='["transcription", "advanced-ai", "integrations", "priority-support"]'>
+                    
+                    <div class="popular-badge-3d">
+                        <i data-feather="star" class="badge-icon"></i>
+                        <span>Most Popular</span>
                     </div>
                     
-                    <div class="plan-features">
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            Unlimited team members
+                    <div class="card-3d-inner">
+                        <div class="card-ambient-light featured-light"></div>
+                        <div class="card-particle-layer featured-particles"></div>
+                        
+                        <div class="plan-header-3d">
+                            <div class="plan-tier-indicator">
+                                <div class="tier-dot tier-professional"></div>
+                            </div>
+                            <h3 class="plan-name-3d featured-name">Professional</h3>
+                            <p class="plan-description-3d">Best for growing teams and scale</p>
+                            
+                            <div class="plan-price-3d">
+                                <div class="price-container">
+                                    <span class="price-currency">$</span>
+                                    <span class="price-amount-3d" data-monthly="59" data-annual="35">59</span>
+                                    <span class="price-period">/user/month</span>
+                                </div>
+                                <div class="annual-savings-3d">Save $288 annually</div>
+                                <div class="roi-preview" id="roiPreviewProfessional">
+                                    <div class="roi-meter">
+                                        <div class="roi-fill" style="width: 0%"></div>
+                                    </div>
+                                    <span class="roi-text">ROI: Calculating...</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            Unlimited recording
+                    
+                        <!-- ✨ REVOLUTIONARY: Professional Features with Advanced Hierarchy -->
+                        <div class="plan-features-3d">
+                            <div class="features-category" data-category="core">
+                                <button class="category-header" aria-expanded="true" aria-controls="coreFeaturesProf">
+                                    <i data-feather="play-circle" class="category-icon"></i>
+                                    <span class="category-title">Core Features</span>
+                                    <i data-feather="chevron-down" class="category-toggle"></i>
+                                </button>
+                                <div class="category-features" id="coreFeaturesProf">
+                                    <div class="feature-item-3d" data-feature-id="team-members">
+                                        <div class="feature-icon-3d feature-check">
+                                            <i data-feather="users" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">Up to 50 team members</span>
+                                            <div class="feature-upgrade-indicator">5x more than Starter</div>
+                                        </div>
+                                    </div>
+                                    <div class="feature-item-3d" data-feature-id="recording-hours">
+                                        <div class="feature-icon-3d feature-check">
+                                            <i data-feather="clock" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">20 hours recording per month</span>
+                                            <div class="feature-upgrade-indicator">4x more capacity</div>
+                                        </div>
+                                    </div>
+                                    <div class="feature-item-3d" data-feature-id="transcription">
+                                        <div class="feature-icon-3d feature-check">
+                                            <i data-feather="type" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">Real-time transcription</span>
+                                            <div class="feature-included">Included</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="features-category" data-category="ai">
+                                <button class="category-header" aria-expanded="true" aria-controls="aiFeaturesProf">
+                                    <i data-feather="zap" class="category-icon"></i>
+                                    <span class="category-title">AI & Analytics</span>
+                                    <span class="category-badge">Professional</span>
+                                    <i data-feather="chevron-down" class="category-toggle"></i>
+                                </button>
+                                <div class="category-features" id="aiFeaturesProf">
+                                    <div class="feature-item-3d" data-feature-id="advanced-ai" data-tier="professional">
+                                        <div class="feature-icon-3d feature-premium">
+                                            <i data-feather="brain" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">Advanced AI insights</span>
+                                            <div class="feature-tooltip-trigger" data-tooltip="Sentiment analysis, topic trends, and predictive analytics">
+                                                <i data-feather="info" class="tooltip-icon"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="feature-item-3d" data-feature-id="smart-extraction">
+                                        <div class="feature-icon-3d feature-premium">
+                                            <i data-feather="target" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">Smart task extraction</span>
+                                            <div class="feature-tooltip-trigger" data-tooltip="AI-powered action item detection with owner assignment">
+                                                <i data-feather="info" class="tooltip-icon"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="features-category" data-category="integrations">
+                                <button class="category-header" aria-expanded="false" aria-controls="integrationFeatures">
+                                    <i data-feather="link" class="category-icon"></i>
+                                    <span class="category-title">Integrations & Workflow</span>
+                                    <i data-feather="chevron-down" class="category-toggle"></i>
+                                </button>
+                                <div class="category-features" id="integrationFeatures" style="display: none;">
+                                    <div class="feature-item-3d" data-feature-id="integrations">
+                                        <div class="feature-icon-3d feature-premium">
+                                            <i data-feather="settings" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">Slack, Teams, Asana integrations</span>
+                                            <div class="integration-logos">
+                                                <div class="integration-logo slack"></div>
+                                                <div class="integration-logo teams"></div>
+                                                <div class="integration-logo asana"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="features-category" data-category="support">
+                                <button class="category-header" aria-expanded="false" aria-controls="supportFeaturesProf">
+                                    <i data-feather="headphones" class="category-icon"></i>
+                                    <span class="category-title">Support</span>
+                                    <i data-feather="chevron-down" class="category-toggle"></i>
+                                </button>
+                                <div class="category-features" id="supportFeaturesProf" style="display: none;">
+                                    <div class="feature-item-3d" data-feature-id="priority-support">
+                                        <div class="feature-icon-3d feature-premium">
+                                            <i data-feather="zap" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">Priority support</span>
+                                            <div class="feature-upgrade-indicator">2-hour response time</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            Custom AI models
-                        </div>
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            Advanced analytics
-                        </div>
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            On-premise deployment
-                        </div>
-                        <div class="feature-item">
-                            <i data-feather="check" class="feature-icon"></i>
-                            Dedicated success manager
+                        
+                        <div class="plan-cta-3d">
+                            <a href="{{ url_for('auth.register') }}" class="cta-button-3d cta-primary-3d">
+                                <span class="cta-text">Start Free Trial</span>
+                                <div class="cta-particles premium-particles"></div>
+                            </a>
+                            <div class="social-proof-micro">
+                                <div class="proof-avatars">
+                                    <div class="proof-avatar"></div>
+                                    <div class="proof-avatar"></div>
+                                    <div class="proof-avatar"></div>
+                                    <div class="proof-avatar"></div>
+                                </div>
+                                <span class="proof-text">Join 7,924 teams</span>
+                            </div>
                         </div>
                     </div>
+                </div>
+                
+                <!-- ✨ REVOLUTIONARY: Enterprise Plan - 3D Enhanced -->
+                <div class="pricing-card-3d enterprise-3d" 
+                     data-plan="enterprise" 
+                     data-monthly="99" 
+                     data-annual="59"
+                     data-roi-base="4.5"
+                     data-team-limit="unlimited"
+                     data-features='["transcription", "custom-ai", "analytics", "enterprise-security", "dedicated-manager"]'>
                     
-                    <a href="mailto:sales@mina.ai" class="plan-cta cta-secondary">
-                        Contact Sales
-                    </a>
+                    <div class="enterprise-badge-3d">
+                        <i data-feather="shield" class="badge-icon"></i>
+                        <span>Enterprise</span>
+                    </div>
+                    
+                    <div class="card-3d-inner">
+                        <div class="card-ambient-light enterprise-light"></div>
+                        <div class="card-particle-layer enterprise-particles"></div>
+                        
+                        <div class="plan-header-3d">
+                            <div class="plan-tier-indicator">
+                                <div class="tier-dot tier-enterprise"></div>
+                            </div>
+                            <h3 class="plan-name-3d enterprise-name">Enterprise</h3>
+                            <p class="plan-description-3d">For large organizations and compliance</p>
+                            
+                            <div class="plan-price-3d">
+                                <div class="price-container">
+                                    <span class="price-currency">$</span>
+                                    <span class="price-amount-3d" data-monthly="99" data-annual="59">99</span>
+                                    <span class="price-period">/user/month</span>
+                                </div>
+                                <div class="annual-savings-3d">Save $480 annually</div>
+                                <div class="roi-preview" id="roiPreviewEnterprise">
+                                    <div class="roi-meter enterprise-meter">
+                                        <div class="roi-fill" style="width: 0%"></div>
+                                    </div>
+                                    <span class="roi-text">ROI: Calculating...</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- ✨ REVOLUTIONARY: Enterprise Features with Security Focus -->
+                        <div class="plan-features-3d">
+                            <div class="features-category" data-category="core">
+                                <button class="category-header" aria-expanded="true" aria-controls="coreFeaturesEnt">
+                                    <i data-feather="play-circle" class="category-icon"></i>
+                                    <span class="category-title">Core Features</span>
+                                    <i data-feather="chevron-down" class="category-toggle"></i>
+                                </button>
+                                <div class="category-features" id="coreFeaturesEnt">
+                                    <div class="feature-item-3d" data-feature-id="team-members">
+                                        <div class="feature-icon-3d feature-enterprise">
+                                            <i data-feather="users" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">Unlimited team members</span>
+                                            <div class="feature-unlimited">No limits</div>
+                                        </div>
+                                    </div>
+                                    <div class="feature-item-3d" data-feature-id="recording-hours">
+                                        <div class="feature-icon-3d feature-enterprise">
+                                            <i data-feather="clock" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">Unlimited recording</span>
+                                            <div class="feature-unlimited">No capacity limits</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="features-category" data-category="ai">
+                                <button class="category-header" aria-expanded="true" aria-controls="aiFeaturesEnt">
+                                    <i data-feather="zap" class="category-icon"></i>
+                                    <span class="category-title">AI & Analytics</span>
+                                    <span class="category-badge enterprise">Enterprise</span>
+                                    <i data-feather="chevron-down" class="category-toggle"></i>
+                                </button>
+                                <div class="category-features" id="aiFeaturesEnt">
+                                    <div class="feature-item-3d" data-feature-id="custom-ai" data-tier="enterprise">
+                                        <div class="feature-icon-3d feature-enterprise">
+                                            <i data-feather="cpu" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">Custom AI models</span>
+                                            <div class="feature-tooltip-trigger" data-tooltip="Tailored AI trained on your organization's data and terminology">
+                                                <i data-feather="info" class="tooltip-icon"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="feature-item-3d" data-feature-id="advanced-analytics">
+                                        <div class="feature-icon-3d feature-enterprise">
+                                            <i data-feather="trending-up" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">Advanced analytics dashboard</span>
+                                            <div class="feature-tooltip-trigger" data-tooltip="Executive reporting, team performance insights, and custom dashboards">
+                                                <i data-feather="info" class="tooltip-icon"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="features-category" data-category="security">
+                                <button class="category-header" aria-expanded="true" aria-controls="securityFeatures">
+                                    <i data-feather="shield" class="category-icon"></i>
+                                    <span class="category-title">Enterprise Security & Compliance</span>
+                                    <span class="category-badge security">SOC2</span>
+                                    <i data-feather="chevron-down" class="category-toggle"></i>
+                                </button>
+                                <div class="category-features" id="securityFeatures">
+                                    <div class="feature-item-3d" data-feature-id="on-premise">
+                                        <div class="feature-icon-3d feature-enterprise">
+                                            <i data-feather="server" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">On-premise deployment</span>
+                                            <div class="feature-tooltip-trigger" data-tooltip="Deploy within your infrastructure with full data control">
+                                                <i data-feather="info" class="tooltip-icon"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="feature-item-3d" data-feature-id="compliance">
+                                        <div class="feature-icon-3d feature-enterprise">
+                                            <i data-feather="check-circle" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">GDPR, HIPAA, SOC2 compliance</span>
+                                            <div class="compliance-badges">
+                                                <span class="compliance-badge">GDPR</span>
+                                                <span class="compliance-badge">HIPAA</span>
+                                                <span class="compliance-badge">SOC2</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="features-category" data-category="support">
+                                <button class="category-header" aria-expanded="false" aria-controls="supportFeaturesEnt">
+                                    <i data-feather="headphones" class="category-icon"></i>
+                                    <span class="category-title">Premium Support</span>
+                                    <i data-feather="chevron-down" class="category-toggle"></i>
+                                </button>
+                                <div class="category-features" id="supportFeaturesEnt" style="display: none;">
+                                    <div class="feature-item-3d" data-feature-id="dedicated-manager">
+                                        <div class="feature-icon-3d feature-enterprise">
+                                            <i data-feather="user-check" class="feature-icon"></i>
+                                        </div>
+                                        <div class="feature-content">
+                                            <span class="feature-text">Dedicated success manager</span>
+                                            <div class="feature-unlimited">24/7 dedicated support</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="plan-cta-3d">
+                            <a href="mailto:sales@mina.ai" class="cta-button-3d cta-enterprise-3d">
+                                <span class="cta-text">Contact Sales</span>
+                                <div class="cta-particles enterprise-particles"></div>
+                            </a>
+                            <div class="social-proof-micro">
+                                <div class="proof-avatars enterprise-avatars">
+                                    <div class="proof-avatar"></div>
+                                    <div class="proof-avatar"></div>
+                                    <div class="proof-avatar"></div>
+                                    <div class="proof-avatar"></div>
+                                    <div class="proof-avatar"></div>
+                                </div>
+                                <span class="proof-text">Join 1,247 enterprises</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
