@@ -190,8 +190,8 @@ def unified_transcribe_audio():
                         file=audio_file,
                         response_format="verbose_json",
                         language="en",
-                        temperature=0.0,  # Lower temperature for more accurate results
-                        prompt="This is a live meeting transcription. Transcribe exactly what is being spoken with proper punctuation. Be accurate and concise."
+                        temperature=0.0  # Lower temperature for more accurate results
+                        # NO PROMPT - prevents hallucination of prompt text when audio quality is poor
                     )
                 
                 transcription_time = (time.time() - transcription_start) * 1000
