@@ -74,30 +74,46 @@ def on_start_session(data):
 def on_audio_data(data):
     """Handle incoming audio data"""
     try:
-        # Handle structured audio data from frontend
+        # Enhanced audio data handling with robust format detection
         if isinstance(data, dict) and 'data' in data:
-            # New structured format
+            # Structured format with metadata
             try:
                 audio_bytes = base64.b64decode(data['data'])
-                mime_type = data.get('mimeType', 'audio/wav')
-                logger.info(f"[transcription] Received {mime_type} audio: {len(audio_bytes)} bytes")
+                mime_type = data.get('mimeType', 'audio/webm')
+                data_size = data.get('size', len(audio_bytes))
+                
+                logger.info(f"[transcription] Received {mime_type} audio: {len(audio_bytes)} bytes (reported: {data_size})")
+                
+                # Validate audio data integrity
+                if len(audio_bytes) < 100:
+                    logger.warning(f"[transcription] Audio chunk too small: {len(audio_bytes)} bytes")
+                    return  # Skip small chunks silently
+                    
+                # Detect format discrepancies
+                if abs(len(audio_bytes) - data_size) > 100:
+                    logger.warning(f"[transcription] Size mismatch: actual={len(audio_bytes)}, reported={data_size}")
+                    
             except Exception as e:
                 logger.error(f"[transcription] Failed to decode structured audio: {e}")
                 emit('error', {'message': 'Invalid audio data format'})
                 return
+                
         elif isinstance(data, str):
             # Legacy base64 string format
             try:
                 audio_bytes = base64.b64decode(data)
                 mime_type = 'audio/webm'
+                logger.info(f"[transcription] Legacy format: {len(audio_bytes)} bytes")
             except Exception as e:
                 logger.error(f"[transcription] Invalid base64 audio data: {e}")
                 emit('error', {'message': 'Invalid base64 audio data'})
                 return
+                
         elif isinstance(data, (bytes, bytearray)):
             # Raw bytes format
             audio_bytes = bytes(data)
             mime_type = 'audio/webm'
+            logger.info(f"[transcription] Raw bytes: {len(audio_bytes)} bytes")
         else:
             logger.error(f"[transcription] Unsupported data type: {type(data)}")
             emit('error', {'message': 'Unsupported audio data format'})

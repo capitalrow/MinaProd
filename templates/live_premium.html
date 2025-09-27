@@ -690,31 +690,90 @@
             }
             
             setupMediaRecorder(stream) {
-                // Use WAV format for maximum compatibility
-                const options = { mimeType: 'audio/wav' };
+                // Browser-compatible format selection with proper priority
+                let mimeType = null;
                 
-                // Fallback to WebM if WAV not supported
-                if (!MediaRecorder.isTypeSupported('audio/wav')) {
-                    options.mimeType = 'audio/webm;codecs=opus';
+                // Priority order: WebM Opus > WebM > MP4 (avoid WAV due to poor browser support)
+                const supportedTypes = [
+                    'audio/webm;codecs=opus',
+                    'audio/webm',
+                    'audio/mp4;codecs=mp4a.40.2',
+                    'audio/mp4'
+                ];
+                
+                for (const type of supportedTypes) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        mimeType = type;
+                        break;
+                    }
                 }
                 
+                if (!mimeType) {
+                    throw new Error('No supported audio formats found in this browser');
+                }
+                
+                console.log(`📱 Using audio format: ${mimeType}`);
+                
+                const options = { 
+                    mimeType,
+                    audioBitsPerSecond: 128000  // High quality for better transcription
+                };
+                
                 this.mediaRecorder = new MediaRecorder(stream, options);
+                this.currentMimeType = mimeType;  // Store for transmission
                 
                 this.mediaRecorder.ondataavailable = (event) => {
                     if (event.data.size > 0 && this.socket) {
-                        // Convert to base64 for reliable transmission
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                            const base64Data = btoa(String.fromCharCode(...new Uint8Array(reader.result)));
-                            this.socket.emit('audio_data', {
-                                data: base64Data,
-                                mimeType: options.mimeType,
-                                timestamp: Date.now()
-                            });
-                        };
-                        reader.readAsArrayBuffer(event.data);
+                        this.transmitAudioChunk(event.data);
                     }
                 };
+                
+                // Add error handling
+                this.mediaRecorder.onerror = (event) => {
+                    console.error('MediaRecorder error:', event.error);
+                    this.showToast('Recording error occurred', 'error');
+                };
+            }
+            
+            transmitAudioChunk(audioBlob) {
+                // Robust audio transmission with proper encoding
+                const reader = new FileReader();
+                
+                reader.onload = () => {
+                    try {
+                        // Proper binary-to-base64 conversion without corruption
+                        const arrayBuffer = reader.result;
+                        const uint8Array = new Uint8Array(arrayBuffer);
+                        let binaryString = '';
+                        
+                        // Convert to binary string in chunks to avoid stack overflow
+                        const chunkSize = 8192;
+                        for (let i = 0; i < uint8Array.length; i += chunkSize) {
+                            const chunk = uint8Array.subarray(i, i + chunkSize);
+                            binaryString += String.fromCharCode.apply(null, chunk);
+                        }
+                        
+                        const base64Data = btoa(binaryString);
+                        
+                        this.socket.emit('audio_data', {
+                            data: base64Data,
+                            mimeType: this.currentMimeType,
+                            timestamp: Date.now(),
+                            size: arrayBuffer.byteLength
+                        });
+                        
+                    } catch (error) {
+                        console.error('Audio transmission error:', error);
+                        this.showToast('Audio transmission failed', 'error');
+                    }
+                };
+                
+                reader.onerror = () => {
+                    console.error('FileReader error during audio processing');
+                    this.showToast('Audio processing error', 'error');
+                };
+                
+                reader.readAsArrayBuffer(audioBlob);
             }
             
             startAudioVisualization() {

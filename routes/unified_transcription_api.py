@@ -54,7 +54,7 @@ def unified_transcribe_audio():
         audio_data = None
         
         if request.content_type and 'multipart/form-data' in request.content_type:
-            # Handle FormData file upload
+            # Handle FormData file upload (from WebSocket relay)
             logger.info("📁 Processing FormData file upload")
             
             session_id = request.form.get('session_id', f'session_{int(time.time())}')
@@ -65,7 +65,18 @@ def unified_transcribe_audio():
                 audio_file = request.files['audio']
                 if audio_file and audio_file.filename:
                     audio_data = audio_file.read()
-                    logger.info(f"📦 File upload: {len(audio_data)} bytes from {audio_file.filename}")
+                    content_type = audio_file.content_type or 'audio/webm'
+                    logger.info(f"📦 File upload: {len(audio_data)} bytes, type: {content_type}, file: {audio_file.filename}")
+                    
+                    # Enhanced format validation
+                    if len(audio_data) < 100:
+                        logger.info(f"ℹ️ Audio chunk too small ({len(audio_data)} bytes) - skipping")
+                        return jsonify({
+                            'success': True,
+                            'text': '',
+                            'message': 'Audio chunk too small',
+                            'processing_time': (time.time() - request_start_time) * 1000
+                        })
             
         elif request.content_type and 'application/x-www-form-urlencoded' in request.content_type:
             # Handle base64 audio data (current frontend format)
