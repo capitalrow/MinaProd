@@ -44,7 +44,7 @@ class User(UserMixin, Base):
     
     # Workspace relationship
     workspace_id: Mapped[Optional[int]] = mapped_column(ForeignKey("workspaces.id"), nullable=True)
-    workspace: Mapped[Optional["Workspace"]] = relationship(back_populates="members")
+    workspace: Mapped[Optional["Workspace"]] = relationship(back_populates="members", foreign_keys=[workspace_id])
     
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
