@@ -56,7 +56,7 @@ class User(UserMixin, Base):
     
     # Relationships
     meetings: Mapped[list["Meeting"]] = relationship(back_populates="organizer")
-    assigned_tasks: Mapped[list["Task"]] = relationship(back_populates="assigned_to")
+    assigned_tasks: Mapped[list["Task"]] = relationship(back_populates="assigned_to", foreign_keys="Task.assigned_to_id")
 
     def __repr__(self):
         return f'<User {self.username}: {self.email}>'
