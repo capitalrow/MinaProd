@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meetings - Mina</title>
+    
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+    <!-- Dark Mode Toggle -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+        <i data-feather="sun" id="themeIcon"></i>
+    </button>
+
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">M</div>
+                <div class="sidebar-logo-text">Mina</div>
+            </div>
+            
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.index') }}" class="nav-link">
+                            <i data-feather="home"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('pages.live') }}" class="nav-link">
+                            <i data-feather="mic"></i>
+                            Live Meeting
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.meetings') }}" class="nav-link active">
+                            <i data-feather="users"></i>
+                            Meetings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.tasks') }}" class="nav-link">
+                            <i data-feather="check-square"></i>
+                            Tasks
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.analytics') }}" class="nav-link">
+                            <i data-feather="bar-chart-2"></i>
+                            Analytics
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="user-info">
+                <div class="user-name">{{ current_user.first_name or current_user.username }}</div>
+                <div class="user-email">{{ current_user.email }}</div>
+                <a href="{{ url_for('auth.logout') }}" class="nav-link">
+                    <i data-feather="log-out"></i>
+                    Sign Out
+                </a>
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <header class="dashboard-header">
+                <h1 class="dashboard-title">Meetings</h1>
+                <p class="dashboard-subtitle">Manage and review your meeting history and transcriptions.</p>
+            </header>
+            
+            <!-- Search and Filter -->
+            <div class="content-section" style="margin-bottom: 2rem;">
+                <div class="section-content">
+                    <form method="GET" class="search-form" style="display: flex; gap: 1rem; align-items: center;">
+                        <input type="text" name="search" value="{{ search_query or '' }}" 
+                               placeholder="Search meetings..." 
+                               style="flex: 1; padding: 0.75rem; border: 1px solid var(--mina-border-primary); border-radius: var(--mina-radius-md);">
+                        <select name="status" style="padding: 0.75rem; border: 1px solid var(--mina-border-primary); border-radius: var(--mina-radius-md);">
+                            <option value="all" {{ 'selected' if status_filter == 'all' else '' }}>All Status</option>
+                            <option value="completed" {{ 'selected' if status_filter == 'completed' else '' }}>Completed</option>
+                            <option value="in_progress" {{ 'selected' if status_filter == 'in_progress' else '' }}>In Progress</option>
+                            <option value="scheduled" {{ 'selected' if status_filter == 'scheduled' else '' }}>Scheduled</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-feather="search"></i>
+                            Search
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Meetings List -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2 class="section-title">Your Meetings</h2>
+                    <a href="{{ url_for('pages.live') }}" class="btn btn-primary">
+                        <i data-feather="plus"></i>
+                        New Meeting
+                    </a>
+                </div>
+                <div class="section-content">
+                    {% if meetings.items %}
+                        {% for meeting in meetings.items %}
+                        <div class="meeting-item">
+                            <div class="meeting-info">
+                                <div class="meeting-title">{{ meeting.title or 'Untitled Meeting' }}</div>
+                                <div class="meeting-date">
+                                    <i data-feather="calendar" style="width: 14px; height: 14px;"></i>
+                                    {{ meeting.created_at.strftime('%b %d, %Y at %I:%M %p') }}
+                                </div>
+                            </div>
+                            <div class="meeting-actions">
+                                <span class="meeting-status status-{{ meeting.status or 'completed' }}">
+                                    {{ (meeting.status or 'completed').title() }}
+                                </span>
+                                <button class="btn-icon" title="View meeting">
+                                    <i data-feather="eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <!-- Pagination -->
+                        {% if meetings.pages > 1 %}
+                        <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 0.5rem;">
+                            {% if meetings.has_prev %}
+                                <a href="{{ url_for('dashboard.meetings', page=meetings.prev_num, status=status_filter, search=search_query) }}" 
+                                   class="btn btn-secondary btn-sm">Previous</a>
+                            {% endif %}
+                            
+                            <span style="padding: 0.5rem 1rem; color: var(--mina-text-secondary);">
+                                Page {{ meetings.page }} of {{ meetings.pages }}
+                            </span>
+                            
+                            {% if meetings.has_next %}
+                                <a href="{{ url_for('dashboard.meetings', page=meetings.next_num, status=status_filter, search=search_query) }}" 
+                                   class="btn btn-secondary btn-sm">Next</a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i data-feather="calendar" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <p>No meetings found</p>
+                            {% if search_query or status_filter != 'all' %}
+                                <p style="color: var(--mina-text-muted); margin-bottom: 1rem;">Try adjusting your search or filter criteria.</p>
+                                <a href="{{ url_for('dashboard.meetings') }}" class="btn btn-secondary">Clear Filters</a>
+                            {% else %}
+                                <a href="{{ url_for('pages.live') }}" class="btn btn-primary">
+                                    <i data-feather="plus"></i>
+                                    Start Your First Meeting
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Initialize theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const currentTheme = localStorage.getItem('mina-theme') || 'light';
+        
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        themeIcon.setAttribute('data-feather', currentTheme === 'light' ? 'moon' : 'sun');
+        
+        themeToggle.addEventListener('click', () => {
+            const newTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('mina-theme', newTheme);
+            
+            themeIcon.style.transform = 'scale(0)';
+            setTimeout(() => {
+                themeIcon.setAttribute('data-feather', newTheme === 'light' ? 'moon' : 'sun');
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+                themeIcon.style.transform = 'scale(1)';
+            }, 150);
+        });
+        
+        // Initialize feather icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Mina</title>
+    
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--mina-space-8);
+            margin-bottom: var(--mina-space-10);
+        }
+        
+        .analytics-card {
+            background: var(--glass-bg-strong);
+            backdrop-filter: var(--glass-blur);
+            padding: var(--mina-space-8);
+            border-radius: var(--mina-radius-xl);
+            box-shadow: var(--elevation-2);
+            border: 1px solid var(--glass-border);
+            transition: all var(--mina-transition-base);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .analytics-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--elevation-4);
+        }
+        
+        .analytics-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+        
+        .analytics-value {
+            font-size: var(--mina-font-size-4xl);
+            font-weight: var(--mina-font-weight-bold);
+            color: var(--mina-primary);
+            margin-bottom: var(--mina-space-3);
+            font-family: var(--mina-font-family-display);
+        }
+        
+        .analytics-label {
+            color: var(--mina-text-secondary);
+            font-size: var(--mina-font-size-sm);
+            font-weight: var(--mina-font-weight-semibold);
+            text-transform: uppercase;
+            letter-spacing: var(--mina-letter-spacing-wide);
+        }
+        
+        .chart-container {
+            background: var(--glass-bg-strong);
+            backdrop-filter: var(--glass-blur);
+            border-radius: var(--mina-radius-xl);
+            box-shadow: var(--elevation-2);
+            border: 1px solid var(--glass-border);
+            padding: var(--mina-space-8);
+            margin-bottom: var(--mina-space-8);
+        }
+        
+        .chart-title {
+            font-size: var(--mina-font-size-xl);
+            font-weight: var(--mina-font-weight-semibold);
+            color: var(--mina-text-primary);
+            margin-bottom: var(--mina-space-6);
+            font-family: var(--mina-font-family-display);
+        }
+        
+        .analysis-item {
+            background: var(--mina-bg-primary);
+            border: 1px solid var(--mina-border-primary);
+            border-radius: var(--mina-radius-lg);
+            padding: var(--mina-space-6);
+            margin-bottom: var(--mina-space-4);
+            transition: all var(--mina-transition-fast);
+        }
+        
+        .analysis-item:hover {
+            transform: translateX(4px);
+            border-color: var(--mina-primary);
+        }
+        
+        .analysis-title {
+            font-weight: var(--mina-font-weight-semibold);
+            color: var(--mina-text-primary);
+            margin-bottom: var(--mina-space-2);
+        }
+        
+        .analysis-meta {
+            font-size: var(--mina-font-size-sm);
+            color: var(--mina-text-muted);
+            margin-bottom: var(--mina-space-3);
+        }
+        
+        .analysis-scores {
+            display: flex;
+            gap: var(--mina-space-4);
+            flex-wrap: wrap;
+        }
+        
+        .score-badge {
+            padding: var(--mina-space-1) var(--mina-space-3);
+            border-radius: var(--mina-radius-full);
+            font-size: var(--mina-font-size-xs);
+            font-weight: var(--mina-font-weight-semibold);
+        }
+        
+        .score-high {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--mina-success-dark);
+        }
+        
+        .score-medium {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--mina-warning-dark);
+        }
+        
+        .score-low {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--mina-danger-dark);
+        }
+    </style>
+</head>
+<body>
+    <!-- Dark Mode Toggle -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+        <i data-feather="sun" id="themeIcon"></i>
+    </button>
+
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">M</div>
+                <div class="sidebar-logo-text">Mina</div>
+            </div>
+            
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.index') }}" class="nav-link">
+                            <i data-feather="home"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('pages.live') }}" class="nav-link">
+                            <i data-feather="mic"></i>
+                            Live Meeting
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.meetings') }}" class="nav-link">
+                            <i data-feather="users"></i>
+                            Meetings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.tasks') }}" class="nav-link">
+                            <i data-feather="check-square"></i>
+                            Tasks
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.analytics') }}" class="nav-link active">
+                            <i data-feather="bar-chart-2"></i>
+                            Analytics
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="user-info">
+                <div class="user-name">{{ current_user.first_name or current_user.username }}</div>
+                <div class="user-email">{{ current_user.email }}</div>
+                <a href="{{ url_for('auth.logout') }}" class="nav-link">
+                    <i data-feather="log-out"></i>
+                    Sign Out
+                </a>
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <header class="dashboard-header">
+                <h1 class="dashboard-title">Analytics</h1>
+                <p class="dashboard-subtitle">Insights and performance metrics from your meetings.</p>
+            </header>
+            
+            <!-- Analytics Overview -->
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <div class="analytics-value">{{ workspace_averages.effectiveness }}%</div>
+                    <div class="analytics-label">
+                        <i data-feather="target" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
+                        Meeting Effectiveness
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <div class="analytics-value">{{ workspace_averages.engagement }}%</div>
+                    <div class="analytics-label">
+                        <i data-feather="users" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
+                        Team Engagement
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <div class="analytics-value">{{ workspace_averages.sentiment }}%</div>
+                    <div class="analytics-label">
+                        <i data-feather="smile" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
+                        Sentiment Score
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts Section -->
+            <div class="chart-container">
+                <div class="chart-title">Meeting Performance Trends</div>
+                <canvas id="performanceChart" width="400" height="200"></canvas>
+            </div>
+            
+            <!-- Recent Analytics -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2 class="section-title">Recent Meeting Analysis</h2>
+                    <button class="btn btn-secondary btn-sm">
+                        <i data-feather="download"></i>
+                        Export Data
+                    </button>
+                </div>
+                <div class="section-content">
+                    {% if recent_analytics %}
+                        {% for analysis in recent_analytics %}
+                        <div class="analysis-item">
+                            <div class="analysis-title">{{ analysis.meeting.title or 'Untitled Meeting' }}</div>
+                            <div class="analysis-meta">
+                                <i data-feather="calendar" style="width: 14px; height: 14px; margin-right: 0.5rem;"></i>
+                                {{ analysis.created_at.strftime('%b %d, %Y at %I:%M %p') }}
+                            </div>
+                            <div class="analysis-scores">
+                                {% if analysis.meeting_effectiveness_score %}
+                                    <span class="score-badge score-{{ 'high' if analysis.meeting_effectiveness_score > 0.7 else 'medium' if analysis.meeting_effectiveness_score > 0.4 else 'low' }}">
+                                        Effectiveness: {{ (analysis.meeting_effectiveness_score * 100)|round }}%
+                                    </span>
+                                {% endif %}
+                                {% if analysis.overall_engagement_score %}
+                                    <span class="score-badge score-{{ 'high' if analysis.overall_engagement_score > 0.7 else 'medium' if analysis.overall_engagement_score > 0.4 else 'low' }}">
+                                        Engagement: {{ (analysis.overall_engagement_score * 100)|round }}%
+                                    </span>
+                                {% endif %}
+                                {% if analysis.overall_sentiment_score %}
+                                    <span class="score-badge score-{{ 'high' if analysis.overall_sentiment_score > 0.7 else 'medium' if analysis.overall_sentiment_score > 0.4 else 'low' }}">
+                                        Sentiment: {{ (analysis.overall_sentiment_score * 100)|round }}%
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i data-feather="bar-chart-2" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <p>No analytics data yet</p>
+                            <p style="color: var(--mina-text-muted); margin-bottom: 1rem;">
+                                Analytics will be generated after your meetings are processed.
+                            </p>
+                            <a href="{{ url_for('pages.live') }}" class="btn btn-primary">
+                                <i data-feather="plus"></i>
+                                Start New Meeting
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Initialize theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const currentTheme = localStorage.getItem('mina-theme') || 'light';
+        
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        themeIcon.setAttribute('data-feather', currentTheme === 'light' ? 'moon' : 'sun');
+        
+        themeToggle.addEventListener('click', () => {
+            const newTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('mina-theme', newTheme);
+            
+            themeIcon.style.transform = 'scale(0)';
+            setTimeout(() => {
+                themeIcon.setAttribute('data-feather', newTheme === 'light' ? 'moon' : 'sun');
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+                themeIcon.style.transform = 'scale(1)';
+            }, 150);
+        });
+        
+        // Initialize Chart.js
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [{
+                        label: 'Effectiveness',
+                        data: [{{ workspace_averages.effectiveness or 0 }}, {{ workspace_averages.effectiveness or 0 }}, {{ workspace_averages.effectiveness or 0 }}, {{ workspace_averages.effectiveness or 0 }}],
+                        borderColor: 'rgb(99, 102, 241)',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Engagement',
+                        data: [{{ workspace_averages.engagement or 0 }}, {{ workspace_averages.engagement or 0 }}, {{ workspace_averages.engagement or 0 }}, {{ workspace_averages.engagement or 0 }}],
+                        borderColor: 'rgb(16, 185, 129)',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: isDark ? '#f1f5f9' : '#1e293b'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                color: isDark ? '#94a3b8' : '#64748b'
+                            },
+                            grid: {
+                                color: isDark ? '#334155' : '#e2e8f0'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: isDark ? '#94a3b8' : '#64748b'
+                            },
+                            grid: {
+                                color: isDark ? '#334155' : '#e2e8f0'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+        
+        // Initialize feather icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    </script>
+</body>
+</html>
