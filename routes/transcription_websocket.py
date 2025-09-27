@@ -7,6 +7,7 @@ import time
 import uuid
 import base64
 import requests
+import threading
 from datetime import datetime
 
 from flask import request
@@ -15,10 +16,23 @@ from flask_socketio import emit, disconnect, join_room, leave_room
 # Import the socketio instance from the consolidated app
 from app import socketio
 
+# Import advanced buffer management
+from services.session_buffer_manager import buffer_registry, BufferConfig
+
 logger = logging.getLogger(__name__)
 
-# Session state storage
+# Session state storage with advanced buffering
 active_sessions = {}
+buffer_config = BufferConfig(
+    max_buffer_ms=30000,
+    min_flush_ms=2000,
+    max_flush_ms=8000,
+    enable_vad=True,
+    enable_quality_gating=True
+)
+
+# Background processing worker
+processing_workers = {}
 
 @socketio.on('connect', namespace='/transcription')
 def on_connect():
@@ -46,14 +60,25 @@ def on_start_session(data):
     try:
         session_id = str(uuid.uuid4())
         
-        # Store session info
+        # Store session info with advanced buffer manager
+        buffer_manager = buffer_registry.get_or_create_session(session_id)
+        
         active_sessions[session_id] = {
             'client_sid': request.sid,
             'started_at': datetime.utcnow(),
             'language': data.get('language', 'en'),
             'enhance_audio': data.get('enhance_audio', True),
-            'audio_buffer': bytearray()
+            'buffer_manager': buffer_manager
         }
+        
+        # Start background processing worker for this session
+        worker = threading.Thread(
+            target=_background_processor,
+            args=(session_id, buffer_manager),
+            daemon=True
+        )
+        worker.start()
+        processing_workers[session_id] = worker
         
         # Join the session room
         join_room(session_id)
