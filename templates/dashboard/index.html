@@ -189,6 +189,7 @@
     <!-- Enhanced Dashboard JavaScript -->
     <script>
         // Premium Dashboard Enhancement System
+        if (typeof MinaDashboard === 'undefined') {
         class MinaDashboard {
             constructor() {
                 this.theme = localStorage.getItem('mina-theme') || 'light';
@@ -461,18 +462,21 @@
 
         // Initialize dashboard when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
-            window.dashboard = new MinaDashboard();
+            if (!window.dashboard) {
+                window.dashboard = new MinaDashboard();
+            }
         });
 
-        // Auto-refresh every 30 seconds
-        setInterval(() => {
-            if (window.dashboard) {
-                window.dashboard.updateStats();
-            }
-        }, 30000);
+        // Auto-refresh every 30 seconds (only once)
+        if (!window.dashboardRefreshInterval) {
+            window.dashboardRefreshInterval = setInterval(() => {
+                if (window.dashboard) {
+                    window.dashboard.updateStats();
+                }
+            }, 30000);
+        }
+        
+        } // End of MinaDashboard class conditional declaration
     </script>
-    
-    <!-- Load additional dashboard JavaScript for API handling -->
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>
 </html>
