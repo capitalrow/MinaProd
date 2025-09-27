@@ -177,3 +177,7 @@ def get_openai_client() -> Optional[OpenAI]:
 def test_openai_connection() -> tuple[bool, Optional[str]]:
     """Test OpenAI connection - convenience function"""
     return openai_manager.test_connection()
+
+def get_openai_client_manager() -> OpenAIClientManager:
+    """Get OpenAI client manager instance - convenience function"""
+    return openai_manager

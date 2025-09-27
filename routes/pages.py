@@ -29,3 +29,9 @@ def live():
 def live_enhanced():
     """Enhanced live recording interface with comprehensive transcription processing"""
     return render_template("live_enhanced.html")
+
+@pages_bp.route("/live-comprehensive")
+@login_required
+def live_comprehensive():
+    """Comprehensive live recording interface with all advanced features"""
+    return render_template("comprehensive_live.html")

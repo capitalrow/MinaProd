@@ -602,3 +602,15 @@ def on_get_enhanced_session_metrics(data=None):
         emit('enhanced_error', {'message': f'Failed to get enhanced metrics: {str(e)}'})
 
 logger.info("✅ Enhanced Transcription WebSocket handlers registered with comprehensive features")
+
+def register_enhanced_websocket_handlers(socketio_instance):
+    """Register enhanced websocket handlers with the provided socketio instance"""
+    try:
+        logger.info("🔧 Registering enhanced websocket handlers...")
+        # The handlers are already registered via the @socketio.on decorators
+        # This function provides compatibility for manual registration
+        logger.info("✅ Enhanced websocket handlers registration completed")
+        return True
+    except Exception as e:
+        logger.error(f"❌ Failed to register enhanced websocket handlers: {e}")
+        return False
