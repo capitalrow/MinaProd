@@ -74,18 +74,30 @@ def on_start_session(data):
 def on_audio_data(data):
     """Handle incoming audio data"""
     try:
-        # Handle incoming audio data - pass raw bytes directly to API
-        if isinstance(data, str):
-            # If it's base64 string, decode it to bytes first
+        # Handle structured audio data from frontend
+        if isinstance(data, dict) and 'data' in data:
+            # New structured format
+            try:
+                audio_bytes = base64.b64decode(data['data'])
+                mime_type = data.get('mimeType', 'audio/wav')
+                logger.info(f"[transcription] Received {mime_type} audio: {len(audio_bytes)} bytes")
+            except Exception as e:
+                logger.error(f"[transcription] Failed to decode structured audio: {e}")
+                emit('error', {'message': 'Invalid audio data format'})
+                return
+        elif isinstance(data, str):
+            # Legacy base64 string format
             try:
                 audio_bytes = base64.b64decode(data)
-            except:
-                logger.error(f"[transcription] Invalid base64 audio data")
+                mime_type = 'audio/webm'
+            except Exception as e:
+                logger.error(f"[transcription] Invalid base64 audio data: {e}")
                 emit('error', {'message': 'Invalid base64 audio data'})
                 return
         elif isinstance(data, (bytes, bytearray)):
-            # Use raw bytes directly
+            # Raw bytes format
             audio_bytes = bytes(data)
+            mime_type = 'audio/webm'
         else:
             logger.error(f"[transcription] Unsupported data type: {type(data)}")
             emit('error', {'message': 'Unsupported audio data format'})
@@ -104,10 +116,11 @@ def on_audio_data(data):
         
         # Process audio via unified transcription API
         try:
-            # Send raw audio bytes to API instead of base64
+            # Send audio with proper format info
+            file_extension = '.wav' if 'wav' in mime_type else '.webm'
             response = requests.post(
                 'http://localhost:5000/api/transcribe-audio',
-                files={'audio': ('audio.webm', audio_bytes, 'audio/webm')},
+                files={'audio': (f'audio{file_extension}', audio_bytes, mime_type)},
                 data={
                     'session_id': session_id,
                     'is_interim': 'true',
