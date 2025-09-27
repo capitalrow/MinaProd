@@ -75,13 +75,13 @@
       });
       
       // Update UI
-      const console = $('#debugConsole');
-      if (console) {
+      const debugConsoleElement = $('#debugConsole');
+      if (debugConsoleElement) {
         const div = document.createElement('div');
         div.className = 'mina-console__line';
         div.textContent = message;
-        console.appendChild(div);
-        console.scrollTop = console.scrollHeight;
+        debugConsoleElement.appendChild(div);
+        debugConsoleElement.scrollTop = debugConsoleElement.scrollHeight;
       }
 
       // Update live region for screen readers
@@ -650,8 +650,8 @@
 
     handleClearLog() {
       appState.setState({ debugLogs: [] });
-      const console = $('#debugConsole');
-      if (console) console.innerHTML = '';
+      const debugConsoleElement = $('#debugConsole');
+      if (debugConsoleElement) debugConsoleElement.innerHTML = '';
     }
 
     async handleCopyTranscript() {
