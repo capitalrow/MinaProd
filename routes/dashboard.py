@@ -79,7 +79,10 @@ def meetings():
     
     # Paginate results
     meetings = db.paginate(
-        query.order_by(desc(Meeting.created_at)),
+        db.select(Meeting).filter_by(workspace_id=current_user.workspace_id).order_by(desc(Meeting.created_at)) if status_filter == 'all' else
+        db.select(Meeting).filter_by(workspace_id=current_user.workspace_id, status=status_filter).order_by(desc(Meeting.created_at)) if not search_query else
+        db.select(Meeting).filter_by(workspace_id=current_user.workspace_id, status=status_filter).filter(Meeting.title.contains(search_query)).order_by(desc(Meeting.created_at)) if status_filter != 'all' else
+        db.select(Meeting).filter_by(workspace_id=current_user.workspace_id).filter(Meeting.title.contains(search_query)).order_by(desc(Meeting.created_at)),
         page=page, per_page=20, error_out=False
     )
     
