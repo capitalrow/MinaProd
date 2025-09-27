@@ -34,9 +34,9 @@ class ComprehensiveTranscriptionProcessor:
     """Unified processor using enhanced transcription integration system"""
     
     def __init__(self):
-        # Initialize enhanced integration system
+        # Initialize enhanced integration system (neural enhancement disabled temporarily)
         self.config = EnhancedTranscriptionConfig(
-            enable_neural_enhancement=True,
+            enable_neural_enhancement=False,
             enable_voice_fingerprinting=True,
             enable_emotion_detection=True,
             enable_conversation_analytics=True,
@@ -58,6 +58,94 @@ class ComprehensiveTranscriptionProcessor:
         }
         
         logger.info("🚀 Enhanced Comprehensive Transcription Processor initialized")
+    
+    def process_audio_comprehensive_sync(
+        self, 
+        session_id: str,
+        audio_data: bytes,
+        client_id: str,
+        is_final: bool = False
+    ) -> Dict[str, Any]:
+        """Synchronous audio processing for WebSocket compatibility"""
+        
+        start_time = time.time()
+        self.processing_metrics['total_requests'] += 1
+        
+        try:
+            # Simple transcription approach for immediate results
+            import io
+            import tempfile
+            from pydub import AudioSegment
+            
+            # Convert audio bytes to a format OpenAI can transcribe
+            audio_segment = AudioSegment.from_file(io.BytesIO(audio_data))
+            
+            # Create temporary file for transcription
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                audio_segment.export(temp_file.name, format='wav')
+                
+                # Transcribe using OpenAI client manager
+                with open(temp_file.name, 'rb') as audio_file:
+                    transcription = self.openai_client.transcribe_audio(audio_file)
+                
+                # Clean up temp file
+                import os
+                os.unlink(temp_file.name)
+            
+            # Simple result format
+            result = {
+                'session_id': session_id,
+                'text': transcription or "",
+                'confidence': 0.9 if transcription else 0.0,
+                'timestamp': time.time(),
+                'is_final': is_final,
+                'speaker': 'unknown',
+                'language': 'en',
+                'processing_time_ms': (time.time() - start_time) * 1000
+            }
+            
+            # Update metrics
+            if transcription:
+                self.processing_metrics['successful_requests'] += 1
+            self._update_average_latency((time.time() - start_time) * 1000)
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Sync transcription failed: {e}")
+            self._increment_error_rate()
+            return {
+                'session_id': session_id,
+                'text': "",
+                'confidence': 0.0,
+                'timestamp': time.time(),
+                'is_final': is_final,
+                'error': str(e),
+                'processing_time_ms': (time.time() - start_time) * 1000
+            }
+    
+    def _increment_error_rate(self):
+        """Update error rate metrics"""
+        try:
+            total = self.processing_metrics.get('total_requests', 1)
+            errors = self.processing_metrics.get('error_count', 0) + 1
+            self.processing_metrics['error_count'] = errors
+            self.processing_metrics['error_rate'] = errors / total
+        except Exception:
+            pass
+    
+    def _update_average_latency(self, latency_ms: float):
+        """Update average latency metric"""
+        try:
+            current_avg = self.processing_metrics.get('average_latency', 0.0)
+            total_requests = self.processing_metrics.get('total_requests', 1)
+            
+            # Calculate rolling average
+            self.processing_metrics['average_latency'] = (
+                (current_avg * (total_requests - 1) + latency_ms) / total_requests
+            )
+        except Exception:
+            pass
     
     async def process_audio_comprehensive(
         self, 
@@ -444,22 +532,21 @@ def register_comprehensive_websocket_handlers(socketio):
             # Process through comprehensive pipeline
             processor = get_comprehensive_processor()
             
-            # Use asyncio to run the async function
-            import asyncio
+            # Process without creating new event loop
             try:
-                result = asyncio.run(processor.process_audio_comprehensive(
+                result = processor.process_audio_comprehensive_sync(
                     session_id=session_id,
                     audio_data=audio_bytes,
                     client_id=client_id,
                     is_final=is_final
-                ))
+                )
                 
                 # Emit result to all clients in the session
                 socketio.emit('comprehensive_transcription_result', result, 
                             room=f"comprehensive_{session_id}")
                 
             except Exception as e:
-                logger.error(f"❌ Async processing failed: {e}")
+                logger.error(f"❌ Processing failed: {e}")
                 emit('error', {'message': f'Processing failed: {str(e)}'})
             
         except Exception as e:

@@ -125,6 +125,48 @@ class OpenAIClientManager:
             logger.error(error_msg)
             return False, error_msg
     
+    async def transcribe_audio_async(self, audio_file, model: str = "whisper-1", **kwargs) -> Optional[str]:
+        """
+        Async transcribe audio with robust error handling
+        
+        Args:
+            audio_file: Audio file object or path
+            model: Whisper model to use
+            **kwargs: Additional parameters for transcription
+            
+        Returns:
+            Transcribed text or None if failed
+        """
+        client = self.get_client()
+        if not client:
+            logger.error("OpenAI client not available for transcription")
+            return None
+        
+        try:
+            # Clean kwargs to avoid unsupported parameters
+            clean_kwargs = {
+                "file": audio_file,
+                "model": model,
+            }
+            
+            # Add supported optional parameters
+            if "language" in kwargs and kwargs["language"]:
+                clean_kwargs["language"] = kwargs["language"]
+            if "response_format" in kwargs:
+                clean_kwargs["response_format"] = kwargs["response_format"]
+            if "temperature" in kwargs:
+                clean_kwargs["temperature"] = kwargs["temperature"]
+            
+            response = client.audio.transcriptions.create(**clean_kwargs)
+            return getattr(response, "text", "") or ""
+            
+        except OpenAIError as e:
+            logger.error(f"OpenAI transcription error: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected transcription error: {e}")
+            return None
+
     def transcribe_audio(self, audio_file, model: str = "whisper-1", **kwargs) -> Optional[str]:
         """
         Transcribe audio with robust error handling
