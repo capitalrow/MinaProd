@@ -1626,6 +1626,11 @@
                     this.socket.on('connect', () => {
                         console.log('✅ Connected to transcription server');
                         this.updateStatus('Connected to server', 'connected');
+                        
+                        // Join session when connected
+                        this.socket.emit('join_session', {
+                            session_id: this.sessionId
+                        });
                     });
                     
                     this.socket.on('disconnect', () => {
@@ -1635,6 +1640,15 @@
                     
                     this.socket.on('transcription_result', (data) => {
                         this.handleTranscriptionResult(data);
+                    });
+                    
+                    this.socket.on('server_hello', (data) => {
+                        console.log('📡 Session joined successfully:', data);
+                        this.showToast('Session connected successfully', 'success');
+                    });
+                    
+                    this.socket.on('ack', (data) => {
+                        console.log('✓ Audio chunk acknowledged:', data);
                     });
                     
                     this.socket.on('error', (error) => {

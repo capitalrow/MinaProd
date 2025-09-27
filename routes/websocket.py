@@ -81,18 +81,30 @@ def on_join_session(data):
 @socketio.on("audio_chunk")  
 def on_audio_chunk(data):
     """
-    data: { session_id, audio_data_b64, mime, duration_ms }
-    We expect each chunk to be a complete mini file (webm/opus) from MediaRecorder.
+    data: { session_id, audio_data, settings }
+    Frontend sends audio_data as array of bytes from MediaRecorder.
     """
     session_id = (data or {}).get("session_id")
     if not session_id:
         emit("error", {"message": "Missing session_id in audio_chunk"})
         return
 
-    mime = (data or {}).get("mime") or "audio/webm"
+    # Handle audio data - frontend sends as array of bytes
+    audio_data = (data or {}).get("audio_data")
+    if not audio_data:
+        emit("error", {"message": "Missing audio_data in audio_chunk"})
+        return
+    
     try:
-        chunk = _decode_b64((data or {}).get("audio_data_b64"))
-    except ValueError as e:
+        # Convert array of bytes to bytes object
+        if isinstance(audio_data, list):
+            chunk = bytes(audio_data)
+        elif isinstance(audio_data, str):
+            # Fallback: try base64 decode
+            chunk = _decode_b64(audio_data)
+        else:
+            chunk = bytes(audio_data)
+    except (ValueError, TypeError) as e:
         emit("error", {"message": f"bad_audio: {e}"})
         return
 
@@ -102,6 +114,11 @@ def on_audio_chunk(data):
     # Append to full buffer for the eventual final pass
     _BUFFERS[session_id].extend(chunk)
 
+    # Only process if we have meaningful audio data (> 1KB)
+    if len(chunk) < 1024:
+        emit("ack", {"ok": True})
+        return
+    
     # Rate-limit interim requests
     now = _now_ms()
     if (now - _LAST_EMIT_AT.get(session_id, 0)) < _MIN_MS_BETWEEN_INTERIM:
@@ -126,7 +143,14 @@ def on_audio_chunk(data):
     text = (text or "").strip()
     if text and text != _LAST_INTERIM_TEXT.get(session_id, ""):
         _LAST_INTERIM_TEXT[session_id] = text
-        emit("interim_transcript", {"text": text})
+        # Emit transcription_result that frontend expects
+        emit("transcription_result", {
+            "text": text,
+            "is_final": False,
+            "confidence": 0.8,  # Default confidence for interim
+            "session_id": session_id,
+            "timestamp": int(_now_ms())
+        })
 
     emit("ack", {"ok": True})
 
@@ -137,7 +161,9 @@ def on_finalize(data):
         emit("error", {"message": "Missing session_id in finalize_session"})
         return
 
-    mime = (data or {}).get("mime") or "audio/webm"
+    # Get settings from frontend
+    settings = (data or {}).get("settings", {})
+    mime = settings.get("mimeType", "audio/webm")
     full_audio = bytes(_BUFFERS.get(session_id, b""))
     if not full_audio:
         emit("final_transcript", {"text": ""})
@@ -178,7 +204,15 @@ def on_finalize(data):
     except Exception as e:
         logger.error(f"[ws] Database error saving segment: {e}")
 
-    emit("final_transcript", {"text": final_text})
+    # Emit transcription_result that frontend expects
+    emit("transcription_result", {
+        "text": final_text,
+        "is_final": True,
+        "confidence": 0.9,  # Higher confidence for final
+        "session_id": session_id,
+        "timestamp": int(_now_ms())
+    })
+    
     # clear session memory
     _BUFFERS.pop(session_id, None)
     _LAST_EMIT_AT.pop(session_id, None)
