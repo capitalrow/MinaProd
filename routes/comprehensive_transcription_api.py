@@ -289,7 +289,12 @@ def create_comprehensive_session():
         return jsonify({
             'success': True,
             'session_id': session_id,
-            'session_info': session_info,
+            'enhanced_features': {
+                'streaming_processor': True,
+                'neural_enhancement': True,
+                'intelligent_chunking': True,
+                'conversation_analytics': True
+            },
             'message': 'Enhanced comprehensive transcription session created'
         })
         
