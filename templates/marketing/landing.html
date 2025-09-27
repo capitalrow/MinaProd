@@ -1321,24 +1321,30 @@
             height: 14px;
         }
 
-        /* 💰 PRICING DISPLAY */
+        /* 📊 PROFESSIONAL TYPOGRAPHY HIERARCHY */
         .plan-header-3d {
             text-align: center;
-            margin-bottom: var(--mina-space-6);
+            margin-bottom: var(--mina-space-8);
         }
 
+        /* Plan Name Typography - Fluid & Sophisticated */
         .plan-name-3d {
-            font-size: var(--mina-font-size-2xl);
-            font-weight: var(--mina-font-weight-bold);
+            font-size: clamp(1.25rem, 3vw, 1.75rem);
+            font-weight: 800;
             color: var(--neutral-900);
-            margin-bottom: var(--mina-space-2);
+            margin-bottom: var(--mina-space-3);
+            line-height: 1.2;
+            font-family: var(--mina-font-display);
+            letter-spacing: -0.015em;
         }
 
+        /* Premium Gradient Text Effects */
         .featured-name {
             background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            font-weight: 900;
         }
 
         .enterprise-name {
@@ -1346,12 +1352,16 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            font-weight: 900;
         }
 
+        /* Plan Description Typography */
         .plan-description-3d {
             color: var(--neutral-600);
-            font-size: var(--mina-font-size-lg);
-            margin-bottom: var(--mina-space-4);
+            font-size: clamp(0.875rem, 2.2vw, 1.125rem);
+            line-height: 1.5;
+            margin-bottom: var(--mina-space-6);
+            font-weight: 500;
         }
 
         .price-container {
@@ -1368,16 +1378,27 @@
             color: var(--neutral-700);
         }
 
+        /* Fluid Price Display Typography */
         .price-amount-3d {
-            font-size: 3.5rem;
-            font-weight: var(--mina-font-weight-black);
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            font-weight: 900;
             color: var(--neutral-900);
-            line-height: 1;
+            line-height: 0.9;
+            font-family: var(--mina-font-display);
+            letter-spacing: -0.025em;
         }
 
         .price-period {
-            font-size: var(--mina-font-size-lg);
+            font-size: clamp(0.875rem, 2.2vw, 1.125rem);
             color: var(--neutral-600);
+            font-weight: 600;
+            letter-spacing: 0.005em;
+        }
+
+        .price-currency {
+            font-size: clamp(1.25rem, 3.5vw, 1.75rem);
+            opacity: 0.9;
+            font-weight: 800;
         }
 
         /* 📊 ROI PREVIEW */
@@ -1734,6 +1755,7 @@
             text-align: center;
         }
 
+        /* 🎨 PREMIUM INTERACTIVE CTA BUTTONS */
         .cta-button-3d {
             display: inline-flex;
             align-items: center;
@@ -1742,14 +1764,27 @@
             padding: var(--mina-space-4) var(--mina-space-6);
             border-radius: var(--mina-radius-lg);
             text-decoration: none;
-            font-weight: var(--mina-font-weight-semibold);
-            font-size: var(--mina-font-size-base);
+            font-weight: 700;
+            font-size: clamp(0.875rem, 2.2vw, 1rem);
             position: relative;
             overflow: hidden;
+            cursor: pointer;
+            border: none;
+            
+            /* GPU-Accelerated Performance */
+            will-change: transform, box-shadow;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            
+            /* Premium Transition System */
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             transform-style: preserve-3d;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
+            
+            /* Sophisticated Shadow Layers */
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.08),
+                0 2px 4px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
         .cta-secondary-3d {
@@ -1971,16 +2006,29 @@
             font-size: clamp(0.875rem, 2.5vw, 1rem);
         }
 
-        /* Mobile Feature Lists */
+        /* Mobile Feature Lists - Enhanced Typography */
         .feature-item-3d {
             padding: var(--mina-space-3) var(--mina-space-2);
             margin: 0 calc(-1 * var(--mina-space-2));
             border-radius: var(--mina-radius-lg);
+            transition: all 0.2s ease;
+        }
+
+        .feature-item-3d:hover {
+            background: rgba(37, 99, 235, 0.04);
+            transform: translateX(2px);
         }
 
         .feature-text {
-            font-size: clamp(0.875rem, 2.5vw, 1rem);
-            line-height: 1.5;
+            font-size: clamp(0.875rem, 2.2vw, 1rem);
+            line-height: 1.6;
+            color: var(--neutral-700);
+            font-weight: 500;
+        }
+
+        .feature-text strong {
+            font-weight: 700;
+            color: var(--neutral-900);
         }
 
         /* Mobile Touch Targets (44px minimum) */
