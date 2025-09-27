@@ -500,3 +500,9 @@ class SessionBufferRegistry:
 
 # Global registry instance
 buffer_registry = SessionBufferRegistry()
+
+def get_session_buffer_manager(session_id: str) -> SessionBufferManager:
+    """Get session buffer manager instance for the given session ID"""
+    return buffer_registry.get_or_create_session(session_id)
+
+logger.info("✅ Session Buffer Manager module initialized")

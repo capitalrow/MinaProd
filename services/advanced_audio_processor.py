@@ -9,6 +9,7 @@ import numpy as np
 from typing import Optional, Tuple, List, Dict, Any
 from dataclasses import dataclass
 import time
+import threading
 from collections import deque
 from scipy import signal
 import librosa
@@ -635,3 +636,18 @@ class AdvancedAudioProcessor:
             'chunks_processed': len(self.chunk_history),
             'current_noise_level': np.mean(self.noise_spectrum) if self.noise_spectrum is not None else 0
         }
+
+# Global processor instance
+_advanced_processor = None
+_processor_lock = threading.Lock()
+
+def get_advanced_audio_processor() -> AdvancedAudioProcessor:
+    """Get global advanced audio processor instance"""
+    global _advanced_processor
+    
+    with _processor_lock:
+        if _advanced_processor is None:
+            _advanced_processor = AdvancedAudioProcessor()
+        return _advanced_processor
+
+logger.info("✅ Advanced Audio Processor module initialized")

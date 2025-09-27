@@ -171,6 +171,22 @@ def create_app() -> Flask:
     # WebSocket routes (required) - import to bind handlers
     import routes.websocket  # noqa: F401
     import routes.transcription_websocket  # noqa: F401
+    
+    # Register enhanced WebSocket handlers
+    try:
+        from routes.enhanced_transcription_websocket import register_enhanced_websocket_handlers
+        register_enhanced_websocket_handlers(socketio)
+        app.logger.info("Enhanced WebSocket handlers registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register enhanced WebSocket handlers: {e}")
+    
+    # Register comprehensive WebSocket handlers
+    try:
+        from routes.comprehensive_transcription_api import register_comprehensive_websocket_handlers
+        register_comprehensive_websocket_handlers(socketio)
+        app.logger.info("Comprehensive WebSocket handlers registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register comprehensive WebSocket handlers: {e}")
 
     # Register transcription APIs
     try:
@@ -193,6 +209,13 @@ def create_app() -> Flask:
         app.logger.info("Enhanced Transcription API registered")
     except Exception as e:
         app.logger.warning(f"Failed to register enhanced transcription API: {e}")
+    
+    try:
+        from routes.comprehensive_transcription_api import comprehensive_bp
+        app.register_blueprint(comprehensive_bp)
+        app.logger.info("Comprehensive Transcription API registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register comprehensive transcription API: {e}")
 
     # Register authentication and dashboard blueprints
     try:
