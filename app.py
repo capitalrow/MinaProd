@@ -186,6 +186,13 @@ def create_app() -> Flask:
         app.logger.info("Unified Transcription API registered")
     except Exception as e:
         app.logger.warning(f"Failed to register unified transcription API: {e}")
+    
+    try:
+        from routes.enhanced_transcription_api import enhanced_api_bp
+        app.register_blueprint(enhanced_api_bp)
+        app.logger.info("Enhanced Transcription API registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register enhanced transcription API: {e}")
 
     # Register authentication and dashboard blueprints
     try:
