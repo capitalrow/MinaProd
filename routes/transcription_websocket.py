@@ -74,13 +74,18 @@ def on_start_session(data):
 def on_audio_data(data):
     """Handle incoming audio data"""
     try:
-        # Handle incoming audio data (base64 encoded or ArrayBuffer)
+        # Handle incoming audio data - pass raw bytes directly to API
         if isinstance(data, str):
-            # Assume it's base64 encoded
-            audio_data = data
+            # If it's base64 string, decode it to bytes first
+            try:
+                audio_bytes = base64.b64decode(data)
+            except:
+                logger.error(f"[transcription] Invalid base64 audio data")
+                emit('error', {'message': 'Invalid base64 audio data'})
+                return
         elif isinstance(data, (bytes, bytearray)):
-            # Convert bytes to base64
-            audio_data = base64.b64encode(data).decode('utf-8')
+            # Use raw bytes directly
+            audio_bytes = bytes(data)
         else:
             logger.error(f"[transcription] Unsupported data type: {type(data)}")
             emit('error', {'message': 'Unsupported audio data format'})
@@ -99,11 +104,12 @@ def on_audio_data(data):
         
         # Process audio via unified transcription API
         try:
+            # Send raw audio bytes to API instead of base64
             response = requests.post(
                 'http://localhost:5000/api/transcribe-audio',
+                files={'audio': ('audio.webm', audio_bytes, 'audio/webm')},
                 data={
                     'session_id': session_id,
-                    'audio_data': audio_data,
                     'is_interim': 'true',
                     'chunk_id': str(int(time.time() * 1000))
                 },
