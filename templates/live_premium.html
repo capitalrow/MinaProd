@@ -644,7 +644,7 @@
                     this.setupAudioContext(stream);
                     this.setupMediaRecorder(stream);
                     
-                    this.mediaRecorder.start(2000); // 2 second chunks for better quality
+                    this.mediaRecorder.start(1500); // 1.5 second chunks for continuous transcription
                     this.isRecording = true;
                     this.recordingStartTime = Date.now();
                     this.startTimer();
@@ -690,47 +690,21 @@
             }
             
             setupMediaRecorder(stream) {
-                // Try different audio formats for better compatibility
-                const supportedTypes = [
-                    'audio/webm;codecs=opus',
-                    'audio/webm',
-                    'audio/ogg;codecs=opus',
-                    'audio/mp4',
-                    'audio/wav'
-                ];
-                
-                let selectedType = '';
-                for (const type of supportedTypes) {
-                    if (MediaRecorder.isTypeSupported(type)) {
-                        selectedType = type;
-                        break;
-                    }
-                }
-                
+                // Use the most compatible format
                 this.mediaRecorder = new MediaRecorder(stream, {
-                    mimeType: selectedType,
-                    audioBitsPerSecond: 128000 // Higher quality
+                    mimeType: 'audio/webm;codecs=opus',
+                    audioBitsPerSecond: 128000
                 });
                 
-                this.audioChunks = [];
-                
                 this.mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) {
-                        this.audioChunks.push(event.data);
-                        
-                        // Send accumulated audio for better transcription
-                        if (this.audioChunks.length >= 3 && this.socket) {
-                            const audioBlob = new Blob(this.audioChunks, { type: selectedType });
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                                const base64Audio = btoa(String.fromCharCode(...new Uint8Array(reader.result)));
-                                this.socket.emit('audio_data', base64Audio);
-                            };
-                            reader.readAsArrayBuffer(audioBlob);
-                            
-                            // Keep last chunk for continuity
-                            this.audioChunks = this.audioChunks.slice(-1);
-                        }
+                    if (event.data.size > 0 && this.socket) {
+                        // Send each chunk immediately for continuous transcription
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            // Send raw ArrayBuffer, not base64 encoded
+                            this.socket.emit('audio_data', reader.result);
+                        };
+                        reader.readAsArrayBuffer(event.data);
                     }
                 };
             }
