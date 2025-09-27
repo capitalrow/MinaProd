@@ -1759,6 +1759,14 @@
                 this.isRecording = false;
                 this.audioChunks = [];
                 
+                // Finalize the session to get final transcript
+                if (this.socket && this.socket.connected) {
+                    this.socket.emit('finalize_session', {
+                        session_id: this.sessionId,
+                        mime: 'audio/webm'
+                    });
+                }
+                
                 this.updateRecordButton();
                 this.updateStatus('Recording stopped', 'stopped');
                 this.showToast('Recording stopped', 'info');
