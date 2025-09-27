@@ -130,40 +130,82 @@ def on_audio_data(data):
             emit('error', {'message': 'No active session found'})
             return
         
-        # Process audio via unified transcription API
-        try:
-            # Send audio with proper format info
-            file_extension = '.wav' if 'wav' in mime_type else '.webm'
-            response = requests.post(
-                'http://localhost:5000/api/transcribe-audio',
-                files={'audio': (f'audio{file_extension}', audio_bytes, mime_type)},
-                data={
-                    'session_id': session_id,
-                    'is_interim': 'true',
-                    'chunk_id': str(int(time.time() * 1000))
-                },
-                timeout=10
-            )
+        # 🔥 CRITICAL FIX: Buffer chunks and reconstruct proper WebM containers
+        session_info = active_sessions[session_id]
+        
+        # Initialize WebM reconstruction data
+        if 'webm_header' not in session_info:
+            session_info['webm_header'] = None
+            session_info['last_process_time'] = 0
             
-            if response.status_code == 200:
-                result = response.json()
-                if result.get('success') and result.get('text'):
-                    emit('transcription_result', {
-                        'transcript': result['text'],
-                        'is_final': result.get('is_final', False),
-                        'confidence': result.get('confidence', 0.9),
-                        'segment_id': result.get('chunk_id', str(uuid.uuid4())),
-                        'latency_ms': result.get('processing_time', 100)
-                    })
+        # Detect and store EBML header from first chunk
+        if session_info['webm_header'] is None and len(audio_bytes) > 12:
+            if audio_bytes[:4] == b'\x1a\x45\xdf\xa3':  # EBML signature
+                session_info['webm_header'] = audio_bytes
+                logger.info(f"🎯 [transcription] Captured WebM header chunk: {len(audio_bytes)} bytes")
+            
+        # Buffer the audio chunk
+        session_info['audio_buffer'].extend(audio_bytes)
+        buffer_size = len(session_info['audio_buffer'])
+        
+        # Process buffered audio every ~3 seconds or when buffer gets large  
+        current_time = time.time()
+        should_process = (
+            buffer_size > 50000 or 
+            (buffer_size > 10000 and current_time - session_info['last_process_time'] > 3)
+        )
+        
+        if should_process:
+            # Reconstruct proper WebM container
+            if session_info['webm_header'] and len(session_info['audio_buffer']) > len(session_info['webm_header']):
+                # Create proper WebM by ensuring EBML header is present
+                if session_info['audio_buffer'][:4] != b'\x1a\x45\xdf\xa3':
+                    reconstructed_audio = session_info['webm_header'] + bytes(session_info['audio_buffer'])
+                    logger.info(f"🔧 [transcription] Reconstructed WebM with header: {len(reconstructed_audio)} bytes")
                 else:
-                    # Silent handling for empty results
-                    pass
+                    reconstructed_audio = bytes(session_info['audio_buffer'])
             else:
-                logger.warning(f"[transcription] API error: {response.status_code}")
-                
-        except requests.RequestException as e:
-            logger.error(f"[transcription] API request failed: {e}")
-            # Don't emit error for network issues, just log them
+                reconstructed_audio = bytes(session_info['audio_buffer'])
+        
+            try:
+                # Send reconstructed audio to transcription API
+                file_extension = '.wav' if 'wav' in mime_type else '.webm'
+                response = requests.post(
+                    'http://localhost:5000/api/transcribe-audio',
+                    files={'audio': (f'audio{file_extension}', reconstructed_audio, mime_type)},
+                    data={
+                        'session_id': session_id,
+                        'is_interim': 'true',
+                        'chunk_id': str(int(time.time() * 1000))
+                    },
+                    timeout=10
+                )
+            
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get('success') and result.get('text'):
+                        emit('transcription_result', {
+                            'transcript': result['text'],
+                            'is_final': result.get('is_final', False),
+                            'confidence': result.get('confidence', 0.9),
+                            'segment_id': result.get('chunk_id', str(uuid.uuid4())),
+                            'latency_ms': result.get('processing_time', 100)
+                        })
+                    else:
+                        # Silent handling for empty results
+                        pass
+                else:
+                    logger.warning(f"[transcription] API error: {response.status_code}")
+                    
+            except requests.RequestException as e:
+                logger.error(f"[transcription] API request failed: {e}")
+                # Don't emit error for network issues, just log them
+            
+            # Reset buffer with some overlap for context continuity
+            overlap_size = min(5000, len(session_info['audio_buffer']) // 3)
+            session_info['audio_buffer'] = session_info['audio_buffer'][-overlap_size:]
+            session_info['last_process_time'] = current_time
+            logger.info(f"🔄 [transcription] Buffer reset, kept {overlap_size} bytes overlap")
         
     except Exception as e:
         logger.error(f"[transcription] Error processing audio: {e}")
