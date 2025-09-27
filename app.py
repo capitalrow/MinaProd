@@ -170,14 +170,22 @@ def create_app() -> Flask:
 
     # WebSocket routes (required) - import to bind handlers
     import routes.websocket  # noqa: F401
+    import routes.transcription_websocket  # noqa: F401
 
-    # Register transcription API
+    # Register transcription APIs
     try:
         from routes.transcription_api import transcription_api_bp
         app.register_blueprint(transcription_api_bp)
         app.logger.info("Transcription API registered")
     except Exception as e:
         app.logger.warning(f"Failed to register transcription API: {e}")
+    
+    try:
+        from routes.unified_transcription_api import unified_api_bp
+        app.register_blueprint(unified_api_bp)
+        app.logger.info("Unified Transcription API registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register unified transcription API: {e}")
 
     # Register authentication and dashboard blueprints
     try:
