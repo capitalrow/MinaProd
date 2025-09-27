@@ -134,7 +134,7 @@ def on_audio_chunk(data):
     # If the buffer is huge, just take the tail ~N seconds.
     # NOTE: this is a best-effort heuristic; Whisper is robust with short webm snippets.
     try:
-        text = transcribe_bytes(window_bytes, mime_hint=mime)
+        text = transcribe_bytes(window_bytes, mime_hint=mime_type)
     except Exception as e:
         logger.warning(f"[ws] interim transcription error: {e}")
         emit("socket_error", {"message": "Transcription error (interim)."})
@@ -163,14 +163,14 @@ def on_finalize(data):
 
     # Get settings from frontend
     settings = (data or {}).get("settings", {})
-    mime = settings.get("mimeType", "audio/webm")
+    mime_type = settings.get("mimeType", "audio/webm")
     full_audio = bytes(_BUFFERS.get(session_id, b""))
     if not full_audio:
         emit("final_transcript", {"text": ""})
         return
 
     try:
-        final_text = transcribe_bytes(full_audio, mime_hint=mime)
+        final_text = transcribe_bytes(full_audio, mime_hint=mime_type)
     except Exception as e:
         logger.error(f"[ws] final transcription error: {e}")
         emit("error", {"message": "Transcription failed (final)."})
