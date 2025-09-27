@@ -142,11 +142,16 @@ def unified_transcribe_audio():
         
         logger.info(f"🎵 Processing audio: session={session_id}, chunk={chunk_id}, interim={is_interim}, size={len(audio_data)} bytes")
         
-        # 🔥 CRITICAL FIX: Use robust AudioProcessor service for conversion
+        # 🔥 CRITICAL FIX: Use robust AudioProcessor service with format detection
         try:
             from services.audio_processor import AudioProcessor
             audio_processor = AudioProcessor()
-            wav_audio = audio_processor.convert_to_wav(audio_data, 'webm')
+            
+            # Detect actual format instead of assuming WebM
+            detected_format = detect_audio_format(audio_data)
+            logger.info(f"🔍 Detected audio format: {detected_format} for {len(audio_data)} bytes")
+            
+            wav_audio = audio_processor.convert_to_wav(audio_data, detected_format)
             
             if not wav_audio or len(wav_audio) < 44:
                 logger.error("❌ AudioProcessor conversion failed")
@@ -268,6 +273,29 @@ def unified_transcribe_audio():
             'session_id': session_id or 'unknown',
             'processing_time': processing_time
         }), 500
+
+def detect_audio_format(audio_data):
+    """
+    Detect audio format using magic bytes instead of assuming WebM
+    """
+    if not audio_data or len(audio_data) < 12:
+        return 'webm'  # Default fallback
+    
+    # Check for common audio format signatures
+    if audio_data[:4] == b'RIFF' and audio_data[8:12] == b'WAVE':
+        return 'wav'
+    elif audio_data[:4] == b'OggS':
+        return 'ogg'
+    elif audio_data[:4] == b'\x1a\x45\xdf\xa3':  # EBML signature for WebM
+        return 'webm'
+    elif audio_data[:8] == b'ftypmp4\x00' or audio_data[4:8] == b'ftyp':
+        return 'mp4'
+    else:
+        # If no clear signature, check for WebM container patterns
+        if b'webm' in audio_data[:100].lower():
+            return 'webm'
+        # Default to WebM for browser MediaRecorder
+        return 'webm'
 
 def convert_audio_to_wav_enhanced(audio_data):
     """Enhanced audio conversion with multiple fallback strategies"""
