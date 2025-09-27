@@ -108,8 +108,15 @@ def register():
             user.workspace_id = workspace.id
             db.session.commit()
             
-            flash('Registration successful! Please log in.', 'success')
-            return redirect(url_for('auth.login'))
+            # Auto-login the new user for smooth onboarding
+            login_user(user)
+            flash('Welcome to Mina! Your account has been created successfully.', 'success')
+            
+            # Redirect to next parameter or dashboard
+            next_page = request.args.get('next')
+            if next_page and next_page.startswith('/'):
+                return redirect(next_page)
+            return redirect(url_for('dashboard.index'))
             
         except Exception as e:
             db.session.rollback()
