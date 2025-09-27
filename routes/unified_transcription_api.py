@@ -173,13 +173,14 @@ def unified_transcribe_audio():
                 transcription_start = time.time()
                 
                 with open(temp_file_path, "rb") as audio_file:
+                    # Optimized Whisper parameters for accuracy
                     response = client.audio.transcriptions.create(
                         model="whisper-1",
                         file=audio_file,
                         response_format="verbose_json",
                         language="en",
-                        temperature=0.2,
-                        prompt="This is a live transcription. Please provide accurate speech-to-text conversion."
+                        temperature=0.0,  # Lower temperature for more accurate results
+                        prompt="Professional meeting transcription. Transcribe exactly what is spoken with proper punctuation and capitalization."
                     )
                 
                 transcription_time = (time.time() - transcription_start) * 1000

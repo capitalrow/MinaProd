@@ -635,14 +635,16 @@
                         audio: {
                             echoCancellation: true,
                             noiseSuppression: true,
-                            autoGainControl: true
+                            autoGainControl: true,
+                            sampleRate: 48000,  // Higher sample rate
+                            channelCount: 1     // Mono for better processing
                         } 
                     });
                     
                     this.setupAudioContext(stream);
                     this.setupMediaRecorder(stream);
                     
-                    this.mediaRecorder.start(1000); // 1 second chunks
+                    this.mediaRecorder.start(2000); // 2 second chunks for better quality
                     this.isRecording = true;
                     this.recordingStartTime = Date.now();
                     this.startTimer();
@@ -688,17 +690,47 @@
             }
             
             setupMediaRecorder(stream) {
+                // Try different audio formats for better compatibility
+                const supportedTypes = [
+                    'audio/webm;codecs=opus',
+                    'audio/webm',
+                    'audio/ogg;codecs=opus',
+                    'audio/mp4',
+                    'audio/wav'
+                ];
+                
+                let selectedType = '';
+                for (const type of supportedTypes) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        selectedType = type;
+                        break;
+                    }
+                }
+                
                 this.mediaRecorder = new MediaRecorder(stream, {
-                    mimeType: 'audio/webm;codecs=opus'
+                    mimeType: selectedType,
+                    audioBitsPerSecond: 128000 // Higher quality
                 });
                 
+                this.audioChunks = [];
+                
                 this.mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0 && this.socket) {
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                            this.socket.emit('audio_data', reader.result);
-                        };
-                        reader.readAsArrayBuffer(event.data);
+                    if (event.data.size > 0) {
+                        this.audioChunks.push(event.data);
+                        
+                        // Send accumulated audio for better transcription
+                        if (this.audioChunks.length >= 3 && this.socket) {
+                            const audioBlob = new Blob(this.audioChunks, { type: selectedType });
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                const base64Audio = btoa(String.fromCharCode(...new Uint8Array(reader.result)));
+                                this.socket.emit('audio_data', base64Audio);
+                            };
+                            reader.readAsArrayBuffer(audioBlob);
+                            
+                            // Keep last chunk for continuity
+                            this.audioChunks = this.audioChunks.slice(-1);
+                        }
                     }
                 };
             }
