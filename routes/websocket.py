@@ -78,7 +78,7 @@ def on_join_session(data):
     emit("server_hello", {"msg": "connected", "t": int(_now_ms())})
     logger.info(f"[ws] join_session {session_id}")
 
-@socketio.on("audio_chunk")
+@socketio.on("audio_chunk")  
 def on_audio_chunk(data):
     """
     data: { session_id, audio_data_b64, mime, duration_ms }

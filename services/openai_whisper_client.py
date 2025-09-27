@@ -12,11 +12,7 @@ _CLIENT: Optional[OpenAI] = None
 def _client() -> OpenAI:
     global _CLIENT
     if _CLIENT is None:
-        from services.openai_client_manager import openai_manager
-        _CLIENT = openai_manager.get_client()
-        if not _CLIENT:
-            error = openai_manager.get_initialization_error()
-            raise ValueError(f"OpenAI client not available: {error}")
+        _CLIENT = OpenAI()  # reads OPENAI_API_KEY from env
     return _CLIENT
 
 # Map the mime that comes from MediaRecorder to extensions Whisper accepts
@@ -72,15 +68,11 @@ def transcribe_bytes(
     while True:
         attempt += 1
         try:
-            kwargs = {
-                "file": file_tuple,
-                "model": model,
-            }
-            # Only include language if explicitly provided
-            if language or os.getenv("LANGUAGE_HINT"):
-                kwargs["language"] = language or os.getenv("LANGUAGE_HINT")
-            
-            resp = client.audio.transcriptions.create(**kwargs)
+            resp = client.audio.transcriptions.create(
+                file=file_tuple,
+                model=model,
+                language=language or os.getenv("LANGUAGE_HINT") or None,
+            )
             return getattr(resp, "text", "") or ""
         except OpenAIError as e:
             if attempt >= max_retries:
