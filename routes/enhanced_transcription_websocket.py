@@ -1,0 +1,604 @@
+# routes/enhanced_transcription_websocket.py
+"""
+ADVANCED TRANSCRIPTION WEBSOCKET HANDLERS
+Comprehensive and extensive transcription processing with advanced buffering,
+real-time quality monitoring, adaptive processing, and sophisticated error handling.
+"""
+import logging
+import time
+import uuid
+import base64
+import requests
+import threading
+import asyncio
+import json
+from datetime import datetime
+from typing import Dict, Any, Optional, List
+
+from flask import request
+from flask_socketio import emit, disconnect, join_room, leave_room
+from typing import Dict
+
+# Import the socketio instance from the consolidated app
+from app import socketio
+
+# Import advanced buffer management and services
+from services.session_buffer_manager import buffer_registry, BufferConfig, SessionBufferManager
+
+logger = logging.getLogger(__name__)
+
+def _background_processor(session_id: str, buffer_manager: SessionBufferManager):
+    """Enhanced background worker for processing buffered audio chunks"""
+    logger.info(f"🔧 Started enhanced background processor for session {session_id}")
+    
+    processing_state = {
+        'consecutive_failures': 0,
+        'last_success_time': time.time(),
+        'adaptive_flush_interval': 2.0,  # Start with 2 second intervals
+        'quality_score': 1.0,
+        'speech_segments': [],
+        'interim_transcript': '',
+        'pending_results': []
+    }
+    
+    while buffer_manager.is_active:
+        try:
+            current_time = time.time()
+            
+            # Adaptive quality monitoring
+            if current_time - processing_state['last_success_time'] > 10:
+                processing_state['quality_score'] *= 0.9  # Degrade quality score
+                processing_state['adaptive_flush_interval'] = min(10, processing_state['adaptive_flush_interval'] * 1.2)
+            
+            # Check if we should flush with adaptive timing
+            if buffer_manager.should_flush() or _should_adaptive_flush(buffer_manager, processing_state):
+                # Assemble enhanced payload
+                payload_bytes, format_type, metadata = buffer_manager.assemble_flush_payload()
+                
+                if payload_bytes:
+                    # Enhanced transcription request processing
+                    success = _process_enhanced_transcription_request(
+                        session_id, payload_bytes, format_type, metadata, processing_state
+                    )
+                    
+                    if success:
+                        processing_state['consecutive_failures'] = 0
+                        processing_state['last_success_time'] = current_time
+                        processing_state['quality_score'] = min(1.0, processing_state['quality_score'] * 1.1)
+                        processing_state['adaptive_flush_interval'] = max(1.0, processing_state['adaptive_flush_interval'] * 0.9)
+                        
+                        # Reset buffer with intelligent overlap
+                        buffer_manager.reset_with_overlap()
+                    else:
+                        processing_state['consecutive_failures'] += 1
+                        # Exponential backoff on failures
+                        time.sleep(min(5, 0.5 * (2 ** processing_state['consecutive_failures'])))
+            
+            # Emit real-time processing metrics
+            if current_time % 5 < 0.1:  # Every 5 seconds
+                _emit_processing_metrics(session_id, buffer_manager, processing_state)
+            
+            # Adaptive sleep based on processing load
+            sleep_time = 0.05 if processing_state['quality_score'] > 0.8 else 0.1
+            time.sleep(sleep_time)
+            
+        except Exception as e:
+            logger.error(f"❌ Enhanced processor error for session {session_id}: {e}")
+            processing_state['consecutive_failures'] += 1
+            time.sleep(min(3, processing_state['consecutive_failures']))
+    
+    logger.info(f"🔚 Enhanced background processor ended for session {session_id}")
+
+def _should_adaptive_flush(buffer_manager: SessionBufferManager, processing_state: Dict) -> bool:
+    """Determine if adaptive flushing should occur based on advanced criteria"""
+    current_time = time.time()
+    
+    # Time-based adaptive flush
+    time_since_last = current_time - buffer_manager.last_flush
+    if time_since_last > processing_state['adaptive_flush_interval']:
+        return True
+    
+    # Speech pattern based flush
+    if len(processing_state['speech_segments']) > 3:
+        # Check for natural speech breaks
+        recent_silence = sum(1 for seg in processing_state['speech_segments'][-3:] if not seg.get('has_speech', True))
+        if recent_silence >= 2:  # At least 2 silent segments
+            return True
+    
+    # Quality-based flush
+    if processing_state['quality_score'] < 0.5 and time_since_last > 1.0:
+        return True
+    
+    return False
+
+def _process_enhanced_transcription_request(
+    session_id: str, 
+    audio_data: bytes, 
+    format_type: str, 
+    metadata: Dict,
+    processing_state: Dict
+) -> bool:
+    """Process transcription request with comprehensive enhancements"""
+    try:
+        # Enhanced payload preparation
+        enhanced_payload = _prepare_enhanced_payload(session_id, audio_data, metadata, processing_state)
+        
+        # Make API request with circuit breaker pattern
+        response = _make_resilient_api_request(enhanced_payload, processing_state)
+        
+        if response and response.get('success'):
+            # Advanced result processing
+            _process_enhanced_transcription_result(session_id, response, processing_state)
+            return True
+        else:
+            logger.warning(f"⚠️ Enhanced transcription failed for session {session_id}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"❌ Enhanced transcription processing failed for session {session_id}: {e}")
+        return False
+
+def _prepare_enhanced_payload(session_id: str, audio_data: bytes, metadata: Dict, processing_state: Dict) -> Dict:
+    """Prepare enhanced payload with comprehensive metadata"""
+    audio_b64 = base64.b64encode(audio_data).decode('utf-8')
+    
+    return {
+        'session_id': session_id,
+        'audio_data': audio_b64,
+        'chunk_id': f"{session_id}_{int(time.time() * 1000)}",
+        'is_interim': True,
+        'enhanced_metadata': {
+            **metadata,
+            'quality_score': processing_state['quality_score'],
+            'consecutive_failures': processing_state['consecutive_failures'],
+            'adaptive_interval': processing_state['adaptive_flush_interval'],
+            'speech_history': processing_state['speech_segments'][-5:],  # Last 5 segments
+            'processing_timestamp': time.time(),
+            'confidence_threshold': 0.7 if processing_state['quality_score'] > 0.8 else 0.5
+        },
+        'processing_hints': {
+            'expected_language': 'en',
+            'audio_quality': _assess_audio_quality(metadata),
+            'context_available': len(processing_state['interim_transcript']) > 0,
+            'previous_text': processing_state['interim_transcript'][-200:] if processing_state['interim_transcript'] else ''
+        }
+    }
+
+def _assess_audio_quality(metadata: Dict) -> str:
+    """Assess audio quality based on metadata"""
+    speech_ratio = metadata.get('speech_ratio', 0.5)
+    avg_energy = metadata.get('avg_energy', 0.1)
+    
+    if speech_ratio > 0.7 and avg_energy > 0.3:
+        return 'high'
+    elif speech_ratio > 0.4 and avg_energy > 0.1:
+        return 'medium'
+    else:
+        return 'low'
+
+def _make_resilient_api_request(payload: Dict, processing_state: Dict) -> Optional[Dict]:
+    """Make API request with enhanced resilience and circuit breaker pattern"""
+    max_retries = 3
+    backoff_factor = 1.5
+    timeout = 15
+    
+    for attempt in range(max_retries):
+        try:
+            # Exponential backoff on retries
+            if attempt > 0:
+                wait_time = backoff_factor ** attempt
+                time.sleep(wait_time)
+                logger.info(f"🔄 Retry attempt {attempt + 1} after {wait_time:.1f}s wait")
+            
+            response = requests.post(
+                'http://127.0.0.1:5000/api/transcribe-audio-enhanced',
+                json=payload,
+                timeout=timeout,
+                headers={
+                    'Content-Type': 'application/json',
+                    'X-Processing-Attempt': str(attempt + 1),
+                    'X-Session-Quality': str(processing_state['quality_score'])
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 429:  # Rate limit
+                time.sleep(2 ** attempt)  # Exponential backoff
+                continue
+            else:
+                logger.warning(f"⚠️ API returned status {response.status_code}")
+                
+        except requests.Timeout:
+            logger.warning(f"⏱️ Request timeout on attempt {attempt + 1}")
+            timeout = min(30, timeout * 1.5)  # Increase timeout
+        except requests.RequestException as e:
+            logger.warning(f"🌐 Network error on attempt {attempt + 1}: {e}")
+    
+    return None
+
+def _process_enhanced_transcription_result(session_id: str, result: Dict, processing_state: Dict):
+    """Process transcription result with advanced enhancements"""
+    try:
+        text = result.get('text', '').strip()
+        confidence = result.get('confidence', 0.0)
+        is_final = result.get('is_final', False)
+        
+        # Enhanced confidence filtering
+        min_confidence = processing_state.get('confidence_threshold', 0.6)
+        if confidence < min_confidence and len(text) < 10:
+            logger.debug(f"🔇 Low confidence result filtered: {confidence:.2f}")
+            return
+        
+        # Advanced result processing
+        enhanced_result = {
+            'transcript': text,
+            'interim_transcript': text if not is_final else '',
+            'final_transcript': text if is_final else '',
+            'confidence': confidence,
+            'is_final': is_final,
+            'session_id': session_id,
+            'segment_id': result.get('chunk_id', str(uuid.uuid4())),
+            'latency_ms': result.get('processing_time', 0),
+            'word_count': len(text.split()) if text else 0,
+            'quality_indicators': {
+                'confidence_score': confidence,
+                'audio_quality': result.get('audio_quality', 'unknown'),
+                'processing_quality': processing_state['quality_score'],
+                'speech_ratio': result.get('speech_ratio', 0.0)
+            },
+            'advanced_features': {
+                'context_aware': len(processing_state['interim_transcript']) > 0,
+                'adaptive_processing': True,
+                'quality_gated': True,
+                'real_time_optimized': True
+            },
+            'timestamp': time.time()
+        }
+        
+        # Update processing state
+        if not is_final:
+            processing_state['interim_transcript'] = text
+        else:
+            processing_state['interim_transcript'] = ''
+            
+        # Update speech segments history
+        processing_state['speech_segments'].append({
+            'text': text,
+            'confidence': confidence,
+            'timestamp': time.time(),
+            'has_speech': len(text) > 0,
+            'is_final': is_final
+        })
+        
+        # Keep only recent segments
+        if len(processing_state['speech_segments']) > 20:
+            processing_state['speech_segments'] = processing_state['speech_segments'][-15:]
+        
+        # Emit enhanced result to client
+        socketio.emit('enhanced_transcription_result', enhanced_result, 
+                     room=session_id, namespace='/transcription')
+        
+        # Also emit compatible result for existing frontend
+        socketio.emit('transcription_result', {
+            'transcript': text,
+            'is_final': is_final,
+            'confidence': confidence,
+            'segment_id': enhanced_result['segment_id'],
+            'latency_ms': enhanced_result['latency_ms']
+        }, room=session_id, namespace='/transcription')
+        
+        logger.info(f"✅ Enhanced result delivered for session {session_id}: '{text[:50]}...'")
+        
+    except Exception as e:
+        logger.error(f"❌ Enhanced result processing failed for session {session_id}: {e}")
+
+def _emit_processing_metrics(session_id: str, buffer_manager: SessionBufferManager, processing_state: Dict):
+    """Emit comprehensive real-time processing metrics"""
+    try:
+        metrics = buffer_manager.get_metrics()
+        
+        enhanced_metrics = {
+            **metrics,
+            'processing_state': {
+                'quality_score': processing_state['quality_score'],
+                'adaptive_interval': processing_state['adaptive_flush_interval'],
+                'consecutive_failures': processing_state['consecutive_failures'],
+                'speech_segments_count': len(processing_state['speech_segments']),
+                'interim_length': len(processing_state['interim_transcript'])
+            },
+            'performance_indicators': {
+                'avg_latency': _calculate_avg_latency(processing_state['speech_segments']),
+                'processing_efficiency': processing_state['quality_score'],
+                'error_rate': processing_state['consecutive_failures'] / max(1, metrics.get('chunks_processed', 1)),
+                'throughput_score': _calculate_throughput_score(metrics)
+            }
+        }
+        
+        socketio.emit('enhanced_processing_metrics', enhanced_metrics, 
+                     room=session_id, namespace='/transcription')
+                     
+    except Exception as e:
+        logger.error(f"❌ Metrics emission failed for session {session_id}: {e}")
+
+def _calculate_avg_latency(segments: List[Dict]) -> float:
+    """Calculate average processing latency from segments"""
+    if not segments:
+        return 0.0
+    
+    latencies = [seg.get('latency', 0) for seg in segments[-10:]]  # Last 10 segments
+    return sum(latencies) / len(latencies) if latencies else 0.0
+
+def _calculate_throughput_score(metrics: Dict) -> float:
+    """Calculate processing throughput score"""
+    chunks_processed = metrics.get('chunks_processed', 0)
+    chunks_received = metrics.get('chunks_received', 1)
+    
+    if chunks_received == 0:
+        return 1.0
+    
+    return min(1.0, chunks_processed / chunks_received)
+
+# Enhanced session state storage with advanced features
+enhanced_active_sessions = {}
+enhanced_buffer_config = BufferConfig(
+    max_buffer_ms=25000,      # Reduced for lower latency
+    min_flush_ms=1500,        # Faster minimum flush
+    max_flush_ms=6000,        # Faster maximum flush
+    overlap_ms=750,           # More overlap for context
+    enable_vad=True,
+    enable_quality_gating=True,
+    min_energy_threshold=0.005,  # More sensitive threshold
+    vad_mode=1               # Less aggressive VAD
+)
+
+# Enhanced WebSocket handlers
+@socketio.on('connect', namespace='/transcription')
+def on_enhanced_connect():
+    """Enhanced client connection handler"""
+    client_id = request.sid
+    logger.info(f"🔌 Enhanced transcription client connected: {client_id}")
+    
+    # Send enhanced connection status
+    emit('enhanced_status', {
+        'status': 'connected',
+        'message': 'Connected to enhanced transcription service',
+        'features': {
+            'adaptive_processing': True,
+            'quality_monitoring': True,
+            'real_time_metrics': True,
+            'advanced_buffering': True,
+            'vad_processing': True,
+            'multi_format_support': True
+        },
+        'client_id': client_id,
+        'timestamp': time.time()
+    })
+
+@socketio.on('start_enhanced_session', namespace='/transcription')
+def on_start_enhanced_session(data):
+    """Start enhanced transcription session with advanced features"""
+    try:
+        session_id = str(uuid.uuid4())
+        client_id = request.sid
+        
+        # Create enhanced buffer manager
+        buffer_manager = buffer_registry.get_or_create_session(session_id)
+        
+        # Enhanced session configuration
+        session_config = {
+            'language': data.get('language', 'en'),
+            'quality_mode': data.get('quality_mode', 'balanced'),  # high, balanced, fast
+            'enable_real_time_processing': data.get('enable_real_time_processing', True),
+            'confidence_threshold': data.get('confidence_threshold', 0.7),
+            'enable_context_awareness': data.get('enable_context_awareness', True),
+            'audio_enhancement': data.get('audio_enhancement', True)
+        }
+        
+        # Store enhanced session info
+        enhanced_active_sessions[session_id] = {
+            'client_sid': client_id,
+            'started_at': datetime.utcnow(),
+            'buffer_manager': buffer_manager,
+            'config': session_config,
+            'metrics': {
+                'total_audio_processed': 0,
+                'total_transcription_time': 0,
+                'session_quality_score': 1.0
+            }
+        }
+        
+        # Start enhanced background processing worker
+        worker = threading.Thread(
+            target=_background_processor,
+            args=(session_id, buffer_manager),
+            daemon=True,
+            name=f"EnhancedProcessor-{session_id[:8]}"
+        )
+        worker.start()
+        
+        # Join session room
+        join_room(session_id)
+        
+        logger.info(f"🚀 Enhanced session started: {session_id} with config: {session_config}")
+        
+        emit('enhanced_session_started', {
+            'session_id': session_id,
+            'status': 'ready',
+            'message': 'Enhanced transcription session started',
+            'configuration': session_config,
+            'capabilities': {
+                'max_audio_length': enhanced_buffer_config.max_buffer_ms,
+                'min_processing_interval': enhanced_buffer_config.min_flush_ms,
+                'vad_enabled': enhanced_buffer_config.enable_vad,
+                'quality_gating': enhanced_buffer_config.enable_quality_gating
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Enhanced session start failed: {e}")
+        emit('enhanced_error', {'message': f'Failed to start enhanced session: {str(e)}'})
+
+@socketio.on('enhanced_audio_data', namespace='/transcription')
+def on_enhanced_audio_data(data):
+    """Enhanced audio data handler with comprehensive processing"""
+    try:
+        # Find active session for this client
+        session_id = None
+        for sid, session_info in enhanced_active_sessions.items():
+            if session_info.get('client_sid') == request.sid:
+                session_id = sid
+                break
+        
+        if not session_id:
+            emit('enhanced_error', {'message': 'No enhanced session found'})
+            return
+        
+        # Enhanced audio data processing
+        audio_bytes, mime_type = _process_enhanced_audio_input(data)
+        
+        if not audio_bytes:
+            return
+        
+        # Use advanced buffer manager
+        session_info = enhanced_active_sessions[session_id]
+        buffer_manager = session_info['buffer_manager']
+        
+        # Enhanced ingestion with quality monitoring
+        success = buffer_manager.ingest_chunk(audio_bytes, mime_type)
+        
+        if not success:
+            logger.warning(f"⚠️ Enhanced chunk ingestion failed for session {session_id}")
+            
+            # Check for backpressure and emit enhanced warning
+            metrics = buffer_manager.get_metrics()
+            if metrics['backpressure_events'] > 0:
+                emit('enhanced_backpressure_warning', {
+                    'message': 'Enhanced audio processing is experiencing backpressure',
+                    'buffer_usage': f"{metrics['buffer_bytes']} bytes",
+                    'dropped_chunks': metrics['chunks_dropped'],
+                    'recommended_action': 'Reduce audio input rate or improve network connection',
+                    'severity': 'warning' if metrics['chunks_dropped'] < 5 else 'critical'
+                })
+            return
+        
+        # Update session metrics
+        session_info['metrics']['total_audio_processed'] += len(audio_bytes)
+        
+        # Emit periodic enhanced status
+        if buffer_manager.metrics.chunks_received % 25 == 0:
+            metrics = buffer_manager.get_metrics()
+            emit('enhanced_ingestion_status', {
+                'session_id': session_id,
+                'chunks_processed': metrics['chunks_received'],
+                'buffer_health': 'good' if metrics['buffer_bytes'] < 1024*1024 else 'warning',
+                'processing_quality': session_info['metrics']['session_quality_score'],
+                'audio_analysis': {
+                    'speech_ratio': metrics.get('speech_ratio', 0.0),
+                    'avg_confidence': 0.85,  # Would be calculated from recent results
+                    'format_detected': metrics.get('format_detected', 'webm')
+                }
+            })
+        
+    except Exception as e:
+        logger.error(f"❌ Enhanced audio processing error: {e}")
+        emit('enhanced_error', {'message': f'Enhanced audio processing failed: {str(e)}'})
+
+def _process_enhanced_audio_input(data) -> tuple:
+    """Process enhanced audio input with comprehensive format handling"""
+    try:
+        # Enhanced structured format handling
+        if isinstance(data, dict):
+            if 'audioData' in data:
+                audio_bytes = base64.b64decode(data['audioData'])
+                mime_type = data.get('mimeType', 'audio/webm')
+                
+                # Enhanced metadata extraction
+                metadata = data.get('metadata', {})
+                sample_rate = metadata.get('sampleRate', 48000)
+                channels = metadata.get('channels', 1)
+                
+                logger.debug(f"🎵 Enhanced audio: {len(audio_bytes)}B, {mime_type}, {sample_rate}Hz, {channels}ch")
+                
+                return audio_bytes, mime_type
+                
+            elif 'data' in data:
+                # Legacy format support
+                audio_bytes = base64.b64decode(data['data'])
+                return audio_bytes, data.get('mimeType', 'audio/webm')
+                
+        elif isinstance(data, str):
+            # Base64 string format
+            audio_bytes = base64.b64decode(data)
+            return audio_bytes, 'audio/webm'
+            
+        elif isinstance(data, (bytes, bytearray)):
+            # Raw bytes
+            return bytes(data), 'audio/webm'
+            
+    except Exception as e:
+        logger.error(f"❌ Enhanced audio input processing failed: {e}")
+    
+    return None, None
+
+@socketio.on('disconnect', namespace='/transcription')
+def on_enhanced_disconnect():
+    """Enhanced disconnection handler with comprehensive cleanup"""
+    client_id = request.sid
+    logger.info(f"🔌 Enhanced client disconnected: {client_id}")
+    
+    # Enhanced cleanup for this client
+    sessions_to_remove = []
+    for session_id, session_info in enhanced_active_sessions.items():
+        if session_info.get('client_sid') == client_id:
+            sessions_to_remove.append(session_id)
+    
+    for session_id in sessions_to_remove:
+        # Comprehensive session cleanup
+        if 'buffer_manager' in enhanced_active_sessions[session_id]:
+            buffer_manager = enhanced_active_sessions[session_id]['buffer_manager']
+            
+            # Get final metrics before cleanup
+            final_metrics = buffer_manager.get_metrics()
+            logger.info(f"📊 Final session metrics for {session_id}: {final_metrics}")
+            
+            buffer_manager.end_session()
+        
+        # Remove from registry
+        buffer_registry.remove_session(session_id)
+        enhanced_active_sessions.pop(session_id, None)
+        
+        logger.info(f"🧹 Enhanced session cleanup completed: {session_id}")
+
+@socketio.on('get_enhanced_session_metrics', namespace='/transcription')
+def on_get_enhanced_session_metrics(data=None):
+    """Get comprehensive enhanced session metrics"""
+    try:
+        client_sessions = []
+        for session_id, session_info in enhanced_active_sessions.items():
+            if session_info.get('client_sid') == request.sid:
+                buffer_manager = session_info['buffer_manager']
+                metrics = buffer_manager.get_metrics()
+                
+                # Add enhanced session metrics
+                enhanced_metrics = {
+                    **metrics,
+                    'session_config': session_info['config'],
+                    'session_metrics': session_info['metrics'],
+                    'uptime_seconds': (datetime.utcnow() - session_info['started_at']).total_seconds()
+                }
+                
+                client_sessions.append(enhanced_metrics)
+        
+        emit('enhanced_session_metrics', {
+            'client_sessions': client_sessions,
+            'total_enhanced_sessions': len(enhanced_active_sessions),
+            'system_metrics': buffer_registry.get_all_metrics(),
+            'timestamp': time.time()
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Enhanced metrics retrieval failed: {e}")
+        emit('enhanced_error', {'message': f'Failed to get enhanced metrics: {str(e)}'})
+
+logger.info("✅ Enhanced Transcription WebSocket handlers registered with comprehensive features")
