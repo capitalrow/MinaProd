@@ -28,7 +28,7 @@ def list_tasks():
         due_date_filter = request.args.get('due_date', None)  # today, overdue, this_week
         
         # Base query - tasks from meetings in user's workspace
-        query = Task.query.join(Meeting).filter(
+        query = db.session.query(Task).join(Meeting).filter(
             Meeting.workspace_id == current_user.workspace_id
         )
         
@@ -87,7 +87,7 @@ def list_tasks():
         )
         
         # Paginate
-        tasks = query.paginate(page=page, per_page=per_page, error_out=False)
+        tasks = db.paginate(query, page=page, per_page=per_page, error_out=False)
         
         return jsonify({
             'success': True,
@@ -111,7 +111,7 @@ def list_tasks():
 def get_task(task_id):
     """Get detailed task information."""
     try:
-        task = Task.query.join(Meeting).filter(
+        task = db.session.query(Task).join(Meeting).filter(
             Task.id == task_id,
             Meeting.workspace_id == current_user.workspace_id
         ).first()
@@ -143,7 +143,7 @@ def create_task():
             return jsonify({'success': False, 'message': 'Meeting ID is required'}), 400
         
         # Verify meeting exists and belongs to user's workspace
-        meeting = Meeting.query.filter_by(
+        meeting = db.session.query(Meeting).filter_by(
             id=data['meeting_id'],
             workspace_id=current_user.workspace_id
         ).first()
@@ -162,7 +162,7 @@ def create_task():
         # Validate assigned_to_id if provided
         assigned_to_id = data.get('assigned_to_id')
         if assigned_to_id:
-            assignee = User.query.filter_by(
+            assignee = db.session.query(User).filter_by(
                 id=assigned_to_id,
                 workspace_id=current_user.workspace_id
             ).first()
@@ -201,7 +201,7 @@ def create_task():
 def update_task(task_id):
     """Update task information."""
     try:
-        task = Task.query.join(Meeting).filter(
+        task = db.session.query(Task).join(Meeting).filter(
             Task.id == task_id,
             Meeting.workspace_id == current_user.workspace_id
         ).first()
@@ -250,7 +250,7 @@ def update_task(task_id):
         if 'assigned_to_id' in data:
             assigned_to_id = data['assigned_to_id']
             if assigned_to_id:
-                assignee = User.query.filter_by(
+                assignee = db.session.query(User).filter_by(
                     id=assigned_to_id,
                     workspace_id=current_user.workspace_id
                 ).first()
@@ -277,7 +277,7 @@ def update_task(task_id):
 def delete_task(task_id):
     """Delete a task."""
     try:
-        task = Task.query.join(Meeting).filter(
+        task = db.session.query(Task).join(Meeting).filter(
             Task.id == task_id,
             Meeting.workspace_id == current_user.workspace_id
         ).first()
@@ -303,7 +303,7 @@ def delete_task(task_id):
 def update_task_status(task_id):
     """Update only the status of a task (for quick status changes)."""
     try:
-        task = Task.query.join(Meeting).filter(
+        task = db.session.query(Task).join(Meeting).filter(
             Task.id == task_id,
             Meeting.workspace_id == current_user.workspace_id
         ).first()
@@ -358,7 +358,7 @@ def bulk_update_tasks():
             return jsonify({'success': False, 'message': 'Task IDs are required'}), 400
         
         # Get tasks that belong to user's workspace
-        tasks = Task.query.join(Meeting).filter(
+        tasks = db.session.query(Task).join(Meeting).filter(
             Task.id.in_(task_ids),
             Meeting.workspace_id == current_user.workspace_id
         ).all()
@@ -407,7 +407,7 @@ def get_my_tasks():
     try:
         status = request.args.get('status', None)
         
-        query = Task.query.join(Meeting).filter(
+        query = db.session.query(Task).join(Meeting).filter(
             Task.assigned_to_id == current_user.id,
             Meeting.workspace_id == current_user.workspace_id
         )
@@ -450,22 +450,22 @@ def get_task_stats():
         workspace_id = current_user.workspace_id
         
         # Basic counts
-        total_tasks = Task.query.join(Meeting).filter(
+        total_tasks = db.session.query(Task).join(Meeting).filter(
             Meeting.workspace_id == workspace_id
         ).count()
         
-        completed_tasks = Task.query.join(Meeting).filter(
+        completed_tasks = db.session.query(Task).join(Meeting).filter(
             Meeting.workspace_id == workspace_id,
             Task.status == 'completed'
         ).count()
         
-        overdue_tasks = Task.query.join(Meeting).filter(
+        overdue_tasks = db.session.query(Task).join(Meeting).filter(
             Meeting.workspace_id == workspace_id,
             Task.due_date < date.today(),
             Task.status.in_(['todo', 'in_progress'])
         ).count()
         
-        my_tasks = Task.query.join(Meeting).filter(
+        my_tasks = db.session.query(Task).join(Meeting).filter(
             Meeting.workspace_id == workspace_id,
             Task.assigned_to_id == current_user.id,
             Task.status.in_(['todo', 'in_progress'])
@@ -513,7 +513,7 @@ def get_task_stats():
 def get_overdue_tasks():
     """Get overdue tasks for current workspace."""
     try:
-        overdue_tasks = Task.query.join(Meeting).filter(
+        overdue_tasks = db.session.query(Task).join(Meeting).filter(
             Meeting.workspace_id == current_user.workspace_id,
             Task.due_date < date.today(),
             Task.status.in_(['todo', 'in_progress'])

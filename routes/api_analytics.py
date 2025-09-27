@@ -45,7 +45,7 @@ def get_meeting_analytics(meeting_id):
     """Get detailed analytics for a specific meeting."""
     try:
         # Verify meeting belongs to user's workspace
-        meeting = Meeting.query.filter_by(
+        meeting = db.session.query(Meeting).filter_by(
             id=meeting_id,
             workspace_id=current_user.workspace_id
         ).first()
@@ -54,7 +54,7 @@ def get_meeting_analytics(meeting_id):
             return jsonify({'success': False, 'message': 'Meeting not found'}), 404
         
         # Get analytics record
-        analytics = Analytics.query.filter_by(meeting_id=meeting_id).first()
+        analytics = db.session.query(Analytics).filter_by(meeting_id=meeting_id).first()
         
         if not analytics or not analytics.is_analysis_complete:
             return jsonify({
@@ -82,7 +82,7 @@ def get_dashboard_analytics():
         cutoff_date = datetime.now() - timedelta(days=days)
         
         # Get recent analytics
-        recent_analytics = Analytics.query.join(Meeting).filter(
+        recent_analytics = db.session.query(Analytics).join(Meeting).filter(
             Meeting.workspace_id == workspace_id,
             Meeting.created_at >= cutoff_date,
             Analytics.analysis_status == 'completed'
@@ -105,7 +105,7 @@ def get_dashboard_analytics():
         meeting_trend = []
         for i in range(days):
             day = datetime.now() - timedelta(days=i)
-            day_meetings = Meeting.query.filter(
+            day_meetings = db.session.query(Meeting).filter(
                 Meeting.workspace_id == workspace_id,
                 func.date(Meeting.created_at) == day.date()
             ).count()
@@ -153,7 +153,7 @@ def get_engagement_analytics():
         cutoff_date = datetime.now() - timedelta(days=days)
         
         # Get engagement data from analytics
-        analytics = Analytics.query.join(Meeting).filter(
+        analytics = db.session.query(Analytics).join(Meeting).filter(
             Meeting.workspace_id == workspace_id,
             Meeting.created_at >= cutoff_date,
             Analytics.analysis_status == 'completed',
@@ -225,7 +225,7 @@ def get_productivity_analytics():
         cutoff_date = datetime.now() - timedelta(days=days)
         
         # Get meetings from the period
-        meetings = Meeting.query.filter(
+        meetings = db.session.query(Meeting).filter(
             Meeting.workspace_id == workspace_id,
             Meeting.created_at >= cutoff_date
         ).all()
@@ -233,8 +233,8 @@ def get_productivity_analytics():
         meeting_ids = [m.id for m in meetings]
         
         # Task analytics
-        total_tasks = Task.query.filter(Task.meeting_id.in_(meeting_ids)).count()
-        completed_tasks = Task.query.filter(
+        total_tasks = db.session.query(Task).filter(Task.meeting_id.in_(meeting_ids)).count()
+        completed_tasks = db.session.query(Task).filter(
             Task.meeting_id.in_(meeting_ids),
             Task.status == 'completed'
         ).count()
@@ -249,7 +249,7 @@ def get_productivity_analytics():
         
         # Average completion time for completed tasks
         completed_task_times = []
-        for task in Task.query.filter(
+        for task in db.session.query(Task).filter(
             Task.meeting_id.in_(meeting_ids),
             Task.status == 'completed',
             Task.completed_at.isnot(None)
@@ -270,7 +270,7 @@ def get_productivity_analytics():
         ).scalar() or 0
         
         # Meeting efficiency
-        efficiency_scores = Analytics.query.join(Meeting).filter(
+        efficiency_scores = db.session.query(Analytics).join(Meeting).filter(
             Meeting.workspace_id == workspace_id,
             Meeting.created_at >= cutoff_date,
             Analytics.meeting_efficiency_score.isnot(None)
@@ -315,7 +315,7 @@ def get_insights():
         cutoff_date = datetime.now() - timedelta(days=days)
         
         # Get recent analytics with insights
-        analytics_with_insights = Analytics.query.join(Meeting).filter(
+        analytics_with_insights = db.session.query(Analytics).join(Meeting).filter(
             Meeting.workspace_id == workspace_id,
             Meeting.created_at >= cutoff_date,
             Analytics.analysis_status == 'completed',
@@ -361,7 +361,7 @@ def get_sentiment_analytics():
         cutoff_date = datetime.now() - timedelta(days=days)
         
         # Get sentiment data
-        analytics = Analytics.query.join(Meeting).filter(
+        analytics = db.session.query(Analytics).join(Meeting).filter(
             Meeting.workspace_id == workspace_id,
             Meeting.created_at >= cutoff_date,
             Analytics.analysis_status == 'completed',
@@ -425,7 +425,7 @@ def get_communication_analytics():
         cutoff_date = datetime.now() - timedelta(days=days)
         
         # Get meetings and participants
-        meetings = Meeting.query.filter(
+        meetings = db.session.query(Meeting).filter(
             Meeting.workspace_id == workspace_id,
             Meeting.created_at >= cutoff_date
         ).all()
@@ -433,7 +433,7 @@ def get_communication_analytics():
         meeting_ids = [m.id for m in meetings]
         
         # Participation statistics
-        participants = Participant.query.filter(
+        participants = db.session.query(Participant).filter(
             Participant.meeting_id.in_(meeting_ids)
         ).all()
         
@@ -518,7 +518,7 @@ def export_analytics():
         cutoff_date = datetime.now() - timedelta(days=days)
         
         # Get comprehensive analytics data
-        analytics = Analytics.query.join(Meeting).filter(
+        analytics = db.session.query(Analytics).join(Meeting).filter(
             Meeting.workspace_id == workspace_id,
             Meeting.created_at >= cutoff_date,
             Analytics.analysis_status == 'completed'

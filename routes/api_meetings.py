@@ -28,7 +28,7 @@ def list_meetings():
         search_query = request.args.get('search', None)
         
         # Base query for user's workspace
-        query = Meeting.query.filter_by(workspace_id=current_user.workspace_id)
+        query = db.session.query(Meeting).filter_by(workspace_id=current_user.workspace_id)
         
         # Apply filters
         if status_filter:
@@ -38,7 +38,8 @@ def list_meetings():
             query = query.filter(Meeting.title.contains(search_query))
         
         # Paginate results
-        meetings = query.order_by(Meeting.created_at.desc()).paginate(
+        meetings = db.paginate(
+            query.order_by(Meeting.created_at.desc()),
             page=page, per_page=per_page, error_out=False
         )
         
@@ -64,7 +65,7 @@ def list_meetings():
 def get_meeting(meeting_id):
     """Get detailed meeting information."""
     try:
-        meeting = Meeting.query.filter_by(
+        meeting = db.session.query(Meeting).filter_by(
             id=meeting_id,
             workspace_id=current_user.workspace_id
         ).first()
@@ -73,9 +74,9 @@ def get_meeting(meeting_id):
             return jsonify({'success': False, 'message': 'Meeting not found'}), 404
         
         # Get additional data
-        tasks = Task.query.filter_by(meeting_id=meeting_id).all()
-        participants = Participant.query.filter_by(meeting_id=meeting_id).all()
-        analytics = Analytics.query.filter_by(meeting_id=meeting_id).first()
+        tasks = db.session.query(Task).filter_by(meeting_id=meeting_id).all()
+        participants = db.session.query(Participant).filter_by(meeting_id=meeting_id).all()
+        analytics = db.session.query(Analytics).filter_by(meeting_id=meeting_id).first()
         
         meeting_data = meeting.to_dict()
         meeting_data.update({
@@ -135,7 +136,7 @@ def create_meeting():
 def update_meeting(meeting_id):
     """Update meeting information."""
     try:
-        meeting = Meeting.query.filter_by(
+        meeting = db.session.query(Meeting).filter_by(
             id=meeting_id,
             workspace_id=current_user.workspace_id
         ).first()
@@ -180,7 +181,7 @@ def update_meeting(meeting_id):
 def delete_meeting(meeting_id):
     """Delete a meeting and all associated data."""
     try:
-        meeting = Meeting.query.filter_by(
+        meeting = db.session.query(Meeting).filter_by(
             id=meeting_id,
             workspace_id=current_user.workspace_id
         ).first()
@@ -189,9 +190,9 @@ def delete_meeting(meeting_id):
             return jsonify({'success': False, 'message': 'Meeting not found'}), 404
         
         # Delete associated data
-        Task.query.filter_by(meeting_id=meeting_id).delete()
-        Participant.query.filter_by(meeting_id=meeting_id).delete()
-        Analytics.query.filter_by(meeting_id=meeting_id).delete()
+        db.session.query(Task).filter_by(meeting_id=meeting_id).delete()
+        db.session.query(Participant).filter_by(meeting_id=meeting_id).delete()
+        db.session.query(Analytics).filter_by(meeting_id=meeting_id).delete()
         
         # Delete meeting
         db.session.delete(meeting)
@@ -212,7 +213,7 @@ def delete_meeting(meeting_id):
 def start_meeting(meeting_id):
     """Start a live meeting."""
     try:
-        meeting = Meeting.query.filter_by(
+        meeting = db.session.query(Meeting).filter_by(
             id=meeting_id,
             workspace_id=current_user.workspace_id
         ).first()
@@ -253,7 +254,7 @@ def start_meeting(meeting_id):
 def end_meeting(meeting_id):
     """End a live meeting and trigger processing."""
     try:
-        meeting = Meeting.query.filter_by(
+        meeting = db.session.query(Meeting).filter_by(
             id=meeting_id,
             workspace_id=current_user.workspace_id
         ).first()
@@ -291,7 +292,7 @@ def end_meeting(meeting_id):
 def process_meeting(meeting_id):
     """Manually trigger meeting processing (task extraction, analytics, etc.)."""
     try:
-        meeting = Meeting.query.filter_by(
+        meeting = db.session.query(Meeting).filter_by(
             id=meeting_id,
             workspace_id=current_user.workspace_id
         ).first()
@@ -334,7 +335,7 @@ def process_meeting(meeting_id):
 def get_meeting_participants(meeting_id):
     """Get meeting participants with detailed metrics."""
     try:
-        meeting = Meeting.query.filter_by(
+        meeting = db.session.query(Meeting).filter_by(
             id=meeting_id,
             workspace_id=current_user.workspace_id
         ).first()
@@ -360,7 +361,7 @@ def get_meeting_participants(meeting_id):
 def get_meeting_tasks(meeting_id):
     """Get all tasks created from this meeting."""
     try:
-        meeting = Meeting.query.filter_by(
+        meeting = db.session.query(Meeting).filter_by(
             id=meeting_id,
             workspace_id=current_user.workspace_id
         ).first()
@@ -368,7 +369,7 @@ def get_meeting_tasks(meeting_id):
         if not meeting:
             return jsonify({'success': False, 'message': 'Meeting not found'}), 404
         
-        tasks = Task.query.filter_by(meeting_id=meeting_id).all()
+        tasks = db.session.query(Task).filter_by(meeting_id=meeting_id).all()
         
         # Group tasks by status
         task_groups = {
@@ -396,7 +397,7 @@ def get_meeting_tasks(meeting_id):
 def get_meeting_analytics(meeting_id):
     """Get detailed analytics for a meeting."""
     try:
-        meeting = Meeting.query.filter_by(
+        meeting = db.session.query(Meeting).filter_by(
             id=meeting_id,
             workspace_id=current_user.workspace_id
         ).first()
@@ -404,7 +405,7 @@ def get_meeting_analytics(meeting_id):
         if not meeting:
             return jsonify({'success': False, 'message': 'Meeting not found'}), 404
         
-        analytics = Analytics.query.filter_by(meeting_id=meeting_id).first()
+        analytics = db.session.query(Analytics).filter_by(meeting_id=meeting_id).first()
         
         if not analytics:
             return jsonify({'success': False, 'message': 'Analytics not available. Please process the meeting first.'}), 404
@@ -425,7 +426,7 @@ def get_recent_meetings():
     try:
         limit = request.args.get('limit', 10, type=int)
         
-        meetings = Meeting.query.filter_by(
+        meetings = db.session.query(Meeting).filter_by(
             workspace_id=current_user.workspace_id
         ).order_by(Meeting.created_at.desc()).limit(limit).all()
         
@@ -446,14 +447,14 @@ def get_meeting_stats():
         workspace_id = current_user.workspace_id
         
         # Basic counts
-        total_meetings = Meeting.query.filter_by(workspace_id=workspace_id).count()
-        live_meetings = Meeting.query.filter_by(workspace_id=workspace_id, status='live').count()
-        completed_meetings = Meeting.query.filter_by(workspace_id=workspace_id, status='completed').count()
+        total_meetings = db.session.query(Meeting).filter_by(workspace_id=workspace_id).count()
+        live_meetings = db.session.query(Meeting).filter_by(workspace_id=workspace_id, status='live').count()
+        completed_meetings = db.session.query(Meeting).filter_by(workspace_id=workspace_id, status='completed').count()
         
         # This week's meetings
         from datetime import datetime, timedelta
         week_start = datetime.now() - timedelta(days=datetime.now().weekday())
-        this_week_meetings = Meeting.query.filter(
+        this_week_meetings = db.session.query(Meeting).filter(
             Meeting.workspace_id == workspace_id,
             Meeting.created_at >= week_start
         ).count()
@@ -486,7 +487,7 @@ async def process_meeting_async(meeting_id: int):
         await analytics_service.analyze_meeting(meeting_id)
         
         # Update meeting status
-        meeting = Meeting.query.get(meeting_id)
+        meeting = db.session.query(Meeting).get(meeting_id)
         if meeting:
             meeting.processing_status = 'completed'
             meeting.processed_at = datetime.now()
@@ -495,7 +496,7 @@ async def process_meeting_async(meeting_id: int):
     except Exception as e:
         print(f"Background processing failed for meeting {meeting_id}: {e}")
         # Update meeting with error status
-        meeting = Meeting.query.get(meeting_id)
+        meeting = db.session.query(Meeting).get(meeting_id)
         if meeting:
             meeting.processing_status = 'failed'
             meeting.processing_error = str(e)
