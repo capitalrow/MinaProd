@@ -47,7 +47,7 @@ class Task(Base):
     meeting: Mapped["Meeting"] = relationship(back_populates="tasks")
     
     assigned_to_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
-    assigned_to: Mapped[Optional["User"]] = relationship(back_populates="assigned_tasks")
+    assigned_to: Mapped[Optional["User"]] = relationship(back_populates="assigned_tasks", foreign_keys=[assigned_to_id])
     
     created_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_by: Mapped[Optional["User"]] = relationship(foreign_keys=[created_by_id])
