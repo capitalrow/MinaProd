@@ -13,3 +13,5 @@ socketio
 websocket
 websockets
 werkzeug
+numpy
+webrtcvad
