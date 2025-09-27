@@ -23,3 +23,9 @@ def app():
 @login_required
 def live():
     return render_template("live_premium.html")
+
+@pages_bp.route("/live-enhanced")
+@login_required
+def live_enhanced():
+    """Enhanced live recording interface with comprehensive transcription processing"""
+    return render_template("live_enhanced.html")
