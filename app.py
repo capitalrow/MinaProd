@@ -216,6 +216,14 @@ def create_app() -> Flask:
         app.logger.info("Comprehensive Transcription API registered")
     except Exception as e:
         app.logger.warning(f"Failed to register comprehensive transcription API: {e}")
+    
+    # Register WORKING live transcription API (priority)
+    try:
+        from routes.live_transcription_working import live_transcription_bp
+        app.register_blueprint(live_transcription_bp)
+        app.logger.info("✅ Working Live Transcription API registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register working live transcription API: {e}")
 
     # Register authentication and dashboard blueprints
     try:
