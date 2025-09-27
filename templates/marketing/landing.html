@@ -187,6 +187,26 @@
       position: relative;
       overflow: hidden;
     }
+    
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+                  radial-gradient(circle at 75% 75%, rgba(34, 211, 238, 0.1) 0%, transparent 50%);
+      animation: heroFloat 25s ease-in-out infinite;
+      z-index: -1;
+    }
+    
+    @keyframes heroFloat {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      25% { transform: translateY(-30px) rotate(1deg); }
+      50% { transform: translateY(20px) rotate(-0.5deg); }
+      75% { transform: translateY(-15px) rotate(0.5deg); }
+    }
 
     .hero-content {
       display: grid;
@@ -566,67 +586,299 @@
 
     /* Testimonials */
     .testimonials {
-      padding: 3rem 0;
+      padding: 4rem 0;
       overflow: hidden;
+      position: relative;
+    }
+    
+    .testimonials::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 100px;
+      background: linear-gradient(90deg, var(--purple-800), transparent);
+      z-index: 2;
+      pointer-events: none;
+    }
+    
+    .testimonials::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 100px;
+      background: linear-gradient(270deg, var(--purple-800), transparent);
+      z-index: 2;
+      pointer-events: none;
     }
 
     .testimonial-track {
       display: flex;
-      gap: 1.5rem;
-      animation: scroll 20s linear infinite;
+      gap: 1.75rem;
+      animation: smooth-scroll 25s linear infinite;
+      will-change: transform;
+    }
+    
+    .testimonial-track:hover {
+      animation-play-state: paused;
     }
 
     .testimonial {
-      min-width: 350px;
-      background: rgba(0, 0, 0, 0.4);
-      border-radius: 12px;
-      padding: 1.5rem;
+      min-width: 380px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 2rem;
       color: #ffffff;
       font-style: italic;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      box-shadow: var(--shadow-lg);
+      transition: all 0.3s var(--ease-out-cubic);
+      position: relative;
+    }
+    
+    .testimonial::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
+      border-radius: inherit;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      -webkit-mask-composite: xor;
+    }
+    
+    .testimonial:hover {
+      transform: translateY(-4px);
+      box-shadow: 
+        0 20px 40px rgba(31, 38, 135, 0.3),
+        0 8px 16px rgba(31, 38, 135, 0.1);
     }
 
-    @keyframes scroll {
+    @keyframes smooth-scroll {
       0% { transform: translateX(0); }
-      100% { transform: translateX(-100%); }
+      100% { transform: translateX(calc(-100% - 1.75rem)); }
+    }
+    
+    /* Advanced Animation Framework */
+    .fade-in-up {
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeInUp 0.6s var(--ease-out-cubic) forwards;
+    }
+    
+    .fade-in-up.delay-1 { animation-delay: 0.1s; }
+    .fade-in-up.delay-2 { animation-delay: 0.2s; }
+    .fade-in-up.delay-3 { animation-delay: 0.3s; }
+    .fade-in-up.delay-4 { animation-delay: 0.4s; }
+    .fade-in-up.delay-5 { animation-delay: 0.5s; }
+    .fade-in-up.delay-6 { animation-delay: 0.6s; }
+    
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .scale-in {
+      opacity: 0;
+      transform: scale(0.8) translateY(20px);
+      animation: scaleIn 0.5s var(--spring) forwards;
+    }
+    
+    @keyframes scaleIn {
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+    
+    .slide-in-left {
+      opacity: 0;
+      transform: translateX(-50px);
+      animation: slideInLeft 0.6s var(--ease-out-cubic) forwards;
+    }
+    
+    @keyframes slideInLeft {
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    .slide-in-right {
+      opacity: 0;
+      transform: translateX(50px);
+      animation: slideInRight 0.6s var(--ease-out-cubic) forwards;
+    }
+    
+    @keyframes slideInRight {
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    /* Parallax Effects */
+    .parallax-bg {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .parallax-bg::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      left: -20%;
+      right: -20%;
+      bottom: -20%;
+      background: radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 30%, rgba(34, 211, 238, 0.1) 0%, transparent 50%);
+      animation: float 20s ease-in-out infinite;
+      z-index: -1;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      33% { transform: translateY(-20px) rotate(1deg); }
+      66% { transform: translateY(10px) rotate(-1deg); }
+    }
+    
+    /* Scroll-triggered animations */
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(50px);
+      transition: all 0.8s var(--ease-out-cubic);
+    }
+    
+    .scroll-reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* Staggered grid animations */
+    .stagger-grid > * {
+      opacity: 0;
+      transform: translateY(30px) scale(0.95);
+      transition: all 0.6s var(--spring);
+    }
+    
+    .stagger-grid.animate > *:nth-child(1) { transition-delay: 0.1s; }
+    .stagger-grid.animate > *:nth-child(2) { transition-delay: 0.2s; }
+    .stagger-grid.animate > *:nth-child(3) { transition-delay: 0.3s; }
+    .stagger-grid.animate > *:nth-child(4) { transition-delay: 0.4s; }
+    .stagger-grid.animate > *:nth-child(5) { transition-delay: 0.5s; }
+    .stagger-grid.animate > *:nth-child(6) { transition-delay: 0.6s; }
+    
+    .stagger-grid.animate > * {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    
+    /* Micro-interactions */
+    .interactive {
+      transition: all 0.3s var(--ease-out-cubic);
+    }
+    
+    .interactive:hover {
+      transform: translateY(-2px);
+    }
+    
+    .interactive:active {
+      transform: translateY(0);
+      transition: all 0.1s ease;
     }
 
     /* Pricing */
     .pricing {
-      padding: 4rem 0;
+      padding: 5rem 0;
     }
 
     .pricing h2 {
-      font-size: 2.5rem;
+      font-size: clamp(2rem, 5vw, 2.75rem);
       font-weight: 800;
       text-align: center;
       margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.8) 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .pricing-subtitle {
       text-align: center;
-      color: #e2e8f0;
-      margin-bottom: 3rem;
+      color: rgba(226, 232, 240, 0.8);
+      margin-bottom: 3.5rem;
+      font-size: clamp(1rem, 2vw, 1.125rem);
+      font-weight: 400;
     }
 
     .pricing-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.75rem;
+      align-items: start;
     }
 
     .pricing-card {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 16px;
-      padding: 2rem;
-      backdrop-filter: blur(10px);
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 2.5rem;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
       text-align: center;
       position: relative;
+      transition: all 0.4s var(--spring);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+    
+    .pricing-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 100%);
+      border-radius: inherit;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      -webkit-mask-composite: xor;
+    }
+    
+    .pricing-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 
+        0 25px 50px rgba(31, 38, 135, 0.4),
+        0 12px 24px rgba(31, 38, 135, 0.2);
+      border-color: rgba(255, 255, 255, 0.25);
     }
 
     .pricing-card.featured {
-      border-color: #3b82f6;
+      border-color: var(--blue-500);
       transform: scale(1.05);
+      background: rgba(59, 130, 246, 0.1);
+      box-shadow: 
+        0 20px 40px rgba(59, 130, 246, 0.3),
+        0 8px 16px rgba(59, 130, 246, 0.2);
+    }
+    
+    .pricing-card.featured::before {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.4) 0%, rgba(34, 211, 238, 0.2) 100%);
+    }
+    
+    .pricing-card.featured:hover {
+      transform: translateY(-10px) scale(1.07);
+      box-shadow: 
+        0 30px 60px rgba(59, 130, 246, 0.4),
+        0 15px 30px rgba(59, 130, 246, 0.3);
     }
 
     .pricing-card h3 {
@@ -664,14 +916,43 @@
 
     .pricing-button {
       width: 100%;
-      background: linear-gradient(135deg, #3b82f6, #22d3ee);
+      background: linear-gradient(135deg, var(--blue-500) 0%, var(--cyan-400) 100%);
       color: #ffffff;
-      padding: 0.75rem;
+      padding: 0.875rem 1rem;
       border-radius: 12px;
       border: none;
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
+      transition: all 0.4s var(--spring);
+      box-shadow: 
+        0 4px 15px rgba(59, 130, 246, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .pricing-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s ease;
+    }
+    
+    .pricing-button:hover::before {
+      left: 100%;
+    }
+    
+    .pricing-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 8px 25px rgba(59, 130, 246, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
       display: inline-block;
       transition: all 0.3s ease;
     }
@@ -842,41 +1123,41 @@
   </header>
 
   <!-- Hero Section -->
-  <section class="hero">
+  <section class="hero parallax-bg">
     <div class="container">
       <div class="hero-content">
-        <div class="hero-left fade-in">
-          <h1>
+        <div class="hero-left">
+          <h1 class="slide-in-left">
             Meetings that 
             <span class="gradient-text">write<br>themselves</span>.
           </h1>
-          <p>
+          <p class="slide-in-left delay-1">
             Live transcription that turns into notes, action items, and ready‑to‑send emails. 
             Mina captures what matters and drafts the follow‑ups for you.
           </p>
-          <div class="hero-buttons">
-            <a href="/app" class="cta-button">Try Mina free</a>
-            <a href="#features" class="btn-secondary">See how it works</a>
+          <div class="hero-buttons slide-in-left delay-2">
+            <a href="/app" class="cta-button interactive">Try Mina free</a>
+            <a href="#features" class="btn-secondary interactive">See how it works</a>
           </div>
-          <form class="waitlist-form" id="waitlist">
+          <form class="waitlist-form slide-in-left delay-3" id="waitlist">
             <input type="email" name="email" placeholder="you@company.com" required>
-            <button type="submit">Join waitlist</button>
+            <button type="submit" class="interactive">Join waitlist</button>
           </form>
-          <p class="disclaimer">No spam. We'll only email important updates.</p>
+          <p class="disclaimer slide-in-left delay-4">No spam. We'll only email important updates.</p>
         </div>
         
-        <div class="step-cards fade-in">
-          <div class="step-card">
+        <div class="step-cards stagger-grid slide-in-right">
+          <div class="step-card interactive">
             <div class="step-number">1</div>
             <h3>Dictate.</h3>
             <p>Speak freely—Mina captures in real time.</p>
           </div>
-          <div class="step-card">
+          <div class="step-card interactive">
             <div class="step-number">2</div>
             <h3>Understand.</h3>
             <p>We extract tasks, decisions, and owners.</p>
           </div>
-          <div class="step-card">
+          <div class="step-card interactive">
             <div class="step-number">3</div>
             <h3>Act.</h3>
             <p>Draft emails and shareable notes for one‑tap send.</p>
@@ -889,29 +1170,29 @@
   <!-- Features Section -->
   <section class="features" id="features">
     <div class="container">
-      <h2 class="fade-in">Why teams choose Mina</h2>
-      <div class="features-grid">
-        <div class="feature-card fade-in">
+      <h2 class="scroll-reveal">Why teams choose Mina</h2>
+      <div class="features-grid stagger-grid">
+        <div class="feature-card interactive">
           <h3>Live transcription</h3>
           <p>Low‑latency interim text with final refinement. Meetings, interviews, and dictation.</p>
         </div>
-        <div class="feature-card fade-in">
+        <div class="feature-card interactive">
           <h3>Actions & emails</h3>
           <p>Turns decisions into drafts—ready to send via your connected email.</p>
         </div>
-        <div class="feature-card fade-in">
+        <div class="feature-card interactive">
           <h3>Organized library</h3>
           <p>Sessions auto‑saved with topics, speakers, and highlights you can search.</p>
         </div>
-        <div class="feature-card fade-in">
+        <div class="feature-card interactive">
           <h3>Secure by default</h3>
           <p>Scoped access, encryption at rest, and export controls per session.</p>
         </div>
-        <div class="feature-card fade-in">
+        <div class="feature-card interactive">
           <h3>Works everywhere</h3>
           <p>Web, mobile browsers, and desktop. No installs required.</p>
         </div>
-        <div class="feature-card fade-in">
+        <div class="feature-card interactive">
           <h3>Team‑ready</h3>
           <p>Share sessions, @mention teammates, and track action history.</p>
         </div>
@@ -922,21 +1203,21 @@
   <!-- How it Works -->
   <section class="how-it-works" id="how">
     <div class="container">
-      <h2 class="fade-in">How Mina works</h2>
-      <div class="how-grid">
-        <div class="how-card fade-in">
+      <h2 class="scroll-reveal">How Mina works</h2>
+      <div class="how-grid stagger-grid">
+        <div class="how-card interactive">
           <h3>1) Capture</h3>
           <p>Start a live session or upload audio. Mina streams interim text in ~250ms cadence.</p>
         </div>
-        <div class="how-card fade-in">
+        <div class="how-card interactive">
           <h3>2) Understand</h3>
           <p>Detects tasks, owners, dates, and decisions from context—no rigid commands.</p>
         </div>
-        <div class="how-card fade-in">
+        <div class="how-card interactive">
           <h3>3) Draft</h3>
           <p>Action cards propose emails, notes, and shares. You edit and approve.</p>
         </div>
-        <div class="how-card fade-in">
+        <div class="how-card interactive">
           <h3>4) Send & share</h3>
           <p>Send via your connected email. Share a secure link with teammates.</p>
         </div>
@@ -959,10 +1240,10 @@
   <!-- Pricing -->
   <section class="pricing" id="pricing">
     <div class="container">
-      <h2 class="fade-in">Simple pricing</h2>
-      <p class="pricing-subtitle fade-in">Start free. Upgrade as you grow.</p>
-      <div class="pricing-grid">
-        <div class="pricing-card fade-in">
+      <h2 class="scroll-reveal">Simple pricing</h2>
+      <p class="pricing-subtitle scroll-reveal">Start free. Upgrade as you grow.</p>
+      <div class="pricing-grid stagger-grid">
+        <div class="pricing-card interactive">
           <h3>Free</h3>
           <div class="price">£0<span class="price-period">/mo</span></div>
           <ul class="feature-list">
@@ -970,19 +1251,19 @@
             <li>Live transcription</li>
             <li>Basic exports</li>
           </ul>
-          <a href="/app" class="pricing-button">Get started</a>
+          <a href="/app" class="pricing-button interactive">Get started</a>
         </div>
-        <div class="pricing-card featured fade-in">
+        <div class="pricing-card featured interactive">
           <h3>Pro</h3>
-          <div class="price">£15<span class="price-period">/mo</span></div>
+          <div class="price">£15<span class="pricing-period">/mo</span></div>
           <ul class="feature-list">
             <li>Unlimited sessions</li>
             <li>Action drafting</li>
             <li>Team sharing</li>
           </ul>
-          <a href="/app" class="pricing-button">Upgrade</a>
+          <a href="/app" class="pricing-button interactive">Upgrade</a>
         </div>
-        <div class="pricing-card fade-in">
+        <div class="pricing-card interactive">
           <h3>Team</h3>
           <div class="price">Custom</div>
           <ul class="feature-list">
@@ -990,7 +1271,7 @@
             <li>Admin controls</li>
             <li>Priority support</li>
           </ul>
-          <a href="#contact" class="pricing-button secondary">Contact sales</a>
+          <a href="#contact" class="pricing-button interactive">Contact sales</a>
         </div>
       </div>
     </div>
@@ -999,21 +1280,21 @@
   <!-- FAQ -->
   <section class="faq" id="faq">
     <div class="container">
-      <h2 class="fade-in">Frequently asked</h2>
-      <div class="faq-grid">
-        <div class="faq-item fade-in">
+      <h2 class="scroll-reveal">Frequently asked</h2>
+      <div class="faq-grid stagger-grid">
+        <div class="faq-item interactive">
           <div class="faq-question">▸ How is Mina different?</div>
           <div class="faq-answer">Mina doesn't stop at transcription—your follow‑ups are drafted as you speak.</div>
         </div>
-        <div class="faq-item fade-in">
+        <div class="faq-item interactive">
           <div class="faq-question">▸ Is my data private?</div>
           <div class="faq-answer">Yes. Scopes per session, encryption at rest, and exports whenever you want.</div>
         </div>
-        <div class="faq-item fade-in">
+        <div class="faq-item interactive">
           <div class="faq-question">▸ Do you support teams?</div>
           <div class="faq-answer">Yes—shared sessions, mentions, and admin controls are built‑in.</div>
         </div>
-        <div class="faq-item fade-in">
+        <div class="faq-item interactive">
           <div class="faq-question">▸ Which languages are supported?</div>
           <div class="faq-answer">English at launch; more languages on the roadmap.</div>
         </div>
@@ -1024,11 +1305,11 @@
   <!-- Final CTA -->
   <section class="final-cta">
     <div class="container">
-      <h2 class="fade-in">Join the waitlist</h2>
-      <p class="fade-in">Be the first to experience Mina. Enter your email to get early access.</p>
-      <form class="final-form fade-in" id="waitlist2">
+      <h2 class="scroll-reveal">Join the waitlist</h2>
+      <p class="scroll-reveal">Be the first to experience Mina. Enter your email to get early access.</p>
+      <form class="final-form scroll-reveal" id="waitlist2">
         <input type="email" name="email" placeholder="you@example.com" required>
-        <button type="submit">Join</button>
+        <button type="submit" class="interactive">Join</button>
       </form>
     </div>
   </section>
@@ -1046,24 +1327,116 @@
   </footer>
 
   <script>
-    // Animation on scroll
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.style.animationDelay = '0.1s';
-          entry.target.classList.add('fade-in');
-        }
-      });
-    }, observerOptions);
-
-    // Observe all elements with fade-in class
-    document.querySelectorAll('.fade-in').forEach((el) => {
-      observer.observe(el);
+    // Advanced Animation System
+    class AnimationController {
+      constructor() {
+        this.init();
+      }
+      
+      init() {
+        this.setupScrollReveal();
+        this.setupStaggeredAnimations();
+        this.setupParallaxEffects();
+        this.setupSmoothScrolling();
+        this.setupHeroAnimations();
+      }
+      
+      setupScrollReveal() {
+        const observerOptions = {
+          threshold: 0.1,
+          rootMargin: '0px 0px -100px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('revealed');
+              // Don't unobserve for repeat animations on scroll
+            }
+          });
+        }, observerOptions);
+        
+        // Observe scroll-reveal elements
+        document.querySelectorAll('.scroll-reveal').forEach((el) => {
+          observer.observe(el);
+        });
+      }
+      
+      setupStaggeredAnimations() {
+        const staggerObserver = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('animate');
+            }
+          });
+        }, {
+          threshold: 0.1,
+          rootMargin: '0px 0px -50px 0px'
+        });
+        
+        document.querySelectorAll('.stagger-grid').forEach((grid) => {
+          staggerObserver.observe(grid);
+        });
+      }
+      
+      setupParallaxEffects() {
+        let ticking = false;
+        
+        const updateParallax = () => {
+          const scrolled = window.pageYOffset;
+          const parallaxElements = document.querySelectorAll('.parallax-bg');
+          
+          parallaxElements.forEach((element) => {
+            const rate = scrolled * -0.5;
+            element.style.transform = `translateY(${rate}px)`;
+          });
+          
+          ticking = false;
+        };
+        
+        const requestParallaxUpdate = () => {
+          if (!ticking) {
+            requestAnimationFrame(updateParallax);
+            ticking = true;
+          }
+        };
+        
+        window.addEventListener('scroll', requestParallaxUpdate, { passive: true });
+      }
+      
+      setupSmoothScrolling() {
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+          anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+              const headerOffset = 80;
+              const elementPosition = target.getBoundingClientRect().top;
+              const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+              
+              window.scrollTo({
+                top: offsetPosition,
+                behavior: 'smooth'
+              });
+            }
+          });
+        });
+      }
+      
+      setupHeroAnimations() {
+        // Trigger step-cards animation after hero animations
+        setTimeout(() => {
+          const stepCards = document.querySelector('.step-cards.stagger-grid');
+          if (stepCards) {
+            stepCards.classList.add('animate');
+          }
+        }, 800);
+      }
+    }
+    
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      new AnimationController();
     });
 
     // FAQ Toggle
