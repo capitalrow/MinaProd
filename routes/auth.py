@@ -102,6 +102,7 @@ def register():
                 owner_id=user.id
             )
             db.session.add(workspace)
+            db.session.flush()  # Flush to get the workspace.id assigned
             
             # Assign user to workspace
             user.workspace_id = workspace.id
