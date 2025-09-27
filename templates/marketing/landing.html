@@ -1,307 +1,911 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mina — AI Meeting Assistant & Live Transcription</title>
-  <meta name="description" content="Mina captures meetings in real time, turns speech into structured notes and actions, and drafts ready‑to‑send emails and follow‑ups." />
-  <link rel="canonical" href="/" />
-  <meta name="theme-color" content="#0b0f1a" media="(prefers-color-scheme: dark)">
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="description" content="Mina captures meetings in real time, turns speech into structured notes and actions, and drafts ready‑to‑send emails and follow‑ups.">
+  <link rel="canonical" href="/">
+  <meta name="theme-color" content="#0b0f1a">
+  
   <!-- Open Graph / Twitter -->
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="Mina — AI Meeting Assistant & Live Transcription" />
-  <meta property="og:description" content="Capture, understand, and act — real-time transcription with action drafting and sharing." />
-  <meta property="og:image" content="/static/brand/og.png" />
-  <meta property="og:url" content="/" />
-  <meta name="twitter:card" content="summary_large_image" />
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Mina — AI Meeting Assistant & Live Transcription">
+  <meta property="og:description" content="Capture, understand, and act — real-time transcription with action drafting and sharing.">
+  <meta property="og:image" content="/static/brand/og.png">
+  <meta property="og:url" content="/">
+  <meta name="twitter:card" content="summary_large_image">
 
-  <!-- Fonts & Tailwind (runtime) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    window.tailwind = window.tailwind || {}; // config for runtime CDN
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            bg: { DEFAULT: '#0b0f1a', light: '#ffffff' },
-            panel: '#0f1629',
-            brand: '#7c3aed',
-            brand2: '#22d3ee'
-          },
-          boxShadow: { smooth: '0 10px 30px rgba(0,0,0,.35)' },
-          borderRadius: { xl2: '14px' },
-          keyframes: {
-            fadeUp: { '0%':{opacity:0, transform:'translateY(16px)'}, '100%':{opacity:1, transform:'translateY(0)'} },
-            pulseSoft: { '0%,100%':{transform:'scale(1)'}, '50%':{transform:'scale(1.03)'} }
-          },
-          animation: {
-            fadeUp: 'fadeUp .7s ease both',
-            pulseSoft: 'pulseSoft 2.6s ease-in-out infinite'
-          }
-        }
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+      color: #ffffff;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Header */
+    .header {
+      background: rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #ffffff;
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: #e2e8f0;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+
+    .nav-links a:hover {
+      color: #3b82f6;
+    }
+
+    .cta-button {
+      background: linear-gradient(135deg, #3b82f6, #22d3ee);
+      color: #ffffff;
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    }
+
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 4rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+
+    .hero-left h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #3b82f6, #22d3ee);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+
+    .hero-left p {
+      font-size: 1.25rem;
+      color: #e2e8f0;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 500;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .waitlist-form {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .waitlist-form input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      font-size: 1rem;
+    }
+
+    .waitlist-form input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .waitlist-form button {
+      background: linear-gradient(135deg, #3b82f6, #22d3ee);
+      color: #ffffff;
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .disclaimer {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Step Cards */
+    .step-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .step-card {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 1.5rem;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    .step-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .step-number {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #3b82f6, #22d3ee);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .step-card h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .step-card p {
+      color: #e2e8f0;
+      line-height: 1.5;
+    }
+
+    /* Features Section */
+    .features {
+      padding: 4rem 0;
+    }
+
+    .features h2 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .feature-card {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 2rem;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-card h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .feature-card p {
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+
+    /* How it Works */
+    .how-it-works {
+      padding: 4rem 0;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .how-it-works h2 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .how-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    .how-card {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 2rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .how-card h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .how-card p {
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+
+    /* Testimonials */
+    .testimonials {
+      padding: 3rem 0;
+      overflow: hidden;
+    }
+
+    .testimonial-track {
+      display: flex;
+      gap: 1.5rem;
+      animation: scroll 20s linear infinite;
+    }
+
+    .testimonial {
+      min-width: 350px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 12px;
+      padding: 1.5rem;
+      color: #ffffff;
+      font-style: italic;
+    }
+
+    @keyframes scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    /* Pricing */
+    .pricing {
+      padding: 4rem 0;
+    }
+
+    .pricing h2 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .pricing-subtitle {
+      text-align: center;
+      color: #e2e8f0;
+      margin-bottom: 3rem;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .pricing-card {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 2rem;
+      backdrop-filter: blur(10px);
+      text-align: center;
+      position: relative;
+    }
+
+    .pricing-card.featured {
+      border-color: #3b82f6;
+      transform: scale(1.05);
+    }
+
+    .pricing-card h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .price {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+    }
+
+    .price-period {
+      color: #e2e8f0;
+      font-size: 1rem;
+    }
+
+    .feature-list {
+      list-style: none;
+      margin: 1.5rem 0;
+    }
+
+    .feature-list li {
+      padding: 0.5rem 0;
+      color: #e2e8f0;
+    }
+
+    .feature-list li:before {
+      content: "•";
+      color: #3b82f6;
+      margin-right: 0.5rem;
+    }
+
+    .pricing-button {
+      width: 100%;
+      background: linear-gradient(135deg, #3b82f6, #22d3ee);
+      color: #ffffff;
+      padding: 0.75rem;
+      border-radius: 12px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s ease;
+    }
+
+    .pricing-button.secondary {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* FAQ */
+    .faq {
+      padding: 4rem 0;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .faq h2 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .faq-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .faq-item {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .faq-question {
+      padding: 1.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+
+    .faq-question:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .faq-answer {
+      padding: 0 1.5rem 1.5rem;
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+
+    /* Final CTA */
+    .final-cta {
+      padding: 4rem 0;
+      text-align: center;
+    }
+
+    .final-cta h2 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+    }
+
+    .final-cta p {
+      color: #e2e8f0;
+      margin-bottom: 2rem;
+    }
+
+    .final-form {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .final-form input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    .final-form button {
+      background: linear-gradient(135deg, #3b82f6, #22d3ee);
+      color: #ffffff;
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 2rem 0;
+      text-align: center;
+      color: #e2e8f0;
+      font-size: 0.875rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .hero-content {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+
+      .hero-left h1 {
+        font-size: 2.5rem;
+      }
+
+      .features-grid,
+      .how-grid,
+      .pricing-grid,
+      .faq-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .waitlist-form,
+      .final-form {
+        flex-direction: column;
+      }
+
+      .hero-buttons {
+        flex-direction: column;
       }
     }
-  </script>
-  <style>
-    :root { color-scheme: light dark }
-    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif }
-    .reveal { opacity:0; transform: translateY(16px) }
-    .reveal.in { opacity:1; transform: none; transition: opacity .6s ease, transform .6s ease }
-    @media (prefers-reduced-motion: reduce){ .reveal{ opacity:1; transform:none } .animate-pulseSoft{ animation:none } }
+
+    /* Animations */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeIn 0.6s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
   </style>
 </head>
-<body class="bg-white dark:bg-bg text-slate-900 dark:text-slate-100">
-  <a href="#main" class="fixed left-2 top-2 z-[100] -translate-y-20 focus:translate-y-0 bg-indigo-600 text-white px-3 py-2 rounded-md shadow">Skip to content</a>
 
-  <!-- Header / Nav -->
-  <header class="sticky top-0 z-50 backdrop-blur bg-white/70 dark:bg-bg/70 border-b border-slate-200/40 dark:border-white/10">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-      <a href="#top" class="flex items-center gap-2 font-extrabold text-lg">
-        <span class="h-3 w-3 rounded-full bg-gradient-to-br from-brand to-brand2 shadow"></span>
-        <span>Mina</span>
-      </a>
-      <nav class="hidden md:flex items-center gap-6 font-medium text-slate-600 dark:text-slate-300" aria-label="Primary">
-        <a href="#features" class="hover:text-indigo-600">Features</a>
-        <a href="#how" class="hover:text-indigo-600">How it works</a>
-        <a href="#pricing" class="hover:text-indigo-600">Pricing</a>
-        <a href="#faq" class="hover:text-indigo-600">FAQ</a>
-      </nav>
-      <div class="flex items-center gap-3">
-        <a href="/app" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-br from-brand to-brand2 text-white font-semibold shadow-smooth hover:saturate-125 transition will-change-transform hover:-translate-y-0.5">Open the App</a>
-        <button id="navToggle" class="md:hidden p-2 rounded-md hover:bg-slate-100 dark:hover:bg-white/10" aria-label="Toggle menu" aria-expanded="false">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-        </button>
-      </div>
-    </div>
-    <div id="mobileNav" class="md:hidden hidden border-t border-slate-200/40 dark:border-white/10">
-      <nav class="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-2" aria-label="Mobile">
-        <a href="#features" class="py-2">Features</a>
-        <a href="#how" class="py-2">How it works</a>
-        <a href="#pricing" class="py-2">Pricing</a>
-        <a href="#faq" class="py-2">FAQ</a>
-        <a href="/app" class="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-br from-brand to-brand2 text-white font-semibold shadow-smooth">Open the App</a>
-      </nav>
-    </div>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <nav class="nav container">
+      <a href="#" class="logo">Mina</a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+      <a href="/app" class="cta-button">Open the App</a>
+    </nav>
   </header>
 
-  <main id="main">
-    <!-- Hero -->
-    <section id="top" class="relative overflow-hidden">
-      <div class="pointer-events-none absolute inset-0 -z-10 opacity-70">
-        <div class="absolute -top-32 -right-24 h-[480px] w-[480px] rounded-full blur-3xl bg-brand/40"></div>
-        <div class="absolute top-24 -left-24 h-[520px] w-[520px] rounded-full blur-3xl bg-brand2/40"></div>
-      </div>
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
-        <div class="grid md:grid-cols-2 gap-10 items-center">
-          <div class="reveal">
-            <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.05]">Meetings that <span class="bg-clip-text text-transparent bg-gradient-to-br from-brand to-brand2">write themselves</span>.</h1>
-            <p class="mt-4 text-lg text-slate-600 dark:text-slate-300">Live transcription that turns into notes, action items, and ready‑to‑send emails. Mina captures what matters and drafts the follow‑ups for you.</p>
-            <div class="mt-6 flex flex-wrap items-center gap-3">
-              <a href="/app" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-br from-brand to-brand2 text-white font-semibold shadow-smooth hover:saturate-125 transition hover:-translate-y-0.5">Try Mina free</a>
-              <a href="#features" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl ring-1 ring-slate-300/50 dark:ring-white/15">See how it works</a>
-            </div>
-            <form id="waitlist" class="mt-6 flex flex-col sm:flex-row gap-3" aria-label="Join waitlist">
-              <input name="email" type="email" placeholder="you@company.com" required class="flex-1 min-w-[220px] px-4 py-3 rounded-xl ring-1 ring-slate-300/60 dark:ring-white/15 bg-white/70 dark:bg-white/5" aria-label="Email"/>
-              <input type="text" name="website" class="hidden" tabindex="-1" autocomplete="off" aria-hidden="true" />
-              <button type="submit" class="px-5 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition">Join waitlist</button>
-            </form>
-            <p class="mt-2 text-sm text-slate-500">No spam. We’ll only email important updates.</p>
-            <p id="waitlistStatus" class="sr-only" aria-live="polite"></p>
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-left fade-in">
+          <h1>
+            Meetings that 
+            <span class="gradient-text">write<br>themselves</span>.
+          </h1>
+          <p>
+            Live transcription that turns into notes, action items, and ready‑to‑send emails. 
+            Mina captures what matters and drafts the follow‑ups for you.
+          </p>
+          <div class="hero-buttons">
+            <a href="/app" class="cta-button">Try Mina free</a>
+            <a href="#features" class="btn-secondary">See how it works</a>
           </div>
-          <div class="reveal md:justify-self-end">
-            <div class="rounded-xl2 shadow-smooth ring-1 ring-slate-300/30 dark:ring-white/10 p-3 bg-white/60 dark:bg-white/5">
-              <img src="/static/brand/hero-ui.png" alt="Mina live transcription and action cards preview" loading="eager" decoding="async" fetchpriority="high" class="rounded-md" onerror="this.style.display='none'"/>
-              <div class="grid gap-3 mt-3">
-                <div class="flex gap-3 items-start"><div class="h-10 w-10 rounded-xl bg-gradient-to-br from-brand to-brand2 text-bg grid place-items-center font-bold">1</div><div><strong>Dictate.</strong><div class="text-slate-500 dark:text-slate-400">Speak freely—Mina captures in real time.</div></div></div>
-                <div class="flex gap-3 items-start"><div class="h-10 w-10 rounded-xl bg-gradient-to-br from-brand to-brand2 text-bg grid place-items-center font-bold">2</div><div><strong>Understand.</strong><div class="text-slate-500 dark:text-slate-400">We extract tasks, decisions, and owners.</div></div></div>
-                <div class="flex gap-3 items-start"><div class="h-10 w-10 rounded-xl bg-gradient-to-br from-brand to-brand2 text-bg grid place-items-center font-bold">3</div><div><strong>Act.</strong><div class="text-slate-500 dark:text-slate-400">Draft emails and shareable notes for one‑tap send.</div></div></div>
-              </div>
-            </div>
+          <form class="waitlist-form" id="waitlist">
+            <input type="email" name="email" placeholder="you@company.com" required>
+            <button type="submit">Join waitlist</button>
+          </form>
+          <p class="disclaimer">No spam. We'll only email important updates.</p>
+        </div>
+        
+        <div class="step-cards fade-in">
+          <div class="step-card">
+            <div class="step-number">1</div>
+            <h3>Dictate.</h3>
+            <p>Speak freely—Mina captures in real time.</p>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Features -->
-    <section id="features" class="py-16 sm:py-20">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6">
-        <h2 class="reveal text-3xl sm:text-4xl font-extrabold">Why teams choose Mina</h2>
-        <div class="grid md:grid-cols-3 gap-5 mt-8">
-          <article class="reveal p-5 rounded-xl2 bg-white/60 dark:bg-white/5 ring-1 ring-slate-300/40 dark:ring-white/10 shadow-smooth"><h3 class="font-semibold text-lg">Live transcription</h3><p class="text-slate-600 dark:text-slate-300">Low‑latency interim text with final refinement. Meetings, interviews, and dictation.</p></article>
-          <article class="reveal p-5 rounded-xl2 bg-white/60 dark:bg-white/5 ring-1 ring-slate-300/40 dark:ring-white/10 shadow-smooth" style="transition-delay:.05s"><h3 class="font-semibold text-lg">Actions & emails</h3><p class="text-slate-600 dark:text-slate-300">Turns decisions into drafts—ready to send via your connected email.</p></article>
-          <article class="reveal p-5 rounded-xl2 bg-white/60 dark:bg-white/5 ring-1 ring-slate-300/40 dark:ring-white/10 shadow-smooth" style="transition-delay:.1s"><h3 class="font-semibold text-lg">Organized library</h3><p class="text-slate-600 dark:text-slate-300">Sessions auto‑saved with topics, speakers, and highlights you can search.</p></article>
-          <article class="reveal p-5 rounded-xl2 bg-white/60 dark:bg-white/5 ring-1 ring-slate-300/40 dark:ring-white/10 shadow-smooth" style="transition-delay:.15s"><h3 class="font-semibold text-lg">Secure by default</h3><p class="text-slate-600 dark:text-slate-300">Scoped access, encryption at rest, and export controls per session.</p></article>
-          <article class="reveal p-5 rounded-xl2 bg-white/60 dark:bg-white/5 ring-1 ring-slate-300/40 dark:ring-white/10 shadow-smooth" style="transition-delay:.2s"><h3 class="font-semibold text-lg">Works everywhere</h3><p class="text-slate-600 dark:text-slate-300">Web, mobile browsers, and desktop. No installs required.</p></article>
-          <article class="reveal p-5 rounded-xl2 bg-white/60 dark:bg-white/5 ring-1 ring-slate-300/40 dark:ring-white/10 shadow-smooth" style="transition-delay:.25s"><h3 class="font-semibold text-lg">Team‑ready</h3><p class="text-slate-600 dark:text-slate-300">Share sessions, @mention teammates, and track action history.</p></article>
-        </div>
-      </div>
-    </section>
-
-    <!-- How it works -->
-    <section id="how" class="py-16 sm:py-20 bg-slate-50 dark:bg-white/5">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6">
-        <h2 class="reveal text-3xl sm:text-4xl font-extrabold">How Mina works</h2>
-        <div class="grid md:grid-cols-2 gap-6 mt-8">
-          <div class="reveal p-5 rounded-xl2 bg-white ring-1 ring-slate-200 dark:bg-white/5 dark:ring-white/10 shadow-smooth"><strong>1) Capture</strong><div class="text-slate-600 dark:text-slate-300">Start a live session or upload audio. Mina streams interim text in ~250ms cadence.</div></div>
-          <div class="reveal p-5 rounded-xl2 bg-white ring-1 ring-slate-200 dark:bg-white/5 dark:ring-white/10 shadow-smooth" style="transition-delay:.05s"><strong>2) Understand</strong><div class="text-slate-600 dark:text-slate-300">Detects tasks, owners, dates, and decisions from context—no rigid commands.</div></div>
-          <div class="reveal p-5 rounded-xl2 bg-white ring-1 ring-slate-200 dark:bg-white/5 dark:ring-white/10 shadow-smooth" style="transition-delay:.1s"><strong>3) Draft</strong><div class="text-slate-600 dark:text-slate-300">Action cards propose emails, notes, and shares. You edit and approve.</div></div>
-          <div class="reveal p-5 rounded-xl2 bg-white ring-1 ring-slate-200 dark:bg-white/5 dark:ring-white/10 shadow-smooth" style="transition-delay:.15s"><strong>4) Send & share</strong><div class="text-slate-600 dark:text-slate-300">Send via your connected email. Share a secure link with teammates.</div></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Testimonials (auto carousel) -->
-    <section class="py-12">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6">
-        <div class="reveal rounded-xl2 bg-white/60 dark:bg-white/5 ring-1 ring-slate-300/40 dark:ring-white/10 overflow-hidden">
-          <div id="tTrack" class="flex gap-4 p-4 will-change-transform">
-            <div class="min-w-[320px] p-4 rounded-lg bg-slate-900/80 text-slate-100">“Switching to Mina cut my note‑taking time to near zero.” — Chloe, PM</div>
-            <div class="min-w-[320px] p-4 rounded-lg bg-slate-900/80 text-slate-100">“The action drafts are spooky good. I just tap send.” — Ahmed, Founder</div>
-            <div class="min-w-[320px] p-4 rounded-lg bg-slate-900/80 text-slate-100">“It’s like Otter, but it actually helps me follow through.” — Ben, Consultant</div>
-            <div class="min-w-[320px] p-4 rounded-lg bg-slate-900/80 text-slate-100">“Our standups finally result in decisions, not more meetings.” — Priya, Eng Lead</div>
+          <div class="step-card">
+            <div class="step-number">2</div>
+            <h3>Understand.</h3>
+            <p>We extract tasks, decisions, and owners.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-number">3</div>
+            <h3>Act.</h3>
+            <p>Draft emails and shareable notes for one‑tap send.</p>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Pricing -->
-    <section id="pricing" class="py-16 sm:py-20">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6">
-        <h2 class="reveal text-3xl sm:text-4xl font-extrabold">Simple pricing</h2>
-        <p class="reveal mt-1 text-slate-600 dark:text-slate-300">Start free. Upgrade as you grow.</p>
-        <div class="grid md:grid-cols-3 gap-6 mt-8">
-          <div class="reveal p-6 rounded-xl2 bg-white ring-1 ring-slate-200 dark:bg-white/5 dark:ring-white/10 shadow-smooth"><h3 class="font-semibold text-xl">Free</h3><div class="text-3xl font-extrabold mt-1">£0<span class="text-base text-slate-500">/mo</span></div><ul class="mt-3 text-slate-600 dark:text-slate-300 list-disc list-inside"><li>60 mins / month</li><li>Live transcription</li><li>Basic exports</li></ul><a href="/app" class="mt-4 inline-flex px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Get started</a></div>
-          <div class="reveal p-6 rounded-xl2 bg-white ring-2 ring-brand/30 dark:bg-white/5 dark:ring-brand/40 shadow-smooth" style="transition-delay:.05s"><h3 class="font-semibold text-xl">Pro</h3><div class="text-3xl font-extrabold mt-1">£15<span class="text-base text-slate-500">/mo</span></div><ul class="mt-3 text-slate-600 dark:text-slate-300 list-disc list-inside"><li>Unlimited sessions</li><li>Action drafting</li><li>Team sharing</li></ul><a href="/app" class="mt-4 inline-flex px-4 py-2 rounded-xl bg-gradient-to-br from-brand to-brand2 text-white">Upgrade</a></div>
-          <div class="reveal p-6 rounded-xl2 bg-white ring-1 ring-slate-200 dark:bg-white/5 dark:ring-white/10 shadow-smooth" style="transition-delay:.1s"><h3 class="font-semibold text-xl">Team</h3><div class="text-3xl font-extrabold mt-1">Custom</div><ul class="mt-3 text-slate-600 dark:text-slate-300 list-disc list-inside"><li>SAML/SSO</li><li>Admin controls</li><li>Priority support</li></ul><a href="#waitlist" class="mt-4 inline-flex px-4 py-2 rounded-xl ring-1 ring-slate-300/60 dark:ring-white/20">Contact sales</a></div>
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="container">
+      <h2 class="fade-in">Why teams choose Mina</h2>
+      <div class="features-grid">
+        <div class="feature-card fade-in">
+          <h3>Live transcription</h3>
+          <p>Low‑latency interim text with final refinement. Meetings, interviews, and dictation.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <h3>Actions & emails</h3>
+          <p>Turns decisions into drafts—ready to send via your connected email.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <h3>Organized library</h3>
+          <p>Sessions auto‑saved with topics, speakers, and highlights you can search.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <h3>Secure by default</h3>
+          <p>Scoped access, encryption at rest, and export controls per session.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <h3>Works everywhere</h3>
+          <p>Web, mobile browsers, and desktop. No installs required.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <h3>Team‑ready</h3>
+          <p>Share sessions, @mention teammates, and track action history.</p>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- FAQ -->
-    <section id="faq" class="py-16 sm:py-20 bg-slate-50 dark:bg-white/5">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6">
-        <h2 class="reveal text-3xl sm:text-4xl font-extrabold">Frequently asked</h2>
-        <div class="grid md:grid-cols-2 gap-4 mt-6">
-          <details class="reveal p-4 rounded-xl2 bg-white ring-1 ring-slate-200 dark:bg-white/5 dark:ring-white/10"><summary class="font-semibold">How is Mina different?</summary><p class="mt-2 text-slate-600 dark:text-slate-300">Mina doesn’t stop at transcription—your follow‑ups are drafted as you speak.</p></details>
-          <details class="reveal p-4 rounded-xl2 bg-white ring-1 ring-slate-200 dark:bg-white/5 dark:ring-white/10"><summary class="font-semibold">Is my data private?</summary><p class="mt-2 text-slate-600 dark:text-slate-300">Yes. Scopes per session, encryption at rest, and exports whenever you want.</p></details>
-          <details class="reveal p-4 rounded-xl2 bg-white ring-1 ring-slate-200 dark:bg-white/5 dark:ring-white/10"><summary class="font-semibold">Do you support teams?</summary><p class="mt-2 text-slate-600 dark:text-slate-300">Yes—shared sessions, mentions, and admin controls are built‑in.</p></details>
-          <details class="reveal p-4 rounded-xl2 bg-white ring-1 ring-slate-200 dark:bg-white/5 dark:ring-white/10"><summary class="font-semibold">Which languages are supported?</summary><p class="mt-2 text-slate-600 dark:text-slate-300">English at launch; more languages on the roadmap.</p></details>
+  <!-- How it Works -->
+  <section class="how-it-works" id="how">
+    <div class="container">
+      <h2 class="fade-in">How Mina works</h2>
+      <div class="how-grid">
+        <div class="how-card fade-in">
+          <h3>1) Capture</h3>
+          <p>Start a live session or upload audio. Mina streams interim text in ~250ms cadence.</p>
+        </div>
+        <div class="how-card fade-in">
+          <h3>2) Understand</h3>
+          <p>Detects tasks, owners, dates, and decisions from context—no rigid commands.</p>
+        </div>
+        <div class="how-card fade-in">
+          <h3>3) Draft</h3>
+          <p>Action cards propose emails, notes, and shares. You edit and approve.</p>
+        </div>
+        <div class="how-card fade-in">
+          <h3>4) Send & share</h3>
+          <p>Send via your connected email. Share a secure link with teammates.</p>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Waitlist CTA -->
-    <section class="py-14">
-      <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-        <h2 class="reveal text-3xl sm:text-4xl font-extrabold">Join the waitlist</h2>
-        <p class="reveal mt-2 text-slate-600 dark:text-slate-300">Be the first to experience Mina. Enter your email to get early access.</p>
-        <form id="waitlist2" class="reveal mt-5 flex flex-col sm:flex-row gap-3 justify-center">
-          <input type="email" name="email" required placeholder="you@example.com" class="flex-1 min-w-[220px] px-4 py-3 rounded-xl ring-1 ring-slate-300/60 dark:ring-white/15 bg-white/70 dark:bg-white/5" />
-          <input type="text" name="nickname" class="hidden" tabindex="-1" autocomplete="off" aria-hidden="true" />
-          <button type="submit" class="px-5 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition">Join</button>
-        </form>
-        <p id="waitlistStatus2" class="sr-only" aria-live="polite"></p>
+  <!-- Testimonials -->
+  <section class="testimonials">
+    <div class="testimonial-track">
+      <div class="testimonial">"Switching to Mina cut my note‑taking time to near zero." — Chloe, PM</div>
+      <div class="testimonial">"The action drafts are spooky good. I just tap send." — Ahmed, Founder</div>
+      <div class="testimonial">"It's like Otter, but it actually helps me follow through." — Ben, Consultant</div>
+      <div class="testimonial">"Our standups finally result in decisions, not more meetings." — Priya, Eng Lead</div>
+      <div class="testimonial">"Switching to Mina cut my note‑taking time to near zero." — Chloe, PM</div>
+      <div class="testimonial">"The action drafts are spooky good. I just tap send." — Ahmed, Founder</div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <h2 class="fade-in">Simple pricing</h2>
+      <p class="pricing-subtitle fade-in">Start free. Upgrade as you grow.</p>
+      <div class="pricing-grid">
+        <div class="pricing-card fade-in">
+          <h3>Free</h3>
+          <div class="price">£0<span class="price-period">/mo</span></div>
+          <ul class="feature-list">
+            <li>60 mins / month</li>
+            <li>Live transcription</li>
+            <li>Basic exports</li>
+          </ul>
+          <a href="/app" class="pricing-button">Get started</a>
+        </div>
+        <div class="pricing-card featured fade-in">
+          <h3>Pro</h3>
+          <div class="price">£15<span class="price-period">/mo</span></div>
+          <ul class="feature-list">
+            <li>Unlimited sessions</li>
+            <li>Action drafting</li>
+            <li>Team sharing</li>
+          </ul>
+          <a href="/app" class="pricing-button">Upgrade</a>
+        </div>
+        <div class="pricing-card fade-in">
+          <h3>Team</h3>
+          <div class="price">Custom</div>
+          <ul class="feature-list">
+            <li>SAML/SSO</li>
+            <li>Admin controls</li>
+            <li>Priority support</li>
+          </ul>
+          <a href="#contact" class="pricing-button secondary">Contact sales</a>
+        </div>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
-  <footer class="py-8 border-t border-slate-200/40 dark:border-white/10">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap items-center justify-between gap-4 text-sm text-slate-500">
-      <p>© <span id="year"></span> Mina. All rights reserved.</p>
-      <nav class="flex gap-4" aria-label="Footer">
-        <a href="/privacy.html" class="hover:text-slate-700 dark:hover:text-white">Privacy</a>
-        <a href="/terms.html" class="hover:text-slate-700 dark:hover:text-white">Terms</a>
-        <a href="#top" class="hover:text-slate-700 dark:hover:text-white">Back to top</a>
-      </nav>
+  <!-- FAQ -->
+  <section class="faq" id="faq">
+    <div class="container">
+      <h2 class="fade-in">Frequently asked</h2>
+      <div class="faq-grid">
+        <div class="faq-item fade-in">
+          <div class="faq-question">▸ How is Mina different?</div>
+          <div class="faq-answer">Mina doesn't stop at transcription—your follow‑ups are drafted as you speak.</div>
+        </div>
+        <div class="faq-item fade-in">
+          <div class="faq-question">▸ Is my data private?</div>
+          <div class="faq-answer">Yes. Scopes per session, encryption at rest, and exports whenever you want.</div>
+        </div>
+        <div class="faq-item fade-in">
+          <div class="faq-question">▸ Do you support teams?</div>
+          <div class="faq-answer">Yes—shared sessions, mentions, and admin controls are built‑in.</div>
+        </div>
+        <div class="faq-item fade-in">
+          <div class="faq-question">▸ Which languages are supported?</div>
+          <div class="faq-answer">English at launch; more languages on the roadmap.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="final-cta">
+    <div class="container">
+      <h2 class="fade-in">Join the waitlist</h2>
+      <p class="fade-in">Be the first to experience Mina. Enter your email to get early access.</p>
+      <form class="final-form fade-in" id="waitlist2">
+        <input type="email" name="email" placeholder="you@example.com" required>
+        <button type="submit">Join</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>© 2025 Mina. All rights reserved.</p>
+      <p>
+        <a href="/privacy" style="color: #e2e8f0;">Privacy</a> • 
+        <a href="/terms" style="color: #e2e8f0;">Terms</a> • 
+        <a href="#top" style="color: #e2e8f0;">Back to top</a>
+      </p>
     </div>
   </footer>
 
-  <!-- Toast -->
-  <div id="toast" class="fixed right-4 bottom-4 px-3 py-2 rounded-lg bg-slate-900 text-white shadow-smooth opacity-0 translate-y-2 transition"></div>
-
   <script>
-    // Mobile nav toggle
-    const navToggle = document.getElementById('navToggle');
-    const mobileNav = document.getElementById('mobileNav');
-    if (navToggle) navToggle.addEventListener('click', ()=>{
-      const open = mobileNav.classList.toggle('hidden') === false;
-      navToggle.setAttribute('aria-expanded', String(open));
+    // Animation on scroll
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.style.animationDelay = '0.1s';
+          entry.target.classList.add('fade-in');
+        }
+      });
+    }, observerOptions);
+
+    // Observe all elements with fade-in class
+    document.querySelectorAll('.fade-in').forEach((el) => {
+      observer.observe(el);
     });
 
-    // Reveal on scroll
-    const io = new IntersectionObserver((entries)=>{
-      entries.forEach(e=>{ if (e.isIntersecting) e.target.classList.add('in') })
-    }, { threshold: .12 });
-    document.querySelectorAll('.reveal').forEach(n=> io.observe(n));
+    // FAQ Toggle
+    document.querySelectorAll('.faq-question').forEach((question) => {
+      question.addEventListener('click', () => {
+        const answer = question.nextElementSibling;
+        const isOpen = answer.style.display === 'block';
+        
+        // Close all other answers
+        document.querySelectorAll('.faq-answer').forEach((a) => {
+          a.style.display = 'none';
+        });
+        document.querySelectorAll('.faq-question').forEach((q) => {
+          q.textContent = q.textContent.replace('▾', '▸');
+        });
+        
+        // Toggle current answer
+        if (!isOpen) {
+          answer.style.display = 'block';
+          question.textContent = question.textContent.replace('▸', '▾');
+        }
+      });
+    });
 
-    // Testimonials auto-scroll (pauses on hover, respects reduced motion)
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const tTrack = document.getElementById('tTrack');
-    if (tTrack && !prefersReduced) {
-      let timer = setInterval(()=>{
-        const first = tTrack.firstElementChild; if (!first) return;
-        tTrack.style.transition = 'transform .6s ease';
-        tTrack.style.transform = 'translateX(-338px)';
-        setTimeout(()=>{ tTrack.style.transition='none'; tTrack.appendChild(first); tTrack.style.transform='translateX(0)'; }, 620);
-      }, 2600);
-      tTrack.addEventListener('mouseenter', ()=> clearInterval(timer));
-      tTrack.addEventListener('mouseleave', ()=> timer = setInterval(()=>{ const first = tTrack.firstElementChild; if (!first) return; tTrack.style.transition='transform .6s ease'; tTrack.style.transform='translateX(-338px)'; setTimeout(()=>{ tTrack.style.transition='none'; tTrack.appendChild(first); tTrack.style.transform='translateX(0)'; }, 620); }, 2600));
-    }
-
-    // Toast helper
-    const toast = (msg, tone='ok') => {
-      const el = document.getElementById('toast'); if (!el) return;
-      el.textContent = msg; el.style.border = '1px solid ' + (tone==='ok'? '#10b981' : tone==='warn'? '#f59e0b' : '#ef4444');
-      el.classList.remove('opacity-0','translate-y-2'); el.classList.add('opacity-100','translate-y-0');
-      setTimeout(()=>{ el.classList.add('opacity-0','translate-y-2'); el.classList.remove('opacity-100','translate-y-0'); }, 2800);
-    }
-
-    // Waitlist submit (with fallback + honeypot + aria-live)
-    async function submitWaitlist(form, statusElId){
-      const status = document.getElementById(statusElId);
-      const email = new FormData(form).get('email');
-      const honeypot = Array.from(form.elements).find(x=>x.name==='website' || x.name==='nickname');
-      if (honeypot && honeypot.value) { return; } // ignore bots
+    // Form submissions
+    document.getElementById('waitlist').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const email = formData.get('email');
+      
       try {
-        const r = await fetch('/api/marketing/subscribe', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email }) });
-        if (r.ok) { status.classList.remove('sr-only'); status.textContent = 'Thanks! We just added you to the waitlist.'; toast('Added to waitlist'); form.reset(); return; }
-        // Fallback: send email to team inbox via existing endpoint
-        const alt = await fetch('/api/email/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ to:'hello@yourdomain.com', subject:'New waitlist signup', body_html:`<p>${email} asked to join the waitlist.</p>` }) });
-        if (alt.ok) { status.classList.remove('sr-only'); status.textContent = 'Got it! We will be in touch.'; toast('Signup received', 'warn'); form.reset(); return; }
-        throw new Error('subscribe + fallback failed');
-      } catch (e) { console.error(e); status.classList.remove('sr-only'); status.textContent = 'Couldn\'t submit right now. Please try again.'; toast('Submission failed', 'err'); }
-    }
-    document.getElementById('waitlist')?.addEventListener('submit', (e)=>{ e.preventDefault(); submitWaitlist(e.target, 'waitlistStatus'); });
-    document.getElementById('waitlist2')?.addEventListener('submit', (e)=>{ e.preventDefault(); submitWaitlist(e.target, 'waitlistStatus2'); });
+        const response = await fetch('/api/waitlist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email }),
+        });
+        
+        if (response.ok) {
+          alert('Thanks for joining! We\'ll be in touch soon.');
+          e.target.reset();
+        } else {
+          alert('Something went wrong. Please try again.');
+        }
+      } catch (error) {
+        alert('Something went wrong. Please try again.');
+      }
+    });
 
-    // Year
-    document.getElementById('year').textContent = new Date().getFullYear();
+    document.getElementById('waitlist2').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const email = formData.get('email');
+      
+      try {
+        const response = await fetch('/api/waitlist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email }),
+        });
+        
+        if (response.ok) {
+          alert('Thanks for joining! We\'ll be in touch soon.');
+          e.target.reset();
+        } else {
+          alert('Something went wrong. Please try again.');
+        }
+      } catch (error) {
+        alert('Something went wrong. Please try again.');
+      }
+    });
 
-    // Scroll spy (set aria-current on nav links)
-    const sections = ['features','how','pricing','faq'];
-    const spyIO = new IntersectionObserver((ents)=>{
-      ents.forEach(ent=>{
-        const id = ent.target.id; const link = document.querySelector(`a[href="#${id}"]`);
-        if (!link) return; link.setAttribute('aria-current', ent.isIntersecting ? 'page' : 'false');
-      })
-    }, { rootMargin: '-40% 0px -55% 0px', threshold: 0.01 });
-    sections.forEach(id=>{ const el = document.getElementById(id); if (el) spyIO.observe(el); })
-  </script>
-
-  <!-- Structured data for SEO -->
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "Mina",
-      "applicationCategory": "Productivity",
-      "operatingSystem": "Web",
-      "offers": {"@type":"Offer","price":"0","priceCurrency":"GBP"}
-    }
+    // Smooth scrolling for navigation links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
   </script>
 </body>
 </html>
