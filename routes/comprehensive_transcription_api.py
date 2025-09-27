@@ -18,12 +18,11 @@ from flask_socketio import emit, join_room, leave_room
 from typing import Dict, List, Any, Optional
 import numpy as np
 
-# Import all enhanced systems
-from services.advanced_audio_processor import get_advanced_audio_processor
-from services.multi_speaker_diarization import get_multi_speaker_diarization
-from services.real_time_punctuation import get_punctuation_engine
-from services.enhanced_session_manager import get_enhanced_session_manager
-from services.session_buffer_manager import get_session_buffer_manager
+# Import enhanced integration system
+from services.enhanced_transcription_integration import (
+    get_enhanced_transcription_integration, 
+    EnhancedTranscriptionConfig
+)
 from services.openai_client_manager import get_openai_client_manager
 
 logger = logging.getLogger(__name__)
@@ -32,19 +31,23 @@ logger = logging.getLogger(__name__)
 comprehensive_bp = Blueprint('comprehensive_transcription', __name__)
 
 class ComprehensiveTranscriptionProcessor:
-    """Unified processor integrating all enhanced transcription systems"""
+    """Unified processor using enhanced transcription integration system"""
     
     def __init__(self):
-        # Initialize all enhanced systems
-        self.audio_processor = get_advanced_audio_processor()
-        self.diarization = get_multi_speaker_diarization()
-        self.punctuation_engine = get_punctuation_engine()
-        self.session_manager = get_enhanced_session_manager()
-        self.buffer_manager = get_session_buffer_manager()
-        self.openai_client = get_openai_client_manager()
+        # Initialize enhanced integration system
+        self.config = EnhancedTranscriptionConfig(
+            enable_neural_enhancement=True,
+            enable_voice_fingerprinting=True,
+            enable_emotion_detection=True,
+            enable_conversation_analytics=True,
+            enable_action_item_extraction=True,
+            enable_insight_generation=True,
+            max_processing_latency_ms=500,
+            enable_performance_monitoring=True
+        )
         
-        # Processing state
-        self.active_sessions = {}
+        self.integration_service = get_enhanced_transcription_integration(self.config)
+        self.openai_client = get_openai_client_manager()
         
         # Performance metrics
         self.processing_metrics = {
@@ -54,7 +57,7 @@ class ComprehensiveTranscriptionProcessor:
             'error_rate': 0.0
         }
         
-        logger.info("🚀 Comprehensive Transcription Processor initialized")
+        logger.info("🚀 Enhanced Comprehensive Transcription Processor initialized")
     
     async def process_audio_comprehensive(
         self, 
@@ -63,180 +66,92 @@ class ComprehensiveTranscriptionProcessor:
         client_id: str,
         is_final: bool = False
     ) -> Dict[str, Any]:
-        """Process audio through complete enhanced pipeline"""
+        """Process audio through enhanced integration pipeline"""
         
         start_time = time.time()
         self.processing_metrics['total_requests'] += 1
         
         try:
-            # === STAGE 1: ADVANCED AUDIO PROCESSING ===
-            
-            # Convert audio to numpy array for processing
+            # Convert bytes to numpy array for enhanced processing
             audio_samples = self._bytes_to_numpy(audio_data)
             
-            # Process through advanced audio processor
-            audio_segment = self.audio_processor.process_audio_segment(
-                audio_data=audio_data,
-                sample_rate=16000,
-                channels=1,
-                enable_enhancement=True
-            )
-            
-            # === STAGE 2: VOICE ACTIVITY DETECTION & QUALITY ASSESSMENT ===
-            
-            voice_active = audio_segment.is_speech
-            quality_score = audio_segment.metrics.audio_quality_score
-            
-            # Skip processing if no speech detected and not final
-            if not voice_active and not is_final:
-                return {
-                    'session_id': session_id,
-                    'voice_activity': False,
-                    'quality_score': quality_score,
-                    'processing_time_ms': (time.time() - start_time) * 1000,
-                    'stage': 'voice_activity_detection'
-                }
-            
-            # === STAGE 3: BUFFER MANAGEMENT ===
-            
-            # Add to session buffer
-            buffer_result = await self.buffer_manager.add_audio_chunk_async(
+            # === STAGE 1: AUDIO CHUNK PROCESSING ===
+            # Process through enhanced audio pipeline
+            chunk_result = self.integration_service.process_audio_chunk(
                 session_id=session_id,
-                audio_data=audio_segment.audio_data,
-                timestamp=time.time(),
-                metadata={
-                    'quality_score': quality_score,
-                    'voice_activity': voice_active,
-                    'audio_metrics': audio_segment.metrics.__dict__
-                }
+                audio_data=audio_samples,
+                sample_rate=16000,
+                client_id=client_id,
+                is_final=is_final
             )
             
-            # === STAGE 4: TRANSCRIPTION PROCESSING ===
-            
+            # === STAGE 2: TRANSCRIPTION PROCESSING ===
             transcription_result = None
-            if buffer_result['should_transcribe'] or is_final:
-                # Get processed audio from buffer
-                processed_audio = buffer_result.get('processed_audio', audio_segment.audio_data)
+            
+            # Only transcribe if chunk processing was successful and audio has sufficient quality
+            if (chunk_result.get('processing_stages', {}).get('chunk_management', {}).get('completed') and
+                not chunk_result.get('error')):
                 
-                # Transcribe with OpenAI
-                transcription_result = await self._transcribe_audio(
-                    audio_data=processed_audio,
-                    session_id=session_id
-                )
+                # Transcribe audio using OpenAI
+                raw_transcription = await self._transcribe_audio(audio_data, session_id)
+                
+                if raw_transcription:
+                    # Process transcription through enhanced streaming processor
+                    transcription_result = self.integration_service.process_transcription_result(
+                        session_id=session_id,
+                        raw_result=raw_transcription
+                    )
             
-            # === STAGE 5: SPEAKER DIARIZATION ===
-            
-            speaker_segment = None
-            if transcription_result and transcription_result.get('text'):
-                speaker_segment = self.diarization.process_audio_segment(
-                    audio_samples=audio_samples,
-                    timestamp=time.time(),
-                    segment_id=f"{session_id}_{int(time.time() * 1000)}",
-                    existing_transcript=transcription_result['text']
-                )
-            
-            # === STAGE 6: REAL-TIME PUNCTUATION ===
-            
-            enhanced_text = ""
-            if transcription_result and transcription_result.get('text'):
-                punctuation_segment = self.punctuation_engine.process_text_segment(
-                    text=transcription_result['text'],
-                    confidence=transcription_result.get('confidence', 0.0),
-                    is_final=is_final,
-                    context=self._get_recent_context(session_id)
-                )
-                enhanced_text = punctuation_segment.text
-            
-            # === STAGE 7: SESSION MANAGEMENT ===
-            
-            # Update session with comprehensive data
-            session_update = {
-                'transcription_segments': [{
-                    'text': enhanced_text,
-                    'original_text': transcription_result.get('text', '') if transcription_result else '',
-                    'speaker_id': speaker_segment.speaker_id if speaker_segment else 'unknown',
-                    'speaker_confidence': speaker_segment.speaker_confidence if speaker_segment else 0.0,
-                    'audio_quality': quality_score,
-                    'voice_activity': voice_active,
-                    'timestamp': start_time,
-                    'is_final': is_final,
-                    'processing_stages': {
-                        'audio_enhanced': True,
-                        'speaker_identified': speaker_segment is not None,
-                        'punctuation_applied': len(enhanced_text) > 0,
-                        'buffer_processed': buffer_result['processed']
-                    }
-                }],
-                'speaker_profiles': {
-                    speaker_segment.speaker_id: {
-                        'confidence': speaker_segment.speaker_confidence,
-                        'voice_features': speaker_segment.voice_features.tolist() if speaker_segment and speaker_segment.voice_features is not None else [],
-                        'last_seen': start_time
-                    }
-                } if speaker_segment else {},
-                'audio_metrics_history': [{
-                    'timestamp': start_time,
-                    'quality_score': quality_score,
-                    'voice_activity': voice_active,
-                    'rms_energy': audio_segment.metrics.rms_energy,
-                    'snr_db': audio_segment.metrics.snr_db,
-                    'speech_probability': audio_segment.metrics.speech_probability
-                }],
-                'processing_events': [{
-                    'event': 'comprehensive_processing',
-                    'timestamp': start_time,
-                    'processing_time_ms': (time.time() - start_time) * 1000,
-                    'stages_completed': ['audio_processing', 'vad', 'buffering', 'transcription', 'diarization', 'punctuation']
-                }]
-            }
-            
-            # Update session
-            self.session_manager.update_session(session_id, session_update)
-            
-            # === STAGE 8: RESPONSE PREPARATION ===
+            # === STAGE 3: RESPONSE PREPARATION ===
             
             processing_time = (time.time() - start_time) * 1000
-            self.processing_metrics['successful_requests'] += 1
-            self._update_average_latency(processing_time)
             
-            comprehensive_result = {
-                'session_id': session_id,
-                'text': enhanced_text,
-                'original_text': transcription_result.get('text', '') if transcription_result else '',
-                'confidence': transcription_result.get('confidence', 0.0) if transcription_result else 0.0,
-                'is_final': is_final,
-                'voice_activity': voice_active,
-                'quality_score': quality_score,
-                'speaker_info': {
-                    'speaker_id': speaker_segment.speaker_id if speaker_segment else 'unknown',
-                    'speaker_confidence': speaker_segment.speaker_confidence if speaker_segment else 0.0,
-                    'overlap_detected': speaker_segment.overlap_detected if speaker_segment else False,
-                    'background_speakers': speaker_segment.background_speakers if speaker_segment else []
-                },
-                'audio_metrics': {
-                    'rms_energy': audio_segment.metrics.rms_energy,
-                    'peak_amplitude': audio_segment.metrics.peak_amplitude,
-                    'snr_db': audio_segment.metrics.snr_db,
-                    'speech_probability': audio_segment.metrics.speech_probability,
-                    'noise_level': audio_segment.metrics.noise_level
-                },
-                'processing_info': {
+            if transcription_result and not transcription_result.get('error'):
+                self.processing_metrics['successful_requests'] += 1
+                self._update_average_latency(processing_time)
+                
+                # Combine chunk processing and transcription results
+                comprehensive_result = {
+                    'session_id': session_id,
+                    'text': transcription_result.get('result', {}).get('text', ''),
+                    'confidence': transcription_result.get('result', {}).get('confidence', 0.0),
+                    'speaker_id': transcription_result.get('result', {}).get('speaker_id', 'unknown'),
+                    'is_final': is_final,
+                    'voice_activity': chunk_result.get('processing_stages', {}).get('neural_enhancement', {}).get('voice_activity', False),
+                    'quality_score': chunk_result.get('processing_stages', {}).get('neural_enhancement', {}).get('quality_score', 0.0),
+                    'emotions': transcription_result.get('result', {}).get('emotions', {}),
+                    'keywords': transcription_result.get('result', {}).get('keywords', []),
+                    'processing_info': {
+                        'total_processing_time_ms': processing_time,
+                        'chunk_processing_time_ms': chunk_result.get('total_processing_latency_ms', 0),
+                        'transcription_latency_ms': transcription_result.get('processing_latency_ms', 0),
+                        'enhancement_applied': chunk_result.get('processing_stages', {}).get('neural_enhancement', {}).get('completed', False),
+                        'chunk_priority': chunk_result.get('processing_stages', {}).get('chunk_management', {}).get('priority', 'normal')
+                    },
+                    'analytics': transcription_result.get('analytics', {}),
+                    'system_metrics': self.get_system_metrics()
+                }
+                
+                logger.debug(f"🎯 Enhanced processing completed for session {session_id}: "
+                            f"{processing_time:.1f}ms")
+                
+                return comprehensive_result
+            
+            else:
+                # Return processing status even without transcription
+                return {
+                    'session_id': session_id,
+                    'voice_activity': chunk_result.get('processing_stages', {}).get('neural_enhancement', {}).get('voice_activity', False),
+                    'quality_score': chunk_result.get('processing_stages', {}).get('neural_enhancement', {}).get('quality_score', 0.0),
                     'processing_time_ms': processing_time,
-                    'buffer_status': buffer_result.get('status', 'unknown'),
-                    'enhancement_applied': True,
-                    'punctuation_applied': len(enhanced_text) > 0,
-                    'speaker_identified': speaker_segment is not None
-                },
-                'system_metrics': self.get_system_metrics()
-            }
-            
-            logger.debug(f"🎯 Comprehensive processing completed for session {session_id}: "
-                        f"{processing_time:.1f}ms, quality={quality_score:.2f}")
-            
-            return comprehensive_result
+                    'status': 'processed_no_transcription',
+                    'chunk_processing': chunk_result,
+                    'transcription_result': transcription_result,
+                    'system_metrics': self.get_system_metrics()
+                }
             
         except Exception as e:
-            logger.error(f"❌ Comprehensive processing failed: {e}")
+            logger.error(f"❌ Enhanced comprehensive processing failed: {e}")
             self._update_error_rate()
             
             return {
@@ -278,20 +193,13 @@ class ComprehensiveTranscriptionProcessor:
             logger.warning(f"⚠️ Audio conversion failed: {e}")
             return np.array([])
     
-    def _get_recent_context(self, session_id: str) -> str:
-        """Get recent context for punctuation processing"""
+    def create_enhanced_session(self, session_id: str, **metadata) -> Dict[str, Any]:
+        """Create enhanced transcription session"""
         try:
-            session_state = self.session_manager.get_session(session_id)
-            if not session_state or not session_state.transcription_segments:
-                return ""
-            
-            # Get last few segments for context
-            recent_segments = session_state.transcription_segments[-3:]
-            context_text = " ".join(segment.get('text', '') for segment in recent_segments)
-            return context_text
-            
-        except Exception:
-            return ""
+            return self.integration_service.create_enhanced_session(session_id, **metadata)
+        except Exception as e:
+            logger.error(f"❌ Enhanced session creation failed: {e}")
+            return {}
     
     def _update_average_latency(self, processing_time_ms: float):
         """Update average latency metric"""
@@ -321,20 +229,30 @@ class ComprehensiveTranscriptionProcessor:
             logger.warning(f"⚠️ Error rate update failed: {e}")
     
     def get_system_metrics(self) -> Dict[str, Any]:
-        """Get comprehensive system metrics"""
+        """Get enhanced system metrics"""
         try:
+            integration_metrics = self.integration_service.get_system_performance()
+            
             return {
                 'processing_metrics': self.processing_metrics,
-                'audio_processor_stats': self.audio_processor.get_processor_stats(),
-                'diarization_summary': self.diarization.get_speaker_summary(),
-                'punctuation_stats': self.punctuation_engine.get_processing_statistics(),
-                'session_analytics': self.session_manager.get_global_analytics(),
-                'buffer_status': self.buffer_manager.get_system_status()
+                'integration_system': integration_metrics,
+                'enhanced_components': {
+                    'streaming_processor': integration_metrics.get('component_performance', {}).get('streaming_processor', {}),
+                    'chunk_manager': integration_metrics.get('component_performance', {}).get('chunk_manager', {}),
+                    'neural_enhancement': integration_metrics.get('component_performance', {}).get('neural_enhancement', {}),
+                    'conversation_analytics': integration_metrics.get('component_performance', {}).get('conversation_analytics', {})
+                },
+                'system_status': {
+                    'active_sessions': integration_metrics.get('system_metrics', {}).get('active_sessions', 0),
+                    'uptime_seconds': integration_metrics.get('system_metrics', {}).get('uptime_seconds', 0),
+                    'total_chunks_processed': integration_metrics.get('system_metrics', {}).get('total_chunks_processed', 0),
+                    'avg_processing_latency': integration_metrics.get('system_metrics', {}).get('avg_processing_latency', 0)
+                }
             }
             
         except Exception as e:
-            logger.error(f"❌ System metrics retrieval failed: {e}")
-            return {}
+            logger.error(f"❌ Enhanced system metrics retrieval failed: {e}")
+            return {'processing_metrics': self.processing_metrics}
 
 # Global processor instance
 _comprehensive_processor = None
@@ -349,27 +267,34 @@ def get_comprehensive_processor():
 # REST API Routes
 @comprehensive_bp.route('/api/transcription/comprehensive/session', methods=['POST'])
 def create_comprehensive_session():
-    """Create new comprehensive transcription session"""
+    """Create new enhanced comprehensive transcription session"""
     try:
         data = request.get_json() or {}
         
-        session_manager = get_enhanced_session_manager()
-        session_id = session_manager.create_session(
+        # Generate session ID
+        session_id = f"comprehensive_{int(time.time() * 1000)}"
+        
+        # Create enhanced session
+        processor = get_comprehensive_processor()
+        session_info = processor.create_enhanced_session(
+            session_id=session_id,
             user_id=data.get('user_id'),
             session_name=data.get('session_name', ''),
-            language=data.get('language', 'en')
+            language=data.get('language', 'en'),
+            metadata=data.get('metadata', {})
         )
         
-        logger.info(f"🆕 Created comprehensive session: {session_id}")
+        logger.info(f"🆕 Created enhanced comprehensive session: {session_id}")
         
         return jsonify({
             'success': True,
             'session_id': session_id,
-            'message': 'Comprehensive transcription session created'
+            'session_info': session_info,
+            'message': 'Enhanced comprehensive transcription session created'
         })
         
     except Exception as e:
-        logger.error(f"❌ Session creation failed: {e}")
+        logger.error(f"❌ Enhanced session creation failed: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
@@ -377,10 +302,10 @@ def create_comprehensive_session():
 
 @comprehensive_bp.route('/api/transcription/comprehensive/session/<session_id>', methods=['GET'])
 def get_comprehensive_session(session_id: str):
-    """Get comprehensive session information"""
+    """Get enhanced comprehensive session information"""
     try:
-        session_manager = get_enhanced_session_manager()
-        analytics = session_manager.get_session_analytics(session_id)
+        processor = get_comprehensive_processor()
+        analytics = processor.integration_service.get_session_analytics(session_id)
         
         if not analytics:
             return jsonify({
@@ -390,11 +315,17 @@ def get_comprehensive_session(session_id: str):
         
         return jsonify({
             'success': True,
-            'session_analytics': analytics
+            'session_analytics': analytics,
+            'enhanced_features': {
+                'neural_enhancement': True,
+                'conversation_analytics': True,
+                'intelligent_chunking': True,
+                'advanced_streaming': True
+            }
         })
         
     except Exception as e:
-        logger.error(f"❌ Session retrieval failed: {e}")
+        logger.error(f"❌ Enhanced session retrieval failed: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
