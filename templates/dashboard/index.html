@@ -1,493 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Mina</title>
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    
+    <!-- Core CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    
+    <!-- Chart.js for premium data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
     <script src="https://unpkg.com/feather-icons"></script>
-    <style>
-        /* Enhanced Modern Dashboard Layout */
-        body {
-            background: var(--mina-bg-secondary);
-            margin: 0;
-            font-family: var(--mina-font-family-sans);
-            color: var(--mina-text-primary);
-            line-height: var(--mina-line-height-normal);
-        }
-        
-        .dashboard-layout {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            min-height: 100vh;
-        }
-        
-        /* Enhanced Sidebar */
-        .sidebar {
-            background: linear-gradient(180deg, var(--mina-bg-primary) 0%, var(--mina-bg-secondary) 100%);
-            border-right: 1px solid var(--mina-border-primary);
-            padding: var(--mina-space-6);
-            display: flex;
-            flex-direction: column;
-            box-shadow: var(--mina-shadow-sm);
-        }
-        
-        .sidebar-logo {
-            display: flex;
-            align-items: center;
-            gap: var(--mina-space-3);
-            margin-bottom: var(--mina-space-8);
-            padding-bottom: var(--mina-space-6);
-            border-bottom: 1px solid var(--mina-border-primary);
-        }
-
-        .sidebar-logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
-            border-radius: var(--mina-radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: var(--mina-font-weight-bold);
-            font-size: var(--mina-font-size-lg);
-        }
-
-        .sidebar-logo-text {
-            font-size: var(--mina-font-size-xl);
-            font-weight: var(--mina-font-weight-bold);
-            color: var(--mina-text-primary);
-            font-family: var(--mina-font-family-display);
-        }
-        
-        .nav-menu {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            flex: 1;
-        }
-        
-        .nav-item {
-            margin-bottom: var(--mina-space-2);
-        }
-        
-        .nav-link {
-            display: flex;
-            align-items: center;
-            gap: var(--mina-space-3);
-            padding: var(--mina-space-3) var(--mina-space-4);
-            color: var(--mina-text-secondary);
-            text-decoration: none;
-            border-radius: var(--mina-radius-md);
-            transition: all var(--mina-transition-fast);
-            font-weight: var(--mina-font-weight-medium);
-            font-size: var(--mina-font-size-sm);
-        }
-        
-        .nav-link:hover {
-            background: var(--mina-bg-accent);
-            color: var(--mina-text-primary);
-            transform: translateX(2px);
-        }
-        
-        .nav-link.active {
-            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
-            color: white;
-            font-weight: var(--mina-font-weight-semibold);
-        }
-
-        .nav-link i {
-            width: 18px;
-            height: 18px;
-        }
-        
-        /* Main Content Area */
-        .main-content {
-            padding: var(--mina-space-8);
-            overflow-y: auto;
-        }
-        
-        .dashboard-header {
-            margin-bottom: var(--mina-space-8);
-        }
-        
-        .dashboard-title {
-            font-size: var(--mina-font-size-4xl);
-            font-weight: var(--mina-font-weight-bold);
-            color: var(--mina-text-primary);
-            margin-bottom: var(--mina-space-2);
-            font-family: var(--mina-font-family-display);
-        }
-
-        .dashboard-subtitle {
-            font-size: var(--mina-font-size-lg);
-            color: var(--mina-text-secondary);
-            margin: 0;
-        }
-        
-        /* Enhanced Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: var(--mina-space-6);
-            margin-bottom: var(--mina-space-10);
-        }
-        
-        .stat-card {
-            background: var(--mina-bg-primary);
-            padding: var(--mina-space-6);
-            border-radius: var(--mina-radius-lg);
-            box-shadow: var(--mina-shadow-sm);
-            border: 1px solid var(--mina-border-primary);
-            transition: all var(--mina-transition-base);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--mina-brand-primary), var(--mina-brand-accent));
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--mina-shadow-lg);
-            border-color: var(--mina-border-secondary);
-        }
-        
-        .stat-value {
-            font-size: var(--mina-font-size-3xl);
-            font-weight: var(--mina-font-weight-bold);
-            color: var(--mina-brand-primary);
-            margin-bottom: var(--mina-space-2);
-            font-family: var(--mina-font-family-display);
-        }
-        
-        .stat-label {
-            color: var(--mina-text-secondary);
-            font-size: var(--mina-font-size-sm);
-            font-weight: var(--mina-font-weight-medium);
-            text-transform: uppercase;
-            letter-spacing: var(--mina-letter-spacing-wide);
-        }
-        
-        /* Content Grid */
-        .content-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: var(--mina-space-8);
-        }
-        
-        .content-section {
-            background: var(--mina-bg-primary);
-            border-radius: var(--mina-radius-lg);
-            box-shadow: var(--mina-shadow-sm);
-            border: 1px solid var(--mina-border-primary);
-            overflow: hidden;
-        }
-        
-        .section-header {
-            padding: var(--mina-space-6);
-            border-bottom: 1px solid var(--mina-border-primary);
-            background: var(--mina-bg-secondary);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .section-title {
-            font-size: var(--mina-font-size-xl);
-            font-weight: var(--mina-font-weight-semibold);
-            color: var(--mina-text-primary);
-            margin: 0;
-            font-family: var(--mina-font-family-display);
-        }
-        
-        .section-content {
-            padding: var(--mina-space-6);
-        }
-        
-        /* Enhanced Item Styling */
-        .meeting-item, .task-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: var(--mina-space-4);
-            border-bottom: 1px solid var(--mina-border-primary);
-            transition: all var(--mina-transition-fast);
-            border-radius: var(--mina-radius-sm);
-            margin-bottom: var(--mina-space-2);
-        }
-        
-        .meeting-item:last-child,
-        .task-item:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-        }
-
-        .meeting-item:hover,
-        .task-item:hover {
-            background: var(--mina-bg-secondary);
-            transform: translateX(4px);
-        }
-        
-        .meeting-info, .task-content {
-            flex: 1;
-        }
-        
-        .meeting-title, .task-title {
-            font-weight: var(--mina-font-weight-semibold);
-            color: var(--mina-text-primary);
-            margin-bottom: var(--mina-space-1);
-            font-size: var(--mina-font-size-base);
-        }
-        
-        .meeting-date, .task-meta {
-            font-size: var(--mina-font-size-sm);
-            color: var(--mina-text-muted);
-        }
-        
-        .meeting-actions, .task-actions {
-            display: flex;
-            align-items: center;
-            gap: var(--mina-space-2);
-        }
-        
-        /* Enhanced Status Pills */
-        .meeting-status, .task-status {
-            padding: var(--mina-space-1) var(--mina-space-3);
-            border-radius: var(--mina-radius-full);
-            font-size: var(--mina-font-size-xs);
-            font-weight: var(--mina-font-weight-semibold);
-            text-transform: uppercase;
-            letter-spacing: var(--mina-letter-spacing-wide);
-            border: 1px solid transparent;
-        }
-        
-        .status-completed {
-            background: rgba(var(--mina-success-rgb), 0.1);
-            color: var(--mina-success-dark);
-            border-color: rgba(var(--mina-success-rgb), 0.3);
-        }
-        
-        .status-live {
-            background: rgba(var(--mina-danger-rgb), 0.1);
-            color: var(--mina-danger-dark);
-            border-color: rgba(var(--mina-danger-rgb), 0.3);
-        }
-        
-        .status-scheduled {
-            background: rgba(var(--mina-info-rgb), 0.1);
-            color: var(--mina-info-dark);
-            border-color: rgba(var(--mina-info-rgb), 0.3);
-        }
-
-        .status-todo {
-            background: rgba(var(--mina-warning-rgb), 0.1);
-            color: var(--mina-warning-dark);
-            border-color: rgba(var(--mina-warning-rgb), 0.3);
-        }
-
-        .status-in_progress {
-            background: rgba(var(--mina-info-rgb), 0.1);
-            color: var(--mina-info-dark);
-            border-color: rgba(var(--mina-info-rgb), 0.3);
-        }
-        
-        /* Enhanced Buttons */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--mina-space-2);
-            padding: var(--mina-space-2) var(--mina-space-4);
-            border-radius: var(--mina-radius-md);
-            text-decoration: none;
-            font-weight: var(--mina-font-weight-medium);
-            font-size: var(--mina-font-size-sm);
-            transition: all var(--mina-transition-fast);
-            border: 1px solid transparent;
-            cursor: pointer;
-            min-height: 36px;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--mina-shadow-md);
-        }
-        
-        .btn-secondary {
-            background: var(--mina-bg-secondary);
-            color: var(--mina-text-secondary);
-            border-color: var(--mina-border-secondary);
-        }
-        
-        .btn-secondary:hover {
-            background: var(--mina-bg-accent);
-            color: var(--mina-text-primary);
-            border-color: var(--mina-border-accent);
-        }
-
-        .btn-sm {
-            padding: var(--mina-space-1) var(--mina-space-3);
-            font-size: var(--mina-font-size-xs);
-            min-height: 28px;
-        }
-
-        .btn-icon {
-            background: none;
-            border: none;
-            padding: var(--mina-space-2);
-            cursor: pointer;
-            color: var(--mina-text-muted);
-            border-radius: var(--mina-radius-sm);
-            transition: all var(--mina-transition-fast);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-icon:hover {
-            background: var(--mina-bg-accent);
-            color: var(--mina-text-primary);
-        }
-        
-        /* User Info in Sidebar */
-        .user-info {
-            padding: var(--mina-space-6);
-            border-top: 1px solid var(--mina-border-primary);
-            margin-top: auto;
-            background: var(--mina-bg-accent);
-            border-radius: var(--mina-radius-md);
-        }
-        
-        .user-name {
-            font-weight: var(--mina-font-weight-semibold);
-            color: var(--mina-text-primary);
-            margin-bottom: var(--mina-space-1);
-        }
-        
-        .user-email {
-            font-size: var(--mina-font-size-sm);
-            color: var(--mina-text-muted);
-            margin-bottom: var(--mina-space-4);
-        }
-        
-        /* Loading and Empty States */
-        .loading-state, .empty-state {
-            text-align: center;
-            padding: var(--mina-space-8);
-            color: var(--mina-text-muted);
-        }
-
-        .empty-state .btn {
-            margin-top: var(--mina-space-4);
-        }
-
-        /* Loading Animation */
-        .loading-spinner {
-            width: 24px;
-            height: 24px;
-            border: 2px solid var(--mina-border-primary);
-            border-top: 2px solid var(--mina-brand-primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto var(--mina-space-4);
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Responsive Design */
-        @media (max-width: 1024px) {
-            .content-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .dashboard-layout {
-                grid-template-columns: 1fr;
-            }
-            
-            .sidebar {
-                order: 2;
-                border-right: none;
-                border-top: 1px solid var(--mina-border-primary);
-                padding: var(--mina-space-4);
-            }
-
-            .main-content {
-                padding: var(--mina-space-4);
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-                gap: var(--mina-space-4);
-            }
-
-            .dashboard-title {
-                font-size: var(--mina-font-size-3xl);
-            }
-        }
-
-        @media (max-width: 640px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .stat-card {
-                padding: var(--mina-space-4);
-            }
-
-            .stat-value {
-                font-size: var(--mina-font-size-2xl);
-            }
-        }
-
-        /* Dark mode support */
-        @media (prefers-color-scheme: dark) {
-            .sidebar {
-                background: linear-gradient(180deg, var(--mina-bg-primary) 0%, var(--mina-bg-secondary) 100%);
-            }
-        }
-
-        /* Accessibility improvements */
-        @media (prefers-reduced-motion: reduce) {
-            .stat-card,
-            .meeting-item,
-            .task-item,
-            .btn {
-                transition: none;
-                transform: none !important;
-            }
-        }
-
-        /* High contrast mode */
-        @media (prefers-contrast: high) {
-            .stat-card,
-            .content-section {
-                border-width: 2px;
-            }
-        }
-    </style>
 </head>
 <body>
+    <!-- Dark Mode Toggle -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+        <i data-feather="sun" id="themeIcon"></i>
+    </button>
+
     <div class="dashboard-layout">
         <aside class="sidebar">
             <div class="sidebar-logo">
@@ -548,28 +88,58 @@
             
             <div class="stats-grid">
                 <div class="stat-card" data-stat="total-meetings">
-                    <div class="stat-value">{{ stats.total_meetings if stats else 0 }}</div>
-                    <div class="stat-label">Total Meetings</div>
+                    <div class="stat-card-content">
+                        <div class="stat-value">{{ stats.total_meetings if stats else 0 }}</div>
+                        <div class="stat-label">
+                            <i data-feather="users" class="stat-icon"></i>
+                            Total Meetings
+                        </div>
+                    </div>
                 </div>
                 <div class="stat-card" data-stat="total-tasks">
-                    <div class="stat-value">{{ stats.total_tasks if stats else 0 }}</div>
-                    <div class="stat-label">Total Tasks</div>
+                    <div class="stat-card-content">
+                        <div class="stat-value">{{ stats.total_tasks if stats else 0 }}</div>
+                        <div class="stat-label">
+                            <i data-feather="check-square" class="stat-icon"></i>
+                            Total Tasks
+                        </div>
+                    </div>
                 </div>
                 <div class="stat-card" data-stat="task-completion-rate">
-                    <div class="stat-value">{{ stats.task_completion_rate if stats else 0 }}%</div>
-                    <div class="stat-label">Task Completion Rate</div>
+                    <div class="stat-card-content">
+                        <div class="stat-value">{{ stats.task_completion_rate if stats else 0 }}%</div>
+                        <div class="stat-label">
+                            <i data-feather="trending-up" class="stat-icon"></i>
+                            Task Completion Rate
+                        </div>
+                    </div>
                 </div>
                 <div class="stat-card" data-stat="this-week-meetings">
-                    <div class="stat-value">{{ stats.this_week_meetings if stats else 0 }}</div>
-                    <div class="stat-label">This Week's Meetings</div>
+                    <div class="stat-card-content">
+                        <div class="stat-value">{{ stats.this_week_meetings if stats else 0 }}</div>
+                        <div class="stat-label">
+                            <i data-feather="calendar" class="stat-icon"></i>
+                            This Week's Meetings
+                        </div>
+                    </div>
                 </div>
                 <div class="stat-card" data-stat="active-meetings">
-                    <div class="stat-value">0</div>
-                    <div class="stat-label">Active Meetings</div>
+                    <div class="stat-card-content">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">
+                            <i data-feather="activity" class="stat-icon"></i>
+                            Active Meetings
+                        </div>
+                    </div>
                 </div>
                 <div class="stat-card" data-stat="my-active-tasks">
-                    <div class="stat-value">0</div>
-                    <div class="stat-label">My Active Tasks</div>
+                    <div class="stat-card-content">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">
+                            <i data-feather="target" class="stat-icon"></i>
+                            My Active Tasks
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -616,14 +186,293 @@
     <!-- Notifications container -->
     <div id="notifications"></div>
 
-    <!-- Load dashboard JavaScript -->
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-    
-    <!-- Initialize feather icons -->
+    <!-- Enhanced Dashboard JavaScript -->
     <script>
-        if (typeof feather !== 'undefined') {
-            feather.replace();
+        // Premium Dashboard Enhancement System
+        class MinaDashboard {
+            constructor() {
+                this.theme = localStorage.getItem('mina-theme') || 'light';
+                this.charts = {};
+                this.init();
+            }
+
+            init() {
+                this.setupThemeToggle();
+                this.initializeFeatherIcons();
+                this.setupInteractions();
+                this.loadData();
+                this.applyTheme();
+            }
+
+            setupThemeToggle() {
+                const toggle = document.getElementById('themeToggle');
+                const icon = document.getElementById('themeIcon');
+                
+                if (toggle && icon) {
+                    toggle.addEventListener('click', () => {
+                        this.theme = this.theme === 'light' ? 'dark' : 'light';
+                        localStorage.setItem('mina-theme', this.theme);
+                        this.applyTheme();
+                    });
+                }
+            }
+
+            applyTheme() {
+                const html = document.documentElement;
+                const icon = document.getElementById('themeIcon');
+                
+                html.setAttribute('data-theme', this.theme);
+                
+                if (icon) {
+                    // Smooth icon transition
+                    icon.style.transform = 'scale(0)';
+                    setTimeout(() => {
+                        icon.setAttribute('data-feather', this.theme === 'light' ? 'moon' : 'sun');
+                        if (typeof feather !== 'undefined') {
+                            feather.replace();
+                        }
+                        icon.style.transform = 'scale(1)';
+                    }, 150);
+                }
+            }
+
+            initializeFeatherIcons() {
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+            }
+
+            setupInteractions() {
+                // Enhanced stat card interactions
+                document.querySelectorAll('.stat-card').forEach(card => {
+                    card.addEventListener('mouseenter', () => {
+                        this.animateStatCard(card, true);
+                    });
+                    
+                    card.addEventListener('mouseleave', () => {
+                        this.animateStatCard(card, false);
+                    });
+                });
+
+                // Refresh button functionality
+                const refreshBtn = document.getElementById('refresh-dashboard');
+                if (refreshBtn) {
+                    refreshBtn.addEventListener('click', () => {
+                        this.refreshData();
+                    });
+                }
+            }
+
+            animateStatCard(card, isHover) {
+                const value = card.querySelector('.stat-value');
+                const icon = card.querySelector('.stat-icon');
+                
+                if (isHover) {
+                    if (value) value.style.transform = 'scale(1.05)';
+                    if (icon) icon.style.transform = 'rotate(5deg) scale(1.1)';
+                } else {
+                    if (value) value.style.transform = 'scale(1)';
+                    if (icon) icon.style.transform = 'rotate(0deg) scale(1)';
+                }
+            }
+
+            loadData() {
+                this.loadMeetings();
+                this.loadTasks();
+                this.updateStats();
+            }
+
+            async loadMeetings() {
+                const container = document.getElementById('recent-meetings-list');
+                if (!container) return;
+
+                try {
+                    const response = await fetch('/api/meetings/recent?limit=5');
+                    const data = await response.json();
+                    
+                    if (data.meetings && data.meetings.length > 0) {
+                        container.innerHTML = data.meetings.map(meeting => `
+                            <div class="meeting-item">
+                                <div class="meeting-info">
+                                    <div class="meeting-title">${meeting.title || 'Untitled Meeting'}</div>
+                                    <div class="meeting-date">
+                                        <i data-feather="calendar" style="width: 14px; height: 14px;"></i>
+                                        ${new Date(meeting.created_at).toLocaleDateString()}
+                                    </div>
+                                </div>
+                                <div class="meeting-actions">
+                                    <span class="meeting-status status-${meeting.status || 'completed'}">${meeting.status || 'completed'}</span>
+                                    <button class="btn-icon" title="View meeting">
+                                        <i data-feather="eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        container.innerHTML = `
+                            <div class="empty-state">
+                                <i data-feather="calendar" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
+                                <p>No recent meetings</p>
+                                <a href="/live" class="btn btn-primary">
+                                    <i data-feather="plus"></i>
+                                    Start New Meeting
+                                </a>
+                            </div>
+                        `;
+                    }
+                    this.initializeFeatherIcons();
+                } catch (error) {
+                    console.error('Error loading meetings:', error);
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <p>Unable to load meetings</p>
+                            <button class="btn btn-secondary" onclick="dashboard.loadMeetings()">
+                                <i data-feather="refresh-cw"></i>
+                                Try Again
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+
+            async loadTasks() {
+                const container = document.getElementById('my-tasks-list');
+                if (!container) return;
+
+                try {
+                    const response = await fetch('/api/tasks/my-tasks');
+                    const data = await response.json();
+                    
+                    if (data.tasks && data.tasks.length > 0) {
+                        container.innerHTML = data.tasks.map(task => `
+                            <div class="task-item">
+                                <div class="task-content">
+                                    <div class="task-title">${task.title}</div>
+                                    <div class="task-meta">
+                                        <i data-feather="clock" style="width: 14px; height: 14px;"></i>
+                                        ${new Date(task.created_at).toLocaleDateString()}
+                                    </div>
+                                </div>
+                                <div class="task-actions">
+                                    <span class="task-status status-${task.status}">${task.status}</span>
+                                    <button class="btn-icon" title="Edit task">
+                                        <i data-feather="edit-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        container.innerHTML = `
+                            <div class="empty-state">
+                                <i data-feather="check-square" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
+                                <p>No tasks yet</p>
+                                <a href="/dashboard/tasks" class="btn btn-primary">
+                                    <i data-feather="plus"></i>
+                                    Create Task
+                                </a>
+                            </div>
+                        `;
+                    }
+                    this.initializeFeatherIcons();
+                } catch (error) {
+                    console.error('Error loading tasks:', error);
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <p>Unable to load tasks</p>
+                            <button class="btn btn-secondary" onclick="dashboard.loadTasks()">
+                                <i data-feather="refresh-cw"></i>
+                                Try Again
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+
+            async updateStats() {
+                try {
+                    const [meetingsResponse, tasksResponse, analyticsResponse] = await Promise.all([
+                        fetch('/api/meetings/stats'),
+                        fetch('/api/tasks/stats'),
+                        fetch('/api/analytics/dashboard?days=7')
+                    ]);
+
+                    const meetingsData = await meetingsResponse.json();
+                    const tasksData = await tasksResponse.json();
+                    const analyticsData = await analyticsResponse.json();
+
+                    // Update stat cards with real data
+                    this.updateStatCard('total-meetings', meetingsData.total_meetings || 0);
+                    this.updateStatCard('total-tasks', tasksData.total_tasks || 0);
+                    this.updateStatCard('task-completion-rate', `${tasksData.completion_rate || 0}%`);
+                    this.updateStatCard('this-week-meetings', analyticsData.this_week_meetings || 0);
+                    this.updateStatCard('active-meetings', meetingsData.active_meetings || 0);
+                    this.updateStatCard('my-active-tasks', tasksData.active_tasks || 0);
+
+                } catch (error) {
+                    console.error('Error updating stats:', error);
+                }
+            }
+
+            updateStatCard(statName, value) {
+                const card = document.querySelector(`[data-stat="${statName}"]`);
+                if (card) {
+                    const valueElement = card.querySelector('.stat-value');
+                    if (valueElement) {
+                        // Animated number update
+                        const currentValue = parseInt(valueElement.textContent) || 0;
+                        const newValue = parseInt(value) || value;
+                        
+                        if (typeof newValue === 'number' && !isNaN(newValue)) {
+                            this.animateNumber(valueElement, currentValue, newValue);
+                        } else {
+                            valueElement.textContent = value;
+                        }
+                    }
+                }
+            }
+
+            animateNumber(element, start, end, duration = 1000) {
+                const range = end - start;
+                const increment = range / (duration / 16);
+                let current = start;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                        current = end;
+                        clearInterval(timer);
+                    }
+                    element.textContent = Math.round(current);
+                }, 16);
+            }
+
+            refreshData() {
+                const refreshBtn = document.getElementById('refresh-dashboard');
+                if (refreshBtn) {
+                    refreshBtn.style.transform = 'rotate(360deg)';
+                    setTimeout(() => {
+                        refreshBtn.style.transform = 'rotate(0deg)';
+                    }, 500);
+                }
+                
+                this.loadData();
+            }
         }
+
+        // Initialize dashboard when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.dashboard = new MinaDashboard();
+        });
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            if (window.dashboard) {
+                window.dashboard.updateStats();
+            }
+        }, 30000);
     </script>
+    
+    <!-- Load additional dashboard JavaScript for API handling -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>
 </html>
