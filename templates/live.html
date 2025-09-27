@@ -225,19 +225,21 @@
         
         /* Metrics */
         .metrics-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
+            display: flex;
+            gap: 0.75rem;
             margin: 1.5rem 0;
+            flex-wrap: wrap;
         }
         
         .metric-card {
             background: var(--surface-1);
             border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 1rem;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
             text-align: center;
             transition: all var(--transition-fast);
+            flex: 1;
+            min-width: 80px;
         }
         
         .metric-card:hover {
@@ -246,14 +248,14 @@
         }
         
         .metric-value {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 700;
             color: var(--primary);
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.2rem;
         }
         
         .metric-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--text-tertiary);
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -585,7 +587,11 @@
             }
             
             .metrics-grid {
-                grid-template-columns: 1fr;
+                flex-direction: column;
+            }
+            
+            .metric-card {
+                min-width: auto;
             }
             
             .action-buttons {
