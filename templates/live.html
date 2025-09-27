@@ -1,455 +1,1324 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="light">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
-  <meta name="description" content="Mina - Real-time live transcription powered by OpenAI Whisper">
-  <meta name="theme-color" content="#6366f1">
-  
-  <title>Mina — Live Transcription</title>
-  
-  <!-- Preconnect to improve performance -->
-  <link rel="preconnect" href="https://cdn.socket.io">
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  
-  <!-- Bootstrap 5 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-  
-  <!-- Feather Icons - Load synchronously -->
-  <script src="https://unpkg.com/feather-icons"></script>
-  
-  <!-- Socket.IO -->
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
-  
-  <!-- Custom Design System - Production Optimized -->
-  <link rel="stylesheet" href="/static/css/design-tokens.css">
-  <link rel="stylesheet" href="/static/css/typography.css">
-  <link rel="stylesheet" href="/static/css/performance.css">
-  <link rel="stylesheet" href="/static/css/mobile-excellence.css">
-  <link rel="stylesheet" href="/static/css/desktop-excellence.css">
-  <link rel="stylesheet" href="/static/css/interaction-mastery.css">
-  <link rel="stylesheet" href="/static/css/security-excellence.css">
-  <link rel="stylesheet" href="/static/css/components.css">
-  
-  <!-- PWA Meta Tags -->
-  <link rel="manifest" href="/static/manifest.json">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Mina">
-  
-  <style>
-    /* Transition overrides for smooth theme switching */
-    * {
-      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mina - Live Recording Studio</title>
     
-    /* Enhance Bootstrap components with design tokens */
-    .btn {
-      transition: all var(--mina-transition-fast);
-    }
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
     
-    /* Audio visualization enhancements */
-    .audio-visualizer {
-      height: 40px;
-      background: linear-gradient(90deg, var(--mina-bg-tertiary) 0%, var(--mina-bg-secondary) 100%);
-      border-radius: var(--mina-radius-lg);
-      position: relative;
-      overflow: hidden;
-    }
+    <!-- External Dependencies -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     
-    .audio-waveform {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      height: 100%;
-      background: linear-gradient(90deg, var(--mina-success) 0%, var(--mina-warning) 70%, var(--mina-danger) 100%);
-      width: 0%;
-      border-radius: var(--mina-radius-lg);
-      transition: width 100ms ease-out;
-    }
-  </style>
-</head>
-
-<body class="bg-body-secondary">
-  <!-- Theme Toggle Button -->
-  <button class="mina-theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
-    <i data-feather="sun" class="mina-theme-toggle__icon" id="themeIcon"></i>
-  </button>
-
-  <!-- Live Region for Screen Readers -->
-  <div id="liveRegion" class="mina-sr-only" aria-live="polite" aria-atomic="true"></div>
-
-  <div class="mina-container py-4">
-    <!-- Header -->
-    <header class="text-center mb-5">
-      <h1 class="display-4 fw-bold text-primary mb-2">
-        <i data-feather="mic" class="me-2"></i>
-        Mina
-      </h1>
-      <p class="lead text-muted">Real-time Live Transcription</p>
-    </header>
-
-    <!-- Main Application -->
-    <main>
-      <!-- Control Panel -->
-      <section class="mina-card mb-4" role="region" aria-labelledby="controls-heading">
-        <div class="mina-card__header">
-          <h2 id="controls-heading" class="mina-card__title">
-            <i data-feather="settings" class="me-2"></i>
-            Recording Controls
-          </h2>
-          <div class="mina-flex mina-gap-2">
-            <span class="mina-pill" id="wsStatus">
-              <span class="mina-pill__indicator"></span>
-              Disconnected
-            </span>
-            <span class="mina-pill" id="micStatus">
-              <i data-feather="mic-off" class="me-1"></i>
-              Ready
-            </span>
-          </div>
-        </div>
-
-        <div class="mina-card__content">
-          <!-- Recording Buttons -->
-          <div class="d-flex gap-3 mb-4 flex-wrap">
-            <button 
-              id="startRecordingBtn" 
-              class="mina-btn mina-btn--success mina-btn--lg"
-              aria-describedby="start-help"
-            >
-              <i data-feather="play" class="me-2"></i>
-              Start Recording
-            </button>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
+    
+    <style>
+        :root {
+            /* Production Color System */
+            --primary: #00C896;
+            --secondary: #6366F1;
+            --accent: #F59E0B;
+            --warning: #EF4444;
+            --success: #10B981;
             
-            <button 
-              id="stopRecordingBtn" 
-              class="mina-btn mina-btn--danger mina-btn--lg" 
-              disabled
-              aria-describedby="stop-help"
-            >
-              <i data-feather="stop" class="me-2"></i>
-              Stop Recording
-            </button>
-
-            <button 
-              id="clearBtn" 
-              class="mina-btn mina-btn--secondary"
-              aria-describedby="clear-help"
-            >
-              <i data-feather="trash-2" class="me-2"></i>
-              Clear
-            </button>
-          </div>
-
-          <!-- Help Text -->
-          <div class="small text-muted">
-            <p id="start-help" class="mb-1">
-              <i data-feather="info" class="me-1"></i>
-              Click Start to begin real-time transcription
-            </p>
-            <p id="stop-help" class="mb-1">
-              <i data-feather="info" class="me-1"></i>
-              Click Stop to end recording and get final transcript
-            </p>
-            <p id="clear-help" class="mb-0">
-              <i data-feather="info" class="me-1"></i>
-              Clear all transcribed text
-            </p>
-          </div>
-
-          <!-- Audio Level Meter -->
-          <div class="mt-4">
-            <label class="form-label small fw-medium">Audio Level</label>
-            <div class="audio-visualizer">
-              <div class="audio-waveform" id="audioWaveform"></div>
+            /* Glass Morphism */
+            --glass-bg: rgba(255, 255, 255, 0.02);
+            --glass-bg-strong: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-blur: blur(20px);
+            
+            /* Surfaces */
+            --surface-1: rgba(0, 0, 0, 0.2);
+            --surface-2: rgba(0, 0, 0, 0.4);
+            --surface-3: rgba(0, 0, 0, 0.6);
+            
+            /* Typography */
+            --text-primary: #FFFFFF;
+            --text-secondary: rgba(255, 255, 255, 0.8);
+            --text-tertiary: rgba(255, 255, 255, 0.6);
+            
+            /* Elevations */
+            --elevation-1: 0 1px 3px rgba(0, 0, 0, 0.2);
+            --elevation-2: 0 4px 6px rgba(0, 0, 0, 0.2);
+            --elevation-3: 0 10px 15px rgba(0, 0, 0, 0.2);
+            --elevation-4: 0 20px 30px rgba(0, 0, 0, 0.3);
+            
+            /* Transitions */
+            --transition-fast: 0.15s ease;
+            --transition-base: 0.25s ease;
+            --transition-slow: 0.4s ease;
+        }
+        
+        /* Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0A0A0A 0%, #1A1A2E 50%, #16213E 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* Main Layout */
+        .recording-studio {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 2rem;
+            padding: 2rem;
+        }
+        
+        /* Control Panel */
+        .control-panel {
+            background: var(--glass-bg-strong);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+            transition: all var(--transition-base);
+        }
+        
+        .control-panel:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--elevation-4);
+        }
+        
+        .panel-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .panel-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        
+        .panel-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        /* Record Button */
+        .record-section {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .record-button {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-size: 2.5rem;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--elevation-3);
+            margin-bottom: 1rem;
+        }
+        
+        .record-button:hover {
+            transform: scale(1.05);
+            box-shadow: var(--elevation-4);
+        }
+        
+        .record-button.recording {
+            background: linear-gradient(135deg, var(--warning), #DC2626);
+            animation: pulse-record 2s infinite;
+        }
+        
+        .record-button.processing {
+            background: linear-gradient(135deg, var(--accent), #D97706);
+        }
+        
+        @keyframes pulse-record {
+            0%, 100% { box-shadow: var(--elevation-3); }
+            50% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.4), var(--elevation-4); }
+        }
+        
+        .record-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--warning);
+        }
+        
+        .status-dot.recording {
+            background: var(--primary);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Settings */
+        .settings-group {
+            margin: 1.5rem 0;
+        }
+        
+        .settings-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .setting-item {
+            margin-bottom: 1rem;
+        }
+        
+        .setting-label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+        }
+        
+        .setting-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--surface-1);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all var(--transition-fast);
+        }
+        
+        .setting-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 200, 150, 0.1);
+        }
+        
+        /* Metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .metric-card {
+            background: var(--surface-1);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            transition: all var(--transition-fast);
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-1px);
+            border-color: var(--primary);
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+        
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+        
+        .action-btn {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            background: var(--surface-1);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .action-btn:hover {
+            background: var(--surface-2);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+        
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-color: transparent;
+        }
+        
+        .action-btn.primary:hover {
+            background: linear-gradient(135deg, #00B085, #5856EB);
+        }
+        
+        /* Transcription Panel */
+        .transcription-panel {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: calc(100vh - 4rem);
+        }
+        
+        .transcript-header {
+            background: var(--surface-2);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .transcript-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .transcript-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+        
+        .transcript-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            background: var(--surface-1);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+        
+        .transcript-btn:hover {
+            background: var(--surface-2);
+            color: var(--text-primary);
+        }
+        
+        /* Live Metrics Bar */
+        .live-metrics {
+            background: var(--surface-1);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--glass-border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .live-metric {
+            text-align: center;
+        }
+        
+        .live-metric-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+        
+        .live-metric-label {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Transcript Content */
+        .transcript-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-tertiary);
+            text-align: center;
+        }
+        
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+        
+        .empty-message {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .empty-hint {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        /* Transcript Segments */
+        .transcript-segment {
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background: var(--surface-1);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            transition: all var(--transition-fast);
+            position: relative;
+        }
+        
+        .transcript-segment:hover {
+            background: var(--surface-2);
+            border-color: var(--primary);
+        }
+        
+        .segment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .speaker-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .speaker-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .speaker-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .segment-metadata {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+        }
+        
+        .confidence-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        
+        .confidence-high {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+        
+        .confidence-medium {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent);
+        }
+        
+        .confidence-low {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--warning);
+        }
+        
+        .transcript-text {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: var(--text-primary);
+        }
+        
+        .interim-text {
+            opacity: 0.6;
+            font-style: italic;
+        }
+        
+        /* Speaker Panel */
+        .speakers-panel {
+            background: var(--surface-1);
+            border-top: 1px solid var(--glass-border);
+            padding: 1.5rem 2rem;
+        }
+        
+        .speakers-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+        
+        .speakers-list {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .speaker-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--surface-2);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+        
+        .speaker-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: var(--surface-3);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transform: translateX(100%);
+            transition: transform var(--transition-base);
+            z-index: 1000;
+            display: none;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .recording-studio {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .control-panel {
+                position: relative;
+                top: 0;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .recording-studio {
+                padding: 1rem;
+                gap: 1rem;
+            }
+            
+            .control-panel,
+            .transcription-panel {
+                border-radius: 16px;
+                padding: 1.5rem;
+            }
+            
+            .record-button {
+                width: 100px;
+                height: 100px;
+                font-size: 2rem;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .live-metrics {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+        }
+        
+        /* Theme Support */
+        [data-theme="light"] {
+            --glass-bg: rgba(0, 0, 0, 0.02);
+            --glass-bg-strong: rgba(0, 0, 0, 0.05);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --surface-1: rgba(255, 255, 255, 0.2);
+            --surface-2: rgba(255, 255, 255, 0.4);
+            --surface-3: rgba(255, 255, 255, 0.6);
+            --text-primary: #1F2937;
+            --text-secondary: #6B7280;
+            --text-tertiary: #9CA3AF;
+        }
+        
+        [data-theme="light"] body {
+            background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 50%, #CBD5E1 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="recording-studio">
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="panel-header">
+                <h1 class="panel-title">Live Recording Studio</h1>
+                <p class="panel-subtitle">Professional-grade transcription</p>
             </div>
-          </div>
+            
+            <!-- Record Section -->
+            <div class="record-section">
+                <button class="record-button" id="recordButton" onclick="app.toggleRecording()">
+                    🎙️
+                </button>
+                <div class="record-status">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Ready to record</span>
+                </div>
+            </div>
+            
+            <!-- Settings -->
+            <div class="settings-group">
+                <h3 class="settings-title">Recording Settings</h3>
+                
+                <div class="setting-item">
+                    <label class="setting-label">Language</label>
+                    <select class="setting-select" id="languageSelect" onchange="app.updateSettings()">
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="auto">Auto-detect</option>
+                    </select>
+                </div>
+                
+                <div class="setting-item">
+                    <label class="setting-label">Quality</label>
+                    <select class="setting-select" id="qualitySelect" onchange="app.updateSettings()">
+                        <option value="high">High Quality</option>
+                        <option value="balanced">Balanced</option>
+                        <option value="fast">Fast Processing</option>
+                    </select>
+                </div>
+                
+                <div class="setting-item">
+                    <label class="setting-label">Speaker Detection</label>
+                    <select class="setting-select" id="diarizationSelect" onchange="app.updateSettings()">
+                        <option value="auto">Auto-detect</option>
+                        <option value="off">Single Speaker</option>
+                        <option value="multi">Multiple Speakers</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Real-time Metrics -->
+            <div class="settings-group">
+                <h3 class="settings-title">Session Metrics</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value" id="durationMetric">00:00</div>
+                        <div class="metric-label">Duration</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="wordsMetric">0</div>
+                        <div class="metric-label">Words</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="confidenceMetric">--%</div>
+                        <div class="metric-label">Confidence</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="latencyMetric">--ms</div>
+                        <div class="metric-label">Latency</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="action-btn" onclick="app.clearTranscript()">
+                    <i data-feather="trash-2"></i>
+                    Clear
+                </button>
+                <button class="action-btn" onclick="app.copyTranscript()">
+                    <i data-feather="copy"></i>
+                    Copy
+                </button>
+                <button class="action-btn" onclick="app.downloadTranscript()">
+                    <i data-feather="download"></i>
+                    Download
+                </button>
+                <button class="action-btn primary" onclick="app.toggleTheme()">
+                    <i data-feather="moon" id="themeIcon"></i>
+                    Theme
+                </button>
+            </div>
         </div>
-      </section>
-
-      <!-- Transcription Display -->
-      <section class="row g-4 mb-4">
-        <div class="col-md-6">
-          <div class="mina-card h-100" role="region" aria-labelledby="interim-heading">
-            <div class="mina-card__header">
-              <h3 id="interim-heading" class="mina-card__title">
-                <i data-feather="edit-3" class="me-2"></i>
-                Live Transcript
-              </h3>
-              <span class="mina-pill mina-pill--info">
-                <span class="mina-pill__indicator"></span>
-                Real-time
-              </span>
+        
+        <!-- Transcription Panel -->
+        <div class="transcription-panel">
+            <!-- Header -->
+            <div class="transcript-header">
+                <h2 class="transcript-title">Live Transcript</h2>
+                <div class="transcript-actions">
+                    <button class="transcript-btn" onclick="app.toggleAutoScroll()" id="autoScrollBtn">
+                        <i data-feather="arrow-down"></i>
+                        Auto-scroll
+                    </button>
+                    <button class="transcript-btn" onclick="app.toggleFullscreen()">
+                        <i data-feather="maximize"></i>
+                        Fullscreen
+                    </button>
+                </div>
             </div>
-            <div class="mina-card__content">
-              <div 
-                id="interimText" 
-                class="mina-transcript mina-transcript--interim"
-                aria-live="polite"
-                aria-label="Live transcription text"
-              ></div>
+            
+            <!-- Live Metrics -->
+            <div class="live-metrics">
+                <div class="live-metric">
+                    <div class="live-metric-value" id="segmentCount">0</div>
+                    <div class="live-metric-label">Segments</div>
+                </div>
+                <div class="live-metric">
+                    <div class="live-metric-value" id="wordCount">0</div>
+                    <div class="live-metric-label">Words</div>
+                </div>
+                <div class="live-metric">
+                    <div class="live-metric-value" id="speakerCount">0</div>
+                    <div class="live-metric-label">Speakers</div>
+                </div>
+                <div class="live-metric">
+                    <div class="live-metric-value" id="qualityScore">--%</div>
+                    <div class="live-metric-label">Quality</div>
+                </div>
             </div>
-          </div>
+            
+            <!-- Transcript Content -->
+            <div class="transcript-content" id="transcriptContent">
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-icon">🎙️</div>
+                    <div class="empty-message">Ready to start recording</div>
+                    <div class="empty-hint">Click the record button to begin live transcription</div>
+                </div>
+            </div>
+            
+            <!-- Speakers Panel -->
+            <div class="speakers-panel" id="speakersPanel" style="display: none;">
+                <h3 class="speakers-title">Active Speakers</h3>
+                <div class="speakers-list" id="speakersList"></div>
+            </div>
         </div>
-
-        <div class="col-md-6">
-          <div class="mina-card h-100" role="region" aria-labelledby="final-heading">
-            <div class="mina-card__header">
-              <h3 id="final-heading" class="mina-card__title">
-                <i data-feather="check-circle" class="me-2"></i>
-                Final Transcript
-              </h3>
-              <button 
-                id="copyBtn" 
-                class="mina-btn mina-btn--sm mina-btn--secondary"
-                title="Copy to clipboard"
-                aria-label="Copy final transcript to clipboard"
-              >
-                <i data-feather="copy" class="me-1"></i>
-                Copy
-              </button>
-            </div>
-            <div class="mina-card__content">
-              <div 
-                id="finalText" 
-                class="mina-transcript mina-transcript--final"
-                aria-live="polite"
-                aria-label="Final transcription text"
-              ></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Session Info & Debug -->
-      <section class="row g-4">
-        <div class="col-md-8">
-          <div class="mina-card" role="region" aria-labelledby="session-heading">
-            <div class="mina-card__header">
-              <h3 id="session-heading" class="mina-card__title">
-                <i data-feather="activity" class="me-2"></i>
-                Session Information
-              </h3>
-            </div>
-            <div class="mina-card__content">
-              <dl class="row">
-                <dt class="col-sm-3">Session ID:</dt>
-                <dd class="col-sm-9">
-                  <code id="sessionId" class="small"></code>
-                </dd>
-                <dt class="col-sm-3">Status:</dt>
-                <dd class="col-sm-9">
-                  <span id="sessionStatus" class="mina-pill">Initializing</span>
-                </dd>
-                <dt class="col-sm-3">Duration:</dt>
-                <dd class="col-sm-9">
-                  <span id="sessionDuration">00:00</span>
-                </dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-4">
-          <div class="mina-card" role="region" aria-labelledby="debug-heading">
-            <div class="mina-card__header">
-              <h3 id="debug-heading" class="mina-card__title">
-                <i data-feather="terminal" class="me-2"></i>
-                System Log
-              </h3>
-              <button 
-                id="clearLogBtn" 
-                class="mina-btn mina-btn--sm mina-btn--secondary"
-                title="Clear log"
-              >
-                <i data-feather="x"></i>
-              </button>
-            </div>
-            <div class="mina-card__content">
-              <div id="debugConsole" class="mina-console" aria-live="polite"></div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <!-- Footer -->
-    <footer class="text-center mt-5 py-4 text-muted">
-      <p class="mb-0">
-        <i data-feather="zap" class="me-1"></i>
-        Powered by <strong>OpenAI Whisper</strong> • 
-        <i data-feather="shield" class="me-1"></i>
-        Secure & Private
-      </p>
-    </footer>
-  </div>
-
-  <!-- Toast Container for Notifications -->
-  <div class="toast-container position-fixed top-0 end-0 p-3">
-    <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="toast-header">
-        <i data-feather="bell" class="me-2 text-primary"></i>
-        <strong class="me-auto">Mina</strong>
-        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>
-      <div class="toast-body" id="toastMessage">
-        <!-- Toast message will be inserted here -->
-      </div>
     </div>
-  </div>
-
-  <!-- Scripts - Production Ready Loading -->
-  <script>
-    // Dependency Management System for Production Reliability
-    window.MinaDependencies = {
-      loaded: {
-        bootstrap: false,
-        feather: false,
-        socketio: false
-      },
-      callbacks: [],
-      
-      checkReady() {
-        const allLoaded = this.loaded.bootstrap && this.loaded.feather && this.loaded.socketio;
-        if (allLoaded) {
-          this.callbacks.forEach(callback => {
-            try {
-              callback();
-            } catch (error) {
-              console.error('[Mina] Dependency callback error:', error);
-            }
-          });
-          this.callbacks = [];
-        }
-        return allLoaded;
-      },
-      
-      onReady(callback) {
-        if (this.checkReady()) {
-          callback();
-        } else {
-          this.callbacks.push(callback);
-        }
-      },
-      
-      markLoaded(dependency) {
-        this.loaded[dependency] = true;
-        console.log(`[Mina] ${dependency} loaded successfully`);
-        this.checkReady();
-      },
-      
-      loadBootstrapFallback() {
-        console.warn('[Mina] Bootstrap CDN failed, loading fallback');
-        // Try alternative CDN
-        const fallbackScript = document.createElement('script');
-        fallbackScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js';
-        fallbackScript.onload = () => this.markLoaded('bootstrap');
-        fallbackScript.onerror = () => {
-          console.error('[Mina] Bootstrap fallback failed, creating minimal implementation');
-          // Create minimal Bootstrap Toast implementation
-          window.bootstrap = {
-            Toast: class {
-              constructor(element) {
-                this.element = element;
-              }
-              show() {
-                if (this.element) {
-                  this.element.style.display = 'block';
-                  this.element.classList.add('show');
-                  setTimeout(() => {
-                    this.element.style.display = 'none';
-                    this.element.classList.remove('show');
-                  }, 5000);
-                }
-              }
-            }
-          };
-          this.markLoaded('bootstrap');
-        };
-        document.head.appendChild(fallbackScript);
-      },
-      
-      loadFeatherFallback() {
-        console.warn('[Mina] Feather icons CDN failed, loading fallback');
-        // Try alternative CDN
-        const fallbackScript = document.createElement('script');
-        fallbackScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js';
-        fallbackScript.onload = () => this.markLoaded('feather');
-        fallbackScript.onerror = () => {
-          console.error('[Mina] Feather fallback failed, creating minimal implementation');
-          // Create minimal Feather implementation
-          window.feather = {
-            replace() {
-              // Replace data-feather attributes with Unicode icons
-              document.querySelectorAll('[data-feather]').forEach(el => {
-                const iconName = el.getAttribute('data-feather');
-                const iconMap = {
-                  'mic': '🎤', 'mic-off': '🔇', 'zap': '⚡', 'shield': '🛡️',
-                  'bell': '🔔', 'moon': '🌙', 'sun': '☀️', 'settings': '⚙️'
+    
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span id="toastMessage"></span>
+    </div>
+    
+    <script>
+        class MinaLiveRecording {
+            constructor() {
+                this.isRecording = false;
+                this.isProcessing = false;
+                this.startTime = null;
+                this.socket = null;
+                this.mediaRecorder = null;
+                this.audioStream = null;
+                this.audioChunks = [];
+                
+                // State tracking
+                this.totalWords = 0;
+                this.segmentCount = 0;
+                this.speakerCount = 0;
+                this.speakers = new Map();
+                this.confidenceScores = [];
+                this.autoScroll = true;
+                
+                // Metrics
+                this.metrics = {
+                    latency: 0,
+                    quality: 0,
+                    speechRatio: 0
                 };
-                el.innerHTML = iconMap[iconName] || '●';
-              });
+                
+                this.init();
             }
-          };
-          this.markLoaded('feather');
-        };
-        document.head.appendChild(fallbackScript);
-      }
-    };
-    
-    // Socket.IO is already loaded in head, mark as ready
-    if (typeof io !== 'undefined') {
-      window.MinaDependencies.markLoaded('socketio');
-    }
-  </script>
-
-  <!-- Bootstrap 5 JavaScript with fallback -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" 
-          integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" 
-          crossorigin="anonymous"
-          onload="window.MinaDependencies.markLoaded('bootstrap')"
-          onerror="window.MinaDependencies.loadBootstrapFallback()"></script>
-
-  <!-- Feather Icons with fallback -->
-  <script src="https://unpkg.com/feather-icons" 
-          onload="window.MinaDependencies.markLoaded('feather')"
-          onerror="window.MinaDependencies.loadFeatherFallback()"></script>
-
-  <!-- Main Application Script - Waits for Dependencies -->
-  <script>
-    window.MinaDependencies.onReady(function() {
-      console.log('[Mina] All dependencies loaded, initializing application');
-      
-      // Initialize Feather icons
-      if (typeof feather !== 'undefined') {
-        feather.replace();
-        console.log('[Mina] Feather icons initialized');
-      }
-      
-      // Load and initialize main application
-      const script = document.createElement('script');
-      script.src = '/static/js/modern-recording-wiring.js';
-      script.onload = function() {
-        console.log('[Mina] Application initialized successfully');
-      };
-      script.onerror = function() {
-        console.error('[Mina] Failed to load main application script');
-      };
-      document.head.appendChild(script);
-    });
-    
-    // Fallback timeout for dependency loading
-    setTimeout(function() {
-      if (!window.MinaDependencies.checkReady()) {
-        console.warn('[Mina] Some dependencies failed to load within timeout');
-        // Show user-friendly error message
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'alert alert-warning text-center';
-        errorDiv.innerHTML = '⚠️ Some features may not work properly due to loading issues. Please refresh the page.';
-        document.body.insertBefore(errorDiv, document.body.firstChild);
-      }
-    }, 10000); // 10 second timeout
-  </script>
+            
+            init() {
+                this.initializeSocket();
+                this.updateTheme();
+                this.initializeFeatherIcons();
+                
+                // Initialize metrics update interval
+                setInterval(() => this.updateMetrics(), 1000);
+            }
+            
+            initializeSocket() {
+                try {
+                    this.socket = io();
+                    
+                    this.socket.on('connect', () => {
+                        console.log('✅ Connected to transcription server');
+                        this.updateStatus('Connected to server', 'connected');
+                    });
+                    
+                    this.socket.on('disconnect', () => {
+                        console.log('🔌 Disconnected from transcription server');
+                        this.updateStatus('Disconnected from server', 'disconnected');
+                    });
+                    
+                    this.socket.on('transcription_result', (data) => {
+                        this.handleTranscriptionResult(data);
+                    });
+                    
+                    this.socket.on('error', (error) => {
+                        console.error('❌ Socket error:', error);
+                        this.showToast('Connection error: ' + error.message, 'error');
+                    });
+                    
+                } catch (error) {
+                    console.error('Failed to initialize socket:', error);
+                    this.showToast('Failed to connect to server', 'error');
+                }
+            }
+            
+            initializeFeatherIcons() {
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+            }
+            
+            async toggleRecording() {
+                if (this.isRecording) {
+                    await this.stopRecording();
+                } else {
+                    await this.startRecording();
+                }
+            }
+            
+            async startRecording() {
+                try {
+                    this.isProcessing = true;
+                    this.updateRecordButton();
+                    this.updateStatus('Requesting microphone access...', 'processing');
+                    
+                    // Get audio stream
+                    this.audioStream = await navigator.mediaDevices.getUserMedia({
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true,
+                            channelCount: 1,
+                            sampleRate: 16000
+                        }
+                    });
+                    
+                    // Setup MediaRecorder
+                    this.mediaRecorder = new MediaRecorder(this.audioStream, {
+                        mimeType: 'audio/webm;codecs=opus'
+                    });
+                    
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            this.audioChunks.push(event.data);
+                            
+                            // Send audio chunk to server
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                const audioData = new Uint8Array(reader.result);
+                                this.socket.emit('audio_chunk', {
+                                    session_id: this.sessionId,
+                                    audio_data: Array.from(audioData),
+                                    settings: this.getCurrentSettings()
+                                });
+                            };
+                            reader.readAsArrayBuffer(event.data);
+                        }
+                    };
+                    
+                    this.mediaRecorder.onerror = (error) => {
+                        console.error('MediaRecorder error:', error);
+                        this.showToast('Recording error: ' + error.message, 'error');
+                    };
+                    
+                    // Start recording
+                    this.sessionId = 'session_' + Date.now();
+                    this.startTime = Date.now();
+                    this.isRecording = true;
+                    this.isProcessing = false;
+                    
+                    this.mediaRecorder.start(250); // Send chunks every 250ms
+                    
+                    this.updateRecordButton();
+                    this.updateStatus('Recording...', 'recording');
+                    this.showToast('Recording started', 'success');
+                    
+                    // Hide empty state
+                    document.getElementById('emptyState').style.display = 'none';
+                    
+                } catch (error) {
+                    console.error('Failed to start recording:', error);
+                    this.isRecording = false;
+                    this.isProcessing = false;
+                    this.updateRecordButton();
+                    this.updateStatus('Failed to start recording', 'error');
+                    this.showToast('Microphone access denied', 'error');
+                }
+            }
+            
+            async stopRecording() {
+                if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                    this.mediaRecorder.stop();
+                }
+                
+                if (this.audioStream) {
+                    this.audioStream.getTracks().forEach(track => track.stop());
+                    this.audioStream = null;
+                }
+                
+                this.isRecording = false;
+                this.audioChunks = [];
+                
+                this.updateRecordButton();
+                this.updateStatus('Recording stopped', 'stopped');
+                this.showToast('Recording stopped', 'info');
+            }
+            
+            handleTranscriptionResult(data) {
+                try {
+                    const { text, confidence, speaker_id, is_final, timestamp } = data;
+                    
+                    if (!text || text.trim() === '') return;
+                    
+                    // Update metrics
+                    this.metrics.latency = data.processing_time_ms || 0;
+                    if (confidence) {
+                        this.confidenceScores.push(confidence);
+                    }
+                    
+                    // Handle speaker identification
+                    let speakerInfo = null;
+                    if (speaker_id) {
+                        speakerInfo = this.getSpeakerInfo(speaker_id);
+                    }
+                    
+                    // Add or update transcript segment
+                    if (is_final) {
+                        this.addTranscriptSegment(text, confidence, speakerInfo, timestamp);
+                        this.totalWords += text.split(' ').length;
+                        this.segmentCount++;
+                    } else {
+                        this.updateInterimTranscript(text, confidence, speakerInfo);
+                    }
+                    
+                    this.updateLiveMetrics();
+                    
+                    if (this.autoScroll) {
+                        this.scrollToBottom();
+                    }
+                    
+                } catch (error) {
+                    console.error('Error handling transcription result:', error);
+                }
+            }
+            
+            addTranscriptSegment(text, confidence, speaker, timestamp) {
+                const content = document.getElementById('transcriptContent');
+                
+                // Remove interim text if exists
+                const interimElement = document.getElementById('interimTranscript');
+                if (interimElement) {
+                    interimElement.remove();
+                }
+                
+                const segment = document.createElement('div');
+                segment.className = 'transcript-segment';
+                segment.innerHTML = `
+                    <div class="segment-header">
+                        <div class="speaker-info">
+                            <div class="speaker-avatar" style="background: ${speaker?.color || '#6366F1'};">
+                                ${speaker?.name ? speaker.name.substring(0, 2).toUpperCase() : 'U'}
+                            </div>
+                            <div class="speaker-name">${speaker?.name || 'Unknown Speaker'}</div>
+                        </div>
+                        <div class="segment-metadata">
+                            <span class="timestamp">${this.formatTimestamp(timestamp)}</span>
+                            <span class="confidence-badge ${this.getConfidenceClass(confidence)}">
+                                ${Math.round(confidence * 100)}%
+                            </span>
+                        </div>
+                    </div>
+                    <div class="transcript-text">${text}</div>
+                `;
+                
+                content.appendChild(segment);
+                
+                // Animate in
+                segment.style.opacity = '0';
+                segment.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    segment.style.transition = 'all 0.3s ease';
+                    segment.style.opacity = '1';
+                    segment.style.transform = 'translateY(0)';
+                }, 10);
+            }
+            
+            updateInterimTranscript(text, confidence, speaker) {
+                const content = document.getElementById('transcriptContent');
+                
+                let interimElement = document.getElementById('interimTranscript');
+                if (!interimElement) {
+                    interimElement = document.createElement('div');
+                    interimElement.id = 'interimTranscript';
+                    interimElement.className = 'transcript-segment';
+                    content.appendChild(interimElement);
+                }
+                
+                interimElement.innerHTML = `
+                    <div class="segment-header">
+                        <div class="speaker-info">
+                            <div class="speaker-avatar" style="background: ${speaker?.color || '#6366F1'};">
+                                ${speaker?.name ? speaker.name.substring(0, 2).toUpperCase() : 'U'}
+                            </div>
+                            <div class="speaker-name">${speaker?.name || 'Speaking...'}</div>
+                        </div>
+                        <div class="segment-metadata">
+                            <span class="timestamp">${this.formatTimestamp()}</span>
+                            <span class="confidence-badge ${this.getConfidenceClass(confidence)}">
+                                ${Math.round(confidence * 100)}%
+                            </span>
+                        </div>
+                    </div>
+                    <div class="transcript-text interim-text">${text}</div>
+                `;
+            }
+            
+            getSpeakerInfo(speakerId) {
+                if (!this.speakers.has(speakerId)) {
+                    const colors = ['#00C896', '#6366F1', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
+                    const speaker = {
+                        id: speakerId,
+                        name: `Speaker ${this.speakers.size + 1}`,
+                        color: colors[this.speakers.size % colors.length],
+                        wordCount: 0,
+                        lastActive: Date.now()
+                    };
+                    this.speakers.set(speakerId, speaker);
+                    this.updateSpeakersPanel();
+                }
+                return this.speakers.get(speakerId);
+            }
+            
+            updateSpeakersPanel() {
+                const panel = document.getElementById('speakersPanel');
+                const list = document.getElementById('speakersList');
+                
+                if (this.speakers.size > 0) {
+                    panel.style.display = 'block';
+                    
+                    list.innerHTML = '';
+                    this.speakers.forEach(speaker => {
+                        const chip = document.createElement('div');
+                        chip.className = 'speaker-chip';
+                        chip.innerHTML = `
+                            <div class="speaker-dot" style="background: ${speaker.color};"></div>
+                            <span>${speaker.name}</span>
+                        `;
+                        list.appendChild(chip);
+                    });
+                    
+                    this.speakerCount = this.speakers.size;
+                } else {
+                    panel.style.display = 'none';
+                }
+            }
+            
+            getCurrentSettings() {
+                return {
+                    language: document.getElementById('languageSelect').value,
+                    quality: document.getElementById('qualitySelect').value,
+                    diarization: document.getElementById('diarizationSelect').value
+                };
+            }
+            
+            updateSettings() {
+                if (this.socket && this.isRecording) {
+                    this.socket.emit('update_settings', {
+                        session_id: this.sessionId,
+                        settings: this.getCurrentSettings()
+                    });
+                }
+            }
+            
+            updateRecordButton() {
+                const button = document.getElementById('recordButton');
+                
+                if (this.isProcessing) {
+                    button.innerHTML = '⏳';
+                    button.className = 'record-button processing';
+                } else if (this.isRecording) {
+                    button.innerHTML = '⏹️';
+                    button.className = 'record-button recording';
+                } else {
+                    button.innerHTML = '🎙️';
+                    button.className = 'record-button';
+                }
+            }
+            
+            updateStatus(text, type) {
+                const statusText = document.getElementById('statusText');
+                const statusDot = document.getElementById('statusDot');
+                
+                statusText.textContent = text;
+                statusDot.className = `status-dot ${type}`;
+            }
+            
+            updateMetrics() {
+                if (this.isRecording && this.startTime) {
+                    const duration = Math.floor((Date.now() - this.startTime) / 1000);
+                    document.getElementById('durationMetric').textContent = this.formatDuration(duration);
+                }
+                
+                document.getElementById('wordsMetric').textContent = this.totalWords.toString();
+                
+                if (this.confidenceScores.length > 0) {
+                    const avgConfidence = this.confidenceScores.reduce((a, b) => a + b, 0) / this.confidenceScores.length;
+                    document.getElementById('confidenceMetric').textContent = Math.round(avgConfidence * 100) + '%';
+                }
+                
+                if (this.metrics.latency !== undefined) {
+                    document.getElementById('latencyMetric').textContent = Math.round(this.metrics.latency) + 'ms';
+                }
+            }
+            
+            updateLiveMetrics() {
+                document.getElementById('segmentCount').textContent = this.segmentCount.toString();
+                document.getElementById('wordCount').textContent = this.totalWords.toString();
+                document.getElementById('speakerCount').textContent = this.speakerCount.toString();
+                
+                if (this.confidenceScores.length > 0) {
+                    const avgConfidence = this.confidenceScores.reduce((a, b) => a + b, 0) / this.confidenceScores.length;
+                    document.getElementById('qualityScore').textContent = Math.round(avgConfidence * 100) + '%';
+                }
+            }
+            
+            formatDuration(seconds) {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+            
+            formatTimestamp(timestamp) {
+                const now = new Date(timestamp || Date.now());
+                return now.toLocaleTimeString();
+            }
+            
+            getConfidenceClass(confidence) {
+                if (!confidence) return 'confidence-medium';
+                if (confidence >= 0.8) return 'confidence-high';
+                if (confidence >= 0.6) return 'confidence-medium';
+                return 'confidence-low';
+            }
+            
+            scrollToBottom() {
+                const content = document.getElementById('transcriptContent');
+                content.scrollTop = content.scrollHeight;
+            }
+            
+            toggleAutoScroll() {
+                this.autoScroll = !this.autoScroll;
+                const button = document.getElementById('autoScrollBtn');
+                const icon = button.querySelector('i');
+                
+                icon.setAttribute('data-feather', this.autoScroll ? 'arrow-down' : 'pause');
+                
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+                
+                this.showToast(`Auto-scroll ${this.autoScroll ? 'enabled' : 'disabled'}`, 'info');
+            }
+            
+            toggleFullscreen() {
+                const panel = document.querySelector('.transcription-panel');
+                
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                } else {
+                    panel.requestFullscreen();
+                }
+            }
+            
+            clearTranscript() {
+                if (confirm('Are you sure you want to clear the transcript? This action cannot be undone.')) {
+                    document.getElementById('transcriptContent').innerHTML = `
+                        <div class="empty-state" id="emptyState">
+                            <div class="empty-icon">🎙️</div>
+                            <div class="empty-message">Transcript cleared</div>
+                            <div class="empty-hint">Start recording to begin again</div>
+                        </div>
+                    `;
+                    
+                    // Reset metrics
+                    this.totalWords = 0;
+                    this.segmentCount = 0;
+                    this.speakerCount = 0;
+                    this.speakers.clear();
+                    this.confidenceScores = [];
+                    
+                    this.updateLiveMetrics();
+                    this.updateSpeakersPanel();
+                    this.showToast('Transcript cleared', 'info');
+                }
+            }
+            
+            copyTranscript() {
+                const segments = document.querySelectorAll('.transcript-text:not(.interim-text)');
+                const text = Array.from(segments).map(el => el.textContent).join(' ');
+                
+                if (text.trim() === '') {
+                    this.showToast('No transcript to copy', 'warning');
+                    return;
+                }
+                
+                navigator.clipboard.writeText(text).then(() => {
+                    this.showToast('Transcript copied to clipboard', 'success');
+                }).catch(() => {
+                    this.showToast('Failed to copy transcript', 'error');
+                });
+            }
+            
+            downloadTranscript() {
+                const segments = document.querySelectorAll('.transcript-text:not(.interim-text)');
+                const text = Array.from(segments).map(el => el.textContent).join(' ');
+                
+                if (text.trim() === '') {
+                    this.showToast('No transcript to download', 'warning');
+                    return;
+                }
+                
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `mina_transcript_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                this.showToast('Transcript downloaded', 'success');
+            }
+            
+            toggleTheme() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('mina-theme', newTheme);
+                
+                this.updateTheme();
+                this.showToast(`Switched to ${newTheme} theme`, 'info');
+            }
+            
+            updateTheme() {
+                const theme = localStorage.getItem('mina-theme') || 'dark';
+                const themeIcon = document.getElementById('themeIcon');
+                
+                document.documentElement.setAttribute('data-theme', theme);
+                themeIcon.setAttribute('data-feather', theme === 'light' ? 'moon' : 'sun');
+                
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+            }
+            
+            showToast(message, type = 'info') {
+                const toast = document.getElementById('toast');
+                const toastMessage = document.getElementById('toastMessage');
+                
+                toastMessage.textContent = message;
+                toast.style.display = 'block';
+                
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(0)';
+                }, 10);
+                
+                setTimeout(() => {
+                    toast.style.transform = 'translateX(100%)';
+                    setTimeout(() => {
+                        toast.style.display = 'none';
+                    }, 300);
+                }, 3000);
+            }
+        }
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+            
+            window.app = new MinaLiveRecording();
+        });
+    </script>
 </body>
 </html>

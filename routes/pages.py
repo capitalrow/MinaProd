@@ -22,16 +22,17 @@ def app():
 @pages_bp.route("/live")
 @login_required
 def live():
-    return render_template("live_premium.html")
+    """Production live recording interface with all features consolidated"""
+    return render_template("live.html")
 
 @pages_bp.route("/live-enhanced")
 @login_required
 def live_enhanced():
-    """Enhanced live recording interface with comprehensive transcription processing"""
-    return render_template("live_enhanced.html")
+    """Legacy route - redirects to main live interface"""
+    return render_template("live.html")
 
 @pages_bp.route("/live-comprehensive")
 @login_required
 def live_comprehensive():
-    """Comprehensive live recording interface with all advanced features"""
-    return render_template("comprehensive_live.html")
+    """Legacy route - redirects to main live interface"""
+    return render_template("live.html")
