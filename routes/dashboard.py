@@ -18,21 +18,21 @@ dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 def index():
     """Main dashboard page with overview of meetings, tasks, and analytics."""
     # Get recent meetings
-    recent_meetings = Meeting.query.filter_by(
+    recent_meetings = db.session.query(Meeting).filter_by(
         workspace_id=current_user.workspace_id
     ).order_by(desc(Meeting.created_at)).limit(5).all()
     
     # Get user's tasks
-    user_tasks = Task.query.filter_by(
+    user_tasks = db.session.query(Task).filter_by(
         assigned_to_id=current_user.id
     ).filter(Task.status.in_(['todo', 'in_progress'])).limit(10).all()
     
     # Get workspace statistics
-    total_meetings = Meeting.query.filter_by(workspace_id=current_user.workspace_id).count()
-    total_tasks = Task.query.join(Meeting).filter(
+    total_meetings = db.session.query(Meeting).filter_by(workspace_id=current_user.workspace_id).count()
+    total_tasks = db.session.query(Task).join(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id
     ).count()
-    completed_tasks = Task.query.join(Meeting).filter(
+    completed_tasks = db.session.query(Task).join(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id,
         Task.status == 'completed'
     ).count()
@@ -42,7 +42,7 @@ def index():
     
     # Get this week's meetings
     week_start = datetime.now() - timedelta(days=datetime.now().weekday())
-    this_week_meetings = Meeting.query.filter_by(
+    this_week_meetings = db.session.query(Meeting).filter_by(
         workspace_id=current_user.workspace_id
     ).filter(Meeting.created_at >= week_start).count()
     
@@ -68,7 +68,7 @@ def meetings():
     search_query = request.args.get('search', '')
     
     # Base query
-    query = Meeting.query.filter_by(workspace_id=current_user.workspace_id)
+    query = db.session.query(Meeting).filter_by(workspace_id=current_user.workspace_id)
     
     # Apply filters
     if status_filter != 'all':
@@ -78,7 +78,8 @@ def meetings():
         query = query.filter(Meeting.title.contains(search_query))
     
     # Paginate results
-    meetings = query.order_by(desc(Meeting.created_at)).paginate(
+    meetings = db.paginate(
+        query.order_by(desc(Meeting.created_at)),
         page=page, per_page=20, error_out=False
     )
     
@@ -93,17 +94,17 @@ def meetings():
 def tasks():
     """Tasks overview page with kanban board."""
     # Get tasks by status
-    todo_tasks = Task.query.join(Meeting).filter(
+    todo_tasks = db.session.query(Task).join(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id,
         Task.status == 'todo'
     ).order_by(Task.due_date.asc().nullslast(), Task.priority.desc()).all()
     
-    in_progress_tasks = Task.query.join(Meeting).filter(
+    in_progress_tasks = db.session.query(Task).join(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id,
         Task.status == 'in_progress'
     ).order_by(Task.due_date.asc().nullslast(), Task.priority.desc()).all()
     
-    completed_tasks = Task.query.join(Meeting).filter(
+    completed_tasks = db.session.query(Task).join(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id,
         Task.status == 'completed'
     ).order_by(desc(Task.completed_at)).limit(10).all()
@@ -119,7 +120,7 @@ def tasks():
 def analytics():
     """Analytics and insights page."""
     # Get recent analytics
-    recent_analytics = Analytics.query.join(Meeting).filter(
+    recent_analytics = db.session.query(Analytics).join(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id,
         Analytics.analysis_status == 'completed'
     ).order_by(desc(Analytics.created_at)).limit(10).all()
@@ -154,12 +155,12 @@ def analytics():
 def api_recent_activity():
     """API endpoint for recent activity feed."""
     # Get recent meetings
-    recent_meetings = Meeting.query.filter_by(
+    recent_meetings = db.session.query(Meeting).filter_by(
         workspace_id=current_user.workspace_id
     ).order_by(desc(Meeting.created_at)).limit(5).all()
     
     # Get recent tasks
-    recent_tasks = Task.query.join(Meeting).filter(
+    recent_tasks = db.session.query(Task).join(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id
     ).order_by(desc(Task.created_at)).limit(5).all()
     
@@ -196,21 +197,21 @@ def api_recent_activity():
 def api_stats():
     """API endpoint for dashboard statistics."""
     # Meeting stats
-    total_meetings = Meeting.query.filter_by(workspace_id=current_user.workspace_id).count()
-    active_meetings = Meeting.query.filter_by(
+    total_meetings = db.session.query(Meeting).filter_by(workspace_id=current_user.workspace_id).count()
+    active_meetings = db.session.query(Meeting).filter_by(
         workspace_id=current_user.workspace_id,
         status='live'
     ).count()
     
     # Task stats
-    total_tasks = Task.query.join(Meeting).filter(
+    total_tasks = db.session.query(Task).join(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id
     ).count()
-    completed_tasks = Task.query.join(Meeting).filter(
+    completed_tasks = db.session.query(Task).join(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id,
         Task.status == 'completed'
     ).count()
-    overdue_tasks = Task.query.join(Meeting).filter(
+    overdue_tasks = db.session.query(Task).join(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id,
         Task.due_date < datetime.now().date(),
         Task.status.in_(['todo', 'in_progress'])
@@ -218,11 +219,11 @@ def api_stats():
     
     # This week's activity
     week_start = datetime.now() - timedelta(days=datetime.now().weekday())
-    this_week_meetings = Meeting.query.filter_by(
+    this_week_meetings = db.session.query(Meeting).filter_by(
         workspace_id=current_user.workspace_id
     ).filter(Meeting.created_at >= week_start).count()
     
-    this_week_tasks = Task.query.join(Meeting).filter(
+    this_week_tasks = db.session.query(Task).join(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id,
         Task.created_at >= week_start
     ).count()
