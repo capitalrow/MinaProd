@@ -23,69 +23,143 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root { 
-      color-scheme: light dark;
+      color-scheme: dark;
       --color-brand: #7c3aed;
       --color-brand2: #22d3ee;
       --color-bg: #0b0f1a;
       --color-panel: #0f1629;
     }
+    
+    * { box-sizing: border-box; }
+    
     body { 
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background-color: white;
-      color: #0f172a;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
+      background-color: #0b0f1a !important;
+      color: #f1f5f9 !important;
+      margin: 0;
+      padding: 0;
     }
-    @media (prefers-color-scheme: dark) {
-      body { 
-        background-color: var(--color-bg); 
-        color: #f1f5f9; 
-      }
-    }
+    
     .reveal { opacity:0; transform: translateY(16px) }
     .reveal.in { opacity:1; transform: none; transition: opacity .6s ease, transform .6s ease }
-    @media (prefers-reduced-motion: reduce){ .reveal{ opacity:1; transform:none } .animate-pulseSoft{ animation:none } }
+    @media (prefers-reduced-motion: reduce){ .reveal{ opacity:1; transform:none !important; } .animate-pulseSoft{ animation:none !important; } }
     
     /* Custom brand colors and effects */
-    .brand-gradient { background: linear-gradient(135deg, var(--color-brand), var(--color-brand2)); }
-    .brand-text-gradient { 
-      background: linear-gradient(135deg, var(--color-brand), var(--color-brand2));
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    .brand-gradient { 
+      background: linear-gradient(135deg, #7c3aed, #22d3ee) !important;
     }
-    .shadow-smooth { box-shadow: 0 10px 30px rgba(0,0,0,.35); }
-    .rounded-xl2 { border-radius: 14px; }
-    .bg-brand { background-color: var(--color-brand); }
-    .bg-brand2 { background-color: var(--color-brand2); }
-    .from-brand { --tw-gradient-from: var(--color-brand); }
-    .to-brand2 { --tw-gradient-to: var(--color-brand2); }
-    .ring-brand { --tw-ring-color: var(--color-brand); }
     
-    /* Dark mode overrides */
-    @media (prefers-color-scheme: dark) {
-      .bg-white { background-color: rgba(255,255,255,0.05) !important; }
-      .bg-slate-50 { background-color: rgba(255,255,255,0.05) !important; }
-      .text-slate-900 { color: #f1f5f9 !important; }
-      .text-slate-600 { color: #94a3b8 !important; }
-      .text-slate-500 { color: #64748b !important; }
-      .border-slate-200 { border-color: rgba(255,255,255,0.1) !important; }
-      .ring-slate-200 { --tw-ring-color: rgba(255,255,255,0.1) !important; }
-      .ring-slate-300 { --tw-ring-color: rgba(255,255,255,0.15) !important; }
+    .brand-text-gradient { 
+      background: linear-gradient(135deg, #7c3aed, #22d3ee) !important;
+      background-clip: text !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      color: transparent !important;
+    }
+    
+    .shadow-smooth { 
+      box-shadow: 0 10px 30px rgba(0,0,0,.5) !important;
+    }
+    
+    .rounded-xl2 { 
+      border-radius: 14px !important;
+    }
+    
+    /* Force dark theme overrides */
+    .bg-white { background-color: rgba(255,255,255,0.05) !important; }
+    .bg-slate-50 { background-color: rgba(255,255,255,0.05) !important; }
+    .text-slate-900 { color: #f1f5f9 !important; }
+    .text-slate-600 { color: #94a3b8 !important; }
+    .text-slate-500 { color: #64748b !important; }
+    .border-slate-200 { border-color: rgba(255,255,255,0.1) !important; }
+    .ring-slate-200 { border-color: rgba(255,255,255,0.1) !important; }
+    .ring-slate-300 { border-color: rgba(255,255,255,0.15) !important; }
+    
+    /* Card styling */
+    .feature-card {
+      background: rgba(255,255,255,0.05) !important;
+      border: 1px solid rgba(255,255,255,0.1) !important;
+      border-radius: 14px !important;
+      padding: 20px !important;
+      box-shadow: 0 10px 30px rgba(0,0,0,.3) !important;
+      backdrop-filter: blur(10px) !important;
+    }
+    
+    /* Button styling */
+    .gradient-button {
+      background: linear-gradient(135deg, #7c3aed, #22d3ee) !important;
+      color: white !important;
+      border: none !important;
+      padding: 12px 20px !important;
+      border-radius: 12px !important;
+      font-weight: 600 !important;
+      box-shadow: 0 8px 25px rgba(124, 58, 237, 0.3) !important;
+      transition: all 0.3s ease !important;
+    }
+    
+    .gradient-button:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 12px 35px rgba(124, 58, 237, 0.4) !important;
+    }
+    
+    /* Background effects */
+    .bg-gradient-blob-1 {
+      position: absolute;
+      top: -8rem;
+      right: -6rem;
+      width: 30rem;
+      height: 30rem;
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.4) 0%, transparent 70%);
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.7;
+      z-index: -1;
+    }
+    
+    .bg-gradient-blob-2 {
+      position: absolute;
+      top: 6rem;
+      left: -6rem;
+      width: 32rem;
+      height: 32rem;
+      background: radial-gradient(circle, rgba(34, 211, 238, 0.4) 0%, transparent 70%);
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.7;
+      z-index: -1;
     }
     
     /* Animations */
     @keyframes fadeUp {
-      0% { opacity: 0; transform: translateY(16px); }
+      0% { opacity: 0; transform: translateY(20px); }
       100% { opacity: 1; transform: translateY(0); }
     }
+    
     @keyframes pulseSoft {
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.03); }
     }
-    .animate-fadeUp { animation: fadeUp 0.7s ease both; }
-    .animate-pulseSoft { animation: pulseSoft 2.6s ease-in-out infinite; }
+    
+    .animate-fadeUp { animation: fadeUp 0.8s ease both; }
+    .animate-pulseSoft { animation: pulseSoft 3s ease-in-out infinite; }
+    
+    /* Number badges */
+    .number-badge {
+      width: 40px !important;
+      height: 40px !important;
+      border-radius: 12px !important;
+      background: linear-gradient(135deg, #7c3aed, #22d3ee) !important;
+      color: white !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-weight: bold !important;
+      font-size: 16px !important;
+      box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3) !important;
+    }
   </style>
 </head>
-<body>
+<body class="bg-dark text-white">
   <a href="#main" class="fixed left-2 top-2 z-50 -translate-y-20 focus:translate-y-0 bg-indigo-600 text-white px-3 py-2 rounded-md shadow">Skip to content</a>
 
   <!-- Header / Nav -->
@@ -102,7 +176,7 @@
         <a href="#faq" class="hover:text-indigo-600">FAQ</a>
       </nav>
       <div class="flex items-center gap-3">
-        <a href="/app" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl brand-gradient text-white font-semibold shadow-smooth hover:saturate-125 transition will-change-transform hover:-translate-y-0.5">Open the App</a>
+        <a href="/app" class="hidden sm:inline-flex items-center gap-2 gradient-button">Open the App</a>
         <button id="navToggle" class="md:hidden p-2 rounded-md hover:bg-slate-100" aria-label="Toggle menu" aria-expanded="false" style="--hover-bg: rgba(255,255,255,0.1);">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
@@ -114,7 +188,7 @@
         <a href="#how" class="py-2">How it works</a>
         <a href="#pricing" class="py-2">Pricing</a>
         <a href="#faq" class="py-2">FAQ</a>
-        <a href="/app" class="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl brand-gradient text-white font-semibold shadow-smooth">Open the App</a>
+        <a href="/app" class="mt-2 inline-flex items-center gap-2 gradient-button">Open the App</a>
       </nav>
     </div>
   </header>
@@ -122,9 +196,9 @@
   <main id="main">
     <!-- Hero -->
     <section id="top" class="relative overflow-hidden">
-      <div class="pointer-events-none absolute inset-0 -z-10 opacity-70">
-        <div class="absolute -top-32 -right-24 h-96 w-96 rounded-full blur-3xl" style="background-color: rgba(124, 58, 237, 0.4);"></div>
-        <div class="absolute top-24 -left-24 h-96 w-96 rounded-full blur-3xl" style="background-color: rgba(34, 211, 238, 0.4);"></div>
+      <div class="pointer-events-none absolute inset-0 -z-10">
+        <div class="bg-gradient-blob-1"></div>
+        <div class="bg-gradient-blob-2"></div>
       </div>
       <div class="max-w-7xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
         <div class="grid md:grid-cols-2 gap-10 items-center">
@@ -132,13 +206,13 @@
             <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight">Meetings that <span class="brand-text-gradient">write themselves</span>.</h1>
             <p class="mt-4 text-lg text-slate-600">Live transcription that turns into notes, action items, and ready‑to‑send emails. Mina captures what matters and drafts the follow‑ups for you.</p>
             <div class="mt-6 flex flex-wrap items-center gap-3">
-              <a href="/app" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl brand-gradient text-white font-semibold shadow-smooth hover:saturate-125 transition hover:-translate-y-0.5">Try Mina free</a>
+              <a href="/app" class="gradient-button inline-flex items-center gap-2">Try Mina free</a>
               <a href="#features" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl ring-1 ring-slate-300/50">See how it works</a>
             </div>
             <form id="waitlist" class="mt-6 flex flex-col sm:flex-row gap-3" aria-label="Join waitlist">
               <input name="email" type="email" placeholder="you@company.com" required class="flex-1 min-w-[220px] px-4 py-3 rounded-xl ring-1 ring-slate-300/60 bg-white/70" style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15);" aria-label="Email"/>
               <input type="text" name="website" class="hidden" tabindex="-1" autocomplete="off" aria-hidden="true" />
-              <button type="submit" class="px-5 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition">Join waitlist</button>
+              <button type="submit" class="gradient-button">Join waitlist</button>
             </form>
             <p class="mt-2 text-sm text-slate-500">No spam. We'll only email important updates.</p>
             <p id="waitlistStatus" class="sr-only" aria-live="polite"></p>
@@ -147,9 +221,9 @@
             <div class="rounded-xl2 shadow-smooth ring-1 ring-slate-300/30 p-3 bg-white/60" style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);">
               <img src="/static/brand/hero-ui.png" alt="Mina live transcription and action cards preview" loading="eager" decoding="async" fetchpriority="high" class="rounded-md" onerror="this.style.display='none'"/>
               <div class="grid gap-3 mt-3">
-                <div class="flex gap-3 items-start"><div class="h-10 w-10 rounded-xl brand-gradient text-white grid place-items-center font-bold">1</div><div><strong>Dictate.</strong><div class="text-slate-500">Speak freely—Mina captures in real time.</div></div></div>
-                <div class="flex gap-3 items-start"><div class="h-10 w-10 rounded-xl brand-gradient text-white grid place-items-center font-bold">2</div><div><strong>Understand.</strong><div class="text-slate-500">We extract tasks, decisions, and owners.</div></div></div>
-                <div class="flex gap-3 items-start"><div class="h-10 w-10 rounded-xl brand-gradient text-white grid place-items-center font-bold">3</div><div><strong>Act.</strong><div class="text-slate-500">Draft emails and shareable notes for one‑tap send.</div></div></div>
+                <div class="flex gap-3 items-start"><div class="number-badge">1</div><div><strong>Dictate.</strong><div class="text-slate-400">Speak freely—Mina captures in real time.</div></div></div>
+                <div class="flex gap-3 items-start"><div class="number-badge">2</div><div><strong>Understand.</strong><div class="text-slate-400">We extract tasks, decisions, and owners.</div></div></div>
+                <div class="flex gap-3 items-start"><div class="number-badge">3</div><div><strong>Act.</strong><div class="text-slate-400">Draft emails and shareable notes for one‑tap send.</div></div></div>
               </div>
             </div>
           </div>
@@ -162,12 +236,12 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6">
         <h2 class="reveal text-3xl sm:text-4xl font-extrabold">Why teams choose Mina</h2>
         <div class="grid md:grid-cols-3 gap-5 mt-8">
-          <article class="reveal p-5 rounded-xl2 bg-white/60 ring-1 ring-slate-300/40 shadow-smooth" style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);"><h3 class="font-semibold text-lg">Live transcription</h3><p class="text-slate-600">Low‑latency interim text with final refinement. Meetings, interviews, and dictation.</p></article>
-          <article class="reveal p-5 rounded-xl2 bg-white/60 ring-1 ring-slate-300/40 shadow-smooth" style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); transition-delay:.05s"><h3 class="font-semibold text-lg">Actions & emails</h3><p class="text-slate-600">Turns decisions into drafts—ready to send via your connected email.</p></article>
-          <article class="reveal p-5 rounded-xl2 bg-white/60 ring-1 ring-slate-300/40 shadow-smooth" style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); transition-delay:.1s"><h3 class="font-semibold text-lg">Organized library</h3><p class="text-slate-600">Sessions auto‑saved with topics, speakers, and highlights you can search.</p></article>
-          <article class="reveal p-5 rounded-xl2 bg-white/60 ring-1 ring-slate-300/40 shadow-smooth" style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); transition-delay:.15s"><h3 class="font-semibold text-lg">Secure by default</h3><p class="text-slate-600">Scoped access, encryption at rest, and export controls per session.</p></article>
-          <article class="reveal p-5 rounded-xl2 bg-white/60 ring-1 ring-slate-300/40 shadow-smooth" style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); transition-delay:.2s"><h3 class="font-semibold text-lg">Works everywhere</h3><p class="text-slate-600">Web, mobile browsers, and desktop. No installs required.</p></article>
-          <article class="reveal p-5 rounded-xl2 bg-white/60 ring-1 ring-slate-300/40 shadow-smooth" style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); transition-delay:.25s"><h3 class="font-semibold text-lg">Team‑ready</h3><p class="text-slate-600">Share sessions, @mention teammates, and track action history.</p></article>
+          <article class="reveal feature-card" style="transition-delay:0s"><h3 class="font-semibold text-lg text-white">Live transcription</h3><p class="text-slate-400">Low‑latency interim text with final refinement. Meetings, interviews, and dictation.</p></article>
+          <article class="reveal feature-card" style="transition-delay:.05s"><h3 class="font-semibold text-lg text-white">Actions & emails</h3><p class="text-slate-400">Turns decisions into drafts—ready to send via your connected email.</p></article>
+          <article class="reveal feature-card" style="transition-delay:.1s"><h3 class="font-semibold text-lg text-white">Organized library</h3><p class="text-slate-400">Sessions auto‑saved with topics, speakers, and highlights you can search.</p></article>
+          <article class="reveal feature-card" style="transition-delay:.15s"><h3 class="font-semibold text-lg text-white">Secure by default</h3><p class="text-slate-400">Scoped access, encryption at rest, and export controls per session.</p></article>
+          <article class="reveal feature-card" style="transition-delay:.2s"><h3 class="font-semibold text-lg text-white">Works everywhere</h3><p class="text-slate-400">Web, mobile browsers, and desktop. No installs required.</p></article>
+          <article class="reveal feature-card" style="transition-delay:.25s"><h3 class="font-semibold text-lg text-white">Team‑ready</h3><p class="text-slate-400">Share sessions, @mention teammates, and track action history.</p></article>
         </div>
       </div>
     </section>
@@ -177,10 +251,10 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6">
         <h2 class="reveal text-3xl sm:text-4xl font-extrabold">How Mina works</h2>
         <div class="grid md:grid-cols-2 gap-6 mt-8">
-          <div class="reveal p-5 rounded-xl2 bg-white ring-1 ring-slate-200 shadow-smooth" style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);"><strong>1) Capture</strong><div class="text-slate-600">Start a live session or upload audio. Mina streams interim text in ~250ms cadence.</div></div>
-          <div class="reveal p-5 rounded-xl2 bg-white ring-1 ring-slate-200 shadow-smooth" style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); transition-delay:.05s"><strong>2) Understand</strong><div class="text-slate-600">Detects tasks, owners, dates, and decisions from context—no rigid commands.</div></div>
-          <div class="reveal p-5 rounded-xl2 bg-white ring-1 ring-slate-200 shadow-smooth" style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); transition-delay:.1s"><strong>3) Draft</strong><div class="text-slate-600">Action cards propose emails, notes, and shares. You edit and approve.</div></div>
-          <div class="reveal p-5 rounded-xl2 bg-white ring-1 ring-slate-200 shadow-smooth" style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); transition-delay:.15s"><strong>4) Send & share</strong><div class="text-slate-600">Send via your connected email. Share a secure link with teammates.</div></div>
+          <div class="reveal feature-card" style="transition-delay:0s"><strong class="text-white">1) Capture</strong><div class="text-slate-400">Start a live session or upload audio. Mina streams interim text in ~250ms cadence.</div></div>
+          <div class="reveal feature-card" style="transition-delay:.05s"><strong class="text-white">2) Understand</strong><div class="text-slate-400">Detects tasks, owners, dates, and decisions from context—no rigid commands.</div></div>
+          <div class="reveal feature-card" style="transition-delay:.1s"><strong class="text-white">3) Draft</strong><div class="text-slate-400">Action cards propose emails, notes, and shares. You edit and approve.</div></div>
+          <div class="reveal feature-card" style="transition-delay:.15s"><strong class="text-white">4) Send & share</strong><div class="text-slate-400">Send via your connected email. Share a secure link with teammates.</div></div>
         </div>
       </div>
     </section>
@@ -233,7 +307,7 @@
         <form id="waitlist2" class="reveal mt-5 flex flex-col sm:flex-row gap-3 justify-center">
           <input type="email" name="email" required placeholder="you@example.com" class="flex-1 min-w-[220px] px-4 py-3 rounded-xl ring-1 ring-slate-300/60 bg-white/70" style="background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15);" />
           <input type="text" name="nickname" class="hidden" tabindex="-1" autocomplete="off" aria-hidden="true" />
-          <button type="submit" class="px-5 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition">Join</button>
+          <button type="submit" class="gradient-button">Join</button>
         </form>
         <p id="waitlistStatus2" class="sr-only" aria-live="polite"></p>
       </div>
