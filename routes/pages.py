@@ -22,4 +22,4 @@ def app():
 @pages_bp.route("/live")
 @login_required
 def live():
-    return render_template("live.html")
+    return render_template("live_premium.html")
