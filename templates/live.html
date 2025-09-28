@@ -37,12 +37,12 @@
             --gradient-glow: radial-gradient(circle, rgba(15,165,233,0.15) 0%, rgba(99,102,241,0.1) 50%, transparent 70%);
             --gradient-muted: linear-gradient(135deg, rgba(71,85,105,0.1) 0%, rgba(51,65,85,0.05) 100%);
             
-            /* Refined Glass Morphism */
-            --glass-bg: rgba(255, 255, 255, 0.06);
-            --glass-bg-strong: rgba(255, 255, 255, 0.1);
-            --glass-bg-ultra: rgba(255, 255, 255, 0.14);
-            --glass-bg-tinted: rgba(15, 165, 233, 0.04);
-            --glass-bg-accent: rgba(99, 102, 241, 0.03);
+            /* FIXED: Accessible Glass Morphism with Better Contrast */
+            --glass-bg: rgba(16, 24, 40, 0.65);              /* Darker, more opaque */
+            --glass-bg-strong: rgba(16, 24, 40, 0.85);       /* Stronger background */
+            --glass-bg-ultra: rgba(16, 24, 40, 0.92);        /* Ultra strong for content */
+            --glass-bg-tinted: rgba(15, 165, 233, 0.08);     /* Slightly more visible */
+            --glass-bg-accent: rgba(99, 102, 241, 0.06);     /* Better accent visibility */
             --glass-border: rgba(255, 255, 255, 0.15);
             --glass-border-strong: rgba(255, 255, 255, 0.25);
             --glass-border-subtle: rgba(15, 165, 233, 0.2);
@@ -54,14 +54,18 @@
             --surface-1: rgba(16, 24, 40, 0.3);
             --surface-2: rgba(16, 24, 40, 0.5);
             --surface-3: rgba(16, 24, 40, 0.7);
+            --surface-primary: rgba(16, 24, 40, 0.85);        /* Added missing token */
             --surface-elevated: rgba(255, 255, 255, 0.05);
             --surface-hover: rgba(255, 255, 255, 0.08);
             
-            /* Enhanced Typography */
+            /* FIXED: Enhanced Typography with Accessible Contrast */
             --text-primary: #FFFFFF;
-            --text-secondary: rgba(255, 255, 255, 0.85);
-            --text-tertiary: rgba(255, 255, 255, 0.65);
-            --text-quaternary: rgba(255, 255, 255, 0.45);
+            --text-secondary: rgba(255, 255, 255, 0.95);     /* Increased from 0.85 */
+            --text-tertiary: rgba(255, 255, 255, 0.85);      /* Increased from 0.65 */
+            --text-quaternary: rgba(255, 255, 255, 0.75);    /* Increased from 0.45 */
+            --text-muted: rgba(255, 255, 255, 0.65);         /* New muted level */
+            --text-on-glass: rgba(255, 255, 255, 0.98);      /* High contrast for glass */
+            --text-accent: var(--primary-light);             /* Accent text color */
             
             /* Professional Shadows & Subtle Glows */
             --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
@@ -73,6 +77,7 @@
             --glow-secondary: 0 0 20px rgba(99, 102, 241, 0.15), 0 0 40px rgba(99, 102, 241, 0.08);
             --glow-accent: 0 0 20px rgba(245, 158, 11, 0.15), 0 0 40px rgba(245, 158, 11, 0.08);
             --glow-subtle: 0 0 16px rgba(15, 165, 233, 0.1), 0 0 32px rgba(99, 102, 241, 0.05);
+            --glow-rainbow: var(--glow-primary);              /* Added missing token */
             --shadow-colored: 0 8px 25px rgba(15, 165, 233, 0.08), 0 4px 12px rgba(0, 0, 0, 0.1);
             
             /* Premium Transitions */
@@ -108,10 +113,8 @@
         
         body {
             font-family: 'SF Pro Display', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(15, 165, 233, 0.06) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
-                linear-gradient(135deg, #0F172A 0%, #1E293B 25%, #334155 50%, #475569 75%, #1E293B 100%);
+            /* SIMPLIFIED: Cleaner background with focus on content */
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
             color: var(--text-primary);
             line-height: 1.6;
             overflow-x: hidden;
@@ -136,22 +139,11 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: 
-                repeating-linear-gradient(
-                    90deg,
-                    transparent,
-                    transparent 98px,
-                    rgba(15, 165, 233, 0.008) 100px
-                ),
-                repeating-linear-gradient(
-                    0deg,
-                    transparent,
-                    transparent 98px,
-                    rgba(99, 102, 241, 0.006) 100px
-                );
+            /* SIMPLIFIED: Subtle accent only when needed */
+            background: radial-gradient(circle at 50% 0%, rgba(15, 165, 233, 0.02) 0%, transparent 70%);
             pointer-events: none;
             z-index: 1;
-            animation: subtle-glow 20s ease-in-out infinite;
+            opacity: 0.7;
         }
         
         
@@ -186,23 +178,21 @@
             opacity: 1;
         }
         
-        /* Control Panel with Animated Borders */
+        /* FIXED: Control Panel with Clear Content Contrast */
         .control-panel {
             background: var(--glass-bg-ultra);
-            backdrop-filter: var(--glass-blur-strong);
-            border: 2px solid transparent;
-            background-image: var(--gradient-border);
-            background-origin: border-box;
-            background-clip: padding-box, border-box;
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border-strong);
             border-radius: var(--radius-2xl);
             padding: var(--space-2xl);
             height: fit-content;
             position: sticky;
             top: var(--space-xl);
             transition: all var(--transition-base);
-            box-shadow: var(--shadow-colored);
+            box-shadow: var(--shadow-lg);
             position: relative;
-            overflow: hidden;
+            /* ACCESSIBILITY: Ensure content is always readable */
+            color: var(--text-on-glass);
         }
         
         .control-panel::after {
@@ -339,17 +329,16 @@
             position: relative;
         }
         
+        /* FIXED: Better readability for main heading */
         .panel-title {
             font-size: 2.5rem;
             font-weight: 800;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);                      /* Solid white instead of gradient */
             margin-bottom: var(--space-md);
             letter-spacing: -0.02em;
             line-height: 1.1;
             position: relative;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);      /* Enhanced shadow for depth */
         }
         
         .panel-title::after {
