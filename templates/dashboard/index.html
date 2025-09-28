@@ -114,12 +114,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="stat-card" data-stat="this-week-meetings">
+                <div class="stat-card" data-stat="todays-meetings">
                     <div class="stat-card-content">
-                        <div class="stat-value">{{ stats.this_week_meetings if stats else 0 }}</div>
+                        <div class="stat-value">{{ stats.todays_meetings if stats else 0 }}</div>
                         <div class="stat-label">
                             <i data-feather="calendar" class="stat-icon"></i>
-                            This Week's Meetings
+                            Today's Meetings
                         </div>
                     </div>
                 </div>
@@ -191,6 +191,127 @@
             </section>
             
             <div class="content-grid">
+                <section class="content-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Today's Meetings</h2>
+                        <a href="{{ url_for('dashboard.meetings') }}" class="btn btn-sm btn-secondary">
+                            <i data-feather="calendar"></i>
+                            View All
+                        </a>
+                    </div>
+                    <div class="section-content">
+                        <div class="todays-meetings-list">
+                            {% if todays_meetings %}
+                                {% for meeting in todays_meetings %}
+                                <div class="meeting-card">
+                                    <div class="meeting-header">
+                                        <h3 class="meeting-title">{{ meeting.title }}</h3>
+                                        <div class="meeting-meta">
+                                            <span class="meeting-time">
+                                                <i data-feather="clock"></i>
+                                                {{ meeting.created_at.strftime('%I:%M %p') }}
+                                            </span>
+                                            <span class="meeting-status meeting-status-{{ meeting.status }}">
+                                                {{ meeting.status.title() }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {% if meeting.description %}
+                                    <p class="meeting-description">{{ meeting.description[:100] }}{% if meeting.description|length > 100 %}...{% endif %}</p>
+                                    {% endif %}
+                                    <div class="meeting-actions">
+                                        <a href="{{ url_for('dashboard.meeting_detail', id=meeting.id) }}" class="btn btn-sm btn-primary">
+                                            <i data-feather="external-link"></i>
+                                            View Details
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="empty-state">
+                                    <i data-feather="calendar" class="empty-icon"></i>
+                                    <h3>No meetings today</h3>
+                                    <p>You have no meetings scheduled for today.</p>
+                                    <a href="{{ url_for('pages.live') }}" class="btn btn-primary">
+                                        <i data-feather="plus"></i>
+                                        Start New Meeting
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </section>
+                
+                <section class="content-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Follow-up Items</h2>
+                        <span class="badge">{{ follow_up_items|length }}</span>
+                    </div>
+                    <div class="section-content">
+                        <div class="follow-up-list">
+                            {% if follow_up_items %}
+                                {% for item in follow_up_items %}
+                                <div class="follow-up-card follow-up-{{ item.type }}">
+                                    <div class="follow-up-header">
+                                        <div class="follow-up-type">
+                                            {% if item.type == 'marker' %}
+                                                {% if item.subtype == 'decision' %}
+                                                    <i data-feather="check-circle" class="follow-up-icon icon-decision"></i>
+                                                {% elif item.subtype == 'todo' %}
+                                                    <i data-feather="square" class="follow-up-icon icon-todo"></i>
+                                                {% elif item.subtype == 'risk' %}
+                                                    <i data-feather="alert-triangle" class="follow-up-icon icon-risk"></i>
+                                                {% endif %}
+                                                <span class="follow-up-label">{{ item.subtype.title() }}</span>
+                                            {% elif item.type == 'task' %}
+                                                <i data-feather="check-square" class="follow-up-icon icon-task"></i>
+                                                <span class="follow-up-label">Task</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="follow-up-meta">
+                                            <span class="follow-up-time">
+                                                {{ item.timestamp.strftime('%m/%d %I:%M %p') }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="follow-up-content">
+                                        <h4 class="follow-up-title">{{ item.title }}</h4>
+                                        {% if item.content %}
+                                        <p class="follow-up-description">{{ item.content[:80] }}{% if item.content|length > 80 %}...{% endif %}</p>
+                                        {% endif %}
+                                        {% if item.type == 'marker' and item.speaker %}
+                                        <div class="follow-up-speaker">
+                                            <i data-feather="user"></i>
+                                            {{ item.speaker }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="follow-up-actions">
+                                        {% if item.type == 'marker' %}
+                                            <button class="btn btn-sm btn-secondary" onclick="openMarkerModal('{{ item.id }}')">
+                                                <i data-feather="edit"></i>
+                                                Edit
+                                            </button>
+                                        {% elif item.type == 'task' %}
+                                            <a href="{{ url_for('dashboard.task_detail', id=item.id) }}" class="btn btn-sm btn-primary">
+                                                <i data-feather="external-link"></i>
+                                                View Task
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="empty-state">
+                                    <i data-feather="inbox" class="empty-icon"></i>
+                                    <h3>No follow-up items</h3>
+                                    <p>You're all caught up! No pending actions from recent meetings.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </section>
+                
                 <section class="content-section">
                     <div class="section-header">
                         <h2 class="section-title">Recent Meetings</h2>

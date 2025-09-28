@@ -5,9 +5,9 @@ Main dashboard with meetings, tasks, analytics overview.
 
 from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required, current_user
-from models import db, Meeting, Task, Analytics, Session
-from sqlalchemy import desc, func
-from datetime import datetime, timedelta
+from models import db, Meeting, Task, Analytics, Session, Marker
+from sqlalchemy import desc, func, and_
+from datetime import datetime, timedelta, date
 
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
@@ -46,15 +46,80 @@ def index():
         workspace_id=current_user.workspace_id
     ).filter(Meeting.created_at >= week_start).count()
     
+    # Get today's meetings (meetings created today or scheduled for today)
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = today_start + timedelta(days=1)
+    
+    todays_meetings = db.session.query(Meeting).filter_by(
+        workspace_id=current_user.workspace_id
+    ).filter(
+        and_(
+            Meeting.created_at >= today_start,
+            Meeting.created_at < today_end
+        )
+    ).order_by(desc(Meeting.created_at)).all()
+    
+    # Get follow-up items from recent meetings (last 7 days)
+    recent_cutoff = datetime.now() - timedelta(days=7)
+    
+    # Get recent markers (decisions, todos, risks)
+    recent_markers = db.session.query(Marker).filter_by(
+        user_id=current_user.id
+    ).filter(Marker.created_at >= recent_cutoff).order_by(desc(Marker.created_at)).limit(5).all()
+    
+    # Get urgent tasks (high priority or due soon)
+    urgent_tasks = db.session.query(Task).filter_by(
+        assigned_to_id=current_user.id
+    ).filter(
+        Task.status.in_(['todo', 'in_progress'])
+    ).order_by(desc(Task.priority), Task.due_date).limit(5).all()
+    
+    # Create follow-up items combining markers and urgent tasks
+    follow_up_items = []
+    
+    # Add markers as follow-up items
+    for marker in recent_markers:
+        content_preview = str(marker.content)[:50] + ('...' if len(str(marker.content)) > 50 else '')
+        follow_up_items.append({
+            'type': 'marker',
+            'subtype': marker.type,
+            'title': f"{marker.type.title()}: {content_preview}",
+            'content': marker.content,
+            'timestamp': marker.created_at,
+            'speaker': marker.speaker,
+            'session_id': marker.session_id,
+            'id': marker.id
+        })
+    
+    # Add urgent tasks as follow-up items
+    for task in urgent_tasks:
+        follow_up_items.append({
+            'type': 'task',
+            'subtype': task.priority,
+            'title': task.title,
+            'content': task.description or '',
+            'timestamp': task.created_at,
+            'due_date': task.due_date,
+            'status': task.status,
+            'id': task.id
+        })
+    
+    # Sort follow-up items by timestamp (newest first)
+    follow_up_items.sort(key=lambda x: x['timestamp'], reverse=True)
+    follow_up_items = follow_up_items[:8]  # Limit to 8 items
+    
     return render_template('dashboard/index.html',
                          recent_meetings=recent_meetings,
                          user_tasks=user_tasks,
+                         todays_meetings=todays_meetings,
+                         follow_up_items=follow_up_items,
                          stats={
                              'total_meetings': total_meetings,
                              'total_tasks': total_tasks,
                              'completed_tasks': completed_tasks,
                              'task_completion_rate': round(task_completion_rate, 1),
-                             'this_week_meetings': this_week_meetings
+                             'this_week_meetings': this_week_meetings,
+                             'todays_meetings': len(todays_meetings)
                          })
 
 
