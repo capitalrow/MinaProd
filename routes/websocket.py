@@ -15,9 +15,11 @@ from flask_socketio import emit
 from app import socketio
 
 # Import database models for persistence
-from models import db, Session, Segment
+from models import db, Session, Segment, Participant
 
 from services.openai_whisper_client import transcribe_bytes
+from services.speaker_diarization import SpeakerDiarizationEngine, DiarizationConfig
+from services.multi_speaker_diarization import MultiSpeakerDiarization
 
 logger = logging.getLogger(__name__)
 ws_bp = Blueprint("ws", __name__)
@@ -26,6 +28,11 @@ ws_bp = Blueprint("ws", __name__)
 _BUFFERS: Dict[str, bytearray] = defaultdict(bytearray)
 _LAST_EMIT_AT: Dict[str, float] = {}
 _LAST_INTERIM_TEXT: Dict[str, str] = {}
+
+# Speaker diarization state (per session)
+_SPEAKER_ENGINES: Dict[str, SpeakerDiarizationEngine] = {}
+_MULTI_SPEAKER_SYSTEMS: Dict[str, MultiSpeakerDiarization] = {}
+_SESSION_SPEAKERS: Dict[str, Dict[str, Dict]] = defaultdict(dict)  # session_id -> speaker_id -> speaker_info
 
 # Tunables
 _MIN_MS_BETWEEN_INTERIM = 400.0      # Real-time feel: ~400ms cadence  
@@ -75,6 +82,29 @@ def on_join_session(data):
     _BUFFERS[session_id] = bytearray()
     _LAST_EMIT_AT[session_id] = 0
     _LAST_INTERIM_TEXT[session_id] = ""
+    
+    # Initialize speaker diarization for this session
+    try:
+        # Initialize speaker diarization engine
+        diarization_config = DiarizationConfig(
+            max_speakers=6,  # Support up to 6 speakers for meetings
+            min_segment_duration=0.5,
+            enable_voice_features=True,
+            auto_label_speakers=True
+        )
+        _SPEAKER_ENGINES[session_id] = SpeakerDiarizationEngine(diarization_config)
+        _SPEAKER_ENGINES[session_id].initialize_session(session_id)
+        
+        # Initialize multi-speaker system
+        _MULTI_SPEAKER_SYSTEMS[session_id] = MultiSpeakerDiarization(max_speakers=6)
+        
+        # Initialize session speakers dictionary
+        _SESSION_SPEAKERS[session_id] = {}
+        
+        logger.info(f"🎤 Speaker diarization initialized for session: {session_id}")
+    except Exception as e:
+        logger.warning(f"⚠️ Speaker diarization initialization failed: {e}")
+    
     emit("server_hello", {"msg": "connected", "t": int(_now_ms())})
     logger.info(f"[ws] join_session {session_id}")
 
@@ -145,16 +175,69 @@ def on_audio_chunk(data):
         return
 
     text = (text or "").strip()
+    
+    # Enhanced: Process with speaker diarization
+    speaker_info = None
+    if text and session_id in _MULTI_SPEAKER_SYSTEMS:
+        try:
+            # Convert audio bytes to numpy array for speaker processing
+            import numpy as np
+            audio_array = np.frombuffer(chunk, dtype=np.int16).astype(np.float32) / 32768.0
+            
+            # Process with speaker diarization
+            segment_id = f"{session_id}_interim_{int(now)}"
+            speaker_segment = _MULTI_SPEAKER_SYSTEMS[session_id].process_audio_segment(
+                audio_array, now / 1000.0, segment_id, text
+            )
+            
+            speaker_info = {
+                "speaker_id": speaker_segment.speaker_id,
+                "speaker_confidence": speaker_segment.speaker_confidence,
+                "overlap_detected": speaker_segment.overlap_detected,
+                "background_speakers": speaker_segment.background_speakers
+            }
+            
+            # Update session speakers
+            if speaker_segment.speaker_id not in _SESSION_SPEAKERS[session_id]:
+                _SESSION_SPEAKERS[session_id][speaker_segment.speaker_id] = {
+                    "id": speaker_segment.speaker_id,
+                    "name": f"Speaker {len(_SESSION_SPEAKERS[session_id]) + 1}",
+                    "first_seen": now,
+                    "total_segments": 0,
+                    "last_activity": now
+                }
+            
+            _SESSION_SPEAKERS[session_id][speaker_segment.speaker_id]["last_activity"] = now
+            _SESSION_SPEAKERS[session_id][speaker_segment.speaker_id]["total_segments"] += 1
+            
+            logger.debug(f"🎤 Speaker identified: {speaker_segment.speaker_id} (confidence: {speaker_segment.speaker_confidence:.2f})")
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Speaker diarization failed for interim: {e}")
+    
     if text and text != _LAST_INTERIM_TEXT.get(session_id, ""):
         _LAST_INTERIM_TEXT[session_id] = text
-        # Emit transcription_result that frontend expects
-        emit("transcription_result", {
+        
+        # Emit enhanced transcription_result with speaker information
+        result = {
             "text": text,
             "is_final": False,
             "confidence": 0.8,  # Default confidence for interim
             "session_id": session_id,
             "timestamp": int(_now_ms())
-        })
+        }
+        
+        # Add speaker information if available
+        if speaker_info:
+            result.update({
+                "speaker_id": speaker_info["speaker_id"],
+                "speaker_confidence": speaker_info["speaker_confidence"],
+                "speaker_name": _SESSION_SPEAKERS[session_id][speaker_info["speaker_id"]]["name"],
+                "overlap_detected": speaker_info["overlap_detected"],
+                "background_speakers": speaker_info["background_speakers"]
+            })
+        
+        emit("transcription_result", result)
 
     emit("ack", {"ok": True})
 
@@ -220,4 +303,44 @@ def on_finalize(data):
     _BUFFERS.pop(session_id, None)
     _LAST_EMIT_AT.pop(session_id, None)
     _LAST_INTERIM_TEXT.pop(session_id, None)
+    
+    # Clear speaker diarization state
+    _SPEAKER_ENGINES.pop(session_id, None)
+    _MULTI_SPEAKER_SYSTEMS.pop(session_id, None)
+    _SESSION_SPEAKERS.pop(session_id, None)
+    
+    logger.info(f"🎤 Cleared speaker diarization state for session: {session_id}")
+
+@socketio.on("get_session_speakers")
+def on_get_session_speakers(data):
+    """Get current speakers for a session."""
+    session_id = (data or {}).get("session_id")
+    if not session_id:
+        emit("error", {"message": "Missing session_id"})
+        return
+    
+    speakers = _SESSION_SPEAKERS.get(session_id, {})
+    speaker_list = []
+    
+    for speaker_id, speaker_info in speakers.items():
+        speaker_list.append({
+            "id": speaker_id,
+            "name": speaker_info["name"],
+            "first_seen": speaker_info["first_seen"],
+            "last_activity": speaker_info["last_activity"],
+            "total_segments": speaker_info["total_segments"],
+            "is_active": (time.time() * 1000 - speaker_info["last_activity"]) < 10000  # Active within last 10 seconds
+        })
+    
+    # Sort by last activity (most recent first)
+    speaker_list.sort(key=lambda x: x["last_activity"], reverse=True)
+    
+    emit("session_speakers", {
+        "session_id": session_id,
+        "speakers": speaker_list,
+        "total_speakers": len(speaker_list),
+        "timestamp": int(_now_ms())
+    })
+    
+    logger.debug(f"🎤 Sent speaker list for session {session_id}: {len(speaker_list)} speakers")
     
