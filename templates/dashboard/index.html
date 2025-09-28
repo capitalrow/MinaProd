@@ -1,626 +1,189 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Mina</title>
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ super() }}{% endblock %}
+
+{% block head %}
+    <!-- Chart.js for premium data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     
-    <!-- Preconnect for performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://unpkg.com">
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    
-    <!-- Core CSS -->
+    <!-- Core Dashboard CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     
-    <!-- Chart.js for premium data visualization -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    
-    <!-- Mina Animated Logo Component -->
-    <script src="{{ url_for('static', filename='js/mina-animated-logo.js') }}" defer></script>
-    
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
     <script src="https://unpkg.com/feather-icons"></script>
-</head>
-<body>
-    <!-- Dark Mode Toggle -->
-    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
-        <i data-feather="sun" id="themeIcon"></i>
-    </button>
+{% endblock %}
 
-    <div class="dashboard-layout">
-        <aside class="sidebar">
-            <div class="sidebar-logo">
-                <div class="sidebar-logo-container">
-                    <svg class="sidebar-logo-icon mina-logo-size-lg mina-logo-sidebar" width="44" height="44" aria-label="Mina logo">
-                        <use href="#minaEnhancedLogo"/>
-                        <!-- Fallback for no-JS/failed-load -->
-                        <g class="mina-fallback" style="display: none;">
-                            <defs>
-                                <linearGradient id="sidebarFallbackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="var(--mina-primary, #6366F1)"/>
-                                    <stop offset="100%" stop-color="var(--mina-secondary, #8B5CF6)"/>
-                                </linearGradient>
-                            </defs>
-                            <rect x="9" y="13" width="6" height="22" rx="3" fill="url(#sidebarFallbackGrad)"/>
-                            <rect x="19" y="17" width="6" height="16" rx="3" fill="url(#sidebarFallbackGrad)"/>
-                            <rect x="29" y="13" width="6" height="22" rx="3" fill="url(#sidebarFallbackGrad)"/>
-                            <rect x="9" y="37" width="26" height="3" rx="1.5" fill="url(#sidebarFallbackGrad)"/>
-                        </g>
-                    </svg>
-                    <div class="sidebar-logo-text">Mina</div>
+{% block content %}
+    <div class="main-content">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <h1 class="dashboard-title">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </h1>
+                <button class="btn btn-primary" id="refresh-dashboard">
+                    <i class="fas fa-sync-alt"></i>
+                    Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-microphone"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number" id="active-sessions">0</h3>
+                    <p class="stat-label">Active Sessions</p>
                 </div>
             </div>
             
-            <nav>
-                <ul class="nav-menu">
-                    <li class="nav-item">
-                        <a href="{{ url_for('dashboard.index') }}" class="nav-link active">
-                            <i data-feather="home"></i>
-                            Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('pages.live') }}" class="nav-link">
-                            <i data-feather="mic"></i>
-                            Live Meeting
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('dashboard.meetings') }}" class="nav-link">
-                            <i data-feather="users"></i>
-                            Meetings
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('dashboard.tasks') }}" class="nav-link">
-                            <i data-feather="check-square"></i>
-                            Tasks
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('dashboard.analytics') }}" class="nav-link">
-                            <i data-feather="bar-chart-2"></i>
-                            Analytics
-                        </a>
-                    </li>
-                </ul>
-            </nav>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number" id="total-hours">0</h3>
+                    <p class="stat-label">Hours Recorded</p>
+                </div>
+            </div>
             
-            <div class="user-info">
-                <div class="user-name">{{ current_user.first_name or current_user.username }}</div>
-                <div class="user-email">{{ current_user.email }}</div>
-                <a href="{{ url_for('auth.logout') }}" class="nav-link">
-                    <i data-feather="log-out"></i>
-                    Sign Out
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number" id="success-rate">0%</h3>
+                    <p class="stat-label">Success Rate</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number" id="avg-confidence">0%</h3>
+                    <p class="stat-label">Avg Confidence</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="dashboard-section">
+            <h2 class="section-title">Quick Actions</h2>
+            <div class="action-grid">
+                <a href="{{ url_for('transcription.live_transcription') }}" class="action-card primary">
+                    <div class="action-icon">
+                        <i class="fas fa-circle text-danger"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>Start Live Recording</h3>
+                        <p>Begin a new transcription session</p>
+                    </div>
+                </a>
+                
+                <a href="{{ url_for('dashboard.meetings') }}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>View Meetings</h3>
+                        <p>Browse your recorded sessions</p>
+                    </div>
+                </a>
+                
+                <a href="{{ url_for('dashboard.analytics') }}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>Analytics</h3>
+                        <p>View detailed insights</p>
+                    </div>
+                </a>
+                
+                <a href="{{ url_for('settings.dashboard') }}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>Settings</h3>
+                        <p>Configure your preferences</p>
+                    </div>
                 </a>
             </div>
-        </aside>
-        
-        <main class="main-content">
-            <header class="dashboard-header">
-                <h1 class="dashboard-title">Welcome back, {{ current_user.first_name or current_user.username }}!</h1>
-                <p class="dashboard-subtitle">Here's what's happening with your meetings and tasks today.</p>
-            </header>
-            
-            <div class="stats-grid">
-                <div class="stat-card" data-stat="total-meetings">
-                    <div class="stat-card-content">
-                        <div class="stat-value">{{ stats.total_meetings if stats else 0 }}</div>
-                        <div class="stat-label">
-                            <i data-feather="users" class="stat-icon"></i>
-                            Total Meetings
-                        </div>
-                    </div>
-                </div>
-                <div class="stat-card" data-stat="total-tasks">
-                    <div class="stat-card-content">
-                        <div class="stat-value">{{ stats.total_tasks if stats else 0 }}</div>
-                        <div class="stat-label">
-                            <i data-feather="check-square" class="stat-icon"></i>
-                            Total Tasks
-                        </div>
-                    </div>
-                </div>
-                <div class="stat-card" data-stat="task-completion-rate">
-                    <div class="stat-card-content">
-                        <div class="stat-value">{{ stats.task_completion_rate if stats else 0 }}%</div>
-                        <div class="stat-label">
-                            <i data-feather="trending-up" class="stat-icon"></i>
-                            Task Completion Rate
-                        </div>
-                    </div>
-                </div>
-                <div class="stat-card" data-stat="todays-meetings">
-                    <div class="stat-card-content">
-                        <div class="stat-value">{{ stats.todays_meetings if stats else 0 }}</div>
-                        <div class="stat-label">
-                            <i data-feather="calendar" class="stat-icon"></i>
-                            Today's Meetings
-                        </div>
-                    </div>
-                </div>
-                <div class="stat-card" data-stat="active-meetings">
-                    <div class="stat-card-content">
-                        <div class="stat-value">0</div>
-                        <div class="stat-label">
-                            <i data-feather="activity" class="stat-icon"></i>
-                            Active Meetings
-                        </div>
-                    </div>
-                </div>
-                <div class="stat-card" data-stat="my-active-tasks">
-                    <div class="stat-card-content">
-                        <div class="stat-value">0</div>
-                        <div class="stat-label">
-                            <i data-feather="target" class="stat-icon"></i>
-                            My Active Tasks
-                        </div>
-                    </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="dashboard-section">
+            <h2 class="section-title">Recent Activity</h2>
+            <div class="activity-list" id="recent-activity">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading recent activity...</p>
                 </div>
             </div>
-            
-            <!-- Hero Recording Action -->
-            <section class="hero-recording-section">
-                <div class="hero-record-container">
-                    <div class="hero-record-content">
-                        <h2 class="hero-record-title">Ready to record your next meeting?</h2>
-                        <p class="hero-record-description">Start recording with one tap. Get instant transcription, AI insights, and actionable summaries.</p>
-                        <div class="hero-record-actions">
-                            <a href="{{ url_for('pages.live') }}" class="hero-record-button" id="heroRecordButton">
-                                <div class="record-button-icon">
-                                    <i data-feather="mic" class="record-mic-icon"></i>
-                                    <div class="record-pulse"></div>
-                                </div>
-                                <div class="record-button-text">
-                                    <span class="record-button-main">Start Recording</span>
-                                    <span class="record-button-sub">One tap to begin</span>
-                                </div>
-                            </a>
-                            <div class="quick-actions">
-                                <a href="{{ url_for('copilot.copilot_dashboard') }}" class="quick-action-btn">
-                                    <i data-feather="message-circle"></i>
-                                    AI Copilot
-                                </a>
-                                <a href="{{ url_for('dashboard.meetings') }}" class="quick-action-btn">
-                                    <i data-feather="folder"></i>
-                                    Past Meetings
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="hero-record-visual">
-                        <div class="recording-preview">
-                            <div class="waveform-animation">
-                                <div class="wave-bar"></div>
-                                <div class="wave-bar"></div>
-                                <div class="wave-bar"></div>
-                                <div class="wave-bar"></div>
-                                <div class="wave-bar"></div>
-                            </div>
-                            <div class="recording-status">
-                                <div class="status-indicator"></div>
-                                <span>Ready to record</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            
-            <div class="content-grid">
-                <section class="content-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Today's Meetings</h2>
-                        <a href="{{ url_for('dashboard.meetings') }}" class="btn btn-sm btn-secondary">
-                            <i data-feather="calendar"></i>
-                            View All
-                        </a>
-                    </div>
-                    <div class="section-content">
-                        <div class="todays-meetings-list">
-                            {% if todays_meetings %}
-                                {% for meeting in todays_meetings %}
-                                <div class="meeting-card">
-                                    <div class="meeting-header">
-                                        <h3 class="meeting-title">{{ meeting.title }}</h3>
-                                        <div class="meeting-meta">
-                                            <span class="meeting-time">
-                                                <i data-feather="clock"></i>
-                                                {{ meeting.created_at.strftime('%I:%M %p') }}
-                                            </span>
-                                            <span class="meeting-status meeting-status-{{ meeting.status }}">
-                                                {{ meeting.status.title() }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    {% if meeting.description %}
-                                    <p class="meeting-description">{{ meeting.description[:100] }}{% if meeting.description|length > 100 %}...{% endif %}</p>
-                                    {% endif %}
-                                    <div class="meeting-actions">
-                                        <a href="{{ url_for('dashboard.meeting_detail', id=meeting.id) }}" class="btn btn-sm btn-primary">
-                                            <i data-feather="external-link"></i>
-                                            View Details
-                                        </a>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="empty-state">
-                                    <i data-feather="calendar" class="empty-icon"></i>
-                                    <h3>No meetings today</h3>
-                                    <p>You have no meetings scheduled for today.</p>
-                                    <a href="{{ url_for('pages.live') }}" class="btn btn-primary">
-                                        <i data-feather="plus"></i>
-                                        Start New Meeting
-                                    </a>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </section>
-                
-                <section class="content-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Follow-up Items</h2>
-                        <span class="badge">{{ follow_up_items|length }}</span>
-                    </div>
-                    <div class="section-content">
-                        <div class="follow-up-list">
-                            {% if follow_up_items %}
-                                {% for item in follow_up_items %}
-                                <div class="follow-up-card follow-up-{{ item.type }}">
-                                    <div class="follow-up-header">
-                                        <div class="follow-up-type">
-                                            {% if item.type == 'marker' %}
-                                                {% if item.subtype == 'decision' %}
-                                                    <i data-feather="check-circle" class="follow-up-icon icon-decision"></i>
-                                                {% elif item.subtype == 'todo' %}
-                                                    <i data-feather="square" class="follow-up-icon icon-todo"></i>
-                                                {% elif item.subtype == 'risk' %}
-                                                    <i data-feather="alert-triangle" class="follow-up-icon icon-risk"></i>
-                                                {% endif %}
-                                                <span class="follow-up-label">{{ item.subtype.title() }}</span>
-                                            {% elif item.type == 'task' %}
-                                                <i data-feather="check-square" class="follow-up-icon icon-task"></i>
-                                                <span class="follow-up-label">Task</span>
-                                            {% endif %}
-                                        </div>
-                                        <div class="follow-up-meta">
-                                            <span class="follow-up-time">
-                                                {{ item.timestamp.strftime('%m/%d %I:%M %p') }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="follow-up-content">
-                                        <h4 class="follow-up-title">{{ item.title }}</h4>
-                                        {% if item.content %}
-                                        <p class="follow-up-description">{{ item.content[:80] }}{% if item.content|length > 80 %}...{% endif %}</p>
-                                        {% endif %}
-                                        {% if item.type == 'marker' and item.speaker %}
-                                        <div class="follow-up-speaker">
-                                            <i data-feather="user"></i>
-                                            {{ item.speaker }}
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="follow-up-actions">
-                                        {% if item.type == 'marker' %}
-                                            <button class="btn btn-sm btn-secondary" onclick="openMarkerModal('{{ item.id }}')">
-                                                <i data-feather="edit"></i>
-                                                Edit
-                                            </button>
-                                        {% elif item.type == 'task' %}
-                                            <a href="{{ url_for('dashboard.task_detail', id=item.id) }}" class="btn btn-sm btn-primary">
-                                                <i data-feather="external-link"></i>
-                                                View Task
-                                            </a>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="empty-state">
-                                    <i data-feather="inbox" class="empty-icon"></i>
-                                    <h3>No follow-up items</h3>
-                                    <p>You're all caught up! No pending actions from recent meetings.</p>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </section>
-                
-                <section class="content-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Recent Meetings</h2>
-                        <button id="refresh-dashboard" class="btn btn-sm btn-secondary">
-                            <i data-feather="refresh-cw"></i> 
-                            Refresh
-                        </button>
-                    </div>
-                    <div class="section-content">
-                        <div id="recent-meetings-list">
-                            <div class="loading-state">
-                                <div class="loading-spinner"></div>
-                                <p>Loading meetings...</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-                
-                <section class="content-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Your Tasks</h2>
-                        <a href="{{ url_for('dashboard.tasks') }}" class="btn btn-sm btn-primary">
-                            <i data-feather="external-link"></i>
-                            View All
-                        </a>
-                    </div>
-                    <div class="section-content">
-                        <div id="my-tasks-list">
-                            <div class="loading-state">
-                                <div class="loading-spinner"></div>
-                                <p>Loading tasks...</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </main>
+        </div>
     </div>
+{% endblock %}
 
-    <!-- Notifications container -->
-    <div id="notifications"></div>
-
-    <!-- Enhanced Dashboard JavaScript -->
+{% block scripts %}
     <script>
-        // Premium Dashboard Enhancement System
-        if (typeof MinaDashboard === 'undefined') {
+        // Initialize Feather icons
+        feather.replace();
+        
         class MinaDashboard {
             constructor() {
-                this.theme = localStorage.getItem('mina-theme') || 'light';
-                this.charts = {};
                 this.init();
             }
-
+            
             init() {
-                this.setupThemeToggle();
-                this.initializeFeatherIcons();
-                this.setupInteractions();
-                this.loadData();
-                this.applyTheme();
+                this.loadStats();
+                this.loadRecentActivity();
+                this.setupRefreshButton();
             }
-
-            setupThemeToggle() {
-                const toggle = document.getElementById('themeToggle');
-                const icon = document.getElementById('themeIcon');
-                
-                if (toggle && icon) {
-                    toggle.addEventListener('click', () => {
-                        this.theme = this.theme === 'light' ? 'dark' : 'light';
-                        localStorage.setItem('mina-theme', this.theme);
-                        this.applyTheme();
-                    });
-                }
-            }
-
-            applyTheme() {
-                const html = document.documentElement;
-                const icon = document.getElementById('themeIcon');
-                
-                html.setAttribute('data-theme', this.theme);
-                
-                if (icon) {
-                    // Smooth icon transition
-                    icon.style.transform = 'scale(0)';
-                    setTimeout(() => {
-                        icon.setAttribute('data-feather', this.theme === 'light' ? 'moon' : 'sun');
-                        if (typeof feather !== 'undefined') {
-                            feather.replace();
-                        }
-                        icon.style.transform = 'scale(1)';
-                    }, 150);
-                }
-            }
-
-            initializeFeatherIcons() {
-                if (typeof feather !== 'undefined') {
-                    feather.replace();
-                }
-            }
-
-            setupInteractions() {
-                // Enhanced stat card interactions
-                document.querySelectorAll('.stat-card').forEach(card => {
-                    card.addEventListener('mouseenter', () => {
-                        this.animateStatCard(card, true);
-                    });
-                    
-                    card.addEventListener('mouseleave', () => {
-                        this.animateStatCard(card, false);
-                    });
-                });
-
-                // Refresh button functionality
-                const refreshBtn = document.getElementById('refresh-dashboard');
-                if (refreshBtn) {
-                    refreshBtn.addEventListener('click', () => {
-                        this.refreshData();
-                    });
-                }
-            }
-
-            animateStatCard(card, isHover) {
-                const value = card.querySelector('.stat-value');
-                const icon = card.querySelector('.stat-icon');
-                
-                if (isHover) {
-                    if (value) value.style.transform = 'scale(1.05)';
-                    if (icon) icon.style.transform = 'rotate(5deg) scale(1.1)';
-                } else {
-                    if (value) value.style.transform = 'scale(1)';
-                    if (icon) icon.style.transform = 'rotate(0deg) scale(1)';
-                }
-            }
-
-            loadData() {
-                this.loadMeetings();
-                this.loadTasks();
-                this.updateStats();
-            }
-
-            async loadMeetings() {
-                const container = document.getElementById('recent-meetings-list');
-                if (!container) return;
-
+            
+            async loadStats() {
                 try {
-                    const response = await fetch('/api/meetings/recent?limit=5');
+                    const response = await fetch('/api/analytics/trends?days=30');
                     const data = await response.json();
                     
-                    if (data.meetings && data.meetings.length > 0) {
-                        container.innerHTML = data.meetings.map(meeting => `
-                            <div class="meeting-item">
-                                <div class="meeting-info">
-                                    <div class="meeting-title">${meeting.title || 'Untitled Meeting'}</div>
-                                    <div class="meeting-date">
-                                        <i data-feather="calendar" style="width: 14px; height: 14px;"></i>
-                                        ${new Date(meeting.created_at).toLocaleDateString()}
-                                    </div>
-                                </div>
-                                <div class="meeting-actions">
-                                    <span class="meeting-status status-${meeting.status || 'completed'}">${meeting.status || 'completed'}</span>
-                                    <button class="btn-icon" title="View meeting">
-                                        <i data-feather="eye"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        `).join('');
-                    } else {
-                        container.innerHTML = `
-                            <div class="empty-state">
-                                <i data-feather="calendar" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
-                                <p>No recent meetings</p>
-                                <a href="/live" class="btn btn-primary">
-                                    <i data-feather="plus"></i>
-                                    Start New Meeting
-                                </a>
-                            </div>
-                        `;
+                    if (data.success) {
+                        this.updateStatsDisplay(data.trends);
                     }
-                    this.initializeFeatherIcons();
                 } catch (error) {
-                    console.error('Error loading meetings:', error);
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <p>Unable to load meetings</p>
-                            <button class="btn btn-secondary" onclick="dashboard.loadMeetings()">
-                                <i data-feather="refresh-cw"></i>
-                                Try Again
-                            </button>
-                        </div>
-                    `;
+                    console.error('Failed to load dashboard stats:', error);
                 }
             }
-
-            async loadTasks() {
-                const container = document.getElementById('my-tasks-list');
-                if (!container) return;
-
-                try {
-                    const response = await fetch('/api/tasks/my-tasks');
-                    const data = await response.json();
-                    
-                    if (data.tasks && data.tasks.length > 0) {
-                        container.innerHTML = data.tasks.map(task => `
-                            <div class="task-item">
-                                <div class="task-content">
-                                    <div class="task-title">${task.title}</div>
-                                    <div class="task-meta">
-                                        <i data-feather="clock" style="width: 14px; height: 14px;"></i>
-                                        ${new Date(task.created_at).toLocaleDateString()}
-                                    </div>
-                                </div>
-                                <div class="task-actions">
-                                    <span class="task-status status-${task.status}">${task.status}</span>
-                                    <button class="btn-icon" title="Edit task">
-                                        <i data-feather="edit-2"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        `).join('');
-                    } else {
-                        container.innerHTML = `
-                            <div class="empty-state">
-                                <i data-feather="check-square" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
-                                <p>No tasks yet</p>
-                                <a href="/dashboard/tasks" class="btn btn-primary">
-                                    <i data-feather="plus"></i>
-                                    Create Task
-                                </a>
-                            </div>
-                        `;
-                    }
-                    this.initializeFeatherIcons();
-                } catch (error) {
-                    console.error('Error loading tasks:', error);
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <p>Unable to load tasks</p>
-                            <button class="btn btn-secondary" onclick="dashboard.loadTasks()">
-                                <i data-feather="refresh-cw"></i>
-                                Try Again
-                            </button>
-                        </div>
-                    `;
-                }
+            
+            updateStatsDisplay(stats) {
+                // Update active sessions
+                const activeSessions = stats.meetings?.total || 0;
+                this.animateValue(document.getElementById('active-sessions'), 0, activeSessions);
+                
+                // Update total hours
+                const totalHours = stats.transcription_hours?.total || 0;
+                this.animateValue(document.getElementById('total-hours'), 0, totalHours);
+                
+                // Update success rate
+                const successRate = stats.success_rate?.total || 0;
+                this.animateValue(document.getElementById('success-rate'), 0, successRate, '%');
+                
+                // Update average confidence
+                const avgConfidence = stats.avg_confidence?.total || 0;
+                this.animateValue(document.getElementById('avg-confidence'), 0, avgConfidence, '%');
             }
-
-            async updateStats() {
-                try {
-                    const [meetingsResponse, tasksResponse, analyticsResponse] = await Promise.all([
-                        fetch('/api/meetings/stats'),
-                        fetch('/api/tasks/stats'),
-                        fetch('/api/analytics/dashboard?days=7')
-                    ]);
-
-                    const meetingsData = await meetingsResponse.json();
-                    const tasksData = await tasksResponse.json();
-                    const analyticsData = await analyticsResponse.json();
-
-                    // Update stat cards with real data
-                    this.updateStatCard('total-meetings', meetingsData.total_meetings || 0);
-                    this.updateStatCard('total-tasks', tasksData.total_tasks || 0);
-                    this.updateStatCard('task-completion-rate', `${tasksData.completion_rate || 0}%`);
-                    this.updateStatCard('this-week-meetings', analyticsData.this_week_meetings || 0);
-                    this.updateStatCard('active-meetings', meetingsData.active_meetings || 0);
-                    this.updateStatCard('my-active-tasks', tasksData.active_tasks || 0);
-
-                } catch (error) {
-                    console.error('Error updating stats:', error);
-                }
-            }
-
-            updateStatCard(statName, value) {
-                const card = document.querySelector(`[data-stat="${statName}"]`);
-                if (card) {
-                    const valueElement = card.querySelector('.stat-value');
-                    if (valueElement) {
-                        // Animated number update
-                        const currentValue = parseInt(valueElement.textContent) || 0;
-                        const newValue = parseInt(value) || value;
-                        
-                        if (typeof newValue === 'number' && !isNaN(newValue)) {
-                            this.animateNumber(valueElement, currentValue, newValue);
-                        } else {
-                            valueElement.textContent = value;
-                        }
-                    }
-                }
-            }
-
-            animateNumber(element, start, end, duration = 1000) {
+            
+            animateValue(element, start, end, suffix = '') {
+                if (!element) return;
+                
+                const duration = 1000;
                 const range = end - start;
                 const increment = range / (duration / 16);
                 let current = start;
@@ -631,42 +194,55 @@
                         current = end;
                         clearInterval(timer);
                     }
-                    element.textContent = Math.round(current);
+                    element.textContent = Math.round(current) + suffix;
                 }, 16);
             }
-
-            refreshData() {
+            
+            async loadRecentActivity() {
+                try {
+                    // Load recent sessions as activity
+                    const activityContainer = document.getElementById('recent-activity');
+                    
+                    // Mock recent activity for now
+                    const activities = [
+                        { type: 'session', title: 'Morning Standup', time: '2 hours ago', status: 'completed' },
+                        { type: 'session', title: 'Client Review', time: '4 hours ago', status: 'completed' },
+                        { type: 'session', title: 'Team Planning', time: '1 day ago', status: 'completed' }
+                    ];
+                    
+                    activityContainer.innerHTML = activities.map(activity => `
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="fas fa-microphone"></i>
+                            </div>
+                            <div class="activity-content">
+                                <h4>${activity.title}</h4>
+                                <p>${activity.time} • ${activity.status}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                } catch (error) {
+                    console.error('Failed to load recent activity:', error);
+                }
+            }
+            
+            setupRefreshButton() {
                 const refreshBtn = document.getElementById('refresh-dashboard');
-                if (refreshBtn) {
+                refreshBtn?.addEventListener('click', () => {
                     refreshBtn.style.transform = 'rotate(360deg)';
                     setTimeout(() => {
                         refreshBtn.style.transform = 'rotate(0deg)';
                     }, 500);
-                }
-                
-                this.loadData();
+                    
+                    this.loadStats();
+                    this.loadRecentActivity();
+                });
             }
         }
 
         // Initialize dashboard when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
-            if (!window.dashboard) {
-                window.dashboard = new MinaDashboard();
-            }
-            
-            // Logo initialization is now handled automatically by MinaLogoManager via data attributes
+            new MinaDashboard();
         });
-
-        // Auto-refresh every 30 seconds (only once)
-        if (!window.dashboardRefreshInterval) {
-            window.dashboardRefreshInterval = setInterval(() => {
-                if (window.dashboard) {
-                    window.dashboard.updateStats();
-                }
-            }, 30000);
-        }
-        
-        } // End of MinaDashboard class conditional declaration
     </script>
-</body>
-</html>
+{% endblock %}
