@@ -125,9 +125,14 @@ def unified_transcribe_audio():
                 'processing_time': (time.time() - request_start_time) * 1000
             }), 400
         
-        # Validate audio size
-        if len(audio_data) < 100:
-            logger.info(f"ℹ️ Audio too short ({len(audio_data)} bytes) - returning empty result")
+        # Enhanced audio validation with different thresholds for interim vs final
+        min_size_interim = 1000  # 1KB minimum for interim
+        min_size_final = 500     # 500 bytes minimum for final
+        
+        required_size = min_size_interim if is_interim else min_size_final
+        
+        if len(audio_data) < required_size:
+            logger.info(f"ℹ️ Audio too short ({len(audio_data)} bytes, need {required_size}) - returning empty result")
             return jsonify({
                 'success': True,
                 'text': '',
@@ -136,7 +141,11 @@ def unified_transcribe_audio():
                 'session_id': session_id,
                 'chunk_id': chunk_id,
                 'is_interim': is_interim,
-                'message': 'Audio too short for transcription',
+                'is_final': not is_interim,
+                'audio_duration_ms': 0,
+                'word_count': 0,
+                'timestamp': time.time(),
+                'message': f'Audio too short for {"interim" if is_interim else "final"} transcription',
                 'processing_time': (time.time() - request_start_time) * 1000
             })
         
@@ -255,13 +264,43 @@ def unified_transcribe_audio():
             logger.error(f"❌ Whisper API error: {whisper_error}")
             processing_time = (time.time() - request_start_time) * 1000
             
+            error_message = str(whisper_error)
+            status_code = 500
+            
+            # Handle specific OpenAI API errors gracefully
+            if 'audio_too_short' in error_message.lower():
+                logger.info(f"ℹ️ Audio too short for Whisper API (session: {session_id})")
+                return jsonify({
+                    'success': True,
+                    'text': '',
+                    'final_text': '',
+                    'confidence': 0.0,
+                    'session_id': session_id,
+                    'chunk_id': chunk_id,
+                    'is_interim': is_interim,
+                    'is_final': not is_interim,
+                    'message': 'Audio duration insufficient for transcription',
+                    'processing_time': processing_time
+                })
+            elif 'rate_limit' in error_message.lower():
+                status_code = 429
+                error_message = 'Transcription service temporarily overloaded. Please try again.'
+            elif 'quota' in error_message.lower() or 'billing' in error_message.lower():
+                status_code = 402
+                error_message = 'Transcription service quota exceeded. Please contact support.'
+            elif 'invalid_request' in error_message.lower():
+                status_code = 400
+                error_message = 'Invalid audio format for transcription service.'
+            
             return jsonify({
-                'error': f'Transcription failed: {str(whisper_error)}',
+                'error': error_message,
                 'success': False,
                 'session_id': session_id,
                 'chunk_id': chunk_id,
-                'processing_time': processing_time
-            }), 500
+                'is_interim': is_interim,
+                'processing_time': processing_time,
+                'retry_suggestion': 'Consider reducing audio quality or checking microphone permissions' if status_code == 400 else None
+            }), status_code
             
     except Exception as e:
         logger.error(f"❌ Critical error in unified transcription API: {e}", exc_info=True)

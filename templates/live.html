@@ -2124,6 +2124,13 @@
                 this.autoScroll = true;
                 this.chunkCounter = 0; // Track audio chunks for real-time transcription
                 
+                // Audio buffering for robust transcription
+                this.audioBuffer = [];
+                this.bufferDuration = 0;
+                this.minBufferDuration = 1000; // Minimum 1 second before sending
+                this.maxBufferDuration = 3000; // Maximum 3 seconds buffer
+                this.lastTranscriptionTime = 0;
+                
                 // Metrics
                 this.metrics = {
                     latency: 0,
@@ -2655,8 +2662,8 @@
                         if (event.data.size > 0) {
                             this.audioChunks.push(event.data);
                             
-                            // Send audio chunk for real-time transcription via HTTP API
-                            this.sendAudioChunkForTranscription(event.data, true); // is_interim = true
+                            // Add to buffer for intelligent processing
+                            this.addToAudioBuffer(event.data);
                         }
                     };
                     
@@ -2693,7 +2700,12 @@
                 if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
                     this.mediaRecorder.stop();
                     
-                    // Send any remaining audio chunks as final
+                    // Process any remaining buffer first
+                    if (this.audioBuffer.length > 0) {
+                        await this.processAudioBuffer();
+                    }
+                    
+                    // Send complete recording as final transcription
                     if (this.audioChunks.length > 0) {
                         const finalBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
                         await this.sendAudioChunkForTranscription(finalBlob, false); // is_interim = false
@@ -2707,6 +2719,8 @@
                 
                 this.isRecording = false;
                 this.audioChunks = [];
+                this.audioBuffer = [];
+                this.bufferDuration = 0;
                 this.chunkCounter = 0; // Reset counter for next recording
                 
                 // End the session to get final transcript
@@ -3030,8 +3044,63 @@
                 this.showToast(`Auto-scroll ${this.autoScroll ? 'enabled' : 'disabled'}`, 'info');
             }
             
+            addToAudioBuffer(audioBlob) {
+                this.audioBuffer.push({
+                    blob: audioBlob,
+                    timestamp: Date.now(),
+                    size: audioBlob.size
+                });
+                
+                // Estimate buffer duration (rough calculation: 250ms per chunk)
+                this.bufferDuration = this.audioBuffer.length * 250;
+                
+                console.log(`📼 Audio buffer: ${this.audioBuffer.length} chunks, ~${this.bufferDuration}ms duration`);
+                
+                // Send buffer if it meets minimum requirements or maximum is reached
+                if (this.bufferDuration >= this.minBufferDuration || 
+                    this.bufferDuration >= this.maxBufferDuration) {
+                    this.processAudioBuffer();
+                }
+            }
+            
+            async processAudioBuffer() {
+                if (this.audioBuffer.length === 0) return;
+                
+                try {
+                    // Combine all buffered audio chunks
+                    const combinedBlob = new Blob(
+                        this.audioBuffer.map(item => item.blob), 
+                        { type: 'audio/webm' }
+                    );
+                    
+                    const totalSize = this.audioBuffer.reduce((sum, item) => sum + item.size, 0);
+                    console.log(`🎯 Processing buffer: ${this.audioBuffer.length} chunks, ${totalSize} bytes, ~${this.bufferDuration}ms`);
+                    
+                    // Send for transcription
+                    await this.sendAudioChunkForTranscription(combinedBlob, true);
+                    
+                    // Clear buffer but keep small overlap for continuity
+                    const keepLast = Math.min(2, this.audioBuffer.length);
+                    this.audioBuffer = this.audioBuffer.slice(-keepLast);
+                    this.bufferDuration = keepLast * 250;
+                    
+                } catch (error) {
+                    console.error('❌ Error processing audio buffer:', error);
+                    // Clear buffer on error to prevent stuck state
+                    this.audioBuffer = [];
+                    this.bufferDuration = 0;
+                }
+            }
+
             async sendAudioChunkForTranscription(audioBlob, isInterim = false) {
                 try {
+                    // Skip if too soon after last transcription to reduce API load
+                    const now = Date.now();
+                    if (isInterim && (now - this.lastTranscriptionTime) < 500) {
+                        console.log('⏱️ Skipping transcription (too soon after last)');
+                        return;
+                    }
+                    
                     console.log(`🎤 Sending ${isInterim ? 'interim' : 'final'} audio chunk (${audioBlob.size} bytes)`);
                     
                     const formData = new FormData();
@@ -3051,11 +3120,11 @@
                     });
                     
                     const latency = Date.now() - startTime;
-                    console.log(`⚡ Transcription response latency: ${latency}ms`);
+                    this.lastTranscriptionTime = now;
                     
                     if (response.ok) {
                         const result = await response.json();
-                        console.log(`✅ Transcription result:`, result);
+                        console.log(`✅ Transcription result (${latency}ms):`, result.text);
                         
                         if (result.text && result.text.trim()) {
                             // Process the transcription result
@@ -3069,10 +3138,19 @@
                             });
                         }
                     } else {
-                        console.error('❌ Transcription request failed:', response.status);
+                        const errorText = await response.text();
+                        console.warn(`⚠️ Transcription failed (${response.status}):`, errorText);
+                        
+                        // Don't show errors for interim requests to avoid spam
+                        if (!isInterim) {
+                            this.showToast('Transcription temporarily unavailable', 'warning');
+                        }
                     }
                 } catch (error) {
                     console.error('❌ Error sending audio chunk:', error);
+                    if (!isInterim) {
+                        this.showToast('Network error during transcription', 'error');
+                    }
                 }
             }
 
