@@ -356,7 +356,9 @@ class HealthMonitor:
             if len(self.memory_samples) >= 2:
                 time_diff = current_time - self.last_memory_check
                 if time_diff > 60:  # Check every minute
-                    memory_diff = current_memory_mb - self.memory_samples[0]
+                    # Get oldest sample safely
+                    oldest_sample = list(self.memory_samples)[0]
+                    memory_diff = current_memory_mb - oldest_sample
                     growth_rate = memory_diff / (time_diff / 60.0)  # MB per minute
                     
                     self.record_metric('memory_growth_rate', growth_rate, current_time)
@@ -368,7 +370,9 @@ class HealthMonitor:
                         
                     # Reset samples if we have enough data
                     if len(self.memory_samples) > 10:
-                        self.memory_samples = deque(self.memory_samples[-5:], maxlen=20)
+                        # Convert to list first, then slice, then back to deque
+                        recent_samples = list(self.memory_samples)[-5:]
+                        self.memory_samples = deque(recent_samples, maxlen=20)
             
         except Exception as e:
             logger.error(f"❌ Memory leak detection failed: {e}")
