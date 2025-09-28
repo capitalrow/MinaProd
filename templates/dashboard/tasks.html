@@ -1,369 +1,465 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tasks - Mina</title>
-    
-    <!-- Core CSS -->
+{% extends "base.html" %}
+
+{% block title %}Tasks - {{ super() }}{% endblock %}
+
+{% block head %}
+    <!-- Core Dashboard CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
     <script src="https://unpkg.com/feather-icons"></script>
-    <script src="{{ url_for('static', filename='js/mina-animated-logo.js') }}"></script>
     
     <style>
         .kanban-board {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: var(--mina-space-8);
-            margin-top: var(--mina-space-6);
+            gap: 2rem;
+            margin-top: 1.5rem;
         }
         
         .kanban-column {
-            background: var(--glass-bg-strong);
-            backdrop-filter: var(--glass-blur);
-            border-radius: var(--mina-radius-xl);
-            border: 1px solid var(--glass-border);
+            background: var(--bg-secondary);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
             overflow: hidden;
+            min-height: 500px;
         }
         
         .kanban-header {
-            padding: var(--mina-space-6);
-            border-bottom: 1px solid var(--glass-border);
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         
         .kanban-title {
-            font-weight: var(--mina-font-weight-semibold);
-            color: var(--mina-text-primary);
+            font-weight: 600;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
-            gap: var(--mina-space-2);
+            gap: 0.5rem;
         }
         
         .task-count {
-            background: var(--mina-bg-accent);
-            color: var(--mina-text-secondary);
-            padding: var(--mina-space-1) var(--mina-space-2);
-            border-radius: var(--mina-radius-full);
-            font-size: var(--mina-font-size-xs);
-            font-weight: var(--mina-font-weight-semibold);
+            background: var(--accent-primary);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 500;
         }
         
         .kanban-body {
-            padding: var(--mina-space-6);
-            min-height: 400px;
+            padding: 1rem;
         }
         
         .task-card {
-            background: var(--mina-bg-primary);
-            border: 1px solid var(--mina-border-primary);
-            border-radius: var(--mina-radius-lg);
-            padding: var(--mina-space-4);
-            margin-bottom: var(--mina-space-4);
-            transition: all var(--mina-transition-base);
-            cursor: pointer;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: move;
+            transition: all 0.2s ease;
         }
         
         .task-card:hover {
             transform: translateY(-2px);
-            box-shadow: var(--elevation-3);
-            border-color: var(--mina-primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         
-        .task-card-title {
-            font-weight: var(--mina-font-weight-semibold);
-            color: var(--mina-text-primary);
-            margin-bottom: var(--mina-space-2);
-            font-size: var(--mina-font-size-sm);
+        .task-title {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
         }
         
-        .task-card-meta {
+        .task-meta {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: var(--mina-space-3);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
         }
         
         .task-priority {
-            padding: var(--mina-space-1) var(--mina-space-2);
-            border-radius: var(--mina-radius-sm);
-            font-size: var(--mina-font-size-xs);
-            font-weight: var(--mina-font-weight-semibold);
-            text-transform: uppercase;
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
         }
         
-        .priority-high {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--mina-danger-dark);
+        .priority-high { background: rgba(239, 68, 68, 0.1); color: rgb(239, 68, 68); }
+        .priority-medium { background: rgba(234, 179, 8, 0.1); color: rgb(234, 179, 8); }
+        .priority-low { background: rgba(34, 197, 94, 0.1); color: rgb(34, 197, 94); }
+        
+        .add-task-btn {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px dashed var(--border-color);
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
         
-        .priority-medium {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--mina-warning-dark);
-        }
-        
-        .priority-low {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--mina-success-dark);
-        }
-        
-        .task-due-date {
-            font-size: var(--mina-font-size-xs);
-            color: var(--mina-text-muted);
-        }
-        
-        @media (max-width: 1024px) {
-            .kanban-board {
-                grid-template-columns: 1fr;
-                gap: var(--mina-space-6);
-            }
+        .add-task-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
         }
     </style>
-</head>
-<body>
-    <!-- Dark Mode Toggle -->
-    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
-        <i data-feather="sun" id="themeIcon"></i>
-    </button>
+{% endblock %}
 
-    <div class="dashboard-layout">
-        <aside class="sidebar">
-            <div class="sidebar-logo">
-                <div class="sidebar-logo-container">
-                    <svg class="sidebar-logo-icon mina-logo-size-lg mina-logo-sidebar" width="44" height="44" aria-label="Mina logo">
-                        <use href="#minaEnhancedLogo"/>
-                        <!-- Fallback for no-JS/failed-load -->
-                        <g class="mina-fallback" style="display: none;">
-                            <defs>
-                                <linearGradient id="tasksFallbackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="var(--mina-primary, #6366F1)"/>
-                                    <stop offset="100%" stop-color="var(--mina-secondary, #8B5CF6)"/>
-                                </linearGradient>
-                            </defs>
-                            <rect x="9" y="13" width="6" height="22" rx="3" fill="url(#tasksFallbackGrad)"/>
-                            <rect x="19" y="17" width="6" height="16" rx="3" fill="url(#tasksFallbackGrad)"/>
-                            <rect x="29" y="13" width="6" height="22" rx="3" fill="url(#tasksFallbackGrad)"/>
-                            <rect x="9" y="37" width="26" height="3" rx="1.5" fill="url(#tasksFallbackGrad)"/>
-                        </g>
-                    </svg>
-                    <div class="sidebar-logo-text">Mina</div>
+{% block content %}
+    <div class="main-content">
+        <!-- Tasks Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <h1 class="dashboard-title">
+                    <i class="fas fa-tasks"></i>
+                    Tasks
+                </h1>
+                <div class="header-actions">
+                    <button class="btn btn-outline-primary" id="refresh-tasks">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
+                    </button>
+                    <button class="btn btn-primary" id="new-task">
+                        <i class="fas fa-plus"></i>
+                        New Task
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-list"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number" id="total-tasks">0</h3>
+                    <p class="stat-label">Total Tasks</p>
                 </div>
             </div>
             
-            <nav>
-                <ul class="nav-menu">
-                    <li class="nav-item">
-                        <a href="{{ url_for('dashboard.index') }}" class="nav-link">
-                            <i data-feather="home"></i>
-                            Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('pages.live') }}" class="nav-link">
-                            <i data-feather="mic"></i>
-                            Live Meeting
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('dashboard.meetings') }}" class="nav-link">
-                            <i data-feather="users"></i>
-                            Meetings
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('dashboard.tasks') }}" class="nav-link active">
-                            <i data-feather="check-square"></i>
-                            Tasks
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('dashboard.analytics') }}" class="nav-link">
-                            <i data-feather="bar-chart-2"></i>
-                            Analytics
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-            
-            <div class="user-info">
-                <div class="user-name">{{ current_user.first_name or current_user.username }}</div>
-                <div class="user-email">{{ current_user.email }}</div>
-                <a href="{{ url_for('auth.logout') }}" class="nav-link">
-                    <i data-feather="log-out"></i>
-                    Sign Out
-                </a>
-            </div>
-        </aside>
-        
-        <main class="main-content">
-            <header class="dashboard-header">
-                <h1 class="dashboard-title">Tasks</h1>
-                <p class="dashboard-subtitle">Manage action items and follow-ups from your meetings.</p>
-            </header>
-            
-            <!-- Kanban Board -->
-            <div class="kanban-board">
-                <!-- To Do Column -->
-                <div class="kanban-column">
-                    <div class="kanban-header">
-                        <div class="kanban-title">
-                            <i data-feather="circle" style="width: 16px; height: 16px;"></i>
-                            To Do
-                        </div>
-                        <span class="task-count">{{ todo_tasks|length }}</span>
-                    </div>
-                    <div class="kanban-body">
-                        {% for task in todo_tasks %}
-                        <div class="task-card">
-                            <div class="task-card-title">{{ task.title }}</div>
-                            {% if task.description %}
-                                <div style="font-size: var(--mina-font-size-xs); color: var(--mina-text-muted); margin-bottom: var(--mina-space-2);">
-                                    {{ task.description[:100] }}{% if task.description|length > 100 %}...{% endif %}
-                                </div>
-                            {% endif %}
-                            <div class="task-card-meta">
-                                <span class="task-priority priority-{{ task.priority or 'medium' }}">
-                                    {{ (task.priority or 'medium').title() }}
-                                </span>
-                                {% if task.due_date %}
-                                    <span class="task-due-date">
-                                        Due {{ task.due_date.strftime('%m/%d') }}
-                                    </span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                        
-                        {% if not todo_tasks %}
-                            <div style="text-align: center; color: var(--mina-text-muted); padding: var(--mina-space-8);">
-                                <i data-feather="check-circle" style="width: 32px; height: 32px; margin-bottom: var(--mina-space-4); opacity: 0.5;"></i>
-                                <p>No pending tasks</p>
-                            </div>
-                        {% endif %}
-                    </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-play"></i>
                 </div>
-                
-                <!-- In Progress Column -->
-                <div class="kanban-column">
-                    <div class="kanban-header">
-                        <div class="kanban-title">
-                            <i data-feather="play-circle" style="width: 16px; height: 16px;"></i>
-                            In Progress
-                        </div>
-                        <span class="task-count">{{ in_progress_tasks|length }}</span>
-                    </div>
-                    <div class="kanban-body">
-                        {% for task in in_progress_tasks %}
-                        <div class="task-card">
-                            <div class="task-card-title">{{ task.title }}</div>
-                            {% if task.description %}
-                                <div style="font-size: var(--mina-font-size-xs); color: var(--mina-text-muted); margin-bottom: var(--mina-space-2);">
-                                    {{ task.description[:100] }}{% if task.description|length > 100 %}...{% endif %}
-                                </div>
-                            {% endif %}
-                            <div class="task-card-meta">
-                                <span class="task-priority priority-{{ task.priority or 'medium' }}">
-                                    {{ (task.priority or 'medium').title() }}
-                                </span>
-                                {% if task.due_date %}
-                                    <span class="task-due-date">
-                                        Due {{ task.due_date.strftime('%m/%d') }}
-                                    </span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                        
-                        {% if not in_progress_tasks %}
-                            <div style="text-align: center; color: var(--mina-text-muted); padding: var(--mina-space-8);">
-                                <i data-feather="clock" style="width: 32px; height: 32px; margin-bottom: var(--mina-space-4); opacity: 0.5;"></i>
-                                <p>No tasks in progress</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <!-- Completed Column -->
-                <div class="kanban-column">
-                    <div class="kanban-header">
-                        <div class="kanban-title">
-                            <i data-feather="check-circle" style="width: 16px; height: 16px;"></i>
-                            Completed
-                        </div>
-                        <span class="task-count">{{ completed_tasks|length }}</span>
-                    </div>
-                    <div class="kanban-body">
-                        {% for task in completed_tasks %}
-                        <div class="task-card">
-                            <div class="task-card-title">{{ task.title }}</div>
-                            {% if task.description %}
-                                <div style="font-size: var(--mina-font-size-xs); color: var(--mina-text-muted); margin-bottom: var(--mina-space-2);">
-                                    {{ task.description[:100] }}{% if task.description|length > 100 %}...{% endif %}
-                                </div>
-                            {% endif %}
-                            <div class="task-card-meta">
-                                <span class="task-priority priority-{{ task.priority or 'medium' }}">
-                                    {{ (task.priority or 'medium').title() }}
-                                </span>
-                                {% if task.completed_at %}
-                                    <span class="task-due-date">
-                                        {{ task.completed_at.strftime('%m/%d') }}
-                                    </span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                        
-                        {% if not completed_tasks %}
-                            <div style="text-align: center; color: var(--mina-text-muted); padding: var(--mina-space-8);">
-                                <i data-feather="calendar" style="width: 32px; height: 32px; margin-bottom: var(--mina-space-4); opacity: 0.5;"></i>
-                                <p>No completed tasks</p>
-                                <p style="font-size: var(--mina-font-size-xs); margin-top: var(--mina-space-2);">
-                                    Tasks will appear here when marked as completed
-                                </p>
-                            </div>
-                        {% endif %}
-                    </div>
+                <div class="stat-content">
+                    <h3 class="stat-number" id="todo-tasks">0</h3>
+                    <p class="stat-label">To Do</p>
                 </div>
             </div>
-        </main>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-spinner"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number" id="progress-tasks">0</h3>
+                    <p class="stat-label">In Progress</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number" id="done-tasks">0</h3>
+                    <p class="stat-label">Completed</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kanban Board -->
+        <div class="kanban-board">
+            <!-- To Do Column -->
+            <div class="kanban-column">
+                <div class="kanban-header">
+                    <h3 class="kanban-title">
+                        <i class="fas fa-list"></i>
+                        To Do
+                    </h3>
+                    <span class="task-count" id="todo-count">0</span>
+                </div>
+                <div class="kanban-body" id="todo-tasks-container">
+                    <button class="add-task-btn" onclick="addTask('todo')">
+                        <i class="fas fa-plus"></i>
+                        Add Task
+                    </button>
+                </div>
+            </div>
+            
+            <!-- In Progress Column -->
+            <div class="kanban-column">
+                <div class="kanban-header">
+                    <h3 class="kanban-title">
+                        <i class="fas fa-spinner"></i>
+                        In Progress
+                    </h3>
+                    <span class="task-count" id="progress-count">0</span>
+                </div>
+                <div class="kanban-body" id="progress-tasks-container">
+                    <button class="add-task-btn" onclick="addTask('progress')">
+                        <i class="fas fa-plus"></i>
+                        Add Task
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Done Column -->
+            <div class="kanban-column">
+                <div class="kanban-header">
+                    <h3 class="kanban-title">
+                        <i class="fas fa-check"></i>
+                        Done
+                    </h3>
+                    <span class="task-count" id="done-count">0</span>
+                </div>
+                <div class="kanban-body" id="done-tasks-container">
+                    <button class="add-task-btn" onclick="addTask('done')">
+                        <i class="fas fa-plus"></i>
+                        Add Task
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
+{% endblock %}
 
+{% block scripts %}
     <script>
-        // Initialize theme toggle
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        const currentTheme = localStorage.getItem('mina-theme') || 'light';
+        // Initialize Feather icons
+        feather.replace();
         
-        document.documentElement.setAttribute('data-theme', currentTheme);
-        themeIcon.setAttribute('data-feather', currentTheme === 'light' ? 'moon' : 'sun');
-        
-        themeToggle.addEventListener('click', () => {
-            const newTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('mina-theme', newTheme);
+        class TaskManager {
+            constructor() {
+                this.tasks = [];
+                this.init();
+            }
             
-            themeIcon.style.transform = 'scale(0)';
-            setTimeout(() => {
-                themeIcon.setAttribute('data-feather', newTheme === 'light' ? 'moon' : 'sun');
-                if (typeof feather !== 'undefined') {
-                    feather.replace();
+            init() {
+                this.loadTasks();
+                this.setupEventListeners();
+            }
+            
+            async loadTasks() {
+                try {
+                    // Load tasks from API or localStorage
+                    const savedTasks = localStorage.getItem('mina-tasks');
+                    if (savedTasks) {
+                        this.tasks = JSON.parse(savedTasks);
+                    } else {
+                        // Sample tasks
+                        this.tasks = [
+                            {
+                                id: '1',
+                                title: 'Review meeting transcripts from last week',
+                                status: 'todo',
+                                priority: 'high',
+                                createdAt: new Date().toISOString()
+                            },
+                            {
+                                id: '2',
+                                title: 'Update transcription settings',
+                                status: 'progress',
+                                priority: 'medium',
+                                createdAt: new Date().toISOString()
+                            },
+                            {
+                                id: '3',
+                                title: 'Export monthly analytics report',
+                                status: 'done',
+                                priority: 'low',
+                                createdAt: new Date().toISOString()
+                            }
+                        ];
+                    }
+                    
+                    this.updateStats();
+                    this.renderTasks();
+                } catch (error) {
+                    console.error('Failed to load tasks:', error);
                 }
-                themeIcon.style.transform = 'scale(1)';
-            }, 150);
-        });
-        
-        // Initialize feather icons
-        if (typeof feather !== 'undefined') {
-            feather.replace();
+            }
+            
+            updateStats() {
+                const todoTasks = this.tasks.filter(t => t.status === 'todo').length;
+                const progressTasks = this.tasks.filter(t => t.status === 'progress').length;
+                const doneTasks = this.tasks.filter(t => t.status === 'done').length;
+                
+                document.getElementById('total-tasks').textContent = this.tasks.length;
+                document.getElementById('todo-tasks').textContent = todoTasks;
+                document.getElementById('progress-tasks').textContent = progressTasks;
+                document.getElementById('done-tasks').textContent = doneTasks;
+                
+                document.getElementById('todo-count').textContent = todoTasks;
+                document.getElementById('progress-count').textContent = progressTasks;
+                document.getElementById('done-count').textContent = doneTasks;
+            }
+            
+            renderTasks() {
+                this.renderTasksInColumn('todo', 'todo-tasks-container');
+                this.renderTasksInColumn('progress', 'progress-tasks-container');
+                this.renderTasksInColumn('done', 'done-tasks-container');
+            }
+            
+            renderTasksInColumn(status, containerId) {
+                const container = document.getElementById(containerId);
+                const tasks = this.tasks.filter(task => task.status === status);
+                
+                // Clear existing tasks (keep add button)
+                const addButton = container.querySelector('.add-task-btn');
+                container.innerHTML = '';
+                
+                // Render tasks
+                tasks.forEach(task => {
+                    container.appendChild(this.createTaskElement(task));
+                });
+                
+                // Re-add the add button
+                container.appendChild(addButton);
+            }
+            
+            createTaskElement(task) {
+                const taskElement = document.createElement('div');
+                taskElement.className = 'task-card';
+                taskElement.draggable = true;
+                taskElement.dataset.taskId = task.id;
+                
+                taskElement.innerHTML = `
+                    <div class="task-title">${task.title}</div>
+                    <div class="task-meta">
+                        <span class="task-priority priority-${task.priority}">${task.priority}</span>
+                        <span>${new Date(task.createdAt).toLocaleDateString()}</span>
+                    </div>
+                `;
+                
+                // Add drag and drop event listeners
+                taskElement.addEventListener('dragstart', this.handleDragStart.bind(this));
+                taskElement.addEventListener('dragend', this.handleDragEnd.bind(this));
+                
+                return taskElement;
+            }
+            
+            handleDragStart(e) {
+                e.dataTransfer.setData('text/plain', e.target.dataset.taskId);
+                e.target.style.opacity = '0.5';
+            }
+            
+            handleDragEnd(e) {
+                e.target.style.opacity = '1';
+            }
+            
+            setupEventListeners() {
+                // Setup drop zones
+                ['todo-tasks-container', 'progress-tasks-container', 'done-tasks-container'].forEach(containerId => {
+                    const container = document.getElementById(containerId);
+                    container.addEventListener('dragover', this.handleDragOver.bind(this));
+                    container.addEventListener('drop', this.handleDrop.bind(this));
+                });
+                
+                // New task button
+                document.getElementById('new-task').addEventListener('click', () => {
+                    this.showNewTaskDialog();
+                });
+                
+                // Refresh button
+                document.getElementById('refresh-tasks').addEventListener('click', () => {
+                    this.loadTasks();
+                });
+            }
+            
+            handleDragOver(e) {
+                e.preventDefault();
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+            }
+            
+            handleDrop(e) {
+                e.preventDefault();
+                e.currentTarget.style.backgroundColor = '';
+                
+                const taskId = e.dataTransfer.getData('text/plain');
+                const containerId = e.currentTarget.id;
+                let newStatus;
+                
+                if (containerId === 'todo-tasks-container') newStatus = 'todo';
+                else if (containerId === 'progress-tasks-container') newStatus = 'progress';
+                else if (containerId === 'done-tasks-container') newStatus = 'done';
+                
+                this.updateTaskStatus(taskId, newStatus);
+            }
+            
+            updateTaskStatus(taskId, newStatus) {
+                const task = this.tasks.find(t => t.id === taskId);
+                if (task) {
+                    task.status = newStatus;
+                    this.saveTasks();
+                    this.updateStats();
+                    this.renderTasks();
+                }
+            }
+            
+            showNewTaskDialog() {
+                const title = prompt('Enter task title:');
+                if (title) {
+                    const priority = prompt('Enter priority (high, medium, low):') || 'medium';
+                    this.addTask({
+                        title,
+                        status: 'todo',
+                        priority,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+            }
+            
+            addTask(taskData) {
+                const task = {
+                    id: Date.now().toString(),
+                    ...taskData
+                };
+                
+                this.tasks.push(task);
+                this.saveTasks();
+                this.updateStats();
+                this.renderTasks();
+            }
+            
+            saveTasks() {
+                localStorage.setItem('mina-tasks', JSON.stringify(this.tasks));
+            }
         }
+        
+        // Global function for add task buttons
+        function addTask(status) {
+            const title = prompt('Enter task title:');
+            if (title) {
+                const priority = prompt('Enter priority (high, medium, low):') || 'medium';
+                window.taskManager.addTask({
+                    title,
+                    status,
+                    priority,
+                    createdAt: new Date().toISOString()
+                });
+            }
+        }
+
+        // Initialize task manager when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.taskManager = new TaskManager();
+        });
     </script>
-</body>
-</html>
+{% endblock %}
