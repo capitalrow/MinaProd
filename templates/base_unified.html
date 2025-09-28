@@ -184,10 +184,68 @@
             100% { transform: translateX(150%) translateY(150%) rotate(-45deg); opacity: 0; }
         }
         
-        /* Hide wave effects at small sizes */
-        @media (max-width: 768px) {
+        /* Responsive Sizing and Progressive Enhancement */
+        @media (max-width: 480px) {
+            .nav-brand-icon {
+                width: 20px;
+                height: 20px;
+            }
+            .sidebar-logo-icon {
+                width: 24px;
+                height: 24px;
+            }
+            /* Simplify effects at smallest sizes */
             .mina-waves {
                 display: none;
+            }
+            .mina-inner-glow,
+            .mina-metallic-overlay {
+                opacity: 0.3;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .nav-brand-icon {
+                width: 22px;
+                height: 22px;
+            }
+            .sidebar-logo-icon {
+                width: 28px;
+                height: 28px;
+            }
+            /* Reduce wave complexity */
+            .mina-waves {
+                opacity: 0.5;
+            }
+        }
+        
+        @media (min-width: 1200px) {
+            .nav-brand-icon {
+                width: 28px;
+                height: 28px;
+            }
+            .sidebar-logo-icon {
+                width: 36px;
+                height: 36px;
+            }
+            /* Enhanced effects on larger screens */
+            .mina-waves {
+                opacity: 1;
+            }
+        }
+        
+        /* Enhanced Theme Support */
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme]) {
+                --mina-icon-highlight: #7DD3FC;
+                --mina-icon-primary: #38BDF8;
+                --mina-icon-secondary: #8B5CF6;
+                --mina-icon-accent: #A855F7;
+                --mina-icon-depth: #7C3AED;
+                --mina-icon-depth-deep: #6B46C1;
+                --mina-icon-specular: #F8FAFC;
+                --mina-icon-shadow: rgba(0,0,0,0.4);
+                --mina-icon-wave: rgba(139, 92, 246, 0.2);
             }
         }
         
@@ -199,8 +257,26 @@
             .nav-brand:hover .nav-brand-icon {
                 transform: none;
             }
-            #minaSheen animateTransform {
+            .nav-brand-icon .mina-bars,
+            .mina-bar-left,
+            .mina-bar-middle,
+            .mina-bar-right {
+                animation: none !important;
+            }
+            #minaSheen animateTransform,
+            .mina-waves animate {
                 animation-duration: 0.01ms !important;
+            }
+        }
+        
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .nav-brand-icon {
+                --mina-icon-shadow: rgba(0,0,0,0.8);
+            }
+            .mina-metallic-overlay,
+            .mina-inner-glow {
+                opacity: 0.8 !important;
             }
         }
         
