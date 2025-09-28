@@ -1627,6 +1627,9 @@
                         console.log('✅ Connected to transcription server');
                         this.updateStatus('Connected to server', 'connected');
                         
+                        // Generate session ID when connecting
+                        this.sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                        
                         // Join session when connected
                         this.socket.emit('join_session', {
                             session_id: this.sessionId
@@ -1721,8 +1724,7 @@
                         this.showToast('Recording error: ' + error.message, 'error');
                     };
                     
-                    // Start recording
-                    this.sessionId = 'session_' + Date.now();
+                    // Start recording (sessionId already created during connect)
                     this.startTime = Date.now();
                     this.isRecording = true;
                     this.isProcessing = false;
