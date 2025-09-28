@@ -1003,10 +1003,71 @@ if (typeof window !== 'undefined') {
         minaLogoManager.autoInitialize();
     }
     
-    // Handle visibility changes for performance
+    // Enterprise-grade performance and accessibility monitoring
+    const enterprisePerformanceMonitor = {
+        metrics: {
+            renderCount: 0,
+            avgRenderTime: 0,
+            lastRenderTime: 0,
+            memoryUsage: 0
+        },
+        
+        setupAccessibilityFeatures() {
+            // Respect prefers-reduced-motion for enterprise accessibility compliance
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.documentElement.style.setProperty('--mina-animation-duration', '0s');
+                document.querySelectorAll('.mina-ultra-depth-3d-icon').forEach(logo => {
+                    logo.style.animation = 'none';
+                });
+            }
+            
+            // High contrast mode support for enterprise environments
+            if (window.matchMedia('(prefers-contrast: high)').matches) {
+                document.documentElement.style.setProperty('--mina-filter-intensity', '1.5');
+            }
+            
+            // Enterprise keyboard navigation support
+            document.querySelectorAll('[data-mina-logo]').forEach(logo => {
+                logo.setAttribute('tabindex', '0');
+                logo.setAttribute('role', 'img');
+                logo.setAttribute('aria-label', 'Mina Enterprise Logo');
+            });
+        },
+        
+        trackPerformance() {
+            // Monitor memory usage for enterprise applications
+            if (performance.memory) {
+                this.metrics.memoryUsage = performance.memory.usedJSHeapSize;
+            }
+            
+            // Log performance metrics for enterprise monitoring
+            if (this.metrics.renderCount > 0 && this.metrics.renderCount % 10 === 0) {
+                console.debug('Mina Logo Performance Metrics:', {
+                    renders: this.metrics.renderCount,
+                    avgTime: `${this.metrics.avgRenderTime.toFixed(2)}ms`,
+                    memory: `${(this.metrics.memoryUsage / 1024 / 1024).toFixed(2)}MB`
+                });
+            }
+        }
+    };
+    
+    // Handle visibility changes for enterprise performance optimization
     document.addEventListener('visibilitychange', () => {
         if (document.hidden && minaLogoManager) {
             minaLogoManager.pauseAnimationsOnLowPower();
+        }
+        enterprisePerformanceMonitor.trackPerformance();
+    });
+    
+    // Enterprise accessibility setup
+    enterprisePerformanceMonitor.setupAccessibilityFeatures();
+    
+    // Monitor media query changes for dynamic accessibility
+    window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => {
+        if (e.matches) {
+            document.documentElement.style.setProperty('--mina-animation-duration', '0s');
+        } else {
+            document.documentElement.style.removeProperty('--mina-animation-duration');
         }
     });
 }
