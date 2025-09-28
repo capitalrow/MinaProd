@@ -147,7 +147,7 @@
                                        class="btn btn-outline-primary btn-sm" title="View Sessions">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ url_for('export.export_session_text', session_id=session.id) }}" 
+                                    <a href="{{ url_for('sessions.export_session_markdown', session_id=session.id) }}" 
                                        class="btn btn-outline-secondary btn-sm" title="Download">
                                         <i class="fas fa-download"></i>
                                     </a>
