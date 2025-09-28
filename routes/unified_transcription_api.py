@@ -184,29 +184,34 @@ def unified_transcribe_audio():
                 'processing_time': (time.time() - request_start_time) * 1000
             }), 400
         
-        # Transcribe using OpenAI Whisper
-        try:
-            client = get_openai_client()
-            
-            # Create temporary file for Whisper API
-            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
-                temp_file.write(wav_audio)
-                temp_file_path = temp_file.name
-            
+        # Transcribe using OpenAI Whisper with retry mechanism
+        max_retries = 3
+        retry_delay = 1  # Start with 1 second delay
+        
+        for attempt in range(max_retries):
             try:
-                # Call Whisper API
-                transcription_start = time.time()
+                client = get_openai_client()
                 
-                with open(temp_file_path, "rb") as audio_file:
-                    # Optimized Whisper parameters for accuracy
-                    response = client.audio.transcriptions.create(
-                        model="whisper-1",
-                        file=audio_file,
-                        response_format="verbose_json",
-                        language="en",
-                        temperature=0.0  # Lower temperature for more accurate results
-                        # NO PROMPT - prevents hallucination of prompt text when audio quality is poor
-                    )
+                # Create temporary file for Whisper API
+                with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                    temp_file.write(wav_audio)
+                    temp_file_path = temp_file.name
+                
+                try:
+                    # Call Whisper API with enhanced parameters
+                    transcription_start = time.time()
+                    
+                    with open(temp_file_path, "rb") as audio_file:
+                        # Enhanced Whisper parameters for robust transcription
+                        response = client.audio.transcriptions.create(
+                            model="whisper-1",
+                            file=audio_file,
+                            response_format="verbose_json",
+                            language="en",
+                            temperature=0.0,  # Lower temperature for accuracy
+                            # Add timestamp granularities for better analysis
+                            timestamp_granularities=["word"]
+                        )
                 
                 transcription_time = (time.time() - transcription_start) * 1000
                 total_processing_time = (time.time() - request_start_time) * 1000
@@ -251,14 +256,41 @@ def unified_transcribe_audio():
                         'model_used': 'whisper-1'
                     }
                 
-                return jsonify(result)
+                    return jsonify(result)
+                    
+                finally:
+                    # Cleanup temporary file
+                    try:
+                        os.unlink(temp_file_path)
+                    except:
+                        pass
+                        
+                # If we reach here, transcription was successful, break retry loop
+                break
                 
-            finally:
-                # Cleanup temporary file
+            except Exception as retry_error:
+                # Cleanup temp file before retry
                 try:
                     os.unlink(temp_file_path)
                 except:
                     pass
+                
+                error_msg = str(retry_error)
+                
+                # Check if this is a retryable error
+                if attempt < max_retries - 1:  # Not the last attempt
+                    retryable_errors = ['timeout', 'rate_limit', 'connection', 'service_unavailable']
+                    
+                    if any(err in error_msg.lower() for err in retryable_errors):
+                        logger.warning(f"⚠️ Retryable error on attempt {attempt + 1}/{max_retries}: {error_msg}")
+                        logger.info(f"🔄 Retrying in {retry_delay} seconds...")
+                        
+                        time.sleep(retry_delay)
+                        retry_delay *= 2  # Exponential backoff
+                        continue
+                
+                # If not retryable or last attempt, re-raise the error
+                raise retry_error
                     
         except Exception as whisper_error:
             logger.error(f"❌ Whisper API error: {whisper_error}")
@@ -306,12 +338,30 @@ def unified_transcribe_audio():
         logger.error(f"❌ Critical error in unified transcription API: {e}", exc_info=True)
         processing_time = (time.time() - request_start_time) * 1000
         
-        return jsonify({
-            'error': f'Server error: {str(e)}',
-            'success': False,
+        # Enhanced error recovery with specific error handling
+        error_details = {
+            'type': type(e).__name__,
+            'message': str(e),
+            'processing_time': processing_time,
             'session_id': session_id or 'unknown',
-            'processing_time': processing_time
-        }), 500
+            'success': False
+        }
+        
+        # Add retry suggestions for recoverable errors
+        if 'timeout' in str(e).lower() or 'connection' in str(e).lower():
+            error_details['retry_suggestion'] = 'Network timeout - please try again in a moment'
+            error_details['retryable'] = True
+            status_code = 503
+        elif 'memory' in str(e).lower() or 'allocation' in str(e).lower():
+            error_details['retry_suggestion'] = 'System overloaded - try reducing audio quality'
+            error_details['retryable'] = False
+            status_code = 507
+        else:
+            error_details['retry_suggestion'] = 'Unexpected error - please refresh the page'
+            error_details['retryable'] = True
+            status_code = 500
+        
+        return jsonify(error_details), status_code
 
 def detect_audio_format(audio_data):
     """
