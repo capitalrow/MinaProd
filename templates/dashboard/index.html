@@ -19,6 +19,9 @@
     <!-- Chart.js for premium data visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     
+    <!-- Mina Animated Logo Component -->
+    <script src="{{ url_for('static', filename='js/mina-animated-logo.js') }}" defer></script>
+    
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
     <script src="https://unpkg.com/feather-icons"></script>
 </head>
@@ -31,7 +34,7 @@
     <div class="dashboard-layout">
         <aside class="sidebar">
             <div class="sidebar-logo">
-                <div class="sidebar-logo-icon">M</div>
+                <div id="minaSidebarLogo" class="sidebar-logo-icon"></div>
                 <div class="sidebar-logo-text">Mina</div>
             </div>
             
@@ -632,6 +635,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             if (!window.dashboard) {
                 window.dashboard = new MinaDashboard();
+            }
+            
+            // Initialize Mina Animated Logo
+            const sidebarLogoContainer = document.getElementById('minaSidebarLogo');
+            if (sidebarLogoContainer && typeof MinaAnimatedLogo !== 'undefined') {
+                MinaAnimatedLogo.createCompactLogo(sidebarLogoContainer, 36);
             }
         });
 

@@ -24,6 +24,9 @@
     <!-- Icons and External Dependencies -->
     <script src="https://unpkg.com/feather-icons"></script>
     
+    <!-- Mina Animated Logo Component -->
+    <script src="{{ url_for('static', filename='js/mina-animated-logo.js') }}" defer></script>
+    
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
     
     <!-- Premium Page Transitions CSS -->
@@ -249,7 +252,7 @@
         <div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; height: 64px;">
             <!-- Brand -->
             <a href="{{ url_for('dashboard.index') if current_user and current_user.is_authenticated else url_for('pages.index') }}" class="nav-brand">
-                <div class="nav-brand-icon">🎤</div>
+                <div id="minaNavLogo" class="nav-brand-icon"></div>
                 <span>Mina</span>
             </a>
             
@@ -309,6 +312,14 @@
         if (typeof feather !== 'undefined') {
             feather.replace();
         }
+        
+        // Initialize Mina Animated Logo
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLogoContainer = document.getElementById('minaNavLogo');
+            if (navLogoContainer && typeof MinaAnimatedLogo !== 'undefined') {
+                MinaAnimatedLogo.createCompactLogo(navLogoContainer, 32);
+            }
+        });
         
         // Mobile Navigation Toggle
         function toggleMobileNav() {

@@ -194,7 +194,7 @@ class MinaAnimatedLogo {
             -webkit-mask-image: linear-gradient(90deg, rgba(0,0,0,1), rgba(0,0,0,0));
             mask-image: linear-gradient(90deg, rgba(0,0,0,1), rgba(0,0,0,0));
             mix-blend-mode: overlay;
-            animation: minaShineSweepe 4s ease-in-out infinite 2s;
+            animation: minaShineSweep 4s ease-in-out infinite 2s;
         `;
         wordmark.appendChild(shine);
         
@@ -276,7 +276,7 @@ if (!document.querySelector('#mina-logo-animations')) {
             to { opacity: 1; transform: translateY(0); }
         }
         
-        @keyframes minaShineSweepe {
+        @keyframes minaShineSweep {
             0% { transform: translateX(-200%); }
             100% { transform: translateX(200%); }
         }
