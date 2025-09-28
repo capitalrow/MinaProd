@@ -132,6 +132,10 @@ def unified_transcribe_audio():
                         return jsonify({
                             'success': True,
                             'text': '',
+                            'speaker_id': 'speaker_1',
+                            'confidence': 0.0,
+                            'is_final': False,
+                            'timestamp': time.time(),
                             'message': 'Audio chunk too small',
                             'processing_time': (time.time() - request_start_time) * 1000
                         })
