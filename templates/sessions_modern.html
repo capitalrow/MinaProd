@@ -308,7 +308,7 @@
         {% if sessions and sessions.items %}
         <div class="mina-sessions-grid">
             {% for session in sessions.items %}
-            <div class="mina-session-card" onclick="location.href='{{ url_for('sessions.session_detail', session_id=session.id) }}'">
+            <div class="mina-session-card" onclick="location.href='{{ url_for('sessions.get_session_detail', session_identifier=session.external_id or session.id) }}'">
                 <div class="mina-session-header">
                     <div>
                         <h3 class="mina-session-title">
@@ -375,7 +375,7 @@
 
                 <!-- Session Actions -->
                 <div class="mina-session-actions">
-                    <a href="{{ url_for('sessions.session_detail', session_id=session.id) }}" 
+                    <a href="{{ url_for('sessions.get_session_detail', session_identifier=session.external_id or session.id) }}" 
                        class="mina-btn mina-btn-primary mina-btn-sm"
                        onclick="event.stopPropagation()">
                         <i class="bi bi-eye"></i>
@@ -383,7 +383,7 @@
                     </a>
                     
                     {% if session.status == 'completed' %}
-                    <a href="{{ url_for('sessions.session_detail', session_id=session.id) }}?action=download" 
+                    <a href="{{ url_for('sessions.get_session_detail', session_identifier=session.external_id or session.id) }}?action=download" 
                        class="mina-btn mina-btn-outline mina-btn-sm"
                        onclick="event.stopPropagation()">
                         <i class="bi bi-download"></i>
@@ -391,7 +391,7 @@
                     </a>
                     {% endif %}
                     
-                    <a href="{{ url_for('sessions.session_detail', session_id=session.id) }}?action=share" 
+                    <a href="{{ url_for('sessions.get_session_detail', session_identifier=session.external_id or session.id) }}?action=share" 
                        class="mina-btn mina-btn-ghost mina-btn-sm"
                        onclick="event.stopPropagation()">
                         <i class="bi bi-share"></i>
