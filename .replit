@@ -29,8 +29,8 @@ task = "shell.exec"
 args = "gunicorn --bind 0.0.0.0:5000 --reuse-port --reload main:app"
 waitForPort = 5000
 
-[[ports]]
-localPort = 38535
-externalPort = 80
-
 [agent]
+
+[[ports]]
+localPort = 5000
+externalPort = 80

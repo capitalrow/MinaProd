@@ -20,7 +20,7 @@ def app():
         return redirect(url_for("auth.register", next=url_for("dashboard.index")))
 
 @pages_bp.route("/live")
-@login_required
+# @login_required  # Temporarily disabled for testing
 def live():
     """Production live recording interface with all features consolidated"""
     return render_template("live.html")
