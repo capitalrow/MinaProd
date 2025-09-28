@@ -272,6 +272,13 @@ def create_app() -> Flask:
         app.logger.info("Markers API routes registered")
     except Exception as e:
         app.logger.warning(f"Failed to register markers API routes: {e}")
+    
+    try:
+        from routes.api_generate_insights import api_generate_insights_bp
+        app.register_blueprint(api_generate_insights_bp)
+        app.logger.info("API Generate Insights route registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register API Generate Insights route: {e}")
 
     # Settings routes
     try:
