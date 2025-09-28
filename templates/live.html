@@ -1338,6 +1338,130 @@
             border-radius: 50%;
         }
         
+        /* Markers Panel */
+        .markers-panel {
+            background: var(--surface-1);
+            border-top: 1px solid var(--glass-border);
+            padding: 1.5rem 2rem;
+            margin-top: 1rem;
+        }
+        
+        .markers-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .markers-count {
+            background: var(--primary);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        .markers-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .marker-item {
+            background: var(--surface-2);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .marker-item:hover {
+            background: var(--surface-3);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .marker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .marker-type {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        
+        .marker-icon {
+            font-size: 1rem;
+        }
+        
+        .marker-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+        }
+        
+        .marker-time {
+            font-weight: 500;
+        }
+        
+        .marker-speaker {
+            opacity: 0.8;
+        }
+        
+        .marker-content {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin-bottom: 0.75rem;
+        }
+        
+        .marker-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+        
+        .marker-action-btn {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            padding: 0.25rem;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+        }
+        
+        .marker-action-btn:hover {
+            background: var(--surface-3);
+            color: var(--text-secondary);
+            border-color: var(--glass-border-strong);
+            transform: scale(1.05);
+        }
+        
+        .marker-action-btn i {
+            width: 14px;
+            height: 14px;
+        }
+        
         /* Toast Notifications */
         .toast {
             position: fixed;
@@ -1809,6 +1933,12 @@
                 <h3 class="speakers-title">Active Speakers</h3>
                 <div class="speakers-list" id="speakersList"></div>
             </div>
+            
+            <!-- Markers Panel -->
+            <div class="markers-panel" id="markersPanel" style="display: none;">
+                <h3 class="markers-title">Key Moments <span class="markers-count" id="markersCount">0</span></h3>
+                <div class="markers-container" id="markersContainer"></div>
+            </div>
         </div>
     </div>
     
@@ -1934,6 +2064,14 @@
                 this.selectedText = '';
                 this.selectedElement = null;
                 
+                // Markers tracking
+                this.markers = [];
+                this.markerTypes = {
+                    'decision': { icon: '🎯', color: '#10B981', label: 'Decision' },
+                    'todo': { icon: '✅', color: '#F59E0B', label: 'To-Do' },
+                    'risk': { icon: '⚠️', color: '#EF4444', label: 'Risk' }
+                };
+                
                 this.init();
             }
             
@@ -1942,9 +2080,167 @@
                 this.updateTheme();
                 this.initializeFeatherIcons();
                 this.initializeTextSelection();
+                this.initializeMarkersPanel();
                 
                 // Initialize metrics update interval
                 setInterval(() => this.updateMetrics(), 1000);
+            }
+            
+            detectAndHandleMarkers(text, speaker, timestamp) {
+                // Regular expression to match /decision, /todo, /risk commands
+                const markerRegex = /\/(decision|todo|risk)\s*([^.!?]*[.!?]?)/gi;
+                let match;
+                
+                while ((match = markerRegex.exec(text)) !== null) {
+                    const markerType = match[1].toLowerCase();
+                    let content = match[2].trim();
+                    
+                    // Clean up the content
+                    if (!content) {
+                        content = text.replace(match[0], '').trim();
+                    }
+                    
+                    // Create marker object
+                    const marker = {
+                        id: 'marker_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                        type: markerType,
+                        content: content || `${this.markerTypes[markerType].label} mentioned`,
+                        speaker: speaker?.name || 'Unknown Speaker',
+                        timestamp: timestamp || Date.now(),
+                        sessionId: this.sessionId
+                    };
+                    
+                    this.markers.push(marker);
+                    this.addMarkerToUI(marker);
+                    this.showToast(`${this.markerTypes[markerType].icon} ${this.markerTypes[markerType].label} captured!`, 'success');
+                    
+                    // Send marker to backend for persistence
+                    this.saveMarkerToBackend(marker);
+                }
+            }
+            
+            addMarkerToUI(marker) {
+                const markersContainer = document.getElementById('markersContainer');
+                if (!markersContainer) return;
+                
+                const markerType = this.markerTypes[marker.type];
+                const markerElement = document.createElement('div');
+                markerElement.className = 'marker-item';
+                markerElement.setAttribute('data-marker-id', marker.id);
+                
+                markerElement.innerHTML = `
+                    <div class="marker-header">
+                        <div class="marker-type" style="color: ${markerType.color};">
+                            <span class="marker-icon">${markerType.icon}</span>
+                            <span class="marker-label">${markerType.label}</span>
+                        </div>
+                        <div class="marker-meta">
+                            <span class="marker-time">${this.formatTimestamp(marker.timestamp)}</span>
+                            <span class="marker-speaker">${marker.speaker}</span>
+                        </div>
+                    </div>
+                    <div class="marker-content">${marker.content}</div>
+                    <div class="marker-actions">
+                        <button class="marker-action-btn" onclick="app.editMarker('${marker.id}')" title="Edit marker">
+                            <i data-feather="edit-2"></i>
+                        </button>
+                        <button class="marker-action-btn" onclick="app.deleteMarker('${marker.id}')" title="Delete marker">
+                            <i data-feather="trash-2"></i>
+                        </button>
+                    </div>
+                `;
+                
+                markersContainer.appendChild(markerElement);
+                
+                // Animate in
+                markerElement.style.opacity = '0';
+                markerElement.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    markerElement.style.transition = 'all 0.3s ease';
+                    markerElement.style.opacity = '1';
+                    markerElement.style.transform = 'translateY(0)';
+                }, 10);
+                
+                // Update markers count
+                this.updateMarkersCount();
+                
+                // Refresh feather icons
+                this.initializeFeatherIcons();
+            }
+            
+            initializeMarkersPanel() {
+                // Show markers panel when first marker is added
+                this.updateMarkersCount();
+            }
+            
+            updateMarkersCount() {
+                const markersPanel = document.getElementById('markersPanel');
+                const markersCount = document.getElementById('markersCount');
+                
+                if (this.markers.length > 0) {
+                    if (markersPanel) markersPanel.style.display = 'block';
+                    if (markersCount) markersCount.textContent = this.markers.length.toString();
+                } else {
+                    if (markersPanel) markersPanel.style.display = 'none';
+                }
+            }
+            
+            async saveMarkerToBackend(marker) {
+                try {
+                    const response = await fetch('/api/markers/create', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(marker)
+                    });
+                    
+                    if (!response.ok) {
+                        console.warn('Failed to save marker to backend:', response.statusText);
+                    }
+                } catch (error) {
+                    console.warn('Error saving marker to backend:', error);
+                }
+            }
+            
+            editMarker(markerId) {
+                const marker = this.markers.find(m => m.id === markerId);
+                if (!marker) return;
+                
+                const newContent = prompt('Edit marker content:', marker.content);
+                if (newContent !== null && newContent.trim() !== '') {
+                    marker.content = newContent.trim();
+                    
+                    // Update UI
+                    const markerElement = document.querySelector(`[data-marker-id="${markerId}"]`);
+                    if (markerElement) {
+                        const contentElement = markerElement.querySelector('.marker-content');
+                        contentElement.textContent = marker.content;
+                    }
+                    
+                    // Update backend
+                    this.saveMarkerToBackend(marker);
+                    this.showToast('Marker updated', 'success');
+                }
+            }
+            
+            deleteMarker(markerId) {
+                if (confirm('Are you sure you want to delete this marker?')) {
+                    // Remove from array
+                    this.markers = this.markers.filter(m => m.id !== markerId);
+                    
+                    // Remove from UI
+                    const markerElement = document.querySelector(`[data-marker-id="${markerId}"]`);
+                    if (markerElement) {
+                        markerElement.style.transition = 'all 0.3s ease';
+                        markerElement.style.opacity = '0';
+                        markerElement.style.transform = 'translateY(-10px)';
+                        setTimeout(() => markerElement.remove(), 300);
+                    }
+                    
+                    this.updateMarkersCount();
+                    this.showToast('Marker deleted', 'info');
+                }
             }
             
             initializeTextSelection() {
@@ -2284,6 +2580,11 @@
                     let speakerInfo = null;
                     if (speaker_id) {
                         speakerInfo = this.getSpeakerInfo(speaker_id);
+                    }
+                    
+                    // Check for markers in final text
+                    if (is_final && text) {
+                        this.detectAndHandleMarkers(text, speakerInfo, timestamp);
                     }
                     
                     // Add or update transcript segment
