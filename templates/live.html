@@ -31,9 +31,10 @@
     <link rel="preload" href="{{ url_for('static', filename='css/components.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}"></noscript>
     
-    <!-- External Dependencies - Load synchronously to prevent race conditions -->
+    <!-- External Dependencies -->
     <script src="https://unpkg.com/feather-icons"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <!-- Socket.IO loaded locally to bypass CDN issues -->
+    <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
     
@@ -2480,10 +2481,10 @@
             
             initializeSocket() {
                 try {
-                    // Wait for Socket.IO to be available
+                    // Socket.IO should already be loaded by now, but double-check
                     if (typeof io === 'undefined') {
-                        console.warn('Socket.IO not yet loaded, retrying...');
-                        setTimeout(() => this.initializeSocket(), 100);
+                        console.error('Socket.IO library not available after initialization delay');
+                        this.showToast('Connection library not loaded', 'error');
                         return;
                     }
                     
@@ -3091,12 +3092,20 @@
             }
         }
         
-        // Initialize the application
+        // Initialize the application with proper Socket.IO timing
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof feather !== 'undefined') {
                 feather.replace();
             }
             
+            // Socket.IO should be loaded locally now, but add basic verification
+            if (typeof io === 'undefined') {
+                console.error('❌ Socket.IO library not loaded - transcription unavailable');
+                alert('Connection library failed to load. Please refresh the page.');
+                return;
+            }
+            
+            console.log('✅ Socket.IO loaded successfully, initializing app...');
             window.app = new MinaLiveRecording();
         });
     </script>
