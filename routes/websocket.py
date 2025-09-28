@@ -89,6 +89,10 @@ def on_audio_chunk(data):
         emit("error", {"message": "Missing session_id in audio_chunk"})
         return
 
+    # Get settings from frontend
+    settings = (data or {}).get("settings", {})
+    mime_type = settings.get("mimeType", "audio/webm")
+    
     # Handle audio data - frontend sends as array of bytes
     audio_data = (data or {}).get("audio_data")
     if not audio_data:
