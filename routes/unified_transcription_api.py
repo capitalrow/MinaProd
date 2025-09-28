@@ -59,9 +59,9 @@ def unified_transcribe_audio():
     success = False
     
     try:
-        # Extract session info
-        session_id = None
-        chunk_id = None
+        # Extract session info with defaults
+        session_id = f'session_{int(time.time())}'
+        chunk_id = '1' 
         is_interim = False
         
         # Determine request format and extract data
