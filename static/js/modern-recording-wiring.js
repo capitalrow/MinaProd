@@ -484,17 +484,25 @@
     }
 
     createMediaRecorder(stream) {
-      // Determine the best supported format
+      // Determine the best supported format with iOS Safari fallback
       let mimeType = 'audio/webm;codecs=opus';
       if (!MediaRecorder.isTypeSupported(mimeType)) {
         if (MediaRecorder.isTypeSupported('audio/webm')) {
           mimeType = 'audio/webm';
+        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4'; // iOS Safari primary fallback
+        } else if (MediaRecorder.isTypeSupported('audio/aac')) {
+          mimeType = 'audio/aac'; // iOS Safari secondary fallback
         } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
           mimeType = 'audio/ogg;codecs=opus';
+        } else if (MediaRecorder.isTypeSupported('audio/wav')) {
+          mimeType = 'audio/wav'; // Universal fallback
         } else {
           mimeType = ''; // Let browser decide
         }
       }
+      
+      logger.log(`Using MediaRecorder MIME type: ${mimeType || 'browser default'}`);
 
       const mediaRecorder = new MediaRecorder(stream, { 
         mimeType, 

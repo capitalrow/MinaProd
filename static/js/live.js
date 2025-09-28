@@ -33,8 +33,24 @@
       return;
     }
 
-    const mime = "audio/webm;codecs=opus";
-    mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+    // iOS Safari MediaRecorder MIME fallback
+    let mime = "audio/webm;codecs=opus";
+    if (!MediaRecorder.isTypeSupported(mime)) {
+      if (MediaRecorder.isTypeSupported('audio/webm')) {
+        mime = 'audio/webm';
+      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        mime = 'audio/mp4'; // iOS Safari fallback
+      } else if (MediaRecorder.isTypeSupported('audio/aac')) {
+        mime = 'audio/aac'; // iOS Safari fallback
+      } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
+        mime = 'audio/ogg;codecs=opus';
+      } else {
+        mime = ''; // Let browser decide
+      }
+    }
+    
+    dlog("Using MIME type: " + (mime || "browser default"));
+    mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
 
     mediaRecorder.ondataavailable = (e) => {
       if (!e.data.size) return;

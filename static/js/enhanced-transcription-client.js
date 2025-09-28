@@ -246,10 +246,30 @@ class EnhancedTranscriptionClient {
             // Initialize enhanced audio analysis
             await this._initializeAudioAnalysis();
 
-            // Create enhanced MediaRecorder
+            // Enhanced MediaRecorder with iOS Safari fallback
+            const recordingOptions = { ...this.config.recordingOptions };
+            
+            // Check MIME type support with comprehensive fallbacks
+            if (!MediaRecorder.isTypeSupported(recordingOptions.mimeType)) {
+                if (MediaRecorder.isTypeSupported('audio/webm')) {
+                    recordingOptions.mimeType = 'audio/webm';
+                } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                    recordingOptions.mimeType = 'audio/mp4'; // iOS Safari primary
+                } else if (MediaRecorder.isTypeSupported('audio/aac')) {
+                    recordingOptions.mimeType = 'audio/aac'; // iOS Safari secondary
+                } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
+                    recordingOptions.mimeType = 'audio/ogg;codecs=opus';
+                } else if (MediaRecorder.isTypeSupported('audio/wav')) {
+                    recordingOptions.mimeType = 'audio/wav'; // Universal fallback
+                } else {
+                    delete recordingOptions.mimeType; // Let browser decide
+                }
+                console.log(`🎙️ Enhanced client using fallback MIME: ${recordingOptions.mimeType || 'browser default'}`);
+            }
+            
             this.state.mediaRecorder = new MediaRecorder(
                 this.state.mediaStream,
-                this.config.recordingOptions
+                recordingOptions
             );
 
             // Enhanced event handlers
