@@ -36,7 +36,7 @@ class AudioProcessor:
         logger.info("Audio processor buffers cleared")
     
     def convert_to_wav(self, audio_data: bytes, input_format: str = 'webm',
-                       sample_rate: int = 16000, channels: int = 1, mime_type: str = None) -> bytes:
+                       sample_rate: int = 16000, channels: int = 1, mime_type: str | None = None) -> bytes:
         """
         Convert audio data to WAV format with proper decoding.
         🔥 CRITICAL FIX: Implements proper WebM to WAV conversion for Google Recorder accuracy.
@@ -55,7 +55,7 @@ class AudioProcessor:
         try:
             # Use client-provided MIME type if available for better detection
             detected_format = input_format
-            if mime_type:
+            if mime_type and isinstance(mime_type, str):
                 if 'wav' in mime_type.lower():
                     detected_format = 'wav'
                 elif 'webm' in mime_type.lower():
