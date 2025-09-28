@@ -283,6 +283,7 @@ def create_app() -> Flask:
         ("routes.final_upload", "final_bp", "/api"),
         ("routes.export", "export_bp", "/api"),
         ("routes.insights", "insights_bp", "/api"),
+        ("routes.nudges", "nudges_bp", "/api"),
         ("routes.health", "health_bp", "/health"),
         ("routes.metrics_stream", "metrics_stream_bp", "/api"),
         ("routes.error_handlers", "errors_bp", None),
