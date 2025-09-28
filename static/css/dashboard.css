@@ -191,46 +191,93 @@ body::before {
   height: 96px;
 }
 
-/* Context-specific logo styling */
+/* Enterprise-grade context-specific logo styling with holographic effects */
 .mina-logo-navigation {
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
-  transition: filter 0.2s ease;
+  filter: drop-shadow(0 2px 6px rgba(59, 130, 246, 0.15)) 
+         drop-shadow(0 1px 3px rgba(147, 197, 253, 0.2));
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(59, 130, 246, 0.03));
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+  padding: 4px;
 }
 
 .mina-logo-navigation:hover {
-  filter: drop-shadow(0 2px 4px rgba(139, 92, 246, 0.3));
+  filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.25)) 
+         drop-shadow(0 2px 8px rgba(147, 197, 253, 0.3))
+         drop-shadow(0 1px 4px rgba(219, 234, 254, 0.2));
+  transform: scale(1.05) translateY(-1px);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(59, 130, 246, 0.06));
 }
 
 .mina-logo-sidebar {
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
-  animation: logoGentlePulse 6s ease-in-out infinite;
+  filter: drop-shadow(0 3px 8px rgba(59, 130, 246, 0.2)) 
+         drop-shadow(0 1px 4px rgba(147, 197, 253, 0.25));
+  animation: logoEnterpriseGlow 8s ease-in-out infinite;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(59, 130, 246, 0.04));
+  border-radius: 10px;
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px;
 }
 
 .mina-logo-hero {
-  filter: drop-shadow(0 4px 8px rgba(139, 92, 246, 0.25)) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.15));
-  animation: logoHeroBreathe 8s ease-in-out infinite;
+  filter: drop-shadow(0 6px 16px rgba(59, 130, 246, 0.3)) 
+         drop-shadow(0 3px 12px rgba(147, 197, 253, 0.25))
+         drop-shadow(0 12px 32px rgba(30, 58, 138, 0.15));
+  animation: logoHolographicBreathe 10s ease-in-out infinite;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(248, 250, 255, 0.12) 25%,
+    rgba(219, 234, 254, 0.1) 50%,
+    rgba(147, 197, 253, 0.08) 75%,
+    rgba(59, 130, 246, 0.05) 100%);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 8px;
 }
 
-/* Logo animations */
-@keyframes logoGentlePulse {
+/* Enterprise holographic logo animations */
+@keyframes logoEnterpriseGlow {
   0%, 100% { 
     transform: scale(1);
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+    filter: drop-shadow(0 3px 8px rgba(59, 130, 246, 0.2)) 
+           drop-shadow(0 1px 4px rgba(147, 197, 253, 0.25));
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(59, 130, 246, 0.04));
   }
   50% { 
-    transform: scale(1.02);
-    filter: drop-shadow(0 3px 6px rgba(139, 92, 246, 0.2));
+    transform: scale(1.03);
+    filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.3)) 
+           drop-shadow(0 2px 6px rgba(147, 197, 253, 0.35));
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(59, 130, 246, 0.06));
   }
 }
 
-@keyframes logoHeroBreathe {
+@keyframes logoHolographicBreathe {
   0%, 100% { 
     transform: scale(1) translateY(0);
-    filter: drop-shadow(0 4px 8px rgba(139, 92, 246, 0.25)) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.15));
+    filter: drop-shadow(0 6px 16px rgba(59, 130, 246, 0.3)) 
+           drop-shadow(0 3px 12px rgba(147, 197, 253, 0.25))
+           drop-shadow(0 12px 32px rgba(30, 58, 138, 0.15));
+    background: linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.15) 0%,
+      rgba(248, 250, 255, 0.12) 25%,
+      rgba(219, 234, 254, 0.1) 50%,
+      rgba(147, 197, 253, 0.08) 75%,
+      rgba(59, 130, 246, 0.05) 100%);
   }
   50% { 
-    transform: scale(1.05) translateY(-2px);
-    filter: drop-shadow(0 6px 12px rgba(139, 92, 246, 0.4)) drop-shadow(0 12px 32px rgba(0, 0, 0, 0.2));
+    transform: scale(1.06) translateY(-3px);
+    filter: drop-shadow(0 8px 20px rgba(59, 130, 246, 0.4)) 
+           drop-shadow(0 4px 16px rgba(147, 197, 253, 0.35))
+           drop-shadow(0 16px 40px rgba(30, 58, 138, 0.2));
+    background: linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.18) 0%,
+      rgba(248, 250, 255, 0.15) 25%,
+      rgba(219, 234, 254, 0.12) 50%,
+      rgba(147, 197, 253, 0.1) 75%,
+      rgba(59, 130, 246, 0.08) 100%);
   }
 }
 
