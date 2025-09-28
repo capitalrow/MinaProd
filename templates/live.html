@@ -1,9 +1,9 @@
-{% extends "base_unified.html" %}
+{% extends "base.html" %}
 
 {% block title %}Live Recording Studio - {{ super() }}{% endblock %}
 
-{% block extra_head %}
-    <!-- Socket.IO is now loaded via base_unified.html -->
+{% block head %}
+    <!-- Socket.IO and dependencies loaded via base.html -->
     
     <style>
         :root {
@@ -4210,6 +4210,4 @@
     </script>
 {% endblock %}
 
-{% block extra_scripts %}
-    <!-- Additional live recording scripts can go here -->
-{% endblock %}
+<!-- Additional live recording scripts integrated into base.html structure -->
