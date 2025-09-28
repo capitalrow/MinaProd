@@ -291,34 +291,68 @@ def unified_transcribe_audio():
                 transcription_start = time.time()
                 
                 with open(temp_file_path, "rb") as audio_file:
-                    # Enhanced Whisper parameters for robust transcription
+                    # ENHANCED: Premium Whisper configuration for enterprise accuracy
                     response = client.audio.transcriptions.create(
                         model="whisper-1",
                         file=audio_file,
-                        response_format="json",  # Simplified for faster response
-                        language="en",
-                        temperature=0.0,  # Lower temperature for accuracy
-                        timeout=WHISPER_RESPONSE_TIMEOUT  # Fast timeout for performance
+                        response_format="verbose_json",  # Get word-level timestamps and confidence
+                        temperature=0.0,  # Deterministic output for consistency
+                        prompt="High-quality meeting transcription with proper punctuation and speaker clarity.",  # Context prompt
+                        timeout=12  # Adequate time for quality processing
                     )
                 
                 transcription_time = (time.time() - transcription_start) * 1000
                 total_processing_time = (time.time() - request_start_time) * 1000
                 
-                # Extract text and confidence
+                # ENHANCED: Extract comprehensive transcription data with real confidence
                 text = response.text.strip() if hasattr(response, 'text') else ''
                 
-                # Calculate confidence based on response
-                confidence = 0.95  # Default high confidence for Whisper
+                # Calculate REAL confidence from actual API response
+                confidence = 0.85  # Conservative default
+                word_timestamps = []
+                segment_data = []
+                
                 if hasattr(response, 'segments') and response.segments:
-                    # Average confidence from segments if available
-                    confidences = [seg.get('avg_logprob', 0.0) for seg in response.segments if isinstance(seg, dict)]
-                    if confidences:
-                        # Convert log probability to confidence percentage
-                        confidence = max(0.0, min(1.0, sum(confidences) / len(confidences) + 1.0))
+                    # Extract segment-level data with timestamps
+                    total_confidence = 0.0
+                    confidence_count = 0
+                    
+                    for segment in response.segments:
+                        # Initialize segment confidence with default
+                        seg_confidence = 0.85
+                        
+                        if hasattr(segment, 'avg_logprob') and segment.avg_logprob is not None:
+                            # Convert log probability to confidence (whisper returns negative log probs)
+                            seg_confidence = max(0.0, min(1.0, (segment.avg_logprob + 1.0)))
+                            total_confidence += seg_confidence
+                            confidence_count += 1
+                        
+                        # Extract word-level timestamps if available
+                        if hasattr(segment, 'words') and segment.words:
+                            for word in segment.words:
+                                if hasattr(word, 'word') and hasattr(word, 'start') and hasattr(word, 'end'):
+                                    word_timestamps.append({
+                                        'word': word.word.strip(),
+                                        'start': word.start,
+                                        'end': word.end,
+                                        'confidence': getattr(word, 'probability', 0.85)
+                                    })
+                        
+                        # Store segment data for UI display
+                        segment_data.append({
+                            'text': getattr(segment, 'text', '').strip(),
+                            'start': getattr(segment, 'start', 0.0),
+                            'end': getattr(segment, 'end', 0.0),
+                            'confidence': seg_confidence
+                        })
+                    
+                    # Calculate overall confidence
+                    if confidence_count > 0:
+                        confidence = total_confidence / confidence_count
                 
                 logger.info(f"✅ Transcription successful: '{text[:50]}...' ({transcription_time:.0f}ms)")
                 
-                # Format response
+                # ENHANCED: Comprehensive response with premium data for UI
                 result = {
                     'success': True,
                     'text': text,
@@ -331,8 +365,16 @@ def unified_transcribe_audio():
                     'processing_time': total_processing_time,
                     'transcription_time': transcription_time,
                     'word_count': len(text.split()) if text else 0,
-                    'audio_duration_ms': len(audio_data) // 32,  # Rough estimate
-                    'timestamp': time.time()
+                    'audio_duration_ms': len(audio_data) // 32,
+                    'timestamp': time.time(),
+                    # PREMIUM: Enhanced data for seamless UI updates
+                    'word_timestamps': word_timestamps,
+                    'segments': segment_data,
+                    'language': getattr(response, 'language', 'en'),
+                    'duration': getattr(response, 'duration', 0.0),
+                    'quality_score': confidence,
+                    'has_words': len(word_timestamps) > 0,
+                    'segment_count': len(segment_data)
                 }
                 
                 # Add processing details for debugging
