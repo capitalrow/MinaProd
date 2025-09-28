@@ -2742,14 +2742,153 @@
                 this.isPaused = false;
                 this.audioChunks = [];
                 
-                // End the session to get final transcript
+                // FIXED: Complete post-recording workflow
+                this.updateRecordButton();
+                this.updateStatus('Processing final transcript...', 'processing');
+                this.showToast('Processing final transcript...', 'info');
+                
+                try {
+                    // 1. Finalize all interim transcripts
+                    await this.finalizeSession();
+                    
+                    // 2. Generate complete final transcript
+                    const finalTranscript = await this.generateFinalTranscript();
+                    
+                    // 3. Display final transcript prominently
+                    this.displayFinalTranscript(finalTranscript);
+                    
+                    // 4. Trigger post-recording tasks
+                    await this.triggerPostRecordingWorkflow();
+                    
+                    // 5. Update final status
+                    this.updateStatus('Recording complete', 'completed');
+                    this.showToast('Recording and processing completed successfully!', 'success');
+                    
+                } catch (error) {
+                    console.error('Post-recording workflow failed:', error);
+                    this.updateStatus('Recording stopped (processing error)', 'error');
+                    this.showToast('Recording stopped - some processing failed', 'warning');
+                }
+            }
+            
+            async finalizeSession() {
+                // Send session completion signal
                 if (this.socket && this.socket.connected) {
-                    this.socket.emit('end_session');
+                    this.socket.emit('end_session', {
+                        sessionId: this.sessionId,
+                        timestamp: Date.now(),
+                        totalDuration: Date.now() - this.startTime,
+                        totalSegments: this.segmentCount,
+                        totalWords: this.totalWords
+                    });
                 }
                 
-                this.updateRecordButton();
-                this.updateStatus('Recording stopped', 'stopped');
-                this.showToast('Recording stopped', 'info');
+                // Wait a moment for final processing
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+            
+            generateFinalTranscript() {
+                // Collect all final transcript segments (not interim)
+                const segments = document.querySelectorAll('.transcript-text:not(.interim-text)');
+                const finalText = Array.from(segments).map(el => el.textContent.trim()).join(' ');
+                
+                if (finalText.trim() === '') {
+                    return 'No transcript was generated. Please ensure you spoke clearly during recording.';
+                }
+                
+                return finalText;
+            }
+            
+            displayFinalTranscript(transcript) {
+                // Create prominent final transcript display
+                const transcriptContent = document.querySelector('.transcript-content');
+                if (!transcriptContent) return;
+                
+                // Add final transcript summary at the top
+                const finalSummary = document.createElement('div');
+                finalSummary.className = 'final-transcript-summary';
+                finalSummary.innerHTML = `
+                    <div class="final-transcript-header">
+                        <h3>📝 Complete Transcript</h3>
+                        <span class="transcript-stats">${this.totalWords} words • ${this.segmentCount} segments</span>
+                    </div>
+                    <div class="final-transcript-text">${transcript}</div>
+                    <div class="final-transcript-actions">
+                        <button onclick="app.copyTranscript()" class="action-btn">Copy</button>
+                        <button onclick="app.downloadTranscript()" class="action-btn">Download</button>
+                        <button onclick="app.generateTasks()" class="action-btn primary">Generate Tasks</button>
+                    </div>
+                `;
+                
+                transcriptContent.insertBefore(finalSummary, transcriptContent.firstChild);
+            }
+            
+            async triggerPostRecordingWorkflow() {
+                // 1. Generate meeting insights and tasks
+                const transcript = this.generateFinalTranscript();
+                
+                // 2. Call AI processing for insights
+                try {
+                    const response = await fetch('/api/generate-insights', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            transcript: transcript,
+                            sessionId: this.sessionId,
+                            duration: Date.now() - this.startTime,
+                            speakerCount: this.speakerCount
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const insights = await response.json();
+                        this.displayInsights(insights);
+                    }
+                } catch (error) {
+                    console.error('Failed to generate insights:', error);
+                }
+                
+                // 3. Auto-redirect after processing (as per user requirements)
+                setTimeout(() => {
+                    if (transcript && transcript.length > 50) {
+                        this.showToast('Redirecting to results...', 'info');
+                        // Redirect to dashboard or results page
+                        window.location.href = '/dashboard?session=' + this.sessionId;
+                    }
+                }, 3000);
+            }
+            
+            displayInsights(insights) {
+                // Display AI-generated insights and tasks
+                const insightsContainer = document.createElement('div');
+                insightsContainer.className = 'meeting-insights';
+                insightsContainer.innerHTML = `
+                    <div class="insights-header">
+                        <h3>🧠 Meeting Insights</h3>
+                    </div>
+                    <div class="insights-content">
+                        ${insights.summary ? `<div class="insight-item">
+                            <strong>Summary:</strong> ${insights.summary}
+                        </div>` : ''}
+                        ${insights.keyPoints && insights.keyPoints.length > 0 ? `
+                            <div class="insight-item">
+                                <strong>Key Points:</strong>
+                                <ul>${insights.keyPoints.map(point => `<li>${point}</li>`).join('')}</ul>
+                            </div>
+                        ` : ''}
+                        ${insights.actionItems && insights.actionItems.length > 0 ? `
+                            <div class="insight-item">
+                                <strong>Action Items:</strong>
+                                <ul>${insights.actionItems.map(item => `<li>${item}</li>`).join('')}</ul>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                const transcriptContent = document.querySelector('.transcript-content');
+                if (transcriptContent) {
+                    transcriptContent.appendChild(insightsContainer);
+                }
             }
             
             async startRecording() {
