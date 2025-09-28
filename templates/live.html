@@ -31,9 +31,9 @@
     <link rel="preload" href="{{ url_for('static', filename='css/components.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}"></noscript>
     
-    <!-- External Dependencies - Defer loading -->
-    <script src="https://unpkg.com/feather-icons" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js" defer></script>
+    <!-- External Dependencies - Load synchronously to prevent race conditions -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
     
@@ -2480,7 +2480,18 @@
             
             initializeSocket() {
                 try {
-                    this.socket = io();
+                    // Wait for Socket.IO to be available
+                    if (typeof io === 'undefined') {
+                        console.warn('Socket.IO not yet loaded, retrying...');
+                        setTimeout(() => this.initializeSocket(), 100);
+                        return;
+                    }
+                    
+                    // Connect to the transcription namespace with proper transports
+                    this.socket = io('/transcription', { 
+                        transports: ['websocket', 'polling'], 
+                        timeout: 10000 
+                    });
                     
                     this.socket.on('connect', () => {
                         console.log('✅ Connected to transcription server');
@@ -2489,12 +2500,19 @@
                         // Generate session ID when connecting
                         this.sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                         
-                        // Join session when connected
+                        // Start session when connected
                         if (this.socket && this.socket.connected) {
-                            this.socket.emit('join_session', {
-                                session_id: this.sessionId
+                            this.socket.emit('start_session', {
+                                language: 'en',
+                                enhance_audio: true
                             });
                         }
+                    });
+                    
+                    this.socket.on('connect_error', (error) => {
+                        console.error('❌ Socket connection error:', error);
+                        this.updateStatus('Connection failed', 'disconnected');
+                        this.showToast('Connection failed: ' + error.message, 'error');
                     });
                     
                     this.socket.on('disconnect', () => {
@@ -2506,8 +2524,9 @@
                         this.handleTranscriptionResult(data);
                     });
                     
-                    this.socket.on('server_hello', (data) => {
-                        console.log('📡 Session joined successfully:', data);
+                    this.socket.on('session_started', (data) => {
+                        console.log('📡 Session started successfully:', data);
+                        this.sessionId = data.session_id;
                         this.showToast('Session connected successfully', 'success');
                     });
                     
@@ -2576,12 +2595,9 @@
                 this.isPaused = false;
                 this.audioChunks = [];
                 
-                // Finalize the session to get final transcript
+                // End the session to get final transcript
                 if (this.socket && this.socket.connected) {
-                    this.socket.emit('finalize_session', {
-                        session_id: this.sessionId,
-                        mime: 'audio/webm'
-                    });
+                    this.socket.emit('end_session');
                 }
                 
                 this.updateRecordButton();
@@ -2591,6 +2607,12 @@
             
             async startRecording() {
                 try {
+                    // Ensure socket is connected before starting
+                    if (!this.socket || !this.socket.connected) {
+                        this.showToast('Please wait for connection to establish', 'warning');
+                        return;
+                    }
+                    
                     this.isProcessing = true;
                     this.updateRecordButton();
                     this.updateStatus('Requesting microphone access...', 'processing');
@@ -2620,10 +2642,12 @@
                             reader.onload = () => {
                                 const audioData = new Uint8Array(reader.result);
                                 if (this.socket && this.socket.connected) {
-                                    this.socket.emit('audio_chunk', {
-                                        session_id: this.sessionId,
-                                        audio_data: Array.from(audioData),
-                                        settings: this.getCurrentSettings()
+                                    // Convert to base64 for transmission
+                                    const base64Audio = btoa(String.fromCharCode.apply(null, audioData));
+                                    this.socket.emit('audio_data', {
+                                        data: base64Audio,
+                                        mimeType: 'audio/webm;codecs=opus',
+                                        size: audioData.length
                                     });
                                 }
                             };
@@ -2673,12 +2697,9 @@
                 this.isRecording = false;
                 this.audioChunks = [];
                 
-                // Finalize the session to get final transcript
+                // End the session to get final transcript
                 if (this.socket && this.socket.connected) {
-                    this.socket.emit('finalize_session', {
-                        session_id: this.sessionId,
-                        mime: 'audio/webm'
-                    });
+                    this.socket.emit('end_session');
                 }
                 
                 this.updateRecordButton();
