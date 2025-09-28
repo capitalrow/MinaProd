@@ -246,6 +246,8 @@ class BrowserWebSocketServer:
             
             # Save audio data to temporary file with proper flushing
             temp_webm_path = None
+            wav_path = None
+            
             try:
                 with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_file:
                     temp_file.write(audio_data)
@@ -312,19 +314,19 @@ class BrowserWebSocketServer:
                 
                 return response.text
                 
-            finally:
-                # Clean up temporary files
-                for path in [temp_webm_path, wav_path]:
-                    if os.path.exists(path):
-                        try:
-                            os.unlink(path)
-                        except:
-                            pass
-                            
             except Exception as conversion_error:
                 logger.error(f"❌ Audio conversion error: {conversion_error}")
                 logger.warning("🔄 Attempting fallback conversion...")
                 return self._fallback_audio_conversion(audio_data)
+                
+            finally:
+                # Clean up temporary files
+                for path in [temp_webm_path, wav_path]:
+                    if path and os.path.exists(path):
+                        try:
+                            os.unlink(path)
+                        except:
+                            pass
                 
         except Exception as e:
             logger.error(f"❌ Real transcription error: {e}")
