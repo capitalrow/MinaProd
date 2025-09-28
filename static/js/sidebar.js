@@ -248,6 +248,8 @@ class SidebarNavigation {
         const overlay = document.getElementById('sidebarOverlay');
         if (overlay) {
             overlay.addEventListener('click', () => this.toggleSidebar());
+        } else {
+            console.warn('Sidebar overlay element not found');
         }
 
         // Keyboard navigation
@@ -279,16 +281,18 @@ class SidebarNavigation {
     toggleSidebar() {
         this.isExpanded = !this.isExpanded;
         
+        const overlay = document.getElementById('sidebarOverlay');
+        
         if (this.isExpanded) {
             this.sidebar.classList.add('expanded');
-            if (this.isMobile) {
-                document.getElementById('sidebarOverlay').classList.add('active');
+            if (this.isMobile && overlay) {
+                overlay.classList.add('active');
                 document.body.style.overflow = 'hidden';
             }
         } else {
             this.sidebar.classList.remove('expanded');
-            if (this.isMobile) {
-                document.getElementById('sidebarOverlay').classList.remove('active');
+            if (this.isMobile && overlay) {
+                overlay.classList.remove('active');
                 document.body.style.overflow = '';
             }
         }
@@ -297,6 +301,9 @@ class SidebarNavigation {
         if (!this.isMobile) {
             localStorage.setItem('sidebarExpanded', this.isExpanded);
         }
+
+        // Update ARIA attributes for accessibility
+        this.sidebar.setAttribute('aria-expanded', this.isExpanded);
 
         // Dispatch event for other components
         window.dispatchEvent(new CustomEvent('sidebar-toggled', { 

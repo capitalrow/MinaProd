@@ -356,11 +356,34 @@
   margin-left: var(--sidebar-width-expanded);
 }
 
+/* Mobile Overlay - Define globally, control visibility in media query */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: 1039;
+  pointer-events: none;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .sidebar-navigation {
     width: 0;
     transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .sidebar-navigation.expanded {
@@ -372,23 +395,20 @@
     margin-left: 0 !important;
   }
   
-  /* Mobile Overlay */
-  .sidebar-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-    z-index: 1039;
+  /* Improve touch targets on mobile */
+  .sidebar-item {
+    padding: 14px 12px;
+    min-height: 44px;
   }
   
-  .sidebar-overlay.active {
-    opacity: 1;
-    visibility: visible;
+  .sidebar-brand {
+    min-height: 44px;
+    padding: 8px 12px;
+  }
+  
+  /* Ensure text is readable on mobile */
+  .sidebar-navigation.expanded .sidebar-item-text {
+    font-size: 16px;
   }
 }
 
