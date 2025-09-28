@@ -143,6 +143,53 @@
                 </div>
             </div>
             
+            <!-- Hero Recording Action -->
+            <section class="hero-recording-section">
+                <div class="hero-record-container">
+                    <div class="hero-record-content">
+                        <h2 class="hero-record-title">Ready to record your next meeting?</h2>
+                        <p class="hero-record-description">Start recording with one tap. Get instant transcription, AI insights, and actionable summaries.</p>
+                        <div class="hero-record-actions">
+                            <a href="{{ url_for('pages.live') }}" class="hero-record-button" id="heroRecordButton">
+                                <div class="record-button-icon">
+                                    <i data-feather="mic" class="record-mic-icon"></i>
+                                    <div class="record-pulse"></div>
+                                </div>
+                                <div class="record-button-text">
+                                    <span class="record-button-main">Start Recording</span>
+                                    <span class="record-button-sub">One tap to begin</span>
+                                </div>
+                            </a>
+                            <div class="quick-actions">
+                                <a href="{{ url_for('copilot.copilot_dashboard') }}" class="quick-action-btn">
+                                    <i data-feather="message-circle"></i>
+                                    AI Copilot
+                                </a>
+                                <a href="{{ url_for('dashboard.meetings') }}" class="quick-action-btn">
+                                    <i data-feather="folder"></i>
+                                    Past Meetings
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hero-record-visual">
+                        <div class="recording-preview">
+                            <div class="waveform-animation">
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                            </div>
+                            <div class="recording-status">
+                                <div class="status-indicator"></div>
+                                <span>Ready to record</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
             <div class="content-grid">
                 <section class="content-section">
                     <div class="section-header">
