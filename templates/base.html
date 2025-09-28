@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Mina - Meeting Insights & Action{% endblock %}</title>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
     <!-- Performance Optimizations -->
     <link rel="preconnect" href="https://cdn.replit.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
@@ -39,7 +43,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js" defer></script>
     
     <!-- Feather Icons -->
-    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://unpkg.com/feather-icons" defer></script>
     
     <!-- Sidebar Navigation CSS -->
     <link rel="preload" href="{{ url_for('static', filename='css/sidebar.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -399,10 +403,18 @@
         
         // Load saved settings
         
-        // Initialize Feather Icons
-        if (typeof feather !== 'undefined') {
-            feather.replace();
+        // Initialize Feather Icons after DOM content loaded
+        function initializeFeatherIcons() {
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            } else {
+                // Retry after a short delay if feather isn't loaded yet
+                setTimeout(initializeFeatherIcons, 100);
+            }
         }
+        
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', initializeFeatherIcons);
         function loadSettings() {
             const saved = localStorage.getItem('minaSettings');
             if (saved) {
