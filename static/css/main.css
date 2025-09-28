@@ -1898,3 +1898,103 @@ p, .text-body {
     box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
   }
 }
+
+/* =================================================
+   COMPREHENSIVE REDUCED MOTION ACCESSIBILITY
+   ================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Disable all keyframe animations */
+  .recording-pulse,
+  .status-connected,
+  .status-connecting,
+  .confidence-bar::after,
+  .mic-level-shimmer,
+  .btn-pulse,
+  .transcription-segment.loading,
+  .live-metrics-card,
+  [class*="shimmer"],
+  [class*="pulse"],
+  [class*="blink"] {
+    animation: none !important;
+  }
+  
+  /* Remove transform-based hover effects */
+  .btn:hover,
+  .mina-btn:hover,
+  .card:hover,
+  .transcription-segment:hover,
+  .live-metrics-card:hover,
+  .nav-item:hover,
+  .stat-card:hover,
+  .sidebar-item:hover {
+    transform: none !important;
+  }
+  
+  /* Simplify transitions to only color/background changes */
+  .card,
+  .btn,
+  .mina-btn,
+  .transcription-segment,
+  .live-metrics-card,
+  .mic-level-bar,
+  .confidence-bar,
+  .sidebar-item,
+  .stat-card {
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease !important;
+  }
+  
+  /* Static states for animated elements */
+  .recording-indicator {
+    background: var(--mina-danger) !important;
+    box-shadow: none !important;
+  }
+  
+  .status-connected {
+    opacity: 1 !important;
+  }
+  
+  .status-connecting {
+    opacity: 0.8 !important;
+  }
+  
+  /* Remove scrolling animations */
+  html {
+    scroll-behavior: auto !important;
+  }
+  
+  /* Hide decorative animations */
+  .confidence-bar::after,
+  .mic-level-shimmer,
+  [class*="shimmer"]::after,
+  [class*="shimmer"]::before {
+    display: none !important;
+  }
+  
+  /* Ensure loading states remain functional but static */
+  .section-loading::before,
+  .btn.loading::after {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+  
+  /* Maintain strong focus indicators */
+  *:focus-visible {
+    outline: 3px solid var(--mina-primary) !important;
+    outline-offset: 2px !important;
+  }
+  
+  /* Ensure button states remain clear */
+  .btn:active,
+  .mina-btn:active {
+    transform: none !important;
+    opacity: 0.8 !important;
+  }
+  
+  /* Page transition fallbacks */
+  .page-transition-container,
+  [data-transition] {
+    transition: none !important;
+    animation: none !important;
+  }
+}
