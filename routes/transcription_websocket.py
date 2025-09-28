@@ -34,6 +34,22 @@ buffer_config = BufferConfig(
 # Background processing worker
 processing_workers = {}
 
+def _background_processor(session_id: str, buffer_manager):
+    """Simple background worker for processing buffered audio chunks"""
+    logger.info(f"🔧 Started background processor for session {session_id}")
+    
+    try:
+        while session_id in active_sessions:
+            time.sleep(1)  # Simple polling interval
+            # Basic background processing - can be enhanced later
+            if session_id not in active_sessions:
+                break
+                
+    except Exception as e:
+        logger.error(f"Background processor error for session {session_id}: {e}")
+    finally:
+        logger.info(f"🔧 Background processor stopped for session {session_id}")
+
 @socketio.on('connect', namespace='/transcription')
 def on_connect():
     """Handle client connection to transcription namespace"""
