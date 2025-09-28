@@ -3,8 +3,7 @@
 {% block title %}Live Recording Studio - {{ super() }}{% endblock %}
 
 {% block extra_head %}
-    <!-- Socket.IO loaded locally to bypass CDN issues -->
-    <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
+    <!-- Socket.IO is now loaded via base_unified.html -->
     
     <style>
         :root {
