@@ -10,26 +10,26 @@
 .recording-indicator {
   width: 14px;
   height: 14px;
-  background: #dc3545;
+  background: var(--mina-danger);
   border-radius: 50%;
   display: inline-block;
   margin-right: 8px;
   position: relative;
-  box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+  box-shadow: 0 0 0 0 rgba(var(--mina-danger-rgb), 0.7);
 }
 
 @keyframes recording-pulse {
   0% { 
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    box-shadow: 0 0 0 0 rgba(var(--mina-danger-rgb), 0.7);
   }
   70% { 
     transform: scale(1);
-    box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    box-shadow: 0 0 0 10px rgba(var(--mina-danger-rgb), 0);
   }
   100% { 
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    box-shadow: 0 0 0 0 rgba(var(--mina-danger-rgb), 0);
   }
 }
 
@@ -46,7 +46,7 @@
 
 .mic-level-bar {
   height: 100%;
-  background: linear-gradient(90deg, #28a745 0%, #28a745 60%, #ffc107 80%, #dc3545 100%);
+  background: linear-gradient(90deg, var(--mina-success) 0%, var(--mina-success) 60%, var(--mina-warning) 80%, var(--mina-danger) 100%);
   transition: width 0.1s ease-out;
   min-width: 2px;
 }
@@ -77,10 +77,10 @@
 }
 
 /* Quality indicators */
-.quality-excellent { color: #28a745; font-weight: bold; }
-.quality-good { color: #20c997; }
-.quality-fair { color: #ffc107; }
-.quality-poor { color: #dc3545; font-weight: bold; }
+.quality-excellent { color: var(--mina-success); font-weight: bold; }
+.quality-good { color: var(--mina-success-light); }
+.quality-fair { color: var(--mina-warning); }
+.quality-poor { color: var(--mina-danger); font-weight: bold; }
 
 /* 🎨 ENHANCED CONFIDENCE & QUALITY INDICATORS */
 .confidence-indicator {
@@ -137,11 +137,11 @@
 .quality-excellent { 
   color: var(--mina-success);
   font-weight: 600;
-  text-shadow: 0 1px 2px rgba(16, 185, 129, 0.2);
+  text-shadow: 0 1px 2px rgba(var(--mina-success-rgb), 0.2);
 }
 
 .quality-good { 
-  color: #20c997;
+  color: var(--mina-success-light);
   font-weight: 500;
 }
 
@@ -153,76 +153,10 @@
 .quality-poor { 
   color: var(--mina-danger);
   font-weight: 600;
-  text-shadow: 0 1px 2px rgba(239, 68, 68, 0.2);
+  text-shadow: 0 1px 2px rgba(var(--mina-danger-rgb), 0.2);
 }
 
-:root {
-  /* 🎨 ENHANCED DESIGN SYSTEM - Premium Color Palette */
-  --mina-primary: #3b82f6;
-  --mina-primary-hover: #2563eb;
-  --mina-primary-light: rgba(59, 130, 246, 0.1);
-  --mina-primary-gradient: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  
-  --mina-secondary: #64748b;
-  --mina-secondary-hover: #475569;
-  --mina-secondary-light: rgba(100, 116, 139, 0.1);
-  
-  --mina-success: #10b981;
-  --mina-success-hover: #059669;
-  --mina-success-light: rgba(16, 185, 129, 0.1);
-  --mina-success-gradient: linear-gradient(135deg, #10b981, #047857);
-  
-  --mina-warning: #f59e0b;
-  --mina-warning-hover: #d97706;
-  --mina-warning-light: rgba(245, 158, 11, 0.1);
-  --mina-warning-gradient: linear-gradient(135deg, #f59e0b, #d97706);
-  
-  --mina-danger: #ef4444;
-  --mina-danger-hover: #dc2626;
-  --mina-danger-light: rgba(239, 68, 68, 0.1);
-  --mina-danger-gradient: linear-gradient(135deg, #ef4444, #b91c1c);
-  
-  --mina-info: #06b6d4;
-  --mina-info-hover: #0891b2;
-  --mina-info-light: rgba(6, 182, 212, 0.1);
-  --mina-info-gradient: linear-gradient(135deg, #06b6d4, #0e7490);
-  
-  /* Enhanced Dark Theme Palette */
-  --mina-dark: #0f172a;
-  --mina-dark-lighter: #1e293b;
-  --mina-dark-light: #334155;
-  --mina-gray-900: #0f172a;
-  --mina-gray-800: #1e293b;
-  --mina-gray-700: #334155;
-  --mina-gray-600: #475569;
-  --mina-gray-500: #64748b;
-  --mina-gray-400: #94a3b8;
-  --mina-gray-300: #cbd5e1;
-  --mina-gray-200: #e2e8f0;
-  --mina-gray-100: #f1f5f9;
-  
-  --mina-light: #f8fafc;
-  
-  /* Enhanced Typography Scale */
-  --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-family-mono: 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
-  
-  /* Spacing Scale */
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
-  --spacing-2xl: 3rem;
-  --spacing-3xl: 4rem;
-  
-  /* Border Radius Scale */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
-  --radius-full: 9999px;
+/* Removed duplicate design tokens - using design-tokens.css as single source of truth */
   
   /* Enhanced Shadow System */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
