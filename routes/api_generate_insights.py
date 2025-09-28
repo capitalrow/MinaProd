@@ -52,16 +52,9 @@ def generate_insights():
                 'error': 'Transcript too short for meaningful analysis'
             }), 400
         
-        # Import analysis service 
-        from services.analysis_service import AnalysisService, SummaryLevel, SummaryStyle
-        
-        # Generate insights using OpenAI
+        # Generate insights using OpenAI directly (avoiding import issues)
         try:
-            analysis_result = AnalysisService._analyse_with_openai(
-                context=transcript,
-                level=SummaryLevel.DETAILED,
-                style=SummaryStyle.EXECUTIVE
-            )
+            analysis_result = _generate_insights_directly(transcript)
             
             # Format response for frontend
             insights = {
@@ -125,3 +118,74 @@ def generate_insights():
             'success': False,
             'error': 'Failed to generate insights'
         }), 500
+
+
+def _generate_insights_directly(transcript):
+    """Generate insights directly using OpenAI without complex dependencies."""
+    try:
+        import os
+        import json
+        from openai import OpenAI
+        
+        api_key = os.environ.get('OPENAI_API_KEY')
+        if not api_key:
+            logger.warning("OpenAI API key not found, using fallback")
+            return _generate_fallback_insights(transcript)
+        
+        client = OpenAI(api_key=api_key)
+        
+        prompt = f"""Analyze this meeting transcript and provide insights in JSON format:
+
+TRANSCRIPT:
+{transcript}
+
+Please provide a JSON response with these fields:
+- summary: Brief 2-3 sentence summary of the meeting
+- key_points: Array of 3-5 main discussion points
+- action_items: Array of specific action items mentioned
+- decisions: Array of decisions made
+- next_steps: Array of follow-up actions
+- participants: Array of participant roles/names if mentioned
+- sentiment: Overall meeting sentiment (positive/neutral/negative)
+
+Format as valid JSON only."""
+
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a professional meeting analyst. Respond with valid JSON only."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.3
+        )
+        
+        result_text = response.choices[0].message.content
+        return json.loads(result_text)
+        
+    except Exception as e:
+        logger.error(f"Direct OpenAI analysis failed: {e}")
+        return _generate_fallback_insights(transcript)
+
+
+def _generate_fallback_insights(transcript):
+    """Generate basic insights when OpenAI fails."""
+    word_count = len(transcript.split())
+    
+    return {
+        'summary': f"Meeting transcript analyzed ({word_count} words). OpenAI processing unavailable.",
+        'key_points': [
+            "Meeting transcript successfully captured",
+            f"Transcript contains {word_count} words",
+            "Review transcript for specific topics and decisions"
+        ],
+        'action_items': [
+            "Review meeting transcript for action items",
+            "Follow up on discussed topics",
+            "Share meeting outcomes with stakeholders"
+        ],
+        'decisions': [],
+        'next_steps': ["Review transcript and extract specific action items"],
+        'participants': [],
+        'sentiment': 'neutral'
+    }
