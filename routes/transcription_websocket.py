@@ -192,11 +192,11 @@ def on_audio_data(data):
         session_info['audio_buffer'].extend(audio_bytes)
         buffer_size = len(session_info['audio_buffer'])
         
-        # Process buffered audio every ~3 seconds or when buffer gets large  
+        # Process buffered audio more frequently for real-time transcription
         current_time = time.time()
         should_process = (
-            buffer_size > 50000 or 
-            (buffer_size > 10000 and current_time - session_info['last_process_time'] > 3)
+            buffer_size > 30000 or 
+            (buffer_size > 5000 and current_time - session_info['last_process_time'] > 2)
         )
         
         if should_process:
@@ -227,16 +227,20 @@ def on_audio_data(data):
             
                 if response.status_code == 200:
                     result = response.json()
-                    if result.get('success') and result.get('text'):
+                    text = result.get('final_text', '') or result.get('text', '')
+                    if text and text.strip():
+                        # Emit properly formatted transcription result
                         emit('transcription_result', {
-                            'transcript': result['text'],
-                            'is_final': result.get('is_final', False),
+                            'text': text,
+                            'is_final': result.get('is_final', True),
                             'confidence': result.get('confidence', 0.9),
-                            'segment_id': result.get('chunk_id', str(uuid.uuid4())),
-                            'latency_ms': result.get('processing_time', 100)
+                            'timestamp': int(time.time() * 1000),
+                            'speaker_id': result.get('speaker_id', 'Speaker 1'),
+                            'processing_time_ms': result.get('processing_time_ms', 100)
                         })
+                        logger.info(f"✅ [transcription] Emitted result: '{text[:50]}...'")
                     else:
-                        # Silent handling for empty results
+                        logger.debug(f"📝 [transcription] Empty result, skipping emission")
                         pass
                 else:
                     logger.warning(f"[transcription] API error: {response.status_code}")

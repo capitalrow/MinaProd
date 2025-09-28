@@ -2629,9 +2629,18 @@
                         }
                     });
                     
-                    // Setup MediaRecorder
+                    // Setup MediaRecorder with compatible format for real-time processing
+                    let mimeType = 'audio/webm;codecs=opus';
+                    if (!MediaRecorder.isTypeSupported(mimeType)) {
+                        mimeType = 'audio/webm';
+                        if (!MediaRecorder.isTypeSupported(mimeType)) {
+                            mimeType = 'audio/wav';
+                        }
+                    }
+                    
                     this.mediaRecorder = new MediaRecorder(this.audioStream, {
-                        mimeType: 'audio/webm;codecs=opus'
+                        mimeType: mimeType,
+                        audioBitsPerSecond: 64000  // Lower bitrate for better real-time processing
                     });
                     
                     this.mediaRecorder.ondataavailable = (event) => {
@@ -2647,7 +2656,7 @@
                                     const base64Audio = btoa(String.fromCharCode.apply(null, audioData));
                                     this.socket.emit('audio_data', {
                                         data: base64Audio,
-                                        mimeType: 'audio/webm;codecs=opus',
+                                        mimeType: mimeType,
                                         size: audioData.length
                                     });
                                 }
