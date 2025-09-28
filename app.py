@@ -48,16 +48,18 @@ def _configure_logging(json_logs: bool = False) -> None:
     root.addHandler(handler)
     root.setLevel(logging.INFO)
 
-# ---------- Create the SocketIO singleton first (threading = Replit-safe)
+# ---------- Create the SocketIO singleton with eventlet for production WebSocket support
 socketio = SocketIO(
     cors_allowed_origins=["http://localhost:5000", "https://*.replit.dev", "https://*.replit.app"],
-    async_mode="threading",
+    async_mode="eventlet",  # Changed from threading to eventlet for proper WebSocket support
     ping_timeout=60,
     ping_interval=25,
     path="/socket.io",
     engineio_logger=False,
     socketio_logger=False,
     max_http_buffer_size=int(os.getenv("SIO_MAX_HTTP_BUFFER", str(10 * 1024 * 1024))),  # 10 MB per message
+    allow_upgrades=True,  # Allow WebSocket upgrades
+    transports=['websocket', 'polling']  # WebSocket first, polling fallback
 )
 
 def create_app() -> Flask:
@@ -133,7 +135,7 @@ def create_app() -> Flask:
         resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         resp.headers["Content-Security-Policy"] = (
             "default-src 'self' *.replit.dev *.replit.app; "
-            "connect-src 'self' https: wss: ws:; "
+            "connect-src 'self' https: wss: ws: wss://*.replit.dev wss://*.replit.app ws://localhost:5000; "
             "script-src 'self' 'unsafe-inline' https://cdn.socket.io https://cdnjs.cloudflare.com https://cdn.replit.com; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.replit.com; "
             "font-src 'self' https://cdnjs.cloudflare.com data:; "

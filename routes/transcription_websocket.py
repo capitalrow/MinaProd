@@ -10,8 +10,9 @@ import requests
 import threading
 from datetime import datetime
 
-from flask import request
+from flask import request, session
 from flask_socketio import emit, disconnect, join_room, leave_room
+from flask_login import current_user
 
 # Import the socketio instance from the consolidated app
 from app import socketio
@@ -51,10 +52,22 @@ def _background_processor(session_id: str, buffer_manager):
         logger.info(f"🔧 Background processor stopped for session {session_id}")
 
 @socketio.on('connect', namespace='/transcription')
-def on_connect():
-    """Handle client connection to transcription namespace"""
-    logger.info(f"[transcription] Client connected: {request.sid}")
-    emit('status', {'status': 'connected', 'message': 'Connected to transcription service'})
+def on_connect(auth=None):
+    """Handle client connection to transcription namespace with authentication"""
+    # Check authentication - require valid user session
+    if not current_user.is_authenticated:
+        logger.warning(f"[transcription] Unauthenticated connection attempt from {request.sid}")
+        emit('error', {'message': 'Authentication required'})
+        disconnect()
+        return False
+    
+    logger.info(f"[transcription] Authenticated client connected: {request.sid} (user: {current_user.id})")
+    join_room(f"user_{current_user.id}")
+    emit('status', {
+        'status': 'connected', 
+        'message': 'Connected to transcription service',
+        'user_id': current_user.id
+    })
 
 @socketio.on('disconnect', namespace='/transcription')
 def on_disconnect():
