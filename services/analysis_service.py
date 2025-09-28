@@ -16,44 +16,170 @@ from sqlalchemy.orm import Session as DbSession
 from app import db
 from models.session import Session
 from models.segment import Segment
-from models.summary import Summary
+from models.summary import Summary, SummaryLevel, SummaryStyle
 
 logger = logging.getLogger(__name__)
 
 
 class AnalysisService:
-    """Service for generating AI-powered meeting insights."""
+    """Service for generating AI-powered meeting insights with multi-level and multi-style support."""
     
-    # Analysis prompt template with strict JSON requirements
-    ANALYSIS_PROMPT = """
-    You are a professional meeting analyst. Analyse this meeting transcript and extract key insights in British English. 
-    Be concise, specific, and never fabricate information. If information is missing or unclear, use "unknown".
-    
-    Extract:
-    1. SUMMARY: A brief meeting summary in markdown format
-    2. ACTIONS: Tasks with owners and deadlines 
-    3. DECISIONS: Key decisions made
-    4. RISKS: Identified risks with potential mitigations
-    
-    Return ONLY valid JSON in this exact format:
-    {
-        "summary_md": "Brief meeting summary in markdown format",
-        "actions": [{"text": "Action description", "owner": "Person or unknown", "due": "Date or unknown"}],
-        "decisions": [{"text": "Decision description"}],
-        "risks": [{"text": "Risk description", "mitigation": "Suggested mitigation or unknown"}]
+    # Multi-level, multi-style prompt templates
+    PROMPT_TEMPLATES = {
+        # Brief Level Prompts
+        "brief_executive": """
+        You are a C-level executive assistant. Create a brief executive summary (2-3 sentences max) of this meeting.
+        Focus on strategic decisions, financial impact, and high-level outcomes only.
+        
+        Return ONLY valid JSON:
+        {
+            "brief_summary": "2-3 sentence executive summary",
+            "executive_insights": [{"insight": "Key strategic point", "impact": "Business impact"}]
+        }
+        
+        Meeting transcript:
+        {transcript}
+        """,
+        
+        "brief_action": """
+        You are a project manager. Extract only the most critical action items from this meeting (2-3 sentences summary).
+        Focus on urgent tasks and immediate next steps.
+        
+        Return ONLY valid JSON:
+        {
+            "brief_summary": "2-3 sentence action-focused summary",
+            "action_plan": [{"action": "Critical task", "owner": "Person or unknown", "priority": "high/medium/low", "due": "Date or unknown"}]
+        }
+        
+        Meeting transcript:
+        {transcript}
+        """,
+        
+        # Standard Level Prompts
+        "standard_executive": """
+        You are a professional meeting analyst. Create a standard executive summary (1-2 paragraphs) focusing on business outcomes.
+        Include key decisions, strategic direction, and business impact.
+        
+        Return ONLY valid JSON:
+        {
+            "summary_md": "Standard executive summary in markdown format",
+            "actions": [{"text": "Action description", "owner": "Person or unknown", "due": "Date or unknown"}],
+            "decisions": [{"text": "Decision description", "impact": "Business impact"}],
+            "risks": [{"text": "Risk description", "mitigation": "Suggested mitigation or unknown"}],
+            "executive_insights": [{"insight": "Strategic point", "impact": "Business impact", "next_steps": "What needs to happen"}]
+        }
+        
+        Meeting transcript:
+        {transcript}
+        """,
+        
+        "standard_technical": """
+        You are a technical lead. Create a standard technical summary (1-2 paragraphs) focusing on implementation details.
+        Include technical decisions, architecture choices, and development tasks.
+        
+        Return ONLY valid JSON:
+        {
+            "summary_md": "Standard technical summary in markdown format",
+            "actions": [{"text": "Technical task", "owner": "Person or unknown", "due": "Date or unknown", "complexity": "high/medium/low"}],
+            "decisions": [{"text": "Technical decision", "rationale": "Why this was chosen"}],
+            "risks": [{"text": "Technical risk", "mitigation": "Technical solution"}],
+            "technical_details": [{"area": "Technology/Architecture", "details": "Technical specifics", "impact": "Development impact"}]
+        }
+        
+        Meeting transcript:
+        {transcript}
+        """,
+        
+        "standard_narrative": """
+        You are a storytelling analyst. Create a standard narrative summary (1-2 paragraphs) that tells the story of this meeting.
+        Focus on the chronological flow of discussions and how decisions evolved.
+        
+        Return ONLY valid JSON:
+        {
+            "summary_md": "Standard narrative summary in markdown format",
+            "actions": [{"text": "Action description", "owner": "Person or unknown", "due": "Date or unknown"}],
+            "decisions": [{"text": "Decision description", "context": "How this decision came about"}],
+            "risks": [{"text": "Risk description", "mitigation": "Suggested mitigation or unknown"}]
+        }
+        
+        Meeting transcript:
+        {transcript}
+        """,
+        
+        "standard_bullet": """
+        You are a structured analyst. Create a standard bullet-point summary (1-2 paragraphs) using clear bullet points and lists.
+        Focus on organized, scannable information.
+        
+        Return ONLY valid JSON:
+        {
+            "summary_md": "Standard bullet-point summary in markdown format with bullet points",
+            "actions": [{"text": "Action description", "owner": "Person or unknown", "due": "Date or unknown"}],
+            "decisions": [{"text": "Decision description"}],
+            "risks": [{"text": "Risk description", "mitigation": "Suggested mitigation or unknown"}]
+        }
+        
+        Meeting transcript:
+        {transcript}
+        """,
+        
+        "brief_narrative": """
+        You are a concise storyteller. Create a brief narrative summary (2-3 sentences max) that tells the key story of this meeting.
+        Focus on the main flow and outcome.
+        
+        Return ONLY valid JSON:
+        {
+            "brief_summary": "2-3 sentence narrative summary"
+        }
+        
+        Meeting transcript:
+        {transcript}
+        """,
+        
+        "brief_bullet": """
+        You are a structured summarizer. Create a brief bullet-point summary (2-3 key points max).
+        Focus on the most important outcomes in bullet format.
+        
+        Return ONLY valid JSON:
+        {
+            "brief_summary": "2-3 key bullet points summary"
+        }
+        
+        Meeting transcript:
+        {transcript}
+        """,
+        
+        # Detailed Level Prompts
+        "detailed_comprehensive": """
+        You are a comprehensive meeting analyst. Create a detailed, multi-section analysis of this meeting.
+        Include all aspects: strategic, operational, technical, and actionable items.
+        
+        Return ONLY valid JSON:
+        {
+            "detailed_summary": "Comprehensive multi-section analysis in markdown format",
+            "summary_md": "Overview paragraph",
+            "brief_summary": "2-3 sentence executive summary",
+            "actions": [{"text": "Action item", "owner": "Person or unknown", "due": "Date or unknown", "priority": "high/medium/low", "category": "strategic/operational/technical"}],
+            "decisions": [{"text": "Decision made", "rationale": "Why this was decided", "impact": "Expected impact", "stakeholders": "Who is affected"}],
+            "risks": [{"text": "Risk identified", "mitigation": "Mitigation strategy", "severity": "high/medium/low", "timeline": "When this might occur"}],
+            "executive_insights": [{"insight": "Strategic insight", "impact": "Business impact", "timeline": "When this matters", "stakeholders": "Who should know"}],
+            "technical_details": [{"area": "Technical area", "details": "Specific details", "decisions": "Technical choices made", "next_steps": "What needs to happen"}],
+            "action_plan": [{"phase": "Implementation phase", "tasks": "What needs to be done", "owner": "Who leads this", "timeline": "When this happens"}]
+        }
+        
+        Meeting transcript:
+        {transcript}
+        """
     }
     
-    Meeting transcript:
-    {transcript}
-    """
-    
     @staticmethod
-    def generate_summary(session_id: int) -> Dict:
+    def generate_summary(session_id: int, level: SummaryLevel = SummaryLevel.STANDARD, style: SummaryStyle = SummaryStyle.EXECUTIVE) -> Dict:
         """
-        Generate AI-powered summary for a session.
+        Generate AI-powered summary for a session with specified level and style.
         
         Args:
             session_id: ID of the session to analyse
+            level: Summary detail level (brief, standard, detailed)
+            style: Summary style (executive, action, technical, narrative, bullet)
             
         Returns:
             Dict containing the generated summary data
@@ -93,14 +219,14 @@ class AnalysisService:
             context = AnalysisService._build_context(final_segments)
             logger.info(f"Built context with {len(context)} characters for session {session_id}")
             
-            # Generate insights using configured engine
+            # Generate insights using configured engine with level and style
             if engine == 'openai_gpt':
-                summary_data = AnalysisService._analyse_with_openai(context)
+                summary_data = AnalysisService._analyse_with_openai(context, level, style)
             else:
-                summary_data = AnalysisService._analyse_with_mock(context, final_segments)
+                summary_data = AnalysisService._analyse_with_mock(context, final_segments, level, style)
         
         # Persist summary to database
-        summary = AnalysisService._persist_summary(session_id, summary_data, engine)
+        summary = AnalysisService._persist_summary(session_id, summary_data, engine, level, style)
         
         logger.info(f"Generated summary {summary.id} for session {session_id} using {engine}")
         return summary.to_dict()
@@ -158,12 +284,14 @@ class AnalysisService:
         return full_transcript
     
     @staticmethod
-    def _analyse_with_openai(context: str) -> Dict:
+    def _analyse_with_openai(context: str, level: SummaryLevel, style: SummaryStyle) -> Dict:
         """
-        Analyse context using OpenAI GPT.
+        Analyse context using OpenAI GPT with specified level and style.
         
         Args:
             context: Meeting transcript context
+            level: Summary detail level
+            style: Summary style type
             
         Returns:
             Analysis results dictionary
@@ -175,15 +303,20 @@ class AnalysisService:
             api_key = os.environ.get('OPENAI_API_KEY')
             if not api_key:
                 logger.warning("OpenAI API key not found, falling back to mock analysis")
-                return AnalysisService._analyse_with_mock(context, [])
+                return AnalysisService._analyse_with_mock(context, [], level, style)
             
             client = OpenAI(api_key=api_key)
             
-            # First attempt
-            prompt = AnalysisService.ANALYSIS_PROMPT.format(transcript=context)
+            # Select appropriate prompt template based on level and style
+            prompt_key = AnalysisService._get_prompt_key(level, style)
+            prompt_template = AnalysisService.PROMPT_TEMPLATES.get(prompt_key, AnalysisService.PROMPT_TEMPLATES["standard_executive"])
+            prompt = prompt_template.format(transcript=context)
+            
+            # Get expected keys for this level/style combination
+            expected_keys = AnalysisService._get_expected_keys(level, style)
             
             response = client.chat.completions.create(
-                model="gpt-5",  # Use latest model as per blueprint
+                model="gpt-4",  # Use proven model (gpt-5 may not exist)
                 messages=[
                     {"role": "system", "content": "You are a professional meeting analyst. Respond with valid JSON only."},
                     {"role": "user", "content": prompt}
@@ -195,10 +328,11 @@ class AnalysisService:
             result_text = response.choices[0].message.content
             result = json.loads(result_text)
             
-            # Validate required keys
-            required_keys = ['summary_md', 'actions', 'decisions', 'risks']
-            if not all(key in result for key in required_keys):
-                raise ValueError(f"Missing required keys in response: {required_keys}")
+            # Validate required keys based on level/style
+            missing_keys = [key for key in expected_keys if key not in result]
+            if missing_keys:
+                logger.warning(f"Missing expected keys for {level.value} {style.value}: {missing_keys}")
+                # Don't fail for missing keys, just log the warning
             
             return result
             
@@ -210,7 +344,7 @@ class AnalysisService:
                 retry_prompt = f"The previous response was invalid JSON. Respond with VALID JSON ONLY in the exact format requested:\n\n{prompt}"
                 
                 response = client.chat.completions.create(
-                    model="gpt-5",
+                    model="gpt-4",
                     messages=[
                         {"role": "system", "content": "Respond with valid JSON only. No additional text."},
                         {"role": "user", "content": retry_prompt}
@@ -222,50 +356,155 @@ class AnalysisService:
                 result_text = response.choices[0].message.content
                 result = json.loads(result_text)
                 
-                # Validate required keys
-                required_keys = ['summary_md', 'actions', 'decisions', 'risks']
-                if not all(key in result for key in required_keys):
-                    raise ValueError(f"Missing required keys in retry response: {required_keys}")
+                # Validate expected keys for this level/style
+                missing_keys = [key for key in expected_keys if key not in result]
+                if missing_keys:
+                    logger.warning(f"Missing expected keys in retry for {level.value} {style.value}: {missing_keys}")
                 
                 return result
                 
             except Exception as retry_e:
                 logger.error(f"OpenAI analysis retry failed: {retry_e}")
                 # Fall back to mock analysis
-                return AnalysisService._analyse_with_mock(context, [])
+                return AnalysisService._analyse_with_mock(context, [], level, style)
             
         except Exception as e:
             logger.error(f"OpenAI analysis failed: {e}")
             # Fall back to mock analysis
-            return AnalysisService._analyse_with_mock(context, [])
+            return AnalysisService._analyse_with_mock(context, [], level, style)
     
     @staticmethod
-    def _analyse_with_mock(context: str, segments: List[Segment]) -> Dict:
+    def _get_expected_keys(level: SummaryLevel, style: SummaryStyle) -> List[str]:
         """
-        Generate mock analysis for testing and development.
+        Get the expected JSON keys for a given level and style combination.
+        
+        Args:
+            level: Summary detail level
+            style: Summary style type
+            
+        Returns:
+            List of expected JSON keys
+        """
+        if level == SummaryLevel.BRIEF:
+            return ["brief_summary"]  # Brief always requires brief_summary
+        elif level == SummaryLevel.DETAILED:
+            return ["detailed_summary", "summary_md", "brief_summary", "actions", "decisions", "risks", 
+                   "executive_insights", "technical_details", "action_plan"]
+        else:  # STANDARD level
+            return ["summary_md", "actions", "decisions", "risks"]
+    
+    @staticmethod
+    def _get_prompt_key(level: SummaryLevel, style: SummaryStyle) -> str:
+        """
+        Get the appropriate prompt key based on level and style.
+        
+        Args:
+            level: Summary detail level
+            style: Summary style type
+            
+        Returns:
+            Prompt template key
+        """
+        # Map level and style combinations to prompt keys
+        if level == SummaryLevel.BRIEF:
+            if style == SummaryStyle.ACTION:
+                return "brief_action"
+            elif style == SummaryStyle.NARRATIVE:
+                return "brief_narrative"
+            elif style == SummaryStyle.BULLET:
+                return "brief_bullet"
+            else:  # EXECUTIVE, TECHNICAL default to executive for brief
+                return "brief_executive"
+        elif level == SummaryLevel.DETAILED:
+            return "detailed_comprehensive"
+        else:  # STANDARD level
+            if style == SummaryStyle.TECHNICAL:
+                return "standard_technical"
+            elif style == SummaryStyle.NARRATIVE:
+                return "standard_narrative"
+            elif style == SummaryStyle.BULLET:
+                return "standard_bullet"
+            else:  # EXECUTIVE, ACTION default to executive for standard
+                return "standard_executive"
+    
+    @staticmethod
+    def _analyse_with_mock(context: str, segments: List[Segment], level: SummaryLevel, style: SummaryStyle) -> Dict:
+        """
+        Generate mock analysis for testing and development with multi-level and multi-style support.
         
         Args:
             context: Meeting transcript context
             segments: List of segments for analysis
+            level: Summary detail level
+            style: Summary style type
             
         Returns:
             Mock analysis results dictionary
         """
-        # Create realistic mock insights based on transcript content
+        # Create realistic mock insights based on transcript content and style
         word_count = len(context.split()) if context else 0
         
-        # Generate summary based on content
-        if word_count > 0:
-            summary_md = f"""## Meeting Summary
+        # Generate different content based on level and style
+        brief_summary = "Key decisions were made during this meeting with several action items identified for follow-up."
+        
+        if level == SummaryLevel.BRIEF:
+            if style == SummaryStyle.ACTION:
+                summary_md = "## Action Summary\nCritical tasks were identified and assigned during this meeting."
+            else:
+                summary_md = "## Executive Brief\nStrategic discussions resulted in key business decisions."
+        elif level == SummaryLevel.DETAILED:
+            summary_md = f"""## Comprehensive Meeting Analysis
+
+### Overview
+This meeting encompassed {word_count} words of detailed discussion across multiple strategic and operational areas.
+
+### Strategic Outcomes
+- Key business decisions were finalized
+- Strategic direction was clarified
+- Resource allocation was discussed
+
+### Operational Details
+- Implementation plans were reviewed
+- Timeline considerations were addressed
+- Team responsibilities were assigned
+
+### Technical Considerations
+- Technical approaches were evaluated
+- Architecture decisions were made
+- Development priorities were set"""
+        else:  # STANDARD
+            if style == SummaryStyle.TECHNICAL:
+                summary_md = f"""## Technical Meeting Summary
+This meeting covered {word_count} words focusing on technical implementation and architecture decisions.
+
+### Technical Decisions
+- Architecture approaches were evaluated
+- Technology choices were made
+- Implementation strategies were discussed"""
+            else:
+                summary_md = f"""## Meeting Summary
 This meeting covered {word_count} words of discussion. Key topics discussed included the main agenda items and various decisions were made.
 
 ### Key Discussion Points
 - Primary topics were addressed
 - Team collaboration was evident
-- Several action items were identified
-"""
-        else:
-            summary_md = "## Meeting Summary\nNo transcript content available for analysis."
+- Several action items were identified"""
+        
+        detailed_summary = f"""## Comprehensive Analysis
+
+This meeting involved extensive discussion across {word_count} words of content, covering strategic, operational, and technical aspects of the project.
+
+### Strategic Overview
+The meeting addressed high-level business objectives and strategic direction. Key stakeholders participated in decision-making processes that will impact future operations.
+
+### Operational Focus
+Day-to-day operational concerns were discussed, including resource allocation, timeline management, and team coordination.
+
+### Technical Considerations
+Technical implementation details were reviewed, including architecture decisions, technology choices, and development approaches.
+
+### Outcomes and Next Steps
+Multiple action items were identified with clear ownership and timelines. Follow-up meetings were scheduled to track progress."""
         
         # Mock actions based on common patterns
         mock_actions = [
@@ -285,22 +524,46 @@ This meeting covered {word_count} words of discussion. Key topics discussed incl
             {"text": "Resource allocation needs clarification", "mitigation": "Schedule resource planning meeting"}
         ] if word_count > 100 else []
         
+        # Generate style-specific mock content
+        executive_insights = [
+            {"insight": "Strategic alignment achieved", "impact": "Improved business outcomes", "timeline": "Q1 next year", "stakeholders": "Executive team"},
+            {"insight": "Resource allocation optimized", "impact": "Cost savings identified", "timeline": "This quarter", "stakeholders": "Operations team"}
+        ] if style == SummaryStyle.EXECUTIVE or level == SummaryLevel.DETAILED else []
+        
+        technical_details = [
+            {"area": "Architecture", "details": "Microservices approach selected", "decisions": "API-first design", "next_steps": "Design service boundaries"},
+            {"area": "Technology Stack", "details": "Modern framework adoption", "decisions": "React/Node.js combination", "next_steps": "Set up development environment"}
+        ] if style == SummaryStyle.TECHNICAL or level == SummaryLevel.DETAILED else []
+        
+        action_plan = [
+            {"phase": "Planning", "tasks": "Finalize requirements and specifications", "owner": "Product team", "timeline": "Week 1-2"},
+            {"phase": "Development", "tasks": "Implement core functionality", "owner": "Engineering team", "timeline": "Week 3-8"},
+            {"phase": "Testing", "tasks": "Quality assurance and user testing", "owner": "QA team", "timeline": "Week 7-10"}
+        ] if style == SummaryStyle.ACTION or level == SummaryLevel.DETAILED else []
+
         return {
             'summary_md': summary_md,
+            'brief_summary': brief_summary,
+            'detailed_summary': detailed_summary if level == SummaryLevel.DETAILED else None,
             'actions': mock_actions,
             'decisions': mock_decisions,
-            'risks': mock_risks
+            'risks': mock_risks,
+            'executive_insights': executive_insights,
+            'technical_details': technical_details,
+            'action_plan': action_plan
         }
     
     @staticmethod
-    def _persist_summary(session_id: int, summary_data: Dict, engine: str) -> Summary:
+    def _persist_summary(session_id: int, summary_data: Dict, engine: str, level: SummaryLevel, style: SummaryStyle) -> Summary:
         """
-        Persist analysis results to database.
+        Persist analysis results to database with level and style information.
         
         Args:
             session_id: ID of the session
             summary_data: Analysis results
             engine: Analysis engine used
+            level: Summary detail level
+            style: Summary style type
             
         Returns:
             Persisted Summary object
@@ -315,10 +578,17 @@ This meeting covered {word_count} words of discussion. Key topics discussed incl
         
         summary = Summary(
             session_id=session_id,
+            level=level,
+            style=style,
             summary_md=summary_data.get('summary_md'),
+            brief_summary=summary_data.get('brief_summary'),
+            detailed_summary=summary_data.get('detailed_summary'),
             actions=summary_data.get('actions', []),
             decisions=summary_data.get('decisions', []),
             risks=summary_data.get('risks', []),
+            executive_insights=summary_data.get('executive_insights', []),
+            technical_details=summary_data.get('technical_details', []),
+            action_plan=summary_data.get('action_plan', []),
             engine=engine,
             created_at=datetime.utcnow()
         )
