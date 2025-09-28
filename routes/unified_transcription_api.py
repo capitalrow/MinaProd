@@ -20,6 +20,13 @@ import io
 from services.circuit_breaker import get_openai_circuit_breaker, get_audio_processing_circuit_breaker, CircuitBreakerOpenError
 from services.health_monitor import get_health_monitor
 
+# Import enhanced services
+from services.multi_model_transcription import get_multi_model_service, TranscriptionContext
+from services.speaker_diarization_enhanced import get_speaker_diarization
+from services.sentiment_analysis_service import get_sentiment_service
+from services.meeting_insights_service import get_insights_service
+from services.redis_cache_service import get_cache_service
+
 logger = logging.getLogger(__name__)
 
 # Create unified transcription blueprint
