@@ -17,7 +17,7 @@ except Exception:
     class Config:
         JSON_LOGS: bool = os.getenv("JSON_LOGS", "false").lower() == "true"
         METRICS_DIR: str = os.getenv("METRICS_DIR", "./metrics")
-        SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me")
+        SECRET_KEY: str = os.getenv("SESSION_SECRET", os.urandom(32).hex())
         SOCKETIO_PATH: str = os.getenv("SOCKETIO_PATH", "/socket.io")
         CORS_ALLOWLIST: str = os.getenv("CORS_ALLOWLIST", "*")
         MAX_CONTENT_LENGTH: int = int(os.getenv("MAX_CONTENT_LENGTH", str(32 * 1024 * 1024)))  # 32 MB
@@ -49,7 +49,7 @@ def _configure_logging(json_logs: bool = False) -> None:
 
 # ---------- Create the SocketIO singleton first (threading = Replit-safe)
 socketio = SocketIO(
-    cors_allowed_origins="*",          # narrowed in handshake check below
+    cors_allowed_origins=["http://localhost:5000", "https://*.replit.dev", "https://*.replit.app"],
     async_mode="threading",
     ping_timeout=60,
     ping_interval=25,
@@ -62,7 +62,7 @@ socketio = SocketIO(
 def create_app() -> Flask:
     app = Flask(__name__, static_folder="static", template_folder="templates")
     app.config.from_object(Config)
-    app.secret_key = getattr(Config, "SECRET_KEY", "change-me")
+    app.secret_key = os.environ.get("SESSION_SECRET", getattr(Config, "SECRET_KEY", os.urandom(32).hex()))
     app.config["MAX_CONTENT_LENGTH"] = getattr(Config, "MAX_CONTENT_LENGTH", 32 * 1024 * 1024)
 
     # logging
@@ -106,6 +106,9 @@ def create_app() -> Flask:
     @app.after_request
     def add_security_headers(resp):
         resp.headers["X-Content-Type-Options"] = "nosniff"
+        resp.headers["X-Frame-Options"] = "SAMEORIGIN"
+        resp.headers["X-XSS-Protection"] = "1; mode=block"
+        resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         resp.headers["Content-Security-Policy"] = (
             "default-src 'self' *.replit.dev *.replit.app; "

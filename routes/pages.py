@@ -20,7 +20,7 @@ def app():
         return redirect(url_for("auth.register", next=url_for("dashboard.index")))
 
 @pages_bp.route("/live")
-# @login_required  # Temporarily disabled for testing
+@login_required
 def live():
     """Production live recording interface with all features consolidated"""
     return render_template("live.html")
@@ -29,10 +29,10 @@ def live():
 @login_required
 def live_enhanced():
     """Legacy route - redirects to main live interface"""
-    return render_template("live.html")
+    return redirect(url_for("pages.live"))
 
 @pages_bp.route("/live-comprehensive")
 @login_required
 def live_comprehensive():
     """Legacy route - redirects to main live interface"""
-    return render_template("live.html")
+    return redirect(url_for("pages.live"))
