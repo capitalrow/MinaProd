@@ -648,16 +648,184 @@ function injectUltraDepthMinaLogoStyles() {
     document.head.appendChild(style);
 }
 
+// Centralized Logo Management System
+class MinaLogoManager {
+    constructor() {
+        this.instances = new Map();
+        this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        this.isLowPowerMode = navigator.hardwareConcurrency <= 2;
+        this.intersectionObserver = null;
+        this.initializeObserver();
+    }
+    
+    initializeObserver() {
+        if ('IntersectionObserver' in window) {
+            this.intersectionObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !this.instances.has(entry.target)) {
+                        this.initializeLogo(entry.target);
+                    }
+                });
+            }, { rootMargin: '50px' });
+        }
+    }
+    
+    // Auto-initialize all logos with data attributes
+    autoInitialize() {
+        const logoElements = document.querySelectorAll('[data-mina-logo]');
+        logoElements.forEach(element => {
+            if (this.intersectionObserver) {
+                this.intersectionObserver.observe(element);
+            } else {
+                this.initializeLogo(element);
+            }
+        });
+    }
+    
+    initializeLogo(element) {
+        if (this.instances.has(element)) return;
+        
+        const options = this.parseDataAttributes(element);
+        
+        // Add accessibility attributes
+        element.setAttribute('role', 'img');
+        element.setAttribute('aria-label', 'Mina logo');
+        if (options.decorative) {
+            element.setAttribute('aria-hidden', 'true');
+            element.removeAttribute('aria-label');
+        }
+        
+        // Apply reduced motion preferences
+        if (this.prefersReducedMotion) {
+            options.animation = 'none';
+        }
+        
+        // Performance optimization for low-power devices
+        if (this.isLowPowerMode && options.size < 64) {
+            this.createStaticFallback(element, options);
+            return;
+        }
+        
+        try {
+            const logo = new MinaAnimatedLogo(element, options);
+            this.instances.set(element, logo);
+        } catch (error) {
+            console.warn('Failed to initialize Mina logo:', error);
+            this.createStaticFallback(element, options);
+        }
+    }
+    
+    parseDataAttributes(element) {
+        const dataset = element.dataset;
+        return {
+            size: parseInt(dataset.minaLogoSize) || 32,
+            showWordmark: dataset.minaLogoWordmark !== 'false',
+            animation: dataset.minaLogoAnimation || 'subtle',
+            decorative: dataset.minaLogoDecorative === 'true',
+            theme: dataset.minaLogoTheme || 'auto'
+        };
+    }
+    
+    createStaticFallback(element, options) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', options.size);
+        svg.setAttribute('height', options.size);
+        svg.setAttribute('viewBox', '0 0 100 100');
+        svg.setAttribute('fill', 'none');
+        
+        // Simple static squircle with microphone bars
+        const squircle = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        squircle.setAttribute('x', '10');
+        squircle.setAttribute('y', '10');
+        squircle.setAttribute('width', '80');
+        squircle.setAttribute('height', '80');
+        squircle.setAttribute('rx', '20');
+        squircle.setAttribute('fill', 'url(#staticGradient)');
+        
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+        gradient.setAttribute('id', 'staticGradient');
+        gradient.innerHTML = `
+            <stop offset="0%" stop-color="#B985FF"/>
+            <stop offset="100%" stop-color="#6D28D9"/>
+        `;
+        defs.appendChild(gradient);
+        
+        // Microphone bars
+        const bars = [
+            { x: 35, height: 20 },
+            { x: 45, height: 15 },
+            { x: 55, height: 20 }
+        ];
+        
+        bars.forEach(bar => {
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', bar.x);
+            rect.setAttribute('y', 60 - bar.height);
+            rect.setAttribute('width', '6');
+            rect.setAttribute('height', bar.height);
+            rect.setAttribute('rx', '3');
+            rect.setAttribute('fill', '#FFFFFF');
+            rect.setAttribute('opacity', '0.9');
+            svg.appendChild(rect);
+        });
+        
+        svg.appendChild(defs);
+        svg.appendChild(squircle);
+        element.appendChild(svg);
+    }
+    
+    // Performance monitoring
+    pauseAnimationsOnLowPower() {
+        if (navigator.getBattery) {
+            navigator.getBattery().then(battery => {
+                if (battery.level < 0.2 || battery.charging === false) {
+                    this.instances.forEach(logo => {
+                        if (logo.pauseAnimations) {
+                            logo.pauseAnimations();
+                        }
+                    });
+                }
+            });
+        }
+    }
+    
+    // Cleanup
+    destroy() {
+        if (this.intersectionObserver) {
+            this.intersectionObserver.disconnect();
+        }
+        this.instances.clear();
+    }
+}
+
+// Global initialization
+let minaLogoManager = null;
+
 // Auto-inject ultra-depth styles when script loads
 if (typeof window !== 'undefined') {
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', injectUltraDepthMinaLogoStyles);
+        document.addEventListener('DOMContentLoaded', () => {
+            injectUltraDepthMinaLogoStyles();
+            minaLogoManager = new MinaLogoManager();
+            minaLogoManager.autoInitialize();
+        });
     } else {
         injectUltraDepthMinaLogoStyles();
+        minaLogoManager = new MinaLogoManager();
+        minaLogoManager.autoInitialize();
     }
+    
+    // Handle visibility changes for performance
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && minaLogoManager) {
+            minaLogoManager.pauseAnimationsOnLowPower();
+        }
+    });
 }
 
 // Make available globally
 if (typeof window !== 'undefined') {
     window.MinaAnimatedLogo = MinaAnimatedLogo;
+    window.MinaLogoManager = minaLogoManager;
 }
