@@ -97,16 +97,60 @@
             text-decoration: none;
         }
         
+        /* Enhanced Mina Logo Theme Variables */
+        :root {
+            --mina-icon-highlight: #60A5FA;
+            --mina-icon-primary: #3B82F6;
+            --mina-icon-secondary: #6366F1;
+            --mina-icon-accent: #8B5CF6;
+            --mina-icon-depth: #6D28D9;
+            --mina-icon-specular: #FFFFFF;
+            --mina-icon-shadow: rgba(0,0,0,0.25);
+            --mina-icon-wave: rgba(99, 102, 241, 0.15);
+        }
+        
+        [data-theme="dark"] {
+            --mina-icon-highlight: #7DD3FC;
+            --mina-icon-primary: #38BDF8;
+            --mina-icon-secondary: #8B5CF6;
+            --mina-icon-accent: #A855F7;
+            --mina-icon-depth: #7C3AED;
+            --mina-icon-specular: #F8FAFC;
+            --mina-icon-shadow: rgba(0,0,0,0.4);
+            --mina-icon-wave: rgba(139, 92, 246, 0.2);
+        }
+        
         .nav-brand-icon {
             width: 24px;
             height: 24px;
             margin-right: 12px;
-            color: #ffffff;
-            transition: color 0.2s ease;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s ease;
+            cursor: pointer;
         }
         
         .nav-brand:hover .nav-brand-icon {
-            color: #0EA5E9;
+            transform: translateY(-1px) scale(1.05);
+            filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.3));
+        }
+        
+        /* Hide wave effects at small sizes */
+        @media (max-width: 768px) {
+            .mina-waves {
+                display: none;
+            }
+        }
+        
+        /* Respect reduced motion preferences */
+        @media (prefers-reduced-motion: reduce) {
+            .nav-brand-icon {
+                transition: none;
+            }
+            .nav-brand:hover .nav-brand-icon {
+                transform: none;
+            }
+            #minaSheen animateTransform {
+                animation-duration: 0.01ms !important;
+            }
         }
         
         .nav-menu {
@@ -247,18 +291,129 @@
     <!-- Skip Link for Accessibility -->
     <a href="#main-content" class="skip-link" style="position: absolute; left: -9999px; z-index: 999; padding: 8px; background: #0EA5E9; color: white; text-decoration: none; border-radius: 4px; top: 8px;">Skip to main content</a>
     
+    <!-- Enhanced Mina Logo Definitions -->
+    <svg width="0" height="0" style="position: absolute;" aria-hidden="true">
+        <defs>
+            <!-- Enhanced Gradients -->
+            <linearGradient id="minaBarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="var(--mina-icon-highlight, #60A5FA)" stop-opacity="1"/>
+                <stop offset="15%" stop-color="var(--mina-icon-primary, #3B82F6)" stop-opacity="1"/>
+                <stop offset="40%" stop-color="var(--mina-icon-secondary, #6366F1)" stop-opacity="1"/>
+                <stop offset="70%" stop-color="var(--mina-icon-accent, #8B5CF6)" stop-opacity="1"/>
+                <stop offset="100%" stop-color="var(--mina-icon-depth, #6D28D9)" stop-opacity="1"/>
+            </linearGradient>
+            
+            <linearGradient id="minaBaselineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="var(--mina-icon-secondary, #6366F1)" stop-opacity="1"/>
+                <stop offset="50%" stop-color="var(--mina-icon-accent, #8B5CF6)" stop-opacity="1"/>
+                <stop offset="100%" stop-color="var(--mina-icon-depth, #6D28D9)" stop-opacity="1"/>
+            </linearGradient>
+            
+            <radialGradient id="minaSpecularHighlight" cx="30%" cy="20%" r="80%">
+                <stop offset="0%" stop-color="var(--mina-icon-specular, #FFFFFF)" stop-opacity="0.4"/>
+                <stop offset="50%" stop-color="var(--mina-icon-specular, #FFFFFF)" stop-opacity="0.1"/>
+                <stop offset="100%" stop-color="var(--mina-icon-specular, #FFFFFF)" stop-opacity="0"/>
+            </radialGradient>
+            
+            <!-- Audio Wave Pattern -->
+            <path id="minaWavePattern" d="M2,12 Q8,8 14,12 T26,12" stroke="var(--mina-icon-wave, rgba(99, 102, 241, 0.15))" stroke-width="0.5" fill="none" opacity="0.6"/>
+            
+            <!-- Animated Sheen -->
+            <linearGradient id="minaSheen" x1="0%" y1="0%" x2="100%" y2="100%" gradientUnits="objectBoundingBox">
+                <stop offset="0%" stop-color="transparent"/>
+                <stop offset="45%" stop-color="transparent"/>
+                <stop offset="50%" stop-color="var(--mina-icon-specular, #FFFFFF)" stop-opacity="0.3"/>
+                <stop offset="55%" stop-color="transparent"/>
+                <stop offset="100%" stop-color="transparent"/>
+                <animateTransform attributeName="gradientTransform" type="translate"
+                    values="-100 -100; 120 120; -100 -100" dur="3s" repeatCount="indefinite"/>
+            </linearGradient>
+            
+            <!-- Premium Filter Effects -->
+            <filter id="minaDepthFilter" x="-50%" y="-50%" width="200%" height="200%">
+                <!-- Main shadow -->
+                <feGaussianBlur in="SourceAlpha" stdDeviation="1.2" result="shadow"/>
+                <feOffset in="shadow" dx="0" dy="1" result="offsetShadow"/>
+                <feFlood flood-color="var(--mina-icon-shadow, rgba(0,0,0,0.25))"/>
+                <feComposite in2="offsetShadow" operator="in" result="dropshadow"/>
+                
+                <!-- Contact shadow -->
+                <feGaussianBlur in="SourceAlpha" stdDeviation="0.5" result="contactShadow"/>
+                <feOffset in="contactShadow" dx="0" dy="0.5" result="offsetContact"/>
+                <feFlood flood-color="var(--mina-icon-shadow, rgba(0,0,0,0.4))"/>
+                <feComposite in2="offsetContact" operator="in" result="contactDrop"/>
+                
+                <!-- Combine shadows -->
+                <feMerge result="shadows">
+                    <feMergeNode in="dropshadow"/>
+                    <feMergeNode in="contactDrop"/>
+                </feMerge>
+                
+                <!-- Final composite -->
+                <feMerge>
+                    <feMergeNode in="shadows"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+            
+            <!-- Masking for highlight effects -->
+            <mask id="minaBarMask">
+                <rect width="100%" height="100%" fill="black"/>
+                <rect x="4" y="6" width="2.5" height="10" rx="1.25" fill="white"/>
+                <rect x="10.75" y="8" width="2.5" height="8" rx="1.25" fill="white"/>
+                <rect x="17.5" y="6" width="2.5" height="10" rx="1.25" fill="white"/>
+            </mask>
+            
+            <!-- Enhanced Mina Logo Symbol -->
+            <symbol id="minaEnhancedLogo" viewBox="0 0 24 24">
+                <!-- Background wave effects (only visible at larger sizes) -->
+                <g class="mina-waves" opacity="0.8">
+                    <use href="#minaWavePattern" transform="translate(-2,0) scale(1.1)"/>
+                    <use href="#minaWavePattern" transform="translate(-2,0) scale(1.2)" opacity="0.5"/>
+                </g>
+                
+                <!-- Main bars with enhanced gradients -->
+                <g class="mina-bars" filter="url(#minaDepthFilter)">
+                    <!-- Left bar (tallest) -->
+                    <rect x="4" y="6" width="2.5" height="10" rx="1.25" fill="url(#minaBarGradient)" class="mina-bar-left"/>
+                    
+                    <!-- Middle bar (medium) -->
+                    <rect x="10.75" y="8" width="2.5" height="8" rx="1.25" fill="url(#minaBarGradient)" class="mina-bar-middle"/>
+                    
+                    <!-- Right bar (tallest) -->
+                    <rect x="17.5" y="6" width="2.5" height="10" rx="1.25" fill="url(#minaBarGradient)" class="mina-bar-right"/>
+                    
+                    <!-- Enhanced baseline -->
+                    <rect x="4" y="18" width="16" height="1.5" rx="0.75" fill="url(#minaBaselineGradient)" class="mina-baseline"/>
+                </g>
+                
+                <!-- Specular highlights -->
+                <g class="mina-highlights" mask="url(#minaBarMask)">
+                    <rect x="0" y="0" width="24" height="24" fill="url(#minaSpecularHighlight)"/>
+                </g>
+                
+                <!-- Animated sheen overlay -->
+                <g class="mina-sheen" mask="url(#minaBarMask)">
+                    <rect x="0" y="0" width="24" height="24" fill="url(#minaSheen)"/>
+                </g>
+                
+                <!-- Top edge highlights for 3D effect -->
+                <g class="mina-edge-highlights" opacity="0.6">
+                    <rect x="4" y="6" width="2.5" height="0.5" rx="0.25" fill="var(--mina-icon-highlight, #FFFFFF)" opacity="0.8"/>
+                    <rect x="10.75" y="8" width="2.5" height="0.5" rx="0.25" fill="var(--mina-icon-highlight, #FFFFFF)" opacity="0.8"/>
+                    <rect x="17.5" y="6" width="2.5" height="0.5" rx="0.25" fill="var(--mina-icon-highlight, #FFFFFF)" opacity="0.8"/>
+                </g>
+            </symbol>
+        </defs>
+    </svg>
+    
     <!-- Unified Premium Navigation Header -->
     <nav class="nav-header">
         <div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; height: 64px;">
             <!-- Brand -->
             <a href="{{ url_for('dashboard.index') if current_user and current_user.is_authenticated else url_for('pages.index') }}" class="nav-brand">
-                <svg class="nav-brand-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Mina logo">
-                    <!-- Three vertical bars forming 'M' -->
-                    <rect x="4" y="6" width="2.5" height="10" rx="1.25" fill="currentColor"/>
-                    <rect x="10.75" y="8" width="2.5" height="8" rx="1.25" fill="currentColor"/>
-                    <rect x="17.5" y="6" width="2.5" height="10" rx="1.25" fill="currentColor"/>
-                    <!-- Horizontal baseline -->
-                    <rect x="4" y="18" width="16" height="1.5" rx="0.75" fill="currentColor"/>
+                <svg class="nav-brand-icon" width="24" height="24" aria-label="Mina logo">
+                    <use href="#minaEnhancedLogo"/>
                 </svg>
                 <span>Mina</span>
             </a>
