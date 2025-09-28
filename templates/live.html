@@ -122,6 +122,34 @@
             position: relative;
         }
         
+        /* COMPREHENSIVE MOTION ACCESSIBILITY - Disable animations for users who prefer reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            
+            /* Remove specific problematic animations */
+            .record-button, .status-dot, .typing-indicator, 
+            .metrics-container, .separator-line,
+            [class*="pulse"], [class*="spin"], [class*="rotate"],
+            [class*="glow"], [class*="shimmer"] { 
+                animation: none !important; 
+            }
+            
+            /* Keep essential state indicators but remove motion */
+            .record-button.recording { 
+                background: var(--danger) !important;
+                transform: none !important;
+            }
+            .record-button.processing { 
+                background: var(--warning) !important;
+                transform: none !important;
+            }
+        }
+
         /* Subtle ambient animation */
         @keyframes subtle-glow {
             0%, 100% { 
@@ -657,8 +685,9 @@
             display: none;
         }
 
+        /* FIXED: Create task button with WCAG-compliant contrast */
         .create-task-btn {
-            background: var(--gradient-primary);
+            background: var(--primary);                      /* Solid color instead of gradient */
             color: white;
             border: none;
             padding: var(--space-sm) var(--space-md);
@@ -670,6 +699,7 @@
             align-items: center;
             gap: var(--space-xs);
             transition: all var(--transition-base);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);      /* Ensure contrast */
         }
 
         .create-task-btn:hover {
@@ -809,8 +839,9 @@
             color: var(--text-primary);
         }
 
+        /* FIXED: Primary task button with WCAG-compliant contrast */
         .task-btn-primary {
-            background: var(--gradient-primary);
+            background: var(--primary);                      /* Solid color instead of gradient */
             color: white;
             border: none;
             padding: var(--space-md) var(--space-xl);
@@ -818,6 +849,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all var(--transition-base);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);      /* Ensure contrast */
         }
 
         .task-btn-primary:hover {
