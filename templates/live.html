@@ -1686,6 +1686,7 @@
                     this.updateStatus('Requesting microphone access...', 'processing');
                     
                     // Get audio stream
+                    console.log('🎤 Requesting microphone access...');
                     this.audioStream = await navigator.mediaDevices.getUserMedia({
                         audio: {
                             echoCancellation: true,
@@ -1695,6 +1696,8 @@
                             sampleRate: 16000
                         }
                     });
+                    console.log('✅ Microphone access granted, stream active:', this.audioStream.active);
+                    console.log('🔧 Audio tracks:', this.audioStream.getAudioTracks().length);
                     
                     // Setup MediaRecorder
                     this.mediaRecorder = new MediaRecorder(this.audioStream, {
@@ -1702,20 +1705,27 @@
                     });
                     
                     this.mediaRecorder.ondataavailable = (event) => {
+                        console.log('🔊 ondataavailable called, data size:', event.data.size);
                         if (event.data.size > 0) {
                             this.audioChunks.push(event.data);
+                            console.log('📦 Audio chunk added, total chunks:', this.audioChunks.length);
                             
                             // Send audio chunk to server
                             const reader = new FileReader();
                             reader.onload = () => {
                                 const audioData = new Uint8Array(reader.result);
+                                console.log('📡 Sending audio chunk to server, size:', audioData.length, 'bytes');
+                                console.log('🔗 Socket connected:', this.socket.connected, 'Session ID:', this.sessionId);
                                 this.socket.emit('audio_chunk', {
                                     session_id: this.sessionId,
                                     audio_data: Array.from(audioData),
                                     settings: this.getCurrentSettings()
                                 });
+                                console.log('✅ audio_chunk event emitted successfully');
                             };
                             reader.readAsArrayBuffer(event.data);
+                        } else {
+                            console.log('⚠️ ondataavailable called but event.data.size is 0');
                         }
                     };
                     
@@ -1729,7 +1739,9 @@
                     this.isRecording = true;
                     this.isProcessing = false;
                     
+                    console.log('🎙️ Starting MediaRecorder with 250ms chunks...');
                     this.mediaRecorder.start(250); // Send chunks every 250ms
+                    console.log('🎙️ MediaRecorder.start() called, state:', this.mediaRecorder.state);
                     
                     this.updateRecordButton();
                     this.updateStatus('Recording...', 'recording');

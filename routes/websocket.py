@@ -84,10 +84,14 @@ def on_audio_chunk(data):
     data: { session_id, audio_data, settings }
     Frontend sends audio_data as array of bytes from MediaRecorder.
     """
+    logger.info(f"🔊 [ws] audio_chunk received from frontend")
     session_id = (data or {}).get("session_id")
     if not session_id:
+        logger.error(f"[ws] Missing session_id in audio_chunk")
         emit("error", {"message": "Missing session_id in audio_chunk"})
         return
+    
+    logger.info(f"[ws] Processing audio_chunk for session: {session_id}")
 
     # Get settings from frontend
     settings = (data or {}).get("settings", {})
