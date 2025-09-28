@@ -16,3 +16,4 @@ werkzeug
 numpy
 webrtcvad
 beautifulsoup4
+flask-wtf
