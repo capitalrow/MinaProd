@@ -104,6 +104,7 @@
             --mina-icon-secondary: #6366F1;
             --mina-icon-accent: #8B5CF6;
             --mina-icon-depth: #6D28D9;
+            --mina-icon-depth-deep: #5B21B6;
             --mina-icon-specular: #FFFFFF;
             --mina-icon-shadow: rgba(0,0,0,0.25);
             --mina-icon-wave: rgba(99, 102, 241, 0.15);
@@ -115,6 +116,7 @@
             --mina-icon-secondary: #8B5CF6;
             --mina-icon-accent: #A855F7;
             --mina-icon-depth: #7C3AED;
+            --mina-icon-depth-deep: #6B46C1;
             --mina-icon-specular: #F8FAFC;
             --mina-icon-shadow: rgba(0,0,0,0.4);
             --mina-icon-wave: rgba(139, 92, 246, 0.2);
@@ -294,29 +296,61 @@
     <!-- Enhanced Mina Logo Definitions -->
     <svg width="0" height="0" style="position: absolute;" aria-hidden="true">
         <defs>
-            <!-- Enhanced Gradients -->
+            <!-- Premium Multi-Layer Gradients -->
             <linearGradient id="minaBarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stop-color="var(--mina-icon-highlight, #60A5FA)" stop-opacity="1"/>
                 <stop offset="15%" stop-color="var(--mina-icon-primary, #3B82F6)" stop-opacity="1"/>
-                <stop offset="40%" stop-color="var(--mina-icon-secondary, #6366F1)" stop-opacity="1"/>
-                <stop offset="70%" stop-color="var(--mina-icon-accent, #8B5CF6)" stop-opacity="1"/>
-                <stop offset="100%" stop-color="var(--mina-icon-depth, #6D28D9)" stop-opacity="1"/>
+                <stop offset="35%" stop-color="var(--mina-icon-secondary, #6366F1)" stop-opacity="1"/>
+                <stop offset="65%" stop-color="var(--mina-icon-accent, #8B5CF6)" stop-opacity="1"/>
+                <stop offset="85%" stop-color="var(--mina-icon-depth, #6D28D9)" stop-opacity="1"/>
+                <stop offset="100%" stop-color="var(--mina-icon-depth-deep, #5B21B6)" stop-opacity="1"/>
+            </linearGradient>
+            
+            <!-- Sophisticated Metallic Gradient -->
+            <linearGradient id="minaMetallicGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="rgba(255, 255, 255, 0.8)" stop-opacity="1"/>
+                <stop offset="20%" stop-color="var(--mina-icon-primary, #3B82F6)" stop-opacity="0.9"/>
+                <stop offset="50%" stop-color="var(--mina-icon-secondary, #6366F1)" stop-opacity="0.8"/>
+                <stop offset="80%" stop-color="var(--mina-icon-accent, #8B5CF6)" stop-opacity="0.9"/>
+                <stop offset="100%" stop-color="rgba(0, 0, 0, 0.3)" stop-opacity="1"/>
             </linearGradient>
             
             <linearGradient id="minaBaselineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stop-color="var(--mina-icon-secondary, #6366F1)" stop-opacity="1"/>
-                <stop offset="50%" stop-color="var(--mina-icon-accent, #8B5CF6)" stop-opacity="1"/>
-                <stop offset="100%" stop-color="var(--mina-icon-depth, #6D28D9)" stop-opacity="1"/>
+                <stop offset="30%" stop-color="var(--mina-icon-accent, #8B5CF6)" stop-opacity="1"/>
+                <stop offset="70%" stop-color="var(--mina-icon-depth, #6D28D9)" stop-opacity="1"/>
+                <stop offset="100%" stop-color="var(--mina-icon-depth-deep, #5B21B6)" stop-opacity="1"/>
             </linearGradient>
             
-            <radialGradient id="minaSpecularHighlight" cx="30%" cy="20%" r="80%">
-                <stop offset="0%" stop-color="var(--mina-icon-specular, #FFFFFF)" stop-opacity="0.4"/>
-                <stop offset="50%" stop-color="var(--mina-icon-specular, #FFFFFF)" stop-opacity="0.1"/>
+            <!-- Multi-Layer Specular Highlights -->
+            <radialGradient id="minaSpecularHighlight" cx="25%" cy="15%" r="70%">
+                <stop offset="0%" stop-color="var(--mina-icon-specular, #FFFFFF)" stop-opacity="0.6"/>
+                <stop offset="40%" stop-color="var(--mina-icon-specular, #FFFFFF)" stop-opacity="0.2"/>
                 <stop offset="100%" stop-color="var(--mina-icon-specular, #FFFFFF)" stop-opacity="0"/>
             </radialGradient>
             
-            <!-- Audio Wave Pattern -->
-            <path id="minaWavePattern" d="M2,12 Q8,8 14,12 T26,12" stroke="var(--mina-icon-wave, rgba(99, 102, 241, 0.15))" stroke-width="0.5" fill="none" opacity="0.6"/>
+            <radialGradient id="minaGlassHighlight" cx="40%" cy="30%" r="60%">
+                <stop offset="0%" stop-color="rgba(255, 255, 255, 0.9)" stop-opacity="1"/>
+                <stop offset="30%" stop-color="rgba(255, 255, 255, 0.4)" stop-opacity="1"/>
+                <stop offset="100%" stop-color="rgba(255, 255, 255, 0)" stop-opacity="0"/>
+            </radialGradient>
+            
+            <!-- Sophisticated Audio Wave Patterns -->
+            <g id="minaAudioWaves">
+                <path d="M1,12 Q6,6 12,12 T24,12" stroke="var(--mina-icon-wave, rgba(99, 102, 241, 0.25))" stroke-width="0.8" fill="none" opacity="0.7"/>
+                <path d="M0,12 Q8,4 16,12 T32,12" stroke="var(--mina-icon-wave, rgba(139, 92, 246, 0.2))" stroke-width="0.6" fill="none" opacity="0.5"/>
+                <path d="M2,12 Q10,2 18,12 T34,12" stroke="var(--mina-icon-wave, rgba(168, 85, 247, 0.15))" stroke-width="0.4" fill="none" opacity="0.4"/>
+                
+                <!-- Animated pulse waves -->
+                <circle cx="12" cy="12" r="8" fill="none" stroke="var(--mina-icon-wave, rgba(99, 102, 241, 0.1))" stroke-width="0.5" opacity="0.3">
+                    <animate attributeName="r" values="8;12;8" dur="2.5s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2.5s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="12" cy="12" r="10" fill="none" stroke="var(--mina-icon-wave, rgba(139, 92, 246, 0.08))" stroke-width="0.3" opacity="0.2">
+                    <animate attributeName="r" values="10;14;10" dur="3s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3s" repeatCount="indefinite"/>
+                </circle>
+            </g>
             
             <!-- Animated Sheen -->
             <linearGradient id="minaSheen" x1="0%" y1="0%" x2="100%" y2="100%" gradientUnits="objectBoundingBox">
@@ -364,44 +398,55 @@
                 <rect x="17.5" y="6" width="2.5" height="10" rx="1.25" fill="white"/>
             </mask>
             
-            <!-- Enhanced Mina Logo Symbol -->
+            <!-- Enhanced Premium Mina Logo Symbol -->
             <symbol id="minaEnhancedLogo" viewBox="0 0 24 24">
-                <!-- Background wave effects (only visible at larger sizes) -->
-                <g class="mina-waves" opacity="0.8">
-                    <use href="#minaWavePattern" transform="translate(-2,0) scale(1.1)"/>
-                    <use href="#minaWavePattern" transform="translate(-2,0) scale(1.2)" opacity="0.5"/>
+                <!-- Sophisticated Background Audio Waves -->
+                <g class="mina-waves" opacity="0.9">
+                    <use href="#minaAudioWaves" transform="translate(-4,-6) scale(1.3)"/>
                 </g>
                 
-                <!-- Main bars with enhanced gradients -->
+                <!-- Main bars with premium gradients and depth -->
                 <g class="mina-bars" filter="url(#minaDepthFilter)">
-                    <!-- Left bar (tallest) -->
+                    <!-- Left bar (tallest) with metallic overlay -->
                     <rect x="4" y="6" width="2.5" height="10" rx="1.25" fill="url(#minaBarGradient)" class="mina-bar-left"/>
+                    <rect x="4.2" y="6.2" width="2.1" height="9.6" rx="1.05" fill="url(#minaMetallicGradient)" class="mina-metallic-overlay" opacity="0.6"/>
                     
-                    <!-- Middle bar (medium) -->
+                    <!-- Middle bar (medium) with metallic overlay -->
                     <rect x="10.75" y="8" width="2.5" height="8" rx="1.25" fill="url(#minaBarGradient)" class="mina-bar-middle"/>
+                    <rect x="10.95" y="8.2" width="2.1" height="7.6" rx="1.05" fill="url(#minaMetallicGradient)" class="mina-metallic-overlay" opacity="0.6"/>
                     
-                    <!-- Right bar (tallest) -->
+                    <!-- Right bar (tallest) with metallic overlay -->
                     <rect x="17.5" y="6" width="2.5" height="10" rx="1.25" fill="url(#minaBarGradient)" class="mina-bar-right"/>
+                    <rect x="17.7" y="6.2" width="2.1" height="9.6" rx="1.05" fill="url(#minaMetallicGradient)" class="mina-metallic-overlay" opacity="0.6"/>
                     
-                    <!-- Enhanced baseline -->
+                    <!-- Enhanced baseline with depth -->
                     <rect x="4" y="18" width="16" height="1.5" rx="0.75" fill="url(#minaBaselineGradient)" class="mina-baseline"/>
+                    <rect x="4.2" y="18.1" width="15.6" height="1.3" rx="0.65" fill="url(#minaMetallicGradient)" class="mina-baseline-metallic" opacity="0.4"/>
                 </g>
                 
-                <!-- Specular highlights -->
+                <!-- Multi-layer specular highlights -->
                 <g class="mina-highlights" mask="url(#minaBarMask)">
                     <rect x="0" y="0" width="24" height="24" fill="url(#minaSpecularHighlight)"/>
+                    <rect x="0" y="0" width="24" height="24" fill="url(#minaGlassHighlight)" opacity="0.3"/>
                 </g>
                 
-                <!-- Animated sheen overlay -->
+                <!-- Animated premium sheen overlay -->
                 <g class="mina-sheen" mask="url(#minaBarMask)">
                     <rect x="0" y="0" width="24" height="24" fill="url(#minaSheen)"/>
                 </g>
                 
-                <!-- Top edge highlights for 3D effect -->
-                <g class="mina-edge-highlights" opacity="0.6">
-                    <rect x="4" y="6" width="2.5" height="0.5" rx="0.25" fill="var(--mina-icon-highlight, #FFFFFF)" opacity="0.8"/>
-                    <rect x="10.75" y="8" width="2.5" height="0.5" rx="0.25" fill="var(--mina-icon-highlight, #FFFFFF)" opacity="0.8"/>
-                    <rect x="17.5" y="6" width="2.5" height="0.5" rx="0.25" fill="var(--mina-icon-highlight, #FFFFFF)" opacity="0.8"/>
+                <!-- Enhanced 3D edge highlights with gradients -->
+                <g class="mina-edge-highlights" opacity="0.8">
+                    <rect x="4" y="6" width="2.5" height="0.6" rx="0.3" fill="url(#minaGlassHighlight)" opacity="0.9"/>
+                    <rect x="10.75" y="8" width="2.5" height="0.6" rx="0.3" fill="url(#minaGlassHighlight)" opacity="0.9"/>
+                    <rect x="17.5" y="6" width="2.5" height="0.6" rx="0.3" fill="url(#minaGlassHighlight)" opacity="0.9"/>
+                </g>
+                
+                <!-- Subtle inner glow for premium depth -->
+                <g class="mina-inner-glow" opacity="0.4">
+                    <rect x="4.5" y="6.5" width="1.5" height="9" rx="0.75" fill="rgba(255, 255, 255, 0.3)"/>
+                    <rect x="11.25" y="8.5" width="1.5" height="7" rx="0.75" fill="rgba(255, 255, 255, 0.3)"/>
+                    <rect x="18" y="6.5" width="1.5" height="9" rx="0.75" fill="rgba(255, 255, 255, 0.3)"/>
                 </g>
             </symbol>
         </defs>
