@@ -123,6 +123,10 @@
                                 <span class="meeting-status status-{{ meeting.status or 'completed' }}">
                                     {{ (meeting.status or 'completed').title() }}
                                 </span>
+                                <a href="{{ url_for('dashboard.meeting_detail', meeting_id=meeting.id) }}" class="btn btn-sm btn-primary">
+                                    <i data-feather="external-link" style="width: 14px; height: 14px;"></i>
+                                    View Details
+                                </a>
                                 <button class="btn-icon" title="View meeting">
                                     <i data-feather="eye"></i>
                                 </button>

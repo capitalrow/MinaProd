@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ meeting.title or 'Meeting' }} - Mina</title>
+    
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <style>
+        /* Three-pane layout styles */
+        .three-pane-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 2rem;
+            height: calc(100vh - 200px);
+            overflow: hidden;
+        }
+        
+        .pane {
+            background: var(--surface-1);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .pane-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        
+        .pane-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .pane-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        /* Transcript pane */
+        .transcript-segment {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--surface-2);
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .segment-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        .speaker-name {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .segment-time {
+            color: var(--text-tertiary);
+            font-size: 0.75rem;
+        }
+        
+        .segment-text {
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        /* Summary pane */
+        .summary-section {
+            margin-bottom: 2rem;
+        }
+        
+        .summary-section h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .summary-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .summary-item {
+            padding: 0.75rem;
+            background: var(--surface-2);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        
+        .summary-item::before {
+            content: '•';
+            color: var(--primary);
+            margin-right: 0.5rem;
+            font-weight: bold;
+        }
+        
+        .meeting-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stat-item {
+            background: var(--surface-2);
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-tertiary);
+            margin-top: 0.25rem;
+        }
+        
+        /* Tasks pane */
+        .task-item {
+            background: var(--surface-2);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .task-item:hover {
+            background: var(--surface-3);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+        
+        .task-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .task-type {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .task-type-decision {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+        
+        .task-type-todo {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+        
+        .task-type-risk {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+        
+        .task-type-task {
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366f1;
+        }
+        
+        .task-content {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin-bottom: 0.75rem;
+        }
+        
+        .task-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+        }
+        
+        .task-speaker {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .task-time {
+            font-weight: 500;
+        }
+        
+        /* Empty states */
+        .empty-pane {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: var(--text-tertiary);
+            text-align: center;
+        }
+        
+        .empty-icon {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 1200px) {
+            .three-pane-layout {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                height: auto;
+            }
+            
+            .pane {
+                height: 400px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .three-pane-layout {
+                gap: 0.5rem;
+            }
+            
+            .pane {
+                padding: 1rem;
+                height: 350px;
+            }
+            
+            .meeting-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Dark Mode Toggle -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+        <i data-feather="sun" id="themeIcon"></i>
+    </button>
+
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">M</div>
+                <div class="sidebar-logo-text">Mina</div>
+            </div>
+            
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.index') }}" class="nav-link">
+                            <i data-feather="home"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('pages.live') }}" class="nav-link">
+                            <i data-feather="mic"></i>
+                            Live Meeting
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.meetings') }}" class="nav-link active">
+                            <i data-feather="users"></i>
+                            Meetings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.tasks') }}" class="nav-link">
+                            <i data-feather="check-square"></i>
+                            Tasks
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('dashboard.analytics') }}" class="nav-link">
+                            <i data-feather="bar-chart-2"></i>
+                            Analytics
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="user-info">
+                <div class="user-name">{{ current_user.first_name or current_user.username }}</div>
+                <div class="user-email">{{ current_user.email }}</div>
+                <a href="{{ url_for('auth.logout') }}" class="nav-link">
+                    <i data-feather="log-out"></i>
+                    Sign Out
+                </a>
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <!-- Meeting Header -->
+            <header class="dashboard-header">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <a href="{{ url_for('dashboard.meetings') }}" class="btn btn-sm btn-secondary">
+                        <i data-feather="arrow-left"></i>
+                        Back to Meetings
+                    </a>
+                    <div>
+                        <h1 class="dashboard-title">{{ meeting.title or 'Untitled Meeting' }}</h1>
+                        <p class="dashboard-subtitle">
+                            {{ meeting.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                            {% if summary.duration %} • {{ summary.duration }}{% endif %}
+                            {% if summary.participants %} • {{ summary.participants|length }} participants{% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-sm btn-secondary" onclick="exportMeeting()">
+                        <i data-feather="download"></i>
+                        Export
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="shareMeeting()">
+                        <i data-feather="share-2"></i>
+                        Share
+                    </button>
+                </div>
+            </header>
+            
+            <!-- Three-Pane Layout -->
+            <div class="three-pane-layout">
+                <!-- Left Pane: Transcript -->
+                <div class="pane">
+                    <div class="pane-header">
+                        <h2 class="pane-title">
+                            <i data-feather="file-text"></i>
+                            Transcript
+                        </h2>
+                        <span class="badge">{{ segments|length }} segments</span>
+                    </div>
+                    <div class="pane-content">
+                        {% if segments %}
+                            {% for segment in segments %}
+                            <div class="transcript-segment">
+                                <div class="segment-meta">
+                                    <span class="speaker-name">
+                                        <i data-feather="user"></i>
+                                        Unknown Speaker
+                                    </span>
+                                    <span class="segment-time">
+                                        {{ segment.start_time_formatted if hasattr(segment, 'start_time_formatted') else 'No timestamp' }}
+                                    </span>
+                                </div>
+                                <div class="segment-text">{{ segment.text or 'No text available' }}</div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-pane">
+                                <i data-feather="mic-off" class="empty-icon"></i>
+                                <h3>No transcript available</h3>
+                                <p>This meeting doesn't have a transcript yet.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Middle Pane: Summary -->
+                <div class="pane">
+                    <div class="pane-header">
+                        <h2 class="pane-title">
+                            <i data-feather="brain"></i>
+                            AI Summary
+                        </h2>
+                        <span class="badge">{{ summary.word_count }} words</span>
+                    </div>
+                    <div class="pane-content">
+                        <!-- Meeting Stats -->
+                        <div class="meeting-stats">
+                            <div class="stat-item">
+                                <div class="stat-value">{{ summary.duration }}</div>
+                                <div class="stat-label">Duration</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">{{ summary.participants|length }}</div>
+                                <div class="stat-label">Participants</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Key Points -->
+                        {% if summary.key_points %}
+                        <div class="summary-section">
+                            <h3>
+                                <i data-feather="key"></i>
+                                Key Points
+                            </h3>
+                            <ul class="summary-list">
+                                {% for point in summary.key_points %}
+                                <li class="summary-item">{{ point }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Decisions -->
+                        {% if summary.decisions %}
+                        <div class="summary-section">
+                            <h3>
+                                <i data-feather="check-circle"></i>
+                                Decisions Made
+                            </h3>
+                            <ul class="summary-list">
+                                {% for decision in summary.decisions %}
+                                <li class="summary-item">{{ decision.content }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Participants -->
+                        {% if summary.participants %}
+                        <div class="summary-section">
+                            <h3>
+                                <i data-feather="users"></i>
+                                Participants
+                            </h3>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                {% for participant in summary.participants %}
+                                <span class="badge" style="background: var(--surface-3); color: var(--text-primary);">
+                                    {{ participant }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Right Pane: Tasks & Actions -->
+                <div class="pane">
+                    <div class="pane-header">
+                        <h2 class="pane-title">
+                            <i data-feather="check-square"></i>
+                            Tasks & Actions
+                        </h2>
+                        <span class="badge">{{ (markers|length) + (tasks|length) }}</span>
+                    </div>
+                    <div class="pane-content">
+                        <!-- Markers from live recording -->
+                        {% for marker in markers %}
+                        <div class="task-item">
+                            <div class="task-header">
+                                <div class="task-title">{{ marker.content[:60] }}{% if marker.content|length > 60 %}...{% endif %}</div>
+                                <span class="task-type task-type-{{ marker.type }}">{{ marker.type }}</span>
+                            </div>
+                            {% if marker.content|length > 60 %}
+                            <div class="task-content">{{ marker.content }}</div>
+                            {% endif %}
+                            <div class="task-meta">
+                                {% if marker.speaker %}
+                                <span class="task-speaker">
+                                    <i data-feather="user"></i>
+                                    {{ marker.speaker }}
+                                </span>
+                                {% endif %}
+                                <span class="task-time">{{ marker.timestamp.strftime('%I:%M %p') if hasattr(marker, 'timestamp') and marker.timestamp else 'No time' }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <!-- Regular tasks -->
+                        {% for task in tasks %}
+                        <div class="task-item">
+                            <div class="task-header">
+                                <div class="task-title">{{ task.title }}</div>
+                                <span class="task-type task-type-task">task</span>
+                            </div>
+                            {% if task.description %}
+                            <div class="task-content">{{ task.description }}</div>
+                            {% endif %}
+                            <div class="task-meta">
+                                <span>Priority: {{ task.priority or 'Medium' }}</span>
+                                <span class="task-time">{{ task.created_at.strftime('%m/%d') if task.created_at else 'No date' }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        {% if not markers and not tasks %}
+                        <div class="empty-pane">
+                            <i data-feather="inbox" class="empty-icon"></i>
+                            <h3>No tasks or actions</h3>
+                            <p>No action items were identified in this meeting.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Initialize Feather icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+
+        // Dark mode toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const currentTheme = localStorage.getItem('mina-theme') || 'light';
+
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        updateThemeIcon(currentTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const newTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('mina-theme', newTheme);
+            updateThemeIcon(newTheme);
+        });
+
+        function updateThemeIcon(theme) {
+            if (themeIcon) {
+                themeIcon.setAttribute('data-feather', theme === 'light' ? 'moon' : 'sun');
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+            }
+        }
+
+        // Export functionality
+        function exportMeeting() {
+            // TODO: Implement meeting export functionality
+            alert('Export functionality coming soon!');
+        }
+
+        // Share functionality
+        function shareMeeting() {
+            // TODO: Implement meeting sharing functionality
+            alert('Share functionality coming soon!');
+        }
+    </script>
+</body>
+</html>
