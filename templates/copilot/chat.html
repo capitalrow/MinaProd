@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Copilot - Mina</title>
+    
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    
+    <!-- External Dependencies -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    
+    <style>
+        :root {
+            --copilot-primary: #0EA5E9;
+            --copilot-secondary: #6366F1;
+            --copilot-accent: #F59E0B;
+            --copilot-bg: rgba(255, 255, 255, 0.06);
+            --copilot-border: rgba(255, 255, 255, 0.15);
+            --copilot-user-bg: rgba(14, 165, 233, 0.1);
+            --copilot-assistant-bg: rgba(99, 102, 241, 0.08);
+        }
+        
+        body {
+            font-family: 'SF Pro Display', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 25%, #334155 50%, #475569 75%, #1E293B 100%);
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .copilot-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: 100vh;
+            gap: 0;
+        }
+        
+        /* Sidebar */
+        .copilot-sidebar {
+            background: var(--copilot-bg);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--copilot-border);
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+        
+        .sidebar-header {
+            margin-bottom: 2rem;
+        }
+        
+        .sidebar-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+            color: var(--copilot-primary);
+        }
+        
+        .sidebar-header p {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0;
+        }
+        
+        .quick-queries {
+            margin-bottom: 2rem;
+        }
+        
+        .quick-queries h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0 0 1rem 0;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .query-button {
+            display: block;
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--copilot-border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.875rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .query-button:hover {
+            background: var(--copilot-bg);
+            border-color: var(--copilot-primary);
+            color: #ffffff;
+        }
+        
+        .nav-links {
+            margin-top: auto;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.2s ease;
+        }
+        
+        .nav-link:hover {
+            background: var(--copilot-bg);
+            color: #ffffff;
+        }
+        
+        .nav-link i {
+            margin-right: 0.75rem;
+            width: 16px;
+        }
+        
+        /* Chat Area */
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        .chat-header {
+            background: var(--copilot-bg);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--copilot-border);
+            padding: 1rem 1.5rem;
+        }
+        
+        .chat-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            scroll-behavior: smooth;
+        }
+        
+        .message {
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        
+        .user-avatar {
+            background: var(--copilot-primary);
+        }
+        
+        .assistant-avatar {
+            background: var(--copilot-secondary);
+        }
+        
+        .message-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .message-bubble {
+            background: var(--copilot-bg);
+            border: 1px solid var(--copilot-border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .user-message .message-bubble {
+            background: var(--copilot-user-bg);
+            border-color: rgba(14, 165, 233, 0.3);
+        }
+        
+        .assistant-message .message-bubble {
+            background: var(--copilot-assistant-bg);
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+        
+        .message-text {
+            margin: 0;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .message-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+        
+        .action-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: transparent;
+            border: 1px solid var(--copilot-border);
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .action-button:hover {
+            background: var(--copilot-bg);
+            border-color: var(--copilot-primary);
+            color: #ffffff;
+        }
+        
+        .action-button i {
+            width: 14px;
+            height: 14px;
+        }
+        
+        .citations {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .citation {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            margin: 0.25rem 0.25rem 0 0;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        /* Chat Input */
+        .chat-input {
+            background: var(--copilot-bg);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--copilot-border);
+            padding: 1.5rem;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+        
+        .input-field {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--copilot-border);
+            border-radius: 12px;
+            padding: 1rem;
+            color: #ffffff;
+            font-size: 1rem;
+            resize: none;
+            min-height: 24px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: var(--copilot-primary);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+        
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .send-button {
+            background: var(--copilot-primary);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .send-button:hover:not(:disabled) {
+            background: #0284C7;
+            transform: translateY(-1px);
+        }
+        
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .send-button i {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 1rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+        }
+        
+        /* Loading animation */
+        .loading-dots {
+            display: inline-block;
+        }
+        
+        .loading-dots::after {
+            content: '';
+            animation: dots 2s infinite;
+        }
+        
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .copilot-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .copilot-sidebar {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="copilot-container">
+        <!-- Sidebar -->
+        <div class="copilot-sidebar">
+            <div class="sidebar-header">
+                <h1>AI Copilot</h1>
+                <p>Ask me anything about your meetings, tasks, and decisions.</p>
+            </div>
+            
+            <div class="quick-queries">
+                <h3>Quick Queries</h3>
+                <div id="quick-queries-container">
+                    <!-- Quick queries will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="nav-links">
+                <a href="/dashboard/" class="nav-link">
+                    <i data-feather="home"></i>
+                    Dashboard
+                </a>
+                <a href="/meetings" class="nav-link">
+                    <i data-feather="video"></i>
+                    Meetings
+                </a>
+                <a href="/tasks" class="nav-link">
+                    <i data-feather="check-square"></i>
+                    Tasks
+                </a>
+                <a href="/settings" class="nav-link">
+                    <i data-feather="settings"></i>
+                    Settings
+                </a>
+            </div>
+        </div>
+        
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <h2>Chat with AI Copilot</h2>
+            </div>
+            
+            <div class="chat-messages" id="chat-messages">
+                <div class="message assistant-message">
+                    <div class="message-avatar assistant-avatar">🤖</div>
+                    <div class="message-content">
+                        <div class="message-bubble">
+                            <p class="message-text">
+                                Hi! I'm your AI Copilot. I can help you with questions about your meetings, tasks, and decisions. 
+                                Try asking me things like "What's due today?" or "What did we decide about the budget?"
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="typing-indicator" id="typing-indicator">
+                AI Copilot is thinking<span class="loading-dots"></span>
+            </div>
+            
+            <div class="chat-input">
+                <div class="input-container">
+                    <textarea id="message-input" class="input-field" placeholder="Ask me anything about your meetings, tasks, or decisions..." rows="1"></textarea>
+                    <button id="send-button" class="send-button">
+                        <i data-feather="send"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+        
+        // DOM elements
+        const chatMessages = document.getElementById('chat-messages');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const quickQueriesContainer = document.getElementById('quick-queries-container');
+        
+        // Load quick queries
+        async function loadQuickQueries() {
+            try {
+                const response = await fetch('/copilot/api/quick-queries');
+                const data = await response.json();
+                
+                if (data.success) {
+                    quickQueriesContainer.innerHTML = '';
+                    data.queries.forEach(query => {
+                        const button = document.createElement('button');
+                        button.className = 'query-button';
+                        button.textContent = query;
+                        button.onclick = () => sendMessage(query);
+                        quickQueriesContainer.appendChild(button);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading quick queries:', error);
+            }
+        }
+        
+        // Auto-resize textarea
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+        
+        // Send message on Enter (Shift+Enter for new line)
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Send button click
+        sendButton.addEventListener('click', sendMessage);
+        
+        // Send message function
+        async function sendMessage(text = null) {
+            const message = text || messageInput.value.trim();
+            if (!message) return;
+            
+            // Clear input if not using predefined text
+            if (!text) {
+                messageInput.value = '';
+                messageInput.style.height = 'auto';
+            }
+            
+            // Add user message to chat
+            addMessage(message, 'user');
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Disable input
+            setInputDisabled(true);
+            
+            try {
+                const response = await fetch('/copilot/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addMessage(data.response.text, 'assistant', data.response);
+                } else {
+                    addMessage('I apologize, but I encountered an error processing your request. Please try again.', 'assistant');
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                addMessage('I apologize, but I encountered a network error. Please check your connection and try again.', 'assistant');
+            } finally {
+                hideTypingIndicator();
+                setInputDisabled(false);
+                messageInput.focus();
+            }
+        }
+        
+        // Add message to chat
+        function addMessage(text, sender, response = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = `message-avatar ${sender}-avatar`;
+            avatar.textContent = sender === 'user' ? '👤' : '🤖';
+            
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            
+            const messageText = document.createElement('p');
+            messageText.className = 'message-text';
+            messageText.textContent = text;
+            
+            bubble.appendChild(messageText);
+            content.appendChild(bubble);
+            
+            // Add action buttons for assistant messages
+            if (sender === 'assistant' && response && response.suggested_actions && response.suggested_actions.length > 0) {
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'message-actions';
+                
+                response.suggested_actions.forEach(action => {
+                    const button = document.createElement('button');
+                    button.className = 'action-button';
+                    button.innerHTML = `<i data-feather="${action.icon}"></i> ${action.label}`;
+                    button.onclick = () => executeAction(action.type, {});
+                    actionsDiv.appendChild(button);
+                });
+                
+                content.appendChild(actionsDiv);
+            }
+            
+            // Add citations for assistant messages
+            if (sender === 'assistant' && response && response.citations && response.citations.length > 0) {
+                const citationsDiv = document.createElement('div');
+                citationsDiv.className = 'citations';
+                
+                response.citations.forEach(citation => {
+                    const citationSpan = document.createElement('span');
+                    citationSpan.className = 'citation';
+                    citationSpan.textContent = `${citation.type}: ${citation.title}`;
+                    citationsDiv.appendChild(citationSpan);
+                });
+                
+                content.appendChild(citationsDiv);
+            }
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+            
+            chatMessages.appendChild(messageDiv);
+            
+            // Re-initialize Feather icons for new elements
+            feather.replace();
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Execute copilot action
+        async function executeAction(action, parameters) {
+            try {
+                const response = await fetch('/copilot/api/execute-action', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action, parameters })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addMessage(data.result.message || 'Action completed successfully.', 'assistant');
+                } else {
+                    addMessage(`Failed to execute action: ${data.error}`, 'assistant');
+                }
+            } catch (error) {
+                console.error('Error executing action:', error);
+                addMessage('Failed to execute action. Please try again.', 'assistant');
+            }
+        }
+        
+        // Show typing indicator
+        function showTypingIndicator() {
+            typingIndicator.style.display = 'block';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            typingIndicator.style.display = 'none';
+        }
+        
+        // Set input disabled state
+        function setInputDisabled(disabled) {
+            messageInput.disabled = disabled;
+            sendButton.disabled = disabled;
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadQuickQueries();
+            messageInput.focus();
+        });
+    </script>
+</body>
+</html>
