@@ -34,8 +34,7 @@
     <div class="dashboard-layout">
         <aside class="sidebar">
             <div class="sidebar-logo">
-                <div id="minaSidebarLogo" class="sidebar-logo-icon"></div>
-                <div class="sidebar-logo-text">Mina</div>
+                <div data-mina-logo data-mina-logo-size="36" data-mina-logo-wordmark="true" class="sidebar-logo-icon"></div>
             </div>
             
             <nav>
@@ -637,11 +636,7 @@
                 window.dashboard = new MinaDashboard();
             }
             
-            // Initialize Mina Animated Logo
-            const sidebarLogoContainer = document.getElementById('minaSidebarLogo');
-            if (sidebarLogoContainer && typeof MinaAnimatedLogo !== 'undefined') {
-                MinaAnimatedLogo.createCompactLogo(sidebarLogoContainer, 36);
-            }
+            // Logo initialization is now handled automatically by MinaLogoManager via data attributes
         });
 
         // Auto-refresh every 30 seconds (only once)
