@@ -2,7 +2,16 @@
   const $ = (id) => document.getElementById(id);
   const dlog = (msg) => { $("debug").textContent += msg + "\n"; };
 
-  const socket = io({ transports: ["websocket", "polling"] });
+  const socket = io({
+    path: '/socket.io',
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 20000,
+    upgrade: true
+  });
   let mediaRecorder, stream, chunks = [];
 
   socket.on("connect", () => {
