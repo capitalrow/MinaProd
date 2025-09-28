@@ -71,7 +71,7 @@ def on_connect(auth=None):
 
 @socketio.on('disconnect', namespace='/transcription')
 def on_disconnect():
-    """Handle client disconnection"""
+    """Handle client disconnection with comprehensive cleanup"""
     logger.info(f"[transcription] Client disconnected: {request.sid}")
     # Clean up any active sessions for this client
     sessions_to_remove = []
@@ -80,8 +80,27 @@ def on_disconnect():
             sessions_to_remove.append(session_id)
     
     for session_id in sessions_to_remove:
+        # Comprehensive session cleanup
+        session_info = active_sessions.get(session_id, {})
+        
+        # End buffer manager session
+        if 'buffer_manager' in session_info:
+            buffer_manager = session_info['buffer_manager']
+            buffer_manager.end_session()
+        
+        # Release from buffer registry  
+        buffer_registry.release(session_id)
+        
+        # Terminate processing thread if exists
+        if session_id in processing_workers:
+            worker = processing_workers[session_id]
+            logger.info(f"[transcription] Terminating processing thread for session: {session_id}")
+            # The thread will terminate when session is removed from active_sessions
+            processing_workers.pop(session_id, None)
+        
+        # Remove from active sessions
         active_sessions.pop(session_id, None)
-        logger.info(f"[transcription] Cleaned up session: {session_id}")
+        logger.info(f"[transcription] Comprehensive cleanup completed for session: {session_id}")
 
 @socketio.on('start_session', namespace='/transcription')
 def on_start_session(data):

@@ -17,8 +17,8 @@ from typing import Dict, Any, Optional, List
 from queue import Queue, Empty
 from threading import Event
 
-from flask import request as flask_request
 from flask_socketio import emit, disconnect, join_room, leave_room
+import flask_socketio
 from typing import Dict
 
 # Import the socketio instance from the consolidated app
@@ -395,7 +395,7 @@ enhanced_buffer_config = BufferConfig(
 @socketio.on('connect', namespace='/transcription')
 def on_enhanced_connect():
     """Enhanced client connection handler"""
-    client_id = socketio.request.sid
+    client_id = flask_socketio.request.sid
     logger.info(f"🔌 Enhanced transcription client connected: {client_id}")
     
     # Send enhanced connection status
@@ -419,7 +419,7 @@ def on_start_enhanced_session(data):
     """Start enhanced transcription session with advanced features"""
     try:
         session_id = str(uuid.uuid4())
-        client_id = socketio.request.sid
+        client_id = flask_socketio.request.sid
         
         # Create enhanced buffer manager
         buffer_manager = buffer_registry.get_or_create_session(session_id)
@@ -485,7 +485,7 @@ def on_enhanced_audio_data(data):
         # Find active session for this client
         session_id = None
         for sid, session_info in enhanced_active_sessions.items():
-            if session_info.get('client_sid') == socketio.request.sid:
+            if session_info.get('client_sid') == flask_socketio.request.sid:
                 session_id = sid
                 break
         
@@ -583,7 +583,7 @@ def _process_enhanced_audio_input(data) -> tuple:
 @socketio.on('disconnect', namespace='/transcription')
 def on_enhanced_disconnect():
     """Enhanced disconnection handler with comprehensive cleanup"""
-    client_id = request.sid
+    client_id = flask_socketio.request.sid
     logger.info(f"🔌 Enhanced client disconnected: {client_id}")
     
     # Enhanced cleanup for this client
@@ -603,8 +603,8 @@ def on_enhanced_disconnect():
             
             buffer_manager.end_session()
         
-        # Remove from registry
-        buffer_registry.remove_session(session_id)
+        # Release from buffer registry
+        buffer_registry.release(session_id)
         enhanced_active_sessions.pop(session_id, None)
         
         logger.info(f"🧹 Enhanced session cleanup completed: {session_id}")
@@ -615,7 +615,7 @@ def on_get_enhanced_session_metrics(data=None):
     try:
         client_sessions = []
         for session_id, session_info in enhanced_active_sessions.items():
-            if session_info.get('client_sid') == request.sid:
+            if session_info.get('client_sid') == flask_socketio.request.sid:
                 buffer_manager = session_info['buffer_manager']
                 metrics = buffer_manager.get_metrics()
                 

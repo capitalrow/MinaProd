@@ -62,6 +62,9 @@ class HealthMonitor:
             'disk_usage': {'warning': 85.0, 'critical': 95.0},
             'api_response_time': {'warning': 5000.0, 'critical': 10000.0},  # milliseconds
             'error_rate': {'warning': 5.0, 'critical': 15.0},  # percentage
+            'memory_growth_rate': {'warning': 10.0, 'critical': 25.0},  # MB/minute
+            'active_sessions': {'warning': 100, 'critical': 200},  # concurrent sessions
+            'buffer_memory': {'warning': 100.0, 'critical': 200.0},  # MB total buffer memory
         }
         
         # Initialize metric storage
@@ -71,6 +74,13 @@ class HealthMonitor:
         self.metrics['active_sessions'] = deque(maxlen=100)
         self.metrics['transcription_count'] = deque(maxlen=100)
         self.metrics['audio_quality'] = deque(maxlen=100)
+        self.metrics['memory_growth_rate'] = deque(maxlen=100)
+        self.metrics['buffer_memory'] = deque(maxlen=100)
+        
+        # Memory leak detection
+        self.baseline_memory = None
+        self.memory_samples = deque(maxlen=20)  # Track last 20 memory samples
+        self.last_memory_check = time.time()
         
         logger.info("🏥 Health Monitor initialized")
     
@@ -123,6 +133,12 @@ class HealthMonitor:
             disk = psutil.disk_usage('/')
             disk_usage = (disk.used / disk.total) * 100
             self.record_metric('disk_usage', disk_usage, current_time)
+            
+            # Memory leak detection
+            self._detect_memory_leaks(current_time)
+            
+            # Session and buffer monitoring
+            self._monitor_session_resources(current_time)
             
         except Exception as e:
             logger.error(f"❌ Error collecting system metrics: {e}")
@@ -319,6 +335,74 @@ class HealthMonitor:
         # In production, you'd track this more accurately
         current_sessions = len(set(session_id for _ in range(1)))  # Placeholder
         self.record_metric('active_sessions', current_sessions, current_time)
+    
+    def _detect_memory_leaks(self, current_time: float):
+        """Detect memory leaks by analyzing memory growth patterns"""
+        try:
+            # Get current memory usage in MB
+            memory = psutil.virtual_memory()
+            current_memory_mb = memory.used / (1024 * 1024)
+            
+            # Store baseline memory on first run
+            if self.baseline_memory is None:
+                self.baseline_memory = current_memory_mb
+                logger.info(f"📊 Baseline memory set: {self.baseline_memory:.2f} MB")
+                return
+            
+            # Add to memory samples
+            self.memory_samples.append(current_memory_mb)
+            
+            # Calculate memory growth rate (MB per minute)
+            if len(self.memory_samples) >= 2:
+                time_diff = current_time - self.last_memory_check
+                if time_diff > 60:  # Check every minute
+                    memory_diff = current_memory_mb - self.memory_samples[0]
+                    growth_rate = memory_diff / (time_diff / 60.0)  # MB per minute
+                    
+                    self.record_metric('memory_growth_rate', growth_rate, current_time)
+                    self.last_memory_check = current_time
+                    
+                    # Log concerning growth
+                    if growth_rate > 5.0:  # More than 5MB/minute growth
+                        logger.warning(f"🚨 High memory growth detected: {growth_rate:.2f} MB/min")
+                        
+                    # Reset samples if we have enough data
+                    if len(self.memory_samples) > 10:
+                        self.memory_samples = deque(self.memory_samples[-5:], maxlen=20)
+            
+        except Exception as e:
+            logger.error(f"❌ Memory leak detection failed: {e}")
+    
+    def _monitor_session_resources(self, current_time: float):
+        """Monitor session and buffer memory usage"""
+        try:
+            # Import here to avoid circular imports
+            from services.session_buffer_manager import buffer_registry
+            
+            # Get active session count and buffer memory
+            metrics = buffer_registry.get_all_metrics()
+            active_sessions = metrics.get('total_sessions', 0)
+            
+            # Calculate total buffer memory (approximate)
+            total_buffer_memory = 0
+            for session_metrics in metrics.get('sessions', {}).values():
+                buffer_bytes = session_metrics.get('buffer_bytes', 0)
+                total_buffer_memory += buffer_bytes
+            
+            buffer_memory_mb = total_buffer_memory / (1024 * 1024)
+            
+            # Record metrics
+            self.record_metric('active_sessions', active_sessions, current_time)
+            self.record_metric('buffer_memory', buffer_memory_mb, current_time)
+            
+            # Log warnings for resource usage
+            if active_sessions > 50:
+                logger.warning(f"⚠️ High session count: {active_sessions}")
+            if buffer_memory_mb > 50:
+                logger.warning(f"⚠️ High buffer memory usage: {buffer_memory_mb:.2f} MB")
+                
+        except Exception as e:
+            logger.error(f"❌ Session resource monitoring failed: {e}")
 
 # Global health monitor instance
 health_monitor = HealthMonitor()

@@ -472,6 +472,10 @@ class SessionBufferRegistry:
                 del self.sessions[session_id]
                 logger.info(f"🗑️ Removed buffer manager for session {session_id}")
     
+    def release(self, session_id: str):
+        """Release session buffer (alias for remove_session for compatibility)"""
+        self.remove_session(session_id)
+    
     def get_all_metrics(self) -> Dict:
         """Get metrics for all active sessions"""
         with self.lock:
