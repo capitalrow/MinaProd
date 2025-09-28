@@ -13,16 +13,18 @@
   --sidebar-shadow: var(--mina-shadow-lg);
 }
 
-/* Main Sidebar Container */
+/* Main Sidebar Container - Performance Optimized */
 .sidebar-navigation {
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
-  width: var(--sidebar-width-collapsed);
+  width: var(--sidebar-width-expanded);
   background: var(--sidebar-bg);
   backdrop-filter: blur(10px);
-  transition: width var(--sidebar-transition);
+  transform: translateX(calc(var(--sidebar-width-collapsed) - var(--sidebar-width-expanded)));
+  transition: transform var(--sidebar-transition);
+  will-change: transform;
   z-index: 1040;
   display: flex;
   flex-direction: column;
@@ -32,7 +34,7 @@
 }
 
 .sidebar-navigation.expanded {
-  width: var(--sidebar-width-expanded);
+  transform: translateX(0);
 }
 
 /* Logo/Brand Section */
@@ -344,16 +346,18 @@
   display: block;
 }
 
-/* Main Content Adjustment */
+/* Main Content Adjustment - Performance Optimized */
 .main-content-with-sidebar {
   margin-left: var(--sidebar-width-collapsed);
-  transition: margin-left var(--sidebar-transition);
+  transform: translateX(0);
+  transition: transform var(--sidebar-transition);
+  will-change: transform;
   min-height: 100vh;
   padding-top: 0;
 }
 
 .sidebar-navigation.expanded ~ .main-content-with-sidebar {
-  margin-left: var(--sidebar-width-expanded);
+  transform: translateX(calc(var(--sidebar-width-expanded) - var(--sidebar-width-collapsed)));
 }
 
 /* Mobile Overlay - Define globally, control visibility in media query */
@@ -378,16 +382,16 @@
   pointer-events: auto;
 }
 
-/* Mobile Responsive */
+/* Mobile Responsive - Performance Optimized */
 @media (max-width: 768px) {
   .sidebar-navigation {
-    width: 0;
+    width: var(--sidebar-width-expanded);
     transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--mina-transition-base);
+    will-change: transform;
   }
   
   .sidebar-navigation.expanded {
-    width: var(--sidebar-width-expanded);
     transform: translateX(0);
   }
   
@@ -465,4 +469,21 @@
 /* Hide original navbar when sidebar is active */
 body.has-sidebar-nav .navbar {
   display: none;
+}
+
+/* Motion Preference - Enhanced Performance */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-navigation,
+  .main-content-with-sidebar,
+  .sidebar-item,
+  .sidebar-brand {
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+  }
+  
+  .sidebar-navigation.expanded .sidebar-item-text,
+  .sidebar-navigation.expanded .sidebar-section-label {
+    animation: none !important;
+  }
 }

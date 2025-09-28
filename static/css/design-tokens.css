@@ -214,11 +214,18 @@
   }
 }
 
-/* Motion Preference */
+/* Motion Preference - Enhanced Performance */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --mina-transition-fast: 0ms;
     --mina-transition-base: 0ms;
     --mina-transition-slow: 0ms;
+  }
+  
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
