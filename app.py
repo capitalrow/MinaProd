@@ -83,10 +83,11 @@ def create_app() -> Flask:
     # reverse proxy (Replit)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
     
-    # Set security headers
+    # Set security headers (production hardening)
     app.config["SESSION_COOKIE_SECURE"] = True
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["PERMANENT_SESSION_LIFETIME"] = 1800  # 30 minutes
     
     # Initialize CSRF protection  
     csrf = CSRFProtect(app)
@@ -331,13 +332,21 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.error(f"Failed to register AI Copilot routes: {e}")
     
-    # Missing API endpoints
+    # Missing API endpoints - temporarily disabled due to circular import
+    # Quick fix for analytics and meetings endpoints
     try:
-        from routes.missing_endpoints import missing_api_bp
-        app.register_blueprint(missing_api_bp)
-        app.logger.info("Missing API endpoints registered")
+        from routes.quick_analytics_fix import quick_analytics_bp
+        app.register_blueprint(quick_analytics_bp)
+        app.logger.info("Quick analytics fix registered")
     except Exception as e:
-        app.logger.error(f"Failed to register missing API endpoints: {e}")
+        app.logger.error(f"Failed to register quick analytics fix: {e}")
+        
+    try:
+        from routes.meetings_api_fix import meetings_api_fix_bp
+        app.register_blueprint(meetings_api_fix_bp)
+        app.logger.info("Quick meetings API fix registered")
+    except Exception as e:
+        app.logger.error(f"Failed to register meetings API fix: {e}")
 
     # other blueprints (guarded)
     _optional = [
