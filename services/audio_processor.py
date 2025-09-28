@@ -312,11 +312,11 @@ class AudioProcessor:
             rms = np.sqrt(np.mean(samples ** 2))
             peak = np.max(np.abs(samples))
             
-            # MUCH more lenient thresholds for real-world audio
-            if rms < 10:  # Was 150 - now 10 (MUCH more lenient)
+            # EXTREMELY lenient thresholds for real-world audio
+            if rms < 5:  # Was 10 - now 5 (even more lenient)
                 logger.debug(f"❌ RMS too low: {rms:.1f}")
                 return False
-            if peak < 50:  # Was 500 - now 50 (10x more lenient)
+            if peak < 20:  # Was 50 - now 20 (much more lenient)
                 logger.debug(f"❌ Peak too low: {peak:.1f}")
                 return False
             if rms > 20000:  # Was 12000 - now higher to allow louder audio
