@@ -28,7 +28,7 @@ _LAST_EMIT_AT: Dict[str, float] = {}
 _LAST_INTERIM_TEXT: Dict[str, str] = {}
 
 # Tunables
-_MIN_MS_BETWEEN_INTERIM = 1200.0     # don't spam Whisper; ~1.2s cadence
+_MIN_MS_BETWEEN_INTERIM = 400.0      # Real-time feel: ~400ms cadence  
 _MAX_INTERIM_WINDOW_SEC = 14.0       # last N seconds for interim context (optional)
 _MAX_B64_SIZE = 1024 * 1024 * 6      # 6MB guard
 
@@ -118,8 +118,8 @@ def on_audio_chunk(data):
     # Append to full buffer for the eventual final pass
     _BUFFERS[session_id].extend(chunk)
 
-    # Only process if we have meaningful audio data (> 1KB)
-    if len(chunk) < 1024:
+    # Only process if we have meaningful audio data (> 200 bytes for real-time feel)
+    if len(chunk) < 200:
         emit("ack", {"ok": True})
         return
     
