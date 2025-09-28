@@ -580,15 +580,17 @@
             transition: all var(--transition-fast);
         }
         
+        /* FIXED: Interim text with better visibility */
         .transcript-text.interim-text {
-            opacity: 0.7;
+            opacity: 0.9;                                    /* Increased from 0.7 for better readability */
             font-style: italic;
             position: relative;
             border-left: 3px solid var(--primary);
             padding-left: 12px;
+            color: var(--text-secondary);                    /* Ensure consistent readable color */
             background: linear-gradient(
                 90deg,
-                rgba(15, 165, 233, 0.05) 0%,
+                rgba(15, 165, 233, 0.08) 0%,               /* Slightly more visible */
                 transparent 20%
             );
             animation: shimmer 2s infinite, fadeInScale var(--transition-fast);
@@ -610,10 +612,12 @@
             border-left: 3px solid var(--success);
         }
         
+        /* FIXED: Low confidence text with accessible contrast */
         .transcript-text.low-confidence {
-            opacity: 0.6;
+            opacity: 0.85;                                   /* Increased from 0.6 for readability */
             border-left: 3px solid var(--warning);
-            background: rgba(245, 158, 11, 0.05);
+            background: rgba(245, 158, 11, 0.08);           /* Slightly more visible background */
+            color: var(--text-tertiary);                    /* Ensure readable text color */
         }
 
         .text-selected {
@@ -995,17 +999,16 @@
             opacity: 1;
         }
         
+        /* FIXED: Metric values with solid high-contrast text */
         .metric-value {
             font-size: 2rem;
             font-weight: 800;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);                      /* Solid white for maximum readability */
             margin-bottom: var(--space-sm);
             line-height: 1;
             position: relative;
             z-index: 1;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);      /* Subtle shadow for depth */
         }
         
         .metric-label {
