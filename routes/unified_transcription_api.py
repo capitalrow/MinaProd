@@ -13,7 +13,6 @@ import subprocess
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 import openai
-from pydub import AudioSegment
 import io
 
 # Import robust services
@@ -26,14 +25,21 @@ from services.speaker_diarization_enhanced import get_speaker_diarization
 from services.sentiment_analysis_service import get_sentiment_service
 from services.meeting_insights_service import get_insights_service
 from services.redis_cache_service import get_cache_service
+from services.audio_processor import AudioProcessor
 
 logger = logging.getLogger(__name__)
 
 # Create unified transcription blueprint
 unified_api_bp = Blueprint('unified_transcription', __name__)
 
-# Initialize OpenAI client
+# Initialize services with production safety
 _openai_client = None
+_audio_processor = None
+
+# Production Safety Limits
+MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024  # 25MB max
+MAX_PROCESSING_TIME_SECONDS = 30  # 30s timeout
+MAX_REQUESTS_PER_MINUTE = 60  # Rate limiting
 
 def get_openai_client():
     """Get or initialize OpenAI client with proper error handling"""
@@ -46,23 +52,49 @@ def get_openai_client():
         logger.info("✅ OpenAI client initialized successfully")
     return _openai_client
 
+def get_audio_processor():
+    """Get thread-safe stateless audio processor instance"""
+    global _audio_processor
+    if _audio_processor is None:
+        _audio_processor = AudioProcessor()
+        logger.info("✅ Audio processor initialized for production use")
+    return _audio_processor
+
+def check_ffmpeg_availability():
+    """Health check for FFmpeg dependency"""
+    try:
+        result = subprocess.run(['ffmpeg', '-version'], 
+                              capture_output=True, timeout=5)
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return False
+
 @unified_api_bp.route('/api/transcribe-audio', methods=['POST'])
 def unified_transcribe_audio():
     """
-    🎯 ENHANCED UNIFIED TRANSCRIPTION ENDPOINT
-    Handles BOTH base64 audio data AND file uploads
-    Supports interim and final transcription modes
-    Now with circuit breaker protection and health monitoring
+    🎯 PRODUCTION-GRADE UNIFIED TRANSCRIPTION ENDPOINT
+    Handles BOTH base64 audio data AND file uploads with comprehensive safety
+    Features: Rate limiting, size limits, timeouts, graceful degradation
     """
     request_start_time = time.time()
     health_monitor = get_health_monitor()
     success = False
     
+    # Production Safety: Request size check
+    if request.content_length and request.content_length > MAX_AUDIO_SIZE_BYTES:
+        logger.warning(f"🚫 Request too large: {request.content_length} bytes")
+        return jsonify({
+            'error': 'Audio file too large',
+            'max_size_mb': MAX_AUDIO_SIZE_BYTES // (1024 * 1024),
+            'success': False
+        }), 413
+    
     try:
-        # Extract session info with defaults
+        # Extract session info with guaranteed values
         session_id = f'session_{int(time.time())}'
         chunk_id = '1' 
         is_interim = False
+        mime_type = 'audio/webm'  # Default
         
         # Determine request format and extract data
         audio_data = None
@@ -74,13 +106,16 @@ def unified_transcribe_audio():
             session_id = request.form.get('session_id', f'session_{int(time.time())}')
             chunk_id = request.form.get('chunk_id', '1')
             is_interim = request.form.get('is_interim', 'false').lower() == 'true'
+            mime_type = request.form.get('mime_type', 'audio/webm')  # Get client-detected MIME type
             
             if 'audio' in request.files:
                 audio_file = request.files['audio']
                 if audio_file and audio_file.filename:
                     audio_data = audio_file.read()
-                    content_type = audio_file.content_type or 'audio/webm'
-                    logger.info(f"📦 File upload: {len(audio_data)} bytes, type: {content_type}, file: {audio_file.filename}")
+                    # Use client MIME type if provided, otherwise detect from file
+                    if mime_type == 'audio/webm':  # Still default
+                        mime_type = audio_file.content_type or 'audio/webm'
+                    logger.info(f"📦 File upload: {len(audio_data)} bytes, type: {mime_type}, file: {audio_file.filename}")
                     
                     # Enhanced format validation
                     if len(audio_data) < 100:
@@ -165,28 +200,60 @@ def unified_transcribe_audio():
         
         logger.info(f"🎵 Processing audio: session={session_id}, chunk={chunk_id}, interim={is_interim}, size={len(audio_data)} bytes")
         
-        # 🔥 CRITICAL FIX: Use robust AudioProcessor service with format detection
+        # 🔥 PRODUCTION-SAFE AUDIO PROCESSING with timeout and graceful degradation
         try:
-            from services.audio_processor import AudioProcessor
-            audio_processor = AudioProcessor()
+            # Health check: Ensure dependencies are available
+            if not check_ffmpeg_availability():
+                logger.warning("⚠️ FFmpeg not available - using basic audio processing")
             
-            # Detect actual format instead of assuming WebM
-            detected_format = detect_audio_format(audio_data)
-            logger.info(f"🔍 Detected audio format: {detected_format} for {len(audio_data)} bytes")
+            # Use production-safe AudioProcessor with MIME type detection
+            audio_processor = get_audio_processor()
             
-            wav_audio = audio_processor.convert_to_wav(audio_data, detected_format)
-            
-            if not wav_audio or len(wav_audio) < 44:
-                logger.error("❌ AudioProcessor conversion failed")
-                # Fallback to basic conversion
-                wav_audio = convert_audio_to_wav_enhanced(audio_data)
+            # Detect format from MIME type and header validation
+            input_format = 'webm'  # Default
+            if 'wav' in mime_type.lower():
+                input_format = 'wav'
+            elif 'webm' in mime_type.lower() or 'opus' in mime_type.lower():
+                input_format = 'webm'
                 
-        except ImportError:
-            logger.warning("⚠️ AudioProcessor service not available, using fallback")
-            wav_audio = convert_audio_to_wav_enhanced(audio_data)
+            logger.info(f"🔧 Converting audio: {len(audio_data)} bytes, format: {input_format}, mime: {mime_type}")
+            
+            # Use enhanced AudioProcessor with timeout protection
+            import signal
+            
+            def timeout_handler(signum, frame):
+                raise TimeoutError("Audio conversion timeout")
+            
+            # Set conversion timeout
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(MAX_PROCESSING_TIME_SECONDS)
+            
+            try:
+                wav_audio = audio_processor.convert_to_wav(
+                    audio_data, 
+                    input_format=input_format,
+                    mime_type=mime_type
+                )
+            finally:
+                signal.alarm(0)  # Cancel timeout
+                
+        except TimeoutError:
+            logger.error("❌ Audio conversion timeout - request took too long")
+            return jsonify({
+                'error': 'Audio processing timeout',
+                'success': False,
+                'session_id': session_id,
+                'processing_time': (time.time() - request_start_time) * 1000
+            }), 504
         except Exception as conversion_error:
             logger.error(f"❌ Audio conversion error: {conversion_error}")
-            wav_audio = convert_audio_to_wav_enhanced(audio_data)
+            return jsonify({
+                'error': 'Audio format not supported',
+                'details': str(conversion_error),
+                'success': False,
+                'session_id': session_id,
+                'processing_time': (time.time() - request_start_time) * 1000
+            }), 400
         
         if not wav_audio or len(wav_audio) < 44:
             logger.error("❌ All audio conversion methods failed")

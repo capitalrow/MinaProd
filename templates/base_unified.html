@@ -378,7 +378,7 @@
             // Alt + S for settings
             if (e.altKey && e.key.toLowerCase() === 's') {
                 e.preventDefault();
-                window.location.href = "{{ url_for('settings.dashboard') }}";
+                window.location.href = "{{ url_for('settings.settings_dashboard') }}";
             }
         });
     </script>
