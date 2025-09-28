@@ -332,6 +332,14 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.error(f"Failed to register AI Copilot routes: {e}")
     
+    # Production Monitoring Dashboard
+    try:
+        from monitoring_dashboard import monitoring_bp
+        app.register_blueprint(monitoring_bp)
+        app.logger.info("Production Monitoring Dashboard registered")
+    except Exception as e:
+        app.logger.error(f"Failed to register Production Monitoring Dashboard: {e}")
+    
     # Missing API endpoints - temporarily disabled due to circular import
     # Quick fix for analytics and meetings endpoints
     try:
