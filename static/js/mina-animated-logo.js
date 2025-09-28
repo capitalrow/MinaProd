@@ -802,16 +802,185 @@ class MinaLogoManager {
 // Global initialization
 let minaLogoManager = null;
 
+// Function to inject enhanced logo symbol for template usage
+function injectEnhancedLogoSymbol() {
+    if (document.getElementById('minaEnhancedLogo')) return;
+    
+    let svgDefs = document.querySelector('#mina-logo-defs');
+    if (!svgDefs) {
+        svgDefs = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svgDefs.id = 'mina-logo-defs';
+        svgDefs.style.cssText = 'position: absolute; width: 0; height: 0; pointer-events: none;';
+        document.body.appendChild(svgDefs);
+    }
+    
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    
+    // Enhanced logo symbol
+    const symbol = document.createElementNS('http://www.w3.org/2000/svg', 'symbol');
+    symbol.id = 'minaEnhancedLogo';
+    symbol.setAttribute('viewBox', '0 0 24 24');
+    
+    // Define gradients
+    const primaryGrad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+    primaryGrad.id = 'minaEnhancedPrimary';
+    primaryGrad.setAttribute('x1', '0%');
+    primaryGrad.setAttribute('y1', '0%');
+    primaryGrad.setAttribute('x2', '100%');
+    primaryGrad.setAttribute('y2', '100%');
+    primaryGrad.innerHTML = `
+        <stop offset="0%" stop-color="var(--mina-icon-highlight, #7DD3FC)"/>
+        <stop offset="30%" stop-color="var(--mina-icon-primary, #38BDF8)"/>
+        <stop offset="70%" stop-color="var(--mina-icon-secondary, #8B5CF6)"/>
+        <stop offset="100%" stop-color="var(--mina-icon-accent, #A855F7)"/>
+    `;
+    
+    const depthGrad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+    depthGrad.id = 'minaEnhancedDepth';
+    depthGrad.setAttribute('x1', '0%');
+    depthGrad.setAttribute('y1', '0%');
+    depthGrad.setAttribute('x2', '100%');
+    depthGrad.setAttribute('y2', '100%');
+    depthGrad.innerHTML = `
+        <stop offset="0%" stop-color="var(--mina-icon-depth, #7C3AED)"/>
+        <stop offset="100%" stop-color="var(--mina-icon-depth-deep, #6B46C1)"/>
+    `;
+    
+    // Audio wave background
+    const waveGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    waveGroup.className = 'mina-waves';
+    waveGroup.setAttribute('opacity', '0.2');
+    for (let i = 0; i < 5; i++) {
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', '12');
+        circle.setAttribute('cy', '12');
+        circle.setAttribute('r', 4 + i * 2);
+        circle.setAttribute('fill', 'none');
+        circle.setAttribute('stroke', 'var(--mina-icon-wave, rgba(139, 92, 246, 0.2))');
+        circle.setAttribute('stroke-width', '0.5');
+        
+        const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+        animate.setAttribute('attributeName', 'opacity');
+        animate.setAttribute('values', '0;0.8;0');
+        animate.setAttribute('dur', '2s');
+        animate.setAttribute('repeatCount', 'indefinite');
+        animate.setAttribute('begin', `${i * 0.4}s`);
+        circle.appendChild(animate);
+        
+        waveGroup.appendChild(circle);
+    }
+    
+    // Main bars with enhanced effects
+    const barsGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    barsGroup.className = 'mina-bars';
+    
+    // Left bar
+    const leftBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    leftBar.className = 'mina-bar-left';
+    leftBar.setAttribute('x', '4');
+    leftBar.setAttribute('y', '6');
+    leftBar.setAttribute('width', '2.5');
+    leftBar.setAttribute('height', '10');
+    leftBar.setAttribute('rx', '1.25');
+    leftBar.setAttribute('fill', 'url(#minaEnhancedPrimary)');
+    leftBar.setAttribute('filter', 'drop-shadow(0 2px 4px var(--mina-icon-shadow))');
+    
+    // Middle bar
+    const middleBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    middleBar.className = 'mina-bar-middle';
+    middleBar.setAttribute('x', '10.75');
+    middleBar.setAttribute('y', '8');
+    middleBar.setAttribute('width', '2.5');
+    middleBar.setAttribute('height', '8');
+    middleBar.setAttribute('rx', '1.25');
+    middleBar.setAttribute('fill', 'url(#minaEnhancedPrimary)');
+    middleBar.setAttribute('filter', 'drop-shadow(0 2px 4px var(--mina-icon-shadow))');
+    
+    // Right bar  
+    const rightBar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rightBar.className = 'mina-bar-right';
+    rightBar.setAttribute('x', '17.5');
+    rightBar.setAttribute('y', '6');
+    rightBar.setAttribute('width', '2.5');
+    rightBar.setAttribute('height', '10');
+    rightBar.setAttribute('rx', '1.25');
+    rightBar.setAttribute('fill', 'url(#minaEnhancedPrimary)');
+    rightBar.setAttribute('filter', 'drop-shadow(0 2px 4px var(--mina-icon-shadow))');
+    
+    // Baseline
+    const baseline = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    baseline.setAttribute('x', '4');
+    baseline.setAttribute('y', '18');
+    baseline.setAttribute('width', '16');
+    baseline.setAttribute('height', '1.5');
+    baseline.setAttribute('rx', '0.75');
+    baseline.setAttribute('fill', 'url(#minaEnhancedDepth)');
+    baseline.setAttribute('filter', 'drop-shadow(0 1px 2px var(--mina-icon-shadow))');
+    
+    // Metallic overlay
+    const metallicOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    metallicOverlay.className = 'mina-metallic-overlay';
+    metallicOverlay.setAttribute('opacity', '0.3');
+    
+    const highlight = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    highlight.setAttribute('cx', '12');
+    highlight.setAttribute('cy', '10');
+    highlight.setAttribute('rx', '8');
+    highlight.setAttribute('ry', '4');
+    highlight.setAttribute('fill', 'var(--mina-icon-specular, #F8FAFC)');
+    highlight.setAttribute('opacity', '0.4');
+    metallicOverlay.appendChild(highlight);
+    
+    // Sheen effect
+    const sheen = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    sheen.className = 'mina-sheen';
+    sheen.setAttribute('x', '-6');
+    sheen.setAttribute('y', '-6');
+    sheen.setAttribute('width', '4');
+    sheen.setAttribute('height', '36');
+    sheen.setAttribute('fill', 'var(--mina-icon-specular, #F8FAFC)');
+    sheen.setAttribute('opacity', '0');
+    sheen.setAttribute('transform', 'rotate(-45)');
+    
+    // Assemble symbol
+    defs.appendChild(primaryGrad);
+    defs.appendChild(depthGrad);
+    symbol.appendChild(waveGroup);
+    barsGroup.appendChild(leftBar);
+    barsGroup.appendChild(middleBar);
+    barsGroup.appendChild(rightBar);
+    symbol.appendChild(barsGroup);
+    symbol.appendChild(baseline);
+    symbol.appendChild(metallicOverlay);
+    symbol.appendChild(sheen);
+    
+    defs.appendChild(symbol);
+    svgDefs.appendChild(defs);
+    
+    // Enable fallbacks after symbol creation
+    setTimeout(() => {
+        const logoElements = document.querySelectorAll('svg[aria-label*="logo"] .mina-fallback');
+        logoElements.forEach(fallback => {
+            const useElement = fallback.parentElement.querySelector('use[href="#minaEnhancedLogo"]');
+            if (useElement && !document.getElementById('minaEnhancedLogo').childElementCount) {
+                fallback.style.display = 'block';
+            }
+        });
+    }, 100);
+}
+
 // Auto-inject ultra-depth styles when script loads
 if (typeof window !== 'undefined') {
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             injectUltraDepthMinaLogoStyles();
+            injectEnhancedLogoSymbol();
             minaLogoManager = new MinaLogoManager();
             minaLogoManager.autoInitialize();
         });
     } else {
         injectUltraDepthMinaLogoStyles();
+        injectEnhancedLogoSymbol();
         minaLogoManager = new MinaLogoManager();
         minaLogoManager.autoInitialize();
     }
