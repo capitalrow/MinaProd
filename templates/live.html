@@ -2522,6 +2522,13 @@
                     });
                     
                     this.socket.on('transcription_result', (data) => {
+                        console.log('📝 Real-time transcription received:', data);
+                        this.handleTranscriptionResult(data);
+                    });
+                    
+                    // Additional debugging for real-time issues
+                    this.socket.on('interim_result', (data) => {
+                        console.log('🔄 Interim result received:', data);
                         this.handleTranscriptionResult(data);
                     });
                     
@@ -2719,9 +2726,15 @@
             
             handleTranscriptionResult(data) {
                 try {
+                    console.log('🎯 Processing transcription data:', data);
                     const { text, confidence, speaker_id, is_final, timestamp } = data;
                     
-                    if (!text || text.trim() === '') return;
+                    if (!text || text.trim() === '') {
+                        console.log('⚠️ Empty text received, skipping display');
+                        return;
+                    }
+                    
+                    console.log(`📝 Displaying text: "${text}" (final: ${is_final})`);
                     
                     // Update metrics
                     this.metrics.latency = data.processing_time_ms || 0;
@@ -2742,10 +2755,12 @@
                     
                     // Add or update transcript segment
                     if (is_final) {
+                        console.log('✅ Adding final transcript segment');
                         this.addTranscriptSegment(text, confidence, speakerInfo, timestamp);
                         this.totalWords += text.split(' ').length;
                         this.segmentCount++;
                     } else {
+                        console.log('🔄 Updating interim transcript');
                         this.updateInterimTranscript(text, confidence, speakerInfo);
                         // Update word count for interim transcript too
                         this.totalWords = text.split(' ').filter(word => word.length > 0).length;
