@@ -27,15 +27,19 @@ class SidebarNavigation {
     }
 
     setupSidebar() {
-        // Create sidebar if it doesn't exist
+        // Find existing sidebar from template
         this.sidebar = document.querySelector('.sidebar-navigation');
         if (!this.sidebar) {
-            this.createSidebar();
+            console.error('Sidebar not found in template');
+            return;
         }
 
-        // Set initial state
-        if (this.isExpanded && !this.isMobile) {
+        // Set initial state (expanded by default for premium experience)
+        this.isExpanded = !this.isMobile;
+        if (this.isExpanded) {
             this.sidebar.classList.add('expanded');
+        } else {
+            this.sidebar.classList.remove('expanded');
         }
 
         // Add event listeners

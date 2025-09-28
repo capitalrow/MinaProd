@@ -16,117 +16,162 @@
 {% endblock %}
 
 {% block content %}
-    <div class="main-content">
-        <!-- Dashboard Header -->
+    <div class="dashboard-layout">
+        <!-- Premium Dashboard Header with Glass Effect -->
         <div class="dashboard-header">
             <div class="header-content">
                 <h1 class="dashboard-title">
-                    <i class="fas fa-tachometer-alt"></i>
+                    <i class="fas fa-tachometer-alt me-3"></i>
                     Dashboard
                 </h1>
-                <button class="btn btn-primary" id="refresh-dashboard">
-                    <i class="fas fa-sync-alt"></i>
-                    Refresh
-                </button>
+                <p class="dashboard-subtitle">Real-time meeting insights and transcription analytics</p>
             </div>
+            <button class="btn btn-primary" id="refresh-dashboard">
+                <i class="fas fa-sync-alt me-2"></i>
+                Refresh Data
+            </button>
         </div>
 
-        <!-- Dashboard Stats Grid -->
+        <!-- Premium Stats Grid with Interactive Cards -->
         <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-microphone"></i>
-                </div>
-                <div class="stat-content">
-                    <h3 class="stat-number" id="active-sessions">0</h3>
-                    <p class="stat-label">Active Sessions</p>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="stat-content">
-                    <h3 class="stat-number" id="total-hours">0</h3>
-                    <p class="stat-label">Hours Recorded</p>
+            <div class="stat-card" data-stat="active-sessions">
+                <div class="stat-card-content">
+                    <div class="stat-value" id="active-sessions">0</div>
+                    <div class="stat-label">
+                        <i class="fas fa-microphone stat-icon"></i>
+                        Active Sessions
+                    </div>
                 </div>
             </div>
             
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <div class="stat-content">
-                    <h3 class="stat-number" id="success-rate">0%</h3>
-                    <p class="stat-label">Success Rate</p>
+            <div class="stat-card" data-stat="total-hours">
+                <div class="stat-card-content">
+                    <div class="stat-value" id="total-hours">0</div>
+                    <div class="stat-label">
+                        <i class="fas fa-clock stat-icon"></i>
+                        Hours Recorded
+                    </div>
                 </div>
             </div>
             
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-star"></i>
+            <div class="stat-card" data-stat="success-rate">
+                <div class="stat-card-content">
+                    <div class="stat-value" id="success-rate">0%</div>
+                    <div class="stat-label">
+                        <i class="fas fa-chart-line stat-icon"></i>
+                        Success Rate
+                    </div>
                 </div>
-                <div class="stat-content">
-                    <h3 class="stat-number" id="avg-confidence">0%</h3>
-                    <p class="stat-label">Avg Confidence</p>
+            </div>
+            
+            <div class="stat-card" data-stat="avg-confidence">
+                <div class="stat-card-content">
+                    <div class="stat-value" id="avg-confidence">0%</div>
+                    <div class="stat-label">
+                        <i class="fas fa-star stat-icon"></i>
+                        Avg Confidence
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="dashboard-section">
-            <h2 class="section-title">Quick Actions</h2>
-            <div class="action-grid">
-                <a href="/live" class="action-card primary">
-                    <div class="action-icon">
-                        <i class="fas fa-circle text-danger"></i>
+        <!-- Premium Content Grid Layout -->
+        <div class="content-grid">
+            <!-- Main Content Section -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2 class="section-title">Quick Actions</h2>
+                    <button class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-expand-alt me-1"></i>
+                        View All
+                    </button>
+                </div>
+                <div class="section-content">
+                    <div class="action-grid">
+                        <a href="/live" class="btn btn-primary mb-3 d-flex align-items-center">
+                            <i class="fas fa-circle text-danger me-3"></i>
+                            <div>
+                                <div class="fw-semibold">Start Live Recording</div>
+                                <small class="opacity-75">Begin a new transcription session</small>
+                            </div>
+                        </a>
+                        
+                        <a href="{{ url_for('dashboard.meetings') }}" class="btn btn-outline-secondary mb-3 d-flex align-items-center">
+                            <i class="fas fa-users me-3"></i>
+                            <div>
+                                <div class="fw-semibold">View Meetings</div>
+                                <small class="opacity-75">Browse your recorded sessions</small>
+                            </div>
+                        </a>
+                        
+                        <a href="{{ url_for('dashboard.analytics') }}" class="btn btn-outline-secondary mb-3 d-flex align-items-center">
+                            <i class="fas fa-chart-bar me-3"></i>
+                            <div>
+                                <div class="fw-semibold">Analytics</div>
+                                <small class="opacity-75">View detailed insights</small>
+                            </div>
+                        </a>
+                        
+                        <a href="/settings" class="btn btn-outline-secondary d-flex align-items-center">
+                            <i class="fas fa-cog me-3"></i>
+                            <div>
+                                <div class="fw-semibold">Settings</div>
+                                <small class="opacity-75">Configure your preferences</small>
+                            </div>
+                        </a>
                     </div>
-                    <div class="action-content">
-                        <h3>Start Live Recording</h3>
-                        <p>Begin a new transcription session</p>
+                </div>
+            </div>
+
+            <!-- Sidebar Content Section -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2 class="section-title">System Status</h2>
+                    <span class="status-live">
+                        <i class="fas fa-circle"></i>
+                        Live
+                    </span>
+                </div>
+                <div class="section-content">
+                    <div class="status-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Transcription Service</span>
+                            <span class="status-completed">Active</span>
+                        </div>
                     </div>
-                </a>
-                
-                <a href="{{ url_for('dashboard.meetings') }}" class="action-card">
-                    <div class="action-icon">
-                        <i class="fas fa-users"></i>
+                    <div class="status-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>WebSocket Connection</span>
+                            <span class="status-completed">Connected</span>
+                        </div>
                     </div>
-                    <div class="action-content">
-                        <h3>View Meetings</h3>
-                        <p>Browse your recorded sessions</p>
+                    <div class="status-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>AI Processing</span>
+                            <span class="status-completed">Ready</span>
+                        </div>
                     </div>
-                </a>
-                
-                <a href="{{ url_for('dashboard.analytics') }}" class="action-card">
-                    <div class="action-icon">
-                        <i class="fas fa-chart-bar"></i>
-                    </div>
-                    <div class="action-content">
-                        <h3>Analytics</h3>
-                        <p>View detailed insights</p>
-                    </div>
-                </a>
-                
-                <a href="/settings" class="action-card">
-                    <div class="action-icon">
-                        <i class="fas fa-cog"></i>
-                    </div>
-                    <div class="action-content">
-                        <h3>Settings</h3>
-                        <p>Configure your preferences</p>
-                    </div>
-                </a>
+                </div>
             </div>
         </div>
 
-        <!-- Recent Activity -->
-        <div class="dashboard-section">
-            <h2 class="section-title">Recent Activity</h2>
-            <div class="activity-list" id="recent-activity">
-                <div class="loading-spinner">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Loading recent activity...</p>
+        <!-- Recent Activity Section -->
+        <div class="content-section mt-4">
+            <div class="section-header">
+                <h2 class="section-title">Recent Activity</h2>
+                <a href="{{ url_for('dashboard.meetings') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-history me-1"></i>
+                    View All
+                </a>
+            </div>
+            <div class="section-content">
+                <div class="activity-list" id="recent-activity">
+                    <div class="d-flex align-items-center justify-content-center py-5">
+                        <div class="text-center">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-3 text-muted"></i>
+                            <p class="text-muted">Loading recent activity...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
