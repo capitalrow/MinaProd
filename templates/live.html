@@ -2122,6 +2122,7 @@
                 this.speakers = new Map();
                 this.confidenceScores = [];
                 this.autoScroll = true;
+                this.chunkCounter = 0; // Track audio chunks for real-time transcription
                 
                 // Metrics
                 this.metrics = {
@@ -2654,21 +2655,8 @@
                         if (event.data.size > 0) {
                             this.audioChunks.push(event.data);
                             
-                            // Send audio chunk to server
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                                const audioData = new Uint8Array(reader.result);
-                                if (this.socket && this.socket.connected) {
-                                    // Convert to base64 for transmission
-                                    const base64Audio = btoa(String.fromCharCode.apply(null, audioData));
-                                    this.socket.emit('audio_data', {
-                                        data: base64Audio,
-                                        mimeType: mimeType,
-                                        size: audioData.length
-                                    });
-                                }
-                            };
-                            reader.readAsArrayBuffer(event.data);
+                            // Send audio chunk for real-time transcription via HTTP API
+                            this.sendAudioChunkForTranscription(event.data, true); // is_interim = true
                         }
                     };
                     
@@ -2704,6 +2692,12 @@
             async stopRecording() {
                 if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
                     this.mediaRecorder.stop();
+                    
+                    // Send any remaining audio chunks as final
+                    if (this.audioChunks.length > 0) {
+                        const finalBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                        await this.sendAudioChunkForTranscription(finalBlob, false); // is_interim = false
+                    }
                 }
                 
                 if (this.audioStream) {
@@ -2713,6 +2707,7 @@
                 
                 this.isRecording = false;
                 this.audioChunks = [];
+                this.chunkCounter = 0; // Reset counter for next recording
                 
                 // End the session to get final transcript
                 if (this.socket && this.socket.connected) {
@@ -3035,6 +3030,52 @@
                 this.showToast(`Auto-scroll ${this.autoScroll ? 'enabled' : 'disabled'}`, 'info');
             }
             
+            async sendAudioChunkForTranscription(audioBlob, isInterim = false) {
+                try {
+                    console.log(`🎤 Sending ${isInterim ? 'interim' : 'final'} audio chunk (${audioBlob.size} bytes)`);
+                    
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'chunk.webm');
+                    formData.append('session_id', this.sessionId);
+                    formData.append('is_interim', isInterim.toString());
+                    formData.append('chunk_id', this.chunkCounter++);
+                    formData.append('language', this.getCurrentSettings().language);
+                    formData.append('quality', this.getCurrentSettings().quality);
+                    formData.append('diarization', this.getCurrentSettings().diarization);
+                    
+                    const startTime = Date.now();
+                    
+                    const response = await fetch('/api/transcribe-audio', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const latency = Date.now() - startTime;
+                    console.log(`⚡ Transcription response latency: ${latency}ms`);
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log(`✅ Transcription result:`, result);
+                        
+                        if (result.text && result.text.trim()) {
+                            // Process the transcription result
+                            this.handleTranscriptionResult({
+                                text: result.text,
+                                confidence: result.confidence || 0.95,
+                                speaker_id: result.speaker_id || 'speaker_1',
+                                is_final: !isInterim,
+                                timestamp: Date.now(),
+                                processing_time_ms: latency
+                            });
+                        }
+                    } else {
+                        console.error('❌ Transcription request failed:', response.status);
+                    }
+                } catch (error) {
+                    console.error('❌ Error sending audio chunk:', error);
+                }
+            }
+
             toggleFullscreen() {
                 const panel = document.querySelector('.transcription-panel');
                 
