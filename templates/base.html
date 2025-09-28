@@ -15,19 +15,19 @@
     <link rel="dns-prefetch" href="//cdn.replit.com">
     <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
     
-    <!-- Critical CSS - Preload for performance -->
-    <link rel="preload" href="{{ url_for('static', filename='css/main.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}"></noscript>
+    <!-- Font Awesome - Load early for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Bootstrap CSS with Replit Dark Theme -->
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     
-    <!-- Non-critical CSS - Lazy Load -->
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
-    
-    <link rel="preload" href="{{ url_for('static', filename='css/clean.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/clean.css') }}"></noscript>
+    <!-- Premium Design System - Load in correct order for override -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/clean.css') }}">
     
     <!-- Defer non-critical JavaScript -->
     <script>
@@ -45,201 +45,130 @@
     <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons" defer></script>
     
-    <!-- Sidebar Navigation CSS -->
-    <link rel="preload" href="{{ url_for('static', filename='css/sidebar.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}"></noscript>
     
     {% block head %}{% endblock %}
 </head>
 <body>
-    <!-- Load Sidebar Navigation Script -->
-    <script src="{{ url_for('static', filename='js/sidebar.js') }}" defer></script>
-    
-    <!-- Sidebar Navigation (Slack/Notion Style) -->
-    <nav id="sidebar" class="sidebar collapsed" aria-label="Main navigation">
-        <div class="sidebar-header">
-            <div class="mina-logo" id="mina-logo" role="button" tabindex="0" aria-label="Toggle navigation menu" aria-expanded="false">
+    <!-- Premium Sidebar Navigation -->
+    <aside class="sidebar-navigation expanded" role="navigation" aria-label="Main navigation">
+        <!-- Logo/Brand Section -->
+        <div class="sidebar-brand" role="button" tabindex="0" aria-label="Toggle sidebar menu">
+            <div class="sidebar-brand-icon">
                 <i class="fas fa-microphone"></i>
-                <span class="logo-text">Mina</span>
             </div>
+            <div class="sidebar-brand-text">
+                <h1>Mina</h1>
+                <small>AI Platform</small>
+            </div>
+            <i class="fas fa-chevron-right sidebar-toggle-indicator"></i>
         </div>
-        
-        <div class="sidebar-content">
-            <ul class="sidebar-menu">
-                <li class="sidebar-item">
-                    <a href="{{ url_for('dashboard.index') }}" class="sidebar-link" data-tooltip="Dashboard">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <span class="sidebar-text">Dashboard</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
-                    <a href="/live" class="sidebar-link" data-tooltip="Live Recording">
-                        <i class="fas fa-circle text-danger"></i>
-                        <span class="sidebar-text">Live Recording</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
-                    <a href="{{ url_for('dashboard.meetings') }}" class="sidebar-link" data-tooltip="Meetings">
-                        <i class="fas fa-video"></i>
-                        <span class="sidebar-text">Meetings</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
-                    <a href="{{ url_for('dashboard.analytics') }}" class="sidebar-link" data-tooltip="Analytics">
+
+        <!-- Navigation Menu -->
+        <nav class="sidebar-menu" role="menu">
+            <!-- Main Section -->
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Main</div>
+                
+                <a href="{{ url_for('dashboard.index') }}" class="sidebar-item" data-route="/dashboard/" role="menuitem">
+                    <div class="sidebar-item-icon">
+                        <i class="fas fa-th-large"></i>
+                    </div>
+                    <span class="sidebar-item-text">Dashboard</span>
+                    <div class="sidebar-item-tooltip">Dashboard</div>
+                </a>
+
+                <a href="/live" class="sidebar-item" data-route="/live" role="menuitem">
+                    <div class="sidebar-item-icon">
+                        <i class="fas fa-microphone"></i>
+                    </div>
+                    <span class="sidebar-item-text">Live Recording</span>
+                    <div class="sidebar-item-badge" id="recording-badge" style="display: none;">LIVE</div>
+                    <div class="sidebar-item-tooltip">Live Recording</div>
+                </a>
+
+                <a href="{{ url_for('dashboard.meetings') }}" class="sidebar-item" data-route="/meetings" role="menuitem">
+                    <div class="sidebar-item-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <span class="sidebar-item-text">Meetings</span>
+                    <div class="sidebar-item-badge" id="meetings-badge" style="display: none;">0</div>
+                    <div class="sidebar-item-tooltip">Meetings</div>
+                </a>
+
+                <a href="{{ url_for('dashboard.tasks') }}" class="sidebar-item" data-route="/tasks" role="menuitem">
+                    <div class="sidebar-item-icon">
+                        <i class="fas fa-check-square"></i>
+                    </div>
+                    <span class="sidebar-item-text">Tasks</span>
+                    <div class="sidebar-item-badge" id="tasks-badge" style="display: none;">0</div>
+                    <div class="sidebar-item-tooltip">Tasks</div>
+                </a>
+            </div>
+
+            <!-- Analytics Section -->
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Analytics</div>
+                
+                <a href="{{ url_for('dashboard.analytics') }}" class="sidebar-item" data-route="/analytics" role="menuitem">
+                    <div class="sidebar-item-icon">
                         <i class="fas fa-chart-line"></i>
-                        <span class="sidebar-text">Analytics</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
-                    <a href="{{ url_for('dashboard.tasks') }}" class="sidebar-link" data-tooltip="Tasks">
-                        <i class="fas fa-tasks"></i>
-                        <span class="sidebar-text">Tasks</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
-                    <a href="/calendar" class="sidebar-link" data-tooltip="Calendar">
+                    </div>
+                    <span class="sidebar-item-text">Analytics</span>
+                    <div class="sidebar-item-tooltip">Analytics</div>
+                </a>
+            </div>
+
+            <!-- Tools Section -->
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Tools</div>
+                
+                <a href="/calendar" class="sidebar-item" data-route="/calendar" role="menuitem">
+                    <div class="sidebar-item-icon">
                         <i class="fas fa-calendar-alt"></i>
-                        <span class="sidebar-text">Calendar</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
-                    <a href="/settings" class="sidebar-link" data-tooltip="Settings">
+                    </div>
+                    <span class="sidebar-item-text">Calendar</span>
+                    <div class="sidebar-item-tooltip">Calendar</div>
+                </a>
+
+                <a href="/settings" class="sidebar-item" data-route="/settings" role="menuitem">
+                    <div class="sidebar-item-icon">
                         <i class="fas fa-cog"></i>
-                        <span class="sidebar-text">Settings</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
-                    <a href="/copilot" class="sidebar-link" data-tooltip="AI Copilot">
+                    </div>
+                    <span class="sidebar-item-text">Settings</span>
+                    <div class="sidebar-item-tooltip">Settings</div>
+                </a>
+
+                <a href="/copilot" class="sidebar-item" data-route="/copilot" role="menuitem">
+                    <div class="sidebar-item-icon">
                         <i class="fas fa-robot"></i>
-                        <span class="sidebar-text">AI Copilot</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
-        
+                    </div>
+                    <span class="sidebar-item-text">AI Copilot</span>
+                    <div class="sidebar-item-tooltip">AI Copilot</div>
+                </a>
+            </div>
+        </nav>
+
+        <!-- Footer Section -->
         <div class="sidebar-footer">
             <div class="sidebar-user">
-                <i class="fas fa-user-circle"></i>
-                <span class="sidebar-text">User</span>
+                <div class="sidebar-user-avatar">
+                    U
+                </div>
+                <div class="sidebar-user-info">
+                    <span class="sidebar-user-name">User</span>
+                    <span class="sidebar-user-status">
+                        <i class="fas fa-circle text-success" style="font-size: 8px;"></i> Online
+                    </span>
+                </div>
             </div>
         </div>
-    </nav>
+    </aside>
+
+    <!-- Load Sidebar Navigation Script -->
+    <script src="{{ url_for('static', filename='js/sidebar.js') }}" defer></script>
     <!-- Skip Link for Accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
     
-    <!-- Industry-Standard Navigation with Optimized Information Architecture -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top" role="navigation" aria-label="Main navigation">
-        <div class="container-fluid px-4">
-            <!-- Left: Brand and Primary Navigation (F-Pattern Left Side) -->
-            <div class="d-flex align-items-center flex-grow-1">
-                <a class="navbar-brand d-flex align-items-center me-4" href="{{ url_for('dashboard.index') }}" aria-label="Mina - Meeting Insights Platform">
-                    <div class="brand-icon-container me-2">
-                        <i class="fas fa-microphone" aria-hidden="true"></i>
-                    </div>
-                    <div class="brand-text">
-                        <span class="fw-bold">Mina</span>
-                        <small class="d-none d-lg-block text-muted">AI Transcription</small>
-                    </div>
-                </a>
-            
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
-                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation menu">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-                <!-- Primary Actions (Industry Standard: Most Important Actions Visible) -->
-                <div class="primary-actions d-none d-lg-flex ms-3">
-                    <a href="/live" 
-                       class="btn btn-primary btn-sm me-2 d-flex align-items-center"
-                       aria-label="Start new transcription session">
-                        <i class="fas fa-plus me-1" aria-hidden="true"></i>
-                        <span>New Session</span>
-                    </a>
-                </div>
-            </div>
-            
-            <!-- Right: Navigation and User Actions (F-Pattern Right Side) -->
-            <div class="d-flex align-items-center gap-3">
-                <!-- Navigation Menu -->
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav" role="menubar">
-                        <li class="nav-item" role="none">
-                            <a class="nav-link d-flex align-items-center" href="{{ url_for('dashboard.index') }}" role="menuitem" 
-                               aria-current="{% if request.endpoint == 'dashboard.index' %}page{% else %}false{% endif %}">
-                                <i class="fas fa-tachometer-alt me-2" aria-hidden="true"></i>
-                                <span class="d-lg-none">Dashboard</span>
-                                <span class="d-none d-lg-inline">Dashboard</span>
-                            </a>
-                        </li>
-                        <li class="nav-item" role="none">
-                            <a class="nav-link d-flex align-items-center" href="/meetings" role="menuitem"
-                               aria-current="{% if request.endpoint == 'sessions.list_sessions' %}page{% else %}false{% endif %}">
-                                <i class="fas fa-history me-2" aria-hidden="true"></i>
-                                <span>Sessions</span>
-                            </a>
-                        </li>
-                    </ul>
-                
-                </div>
-                
-                <!-- User Actions Dropdown (Industry Standard: Right-Side User Menu) -->
-                <div class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle d-flex align-items-center px-2" href="#" role="button" 
-                       data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" id="userMenuDropdown">
-                        <div class="user-avatar me-2">
-                            <i class="fas fa-user-circle fa-lg" aria-hidden="true"></i>
-                        </div>
-                        <div class="user-info d-none d-md-block">
-                            <small class="text-muted d-block">User</small>
-                        </div>
-                        <i class="fas fa-chevron-down ms-2" aria-hidden="true"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end" role="menu" aria-labelledby="userMenuDropdown">
-                        <li role="none">
-                            <div class="dropdown-header">
-                                <strong>Account</strong>
-                            </div>
-                        </li>
-                        <li role="none">
-                            <a class="dropdown-item d-flex align-items-center" href="#" role="menuitem"
-                               data-bs-toggle="modal" data-bs-target="#settingsModal">
-                                <i class="fas fa-sliders-h me-2" aria-hidden="true"></i>
-                                <span>Preferences</span>
-                            </a>
-                        </li>
-                        <li role="none">
-                            <a class="dropdown-item d-flex align-items-center" href="#" role="menuitem">
-                                <i class="fas fa-bell me-2" aria-hidden="true"></i>
-                                <span>Notifications</span>
-                                <span class="badge bg-primary ms-auto">3</span>
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider" role="separator"></li>
-                        <li role="none">
-                            <div class="dropdown-header">
-                                <strong>System</strong>
-                            </div>
-                        </li>
-                        <li role="none">
-                            <a class="dropdown-item d-flex align-items-center" href="/monitoring/dashboard" 
-                               target="_blank" role="menuitem">
-                                <i class="fas fa-heartbeat me-2" aria-hidden="true"></i>
-                                <span>System Health</span>
-                                <i class="fas fa-external-link-alt ms-auto" aria-hidden="true" title="Opens in new tab"></i>
-                            </a>
-                        </li>
-                        <li role="none">
-                            <a class="dropdown-item d-flex align-items-center" href="#" role="menuitem">
-                                <i class="fas fa-question-circle me-2" aria-hidden="true"></i>
-                                <span>Help & Support</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            </div>
-        </div>
-    </nav>
     
     <!-- Industry Standard: Status/Alert Bar (Below Navigation) -->
     <div id="global-status-bar" class="status-bar d-none" role="alert" aria-live="polite">
@@ -268,8 +197,8 @@
         {% endif %}
     {% endwith %}
 
-    <!-- Main Content -->
-    <main id="main-content" class="container my-4" role="main" tabindex="-1">
+    <!-- Main Content with Sidebar Layout -->
+    <main id="main-content" class="main-content-with-sidebar" role="main" tabindex="-1">
         <!-- Breadcrumb Navigation -->
         <nav aria-label="Breadcrumb" class="mb-3">
             <ol class="breadcrumb">
