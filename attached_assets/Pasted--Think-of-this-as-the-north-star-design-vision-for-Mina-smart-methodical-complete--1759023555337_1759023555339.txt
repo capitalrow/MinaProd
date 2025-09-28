@@ -1,0 +1,447 @@
+
+ 
+Think of this as the “north star” design vision for Mina — **smart, methodical, complete**.
+  
+# Mina — Complete Premium User Experience Blueprint
+ 
+## 🌟 Core Vision
+ 
+Mina is your **meeting intelligence companion**: always ready, always clear, always trustworthy.
+ 
+ 
+- It captures **everything** during meetings.
+ 
+- It organizes what matters: decisions, risks, actions, insights.
+ 
+- It integrates seamlessly into your **workflow** (calendars, tasks, documents, chat).
+ 
+- It gives you full **control** over data, privacy, and collaboration.
+ 
+- It ensures a **premium experience**: smooth, safe, human.
+ 
+
+  
+## 1. User Journey — End-to-End Flow
+ 
+### **A. Before the Meeting**
+ 
+ 
+- **What the user sees**: 
+ 
+  - A clean dashboard showing Today’s meetings, Upcoming meetings, and Pending follow-ups.
+ 
+  - Each calendar event is pre-listed (if integrated).
+ 
+  - A large “Record” button for spontaneous or ad-hoc meetings.
+ 
+
+ 
+ 
+- **What Mina does silently**: 
+ 
+  - Pulls meeting metadata (title, time, participants) from the calendar.
+ 
+  - Prepares profiles of known participants (speaker mapping).
+ 
+  - Loads your preferences (e.g., language, redaction rules).
+ 
+
+ 
+ 
+- **Risks considered**: 
+ 
+  - *No calendar connected*: fallback to manual meeting creation, with a suggestion to connect later.
+ 
+  - *Ambiguous participants*: meeting defaults to “Guest” until names are clarified.
+ 
+
+ 
+ 
+
+  
+### **B. During the Meeting**
+ 
+ 
+- **What the user sees**: 
+ 
+  - **Real-time transcript** flowing like a chat.
+ 
+  - **Speaker labels** that self-correct as you confirm identities.
+ 
+  - **Markers**: `/decision`, `/todo`, `/risk` appear as visual chips in the margin.
+ 
+  - **Audio confidence meter**: assures users Mina is listening without being distracting.
+ 
+
+ 
+ 
+- **What Mina does silently**: 
+ 
+  - Detects dates, owners, and action items as they’re spoken.
+ 
+  - Marks uncertain words with subtle highlights.
+ 
+  - Buffers locally if the internet drops, syncing when reconnected.
+ 
+
+ 
+ 
+- **Risks considered**: 
+ 
+  - *Privacy moment*: “Pause capture” is one tap; Mina reassures you recording is paused.
+ 
+  - *Background noise*: transcript remains readable, flagged with “[unclear]” rather than guessing.
+ 
+  - *Multiple people speaking*: system keeps all text but marks overlap to avoid confusion.
+ 
+
+ 
+ 
+
+  
+### **C. After the Meeting**
+ 
+ 
+- **What the user sees**: 
+ 
+  - Transcript: clean, searchable, clickable by timestamp.
+ 
+  - Summaries: 3 options (Snapshot, Executive, Structured).
+ 
+  - Tasks: clearly written, with suggested owners/due dates.
+ 
+  - “Share Recap” button: generates a safe link with expiry + optional redaction.
+ 
+
+ 
+ 
+- **What Mina does silently**: 
+ 
+  - Links tasks back to their spoken moment in the transcript.
+ 
+  - Connects this meeting to past related ones (“This theme has appeared 4× this month”).
+ 
+  - Prepares exports in multiple formats (PDF, Word, Markdown).
+ 
+
+ 
+ 
+- **Risks considered**: 
+ 
+  - *Ambiguous task ownership*: Mina suggests likely owners but defaults to “Unassigned” if unclear.
+ 
+  - *PII exposure*: by default, share links have redaction ON and expiry dates set.
+ 
+  - *Connectivity issues*: if meeting ended offline, Mina syncs transcript and tasks automatically once online.
+ 
+
+ 
+ 
+
+  
+### **D. Between Meetings**
+ 
+ 
+- **What the user sees**: 
+ 
+  - A daily or weekly digest: “3 tasks due, 1 unresolved risk, 1 decision carried forward.”
+ 
+  - Insights in dashboard: recurring themes, unresolved items, and talk-time balance.
+ 
+
+ 
+ 
+- **What Mina does silently**: 
+ 
+  - Monitors open tasks and due dates.
+ 
+  - Surfaces patterns across meetings (e.g., repeated risks, recurring agenda gaps).
+ 
+  - Respects quiet hours: reminders never come at night or on weekends unless urgent.
+ 
+
+ 
+ 
+- **Risks considered**: 
+ 
+  - *Notification overload*: daily/weekly digest defaults, with instant alerts opt-in.
+ 
+  - *Missed follow-ups*: tasks overdue by >X days are flagged in summaries until resolved.
+ 
+
+ 
+ 
+
+  
+## 2. Core Features (Descriptive Experience)
+ 
+### **Transcripts**
+ 
+ 
+- Feels like a **shared live notebook** — searchable, interactive, and tidy.
+ 
+- Words appear in near real time; users never doubt Mina is working.
+ 
+- You can highlight text to instantly create a task or summary note.
+ 
+- Speaker names can be corrected after the fact and update everywhere.
+ 
+- Confidence cues are subtle — users know where to double-check without being overwhelmed.
+ 
+
+ 
+### **Summaries & Insights**
+ 
+ 
+- Always ready instantly after meetings.
+ 
+- 3 styles: Snapshot (2–3 lines), Executive (bullets), Structured (D/R/A/Q).
+ 
+- Tone can be changed: casual, formal, technical.
+ 
+- Memory graph ties meetings together: “This decision was first raised on 12 Sept.”
+ 
+- Feels personalized — not generic AI text.
+ 
+
+ 
+### **Tasks & Workflow**
+ 
+ 
+- Captured automatically from speech (“Let’s draft a proposal by Friday”).
+ 
+- Rewritten clearly: “Draft proposal by Fri, 5pm.”
+ 
+- Suggested owner is prefilled; user can reassign.
+ 
+- Views: My Tasks, By Meeting, Kanban (drag & drop).
+ 
+- Urgent and impactful tasks are highlighted.
+ 
+- Dependencies can be visualized (“Draft → Review → Approve”).
+ 
+
+ 
+### **Calendar & Scheduling**
+ 
+ 
+- When deadlines are mentioned, Mina suggests “Add to Calendar.”
+ 
+- Two-way sync keeps Mina and Google/Outlook aligned.
+ 
+- Tasks appear alongside meetings for a single view.
+ 
+- Reminders are gentle and context-aware (“This task is due tomorrow — snooze or mark done?”).
+ 
+
+ 
+### **Collaboration & Sharing**
+ 
+ 
+- Each meeting has its own page: transcript, summary, tasks.
+ 
+- Sharing is role-based: viewer, editor, admin.
+ 
+- Guest view: external partners see a polished, redacted version.
+ 
+- Exports: one-click to PDF, Word, Markdown.
+ 
+- Comments: highlight transcript → leave a note → mention a teammate.
+ 
+
+ 
+### **UI & Experience**
+ 
+ 
+- Dashboard: one glance → today’s meetings, yesterday’s tasks, upcoming deadlines.
+ 
+- Live view: calm, flowing, chat-like transcript with markers on the side.
+ 
+- Mobile-first: feels like WhatsApp for meetings.
+ 
+- Dark/light themes for comfort.
+ 
+- Keyboard shortcuts for power users.
+ 
+- Accessibility: screen-reader friendly, adjustable fonts, high-contrast mode.
+ 
+
+  
+## 3. Settings — Premium, Complete, User-Friendly
+ 
+Settings are designed like Monzo’s app: plain English, clear toggles, full control.
+ 
+### **Profile**
+ 
+ 
+- Name, photo, role, timezone, language.
+ 
+- How your name appears in transcripts.
+ 
+
+ 
+### **Security**
+ 
+ 
+- Two-factor authentication (app, SMS, email).
+ 
+- Active sessions list + remote log out.
+ 
+- New device alerts.
+ 
+- API keys for integrations.
+ 
+
+ 
+### **Privacy**
+ 
+ 
+- Retention settings: how long to keep transcripts, audio, exports.
+ 
+- Download my data (one click).
+ 
+- Delete meeting/account with clear warnings.
+ 
+- Automatic redaction: emails, numbers, IDs; add custom rules.
+ 
+
+ 
+### **Workspace & Team**
+ 
+ 
+- Invite teammates with link/email.
+ 
+- Assign roles: Owner, Admin, Editor, Viewer.
+ 
+- Create groups (e.g., “Sales team”).
+ 
+- Set workspace-wide rules (retention, link expiry).
+ 
+- Enterprise: enforce SSO, domain restrictions.
+ 
+
+ 
+### **Integrations**
+ 
+ 
+- Calendar: Google/Outlook.
+ 
+- Slack: for alerts, digests, task notifications.
+ 
+- Notion, Trello, Jira, Drive: export notes & tasks.
+ 
+- Clear “what Mina can access” disclosure.
+ 
+
+ 
+### **Notifications**
+ 
+ 
+- Choose channels: email, Slack, push.
+ 
+- Pick timing: instant, daily, weekly.
+ 
+- Quiet hours: silence nights/weekends.
+ 
+- Control detail: all events, tasks only, digests only.
+ 
+
+ 
+### **Transcription Defaults**
+ 
+ 
+- Preferred language.
+ 
+- Speaker separation toggle.
+ 
+- Confidence highlighting (off/light/strong).
+ 
+- Quick command customization (`/decision`, `/risk`).
+ 
+- Meeting title templates.
+ 
+
+ 
+### **Sharing & Export**
+ 
+ 
+- Default format: PDF, Word, Markdown.
+ 
+- Branding (logo/header/footer).
+ 
+- Guest link expiry (default 7 days).
+ 
+- Watermark toggle.
+ 
+- Redaction default: ON.
+ 
+
+ 
+### **Billing**
+ 
+ 
+- Plan, usage meter, limits.
+ 
+- Payment method + invoice history.
+ 
+- Usage alerts at 80/95/100%.
+ 
+
+ 
+### **Compliance & Audit (Admins only)**
+ 
+ 
+- Logs of who viewed/shared/exported what.
+ 
+- Data region (EU/UK/US).
+ 
+- Legal export for compliance.
+ 
+
+ 
+### **Admin Dashboard (Admins only)**
+ 
+ 
+- System health and usage overview.
+ 
+- Workspace-level integrations and policies.
+ 
+- Debug logs only here — never in the user UI.
+ 
+
+  
+## 4. Risks Considered Across the Experience
+ 
+ 
+- **User trust risk**: Mina avoids hallucinated summaries by tying everything to transcripts.
+ 
+- **Privacy risk**: Redaction ON by default, guest links expire, audit logs track sharing.
+ 
+- **Overload risk**: Digests replace constant pings; quiet hours honored.
+ 
+- **Accessibility risk**: UI is readable, navigable, adjustable.
+ 
+- **Ownership risk**: If owner unclear, task defaults to “Unassigned” until confirmed.
+ 
+- **Connectivity risk**: Offline-first capture, syncs when back online.
+ 
+- **Error risk**: Always Undo; destructive actions confirm or roll back.
+ 
+
+  
+## 5. What It Feels Like (User Sentiment)
+ 
+ 
+- *“It just works — I never worry if it’s recording.”*
+ 
+- *“I leave meetings knowing exactly what’s decided and what’s next.”*
+ 
+- *“The summaries feel like they were written for me.”*
+ 
+- *“I control my data — I trust this app.”*
+ 
+- *“It’s premium, polished, and makes my life easier.”*
+ 
+
+  
+✨ In short: Mina delivers a **premium meeting experience** that is **seamless, trustworthy, and intelligent**. Every touchpoint — from recording to sharing to settings — is designed to save time, reduce friction, and inspire confidence
