@@ -270,6 +270,14 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.error(f"Failed to register settings routes: {e}")
 
+    # Calendar routes
+    try:
+        from routes.calendar import calendar_bp
+        app.register_blueprint(calendar_bp)
+        app.logger.info("Calendar routes registered")
+    except Exception as e:
+        app.logger.error(f"Failed to register calendar routes: {e}")
+
     # other blueprints (guarded)
     _optional = [
         ("routes.final_upload", "final_bp", "/api"),
