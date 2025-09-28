@@ -10,6 +10,7 @@ from flask import Blueprint, request, jsonify, current_app
 # from flask_socketio import emit  # Disabled for native WebSocket testing
 
 from services.analysis_service import AnalysisService
+from models.summary import SummaryLevel, SummaryStyle
 # from app import socketio  # Disabled for native WebSocket testing
 
 logger = logging.getLogger(__name__)
@@ -135,3 +136,270 @@ def trigger_auto_summary(session_id: int):
         
         # Emit error event
         # socketio.emit('summary_error', { 'session_id': session_id, 'error': 'Failed to auto-generate summary' }, room=f'session_{session_id}')  # Disabled
+
+
+@summary_bp.route('/<int:session_id>/generate-summary', methods=['POST'])
+def generate_multi_level_summary(session_id: int):
+    """
+    Generate AI-powered summary with specified level and style.
+    
+    Request Body:
+        {
+            "level": "brief|standard|detailed",
+            "style": "executive|action|technical|narrative|bullet"
+        }
+    
+    Args:
+        session_id: ID of the session to analyse
+        
+    Returns:
+        JSON: Generated summary data with specified level and style
+        
+    Status Codes:
+        200: Summary generated successfully
+        400: Invalid level or style parameter
+        404: Session not found
+        500: Analysis service error
+    """
+    try:
+        data = request.get_json() or {}
+        
+        # Parse level and style from request
+        level_str = data.get('level', 'standard').lower()
+        style_str = data.get('style', 'executive').lower()
+        
+        # Validate and convert level
+        try:
+            level = SummaryLevel(level_str)
+        except ValueError:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid level: {level_str}. Must be one of: brief, standard, detailed'
+            }), 400
+        
+        # Validate and convert style
+        try:
+            style = SummaryStyle(style_str)
+        except ValueError:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid style: {style_str}. Must be one of: executive, action, technical, narrative, bullet'
+            }), 400
+        
+        logger.info(f"Request to generate {level.value} {style.value} summary for session {session_id}")
+        
+        # Generate summary with specified level and style
+        summary_data = AnalysisService.generate_summary(session_id, level, style)
+        
+        logger.info(f"Successfully generated {level.value} {style.value} summary {summary_data['id']} for session {session_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'{level.value.title()} {style.value} summary generated for session {session_id}',
+            'summary': summary_data
+        }), 200
+        
+    except ValueError as e:
+        logger.warning(f"Summary generation failed for session {session_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 404 if 'not found' in str(e) else 400
+        
+    except Exception as e:
+        logger.error(f"Summary generation error for session {session_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to generate summary'
+        }), 500
+
+
+@summary_bp.route('/levels', methods=['GET'])
+def get_summary_levels():
+    """
+    Get available summary levels and styles.
+    
+    Returns:
+        JSON: Available levels and styles with descriptions
+    """
+    return jsonify({
+        'success': True,
+        'levels': {
+            'brief': {
+                'value': 'brief',
+                'name': 'Brief Summary',
+                'description': 'Executive summary in 2-3 sentences, focusing on key decisions and outcomes'
+            },
+            'standard': {
+                'value': 'standard',
+                'name': 'Standard Summary',
+                'description': 'Comprehensive 1-2 paragraph summary with actions, decisions, and risks'
+            },
+            'detailed': {
+                'value': 'detailed',
+                'name': 'Detailed Analysis',
+                'description': 'Multi-section comprehensive analysis covering all aspects of the meeting'
+            }
+        },
+        'styles': {
+            'executive': {
+                'value': 'executive',
+                'name': 'Executive Focus',
+                'description': 'Strategic decisions, business impact, and high-level outcomes'
+            },
+            'action': {
+                'value': 'action',
+                'name': 'Action-Oriented',
+                'description': 'Task-focused with clear action items, owners, and deadlines'
+            },
+            'technical': {
+                'value': 'technical',
+                'name': 'Technical Details',
+                'description': 'Implementation specifics, architecture decisions, and technical choices'
+            },
+            'narrative': {
+                'value': 'narrative',
+                'name': 'Narrative Flow',
+                'description': 'Story-like chronological summary of meeting progression'
+            },
+            'bullet': {
+                'value': 'bullet',
+                'name': 'Bullet Points',
+                'description': 'Structured bullet-point format for easy scanning'
+            }
+        }
+    })
+
+
+@summary_bp.route('/<int:session_id>/summaries', methods=['GET'])
+def get_session_summaries(session_id: int):
+    """
+    Get all summaries for a session (different levels and styles).
+    
+    Args:
+        session_id: ID of the session
+        
+    Returns:
+        JSON: All summaries for the session grouped by level and style
+    """
+    try:
+        from sqlalchemy import select
+        from models.summary import Summary
+        from app import db
+        
+        logger.debug(f"Request to get all summaries for session {session_id}")
+        
+        # Get all summaries for this session
+        stmt = select(Summary).filter(
+            Summary.session_id == session_id
+        ).order_by(Summary.created_at.desc())
+        summaries = db.session.execute(stmt).scalars().all()
+        
+        if not summaries:
+            return jsonify({
+                'success': False,
+                'error': f'No summaries found for session {session_id}'
+            }), 404
+        
+        # Group summaries by level and style
+        grouped_summaries = {}
+        for summary in summaries:
+            level_key = summary.level.value if summary.level else 'standard'
+            style_key = summary.style.value if summary.style else 'executive'
+            
+            if level_key not in grouped_summaries:
+                grouped_summaries[level_key] = {}
+            
+            grouped_summaries[level_key][style_key] = summary.to_dict()
+        
+        return jsonify({
+            'success': True,
+            'session_id': session_id,
+            'summaries': grouped_summaries,
+            'total_count': len(summaries)
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error retrieving summaries for session {session_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retrieve summaries'
+        }), 500
+
+
+@summary_bp.route('/summaries', methods=['GET'])
+def get_all_summaries():
+    """
+    Get all summaries across all sessions (admin/overview endpoint).
+    
+    Query Parameters:
+        - limit: Number of summaries to return (default: 50)
+        - session_id: Filter by specific session ID
+        - level: Filter by summary level
+        - style: Filter by summary style
+        
+    Returns:
+        JSON: All summaries with filtering options
+    """
+    try:
+        from sqlalchemy import select
+        from models.summary import Summary
+        from app import db
+        
+        # Get query parameters
+        limit = request.args.get('limit', 50, type=int)
+        session_id_filter = request.args.get('session_id', type=int)
+        level_filter = request.args.get('level')
+        style_filter = request.args.get('style')
+        
+        logger.debug(f"Request to get all summaries with filters: session_id={session_id_filter}, level={level_filter}, style={style_filter}")
+        
+        # Build query
+        stmt = select(Summary)
+        
+        # Apply filters
+        if session_id_filter:
+            stmt = stmt.filter(Summary.session_id == session_id_filter)
+        
+        if level_filter:
+            try:
+                level_enum = SummaryLevel(level_filter.lower())
+                stmt = stmt.filter(Summary.level == level_enum)
+            except ValueError:
+                return jsonify({
+                    'success': False,
+                    'error': f'Invalid level filter: {level_filter}'
+                }), 400
+        
+        if style_filter:
+            try:
+                style_enum = SummaryStyle(style_filter.lower())
+                stmt = stmt.filter(Summary.style == style_enum)
+            except ValueError:
+                return jsonify({
+                    'success': False,
+                    'error': f'Invalid style filter: {style_filter}'
+                }), 400
+        
+        # Order and limit
+        stmt = stmt.order_by(Summary.created_at.desc()).limit(limit)
+        summaries = db.session.execute(stmt).scalars().all()
+        
+        return jsonify({
+            'success': True,
+            'summaries': [summary.to_dict() for summary in summaries],
+            'count': len(summaries),
+            'filters': {
+                'session_id': session_id_filter,
+                'level': level_filter,
+                'style': style_filter,
+                'limit': limit
+            }
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error retrieving all summaries: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retrieve summaries'
+        }), 500
