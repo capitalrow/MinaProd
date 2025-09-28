@@ -328,6 +328,10 @@ class AdvancedAudioProcessor:
             sos = signal.butter(4, 7000, btype='low', fs=self.sample_rate, output='sos')
             filtered = signal.sosfilt(sos, filtered)
             
+            # Ensure we return ndarray, not tuple
+            if isinstance(filtered, tuple):
+                filtered = filtered[0]
+            
             return filtered
             
         except Exception as e:
