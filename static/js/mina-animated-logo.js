@@ -1,5 +1,5 @@
-// Mina Animated Logo Component - Ultra Premium 3D Implementation
-// Creates a sophisticated 3D squircle with advanced lighting and depth effects
+// Mina Animated Logo Component - Ultra-Premium Ultra-Depth 3D Implementation
+// Creates a sophisticated multi-layered 3D squircle with advanced depth perception
 
 class MinaAnimatedLogo {
     constructor(container, options = {}) {
@@ -8,10 +8,11 @@ class MinaAnimatedLogo {
             size: 200,
             accent: {
                 name: "Premium Purple",
-                gradient: ["#E4C8FF", "#B985FF", "#8B5CF6", "#6D28D9", "#4C1D95"],
+                gradient: ["#F3EAFF", "#E4C8FF", "#B985FF", "#8B5CF6", "#6D28D9", "#4C1D95", "#1E1B4B"],
                 neon: "#A855F7",
                 shadow: "#1E1B4B",
-                highlight: "#F8FAFC"
+                highlight: "#FFFFFF",
+                depth: "#0F0F23"
             },
             showWordmark: true,
             wordmarkSize: 72,
@@ -22,39 +23,41 @@ class MinaAnimatedLogo {
     }
     
     init() {
-        this.createUltraPremium3DIcon();
+        this.createUltraDepth3DIcon();
         if (this.options.showWordmark) {
             this.createWordmark();
         }
     }
     
-    createUltraPremium3DIcon() {
+    createUltraDepth3DIcon() {
         const { size, accent } = this.options;
         
         // Create container with enhanced styling
         const container = document.createElement('div');
-        container.className = 'mina-ultra-3d-icon';
+        container.className = 'mina-ultra-depth-3d-icon';
         container.style.cssText = `
             width: ${size}px;
             height: ${size}px;
             position: relative;
-            filter: drop-shadow(0 8px 32px rgba(75, 85, 99, 0.15));
-            animation: minaUltraIconBreathe 8s ease-in-out infinite;
+            filter: drop-shadow(0 12px 48px rgba(75, 85, 99, 0.25)) 
+                   drop-shadow(0 4px 16px rgba(30, 27, 75, 0.3));
+            animation: minaUltraDepthIconBreathe 10s ease-in-out infinite;
+            transform-style: preserve-3d;
         `;
         
-        // Create the ultra-premium SVG icon
-        const svg = this.createUltraPremiumSVG(size);
+        // Create the ultra-depth SVG icon
+        const svg = this.createUltraDepthSVG(size);
         container.appendChild(svg);
         
         this.container.appendChild(container);
     }
     
-    createUltraPremiumSVG(size) {
-        const micSize = size * 0.66; // Slightly larger for better presence
-        const barWidth = micSize * 0.13;
-        const barHeights = [micSize * 0.38, micSize * 0.28, micSize * 0.38]; // Perfect proportions
-        const gap = barWidth * 0.95;
-        const connectorHeight = micSize * 0.055;
+    createUltraDepthSVG(size) {
+        const micSize = size * 0.68; // Slightly larger for better presence
+        const barWidth = micSize * 0.14;
+        const barHeights = [micSize * 0.42, micSize * 0.31, micSize * 0.42]; // Perfect proportions
+        const gap = barWidth * 0.92;
+        const connectorHeight = micSize * 0.06;
         
         // Create SVG element with enhanced settings
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -63,22 +66,24 @@ class MinaAnimatedLogo {
         svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
         svg.style.cssText = 'display: block; overflow: visible;';
         
-        // Create advanced defs for ultra-premium effects
+        // Create ultra-advanced defs for maximum depth effects
         const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
         
-        // Ultra-premium background gradient with depth
+        // Ultra-depth background gradient with enhanced layering
         const bgGradient = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
         bgGradient.setAttribute('id', `squircleGradient_${Math.random().toString(36).substr(2, 9)}`);
-        bgGradient.setAttribute('cx', '35%');
-        bgGradient.setAttribute('cy', '25%');
-        bgGradient.setAttribute('r', '85%');
+        bgGradient.setAttribute('cx', '38%');
+        bgGradient.setAttribute('cy', '22%');
+        bgGradient.setAttribute('r', '90%');
         
         const bgStops = [
             { offset: '0%', color: this.options.accent.gradient[0], opacity: '1' },
-            { offset: '25%', color: this.options.accent.gradient[1], opacity: '0.95' },
-            { offset: '50%', color: this.options.accent.gradient[2], opacity: '1' },
-            { offset: '75%', color: this.options.accent.gradient[3], opacity: '1' },
-            { offset: '100%', color: this.options.accent.gradient[4], opacity: '1' }
+            { offset: '15%', color: this.options.accent.gradient[1], opacity: '0.98' },
+            { offset: '35%', color: this.options.accent.gradient[2], opacity: '1' },
+            { offset: '55%', color: this.options.accent.gradient[3], opacity: '1' },
+            { offset: '75%', color: this.options.accent.gradient[4], opacity: '1' },
+            { offset: '90%', color: this.options.accent.gradient[5], opacity: '1' },
+            { offset: '100%', color: this.options.accent.gradient[6], opacity: '1' }
         ];
         
         bgStops.forEach(stop => {
@@ -89,20 +94,21 @@ class MinaAnimatedLogo {
             bgGradient.appendChild(stopEl);
         });
         
-        // Enhanced bar gradient with sophisticated lighting
+        // Enhanced 3D beveled bar gradient
         const barGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
         barGradient.setAttribute('id', `barGradient_${Math.random().toString(36).substr(2, 9)}`);
-        barGradient.setAttribute('x1', '15%');
-        barGradient.setAttribute('y1', '15%');
-        barGradient.setAttribute('x2', '85%');
-        barGradient.setAttribute('y2', '85%');
+        barGradient.setAttribute('x1', '12%');
+        barGradient.setAttribute('y1', '8%');
+        barGradient.setAttribute('x2', '88%');
+        barGradient.setAttribute('y2', '92%');
         
         const barStops = [
-            { offset: '0%', color: this.options.accent.highlight, opacity: '0.4' },
-            { offset: '25%', color: this.options.accent.gradient[1], opacity: '0.8' },
-            { offset: '60%', color: this.options.accent.gradient[2], opacity: '1' },
-            { offset: '85%', color: this.options.accent.gradient[3], opacity: '1' },
-            { offset: '100%', color: this.options.accent.shadow, opacity: '0.9' }
+            { offset: '0%', color: this.options.accent.highlight, opacity: '0.5' },
+            { offset: '15%', color: this.options.accent.gradient[1], opacity: '0.85' },
+            { offset: '35%', color: this.options.accent.gradient[2], opacity: '1' },
+            { offset: '60%', color: this.options.accent.gradient[3], opacity: '1' },
+            { offset: '85%', color: this.options.accent.gradient[4], opacity: '1' },
+            { offset: '100%', color: this.options.accent.depth, opacity: '0.95' }
         ];
         
         barStops.forEach(stop => {
@@ -113,150 +119,299 @@ class MinaAnimatedLogo {
             barGradient.appendChild(stopEl);
         });
         
-        // Advanced depth filter system
-        const depthFilter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
-        depthFilter.setAttribute('id', `depthFilter_${Math.random().toString(36).substr(2, 9)}`);
-        depthFilter.setAttribute('x', '-100%');
-        depthFilter.setAttribute('y', '-100%');
-        depthFilter.setAttribute('width', '300%');
-        depthFilter.setAttribute('height', '300%');
+        // Multi-Layer Depth Filter System - Layer 1: Deep Shadows
+        const deepShadowFilter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+        deepShadowFilter.setAttribute('id', `deepShadow_${Math.random().toString(36).substr(2, 9)}`);
+        deepShadowFilter.setAttribute('x', '-200%');
+        deepShadowFilter.setAttribute('y', '-200%');
+        deepShadowFilter.setAttribute('width', '500%');
+        deepShadowFilter.setAttribute('height', '500%');
         
-        // Inner shadow for depth
+        // Deep shadow layer
         const feGaussianBlur1 = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
         feGaussianBlur1.setAttribute('in', 'SourceAlpha');
-        feGaussianBlur1.setAttribute('stdDeviation', '2.5');
-        feGaussianBlur1.setAttribute('result', 'innerBlur');
+        feGaussianBlur1.setAttribute('stdDeviation', '12');
+        feGaussianBlur1.setAttribute('result', 'deepBlur');
         
         const feOffset1 = document.createElementNS('http://www.w3.org/2000/svg', 'feOffset');
-        feOffset1.setAttribute('in', 'innerBlur');
-        feOffset1.setAttribute('dx', '1.5');
-        feOffset1.setAttribute('dy', '1.5');
-        feOffset1.setAttribute('result', 'innerOffset');
+        feOffset1.setAttribute('in', 'deepBlur');
+        feOffset1.setAttribute('dx', '8');
+        feOffset1.setAttribute('dy', '12');
+        feOffset1.setAttribute('result', 'deepOffset');
         
-        const feComposite1 = document.createElementNS('http://www.w3.org/2000/svg', 'feComposite');
-        feComposite1.setAttribute('in', 'innerOffset');
-        feComposite1.setAttribute('in2', 'SourceGraphic');
-        feComposite1.setAttribute('operator', 'in');
-        feComposite1.setAttribute('result', 'innerShadow');
+        const feColorMatrix1 = document.createElementNS('http://www.w3.org/2000/svg', 'feColorMatrix');
+        feColorMatrix1.setAttribute('in', 'deepOffset');
+        feColorMatrix1.setAttribute('type', 'matrix');
+        feColorMatrix1.setAttribute('values', '0 0 0 0 0.05  0 0 0 0 0.02  0 0 0 0 0.15  0 0 0 0.6 0');
+        feColorMatrix1.setAttribute('result', 'deepShadow');
         
-        // Outer glow for premium effect
+        // Medium shadow layer
         const feGaussianBlur2 = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
-        feGaussianBlur2.setAttribute('in', 'SourceGraphic');
-        feGaussianBlur2.setAttribute('stdDeviation', '4');
-        feGaussianBlur2.setAttribute('result', 'glow');
+        feGaussianBlur2.setAttribute('in', 'SourceAlpha');
+        feGaussianBlur2.setAttribute('stdDeviation', '6');
+        feGaussianBlur2.setAttribute('result', 'mediumBlur');
         
-        const feColorMatrix = document.createElementNS('http://www.w3.org/2000/svg', 'feColorMatrix');
-        feColorMatrix.setAttribute('in', 'glow');
-        feColorMatrix.setAttribute('type', 'matrix');
-        feColorMatrix.setAttribute('values', '0.5 0 0.8 0 0.3  0 0 0.8 0 0.2  0.8 0 1 0 0.4  0 0 0 0.6 0');
-        feColorMatrix.setAttribute('result', 'coloredGlow');
-        
-        // Merge all effects
-        const feMerge = document.createElementNS('http://www.w3.org/2000/svg', 'feMerge');
-        const feMergeNode1 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
-        feMergeNode1.setAttribute('in', 'coloredGlow');
-        const feMergeNode2 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
-        feMergeNode2.setAttribute('in', 'innerShadow');
-        const feMergeNode3 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
-        feMergeNode3.setAttribute('in', 'SourceGraphic');
-        
-        feMerge.appendChild(feMergeNode1);
-        feMerge.appendChild(feMergeNode2);
-        feMerge.appendChild(feMergeNode3);
-        
-        depthFilter.appendChild(feGaussianBlur1);
-        depthFilter.appendChild(feOffset1);
-        depthFilter.appendChild(feComposite1);
-        depthFilter.appendChild(feGaussianBlur2);
-        depthFilter.appendChild(feColorMatrix);
-        depthFilter.appendChild(feMerge);
-        
-        // Ultra-premium outer glow filter
-        const ultraGlowFilter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
-        ultraGlowFilter.setAttribute('id', `ultraGlow_${Math.random().toString(36).substr(2, 9)}`);
-        ultraGlowFilter.setAttribute('x', '-150%');
-        ultraGlowFilter.setAttribute('y', '-150%');
-        ultraGlowFilter.setAttribute('width', '400%');
-        ultraGlowFilter.setAttribute('height', '400%');
-        
-        const feGlow3 = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
-        feGlow3.setAttribute('stdDeviation', '8');
-        feGlow3.setAttribute('result', 'ultraGlow');
+        const feOffset2 = document.createElementNS('http://www.w3.org/2000/svg', 'feOffset');
+        feOffset2.setAttribute('in', 'mediumBlur');
+        feOffset2.setAttribute('dx', '4');
+        feOffset2.setAttribute('dy', '6');
+        feOffset2.setAttribute('result', 'mediumOffset');
         
         const feColorMatrix2 = document.createElementNS('http://www.w3.org/2000/svg', 'feColorMatrix');
-        feColorMatrix2.setAttribute('in', 'ultraGlow');
+        feColorMatrix2.setAttribute('in', 'mediumOffset');
         feColorMatrix2.setAttribute('type', 'matrix');
-        feColorMatrix2.setAttribute('values', '0.7 0 1 0 0.2  0 0.3 1 0 0.1  1 0.2 1 0 0.5  0 0 0 0.4 0');
-        feColorMatrix2.setAttribute('result', 'coloredUltraGlow');
+        feColorMatrix2.setAttribute('values', '0 0 0 0 0.1  0 0 0 0 0.05  0 0 0 0 0.25  0 0 0 0.4 0');
+        feColorMatrix2.setAttribute('result', 'mediumShadow');
         
-        const feMerge2 = document.createElementNS('http://www.w3.org/2000/svg', 'feMerge');
-        const feMergeNodeUG1 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
-        feMergeNodeUG1.setAttribute('in', 'coloredUltraGlow');
-        const feMergeNodeUG2 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
-        feMergeNodeUG2.setAttribute('in', 'SourceGraphic');
+        // Close shadow layer
+        const feGaussianBlur3 = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+        feGaussianBlur3.setAttribute('in', 'SourceAlpha');
+        feGaussianBlur3.setAttribute('stdDeviation', '3');
+        feGaussianBlur3.setAttribute('result', 'closeBlur');
         
-        feMerge2.appendChild(feMergeNodeUG1);
-        feMerge2.appendChild(feMergeNodeUG2);
+        const feOffset3 = document.createElementNS('http://www.w3.org/2000/svg', 'feOffset');
+        feOffset3.setAttribute('in', 'closeBlur');
+        feOffset3.setAttribute('dx', '2');
+        feOffset3.setAttribute('dy', '3');
+        feOffset3.setAttribute('result', 'closeOffset');
         
-        ultraGlowFilter.appendChild(feGlow3);
-        ultraGlowFilter.appendChild(feColorMatrix2);
-        ultraGlowFilter.appendChild(feMerge2);
+        const feColorMatrix3 = document.createElementNS('http://www.w3.org/2000/svg', 'feColorMatrix');
+        feColorMatrix3.setAttribute('in', 'closeOffset');
+        feColorMatrix3.setAttribute('type', 'matrix');
+        feColorMatrix3.setAttribute('values', '0 0 0 0 0.15  0 0 0 0 0.1  0 0 0 0 0.35  0 0 0 0.3 0');
+        feColorMatrix3.setAttribute('result', 'closeShadow');
+        
+        // Merge shadow layers
+        const shadowMerge = document.createElementNS('http://www.w3.org/2000/svg', 'feMerge');
+        const shadowMergeNode1 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+        shadowMergeNode1.setAttribute('in', 'deepShadow');
+        const shadowMergeNode2 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+        shadowMergeNode2.setAttribute('in', 'mediumShadow');
+        const shadowMergeNode3 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+        shadowMergeNode3.setAttribute('in', 'closeShadow');
+        const shadowMergeNode4 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+        shadowMergeNode4.setAttribute('in', 'SourceGraphic');
+        
+        shadowMerge.appendChild(shadowMergeNode1);
+        shadowMerge.appendChild(shadowMergeNode2);
+        shadowMerge.appendChild(shadowMergeNode3);
+        shadowMerge.appendChild(shadowMergeNode4);
+        
+        deepShadowFilter.appendChild(feGaussianBlur1);
+        deepShadowFilter.appendChild(feOffset1);
+        deepShadowFilter.appendChild(feColorMatrix1);
+        deepShadowFilter.appendChild(feGaussianBlur2);
+        deepShadowFilter.appendChild(feOffset2);
+        deepShadowFilter.appendChild(feColorMatrix2);
+        deepShadowFilter.appendChild(feGaussianBlur3);
+        deepShadowFilter.appendChild(feOffset3);
+        deepShadowFilter.appendChild(feColorMatrix3);
+        deepShadowFilter.appendChild(shadowMerge);
+        
+        // Advanced Beveling and Inner Depth Filter
+        const bevelFilter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+        bevelFilter.setAttribute('id', `bevelFilter_${Math.random().toString(36).substr(2, 9)}`);
+        bevelFilter.setAttribute('x', '-150%');
+        bevelFilter.setAttribute('y', '-150%');
+        bevelFilter.setAttribute('width', '400%');
+        bevelFilter.setAttribute('height', '400%');
+        
+        // Inner highlight (top-left bevel)
+        const feGaussianBlur4 = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+        feGaussianBlur4.setAttribute('in', 'SourceAlpha');
+        feGaussianBlur4.setAttribute('stdDeviation', '2');
+        feGaussianBlur4.setAttribute('result', 'highlightBlur');
+        
+        const feOffset4 = document.createElementNS('http://www.w3.org/2000/svg', 'feOffset');
+        feOffset4.setAttribute('in', 'highlightBlur');
+        feOffset4.setAttribute('dx', '-1');
+        feOffset4.setAttribute('dy', '-1.5');
+        feOffset4.setAttribute('result', 'highlightOffset');
+        
+        const feComposite1 = document.createElementNS('http://www.w3.org/2000/svg', 'feComposite');
+        feComposite1.setAttribute('in', 'highlightOffset');
+        feComposite1.setAttribute('in2', 'SourceGraphic');
+        feComposite1.setAttribute('operator', 'in');
+        feComposite1.setAttribute('result', 'innerHighlight');
+        
+        const feColorMatrix4 = document.createElementNS('http://www.w3.org/2000/svg', 'feColorMatrix');
+        feColorMatrix4.setAttribute('in', 'innerHighlight');
+        feColorMatrix4.setAttribute('type', 'matrix');
+        feColorMatrix4.setAttribute('values', '1 1 1 0 0.8  1 1 1 0 0.9  1 1 1 0 1  0 0 0 0.4 0');
+        feColorMatrix4.setAttribute('result', 'brightHighlight');
+        
+        // Inner shadow (bottom-right bevel)
+        const feGaussianBlur5 = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+        feGaussianBlur5.setAttribute('in', 'SourceAlpha');
+        feGaussianBlur5.setAttribute('stdDeviation', '2.5');
+        feGaussianBlur5.setAttribute('result', 'innerShadowBlur');
+        
+        const feOffset5 = document.createElementNS('http://www.w3.org/2000/svg', 'feOffset');
+        feOffset5.setAttribute('in', 'innerShadowBlur');
+        feOffset5.setAttribute('dx', '1.5');
+        feOffset5.setAttribute('dy', '2');
+        feOffset5.setAttribute('result', 'innerShadowOffset');
+        
+        const feComposite2 = document.createElementNS('http://www.w3.org/2000/svg', 'feComposite');
+        feComposite2.setAttribute('in', 'innerShadowOffset');
+        feComposite2.setAttribute('in2', 'SourceGraphic');
+        feComposite2.setAttribute('operator', 'in');
+        feComposite2.setAttribute('result', 'innerShadow');
+        
+        const feColorMatrix5 = document.createElementNS('http://www.w3.org/2000/svg', 'feColorMatrix');
+        feColorMatrix5.setAttribute('in', 'innerShadow');
+        feColorMatrix5.setAttribute('type', 'matrix');
+        feColorMatrix5.setAttribute('values', '0 0 0 0 0.05  0 0 0 0 0.02  0 0 0 0 0.15  0 0 0 0.5 0');
+        feColorMatrix5.setAttribute('result', 'darkInnerShadow');
+        
+        // Merge bevel effects
+        const bevelMerge = document.createElementNS('http://www.w3.org/2000/svg', 'feMerge');
+        const bevelMergeNode1 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+        bevelMergeNode1.setAttribute('in', 'SourceGraphic');
+        const bevelMergeNode2 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+        bevelMergeNode2.setAttribute('in', 'darkInnerShadow');
+        const bevelMergeNode3 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+        bevelMergeNode3.setAttribute('in', 'brightHighlight');
+        
+        bevelMerge.appendChild(bevelMergeNode1);
+        bevelMerge.appendChild(bevelMergeNode2);
+        bevelMerge.appendChild(bevelMergeNode3);
+        
+        bevelFilter.appendChild(feGaussianBlur4);
+        bevelFilter.appendChild(feOffset4);
+        bevelFilter.appendChild(feComposite1);
+        bevelFilter.appendChild(feColorMatrix4);
+        bevelFilter.appendChild(feGaussianBlur5);
+        bevelFilter.appendChild(feOffset5);
+        bevelFilter.appendChild(feComposite2);
+        bevelFilter.appendChild(feColorMatrix5);
+        bevelFilter.appendChild(bevelMerge);
+        
+        // Ultra-Premium Atmospheric Glow Filter
+        const atmosphericGlowFilter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+        atmosphericGlowFilter.setAttribute('id', `atmosphericGlow_${Math.random().toString(36).substr(2, 9)}`);
+        atmosphericGlowFilter.setAttribute('x', '-200%');
+        atmosphericGlowFilter.setAttribute('y', '-200%');
+        atmosphericGlowFilter.setAttribute('width', '500%');
+        atmosphericGlowFilter.setAttribute('height', '500%');
+        
+        // Outer atmospheric glow
+        const feGlow1 = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+        feGlow1.setAttribute('stdDeviation', '16');
+        feGlow1.setAttribute('result', 'atmosphericGlow');
+        
+        const feColorMatrix6 = document.createElementNS('http://www.w3.org/2000/svg', 'feColorMatrix');
+        feColorMatrix6.setAttribute('in', 'atmosphericGlow');
+        feColorMatrix6.setAttribute('type', 'matrix');
+        feColorMatrix6.setAttribute('values', '0.8 0 1 0 0.3  0 0.4 1 0 0.15  1 0.3 1 0 0.6  0 0 0 0.25 0');
+        feColorMatrix6.setAttribute('result', 'coloredAtmosphericGlow');
+        
+        // Mid-range glow
+        const feGlow2 = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+        feGlow2.setAttribute('in', 'SourceGraphic');
+        feGlow2.setAttribute('stdDeviation', '8');
+        feGlow2.setAttribute('result', 'midGlow');
+        
+        const feColorMatrix7 = document.createElementNS('http://www.w3.org/2000/svg', 'feColorMatrix');
+        feColorMatrix7.setAttribute('in', 'midGlow');
+        feColorMatrix7.setAttribute('type', 'matrix');
+        feColorMatrix7.setAttribute('values', '0.9 0 1 0 0.25  0 0.5 1 0 0.12  1 0.4 1 0 0.55  0 0 0 0.35 0');
+        feColorMatrix7.setAttribute('result', 'coloredMidGlow');
+        
+        // Close range glow
+        const feGlow3 = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+        feGlow3.setAttribute('in', 'SourceGraphic');
+        feGlow3.setAttribute('stdDeviation', '4');
+        feGlow3.setAttribute('result', 'closeGlow');
+        
+        const feColorMatrix8 = document.createElementNS('http://www.w3.org/2000/svg', 'feColorMatrix');
+        feColorMatrix8.setAttribute('in', 'closeGlow');
+        feColorMatrix8.setAttribute('type', 'matrix');
+        feColorMatrix8.setAttribute('values', '1 0 1 0 0.2  0 0.6 1 0 0.1  1 0.5 1 0 0.5  0 0 0 0.45 0');
+        feColorMatrix8.setAttribute('result', 'coloredCloseGlow');
+        
+        // Merge all glows
+        const glowMerge = document.createElementNS('http://www.w3.org/2000/svg', 'feMerge');
+        const glowMergeNode1 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+        glowMergeNode1.setAttribute('in', 'coloredAtmosphericGlow');
+        const glowMergeNode2 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+        glowMergeNode2.setAttribute('in', 'coloredMidGlow');
+        const glowMergeNode3 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+        glowMergeNode3.setAttribute('in', 'coloredCloseGlow');
+        const glowMergeNode4 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+        glowMergeNode4.setAttribute('in', 'SourceGraphic');
+        
+        glowMerge.appendChild(glowMergeNode1);
+        glowMerge.appendChild(glowMergeNode2);
+        glowMerge.appendChild(glowMergeNode3);
+        glowMerge.appendChild(glowMergeNode4);
+        
+        atmosphericGlowFilter.appendChild(feGlow1);
+        atmosphericGlowFilter.appendChild(feColorMatrix6);
+        atmosphericGlowFilter.appendChild(feGlow2);
+        atmosphericGlowFilter.appendChild(feColorMatrix7);
+        atmosphericGlowFilter.appendChild(feGlow3);
+        atmosphericGlowFilter.appendChild(feColorMatrix8);
+        atmosphericGlowFilter.appendChild(glowMerge);
         
         defs.appendChild(bgGradient);
         defs.appendChild(barGradient);
-        defs.appendChild(depthFilter);
-        defs.appendChild(ultraGlowFilter);
+        defs.appendChild(deepShadowFilter);
+        defs.appendChild(bevelFilter);
+        defs.appendChild(atmosphericGlowFilter);
         svg.appendChild(defs);
         
-        // Create ultra-premium squircle
+        // Create ultra-depth squircle with layered effects
         const squirclePath = this.createUltraSquirclePath(size);
         const squircle = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         squircle.setAttribute('d', squirclePath);
         squircle.setAttribute('fill', `url(#${bgGradient.getAttribute('id')})`);
-        squircle.setAttribute('filter', `url(#${ultraGlowFilter.getAttribute('id')})`);
-        squircle.setAttribute('stroke', 'rgba(255, 255, 255, 0.1)');
-        squircle.setAttribute('stroke-width', '0.5');
+        squircle.setAttribute('filter', `url(#${deepShadowFilter.getAttribute('id')}) url(#${atmosphericGlowFilter.getAttribute('id')})`);
+        squircle.setAttribute('stroke', 'rgba(255, 255, 255, 0.12)');
+        squircle.setAttribute('stroke-width', '0.6');
         svg.appendChild(squircle);
         
-        // Create microphone symbol group with enhanced positioning
+        // Create microphone symbol group with enhanced depth positioning
         const micGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        micGroup.setAttribute('transform', `translate(${(size - micSize) / 2}, ${(size - micSize) / 2 + micSize * 0.04})`);
+        micGroup.setAttribute('transform', `translate(${(size - micSize) / 2}, ${(size - micSize) / 2 + micSize * 0.035})`);
         
         // Enhanced horizontal connector with depth
         const connector = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        const connectorWidth = barWidth * 3 + gap * 2.2;
+        const connectorWidth = barWidth * 3 + gap * 2.3;
         connector.setAttribute('x', (micSize - connectorWidth) / 2);
-        connector.setAttribute('y', micSize * 0.46);
+        connector.setAttribute('y', micSize * 0.465);
         connector.setAttribute('width', connectorWidth);
         connector.setAttribute('height', connectorHeight);
         connector.setAttribute('rx', connectorHeight / 2);
         connector.setAttribute('fill', `url(#${barGradient.getAttribute('id')})`);
-        connector.setAttribute('opacity', '0.75');
-        connector.setAttribute('filter', `url(#${depthFilter.getAttribute('id')})`);
+        connector.setAttribute('opacity', '0.78');
+        connector.setAttribute('filter', `url(#${bevelFilter.getAttribute('id')})`);
+        connector.setAttribute('stroke', 'rgba(255, 255, 255, 0.08)');
+        connector.setAttribute('stroke-width', '0.3');
         micGroup.appendChild(connector);
         
-        // Three ultra-premium microphone bars
+        // Three ultra-depth microphone bars with enhanced 3D effects
         const startX = (micSize - (barWidth * 3 + gap * 2)) / 2;
         barHeights.forEach((height, i) => {
             const bar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             bar.setAttribute('x', startX + i * (barWidth + gap));
-            bar.setAttribute('y', micSize * 0.54 - height);
+            bar.setAttribute('y', micSize * 0.545 - height);
             bar.setAttribute('width', barWidth);
             bar.setAttribute('height', height);
-            bar.setAttribute('rx', barWidth / 2.2);
+            bar.setAttribute('rx', barWidth / 2.1);
             bar.setAttribute('fill', `url(#${barGradient.getAttribute('id')})`);
-            bar.setAttribute('filter', `url(#${depthFilter.getAttribute('id')})`);
-            bar.setAttribute('stroke', 'rgba(255, 255, 255, 0.08)');
-            bar.setAttribute('stroke-width', '0.3');
+            bar.setAttribute('filter', `url(#${bevelFilter.getAttribute('id')})`);
+            bar.setAttribute('stroke', 'rgba(255, 255, 255, 0.1)');
+            bar.setAttribute('stroke-width', '0.4');
             
-            // Add ultra-subtle premium animation
+            // Add ultra-subtle premium depth animation
             const animateTransform = document.createElementNS('http://www.w3.org/2000/svg', 'animateTransform');
             animateTransform.setAttribute('attributeName', 'transform');
             animateTransform.setAttribute('type', 'scale');
-            animateTransform.setAttribute('values', '1,1; 1,1.015; 1,1');
-            animateTransform.setAttribute('dur', `${6 + i * 0.8}s`);
+            animateTransform.setAttribute('values', '1,1; 1,1.02; 1,1');
+            animateTransform.setAttribute('dur', `${7 + i * 1.2}s`);
             animateTransform.setAttribute('repeatCount', 'indefinite');
-            animateTransform.setAttribute('begin', `${i * 0.5}s`);
+            animateTransform.setAttribute('begin', `${i * 0.6}s`);
             bar.appendChild(animateTransform);
             
             micGroup.appendChild(bar);
@@ -264,25 +419,37 @@ class MinaAnimatedLogo {
         
         svg.appendChild(micGroup);
         
-        // Ultra-premium highlight overlay with sophisticated positioning
+        // Ultra-depth highlight overlay with enhanced positioning and depth
         const highlight = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-        highlight.setAttribute('cx', size * 0.38);
-        highlight.setAttribute('cy', size * 0.32);
-        highlight.setAttribute('rx', size * 0.28);
-        highlight.setAttribute('ry', size * 0.16);
-        highlight.setAttribute('fill', 'rgba(255, 255, 255, 0.12)');
-        highlight.setAttribute('opacity', '0.7');
-        highlight.setAttribute('transform', 'rotate(-8)');
+        highlight.setAttribute('cx', size * 0.365);
+        highlight.setAttribute('cy', size * 0.315);
+        highlight.setAttribute('rx', size * 0.32);
+        highlight.setAttribute('ry', size * 0.18);
+        highlight.setAttribute('fill', 'rgba(255, 255, 255, 0.15)');
+        highlight.setAttribute('opacity', '0.75');
+        highlight.setAttribute('transform', 'rotate(-9)');
         
-        // Add subtle highlight animation
+        // Add enhanced highlight animation with depth variation
         const animateOpacity = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
         animateOpacity.setAttribute('attributeName', 'opacity');
-        animateOpacity.setAttribute('values', '0.7; 0.9; 0.7');
-        animateOpacity.setAttribute('dur', '12s');
+        animateOpacity.setAttribute('values', '0.75; 0.95; 0.75');
+        animateOpacity.setAttribute('dur', '14s');
         animateOpacity.setAttribute('repeatCount', 'indefinite');
         highlight.appendChild(animateOpacity);
         
         svg.appendChild(highlight);
+        
+        // Additional depth layer - subtle secondary highlight
+        const secondaryHighlight = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+        secondaryHighlight.setAttribute('cx', size * 0.42);
+        secondaryHighlight.setAttribute('cy', size * 0.28);
+        secondaryHighlight.setAttribute('rx', size * 0.15);
+        secondaryHighlight.setAttribute('ry', size * 0.08);
+        secondaryHighlight.setAttribute('fill', 'rgba(255, 255, 255, 0.08)');
+        secondaryHighlight.setAttribute('opacity', '0.6');
+        secondaryHighlight.setAttribute('transform', 'rotate(-12)');
+        
+        svg.appendChild(secondaryHighlight);
         
         return svg;
     }
@@ -291,11 +458,11 @@ class MinaAnimatedLogo {
         // Create an ultra-smooth squircle with perfect mathematical precision
         const cx = size / 2;
         const cy = size / 2;
-        const r = size * 0.42;
-        const n = 4.8; // Ultra-premium squircle parameter
+        const r = size * 0.425;
+        const n = 5.2; // Enhanced squircle parameter for more depth
         
         let path = '';
-        const steps = 72; // Higher resolution for smoother curves
+        const steps = 96; // Ultra-high resolution for perfect smoothness
         
         for (let i = 0; i <= steps; i++) {
             const angle = (i * 2 * Math.PI) / steps;
@@ -319,52 +486,52 @@ class MinaAnimatedLogo {
         const { accent, wordmarkSize } = this.options;
         
         const wordmark = document.createElement('div');
-        wordmark.className = 'mina-ultra-wordmark';
+        wordmark.className = 'mina-ultra-depth-wordmark';
         wordmark.style.cssText = `
             position: relative;
-            margin-top: 28px;
+            margin-top: 32px;
             user-select: none;
         `;
         
         const text = document.createElement('span');
-        text.className = 'mina-ultra-wordmark-text';
+        text.className = 'mina-ultra-depth-wordmark-text';
         text.textContent = 'Mina';
         text.style.cssText = `
             font-size: ${wordmarkSize}px;
             font-weight: 900;
-            letter-spacing: -0.025em;
-            background: linear-gradient(135deg, ${accent.gradient[0]}, ${accent.gradient[1]}, ${accent.gradient[2]}, ${accent.gradient[3]});
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, ${accent.gradient[0]}, ${accent.gradient[1]}, ${accent.gradient[2]}, ${accent.gradient[3]}, ${accent.gradient[4]});
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            text-shadow: 0 0 24px ${accent.neon}55, 0 4px 12px rgba(0,0,0,0.15);
+            text-shadow: 0 0 32px ${accent.neon}55, 0 6px 16px rgba(0,0,0,0.2), 0 2px 8px rgba(30,27,75,0.3);
             display: block;
-            animation: minaUltraWordmarkReveal 2.2s ease-out;
+            animation: minaUltraDepthWordmarkReveal 2.5s ease-out;
             position: relative;
             overflow: hidden;
-            filter: drop-shadow(0 2px 8px rgba(139, 92, 246, 0.2));
+            filter: drop-shadow(0 3px 12px rgba(139, 92, 246, 0.25));
         `;
         
         wordmark.appendChild(text);
         
-        // Ultra-premium shine sweep effect
+        // Ultra-depth shine sweep effect
         const shine = document.createElement('div');
         shine.style.cssText = `
             position: absolute;
-            top: -10%;
-            left: -100%;
-            right: -100%;
-            bottom: -10%;
-            background: linear-gradient(110deg, 
-                rgba(255,255,255,0) 25%, 
-                rgba(255,255,255,0.8) 45%, 
+            top: -15%;
+            left: -120%;
+            right: -120%;
+            bottom: -15%;
+            background: linear-gradient(115deg, 
+                rgba(255,255,255,0) 20%, 
+                rgba(255,255,255,0.9) 42%, 
                 rgba(255,255,255,1) 50%, 
-                rgba(255,255,255,0.8) 55%, 
-                rgba(255,255,255,0) 75%);
-            -webkit-mask-image: linear-gradient(90deg, rgba(0,0,0,1), rgba(0,0,0,0.3), rgba(0,0,0,0));
-            mask-image: linear-gradient(90deg, rgba(0,0,0,1), rgba(0,0,0,0.3), rgba(0,0,0,0));
+                rgba(255,255,255,0.9) 58%, 
+                rgba(255,255,255,0) 80%);
+            -webkit-mask-image: linear-gradient(90deg, rgba(0,0,0,1), rgba(0,0,0,0.4), rgba(0,0,0,0));
+            mask-image: linear-gradient(90deg, rgba(0,0,0,1), rgba(0,0,0,0.4), rgba(0,0,0,0));
             mix-blend-mode: overlay;
-            animation: minaUltraShine 6s ease-in-out infinite 3s;
+            animation: minaUltraDepthShine 7s ease-in-out infinite 3.5s;
         `;
         wordmark.appendChild(shine);
         
@@ -391,36 +558,43 @@ class MinaAnimatedLogo {
     }
 }
 
-// Inject ultra-premium CSS animations
-function injectUltraMinaLogoStyles() {
-    if (document.getElementById('ultra-mina-logo-styles')) return;
+// Inject ultra-depth CSS animations
+function injectUltraDepthMinaLogoStyles() {
+    if (document.getElementById('ultra-depth-mina-logo-styles')) return;
     
     const style = document.createElement('style');
-    style.id = 'ultra-mina-logo-styles';
+    style.id = 'ultra-depth-mina-logo-styles';
     style.textContent = `
-        @keyframes minaUltraIconBreathe {
+        @keyframes minaUltraDepthIconBreathe {
             0%, 100% { 
-                transform: scale(1) translateY(0px); 
-                filter: drop-shadow(0 8px 32px rgba(75, 85, 99, 0.15)) 
-                       drop-shadow(0 0 20px rgba(168, 85, 247, 0.25));
+                transform: scale(1) translateY(0px) rotateX(0deg); 
+                filter: drop-shadow(0 12px 48px rgba(75, 85, 99, 0.25)) 
+                       drop-shadow(0 4px 16px rgba(30, 27, 75, 0.3))
+                       drop-shadow(0 0 24px rgba(168, 85, 247, 0.28));
             }
             50% { 
-                transform: scale(1.015) translateY(-1px); 
-                filter: drop-shadow(0 12px 40px rgba(75, 85, 99, 0.2)) 
-                       drop-shadow(0 0 30px rgba(168, 85, 247, 0.35));
+                transform: scale(1.018) translateY(-1.5px) rotateX(1deg); 
+                filter: drop-shadow(0 16px 56px rgba(75, 85, 99, 0.32)) 
+                       drop-shadow(0 6px 20px rgba(30, 27, 75, 0.4))
+                       drop-shadow(0 0 36px rgba(168, 85, 247, 0.4));
             }
         }
         
-        @keyframes minaUltraWordmarkReveal {
+        @keyframes minaUltraDepthWordmarkReveal {
             0% { 
                 opacity: 0; 
-                transform: translateY(15px) scale(0.95); 
-                filter: blur(2px);
+                transform: translateY(18px) scale(0.92); 
+                filter: blur(3px);
             }
-            60% {
-                opacity: 0.8;
-                transform: translateY(3px) scale(0.98);
-                filter: blur(0.5px);
+            40% {
+                opacity: 0.6;
+                transform: translateY(6px) scale(0.96);
+                filter: blur(1px);
+            }
+            70% {
+                opacity: 0.9;
+                transform: translateY(1px) scale(0.99);
+                filter: blur(0.2px);
             }
             100% { 
                 opacity: 1; 
@@ -429,41 +603,57 @@ function injectUltraMinaLogoStyles() {
             }
         }
         
-        @keyframes minaUltraShine {
-            0% { transform: translateX(-150%); opacity: 0; }
-            15% { transform: translateX(-80%); opacity: 0.6; }
-            50% { transform: translateX(0%); opacity: 0.8; }
-            85% { transform: translateX(80%); opacity: 0.6; }
-            100% { transform: translateX(150%); opacity: 0; }
+        @keyframes minaUltraDepthShine {
+            0% { transform: translateX(-160%); opacity: 0; }
+            12% { transform: translateX(-90%); opacity: 0.7; }
+            50% { transform: translateX(0%); opacity: 0.9; }
+            88% { transform: translateX(90%); opacity: 0.7; }
+            100% { transform: translateX(160%); opacity: 0; }
         }
         
-        /* Enhanced responsive scaling */
+        /* Enhanced responsive scaling with depth preservation */
         @media (max-width: 768px) {
-            .mina-ultra-3d-icon {
-                filter: drop-shadow(0 4px 16px rgba(75, 85, 99, 0.12));
+            .mina-ultra-depth-3d-icon {
+                filter: drop-shadow(0 6px 24px rgba(75, 85, 99, 0.2)) 
+                       drop-shadow(0 2px 8px rgba(30, 27, 75, 0.25));
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .mina-ultra-depth-3d-icon {
+                filter: drop-shadow(0 4px 16px rgba(75, 85, 99, 0.18)) 
+                       drop-shadow(0 1px 6px rgba(30, 27, 75, 0.22));
             }
         }
         
         /* Respect reduced motion preferences */
         @media (prefers-reduced-motion: reduce) {
-            .mina-ultra-3d-icon,
-            .mina-ultra-wordmark-text,
+            .mina-ultra-depth-3d-icon,
+            .mina-ultra-depth-wordmark-text,
             * {
                 animation-duration: 0.01ms !important;
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.01ms !important;
             }
         }
+        
+        /* Enhanced focus states for accessibility */
+        .mina-ultra-depth-3d-icon:focus-visible,
+        .mina-ultra-depth-wordmark:focus-visible {
+            outline: 2px solid rgba(168, 85, 247, 0.6);
+            outline-offset: 4px;
+            border-radius: 8px;
+        }
     `;
     document.head.appendChild(style);
 }
 
-// Auto-inject ultra-premium styles when script loads
+// Auto-inject ultra-depth styles when script loads
 if (typeof window !== 'undefined') {
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', injectUltraMinaLogoStyles);
+        document.addEventListener('DOMContentLoaded', injectUltraDepthMinaLogoStyles);
     } else {
-        injectUltraMinaLogoStyles();
+        injectUltraDepthMinaLogoStyles();
     }
 }
 
