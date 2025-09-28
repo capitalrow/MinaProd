@@ -132,17 +132,22 @@ def create_app() -> Flask:
         resp.headers["X-Content-Type-Options"] = "nosniff"
         resp.headers["X-Frame-Options"] = "SAMEORIGIN"
         resp.headers["X-XSS-Protection"] = "1; mode=block"
-        resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
         resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        resp.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        resp.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
+        resp.headers["Cross-Origin-Opener-Policy"] = "same-origin"
         resp.headers["Content-Security-Policy"] = (
             "default-src 'self' *.replit.dev *.replit.app; "
             "connect-src 'self' https: wss: ws: wss://*.replit.dev wss://*.replit.app ws://localhost:5000; "
-            "script-src 'self' 'unsafe-inline' https://cdn.socket.io https://cdnjs.cloudflare.com https://cdn.replit.com; "
+            "script-src 'self' 'unsafe-inline' https://cdn.socket.io https://cdnjs.cloudflare.com https://cdn.replit.com https://unpkg.com https://cdn.jsdelivr.net; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.replit.com; "
             "font-src 'self' https://cdnjs.cloudflare.com data:; "
             "img-src 'self' blob: data:; "
             "media-src 'self' blob:; "
-            "worker-src 'self' blob:;"
+            "worker-src 'self' blob:; "
+            "frame-ancestors 'self' *.replit.dev *.replit.app; "
+            "base-uri 'self';"
         )
         return resp
 
