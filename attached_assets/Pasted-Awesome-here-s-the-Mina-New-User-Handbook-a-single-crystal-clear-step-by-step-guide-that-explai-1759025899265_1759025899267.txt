@@ -1,0 +1,851 @@
+Awesome — here’s the Mina New-User Handbook: a single, crystal-clear, step-by-step guide that explains exactly how Mina works, what you’ll see, what you’ll do, and what happens next. It’s written for someone brand new who wants to feel confident and in control from minute one.
+
+> Important: No debug logs are ever shown in Mina’s user interface. Technical diagnostics live only in the Admin Dashboard (admins only).
+
+
+
+
+---
+
+Mina — New-User Handbook (Complete, Step-by-Step)
+
+1) What Mina is (in one minute)
+
+Mina is a Meeting Intelligence Platform. It:
+
+Captures your meetings (live or uploaded) and turns speech into a clean, searchable transcript.
+
+Organizes what matters into instant summaries and tasks (with owners and dates).
+
+Guides you via an AI Copilot (a separate chat tab) that can answer questions about any meeting, find decisions, list tasks, and even help you act (mark done, add to calendar, export to Slack/Notion, etc.).
+
+Protects your data with privacy-first defaults (redaction on shared links is ON by default; quiet hours are ON by default).
+
+
+You always leave a meeting with clarity: what was said, what was decided, what’s risky, and what needs doing.
+
+
+---
+
+2) 3-Minute Quickstart (your first success)
+
+Step 1: Create your account
+
+1. Click Try Mina Free.
+
+
+2. Sign up with Google, Microsoft, or Email (one-tap verification if email).
+
+
+3. Read the short privacy pledge (“Your data is yours.”).
+
+
+
+You’ll see: a short setup screen (language/timezone auto-detected, Redaction ON, Quiet Hours ON by default).
+
+Step 2: (Optional) Connect your tools
+
+Calendar (Google/Outlook): titles and attendees pre-fill; one-tap add-to-calendar later.
+
+Slack: get daily/weekly digests or task alerts where you already work.
+
+Notion/Jira/Trello/Drive/SharePoint: one-click exports later.
+
+
+You’ll see: a skippable 45-second mini-tour (Record → Transcript → Summary → Tasks → Share → Copilot).
+
+Step 3: Record something (or upload a clip)
+
+Press Record (big button) and speak for 15–30 seconds or upload an audio file.
+
+Live transcript will start flowing like a chat.
+
+
+You’ll see:
+
+“Recording” pill and a small audio meter (reassurance it’s working).
+
+Transcript lines appearing with your name (or “Speaker 1”) and timestamps.
+
+
+Step 4: End → Get summary & tasks
+
+Click End. Within moments:
+
+Snapshot summary (2–3 lines) appears.
+
+Tasks auto-extracted (e.g., “Prepare slides by Monday”).
+
+Button: Add to Calendar? (one tap).
+
+Button: Share Meeting Page (redaction ON by default, 7-day expiry).
+
+
+
+Done: You just saw Mina’s full loop in under 3 minutes.
+
+
+---
+
+3) The Dashboard (your home base)
+
+When you log in, you start here.
+
+Top area (Today)
+
+Your meetings for today (if you connected a calendar).
+
+Each entry shows time, title, attendees, and a Record now button.
+
+No calendar? You still see the Record button for ad-hoc capture.
+
+
+Middle area (Needs follow-up)
+
+Cards for unclosed decisions, overdue tasks, recurring risks.
+
+Click a card to jump straight to the relevant meetings or tasks.
+
+
+Primary action
+
+A big Record button: always visible, always one tap away.
+
+
+Why it matters: You always know what’s next and can start capturing instantly.
+
+
+---
+
+4) Recording & Permissions (what to expect)
+
+Start Recording: Click Record. You may get a browser mic permission prompt; click Allow.
+
+While recording: A subtle “Recording” pill shows at the top; a small audio meter moves as you speak.
+
+Pause: Click Pause any time (e.g., for private moments). A banner reads: “Recording paused.” Click again to resume.
+
+Offline: If your connection drops, Mina shows: “You’re offline — still capturing. We’ll sync when you’re back.” You won’t lose your notes.
+
+Stop: Click End. You’ll land on the meeting’s page with transcript, summary, and tasks ready.
+
+
+Tip: You can rename speakers after the meeting; don’t stress during the call.
+
+
+---
+
+5) Live Transcript (during the meeting)
+
+What you see:
+
+A calm, chat-style transcript: each line has speaker + timestamp.
+
+Speaker labels: Mina guesses based on past context; unknown speakers show as “Speaker 2,” etc.
+
+Confidence cues: Low-confidence words are lightly underlined with a tooltip “Low confidence — review later.”
+
+Overlapping speech: Lines are stacked clearly; nothing is lost or merged confusingly.
+
+
+What you do (optional):
+
+Rename a speaker: Click the name (e.g., “Speaker 2”) → type “Robin” → Save. All past lines update too.
+
+Mark a key moment: Type /decision, /todo, or /risk in the tiny command bar or click the matching marker button. A small chip appears in the margin and on the timeline.
+
+
+Why it matters: You stay focused on the conversation while Mina quietly keeps the record clean and navigable.
+
+
+---
+
+6) Markers & Key Moments (capturing the good stuff)
+
+What markers do:
+
+/decision: flags a decision as it happens.
+
+/todo: creates a draft action item at that exact second.
+
+/risk: highlights something risky or uncertain.
+
+
+Where they show:
+
+As chips in the transcript margin (hover to preview).
+
+On the bottom timeline so you can jump around quickly.
+
+
+After the meeting:
+
+Decisions appear in summaries.
+
+To-dos become tasks with suggested owners/dates.
+
+Risks show up in Insights (“Recurring risks this month”).
+
+
+Why it matters: You won’t dig for critical moments; they’ll find you later.
+
+
+---
+
+7) After the Meeting (review screen)
+
+When you click End, Mina finishes the transcript and lands you on a meeting page with three main parts:
+
+A) Transcript pane (left)
+
+Search bar at the top: type a word (e.g., “budget”) → see hits with context lines and timestamps.
+
+Click any line to jump to that exact moment.
+
+Highlight text to open a mini-menu:
+
+Create Task
+
+Add to Summary
+
+Copy link (with a timestamped URL to this moment)
+
+
+
+B) Summary pane (center)
+
+Tabs at the top:
+
+Snapshot: a 2–3 line TL;DR (great for Slack).
+
+Executive: 5 clean bullets (great for leadership).
+
+Structured: organized sections — Decisions, Risks, Actions, Questions.
+
+
+Tone dropdown: Formal / Casual / Technical (your choice sticks next time).
+
+Each bullet has a “View in transcript” link.
+
+
+C) Tasks pane (right)
+
+List of auto-extracted tasks at the top:
+
+Titles are short and clear (Mina rewrites them).
+
+Suggested Owner (speaker/host/mentioned person).
+
+Suggested Due date (if one was said; Mina confirms ambiguous dates, e.g., “This Fri or next Fri?”).
+
+
+Buttons on each task: Accept, Edit, Reassign, Delete, Mark done.
+
+You can create new tasks from any transcript highlight.
+
+
+One-tap Calendar prompt
+
+If Mina detects a date/time: “Add to Calendar?” Click Yes → it appears in Google/Outlook with a link back to Mina.
+
+
+Share recap
+
+Click Share Meeting Page → defaults: Redaction ON, Link expires in 7 days, Watermark Off (toggle if you want).
+
+Export as PDF / Word / Markdown (with optional workspace branding).
+
+
+Why it matters: You leave with a complete, polished package you can use instantly.
+
+
+---
+
+8) Tasks & Workflow (from talk → action → done)
+
+Creating tasks
+
+Automatically: Mina hears “We’ll send the report Friday” → creates Send the report (Due Fri 5pm; Owner: suggested).
+
+Manually from text: highlight → Create Task (Mina pre-fills a short, clear title; you adjust owner/date).
+
+From Copilot: “Create a task to ‘Draft Q3 memo by Tue 4pm for Robin’” → it appears; you can mark done or add to calendar right there.
+
+
+Editing tasks
+
+Short, action-first titles only (Mina helps rewrite).
+
+Owners suggested; reassign via dropdown.
+
+Dates captured (human phrases like “next Tuesday morning” are understood).
+
+
+Views that keep you sane
+
+My Tasks: due Today, This Week, Later; mark done, snooze, or delegate in one click.
+
+By Meeting: tasks grouped under each meeting (with a peek of the summary).
+
+Kanban: drag tasks across Draft → Review → Approve; link dependencies if needed (Draft depends on receiving data, etc.).
+
+
+Calendar sync
+
+Add any task to your calendar in one click; edits in your calendar reflect back in Mina.
+
+Overlay view in Mina to see meetings + tasks together in a single schedule.
+
+
+Why it matters: Action items don’t get lost. Everything ties back to evidence (the transcript moment).
+
+
+---
+
+9) Calendar & Scheduling (lightweight, powerful)
+
+When Mina detects a deadline, it offers to add it to your calendar; no hunting around.
+
+Two-way sync keeps things aligned (update in Calendar = seen in Mina).
+
+Nudges appear before due dates — never during your quiet hours.
+
+
+Why it matters: Deadlines become real. You don’t live in your inbox to track them.
+
+
+---
+
+10) Collaboration & Sharing (safe by default)
+
+Meeting page (what recipients see)
+
+Clean, read-only web page with title, summary tabs, tasks, and transcript (sensitive data redacted by default).
+
+External guests cannot edit your content unless you explicitly grant permissions.
+
+
+Share settings (simple & safe)
+
+Redaction ON by default (emails, phone numbers, IDs masked).
+
+Link expiry defaults to 7 days (change to 30/90 if needed).
+
+Watermark optional (add when sharing broadly).
+
+
+Export options
+
+PDF (polished, client-ready), Word (editable), Markdown (for wikis).
+
+Each export embeds links back to the exact moments in Mina.
+
+
+Comments & mentions
+
+Highlight a line → Comment → “@Robin can you confirm the final number?”
+
+Robin gets a Slack/email ping (your choice).
+
+
+Why it matters: You share quickly with confidence that private details won’t leak.
+
+
+---
+
+11) Insights & Trends (your team’s bigger picture)
+
+What you’ll see
+
+Recurring risks (e.g., “Budget delays” — 3 mentions this month).
+
+Decision aging (decisions still open > X days).
+
+Unresolved actions (grouped by owner, meeting, or project).
+
+Talk-time balance (helpful in retrospectives and 1:1s).
+
+
+What you can do
+
+Click a card → see excerpts across meetings with links.
+
+Assign owners, set dates, schedule follow-ups from the insight card.
+
+
+Optional weekly insight report
+
+One click to generate a Weekly Insights mini-report:
+
+Highlights
+
+Risks to watch
+
+Stalled decisions
+
+Suggested follow-ups
+
+
+
+Why it matters: You don’t just remember one meeting — Mina helps you learn across all of them.
+
+
+---
+
+12) AI Copilot (separate “Copilot” chat tab)
+
+A dedicated chat tab where you can ask Mina anything about your meetings, summaries, tasks, and trends — and act on the answers.
+
+Where to find it
+
+Top navigation: click Copilot.
+
+
+What you do
+
+Type natural questions, like:
+
+“What did we decide about the Q3 budget last Thursday?”
+
+“Summarize the last 3 client calls in 5 bullets.”
+
+“What are my overdue tasks from design reviews?”
+
+“Delete the task ‘Old intro email draft’.”
+
+“What risks came up most often in September?”
+
+“What did Robin commit to last week?”
+
+“What’s due Friday?”
+
+
+
+What you see
+
+Direct answer + citations (links to transcript lines, tasks, or meetings).
+
+Action buttons in the reply:
+
+View in transcript
+
+Create/Mark done/Delete task (Copilot will confirm deletions)
+
+Add to calendar
+
+Export to Slack/Notion/Jira
+
+
+Confidence indicator when an answer touches ambiguous areas (and a link to verify).
+
+
+Scope & safety
+
+Copilot respects your permissions:
+
+You see your meetings and anything shared with you.
+
+Admins (if permitted) can run workspace-wide queries.
+
+
+Copilot always cites sources; it won’t “guess” without evidence.
+
+You can limit Copilot’s ability to create/edit/delete tasks in Settings.
+
+
+Why it matters: It’s like having a smart assistant who remembers everything you’ve discussed and helps you act — right from chat.
+
+
+---
+
+13) Mobile (Mina in your pocket)
+
+Bottom tabs: Dashboard • Meetings • Tasks • Copilot • Settings.
+
+Record with one big button; live transcript flows smoothly.
+
+Markers are large chips (easy to tap).
+
+Offline capture works; syncs when online.
+
+Swipe tasks to Mark done or Snooze.
+
+Ask Copilot quick questions: “What’s due today?”; tap to add to calendar.
+
+
+Why it matters: Full power, anywhere.
+
+
+---
+
+14) Notifications & Digests (useful, not noisy)
+
+Channels
+
+Slack, Email, or Push (you choose).
+
+
+Instant alerts (you can toggle each)
+
+When you are assigned a task.
+
+When you are @mentioned in a comment.
+
+When a task is due soon or overdue.
+
+When a summary is ready (for meetings you own).
+
+
+Bundled digests
+
+Daily (9am by default): Due today, overdue, unclosed decisions, top risk.
+
+Weekly (Mon 9am): Week-ahead plan + top insights.
+
+Optional Team digest to a Slack channel (high-level, no PII).
+
+
+Quiet Hours
+
+Default ON (evenings/weekends) so alerts arrive when you want them.
+
+
+Why it matters: You stay on top of what matters without feeling interrupted.
+
+
+---
+
+15) Settings (clear, safe, reversible)
+
+Open Settings from the top nav. Everything is plain English; nothing is buried.
+
+Profile
+
+Name, photo, title, display name for transcripts.
+
+Timezone, language, date format.
+
+Pronunciation hints (helps speaker labels).
+
+
+Security
+
+2FA (app/SMS/email).
+
+Active devices list; Log out everywhere.
+
+New device alerts (toggle).
+
+
+Privacy
+
+Retention sliders for Transcripts, Audio, Exports (e.g., 30/90 days).
+
+Download my data (self-service export).
+
+Delete a meeting (with Undo); Delete account (with a grace period).
+
+Automatic redaction rules ON by default (emails, phone numbers, IDs).
+Add custom patterns with a live preview.
+
+
+Workspace & Team (Admins)
+
+Invite by email/link; roles:
+
+Owner: Everything.
+
+Admin: People, workspace settings, billing.
+
+Editor: Create/edit content.
+
+Viewer: Read-only.
+
+
+Groups (e.g., Sales, Design) to share or notify at once.
+
+Defaults: redaction ON, link expiry (7/30/90 days), retention (e.g., 90 days).
+
+Enterprise: Enforce SSO, restrict external domains.
+
+
+Integrations
+
+Calendar (Google/Outlook) — connect/test/disconnect.
+
+Slack — choose your DM or channel for digests/alerts.
+
+Notion, Jira, Trello, Drive/SharePoint — toggles; pick where to send exports.
+
+Health status and reconnect reminders.
+
+Clear “What Mina can access” text — no surprises.
+
+
+Notifications
+
+Choose channels (Email/Slack/Push).
+
+Choose timing (Instant/Daily/Weekly).
+
+Set Quiet Hours (default ON).
+
+Toggle what triggers alerts (assigned, mentions, due soon, overdue, digests only).
+
+
+Transcription Defaults
+
+Preferred language (auto-detect toggle).
+
+Speaker separation ON/OFF.
+
+Confidence highlighting (Off/Light/Strong).
+
+Customize quick commands (/decision, /risk, /todo).
+
+Meeting title template (e.g., {Date} — {Topic}).
+
+
+Sharing & Export
+
+Default export format (PDF/Word/Markdown).
+
+Branding (logo, footer, accent color).
+
+Guest link expiry (7/30/90 days).
+
+Watermark (optional).
+
+Redaction ON by default for shared links.
+
+
+Billing (Admins/Owners)
+
+Plan, usage meters (minutes, tasks, storage).
+
+Alerts at 80/95/100%.
+
+Payment methods, invoice history, tax/VAT fields.
+
+
+Compliance & Audit (Admins)
+
+Audit timeline (who viewed/shared/exported; key setting changes).
+
+Data region preference (EU/UK/US) if offered in your plan.
+
+Discovery export by date/user/keyword.
+
+DPA access link.
+
+
+Admin Dashboard (Admins only)
+
+Workspace health, usage trends, integration status.
+
+Policy management (retention, sharing, redaction).
+
+Diagnostic logs live here only — never in the main UI.
+
+
+Copilot Settings
+
+Default scope: Personal vs Workspace (admins only).
+
+Task controls: allow/deny AI to create/edit/delete tasks (per user).
+
+Export controls: where AI is allowed to send/export (Slack/Email/Notion).
+
+Always show citations (admins can enforce).
+
+
+
+---
+
+16) Admin Guide (workspace owners & admins)
+
+Setup
+
+1. Create a workspace; optionally add branding (logo, color).
+
+
+2. Invite users; assign roles.
+
+
+3. Set defaults: redaction ON, link expiry 7 days, retention 90 days, quiet hours ON.
+
+
+
+Governance
+
+Enforce SSO (Enterprise).
+
+Restrict external shares to allow-listed domains.
+
+Select a data region (if available in your plan).
+
+Control Copilot permissions (task edits, export destinations).
+
+
+Visibility & control
+
+Check usage trends (minutes, active users).
+
+Review audit logs weekly for sensitive meetings.
+
+Ensure integrations are healthy (reconnect expired tokens).
+
+
+Billing
+
+Monitor usage vs plan; set alerts to billing contacts.
+
+Download invoices; update payment details.
+
+
+Offboarding
+
+Disable a user; transfer meeting ownership.
+
+Export user’s content on request.
+
+Optionally archive the workspace.
+
+
+
+---
+
+17) Lifecycle (trial, upgrades, deletion)
+
+Trial: You’ll see a usage bar (e.g., 40/60 minutes used). When near limits, Mina suggests upgrading — never interrupts mid-meeting.
+
+Upgrade/Downgrade: No data loss; changes apply immediately.
+
+Delete account: Mina offers a one-click data export first. Confirm deletion → content purged after a grace period (e.g., 7–30 days). You can undo within that window.
+
+Delete workspace (owner): Checklist prompts reassignments and exports. A final audit snapshot may be retained for legal record (no content).
+
+Reactivate: If within grace, your settings/history are restored on sign-in.
+
+
+
+---
+
+18) Common “How do I…?” Recipes
+
+Get a client-ready recap: Open the meeting → Summary → Executive tab → Export PDF → (optional) add branding → Share.
+
+Create a task from a sentence: Highlight sentence → Create Task → confirm owner/date → Add to Calendar (optional).
+
+Share safely with a client: Share Meeting Page → confirm Redaction ON and Expiry 7 days → Send link.
+
+Catch up on a project: Open Insights → filter by project or client → scan recurring risks & unclosed decisions → assign owners.
+
+Plan my week in 2 minutes: Open Copilot → “What’s due this week?” → click Add to Calendar on important items.
+
+
+
+---
+
+19) Troubleshooting (quick fixes)
+
+Mic blocked: Browser asked for mic but you missed it → Click the mic icon in the URL bar → Allow → try again. Or upload a file.
+
+Speakers mislabeled: After the meeting, click a name (“Speaker 2”) → rename. Past lines update.
+
+Poor audio: Move closer to mic; reduce background noise. Unclear words will be flagged to review.
+
+Can’t find something: Use Search in the transcript or ask Copilot (“Find all mentions of pricing in September.”).
+
+Too many notifications: Open Settings → Notifications → choose Daily/Weekly digests and set Quiet Hours.
+
+Shared link too open: Make sure Redaction ON; set Expiry to 7 days; use Watermark if needed.
+
+
+
+---
+
+20) Accessibility & Inclusion (you can rely on this)
+
+Full keyboard navigation; skip links for screen readers.
+
+ARIA labels for all interactive controls.
+
+High-contrast and dark modes; respects system reduced motion.
+
+Adjustable text size; content chunked with meaningful headings.
+
+Clear, jargon-free microcopy.
+
+
+
+---
+
+21) Keyboard Shortcuts (power user cheat sheet)
+
+Cmd/Ctrl-K: Global search
+
+/ then decision/todo/risk: Add marker
+
+Cmd/Ctrl-F: Search within transcript
+
+G M / G T / G I / G C: Go to Meetings / Tasks / Insights / Copilot
+
+N: Create new task (from selection)
+
+Esc: Close modals and menus
+
+
+
+---
+
+22) Copilot Prompt Ideas (copy/paste to try)
+
+“What did we decide about pricing on Sept 12?”
+
+“Top 5 risks mentioned across September, with links.”
+
+“Summarize the last 3 client A calls in 5 bullets.”
+
+“List my overdue tasks; mark ‘Send draft deck’ as done.”
+
+“Create ‘Prep Q3 memo by Tue 4pm for Robin’ and add to calendar.”
+
+“What’s due this Friday for my team? Group by owner.”
+
+
+
+---
+
+23) What makes Mina feel premium (the bar we keep)
+
+Immediate feedback: live text in moments; summaries ready when you arrive.
+
+Calm visuals: smooth transitions; no spinners or tech clutter.
+
+Respectful defaults: redaction ON, quiet hours ON, share links expire.
+
+Trust on every click: every bullet and task links to the exact moment it was said.
+
+Recovery everywhere: Undo, grace periods, recycle bin for deleted meetings.
+
+
+
+---
+
+Final Thought
+
+If you remember just three things:
+
+1. Press Record — Mina handles the rest.
+
+
+2. After the meeting, check Summary and Tasks — you’ll have your outcomes.
+
+
+3. When in doubt, ask Copilot — it knows your meetings and helps you act.
+
+
+
+You’re ready. 🎯
+

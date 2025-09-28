@@ -56,8 +56,18 @@ def transcribe_chunk_streaming():
     
     start_time = time.time()
     
+    # Initialize variables early to avoid LSP errors
+    chunk_id = '1'
+    session_id = f'session_{int(time.time())}'
+    
     try:
         print(f"[LIVE-API] 🎵 Received transcription request")
+        
+        # Get form data
+        audio_file = request.files.get('audio')
+        session_id = request.form.get('session_id', session_id)
+        chunk_id = request.form.get('chunk_id', chunk_id)
+        is_final = request.form.get('is_final', 'false').lower() == 'true'
         
         # Check if OpenAI is available
         if not openai_client:
@@ -66,13 +76,9 @@ def transcribe_chunk_streaming():
                 'text': '',
                 'confidence': 0,
                 'processing_time': time.time() - start_time,
+                'chunk_id': chunk_id,
                 'type': 'error'
             }), 500
-        
-        # Get form data
-        audio_file = request.files.get('audio')
-        session_id = request.form.get('session_id', f'session_{int(time.time())}')
-        chunk_id = request.form.get('chunk_id', '1')
         
         print(f"[LIVE-API] 📊 Request details: audio_file={bool(audio_file)}, session_id={session_id}, chunk_id={chunk_id}")
         
