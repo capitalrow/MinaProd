@@ -16,6 +16,10 @@ import openai
 from pydub import AudioSegment
 import io
 
+# Import robust services
+from services.circuit_breaker import get_openai_circuit_breaker, get_audio_processing_circuit_breaker, CircuitBreakerOpenError
+from services.health_monitor import get_health_monitor
+
 logger = logging.getLogger(__name__)
 
 # Create unified transcription blueprint
@@ -38,11 +42,14 @@ def get_openai_client():
 @unified_api_bp.route('/api/transcribe-audio', methods=['POST'])
 def unified_transcribe_audio():
     """
-    🎯 UNIFIED TRANSCRIPTION ENDPOINT
+    🎯 ENHANCED UNIFIED TRANSCRIPTION ENDPOINT
     Handles BOTH base64 audio data AND file uploads
     Supports interim and final transcription modes
+    Now with circuit breaker protection and health monitoring
     """
     request_start_time = time.time()
+    health_monitor = get_health_monitor()
+    success = False
     
     try:
         # Extract session info
@@ -184,34 +191,33 @@ def unified_transcribe_audio():
                 'processing_time': (time.time() - request_start_time) * 1000
             }), 400
         
-        # Transcribe using OpenAI Whisper with retry mechanism
-        max_retries = 3
-        retry_delay = 1  # Start with 1 second delay
+        # Transcribe using OpenAI Whisper with circuit breaker protection
+        openai_breaker = get_openai_circuit_breaker()
+        audio_breaker = get_audio_processing_circuit_breaker()
         
-        for attempt in range(max_retries):
+        def protected_transcription():
+            client = get_openai_client()
+            
+            # Create temporary file for Whisper API
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                temp_file.write(wav_audio)
+                temp_file_path = temp_file.name
+            
             try:
-                client = get_openai_client()
+                # Call Whisper API with enhanced parameters and circuit breaker
+                transcription_start = time.time()
                 
-                # Create temporary file for Whisper API
-                with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
-                    temp_file.write(wav_audio)
-                    temp_file_path = temp_file.name
-                
-                try:
-                    # Call Whisper API with enhanced parameters
-                    transcription_start = time.time()
-                    
-                    with open(temp_file_path, "rb") as audio_file:
-                        # Enhanced Whisper parameters for robust transcription
-                        response = client.audio.transcriptions.create(
-                            model="whisper-1",
-                            file=audio_file,
-                            response_format="verbose_json",
-                            language="en",
-                            temperature=0.0,  # Lower temperature for accuracy
-                            # Add timestamp granularities for better analysis
-                            timestamp_granularities=["word"]
-                        )
+                with open(temp_file_path, "rb") as audio_file:
+                    # Enhanced Whisper parameters for robust transcription
+                    response = client.audio.transcriptions.create(
+                        model="whisper-1",
+                        file=audio_file,
+                        response_format="verbose_json",
+                        language="en",
+                        temperature=0.0,  # Lower temperature for accuracy
+                        # Add timestamp granularities for better analysis
+                        timestamp_granularities=["word"]
+                    )
                 
                 transcription_time = (time.time() - transcription_start) * 1000
                 total_processing_time = (time.time() - request_start_time) * 1000
@@ -256,45 +262,56 @@ def unified_transcribe_audio():
                         'model_used': 'whisper-1'
                     }
                 
-                    return jsonify(result)
+                return result
                     
-                finally:
-                    # Cleanup temporary file
-                    try:
-                        os.unlink(temp_file_path)
-                    except:
-                        pass
-                        
-                # If we reach here, transcription was successful, break retry loop
-                break
-                
-            except Exception as retry_error:
-                # Cleanup temp file before retry
+            finally:
+                # Cleanup temporary file
                 try:
                     os.unlink(temp_file_path)
                 except:
                     pass
-                
-                error_msg = str(retry_error)
-                
-                # Check if this is a retryable error
-                if attempt < max_retries - 1:  # Not the last attempt
-                    retryable_errors = ['timeout', 'rate_limit', 'connection', 'service_unavailable']
+        
+        try:
+            # Execute transcription with circuit breaker protection
+            result = openai_breaker.call(protected_transcription)
+            success = True
+            
+            # Record successful transcription metrics
+            total_processing_time = (time.time() - request_start_time) * 1000
+            health_monitor.record_api_call('/api/transcribe-audio', total_processing_time, True)
+            health_monitor.record_transcription_event(
+                session_id, 
+                total_processing_time / 1000, 
+                True, 
+                result.get('confidence', 0.95)
+            )
+            
+            return jsonify(result)
                     
-                    if any(err in error_msg.lower() for err in retryable_errors):
-                        logger.warning(f"⚠️ Retryable error on attempt {attempt + 1}/{max_retries}: {error_msg}")
-                        logger.info(f"🔄 Retrying in {retry_delay} seconds...")
-                        
-                        time.sleep(retry_delay)
-                        retry_delay *= 2  # Exponential backoff
-                        continue
-                
-                # If not retryable or last attempt, re-raise the error
-                raise retry_error
-                    
+        except CircuitBreakerOpenError as cb_error:
+            logger.warning(f"🔴 Circuit breaker protection activated: {cb_error}")
+            processing_time = (time.time() - request_start_time) * 1000
+            
+            # Record the failed attempt
+            health_monitor.record_api_call('/api/transcribe-audio', processing_time, False)
+            
+            return jsonify({
+                'error': 'Transcription service temporarily unavailable due to high error rates',
+                'success': False,
+                'session_id': session_id,
+                'chunk_id': chunk_id,
+                'is_interim': is_interim,
+                'processing_time': processing_time,
+                'retry_suggestion': 'Please wait a moment and try again - service is recovering',
+                'service_status': 'circuit_breaker_open'
+            }), 503
+            
         except Exception as whisper_error:
             logger.error(f"❌ Whisper API error: {whisper_error}")
             processing_time = (time.time() - request_start_time) * 1000
+            
+            # Record the failed attempt
+            health_monitor.record_api_call('/api/transcribe-audio', processing_time, False)
             
             error_message = str(whisper_error)
             status_code = 500
@@ -302,6 +319,7 @@ def unified_transcribe_audio():
             # Handle specific OpenAI API errors gracefully
             if 'audio_too_short' in error_message.lower():
                 logger.info(f"ℹ️ Audio too short for Whisper API (session: {session_id})")
+                success = True  # This is not really a failure
                 return jsonify({
                     'success': True,
                     'text': '',
@@ -337,6 +355,10 @@ def unified_transcribe_audio():
     except Exception as e:
         logger.error(f"❌ Critical error in unified transcription API: {e}", exc_info=True)
         processing_time = (time.time() - request_start_time) * 1000
+        
+        # Record the critical error
+        if 'health_monitor' in locals():
+            health_monitor.record_api_call('/api/transcribe-audio', processing_time, False)
         
         # Enhanced error recovery with specific error handling
         error_details = {
@@ -532,13 +554,45 @@ def transcription_health():
     try:
         client = get_openai_client()
         
+        # Enhanced health monitoring with circuit breakers and system metrics
+        try:
+            health_monitor = get_health_monitor()
+            circuit_manager = __import__('services.circuit_breaker', fromlist=['circuit_manager']).circuit_manager
+            
+            system_health = health_monitor.get_current_health()
+            circuit_health = circuit_manager.health_check()
+            
+            overall_status = 'healthy'
+            if system_health.status == 'unhealthy' or circuit_health['overall_health'] == 'unhealthy':
+                overall_status = 'unhealthy'
+            elif system_health.status == 'degraded' or circuit_health['overall_health'] == 'degraded':
+                overall_status = 'degraded'
+        except Exception:
+            # Fallback to basic health check if monitoring services fail
+            overall_status = 'healthy'
+            system_health = None
+            circuit_health = None
+        
         return jsonify({
-            'status': 'healthy',
+            'status': overall_status,
             'openai_api_configured': True,
+            'system_metrics': {
+                'cpu_usage': system_health.cpu_usage if system_health else 0,
+                'memory_usage': system_health.memory_usage if system_health else 0,
+                'uptime_hours': round(system_health.uptime / 3600, 2) if system_health else 0,
+                'error_rate': system_health.error_rate if system_health else 0
+            },
+            'circuit_breakers': {
+                'status': circuit_health['overall_health'] if circuit_health else 'unknown',
+                'open_breakers': circuit_health['open_breakers'] if circuit_health else 0,
+                'total_breakers': circuit_health['total_breakers'] if circuit_health else 0
+            },
             'services': {
                 'openai_client': True,
                 'audio_processing': True,
-                'pydub_available': True
+                'pydub_available': True,
+                'health_monitor': system_health is not None,
+                'circuit_breaker': circuit_health is not None
             },
             'timestamp': time.time()
         })
@@ -552,4 +606,103 @@ def transcription_health():
             'timestamp': time.time()
         }), 503
 
-logger.info("✅ Unified Transcription API initialized")
+# Additional robust health monitoring endpoints
+@unified_api_bp.route('/api/health/metrics', methods=['GET'])
+def detailed_health_metrics():
+    """Get detailed health metrics and performance data"""
+    try:
+        health_monitor = get_health_monitor()
+        circuit_manager = __import__('services.circuit_breaker', fromlist=['circuit_manager']).circuit_manager
+        
+        # Get time range from query params
+        hours = int(request.args.get('hours', 1))
+        
+        return jsonify({
+            'timestamp': time.time(),
+            'metrics': {
+                'cpu_usage': [
+                    {'timestamp': m.timestamp, 'value': m.value, 'status': m.status}
+                    for m in health_monitor.get_metric_history('cpu_usage', hours * 60)
+                ],
+                'memory_usage': [
+                    {'timestamp': m.timestamp, 'value': m.value, 'status': m.status}
+                    for m in health_monitor.get_metric_history('memory_usage', hours * 60)
+                ],
+                'api_response_time': [
+                    {'timestamp': m.timestamp, 'value': m.value, 'status': m.status}
+                    for m in health_monitor.get_metric_history('api_response_time', hours * 60)
+                ]
+            },
+            'alerts': health_monitor.get_alerts(hours),
+            'circuit_breakers': circuit_manager.get_all_stats(),
+            'performance_summary': health_monitor.get_performance_summary()
+        })
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'timestamp': time.time()
+        }), 500
+
+@unified_api_bp.route('/api/session/persist', methods=['POST'])
+def persist_session():
+    """Persist session state for recovery"""
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')
+        state_data = data.get('state', {})
+        
+        if not session_id:
+            return jsonify({'error': 'Session ID required'}), 400
+        
+        # Basic in-memory session persistence (production would use Redis/DB)
+        session_store = getattr(persist_session, '_store', {})
+        session_store[session_id] = {
+            'state': state_data,
+            'timestamp': time.time(),
+            'last_activity': time.time()
+        }
+        persist_session._store = session_store
+        
+        return jsonify({
+            'success': True,
+            'session_id': session_id,
+            'persisted_at': time.time()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@unified_api_bp.route('/api/session/recover/<session_id>', methods=['GET'])
+def recover_session(session_id):
+    """Recover persisted session state"""
+    try:
+        session_store = getattr(persist_session, '_store', {})
+        
+        if session_id not in session_store:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        session_data = session_store[session_id]
+        
+        # Check if session is still valid (within 24 hours)
+        if time.time() - session_data['timestamp'] > 86400:
+            del session_store[session_id]
+            return jsonify({'error': 'Session expired'}), 410
+        
+        return jsonify({
+            'success': True,
+            'session_id': session_id,
+            'state': session_data['state'],
+            'last_activity': session_data['last_activity'],
+            'age_hours': (time.time() - session_data['timestamp']) / 3600
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Start health monitoring
+try:
+    health_monitor = get_health_monitor()
+    health_monitor.start_monitoring(interval=30)  # Monitor every 30 seconds
+    logger.info("🏥 Health monitoring started")
+except Exception as e:
+    logger.warning(f"⚠️ Failed to start health monitoring: {e}")
+
+logger.info("✅ Enhanced Unified Transcription API initialized with robust monitoring")
