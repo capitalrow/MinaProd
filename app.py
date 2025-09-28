@@ -262,6 +262,14 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"Failed to register analytics API routes: {e}")
 
+    # Settings routes
+    try:
+        from routes.settings import settings_bp
+        app.register_blueprint(settings_bp)
+        app.logger.info("Settings routes registered")
+    except Exception as e:
+        app.logger.error(f"Failed to register settings routes: {e}")
+
     # other blueprints (guarded)
     _optional = [
         ("routes.final_upload", "final_bp", "/api"),
