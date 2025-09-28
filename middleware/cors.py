@@ -2,10 +2,12 @@
 from flask import request, current_app
 
 def cors_middleware(app):
-    allowed = [o.strip() for o in current_app.config.get("ALLOWED_ORIGINS", []) if o.strip()]
-
     @app.after_request
     def _cors(resp):
+        # Get allowed origins from config at request time (not initialization time)
+        allowed_origins = current_app.config.get("ALLOWED_ORIGINS", ["*"])
+        allowed = [o.strip() for o in allowed_origins if o.strip()] if allowed_origins else ["*"]
+        
         origin = request.headers.get("Origin")
         if not origin:
             return resp
