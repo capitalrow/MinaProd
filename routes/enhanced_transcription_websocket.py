@@ -14,8 +14,10 @@ import asyncio
 import json
 from datetime import datetime
 from typing import Dict, Any, Optional, List
+from queue import Queue, Empty
+from threading import Event
 
-from flask import request
+from flask import request as flask_request
 from flask_socketio import emit, disconnect, join_room, leave_room
 from typing import Dict
 
@@ -28,8 +30,8 @@ from services.session_buffer_manager import buffer_registry, BufferConfig, Sessi
 logger = logging.getLogger(__name__)
 
 def _background_processor(session_id: str, buffer_manager: SessionBufferManager):
-    """Enhanced background worker for processing buffered audio chunks"""
-    logger.info(f"🔧 Started enhanced background processor for session {session_id}")
+    """Enhanced background worker with event-driven processing and dynamic backoff"""
+    logger.info(f"🔧 Started optimized background processor for session {session_id}")
     
     processing_state = {
         'consecutive_failures': 0,
@@ -38,12 +40,27 @@ def _background_processor(session_id: str, buffer_manager: SessionBufferManager)
         'quality_score': 1.0,
         'speech_segments': [],
         'interim_transcript': '',
-        'pending_results': []
+        'pending_results': [],
+        'idle_time': 0,
+        'last_activity': time.time()
     }
+    
+    # Event-driven processing setup
+    processing_queue = Queue(maxsize=50)
+    flush_event = Event()
+    
+    # Dynamic backoff configuration
+    min_sleep = 0.5  # Minimum 500ms instead of 50ms
+    max_sleep = 5.0  # Maximum 5 seconds
+    idle_threshold = 10.0  # Consider idle after 10 seconds
     
     while buffer_manager.is_active:
         try:
             current_time = time.time()
+            
+            # Calculate idle time for dynamic backoff
+            time_since_activity = current_time - processing_state['last_activity']
+            is_idle = time_since_activity > idle_threshold
             
             # Adaptive quality monitoring
             if current_time - processing_state['last_success_time'] > 10:
@@ -51,7 +68,11 @@ def _background_processor(session_id: str, buffer_manager: SessionBufferManager)
                 processing_state['adaptive_flush_interval'] = min(10, processing_state['adaptive_flush_interval'] * 1.2)
             
             # Check if we should flush with adaptive timing
-            if buffer_manager.should_flush() or _should_adaptive_flush(buffer_manager, processing_state):
+            should_process = buffer_manager.should_flush() or _should_adaptive_flush(buffer_manager, processing_state)
+            
+            if should_process:
+                processing_state['last_activity'] = current_time
+                
                 # Assemble enhanced payload
                 payload_bytes, format_type, metadata = buffer_manager.assemble_flush_payload()
                 
@@ -72,20 +93,38 @@ def _background_processor(session_id: str, buffer_manager: SessionBufferManager)
                     else:
                         processing_state['consecutive_failures'] += 1
                         # Exponential backoff on failures
-                        time.sleep(min(5, 0.5 * (2 ** processing_state['consecutive_failures'])))
+                        failure_backoff = min(5, 0.5 * (2 ** processing_state['consecutive_failures']))
+                        time.sleep(failure_backoff)
             
-            # Emit real-time processing metrics
-            if current_time % 5 < 0.1:  # Every 5 seconds
+            # Emit real-time processing metrics (less frequently)
+            if current_time % 10 < 0.5:  # Every 10 seconds instead of 5
                 _emit_processing_metrics(session_id, buffer_manager, processing_state)
             
-            # Adaptive sleep based on processing load
-            sleep_time = 0.05 if processing_state['quality_score'] > 0.8 else 0.1
+            # Dynamic backoff based on activity and quality
+            if is_idle:
+                # Long sleep when idle to reduce CPU usage
+                sleep_time = max_sleep
+                processing_state['idle_time'] += 1
+            elif processing_state['consecutive_failures'] > 0:
+                # Moderate sleep when having issues
+                sleep_time = min_sleep * (1 + processing_state['consecutive_failures'])
+            elif processing_state['quality_score'] > 0.8:
+                # Normal sleep for good quality
+                sleep_time = min_sleep
+            else:
+                # Slightly longer sleep for degraded quality
+                sleep_time = min_sleep * 1.5
+            
+            # Cap the sleep time
+            sleep_time = min(max_sleep, max(min_sleep, sleep_time))
             time.sleep(sleep_time)
             
         except Exception as e:
             logger.error(f"❌ Enhanced processor error for session {session_id}: {e}")
             processing_state['consecutive_failures'] += 1
-            time.sleep(min(3, processing_state['consecutive_failures']))
+            # Use dynamic backoff even for exceptions
+            error_sleep = min(max_sleep, max(min_sleep, processing_state['consecutive_failures']))
+            time.sleep(error_sleep)
     
     logger.info(f"🔚 Enhanced background processor ended for session {session_id}")
 
@@ -277,7 +316,7 @@ def _process_enhanced_transcription_result(session_id: str, result: Dict, proces
         
         # Emit enhanced result to client
         socketio.emit('enhanced_transcription_result', enhanced_result, 
-                     room=session_id, namespace='/transcription')
+                     to=session_id, namespace='/transcription')
         
         # Also emit compatible result for existing frontend
         socketio.emit('transcription_result', {
@@ -286,7 +325,7 @@ def _process_enhanced_transcription_result(session_id: str, result: Dict, proces
             'confidence': confidence,
             'segment_id': enhanced_result['segment_id'],
             'latency_ms': enhanced_result['latency_ms']
-        }, room=session_id, namespace='/transcription')
+        }, to=session_id, namespace='/transcription')
         
         logger.info(f"✅ Enhanced result delivered for session {session_id}: '{text[:50]}...'")
         
@@ -316,7 +355,7 @@ def _emit_processing_metrics(session_id: str, buffer_manager: SessionBufferManag
         }
         
         socketio.emit('enhanced_processing_metrics', enhanced_metrics, 
-                     room=session_id, namespace='/transcription')
+                     to=session_id, namespace='/transcription')
                      
     except Exception as e:
         logger.error(f"❌ Metrics emission failed for session {session_id}: {e}")
@@ -356,7 +395,7 @@ enhanced_buffer_config = BufferConfig(
 @socketio.on('connect', namespace='/transcription')
 def on_enhanced_connect():
     """Enhanced client connection handler"""
-    client_id = request.sid
+    client_id = socketio.request.sid
     logger.info(f"🔌 Enhanced transcription client connected: {client_id}")
     
     # Send enhanced connection status
@@ -380,7 +419,7 @@ def on_start_enhanced_session(data):
     """Start enhanced transcription session with advanced features"""
     try:
         session_id = str(uuid.uuid4())
-        client_id = request.sid
+        client_id = socketio.request.sid
         
         # Create enhanced buffer manager
         buffer_manager = buffer_registry.get_or_create_session(session_id)
@@ -446,7 +485,7 @@ def on_enhanced_audio_data(data):
         # Find active session for this client
         session_id = None
         for sid, session_info in enhanced_active_sessions.items():
-            if session_info.get('client_sid') == request.sid:
+            if session_info.get('client_sid') == socketio.request.sid:
                 session_id = sid
                 break
         

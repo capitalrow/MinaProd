@@ -51,7 +51,7 @@ class SystemHealthMonitor:
         """Collect comprehensive system health metrics."""
         try:
             # System resource metrics
-            cpu_usage = psutil.cpu_percent(interval=1)
+            cpu_usage = psutil.cpu_percent(interval=None)  # Non-blocking CPU sampling
             memory = psutil.virtual_memory()
             disk = psutil.disk_usage('/')
             
@@ -87,7 +87,19 @@ class SystemHealthMonitor:
             
         except Exception as e:
             logger.error(f"Error collecting system metrics: {e}")
-            return None
+            # Return a fallback metrics object instead of None
+            return SystemHealthMetrics(
+                timestamp=datetime.utcnow().isoformat(),
+                cpu_usage=0.0,
+                memory_usage=0.0,
+                disk_usage=0.0,
+                active_sessions=0,
+                total_transcriptions=0,
+                average_latency=0.0,
+                error_rate=0.0,
+                quality_filter_rate=0.0,
+                user_satisfaction_score=0.0
+            )
     
     def check_health_alerts(self, metrics: SystemHealthMetrics) -> List[str]:
         """Check for health alerts based on current metrics."""

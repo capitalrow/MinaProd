@@ -55,7 +55,7 @@ class PerformanceMonitor:
                 try:
                     # System metrics
                     memory = psutil.virtual_memory()
-                    cpu = psutil.cpu_percent(interval=1)
+                    cpu = psutil.cpu_percent(interval=None)  # Non-blocking CPU sampling
                     
                     self.global_metrics.update({
                         'system_memory_usage': memory.percent,
@@ -185,17 +185,6 @@ class PerformanceMonitor:
         except Exception:
             return confidence
     
-    def record_transcription_result(self, session_id: str, is_final: bool, confidence: float):
-        """Record transcription result metrics."""
-        if session_id in self.metrics:
-            metrics = self.metrics[session_id]
-            metrics.confidence_scores.append(confidence)
-            
-            # Calculate interim to final ratio
-            if is_final:
-                total_results = len(metrics.confidence_scores)
-                # Estimate interim vs final based on typical patterns
-                metrics.interim_to_final_ratio = max(0, (total_results - 1) / total_results) if total_results > 0 else 0
     
     def calculate_wer(self, session_id: str, reference_text: str, hypothesis_text: str) -> float:
         """Calculate Word Error Rate between reference and hypothesis."""
