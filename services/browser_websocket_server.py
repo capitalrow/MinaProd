@@ -244,31 +244,50 @@ class BrowserWebSocketServer:
                 logger.debug(f"⚠️ Audio data format validation failed, attempting conversion anyway")
                 # Don't return None, attempt to process anyway
             
-            # Save audio data to temporary file
-            with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_file:
-                temp_file.write(audio_data)
-                temp_webm_path = temp_file.name
-            
-            # Convert to WAV using ffmpeg directly for better compatibility
-            wav_path = temp_webm_path.replace('.webm', '.wav')
-            
+            # Save audio data to temporary file with proper flushing
+            temp_webm_path = None
             try:
-                # Use ffmpeg to convert WebM to WAV with optimal settings for Whisper
+                with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_file:
+                    temp_file.write(audio_data)
+                    temp_file.flush()  # Ensure data is written to disk
+                    temp_webm_path = temp_file.name
+                    
+                # Small delay to ensure file is completely written
+                import time
+                time.sleep(0.1)
+                
+                # Verify file exists and has content
+                if not os.path.exists(temp_webm_path) or os.path.getsize(temp_webm_path) == 0:
+                    logger.error(f"❌ WebM temp file is empty or missing: {temp_webm_path}")
+                    return None
+                    
+                # Convert to WAV using ffmpeg with improved settings
+                wav_path = temp_webm_path.replace('.webm', '.wav')
+                
+                # Use ffmpeg with better error handling and mobile-friendly settings
                 import subprocess
                 ffmpeg_cmd = [
-                    'ffmpeg', '-i', temp_webm_path,
+                    'ffmpeg', '-y',  # Overwrite output (moved to front)
+                    '-i', temp_webm_path,
+                    '-vn',           # No video 
                     '-ar', '16000',  # 16kHz sample rate
                     '-ac', '1',      # Mono channel
                     '-c:a', 'pcm_s16le',  # 16-bit PCM
-                    '-y',            # Overwrite output
+                    '-f', 'wav',     # Force WAV format
                     wav_path
                 ]
                 
-                result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=10)
+                # Longer timeout for mobile processing
+                result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, timeout=30)
                 
                 if result.returncode != 0:
-                    logger.error(f"❌ FFmpeg conversion failed: {result.stderr}")
-                    return None
+                    logger.error(f"❌ FFmpeg conversion failed (code {result.returncode}): {result.stderr}")
+                    logger.error(f"FFmpeg stdout: {result.stdout}")
+                    logger.error(f"WebM file size: {os.path.getsize(temp_webm_path) if temp_webm_path else 'N/A'} bytes")
+                    
+                    # Try alternative conversion method
+                    logger.warning("🔄 Attempting alternative audio conversion...")
+                    return self._fallback_audio_conversion(audio_data)
                 
                 # Check if WAV file was created and has content
                 if not os.path.exists(wav_path) or os.path.getsize(wav_path) < 1000:
@@ -302,8 +321,46 @@ class BrowserWebSocketServer:
                         except:
                             pass
                             
+            except Exception as conversion_error:
+                logger.error(f"❌ Audio conversion error: {conversion_error}")
+                logger.warning("🔄 Attempting fallback conversion...")
+                return self._fallback_audio_conversion(audio_data)
+                
         except Exception as e:
             logger.error(f"❌ Real transcription error: {e}")
+            return None
+
+    def _fallback_audio_conversion(self, audio_data: bytes):
+        """Fallback audio conversion when FFmpeg fails."""
+        try:
+            logger.info("🔄 Using fallback audio processing pipeline...")
+            
+            # Use the audio processor for conversion
+            from services.audio_processor import AudioProcessor
+            processor = AudioProcessor()
+            
+            # Process through the emergency pipeline
+            wav_data = processor._emergency_wav_conversion(audio_data, 16000, 1)
+            
+            # Set up OpenAI client
+            import os
+            import openai
+            client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+            
+            # Call Whisper API
+            response = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=("audio.wav", wav_data, "audio/wav"),
+                language="en",
+                prompt="Transcribe this speech clearly and accurately.",
+                temperature=0.0
+            )
+            
+            logger.info("✅ Fallback conversion successful")
+            return response.text
+            
+        except Exception as fallback_error:
+            logger.error(f"❌ Fallback conversion failed: {fallback_error}")
             return None
     
     def is_valid_webm(self, audio_data):
