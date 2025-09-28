@@ -68,7 +68,10 @@ def on_start_session(data):
             'started_at': datetime.utcnow(),
             'language': data.get('language', 'en'),
             'enhance_audio': data.get('enhance_audio', True),
-            'buffer_manager': buffer_manager
+            'buffer_manager': buffer_manager,
+            'audio_buffer': bytearray(),
+            'webm_header': None,
+            'last_process_time': 0
         }
         
         # Start background processing worker for this session
