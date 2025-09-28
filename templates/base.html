@@ -5,19 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Mina - Meeting Insights & Action{% endblock %}</title>
     
+    <!-- Performance Optimizations -->
+    <link rel="preconnect" href="https://cdn.replit.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="dns-prefetch" href="//cdn.replit.com">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    
+    <!-- Critical CSS - Preload for performance -->
+    <link rel="preload" href="{{ url_for('static', filename='css/main.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}"></noscript>
+    
     <!-- Bootstrap CSS with Replit Dark Theme -->
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Non-critical CSS - Lazy Load -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <!-- Clean Professional CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/clean.css') }}">
+    <link rel="preload" href="{{ url_for('static', filename='css/clean.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/clean.css') }}"></noscript>
     
-    <!-- Socket.IO Client -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <!-- Defer non-critical JavaScript -->
+    <script>
+      // Optimized font loading
+      if ('fonts' in document) {
+        document.fonts.ready.then(() => {
+          document.documentElement.className += ' fonts-loaded';
+        });
+      }
+    </script>
+    
+    <!-- Socket.IO Client - Defer loading -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js" defer></script>
     
     {% block head %}{% endblock %}
 </head>

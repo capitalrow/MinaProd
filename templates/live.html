@@ -5,14 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mina - Live Recording Studio</title>
     
-    <!-- Core CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <!-- Performance Optimizations -->
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="dns-prefetch" href="//unpkg.com">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
     
-    <!-- External Dependencies -->
-    <script src="https://unpkg.com/feather-icons"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <!-- Critical CSS - Inline most important design tokens -->
+    <style>
+        :root {
+            --mina-breakpoint-xs: 360px; --mina-breakpoint-sm: 768px; --mina-breakpoint-md: 1024px; --mina-breakpoint-lg: 1440px;
+            --mina-primary: #2563eb; --mina-bg-primary: #ffffff; --mina-text-primary: #0f172a;
+        }
+        [data-theme="dark"] { --mina-bg-primary: #0f172a; --mina-text-primary: #f8fafc; }
+        body { font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; }
+    </style>
+    
+    <!-- Core CSS - Load progressively -->
+    <link rel="preload" href="{{ url_for('static', filename='css/design-tokens.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}"></noscript>
+    
+    <link rel="preload" href="{{ url_for('static', filename='css/typography.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}"></noscript>
+    
+    <link rel="preload" href="{{ url_for('static', filename='css/components.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}"></noscript>
+    
+    <!-- External Dependencies - Defer loading -->
+    <script src="https://unpkg.com/feather-icons" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js" defer></script>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
     
