@@ -1,0 +1,367 @@
+{
+  "timestamp": "2025-09-28T20:09:36.830162",
+  "summary": {
+    "total_tests": 42,
+    "passed": 26,
+    "failed": 5,
+    "warnings": 16,
+    "pass_rate": 61.904761904761905
+  },
+  "critical_issues": [],
+  "warnings": [
+    "Endpoint /health/detailed: Not found",
+    "Endpoint /health/ready: Status code: 503",
+    "Endpoint /health/live: Not found",
+    "Endpoint /api/health: Not found",
+    "/healthz status check: Unexpected status: None",
+    "/api/transcribe-health status check: Unexpected status: healthy",
+    "Endpoint /health/api/health: Status code: 503",
+    "Protected route /settings: Status: 308",
+    "GET /api/markers: Not found",
+    "POST /api/transcription/start: Not found",
+    "Connection: module 'websocket' has no attribute 'WebSocketException'",
+    "Element 'transcriptionCanvas': Missing from page",
+    "Connection: Health endpoint returned 404",
+    "Header X-Frame-Options: Missing",
+    "Header X-XSS-Protection: Missing",
+    "Invalid JSON handling: Status: 404"
+  ],
+  "detailed_results": [
+    {
+      "timestamp": "2025-09-28T20:09:34.904314",
+      "category": "Connectivity",
+      "test": "Server reachable",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:34.913074",
+      "category": "Performance",
+      "test": "Response time",
+      "status": "PASS",
+      "details": "8.31ms",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:34.943171",
+      "category": "Health",
+      "test": "Endpoint /health/health",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:34.943286",
+      "category": "Health",
+      "test": "/health/health status check",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:34.951233",
+      "category": "Health",
+      "test": "Endpoint /health/detailed",
+      "status": "WARNING",
+      "details": "Not found",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:34.963731",
+      "category": "Health",
+      "test": "Endpoint /health/ready",
+      "status": "FAIL",
+      "details": "Status code: 503",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:34.970058",
+      "category": "Health",
+      "test": "Endpoint /health/live",
+      "status": "WARNING",
+      "details": "Not found",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:34.974506",
+      "category": "Health",
+      "test": "Endpoint /api/health",
+      "status": "WARNING",
+      "details": "Not found",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:34.980191",
+      "category": "Health",
+      "test": "Endpoint /healthz",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:34.980271",
+      "category": "Health",
+      "test": "/healthz status check",
+      "status": "WARNING",
+      "details": "Unexpected status: None",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:35.003988",
+      "category": "Health",
+      "test": "Endpoint /api/transcribe-health",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:35.004069",
+      "category": "Health",
+      "test": "/api/transcribe-health status check",
+      "status": "WARNING",
+      "details": "Unexpected status: healthy",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:35.110539",
+      "category": "Health",
+      "test": "Endpoint /health/api/health",
+      "status": "FAIL",
+      "details": "Status code: 503",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:35.125071",
+      "category": "Auth",
+      "test": "Login page",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:35.146589",
+      "category": "Auth",
+      "test": "Registration page",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:35.152990",
+      "category": "Auth",
+      "test": "Protected route /dashboard/",
+      "status": "PASS",
+      "details": "Properly protected",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:35.158229",
+      "category": "Auth",
+      "test": "Protected route /settings",
+      "status": "WARNING",
+      "details": "Status: 308",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:35.165562",
+      "category": "API",
+      "test": "GET /api/meetings/recent",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:35.173809",
+      "category": "API",
+      "test": "GET /api/meetings/stats",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:35.182585",
+      "category": "API",
+      "test": "GET /api/tasks/stats",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:35.193620",
+      "category": "API",
+      "test": "GET /api/analytics/dashboard?days=7",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:35.198668",
+      "category": "API",
+      "test": "GET /api/markers",
+      "status": "WARNING",
+      "details": "Not found",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:35.202475",
+      "category": "API",
+      "test": "POST /api/transcription/start",
+      "status": "WARNING",
+      "details": "Not found",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.267472",
+      "category": "API",
+      "test": "GET /api/transcription/health",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.774139",
+      "category": "WebSocket",
+      "test": "Connection",
+      "status": "FAIL",
+      "details": "module 'websocket' has no attribute 'WebSocketException'",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.778841",
+      "category": "Static",
+      "test": "File /static/css/design-tokens.css",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.784138",
+      "category": "Static",
+      "test": "File /static/css/typography.css",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.788176",
+      "category": "Static",
+      "test": "File /static/css/components.css",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.795824",
+      "category": "Static",
+      "test": "File /static/js/socket.io.min.js",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.800795",
+      "category": "Static",
+      "test": "File /static/js/mina-animated-logo.js",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.807582",
+      "category": "Live",
+      "test": "Page accessible",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.808248",
+      "category": "Live",
+      "test": "Element 'transcriptionCanvas'",
+      "status": "FAIL",
+      "details": "Missing from page",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.808360",
+      "category": "Live",
+      "test": "Element 'recordButton'",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.808454",
+      "category": "Live",
+      "test": "Element 'statusChip'",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.808553",
+      "category": "Live",
+      "test": "Element 'socket.io'",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.812676",
+      "category": "Database",
+      "test": "Connection",
+      "status": "FAIL",
+      "details": "Health endpoint returned 404",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.817812",
+      "category": "Security",
+      "test": "Header X-Content-Type-Options",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.817868",
+      "category": "Security",
+      "test": "Header X-Frame-Options",
+      "status": "WARNING",
+      "details": "Missing",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.817921",
+      "category": "Security",
+      "test": "Header X-XSS-Protection",
+      "status": "WARNING",
+      "details": "Missing",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.817970",
+      "category": "Security",
+      "test": "Header Content-Security-Policy",
+      "status": "PASS",
+      "details": "Present: default-src 'self' *.replit.dev *.replit.app; connect-src 'self' https: wss: ws:; script-src 'self' 'unsafe-inline' https://cdn.socket.io; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' blob: data:; media-src 'self' blob:; worker-src 'self' blob:;",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.823417",
+      "category": "Errors",
+      "test": "404 handling",
+      "status": "PASS",
+      "details": "",
+      "severity": "info"
+    },
+    {
+      "timestamp": "2025-09-28T20:09:36.827105",
+      "category": "Errors",
+      "test": "Invalid JSON handling",
+      "status": "WARNING",
+      "details": "Status: 404",
+      "severity": "info"
+    }
+  ]
+}
