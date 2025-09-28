@@ -409,3 +409,220 @@ body {
     padding: var(--mina-space-4);
   }
 }
+
+/* =================================================
+   ENHANCED LOADING STATES SYSTEM
+   ================================================= */
+
+/* Enhanced Button Loading States */
+.btn.loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.btn.loading .btn-text {
+  opacity: 0;
+}
+
+.btn.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1rem;
+  height: 1rem;
+  margin: -0.5rem 0 0 -0.5rem;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: mina-spin 0.8s linear infinite;
+}
+
+/* Page Section Loading Overlay */
+.section-loading {
+  position: relative;
+  min-height: 200px;
+}
+
+.section-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(var(--mina-bg-primary), 0.8);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.section-loading::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2rem;
+  height: 2rem;
+  margin: -1rem 0 0 -1rem;
+  border: 3px solid var(--mina-border-primary);
+  border-top-color: var(--mina-primary);
+  border-radius: 50%;
+  animation: mina-spin 1s linear infinite;
+  z-index: 11;
+}
+
+/* =================================================
+   EMPTY STATES SYSTEM
+   ================================================= */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--mina-space-12) var(--mina-space-6);
+  text-align: center;
+  min-height: 300px;
+}
+
+.empty-state-icon {
+  width: 4rem;
+  height: 4rem;
+  color: var(--mina-text-muted);
+  margin-bottom: var(--mina-space-6);
+  font-size: 3rem;
+}
+
+.empty-state-title {
+  font-size: var(--mina-font-size-xl);
+  font-weight: 600;
+  color: var(--mina-text-primary);
+  margin-bottom: var(--mina-space-2);
+}
+
+.empty-state-description {
+  color: var(--mina-text-secondary);
+  margin-bottom: var(--mina-space-6);
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+.empty-state-action {
+  margin-top: var(--mina-space-4);
+}
+
+/* =================================================
+   TOAST NOTIFICATION SYSTEM
+   ================================================= */
+
+.toast-container {
+  position: fixed;
+  top: var(--mina-space-6);
+  right: var(--mina-space-6);
+  z-index: 9998;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mina-space-4);
+  max-width: 400px;
+}
+
+.toast {
+  background: var(--mina-bg-primary);
+  border: 1px solid var(--mina-border-primary);
+  border-radius: var(--mina-radius-lg);
+  padding: var(--mina-space-4);
+  box-shadow: var(--mina-shadow-xl);
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all var(--mina-transition-base);
+  position: relative;
+}
+
+.toast.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.toast.success {
+  border-left: 4px solid var(--mina-success);
+}
+
+.toast.error {
+  border-left: 4px solid var(--mina-danger);
+}
+
+.toast.warning {
+  border-left: 4px solid var(--mina-warning);
+}
+
+.toast.info {
+  border-left: 4px solid var(--mina-info);
+}
+
+.toast-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--mina-space-2);
+}
+
+.toast-title {
+  font-weight: 600;
+  color: var(--mina-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--mina-space-2);
+  font-size: var(--mina-font-size-sm);
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: var(--mina-text-muted);
+  cursor: pointer;
+  font-size: 1.25rem;
+  padding: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--mina-radius-sm);
+  transition: all var(--mina-transition-fast);
+}
+
+.toast-close:hover {
+  background: var(--mina-bg-hover);
+  color: var(--mina-text-primary);
+}
+
+.toast-body {
+  color: var(--mina-text-secondary);
+  font-size: var(--mina-font-size-sm);
+  line-height: 1.5;
+}
+
+/* =================================================
+   MOTION PREFERENCE RESPECT
+   ================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:hover,
+  .mina-btn:hover,
+  .mina-theme-toggle:hover {
+    transform: none !important;
+  }
+  
+  .section-loading::before,
+  .btn.loading::after {
+    animation: none !important;
+  }
+  
+  .toast {
+    transition: none !important;
+  }
+}
