@@ -47,6 +47,76 @@
 <body>
     <!-- Load Sidebar Navigation Script -->
     <script src="{{ url_for('static', filename='js/sidebar.js') }}" defer></script>
+    
+    <!-- Sidebar Navigation (Slack/Notion Style) -->
+    <nav id="sidebar" class="sidebar collapsed" aria-label="Main navigation">
+        <div class="sidebar-header">
+            <div class="mina-logo" id="mina-logo" role="button" tabindex="0" aria-label="Toggle navigation menu" aria-expanded="false">
+                <i class="fas fa-microphone"></i>
+                <span class="logo-text">Mina</span>
+            </div>
+        </div>
+        
+        <div class="sidebar-content">
+            <ul class="sidebar-menu">
+                <li class="sidebar-item">
+                    <a href="{{ url_for('transcription.index') }}" class="sidebar-link" data-tooltip="Dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span class="sidebar-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ url_for('transcription.live_transcription') }}" class="sidebar-link" data-tooltip="Live Recording">
+                        <i class="fas fa-circle text-danger"></i>
+                        <span class="sidebar-text">Live Recording</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ url_for('dashboard.meetings') }}" class="sidebar-link" data-tooltip="Meetings">
+                        <i class="fas fa-video"></i>
+                        <span class="sidebar-text">Meetings</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ url_for('dashboard.analytics') }}" class="sidebar-link" data-tooltip="Analytics">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="sidebar-text">Analytics</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ url_for('dashboard.tasks') }}" class="sidebar-link" data-tooltip="Tasks">
+                        <i class="fas fa-tasks"></i>
+                        <span class="sidebar-text">Tasks</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ url_for('calendar.calendar_dashboard') }}" class="sidebar-link" data-tooltip="Calendar">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span class="sidebar-text">Calendar</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ url_for('settings.settings') }}" class="sidebar-link" data-tooltip="Settings">
+                        <i class="fas fa-cog"></i>
+                        <span class="sidebar-text">Settings</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ url_for('copilot.chat') }}" class="sidebar-link" data-tooltip="AI Copilot">
+                        <i class="fas fa-robot"></i>
+                        <span class="sidebar-text">AI Copilot</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <i class="fas fa-user-circle"></i>
+                <span class="sidebar-text">User</span>
+            </div>
+        </div>
+    </nav>
     <!-- Skip Link for Accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
     
