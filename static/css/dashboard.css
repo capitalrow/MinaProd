@@ -123,14 +123,15 @@ body::before {
 }
 
 .sidebar-logo-icon {
-  width: 28px;
-  height: 28px;
-  color: var(--mina-text-primary);
-  transition: color 0.2s ease;
+  width: 32px;
+  height: 32px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s ease;
+  cursor: pointer;
 }
 
-.sidebar-logo-icon:hover {
-  color: var(--mina-primary);
+.sidebar-logo-container:hover .sidebar-logo-icon {
+  transform: translateY(-1px) scale(1.08);
+  filter: drop-shadow(0 6px 16px rgba(99, 102, 241, 0.4));
 }
 
 
