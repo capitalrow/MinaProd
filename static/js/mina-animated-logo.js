@@ -1,5 +1,5 @@
-// Mina Animated Logo Component - Ultra-Premium Ultra-Depth 3D Implementation
-// Creates a sophisticated multi-layered 3D squircle with advanced depth perception
+// Mina Animated Logo Component - Enterprise-Grade Ultra-Premium 3D Implementation
+// Creates a sophisticated multi-layered holographic diamond with maximum depth perception
 
 class MinaAnimatedLogo {
     constructor(container, options = {}) {
@@ -7,12 +7,19 @@ class MinaAnimatedLogo {
         this.options = {
             size: 200,
             accent: {
-                name: "Premium Purple",
-                gradient: ["#F3EAFF", "#E4C8FF", "#B985FF", "#8B5CF6", "#6D28D9", "#4C1D95", "#1E1B4B"],
-                neon: "#A855F7",
-                shadow: "#1E1B4B",
+                name: "Enterprise Diamond",
+                gradient: [
+                    "#FFFFFF", "#F8FAFF", "#E8EFFF", "#D1E3FF", "#B8D4FF", 
+                    "#9AC5FF", "#7BB3FF", "#5A9EFF", "#3B82F6", "#2563EB", 
+                    "#1D4ED8", "#1E40AF", "#1E3A8A", "#172554", "#0F172A"
+                ],
+                metallic: ["#F8FAFF", "#E1E8F0", "#C4D1E0", "#8B9DC3", "#4F5B7A", "#2D3748"],
+                neon: "#60A5FA",
+                shadow: "#0F172A",
                 highlight: "#FFFFFF",
-                depth: "#0F0F23"
+                depth: "#020617",
+                glass: "rgba(255, 255, 255, 0.15)",
+                chrome: "#E2E8F0"
             },
             showWordmark: true,
             wordmarkSize: 72,
@@ -69,21 +76,29 @@ class MinaAnimatedLogo {
         // Create ultra-advanced defs for maximum depth effects
         const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
         
-        // Ultra-depth background gradient with enhanced layering
+        // Enterprise holographic diamond gradient with ultra-premium layering
         const bgGradient = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
-        bgGradient.setAttribute('id', `squircleGradient_${Math.random().toString(36).substr(2, 9)}`);
-        bgGradient.setAttribute('cx', '38%');
-        bgGradient.setAttribute('cy', '22%');
-        bgGradient.setAttribute('r', '90%');
+        bgGradient.setAttribute('id', `diamondGradient_${Math.random().toString(36).substr(2, 9)}`);
+        bgGradient.setAttribute('cx', '30%');
+        bgGradient.setAttribute('cy', '20%');
+        bgGradient.setAttribute('r', '95%');
         
         const bgStops = [
             { offset: '0%', color: this.options.accent.gradient[0], opacity: '1' },
-            { offset: '15%', color: this.options.accent.gradient[1], opacity: '0.98' },
-            { offset: '35%', color: this.options.accent.gradient[2], opacity: '1' },
-            { offset: '55%', color: this.options.accent.gradient[3], opacity: '1' },
-            { offset: '75%', color: this.options.accent.gradient[4], opacity: '1' },
-            { offset: '90%', color: this.options.accent.gradient[5], opacity: '1' },
-            { offset: '100%', color: this.options.accent.gradient[6], opacity: '1' }
+            { offset: '8%', color: this.options.accent.gradient[1], opacity: '0.95' },
+            { offset: '16%', color: this.options.accent.gradient[2], opacity: '0.98' },
+            { offset: '25%', color: this.options.accent.gradient[3], opacity: '1' },
+            { offset: '35%', color: this.options.accent.gradient[4], opacity: '1' },
+            { offset: '45%', color: this.options.accent.gradient[5], opacity: '1' },
+            { offset: '55%', color: this.options.accent.gradient[6], opacity: '1' },
+            { offset: '65%', color: this.options.accent.gradient[7], opacity: '1' },
+            { offset: '72%', color: this.options.accent.gradient[8], opacity: '1' },
+            { offset: '79%', color: this.options.accent.gradient[9], opacity: '1' },
+            { offset: '86%', color: this.options.accent.gradient[10], opacity: '1' },
+            { offset: '91%', color: this.options.accent.gradient[11], opacity: '1' },
+            { offset: '95%', color: this.options.accent.gradient[12], opacity: '1' },
+            { offset: '98%', color: this.options.accent.gradient[13], opacity: '1' },
+            { offset: '100%', color: this.options.accent.gradient[14], opacity: '1' }
         ];
         
         bgStops.forEach(stop => {
@@ -94,21 +109,24 @@ class MinaAnimatedLogo {
             bgGradient.appendChild(stopEl);
         });
         
-        // Enhanced 3D beveled bar gradient
+        // Ultra-premium metallic chrome bar gradient with holographic effects
         const barGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-        barGradient.setAttribute('id', `barGradient_${Math.random().toString(36).substr(2, 9)}`);
-        barGradient.setAttribute('x1', '12%');
-        barGradient.setAttribute('y1', '8%');
-        barGradient.setAttribute('x2', '88%');
-        barGradient.setAttribute('y2', '92%');
+        barGradient.setAttribute('id', `chromeBarGradient_${Math.random().toString(36).substr(2, 9)}`);
+        barGradient.setAttribute('x1', '5%');
+        barGradient.setAttribute('y1', '3%');
+        barGradient.setAttribute('x2', '95%');
+        barGradient.setAttribute('y2', '97%');
         
         const barStops = [
-            { offset: '0%', color: this.options.accent.highlight, opacity: '0.5' },
-            { offset: '15%', color: this.options.accent.gradient[1], opacity: '0.85' },
-            { offset: '35%', color: this.options.accent.gradient[2], opacity: '1' },
-            { offset: '60%', color: this.options.accent.gradient[3], opacity: '1' },
-            { offset: '85%', color: this.options.accent.gradient[4], opacity: '1' },
-            { offset: '100%', color: this.options.accent.depth, opacity: '0.95' }
+            { offset: '0%', color: this.options.accent.highlight, opacity: '0.85' },
+            { offset: '12%', color: this.options.accent.metallic[0], opacity: '0.9' },
+            { offset: '25%', color: this.options.accent.metallic[1], opacity: '1' },
+            { offset: '38%', color: this.options.accent.gradient[8], opacity: '1' },
+            { offset: '50%', color: this.options.accent.gradient[9], opacity: '1' },
+            { offset: '62%', color: this.options.accent.gradient[10], opacity: '1' },
+            { offset: '75%', color: this.options.accent.metallic[4], opacity: '1' },
+            { offset: '88%', color: this.options.accent.metallic[5], opacity: '1' },
+            { offset: '100%', color: this.options.accent.depth, opacity: '0.98' }
         ];
         
         barStops.forEach(stop => {
@@ -287,89 +305,89 @@ class MinaAnimatedLogo {
         bevelFilter.appendChild(feColorMatrix5);
         bevelFilter.appendChild(bevelMerge);
         
-        // Ultra-Premium Atmospheric Glow Filter
-        const atmosphericGlowFilter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
-        atmosphericGlowFilter.setAttribute('id', `atmosphericGlow_${Math.random().toString(36).substr(2, 9)}`);
-        atmosphericGlowFilter.setAttribute('x', '-200%');
-        atmosphericGlowFilter.setAttribute('y', '-200%');
-        atmosphericGlowFilter.setAttribute('width', '500%');
-        atmosphericGlowFilter.setAttribute('height', '500%');
+        // Enterprise Holographic Aura Filter with Premium Light Dispersion
+        const holographicAuraFilter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+        holographicAuraFilter.setAttribute('id', `holographicAura_${Math.random().toString(36).substr(2, 9)}`);
+        holographicAuraFilter.setAttribute('x', '-250%');
+        holographicAuraFilter.setAttribute('y', '-250%');
+        holographicAuraFilter.setAttribute('width', '600%');
+        holographicAuraFilter.setAttribute('height', '600%');
         
-        // Outer atmospheric glow
+        // Outer holographic aura - diamond light dispersion
         const feGlow1 = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
-        feGlow1.setAttribute('stdDeviation', '16');
-        feGlow1.setAttribute('result', 'atmosphericGlow');
+        feGlow1.setAttribute('stdDeviation', '20');
+        feGlow1.setAttribute('result', 'holographicAura');
         
         const feColorMatrix6 = document.createElementNS('http://www.w3.org/2000/svg', 'feColorMatrix');
-        feColorMatrix6.setAttribute('in', 'atmosphericGlow');
+        feColorMatrix6.setAttribute('in', 'holographicAura');
         feColorMatrix6.setAttribute('type', 'matrix');
-        feColorMatrix6.setAttribute('values', '0.8 0 1 0 0.3  0 0.4 1 0 0.15  1 0.3 1 0 0.6  0 0 0 0.25 0');
-        feColorMatrix6.setAttribute('result', 'coloredAtmosphericGlow');
+        feColorMatrix6.setAttribute('values', '0.4 0.6 1 0 0.25  0.2 0.7 1 0 0.35  0.8 0.9 1 0 0.7  0 0 0 0.18 0');
+        feColorMatrix6.setAttribute('result', 'coloredHolographicAura');
         
-        // Mid-range glow
+        // Mid-range diamond glow - premium enterprise effect
         const feGlow2 = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
         feGlow2.setAttribute('in', 'SourceGraphic');
-        feGlow2.setAttribute('stdDeviation', '8');
-        feGlow2.setAttribute('result', 'midGlow');
+        feGlow2.setAttribute('stdDeviation', '12');
+        feGlow2.setAttribute('result', 'diamondGlow');
         
         const feColorMatrix7 = document.createElementNS('http://www.w3.org/2000/svg', 'feColorMatrix');
-        feColorMatrix7.setAttribute('in', 'midGlow');
+        feColorMatrix7.setAttribute('in', 'diamondGlow');
         feColorMatrix7.setAttribute('type', 'matrix');
-        feColorMatrix7.setAttribute('values', '0.9 0 1 0 0.25  0 0.5 1 0 0.12  1 0.4 1 0 0.55  0 0 0 0.35 0');
-        feColorMatrix7.setAttribute('result', 'coloredMidGlow');
+        feColorMatrix7.setAttribute('values', '0.3 0.8 1 0 0.3  0.1 0.6 1 0 0.4  0.7 0.85 1 0 0.8  0 0 0 0.25 0');
+        feColorMatrix7.setAttribute('result', 'coloredDiamondGlow');
         
-        // Close range glow
+        // Close range crystalline glow - ultra-premium effect
         const feGlow3 = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
         feGlow3.setAttribute('in', 'SourceGraphic');
-        feGlow3.setAttribute('stdDeviation', '4');
-        feGlow3.setAttribute('result', 'closeGlow');
+        feGlow3.setAttribute('stdDeviation', '6');
+        feGlow3.setAttribute('result', 'crystallineGlow');
         
         const feColorMatrix8 = document.createElementNS('http://www.w3.org/2000/svg', 'feColorMatrix');
-        feColorMatrix8.setAttribute('in', 'closeGlow');
+        feColorMatrix8.setAttribute('in', 'crystallineGlow');
         feColorMatrix8.setAttribute('type', 'matrix');
-        feColorMatrix8.setAttribute('values', '1 0 1 0 0.2  0 0.6 1 0 0.1  1 0.5 1 0 0.5  0 0 0 0.45 0');
-        feColorMatrix8.setAttribute('result', 'coloredCloseGlow');
+        feColorMatrix8.setAttribute('values', '0.2 0.9 1 0 0.35  0.05 0.5 1 0 0.45  0.6 0.8 1 0 0.85  0 0 0 0.35 0');
+        feColorMatrix8.setAttribute('result', 'coloredCrystallineGlow');
         
-        // Merge all glows
-        const glowMerge = document.createElementNS('http://www.w3.org/2000/svg', 'feMerge');
-        const glowMergeNode1 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
-        glowMergeNode1.setAttribute('in', 'coloredAtmosphericGlow');
-        const glowMergeNode2 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
-        glowMergeNode2.setAttribute('in', 'coloredMidGlow');
-        const glowMergeNode3 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
-        glowMergeNode3.setAttribute('in', 'coloredCloseGlow');
-        const glowMergeNode4 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
-        glowMergeNode4.setAttribute('in', 'SourceGraphic');
+        // Merge all holographic effects
+        const holographicMerge = document.createElementNS('http://www.w3.org/2000/svg', 'feMerge');
+        const holographicMergeNode1 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+        holographicMergeNode1.setAttribute('in', 'coloredHolographicAura');
+        const holographicMergeNode2 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+        holographicMergeNode2.setAttribute('in', 'coloredDiamondGlow');
+        const holographicMergeNode3 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+        holographicMergeNode3.setAttribute('in', 'coloredCrystallineGlow');
+        const holographicMergeNode4 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+        holographicMergeNode4.setAttribute('in', 'SourceGraphic');
         
-        glowMerge.appendChild(glowMergeNode1);
-        glowMerge.appendChild(glowMergeNode2);
-        glowMerge.appendChild(glowMergeNode3);
-        glowMerge.appendChild(glowMergeNode4);
+        holographicMerge.appendChild(holographicMergeNode1);
+        holographicMerge.appendChild(holographicMergeNode2);
+        holographicMerge.appendChild(holographicMergeNode3);
+        holographicMerge.appendChild(holographicMergeNode4);
         
-        atmosphericGlowFilter.appendChild(feGlow1);
-        atmosphericGlowFilter.appendChild(feColorMatrix6);
-        atmosphericGlowFilter.appendChild(feGlow2);
-        atmosphericGlowFilter.appendChild(feColorMatrix7);
-        atmosphericGlowFilter.appendChild(feGlow3);
-        atmosphericGlowFilter.appendChild(feColorMatrix8);
-        atmosphericGlowFilter.appendChild(glowMerge);
+        holographicAuraFilter.appendChild(feGlow1);
+        holographicAuraFilter.appendChild(feColorMatrix6);
+        holographicAuraFilter.appendChild(feGlow2);
+        holographicAuraFilter.appendChild(feColorMatrix7);
+        holographicAuraFilter.appendChild(feGlow3);
+        holographicAuraFilter.appendChild(feColorMatrix8);
+        holographicAuraFilter.appendChild(holographicMerge);
         
         defs.appendChild(bgGradient);
         defs.appendChild(barGradient);
         defs.appendChild(deepShadowFilter);
         defs.appendChild(bevelFilter);
-        defs.appendChild(atmosphericGlowFilter);
+        defs.appendChild(holographicAuraFilter);
         svg.appendChild(defs);
         
-        // Create ultra-depth squircle with layered effects
-        const squirclePath = this.createUltraSquirclePath(size);
-        const squircle = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        squircle.setAttribute('d', squirclePath);
-        squircle.setAttribute('fill', `url(#${bgGradient.getAttribute('id')})`);
-        squircle.setAttribute('filter', `url(#${deepShadowFilter.getAttribute('id')}) url(#${atmosphericGlowFilter.getAttribute('id')})`);
-        squircle.setAttribute('stroke', 'rgba(255, 255, 255, 0.12)');
-        squircle.setAttribute('stroke-width', '0.6');
-        svg.appendChild(squircle);
+        // Create enterprise holographic diamond with ultra-premium layered effects
+        const diamondPath = this.createUltraSquirclePath(size);
+        const diamond = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        diamond.setAttribute('d', diamondPath);
+        diamond.setAttribute('fill', `url(#${bgGradient.getAttribute('id')})`);
+        diamond.setAttribute('filter', `url(#${deepShadowFilter.getAttribute('id')}) url(#${holographicAuraFilter.getAttribute('id')})`);
+        diamond.setAttribute('stroke', 'rgba(255, 255, 255, 0.2)');
+        diamond.setAttribute('stroke-width', '0.8');
+        svg.appendChild(diamond);
         
         // Create microphone symbol group with enhanced depth positioning
         const micGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
