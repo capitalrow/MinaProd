@@ -322,12 +322,13 @@
 
       const socket = io(window.location.origin, {
         path: '/socket.io',
-        transports: ['polling'],
-        upgrade: false,
+        transports: ['websocket', 'polling'],
         reconnection: true,
-        reconnectionAttempts: this.maxReconnectAttempts,
-        reconnectionDelay: this.reconnectDelay,
-        timeout: 10000,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
+        upgrade: true
       });
 
       this.setupEventHandlers(socket);

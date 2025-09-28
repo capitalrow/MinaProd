@@ -108,9 +108,14 @@ class EnhancedTranscriptionClient {
     _initializeSocket() {
         try {
             this.state.socket = io(this.config.socketNamespace, {
-                transports: ['polling', 'websocket'],
-                upgrade: true,
-                timeout: 20000
+                path: '/socket.io',
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionAttempts: Infinity,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+                timeout: 20000,
+                upgrade: true
             });
 
             // Enhanced connection events
