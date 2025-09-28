@@ -29,6 +29,26 @@ class ChunkPriority(Enum):
     NORMAL = 2
     HIGH = 3
     CRITICAL = 4
+    
+    def __lt__(self, other):
+        if isinstance(other, ChunkPriority):
+            return self.value < other.value
+        return NotImplemented
+    
+    def __le__(self, other):
+        if isinstance(other, ChunkPriority):
+            return self.value <= other.value
+        return NotImplemented
+    
+    def __gt__(self, other):
+        if isinstance(other, ChunkPriority):
+            return self.value > other.value
+        return NotImplemented
+    
+    def __ge__(self, other):
+        if isinstance(other, ChunkPriority):
+            return self.value >= other.value
+        return NotImplemented
 
 class ChunkState(Enum):
     """Chunk processing states"""
@@ -78,7 +98,7 @@ class IntelligentChunk:
     """Enhanced audio chunk with intelligence"""
     id: str
     session_id: str
-    data: Union[bytes, np.ndarray]
+    data: Union[bytes, np.ndarray, Dict[str, Any]]
     timestamp: float
     sequence_number: int
     chunk_type: str = "audio"  # audio, text, metadata
@@ -142,7 +162,7 @@ class IntelligentChunk:
     
     def decompress_data(self) -> bool:
         """Decompress chunk data"""
-        if not isinstance(self.data, dict) or 'compressed' not in self.data:
+        if not (isinstance(self.data, dict) and 'compressed' in self.data):
             return True  # Already decompressed
         
         try:
@@ -183,7 +203,7 @@ class IntelligentChunk:
         return (
             self.state == ChunkState.QUEUED and
             self.processing_attempts < self.max_attempts and
-            all(dep in self.metadata.get('resolved_dependencies', []) for dep in self.dependencies)
+            all(dep in (self.metadata.get('resolved_dependencies', []) or []) for dep in self.dependencies)
         )
     
     def to_dict(self) -> Dict[str, Any]:
@@ -424,8 +444,13 @@ class ChunkMerger:
         merged_id = f"merged_{uuid.uuid4().hex[:8]}"
         base_chunk = sorted_chunks[0]
         
-        # Merge data
-        merged_data = self._concatenate_data([c.data for c in sorted_chunks])
+        # Merge data - ensure we decompress compressed chunks first
+        chunk_data = []
+        for c in sorted_chunks:
+            if isinstance(c.data, dict) and 'compressed' in c.data:
+                c.decompress_data()
+            chunk_data.append(c.data)
+        merged_data = self._concatenate_data(chunk_data)
         
         # Calculate merged metrics
         merged_metrics = self._merge_metrics([c.metrics for c in sorted_chunks])
@@ -474,7 +499,7 @@ class ChunkMerger:
         # Could be enhanced with content similarity analysis
         return self._merge_temporal(chunks)
     
-    def _concatenate_data(self, data_list: List[Union[bytes, np.ndarray]]) -> Union[bytes, np.ndarray]:
+    def _concatenate_data(self, data_list: List[Union[bytes, np.ndarray, Dict[str, Any]]]) -> Union[bytes, np.ndarray]:
         """Concatenate chunk data"""
         if not data_list:
             return b''
@@ -658,7 +683,7 @@ class IntelligentChunkManager:
         while True:
             try:
                 if not self.processing_queue:
-                    time.sleep(0.1)
+                    time.sleep(1.0)  # Increased from 0.1s to 1.0s for CPU optimization
                     continue
                 
                 with self.lock:

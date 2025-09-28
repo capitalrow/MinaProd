@@ -154,7 +154,7 @@ class VADProcessor:
         self.vad = None
         self.speech_frames = deque(maxlen=50)  # Last 50 frame decisions
         
-        if config.enable_vad and WEBRTC_VAD_AVAILABLE:
+        if config.enable_vad and WEBRTC_VAD_AVAILABLE and webrtcvad is not None:
             try:
                 self.vad = webrtcvad.Vad(config.vad_mode)
             except Exception as e:

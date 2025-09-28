@@ -26,7 +26,7 @@ class ProductionMonitor:
     def collect_system_metrics(self) -> Dict[str, Any]:
         """Collect system performance metrics."""
         try:
-            cpu_percent = psutil.cpu_percent(interval=1)
+            cpu_percent = psutil.cpu_percent(interval=None)  # Non-blocking CPU sampling
             memory = psutil.virtual_memory()
             disk = psutil.disk_usage('/')
             

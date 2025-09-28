@@ -12,6 +12,7 @@ from services.analytics_service import analytics_service
 from datetime import datetime
 import asyncio
 import json
+from typing import Optional
 
 
 api_meetings_bp = Blueprint('api_meetings', __name__, url_prefix='/api/meetings')
@@ -37,11 +38,18 @@ def list_meetings():
         if search_query:
             query = query.filter(Meeting.title.contains(search_query))
         
-        # Paginate results
-        meetings = db.paginate(
-            query.order_by(Meeting.created_at.desc()),
-            page=page, per_page=per_page, error_out=False
-        )
+        # Paginate results (Flask-SQLAlchemy 3.x compatible)
+        from sqlalchemy import select
+        stmt = select(Meeting).where(Meeting.workspace_id == current_user.workspace_id)
+        
+        # Apply filters to statement
+        if status_filter:
+            stmt = stmt.where(Meeting.status == status_filter)
+        if search_query:
+            stmt = stmt.where(Meeting.title.contains(search_query))
+        
+        stmt = stmt.order_by(Meeting.created_at.desc())
+        meetings = db.paginate(stmt, page=page, per_page=per_page, error_out=False)
         
         return jsonify({
             'success': True,
@@ -110,8 +118,8 @@ def create_meeting():
             description=data.get('description'),
             workspace_id=current_user.workspace_id,
             status='scheduled',
-            scheduled_start=datetime.fromisoformat(data['scheduled_start']) if data.get('scheduled_start') else None,
-            scheduled_end=datetime.fromisoformat(data['scheduled_end']) if data.get('scheduled_end') else None,
+            scheduled_start=_parse_datetime(data.get('scheduled_start')),
+            scheduled_end=_parse_datetime(data.get('scheduled_end')),
             agenda=data.get('agenda', {}),
             meeting_type=data.get('meeting_type', 'internal'),
             organizer_id=current_user.id
@@ -154,9 +162,9 @@ def update_meeting(meeting_id):
         if 'status' in data:
             meeting.status = data['status']
         if 'scheduled_start' in data:
-            meeting.scheduled_start = datetime.fromisoformat(data['scheduled_start'])
+            meeting.scheduled_start = _parse_datetime(data['scheduled_start'])
         if 'scheduled_end' in data:
-            meeting.scheduled_end = datetime.fromisoformat(data['scheduled_end'])
+            meeting.scheduled_end = _parse_datetime(data['scheduled_end'])
         if 'agenda' in data:
             meeting.agenda = data['agenda']
         if 'meeting_type' in data:
@@ -472,6 +480,16 @@ def get_meeting_stats():
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+def _parse_datetime(date_str: Optional[str]) -> Optional[datetime]:
+    """Safely parse ISO datetime string."""
+    if not date_str:
+        return None
+    try:
+        return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+    except (ValueError, AttributeError):
+        return None
 
 
 async def process_meeting_async(meeting_id: int):

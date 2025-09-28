@@ -51,9 +51,13 @@ class HealthMonitor:
         self.monitoring_active = False
         self.monitor_thread = None
         
+        # CPU sampling optimization - rolling average without blocking
+        self.cpu_samples = deque(maxlen=10)  # Keep last 10 samples for rolling average
+        self.last_cpu_sample_time = 0
+        
         # Thresholds for health checks
         self.thresholds = {
-            'cpu_usage': {'warning': 70.0, 'critical': 90.0},
+            'cpu_usage': {'warning': 80.0, 'critical': 90.0},
             'memory_usage': {'warning': 80.0, 'critical': 95.0},
             'disk_usage': {'warning': 85.0, 'critical': 95.0},
             'api_response_time': {'warning': 5000.0, 'critical': 10000.0},  # milliseconds
@@ -105,9 +109,10 @@ class HealthMonitor:
         current_time = time.time()
         
         try:
-            # CPU usage
-            cpu_usage = psutil.cpu_percent(interval=1)
-            self.record_metric('cpu_usage', cpu_usage, current_time)
+            # CPU usage - non-blocking with rolling average
+            cpu_usage = self._get_cpu_usage_optimized(current_time)
+            if cpu_usage is not None:
+                self.record_metric('cpu_usage', cpu_usage, current_time)
             
             # Memory usage
             memory = psutil.virtual_memory()
@@ -121,6 +126,32 @@ class HealthMonitor:
             
         except Exception as e:
             logger.error(f"❌ Error collecting system metrics: {e}")
+    
+    def _get_cpu_usage_optimized(self, current_time: float) -> Optional[float]:
+        """Get CPU usage with non-blocking optimized sampling and rolling average"""
+        # Only sample every 2 seconds to avoid blocking
+        if current_time - self.last_cpu_sample_time < 2.0:
+            # Return rolling average if we have recent samples
+            if self.cpu_samples:
+                return sum(self.cpu_samples) / len(self.cpu_samples)
+            return None
+        
+        try:
+            # Non-blocking CPU sample
+            cpu_sample = psutil.cpu_percent(interval=None)
+            
+            # Only use the sample if it's reasonable (not first call or after pause)
+            if cpu_sample > 0:
+                self.cpu_samples.append(cpu_sample)
+                self.last_cpu_sample_time = current_time
+                
+                # Return rolling average
+                return sum(self.cpu_samples) / len(self.cpu_samples)
+            
+            return None
+        except Exception as e:
+            logger.error(f"❌ Error getting optimized CPU usage: {e}")
+            return None
     
     def record_metric(self, name: str, value: Any, timestamp: Optional[float] = None):
         """Record a metric value"""
