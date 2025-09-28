@@ -22,14 +22,18 @@ def limits_middleware(app):
         ip = request.headers.get("x-forwarded-for", request.remote_addr) or "unknown"
 
         # apply simple per-IP rate limit for all HTTP requests
-        if not _rate_ok(ip, cfg["RATE_LIMIT_PER_IP_MIN"]):
+        rate_limit = cfg.get("RATE_LIMIT_PER_IP_MIN", 120)  # Default 120 req/min
+        if not _rate_ok(ip, rate_limit):
             abort(429)
 
         # body size caps
         cl = request.content_length or 0
         if request.method in ("POST", "PUT", "PATCH"):
             ct = (request.content_type or "").lower()
-            if "application/json" in ct and cl > cfg["MAX_JSON_BODY_BYTES"]:
+            max_json = cfg.get("MAX_JSON_BODY_BYTES", 5 * 1024 * 1024)  # Default 5MB
+            max_form = cfg.get("MAX_FORM_BODY_BYTES", 50 * 1024 * 1024)  # Default 50MB
+            
+            if "application/json" in ct and cl > max_json:
                 abort(413)
-            if "multipart/form-data" in ct and cl > cfg["MAX_FORM_BODY_BYTES"]:
+            if "multipart/form-data" in ct and cl > max_form:
                 abort(413)

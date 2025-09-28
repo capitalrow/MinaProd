@@ -104,22 +104,39 @@ def create_app() -> Flask:
     except Exception:
         app.logger.info("Compression unavailable (flask-compress not installed)")
 
-    # middlewares (guarded imports)
+    # middlewares with proper error handling and logging
     try:
         from middleware.request_context import request_context_middleware  # type: ignore
         request_context_middleware(app)
-    except Exception:
-        pass
+        app.logger.info("✅ Request context middleware enabled")
+    except Exception as e:
+        app.logger.warning(f"⚠️ Request context middleware failed to load: {e}")
+
+    # Set sensible defaults for rate limiting
+    app.config.setdefault("RATE_LIMIT_PER_IP_MIN", 120)  # 120 requests per minute
+    app.config.setdefault("MAX_JSON_BODY_BYTES", 5 * 1024 * 1024)  # 5MB
+    app.config.setdefault("MAX_FORM_BODY_BYTES", 50 * 1024 * 1024)  # 50MB
+    
     try:
         from middleware.limits import limits_middleware  # type: ignore
         limits_middleware(app)
-    except Exception:
-        pass
+        app.logger.info("✅ Rate limiting middleware enabled")
+    except Exception as e:
+        app.logger.warning(f"⚠️ Rate limiting middleware failed to load: {e}")
+
+    # Set CORS defaults - secure for production, permissive for development
+    env = os.environ.get("FLASK_ENV", "development")
+    if env == "production":
+        app.config.setdefault("ALLOWED_ORIGINS", [])  # Require explicit config in production
+    else:
+        app.config.setdefault("ALLOWED_ORIGINS", ["*"])  # Allow all origins for development
+    
     try:
         from middleware.cors import cors_middleware  # type: ignore
         cors_middleware(app)
-    except Exception:
-        pass
+        app.logger.info("✅ CORS middleware enabled")
+    except Exception as e:
+        app.logger.warning(f"⚠️ CORS middleware failed to load: {e}")
 
     # per-request id for tracing
     @app.before_request
