@@ -396,6 +396,55 @@
             background-clip: padding-box, border-box;
         }
         
+        /* Status Chip - Premium Muted Style */
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(107, 114, 128, 0.1);
+            border: 1px solid rgba(107, 114, 128, 0.2);
+            border-radius: 24px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .status-chip.ready {
+            background: rgba(107, 114, 128, 0.1);
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .status-chip.listening {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #FFFFFF;
+        }
+        
+        .status-chip.stopped {
+            background: rgba(107, 114, 128, 0.1);
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .status-chip .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        
+        .status-chip.listening .status-dot {
+            background: #EF4444;
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+        
         .record-button {
             width: 240px;
             height: 240px;
@@ -411,6 +460,63 @@
             overflow: hidden;
             box-shadow: var(--shadow-xl), var(--glow-primary);
             margin-bottom: var(--space-xl);
+        }
+        
+        /* Spotlight Glow for Record Button - Pre-Recording State */
+        .record-button.spotlight {
+            box-shadow: 
+                0 0 40px rgba(14, 165, 233, 0.3),
+                0 0 80px rgba(14, 165, 233, 0.2),
+                0 0 120px rgba(14, 165, 233, 0.1),
+                0 8px 32px rgba(0, 0, 0, 0.2);
+            animation: spotlight-glow 3s ease-in-out infinite;
+        }
+        
+        @keyframes spotlight-glow {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 40px rgba(14, 165, 233, 0.3),
+                    0 0 80px rgba(14, 165, 233, 0.2),
+                    0 0 120px rgba(14, 165, 233, 0.1),
+                    0 8px 32px rgba(0, 0, 0, 0.2);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 60px rgba(14, 165, 233, 0.4),
+                    0 0 100px rgba(14, 165, 233, 0.3),
+                    0 0 140px rgba(14, 165, 233, 0.15),
+                    0 8px 32px rgba(0, 0, 0, 0.25);
+            }
+        }
+        
+        /* First-Run Helper */
+        .first-run-helper {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            opacity: 0;
+            animation: helper-appear 0.5s ease-out forwards;
+        }
+        
+        .first-run-helper.auto-dismiss {
+            animation: helper-appear 0.5s ease-out forwards, helper-dismiss 0.5s ease-out 2.5s forwards;
+        }
+        
+        @keyframes helper-appear {
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        
+        @keyframes helper-dismiss {
+            from { opacity: 1; }
+            to { opacity: 0; transform: translateX(-50%) translateY(-10px); }
         }
         
         .record-button::before {
@@ -1825,23 +1931,80 @@
             visibility: visible !important;
         }
         
-        /* Real-time Interim Line - ULTRA VISIBLE */
+        /* Real-time Interim Line - Premium Grey Italic with Shimmer */
         .interim-line {
             opacity: 1 !important;
             visibility: visible !important;
-            color: #FFFFFF !important;
-            background: rgba(0, 255, 0, 0.1) !important;
-            border-left: 4px solid #00FF00 !important;
-            padding: 12px 16px !important;
-            margin: 8px 0 !important;
-            border-radius: 8px !important;
-            font-weight: 600 !important;
-            font-size: 16px !important;
-            line-height: 1.6 !important;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8) !important;
-            z-index: 100 !important;
-            position: relative !important;
-            display: block !important;
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+            padding: 16px 20px;
+            margin: 12px 0;
+            border-radius: 12px;
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 1.8;
+            position: relative;
+            display: block;
+            transition: all 0.2s ease-out;
+        }
+        
+        /* Shimmer Effect on Last 2 Words */
+        .interim-line .last-words {
+            display: inline;
+            background: linear-gradient(90deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0.6) 100%);
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 2s linear infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Blinking Caret */
+        .interim-line .caret {
+            display: inline;
+            color: rgba(255, 255, 255, 0.8);
+            margin-left: 2px;
+            animation: blink-caret 1s infinite;
+            font-style: normal;
+        }
+        
+        @keyframes blink-caret {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        /* Finalized Transcript Line */
+        .final-segment {
+            color: #FFFFFF;
+            font-style: normal;
+            padding: 16px 20px;
+            margin: 8px 0;
+            border-radius: 12px;
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 1.8;
+            animation: finalize 0.2s ease-out, rise-settle 0.3s ease-out;
+        }
+        
+        @keyframes finalize {
+            from { 
+                color: rgba(255, 255, 255, 0.6);
+                font-style: italic;
+            }
+            to { 
+                color: #FFFFFF;
+                font-style: normal;
+            }
+        }
+        
+        @keyframes rise-settle {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+            100% { transform: translateY(0); }
         }
         
         /* State Classes for Active Recording */
@@ -2054,17 +2217,24 @@
             
             <!-- Record Section -->
             <div class="record-section">
+                <!-- Status Chip -->
+                <div class="status-chip ready" id="statusChip">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Ready</span>
+                </div>
+                
+                <!-- First-Run Helper (shown only once) -->
+                <div class="first-run-helper auto-dismiss" id="firstRunHelper" style="display: none;">
+                    Start when you're ready
+                </div>
+                
                 <div class="recording-controls">
-                    <button class="record-button" id="recordButton" onclick="app.toggleRecording()">
+                    <button class="record-button spotlight" id="recordButton" onclick="app.toggleRecording()">
                         🎙️
                     </button>
                     <button class="stop-button" id="stopButton" onclick="app.stopRecordingFully()" style="display: none;">
                         ⏹️
                     </button>
-                </div>
-                <div class="record-status">
-                    <div class="status-dot" id="statusDot"></div>
-                    <span id="statusText">Ready to record</span>
                 </div>
             </div>
             
@@ -2312,6 +2482,7 @@
                 this.isPaused = false;
                 this.startTime = null;
                 this.socket = null;
+                this.isFirstRun = !localStorage.getItem('hasRecorded');
                 this.mediaRecorder = null;
                 this.audioStream = null;
                 this.audioChunks = [];
@@ -2799,6 +2970,39 @@
             }
             
             async stopRecordingFully() {
+                console.log('🛑 Stopping recording - executing stop transition');
+                
+                // Update status chip to stopped
+                const statusChip = document.getElementById('statusChip');
+                const statusText = document.getElementById('statusText');
+                if (statusChip) {
+                    statusChip.className = 'status-chip stopped';
+                    if (statusText) statusText.textContent = 'Stopped';
+                }
+                
+                // Clear any remaining interim text immediately
+                const interimLine = document.getElementById('interimLine');
+                if (interimLine && interimLine.innerHTML) {
+                    // Finalize any remaining interim text
+                    const remainingText = this.lastInterimText;
+                    if (remainingText) {
+                        // Add as final segment
+                        const finalSegments = document.getElementById('finalSegments');
+                        if (finalSegments) {
+                            const segment = document.createElement('div');
+                            segment.className = 'final-segment';
+                            segment.textContent = this.addPunctuation(remainingText);
+                            finalSegments.appendChild(segment);
+                        }
+                    }
+                    interimLine.innerHTML = '';
+                    interimLine.style.display = 'none';
+                }
+                
+                // Remove recording state classes
+                document.body.classList.remove('ui-state-recording');
+                
+                // Stop media recorder
                 if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
                     this.mediaRecorder.stop();
                 }
@@ -3271,74 +3475,63 @@
             }
             
             updateInterimTranscript(text, confidence, speaker, response) {
-                console.log('🔄 UNIFIED updateInterimTranscript called with:', { text, confidence, speaker, response });
+                console.log('🔄 Premium Interim Transcript Update:', { text, confidence });
                 
                 // CRITICAL: Use unified container as single source of truth
                 const container = document.getElementById('transcriptContainer');
                 const interimLine = document.getElementById('interimLine');
                 
                 if (!container || !interimLine) {
-                    console.error('❌ Required unified containers not found:', {container: !!container, interimLine: !!interimLine});
+                    console.error('❌ Required containers not found');
                     return;
                 }
                 
-                console.log('✅ Unified containers found - implementing architect solution');
-                
-                // Hide empty state immediately when showing content
+                // Hide empty state when showing content
                 const emptyState = document.getElementById('emptyState');
                 if (emptyState && emptyState.style.display !== 'none') {
-                    console.log('🗑️ Hiding empty state for live transcript');
                     emptyState.style.display = 'none';
                 }
                 
-                // CRITICAL: Toggle state classes for CSS visibility control
+                // Update status chip to listening
+                this.updateStatus('Listening', 'listening');
+                
+                // Toggle state classes for visibility
                 document.body.classList.add('ui-state-recording');
                 container.classList.add('has-content', 'has-interim');
                 
-                console.log('✅ State classes applied:', {
-                    body: document.body.classList.contains('ui-state-recording'),
-                    container: container.classList.contains('has-content'),
-                    interim: container.classList.contains('has-interim')
-                });
+                // Process text to add shimmer to last 2 words
+                const words = text.split(' ');
+                let processedText = '';
                 
-                // Create interim content with ULTRA visibility
+                if (words.length > 2) {
+                    const mainWords = words.slice(0, -2).join(' ');
+                    const lastWords = words.slice(-2).join(' ');
+                    processedText = `${mainWords} <span class="last-words">${lastWords}</span>`;
+                } else {
+                    processedText = `<span class="last-words">${text}</span>`;
+                }
+                
+                // Create interim content with premium grey italic style
                 const interimHTML = `
-                    <div style="color: #FFFFFF !important; font-size: 18px !important; font-weight: 700 !important; margin-bottom: 8px !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.8) !important;">
-                        <span style="color: #00FF00 !important; font-size: 14px !important; margin-right: 8px !important; font-weight: 900 !important;">● LIVE TRANSCRIPTION</span>
-                        ${speaker?.name || 'Speaker 1'}
-                    </div>
-                    <div style="color: #FFFFFF !important; font-size: 16px !important; line-height: 1.6 !important; font-weight: 600 !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.9) !important; letter-spacing: 0.5px !important;">
-                        ${text}
-                        <span style="animation: blink 1s infinite; margin-left: 6px; color: #00FF00 !important; font-weight: 900 !important;">▌</span>
-                    </div>
-                    <div style="color: #00BFFF !important; font-size: 13px !important; margin-top: 6px !important; font-weight: 600 !important;">
-                        📊 Confidence: ${Math.round(confidence * 100)}% | 🎤 Real-time
+                    <div class="interim-text">
+                        ${processedText}<span class="caret">▍</span>
                     </div>
                 `;
                 
-                // CRITICAL: Set content in dedicated interim line (don't replace container innerHTML)
+                // Set content in dedicated interim line
                 interimLine.innerHTML = interimHTML;
+                interimLine.style.display = 'block';
                 
                 // Store for seamless final replacement
                 this.lastInterimText = text;
                 this.lastInterimElement = interimLine;
                 
-                // Log positioning for debugging
-                const rect = interimLine.getBoundingClientRect();
-                console.log('📍 Interim line position:', {
-                    x: rect.x, y: rect.y, width: rect.width, height: rect.height,
-                    visible: rect.width > 0 && rect.height > 0,
-                    display: getComputedStyle(interimLine).display,
-                    visibility: getComputedStyle(interimLine).visibility,
-                    opacity: getComputedStyle(interimLine).opacity
-                });
-                
-                // Ensure optimal scroll behavior
+                // Ensure scroll to latest content
                 if (this.autoScroll) {
                     this.scrollToBottomSmooth();
                 }
                 
-                console.log('✅ UNIFIED interim transcript updated with state classes & dedicated line');
+                console.log('✅ Premium interim transcript displayed');
             }
             
             createPremiumInterimText(text, wordTimestamps, confidence) {
