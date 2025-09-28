@@ -56,11 +56,11 @@ class MinaAnimatedLogo {
     
     createMicSymbol(size) {
         const { accent } = this.options;
-        const barW = Math.round(size * 0.18);
-        const barH = Math.round(size * 0.65);
+        const barW = Math.round(size * 0.14);
+        const barH = Math.round(size * 0.45);
         const gap = Math.round(barW * 0.65);
-        const horizH = Math.max(2, Math.round(size * 0.12));
-        const horizW = Math.round(size * 0.85);
+        const horizH = Math.max(2, Math.round(size * 0.08));
+        const horizW = Math.round(size * 0.65);
         
         const micContainer = document.createElement('div');
         micContainer.className = 'mina-mic-symbol';
