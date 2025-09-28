@@ -1,0 +1,1032 @@
+{
+  "timestamp": "2025-09-28T20:21:43.450429",
+  "summary": {
+    "total_tests": 137,
+    "passed": 95,
+    "failed": 1,
+    "warnings": 42,
+    "score": 69.34306569343066
+  },
+  "critical_issues": [],
+  "warnings": [
+    "Homepage - Form labels: 2/2 inputs missing labels",
+    "Homepage - ARIA usage: No ARIA attributes found",
+    "Homepage - Skip navigation: No skip navigation link found",
+    "Homepage - Responsive classes: No responsive classes found",
+    "Homepage - Structured data: No structured data",
+    "Dashboard - ARIA usage: No ARIA attributes found",
+    "Dashboard - Skip navigation: No skip navigation link found",
+    "Dashboard - Navigation: No navigation element",
+    "Dashboard - Responsive classes: No responsive classes found",
+    "Dashboard - Meta description: Missing meta description",
+    "Dashboard - Open Graph: No Open Graph tags",
+    "Dashboard - Canonical URL: No canonical URL",
+    "Dashboard - Structured data: No structured data",
+    "Dashboard - Error handling: No try-catch blocks found",
+    "Live Transcription - Footer: No footer element",
+    "Live Transcription - Meta description: Missing meta description",
+    "Live Transcription - Open Graph: No Open Graph tags",
+    "Live Transcription - Canonical URL: No canonical URL",
+    "Live Transcription - Structured data: No structured data",
+    "Live Transcription - Console logs: 26 console.log statements",
+    "Login - ARIA usage: No ARIA attributes found",
+    "Login - Skip navigation: No skip navigation link found",
+    "Login - Navigation: No navigation element",
+    "Login - Responsive classes: No responsive classes found",
+    "Login - Meta description: Missing meta description",
+    "Login - Open Graph: No Open Graph tags",
+    "Login - Canonical URL: No canonical URL",
+    "Login - Structured data: No structured data",
+    "Login - Error handling: No try-catch blocks found",
+    "Registration - ARIA usage: No ARIA attributes found",
+    "Registration - Skip navigation: No skip navigation link found",
+    "Registration - Navigation: No navigation element",
+    "Registration - Responsive classes: No responsive classes found",
+    "Registration - Meta description: Missing meta description",
+    "Registration - Open Graph: No Open Graph tags",
+    "Registration - Canonical URL: No canonical URL",
+    "Registration - Structured data: No structured data",
+    "Registration - Error handling: No try-catch blocks found",
+    "Live - Transcript area: Component 'transcriptDisplay' not found",
+    "Live - Audio visualizer: Component 'audioVisualizer' not found",
+    "Live - Transcription canvas: Component 'transcriptionCanvas' not found",
+    "Live - Settings panel: Component 'settingsPanel' not found"
+  ],
+  "audit_results": {
+    "accessibility": [
+      {
+        "timestamp": "2025-09-28T20:21:43.198280",
+        "test": "Homepage - HTML lang attribute",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.198411",
+        "test": "Homepage - Page title",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.199308",
+        "test": "Homepage - H1 heading",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.199829",
+        "test": "Homepage - Form labels",
+        "status": "FAIL",
+        "details": "2/2 inputs missing labels",
+        "severity": "high"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.203974",
+        "test": "Homepage - ARIA usage",
+        "status": "WARNING",
+        "details": "No ARIA attributes found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.205783",
+        "test": "Homepage - Text content",
+        "status": "PASS",
+        "details": "Text content present",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.207738",
+        "test": "Homepage - Skip navigation",
+        "status": "WARNING",
+        "details": "No skip navigation link found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.240536",
+        "test": "Dashboard - HTML lang attribute",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.240651",
+        "test": "Dashboard - Page title",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.240974",
+        "test": "Dashboard - H1 heading",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.241491",
+        "test": "Dashboard - Form labels",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.241994",
+        "test": "Dashboard - ARIA usage",
+        "status": "WARNING",
+        "details": "No ARIA attributes found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.242485",
+        "test": "Dashboard - Text content",
+        "status": "PASS",
+        "details": "Text content present",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.242793",
+        "test": "Dashboard - Skip navigation",
+        "status": "WARNING",
+        "details": "No skip navigation link found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.329633",
+        "test": "Live Transcription - HTML lang attribute",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.329765",
+        "test": "Live Transcription - Page title",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.331257",
+        "test": "Live Transcription - H1 heading",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.334222",
+        "test": "Live Transcription - Form labels",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.337108",
+        "test": "Live Transcription - ARIA usage",
+        "status": "PASS",
+        "details": "0 roles, 2 labels",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.342201",
+        "test": "Live Transcription - Text content",
+        "status": "PASS",
+        "details": "Text content present",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.342453",
+        "test": "Live Transcription - Skip navigation",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.374688",
+        "test": "Login - HTML lang attribute",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.374794",
+        "test": "Login - Page title",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.375196",
+        "test": "Login - H1 heading",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.375601",
+        "test": "Login - Form labels",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.375946",
+        "test": "Login - ARIA usage",
+        "status": "WARNING",
+        "details": "No ARIA attributes found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.376446",
+        "test": "Login - Text content",
+        "status": "PASS",
+        "details": "Text content present",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.376800",
+        "test": "Login - Skip navigation",
+        "status": "WARNING",
+        "details": "No skip navigation link found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.387357",
+        "test": "Registration - HTML lang attribute",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.387450",
+        "test": "Registration - Page title",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.387785",
+        "test": "Registration - H1 heading",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.388528",
+        "test": "Registration - Form labels",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.388941",
+        "test": "Registration - ARIA usage",
+        "status": "WARNING",
+        "details": "No ARIA attributes found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.389574",
+        "test": "Registration - Text content",
+        "status": "PASS",
+        "details": "Text content present",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.389930",
+        "test": "Registration - Skip navigation",
+        "status": "WARNING",
+        "details": "No skip navigation link found",
+        "severity": "info"
+      }
+    ],
+    "ui_components": [
+      {
+        "timestamp": "2025-09-28T20:21:43.208000",
+        "test": "Homepage - Navigation",
+        "status": "PASS",
+        "details": "6 links",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.208143",
+        "test": "Homepage - Header",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.208578",
+        "test": "Homepage - Footer",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.209701",
+        "test": "Homepage - Buttons",
+        "status": "PASS",
+        "details": "2 buttons (0 disabled)",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.210137",
+        "test": "Homepage - Forms",
+        "status": "PASS",
+        "details": "2 forms",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.243188",
+        "test": "Dashboard - Navigation",
+        "status": "WARNING",
+        "details": "No navigation element",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.243463",
+        "test": "Dashboard - Header",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.243767",
+        "test": "Dashboard - Footer",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.244064",
+        "test": "Dashboard - Buttons",
+        "status": "PASS",
+        "details": "1 buttons (0 disabled)",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.244271",
+        "test": "Dashboard - Forms",
+        "status": "PASS",
+        "details": "1 forms",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.244721",
+        "test": "Dashboard - Error handling UI",
+        "status": "PASS",
+        "details": "1 error containers",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.342786",
+        "test": "Live Transcription - Navigation",
+        "status": "PASS",
+        "details": "8 links",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.343695",
+        "test": "Live Transcription - Header",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.347394",
+        "test": "Live Transcription - Footer",
+        "status": "WARNING",
+        "details": "No footer element",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.350302",
+        "test": "Live Transcription - Buttons",
+        "status": "PASS",
+        "details": "13 buttons (0 disabled)",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.350646",
+        "test": "Live Transcription - Forms",
+        "status": "PASS",
+        "details": "1 forms",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.354443",
+        "test": "Live Transcription - Modals",
+        "status": "PASS",
+        "details": "5 modals",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.377124",
+        "test": "Login - Navigation",
+        "status": "WARNING",
+        "details": "No navigation element",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.377360",
+        "test": "Login - Header",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.377609",
+        "test": "Login - Footer",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.377914",
+        "test": "Login - Buttons",
+        "status": "PASS",
+        "details": "1 buttons (0 disabled)",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.378007",
+        "test": "Login - Forms",
+        "status": "PASS",
+        "details": "1 forms",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.390360",
+        "test": "Registration - Navigation",
+        "status": "WARNING",
+        "details": "No navigation element",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.390588",
+        "test": "Registration - Header",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.390926",
+        "test": "Registration - Footer",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.391364",
+        "test": "Registration - Buttons",
+        "status": "PASS",
+        "details": "1 buttons (0 disabled)",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.391482",
+        "test": "Registration - Forms",
+        "status": "PASS",
+        "details": "1 forms",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.436462",
+        "test": "Live - Status indicator",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.436906",
+        "test": "Live - Record button",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.438677",
+        "test": "Live - Transcript area",
+        "status": "WARNING",
+        "details": "Component 'transcriptDisplay' not found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.440386",
+        "test": "Live - Audio visualizer",
+        "status": "WARNING",
+        "details": "Component 'audioVisualizer' not found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.442138",
+        "test": "Live - Transcription canvas",
+        "status": "WARNING",
+        "details": "Component 'transcriptionCanvas' not found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.445075",
+        "test": "Live - Settings panel",
+        "status": "WARNING",
+        "details": "Component 'settingsPanel' not found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.446353",
+        "test": "Live - WebSocket initialization",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.446408",
+        "test": "Live - Audio permissions",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      }
+    ],
+    "responsiveness": [
+      {
+        "timestamp": "2025-09-28T20:21:43.213764",
+        "test": "Homepage - Viewport meta",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.215046",
+        "test": "Homepage - Responsive classes",
+        "status": "WARNING",
+        "details": "No responsive classes found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.215657",
+        "test": "Homepage - Media queries",
+        "status": "PASS",
+        "details": "Inline media queries found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.245107",
+        "test": "Dashboard - Viewport meta",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.245527",
+        "test": "Dashboard - Responsive classes",
+        "status": "WARNING",
+        "details": "No responsive classes found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.245665",
+        "test": "Dashboard - Media queries",
+        "status": "PASS",
+        "details": "Inline media queries found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.354646",
+        "test": "Live Transcription - Viewport meta",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.355941",
+        "test": "Live Transcription - Responsive classes",
+        "status": "PASS",
+        "details": "1 responsive elements",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.356218",
+        "test": "Live Transcription - Media queries",
+        "status": "PASS",
+        "details": "Inline media queries found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.379045",
+        "test": "Login - Viewport meta",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.379406",
+        "test": "Login - Responsive classes",
+        "status": "WARNING",
+        "details": "No responsive classes found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.379517",
+        "test": "Login - Media queries",
+        "status": "PASS",
+        "details": "Inline media queries found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.392344",
+        "test": "Registration - Viewport meta",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.392674",
+        "test": "Registration - Responsive classes",
+        "status": "WARNING",
+        "details": "No responsive classes found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.392793",
+        "test": "Registration - Media queries",
+        "status": "PASS",
+        "details": "Inline media queries found",
+        "severity": "info"
+      }
+    ],
+    "performance": [
+      {
+        "timestamp": "2025-09-28T20:21:43.216546",
+        "test": "Homepage - CSS files",
+        "status": "PASS",
+        "details": "1 files",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.216606",
+        "test": "Homepage - JS files",
+        "status": "PASS",
+        "details": "0 files",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.217812",
+        "test": "Homepage - Inline styles",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.217876",
+        "test": "Homepage - Inline scripts",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.246128",
+        "test": "Dashboard - CSS files",
+        "status": "PASS",
+        "details": "3 files",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.246245",
+        "test": "Dashboard - JS files",
+        "status": "PASS",
+        "details": "0 files",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.246618",
+        "test": "Dashboard - Inline styles",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.246807",
+        "test": "Dashboard - Inline scripts",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.357422",
+        "test": "Live Transcription - CSS files",
+        "status": "PASS",
+        "details": "3 files",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.357475",
+        "test": "Live Transcription - JS files",
+        "status": "PASS",
+        "details": "3 files",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.358892",
+        "test": "Live Transcription - Inline styles",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.359621",
+        "test": "Live Transcription - Inline scripts",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.361307",
+        "test": "Live Transcription - Script loading",
+        "status": "PASS",
+        "details": "0 async, 1 defer",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.379732",
+        "test": "Login - CSS files",
+        "status": "PASS",
+        "details": "3 files",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.379770",
+        "test": "Login - JS files",
+        "status": "PASS",
+        "details": "0 files",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.379938",
+        "test": "Login - Inline styles",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.379976",
+        "test": "Login - Inline scripts",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.393178",
+        "test": "Registration - CSS files",
+        "status": "PASS",
+        "details": "3 files",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.393232",
+        "test": "Registration - JS files",
+        "status": "PASS",
+        "details": "0 files",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.393580",
+        "test": "Registration - Inline styles",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.393629",
+        "test": "Registration - Inline scripts",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      }
+    ],
+    "seo": [
+      {
+        "timestamp": "2025-09-28T20:21:43.218930",
+        "test": "Homepage - Meta description",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.219360",
+        "test": "Homepage - Open Graph",
+        "status": "PASS",
+        "details": "5 tags",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.219462",
+        "test": "Homepage - Canonical URL",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.219802",
+        "test": "Homepage - Structured data",
+        "status": "INFO",
+        "details": "No structured data",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.247711",
+        "test": "Dashboard - Meta description",
+        "status": "WARNING",
+        "details": "Missing meta description",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.247944",
+        "test": "Dashboard - Open Graph",
+        "status": "WARNING",
+        "details": "No Open Graph tags",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.248138",
+        "test": "Dashboard - Canonical URL",
+        "status": "WARNING",
+        "details": "No canonical URL",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.248383",
+        "test": "Dashboard - Structured data",
+        "status": "INFO",
+        "details": "No structured data",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.361862",
+        "test": "Live Transcription - Meta description",
+        "status": "WARNING",
+        "details": "Missing meta description",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.362376",
+        "test": "Live Transcription - Open Graph",
+        "status": "WARNING",
+        "details": "No Open Graph tags",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.362879",
+        "test": "Live Transcription - Canonical URL",
+        "status": "WARNING",
+        "details": "No canonical URL",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.364149",
+        "test": "Live Transcription - Structured data",
+        "status": "INFO",
+        "details": "No structured data",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.380381",
+        "test": "Login - Meta description",
+        "status": "WARNING",
+        "details": "Missing meta description",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.380526",
+        "test": "Login - Open Graph",
+        "status": "WARNING",
+        "details": "No Open Graph tags",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.380676",
+        "test": "Login - Canonical URL",
+        "status": "WARNING",
+        "details": "No canonical URL",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.380813",
+        "test": "Login - Structured data",
+        "status": "INFO",
+        "details": "No structured data",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.394148",
+        "test": "Registration - Meta description",
+        "status": "WARNING",
+        "details": "Missing meta description",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.394322",
+        "test": "Registration - Open Graph",
+        "status": "WARNING",
+        "details": "No Open Graph tags",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.396472",
+        "test": "Registration - Canonical URL",
+        "status": "WARNING",
+        "details": "No canonical URL",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.396693",
+        "test": "Registration - Structured data",
+        "status": "INFO",
+        "details": "No structured data",
+        "severity": "info"
+      }
+    ],
+    "navigation": [],
+    "forms": [],
+    "javascript": [
+      {
+        "timestamp": "2025-09-28T20:21:43.220453",
+        "test": "Homepage - Error handling",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.220511",
+        "test": "Homepage - Console logs",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.249036",
+        "test": "Dashboard - Error handling",
+        "status": "WARNING",
+        "details": "No try-catch blocks found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.249119",
+        "test": "Dashboard - Console logs",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.364788",
+        "test": "Live Transcription - Socket.IO",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.365633",
+        "test": "Live Transcription - Error handling",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.365750",
+        "test": "Live Transcription - Console logs",
+        "status": "WARNING",
+        "details": "26 console.log statements",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.381069",
+        "test": "Login - Error handling",
+        "status": "WARNING",
+        "details": "No try-catch blocks found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.381119",
+        "test": "Login - Console logs",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.396960",
+        "test": "Registration - Error handling",
+        "status": "WARNING",
+        "details": "No try-catch blocks found",
+        "severity": "info"
+      },
+      {
+        "timestamp": "2025-09-28T20:21:43.397003",
+        "test": "Registration - Console logs",
+        "status": "PASS",
+        "details": "",
+        "severity": "info"
+      }
+    ],
+    "css": [],
+    "cross_browser": []
+  }
+}
