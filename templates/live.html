@@ -2983,14 +2983,14 @@
                     console.log('✅ Removed empty state with animation');
                 }
                 
+                // FIXED: Move confidenceClass definition outside conditional block
+                const confidenceClass = confidence > 0.8 ? 'high-confidence' : 
+                                      confidence < 0.5 ? 'low-confidence' : '';
+                
                 let interimElement = document.getElementById('interimTranscript');
                 if (!interimElement) {
                     interimElement = document.createElement('div');
                     interimElement.id = 'interimTranscript';
-                    
-                    // Apply confidence-based styling with animations
-                    const confidenceClass = confidence > 0.8 ? 'high-confidence' : 
-                                          confidence < 0.5 ? 'low-confidence' : '';
                     
                     interimElement.className = `transcript-segment interim-text ${confidenceClass}`;
                     
@@ -3000,6 +3000,8 @@
                     console.log('✅ Created new interim element with animations');
                 } else {
                     console.log('✅ Using existing interim element');
+                    // Update class for existing element
+                    interimElement.className = `transcript-segment interim-text ${confidenceClass}`;
                 }
                 
                 interimElement.innerHTML = `
