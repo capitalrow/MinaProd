@@ -5,7 +5,7 @@ REST API endpoints for task management, CRUD operations, and status updates.
 
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
-from models import db, Task, Meeting, User
+from models import db, Task, Meeting, User, Session
 from datetime import datetime, date, timedelta
 from sqlalchemy import func, and_, or_
 
@@ -527,3 +527,134 @@ def get_overdue_tasks():
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@api_tasks_bp.route('/create', methods=['POST'])
+def create_live_task():
+    """Create a task from highlighted text in live transcription (no authentication required for live sessions)."""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data.get('title'):
+            return jsonify({'success': False, 'message': 'Title is required'}), 400
+        
+        if not data.get('session_id'):
+            return jsonify({'success': False, 'message': 'Session ID is required'}), 400
+        
+        # Find or create a session record
+        session_external_id = data['session_id']
+        session = db.session.query(Session).filter_by(external_id=session_external_id).first()
+        
+        if not session:
+            # Create a new session record for this live transcription
+            session = Session(
+                external_id=session_external_id,
+                title=f"Live Transcription - {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                status="active",
+                started_at=datetime.utcnow()
+            )
+            db.session.add(session)
+            db.session.flush()  # Get the session ID
+        
+        # Create or find a meeting record for this session
+        meeting = db.session.query(Meeting).filter_by(session_id=session.id).first()
+        
+        if not meeting:
+            # Create a meeting record linked to this session
+            meeting = Meeting(
+                title=f"Live Meeting - {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                session_id=session.id,
+                status="in_progress",
+                workspace_id=1,  # Default workspace for live sessions
+                created_at=datetime.utcnow()
+            )
+            db.session.add(meeting)
+            db.session.flush()  # Get the meeting ID
+        
+        # Parse due date from natural language if provided
+        due_date = None
+        due_date_text = data.get('due_date_text', '').strip()
+        if due_date_text:
+            due_date = parse_natural_due_date(due_date_text)
+        
+        # Create the task
+        task = Task(
+            title=data['title'].strip(),
+            description=data.get('description', '').strip() or None,
+            meeting_id=meeting.id,
+            priority=data.get('priority', 'medium'),
+            category='live_transcription',
+            due_date=due_date,
+            status='todo',
+            created_by_id=None,  # No user authentication for live sessions
+            extracted_by_ai=False,
+            context_source=data.get('context', ''),  # Store the highlighted text
+            assignee_name=data.get('assignee', '').strip() or None  # Store assignee name as text
+        )
+        
+        db.session.add(task)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Task created successfully',
+            'task': {
+                'id': task.id,
+                'title': task.title,
+                'description': task.description,
+                'priority': task.priority,
+                'status': task.status,
+                'due_date': task.due_date.isoformat() if task.due_date else None,
+                'assignee_name': task.assignee_name,
+                'context_source': task.context_source,
+                'created_at': task.created_at.isoformat()
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+def parse_natural_due_date(due_date_text):
+    """Parse natural language due dates like 'tomorrow', 'next week', 'friday'."""
+    try:
+        text = due_date_text.lower().strip()
+        today = date.today()
+        
+        if text in ['today']:
+            return today
+        elif text in ['tomorrow']:
+            return today + timedelta(days=1)
+        elif text in ['next week']:
+            days_ahead = 7 - today.weekday()
+            return today + timedelta(days=days_ahead)
+        elif text in ['end of week', 'friday']:
+            days_ahead = 4 - today.weekday()  # Friday is day 4
+            if days_ahead < 0:  # If Friday has passed, get next Friday
+                days_ahead += 7
+            return today + timedelta(days=days_ahead)
+        elif text in ['monday']:
+            days_ahead = 0 - today.weekday()
+            if days_ahead <= 0:  # If Monday has passed, get next Monday
+                days_ahead += 7
+            return today + timedelta(days=days_ahead)
+        elif text in ['next month']:
+            if today.month == 12:
+                return date(today.year + 1, 1, today.day)
+            else:
+                return date(today.year, today.month + 1, today.day)
+        
+        # Try to parse as ISO date
+        try:
+            return date.fromisoformat(text)
+        except ValueError:
+            pass
+            
+        # Default to one week from now if we can't parse
+        return today + timedelta(days=7)
+        
+    except Exception:
+        # If all parsing fails, default to one week from now
+        return date.today() + timedelta(days=7)

@@ -442,6 +442,221 @@
             background: var(--primary);
             animation: pulse-glow 2s infinite;
         }
+
+        /* Highlight-to-Task Functionality */
+        .transcript-text {
+            user-select: text;
+            cursor: text;
+            position: relative;
+        }
+
+        .text-selected {
+            background: rgba(0, 200, 150, 0.2);
+            border-radius: var(--radius-sm);
+            transition: background-color 0.2s ease;
+        }
+
+        .selection-tooltip {
+            position: absolute;
+            background: var(--surface-elevated);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: var(--space-sm);
+            box-shadow: var(--shadow-xl);
+            backdrop-filter: blur(16px);
+            z-index: 1000;
+            display: none;
+        }
+
+        .create-task-btn {
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            transition: all var(--transition-base);
+        }
+
+        .create-task-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Task Creation Modal */
+        .task-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .task-modal-content {
+            background: var(--surface-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: var(--space-2xl);
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideUp 0.3s ease;
+        }
+
+        .task-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-xl);
+        }
+
+        .task-modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .close-modal-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: var(--space-xs);
+            border-radius: var(--radius-md);
+            transition: all var(--transition-base);
+        }
+
+        .close-modal-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+        }
+
+        .task-form-group {
+            margin-bottom: var(--space-lg);
+        }
+
+        .task-form-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .task-form-input,
+        .task-form-textarea,
+        .task-form-select {
+            width: 100%;
+            padding: var(--space-md);
+            background: var(--surface-elevated);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: all var(--transition-base);
+            box-sizing: border-box;
+        }
+
+        .task-form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .task-form-input:focus,
+        .task-form-textarea:focus,
+        .task-form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.15);
+        }
+
+        .task-context-preview {
+            background: var(--glass-bg-accent);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: var(--space-md);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            line-height: 1.4;
+        }
+
+        .task-form-actions {
+            display: flex;
+            gap: var(--space-md);
+            justify-content: flex-end;
+            margin-top: var(--space-xl);
+        }
+
+        .task-btn-secondary {
+            background: var(--surface-elevated);
+            color: var(--text-secondary);
+            border: 1px solid var(--glass-border);
+            padding: var(--space-md) var(--space-xl);
+            border-radius: var(--radius-lg);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .task-btn-secondary:hover {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+        }
+
+        .task-btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            padding: var(--space-md) var(--space-xl);
+            border-radius: var(--radius-lg);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .task-btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .task-btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
         
         @keyframes pulse-ring {
             0% { transform: scale(1); opacity: 0.3; }
@@ -1580,6 +1795,93 @@
     <div class="toast" id="toast">
         <span id="toastMessage"></span>
     </div>
+
+    <!-- Selection Tooltip for Highlight-to-Task -->
+    <div class="selection-tooltip" id="selectionTooltip">
+        <button class="create-task-btn" onclick="app.openTaskModal()">
+            <i data-feather="plus-circle"></i>
+            Create Task
+        </button>
+    </div>
+
+    <!-- Task Creation Modal -->
+    <div class="task-modal" id="taskModal">
+        <div class="task-modal-content">
+            <div class="task-modal-header">
+                <h3 class="task-modal-title">Create Task</h3>
+                <button class="close-modal-btn" onclick="app.closeTaskModal()">×</button>
+            </div>
+            
+            <form id="taskForm" onsubmit="app.submitTask(event)">
+                <div class="task-form-group">
+                    <label class="task-form-label">Selected Text</label>
+                    <div class="task-context-preview" id="taskContext">
+                        Selected text will appear here...
+                    </div>
+                </div>
+                
+                <div class="task-form-group">
+                    <label class="task-form-label" for="taskTitle">Task Title *</label>
+                    <input 
+                        type="text" 
+                        id="taskTitle" 
+                        class="task-form-input" 
+                        placeholder="Enter a clear task title..."
+                        required
+                    >
+                </div>
+                
+                <div class="task-form-group">
+                    <label class="task-form-label" for="taskDescription">Description</label>
+                    <textarea 
+                        id="taskDescription" 
+                        class="task-form-textarea" 
+                        placeholder="Add more details about this task..."
+                        rows="3"
+                    ></textarea>
+                </div>
+                
+                <div class="task-form-group">
+                    <label class="task-form-label" for="taskPriority">Priority</label>
+                    <select id="taskPriority" class="task-form-select">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+                
+                <div class="task-form-group">
+                    <label class="task-form-label" for="taskAssignee">Assign To</label>
+                    <input 
+                        type="text" 
+                        id="taskAssignee" 
+                        class="task-form-input" 
+                        placeholder="Enter assignee name (optional)..."
+                    >
+                </div>
+                
+                <div class="task-form-group">
+                    <label class="task-form-label" for="taskDueDate">Due Date</label>
+                    <input 
+                        type="text" 
+                        id="taskDueDate" 
+                        class="task-form-input" 
+                        placeholder="e.g., tomorrow, next week, Friday..."
+                    >
+                </div>
+                
+                <div class="task-form-actions">
+                    <button type="button" class="task-btn-secondary" onclick="app.closeTaskModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="task-btn-primary" id="submitTaskBtn">
+                        Create Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
     
     <script>
         class MinaLiveRecording {
@@ -1607,6 +1909,10 @@
                     speechRatio: 0
                 };
                 
+                // Task creation state
+                this.selectedText = '';
+                this.selectedElement = null;
+                
                 this.init();
             }
             
@@ -1614,9 +1920,176 @@
                 this.initializeSocket();
                 this.updateTheme();
                 this.initializeFeatherIcons();
+                this.initializeTextSelection();
                 
                 // Initialize metrics update interval
                 setInterval(() => this.updateMetrics(), 1000);
+            }
+            
+            initializeTextSelection() {
+                // Listen for text selection on transcript elements
+                document.addEventListener('mouseup', (e) => this.handleTextSelection(e));
+                document.addEventListener('keyup', (e) => this.handleTextSelection(e));
+                
+                // Hide tooltip when clicking elsewhere
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.selection-tooltip') && !e.target.closest('.transcript-text')) {
+                        this.hideSelectionTooltip();
+                    }
+                });
+            }
+            
+            handleTextSelection(e) {
+                const selection = window.getSelection();
+                const selectedText = selection.toString().trim();
+                
+                if (selectedText.length > 0) {
+                    // Check if selection is within transcript text
+                    const transcriptElement = selection.anchorNode?.parentElement?.closest('.transcript-text');
+                    
+                    if (transcriptElement) {
+                        this.selectedText = selectedText;
+                        this.selectedElement = transcriptElement;
+                        this.showSelectionTooltip(selection);
+                    }
+                } else {
+                    this.hideSelectionTooltip();
+                }
+            }
+            
+            showSelectionTooltip(selection) {
+                const tooltip = document.getElementById('selectionTooltip');
+                const range = selection.getRangeAt(0);
+                const rect = range.getBoundingClientRect();
+                
+                // Position tooltip above the selection
+                tooltip.style.left = `${rect.left + (rect.width / 2) - 60}px`;
+                tooltip.style.top = `${rect.top - 50}px`;
+                tooltip.style.display = 'block';
+                
+                // Refresh feather icons
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+            }
+            
+            hideSelectionTooltip() {
+                const tooltip = document.getElementById('selectionTooltip');
+                tooltip.style.display = 'none';
+                this.selectedText = '';
+                this.selectedElement = null;
+            }
+            
+            openTaskModal() {
+                if (!this.selectedText) {
+                    this.showToast('No text selected', 'warning');
+                    return;
+                }
+                
+                // Populate the context preview
+                document.getElementById('taskContext').textContent = this.selectedText;
+                
+                // Auto-generate task title from selected text
+                const autoTitle = this.generateTaskTitle(this.selectedText);
+                document.getElementById('taskTitle').value = autoTitle;
+                
+                // Show modal
+                const modal = document.getElementById('taskModal');
+                modal.style.display = 'flex';
+                
+                // Focus on title input
+                setTimeout(() => {
+                    document.getElementById('taskTitle').focus();
+                    document.getElementById('taskTitle').select();
+                }, 100);
+                
+                this.hideSelectionTooltip();
+            }
+            
+            closeTaskModal() {
+                const modal = document.getElementById('taskModal');
+                modal.style.display = 'none';
+                
+                // Reset form
+                document.getElementById('taskForm').reset();
+                document.getElementById('taskContext').textContent = 'Selected text will appear here...';
+            }
+            
+            generateTaskTitle(text) {
+                // Clean and shorten text for title
+                let title = text.replace(/[^\w\s]/g, '').trim();
+                
+                // Look for action words to create better titles
+                const actionWords = ['need to', 'should', 'must', 'will', 'follow up', 'action item', 'todo'];
+                for (const action of actionWords) {
+                    if (title.toLowerCase().includes(action)) {
+                        const parts = title.toLowerCase().split(action);
+                        if (parts.length > 1) {
+                            title = parts[1].trim();
+                            break;
+                        }
+                    }
+                }
+                
+                // Capitalize first letter and limit length
+                title = title.charAt(0).toUpperCase() + title.slice(1);
+                return title.length > 60 ? title.substring(0, 60) + '...' : title;
+            }
+            
+            async submitTask(event) {
+                event.preventDefault();
+                
+                const submitBtn = document.getElementById('submitTaskBtn');
+                const originalText = submitBtn.textContent;
+                
+                // Disable button and show loading
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Creating...';
+                
+                const taskData = {
+                    title: document.getElementById('taskTitle').value.trim(),
+                    description: document.getElementById('taskDescription').value.trim(),
+                    priority: document.getElementById('taskPriority').value,
+                    assignee: document.getElementById('taskAssignee').value.trim(),
+                    due_date_text: document.getElementById('taskDueDate').value.trim(),
+                    context: this.selectedText,
+                    session_id: this.sessionId,
+                    timestamp: Date.now()
+                };
+                
+                try {
+                    const response = await fetch('/api/tasks/create', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(taskData)
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        this.showToast('Task created successfully!', 'success');
+                        this.closeTaskModal();
+                        
+                        // Optionally highlight the original text
+                        if (this.selectedElement) {
+                            this.selectedElement.classList.add('text-selected');
+                            setTimeout(() => {
+                                this.selectedElement?.classList.remove('text-selected');
+                            }, 3000);
+                        }
+                    } else {
+                        const error = await response.json();
+                        this.showToast('Failed to create task: ' + (error.message || 'Unknown error'), 'error');
+                    }
+                } catch (error) {
+                    console.error('Task creation error:', error);
+                    this.showToast('Network error creating task', 'error');
+                }
+                
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             }
             
             initializeSocket() {
