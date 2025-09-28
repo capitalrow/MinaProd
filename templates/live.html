@@ -1011,9 +1011,10 @@
             text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);      /* Subtle shadow for depth */
         }
         
+        /* FIXED: Metric labels with better contrast */
         .metric-label {
             font-size: 0.8rem;
-            color: var(--text-tertiary);
+            color: var(--text-secondary);                    /* Improved from tertiary to secondary */
             text-transform: uppercase;
             letter-spacing: 0.08em;
             font-weight: 600;
@@ -1446,9 +1447,11 @@
             font-weight: 400;
         }
         
+        /* FIXED: Interim text with improved readability */
         .interim-text {
-            opacity: 0.6;
+            opacity: 0.9;                                    /* Increased from 0.6 for better readability */
             font-style: italic;
+            color: var(--text-secondary);                    /* Ensure readable color */
         }
         
         /* Speaker Panel */
