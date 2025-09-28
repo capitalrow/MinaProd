@@ -142,6 +142,18 @@
   --mina-transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   --mina-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
 
+  /* Responsive Breakpoints - Mobile-First Approach */
+  --mina-breakpoint-xs: 360px;    /* Extra small devices (phones) */
+  --mina-breakpoint-sm: 768px;    /* Small devices (tablets) */
+  --mina-breakpoint-md: 1024px;   /* Medium devices (small laptops) */
+  --mina-breakpoint-lg: 1440px;   /* Large devices (desktops) */
+  
+  /* Container Max Widths */
+  --mina-container-xs: 100%;
+  --mina-container-sm: 720px;
+  --mina-container-md: 960px;
+  --mina-container-lg: 1320px;
+
   /* Z-Index Scale */
   --mina-z-dropdown: 1000;
   --mina-z-sticky: 1020;
