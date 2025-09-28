@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from .workspace import Workspace
     from .meeting import Meeting
     from .task import Task
+    from .marker import Marker
 
 
 class User(UserMixin, Base):
@@ -57,6 +58,7 @@ class User(UserMixin, Base):
     # Relationships
     meetings: Mapped[list["Meeting"]] = relationship(back_populates="organizer")
     assigned_tasks: Mapped[list["Task"]] = relationship(back_populates="assigned_to", foreign_keys="Task.assigned_to_id")
+    markers: Mapped[list["Marker"]] = relationship(back_populates="user")
 
     def __repr__(self):
         return f'<User {self.username}: {self.email}>'
