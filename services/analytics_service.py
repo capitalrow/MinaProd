@@ -36,13 +36,13 @@ class AnalyticsService:
 
     async def analyze_meeting(self, meeting_id: int) -> Dict:
         """Perform comprehensive analysis of a meeting."""
-        meeting = Meeting.query.get(meeting_id)
+        meeting = db.session.get(Meeting, meeting_id)
         if not meeting:
             return {"success": False, "message": "Meeting not found"}
         
         try:
             # Create or get analytics record
-            analytics = Analytics.query.filter_by(meeting_id=meeting_id).first()
+            analytics = db.session.query(Analytics).filter_by(meeting_id=meeting_id).first()
             if not analytics:
                 analytics = Analytics(meeting_id=meeting_id)
                 db.session.add(analytics)
@@ -90,18 +90,18 @@ class AnalyticsService:
             analytics.actual_vs_scheduled_ratio = analytics.total_duration_minutes / scheduled_duration
         
         # Participant count
-        participants = Participant.query.filter_by(meeting_id=meeting.id).all()
+        participants = db.session.query(Participant).filter_by(meeting_id=meeting.id).all()
         analytics.participant_count = len(participants)
         analytics.unique_speakers = len([p for p in participants if p.talk_time_seconds and p.talk_time_seconds > 0])
         
         # Word count from transcript
         if meeting.session:
-            segments = Segment.query.filter_by(session_id=meeting.session.id, is_final=True).all()
+            segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, is_final=True).all()
             analytics.word_count = sum(len(segment.text.split()) for segment in segments)
 
     async def _analyze_engagement(self, analytics: Analytics, meeting: Meeting):
         """Analyze participant engagement metrics."""
-        participants = Participant.query.filter_by(meeting_id=meeting.id).all()
+        participants = db.session.query(Participant).filter_by(meeting_id=meeting.id).all()
         
         if not participants:
             return
@@ -144,7 +144,7 @@ class AnalyticsService:
 
     async def _analyze_sentiment(self, analytics: Analytics, meeting: Meeting):
         """Analyze sentiment patterns throughout the meeting."""
-        participants = Participant.query.filter_by(meeting_id=meeting.id).all()
+        participants = db.session.query(Participant).filter_by(meeting_id=meeting.id).all()
         
         sentiment_scores = []
         for participant in participants:
@@ -170,7 +170,7 @@ class AnalyticsService:
         if not self.client:
             return [0.0]
         
-        segments = Segment.query.filter_by(
+        segments = db.session.query(Segment).filter_by(
             session_id=session.id, 
             is_final=True
         ).order_by(Segment.timestamp).all()
@@ -203,7 +203,7 @@ class AnalyticsService:
             return 0.0
         
         try:
-            response = await self.client.chat.completions.acreate(
+            response = await self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {
@@ -224,12 +224,12 @@ class AnalyticsService:
     async def _analyze_productivity(self, analytics: Analytics, meeting: Meeting):
         """Analyze meeting productivity metrics."""
         # Task analysis
-        tasks = Task.query.filter_by(meeting_id=meeting.id).all()
+        tasks = db.session.query(Task).filter_by(meeting_id=meeting.id).all()
         analytics.action_items_created = len(tasks)
         
         # Decision analysis
         if meeting.session:
-            segments = Segment.query.filter_by(session_id=meeting.session.id, is_final=True).all()
+            segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, is_final=True).all()
             full_text = " ".join(segment.text.lower() for segment in segments)
             
             # Count decisions made
@@ -270,7 +270,7 @@ class AnalyticsService:
         if not meeting.session:
             return
         
-        segments = Segment.query.filter_by(session_id=meeting.session.id, is_final=True).all()
+        segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, is_final=True).all()
         full_text = " ".join(segment.text.lower() for segment in segments)
         
         # Count different types of content
@@ -292,7 +292,7 @@ class AnalyticsService:
             return []
         
         try:
-            response = await self.client.chat.completions.acreate(
+            response = await self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {
@@ -330,7 +330,7 @@ class AnalyticsService:
         if not meeting.session:
             return
         
-        segments = Segment.query.filter_by(session_id=meeting.session.id, is_final=True).all()
+        segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, is_final=True).all()
         
         # Analyze consensus moments (simplified)
         consensus_indicators = ["everyone agrees", "we all think", "consensus", "unanimous"]
@@ -382,7 +382,7 @@ class AnalyticsService:
         }
         
         try:
-            response = await self.client.chat.completions.acreate(
+            response = await self.client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {
@@ -411,7 +411,7 @@ class AnalyticsService:
         """Get analytics summary for a workspace over specified days."""
         cutoff_date = datetime.now() - timedelta(days=days)
         
-        meetings = Meeting.query.filter(
+        meetings = db.session.query(Meeting).filter(
             Meeting.workspace_id == workspace_id,
             Meeting.created_at >= cutoff_date
         ).all()
@@ -421,7 +421,7 @@ class AnalyticsService:
         
         analytics_records = []
         for meeting in meetings:
-            analytics = Analytics.query.filter_by(meeting_id=meeting.id).first()
+            analytics = db.session.query(Analytics).filter_by(meeting_id=meeting.id).first()
             if analytics and analytics.is_analysis_complete:
                 analytics_records.append(analytics)
         
