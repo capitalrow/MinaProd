@@ -151,16 +151,18 @@ Please provide a JSON response with these fields:
 Format as valid JSON only."""
 
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a professional meeting analyst. Respond with valid JSON only."},
+                {"role": "system", "content": "You are a professional meeting analyst. Respond with valid JSON only. Format your response as JSON with the requested structure."},
                 {"role": "user", "content": prompt}
             ],
-            response_format={"type": "json_object"},
             temperature=0.3
         )
         
         result_text = response.choices[0].message.content
+        if not result_text:
+            logger.warning("Empty response from OpenAI")
+            return _generate_fallback_insights(transcript)
         return json.loads(result_text)
         
     except Exception as e:

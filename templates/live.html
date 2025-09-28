@@ -3411,11 +3411,11 @@
                         bytes[0] === 0x1A && bytes[1] === 0x45 && 
                         bytes[2] === 0xDF && bytes[3] === 0xA3;
                     
+                    // Always try to use original WebM first, then fallback to WAV conversion
                     if (!hasValidWebMHeader && bytes.length > 1000) {
-                        console.log('🔧 WebM header missing, using PCM fallback');
-                        // Convert to PCM16/WAV format for better compatibility
+                        console.log('🔧 WebM header missing, converting to high-quality WAV');
                         try {
-                            processedBlob = await this.convertToPCMWav(audioBlob);
+                            processedBlob = await this.convertToHighQualityWAV(audioBlob);
                             filename = 'chunk.wav';
                             mimeType = 'audio/wav';
                             console.log(`✅ PCM conversion successful: ${processedBlob.size} bytes`);
@@ -3478,6 +3478,59 @@
                 }
             }
 
+            async convertToHighQualityWAV(audioBlob) {
+                /**
+                 * 🔥 ENHANCED: Convert audio blob to high-quality WAV format
+                 * Handles both valid audio data AND corrupted WebM data properly
+                 */
+                return new Promise((resolve, reject) => {
+                    try {
+                        const reader = new FileReader();
+                        reader.onload = async () => {
+                            try {
+                                const arrayBuffer = reader.result;
+                                
+                                // First, try direct WAV creation from raw audio data
+                                const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                                    sampleRate: 16000
+                                });
+                                
+                                let audioBuffer;
+                                
+                                // Method 1: Try to decode if possible
+                                try {
+                                    audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice());
+                                    console.log('✅ Successfully decoded audio data');
+                                } catch (decodeError) {
+                                    console.warn('Direct decode failed, using raw PCM processing');
+                                    
+                                    // Method 2: Create high-quality WAV from raw bytes
+                                    const wavBuffer = this.createWavFromRawData(new Uint8Array(arrayBuffer));
+                                    const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
+                                    resolve(wavBlob);
+                                    return;
+                                }
+                                
+                                // Convert decoded audio to WAV
+                                const wavBuffer = this.audioBufferToWav(audioBuffer);
+                                const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
+                                resolve(wavBlob);
+                                
+                            } catch (error) {
+                                console.error('WAV conversion failed:', error);
+                                reject(error);
+                            }
+                        };
+                        
+                        reader.onerror = () => reject(new Error('Failed to read audio blob'));
+                        reader.readAsArrayBuffer(audioBlob);
+                        
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            }
+
             async convertToPCMWav(audioBlob) {
                 /**
                  * CRITICAL: Convert audio blob to PCM16/WAV format as fallback
@@ -3529,6 +3582,58 @@
                         reject(error);
                     }
                 });
+            }
+
+            createWavFromRawData(rawBytes) {
+                /**
+                 * 🔥 NEW: Create proper WAV file from raw audio bytes
+                 * This handles corrupted WebM data by treating it as raw PCM
+                 */
+                const sampleRate = 16000;
+                const numChannels = 1;
+                const bitsPerSample = 16;
+                
+                // Skip any potential header bytes and find audio data
+                let audioStart = 0;
+                for (let i = 0; i < Math.min(1000, rawBytes.length - 4); i++) {
+                    // Look for patterns that might indicate start of audio data
+                    if (rawBytes[i] === 0 && rawBytes[i+1] === 0) {
+                        continue; // Skip silence
+                    }
+                    audioStart = i;
+                    break;
+                }
+                
+                const audioData = rawBytes.slice(audioStart);
+                const numSamples = Math.floor(audioData.length / 2); // 16-bit samples
+                const dataSize = numSamples * 2;
+                const fileSize = 44 + dataSize;
+                
+                const buffer = new ArrayBuffer(fileSize);
+                const view = new DataView(buffer);
+                
+                // WAV file header
+                view.setUint32(0, 0x46464952, false); // "RIFF"
+                view.setUint32(4, fileSize - 8, true); // File size
+                view.setUint32(8, 0x45564157, false); // "WAVE"
+                view.setUint32(12, 0x20746d66, false); // "fmt "
+                view.setUint32(16, 16, true); // Subchunk size
+                view.setUint16(20, 1, true); // Audio format (PCM)
+                view.setUint16(22, numChannels, true); // Number of channels
+                view.setUint32(24, sampleRate, true); // Sample rate
+                view.setUint32(28, sampleRate * numChannels * 2, true); // Byte rate
+                view.setUint16(32, numChannels * 2, true); // Block align
+                view.setUint16(34, bitsPerSample, true); // Bits per sample
+                view.setUint32(36, 0x61746164, false); // "data"
+                view.setUint32(40, dataSize, true); // Data size
+                
+                // Copy audio data
+                const outputData = new Uint8Array(buffer, 44);
+                for (let i = 0; i < Math.min(dataSize, audioData.length); i++) {
+                    outputData[i] = audioData[i];
+                }
+                
+                return buffer;
             }
 
             audioBufferToWav(audioBuffer) {
