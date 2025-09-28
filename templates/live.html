@@ -2819,7 +2819,22 @@
             }
             
             updateInterimTranscript(text, confidence, speaker) {
+                console.log('🔄 updateInterimTranscript called with:', { text, confidence, speaker });
+                
                 const content = document.getElementById('transcriptContent');
+                if (!content) {
+                    console.error('❌ transcriptContent not found');
+                    return;
+                }
+                
+                console.log('✅ Found transcriptContent container');
+                
+                // Remove empty state if it exists
+                const emptyState = content.querySelector('.empty-state');
+                if (emptyState) {
+                    emptyState.remove();
+                    console.log('✅ Removed empty state');
+                }
                 
                 let interimElement = document.getElementById('interimTranscript');
                 if (!interimElement) {
@@ -2827,15 +2842,18 @@
                     interimElement.id = 'interimTranscript';
                     interimElement.className = 'transcript-segment';
                     content.appendChild(interimElement);
+                    console.log('✅ Created new interim element');
+                } else {
+                    console.log('✅ Using existing interim element');
                 }
                 
                 interimElement.innerHTML = `
                     <div class="segment-header">
                         <div class="speaker-info">
-                            <div class="speaker-avatar" style="background: ${speaker?.color || '#6366F1'};">
-                                ${speaker?.name ? speaker.name.substring(0, 2).toUpperCase() : 'U'}
+                            <div class="speaker-avatar" style="background: ${speaker?.color || '#10b981'};">
+                                ${speaker?.name ? speaker.name.substring(0, 1).toUpperCase() : 'S'}
                             </div>
-                            <div class="speaker-name">${speaker?.name || 'Speaking...'}</div>
+                            <div class="speaker-name">${speaker?.name || 'Speaker 1'}</div>
                         </div>
                         <div class="segment-metadata">
                             <span class="timestamp">${this.formatTimestamp()}</span>
@@ -2844,8 +2862,23 @@
                             </span>
                         </div>
                     </div>
-                    <div class="transcript-text interim-text">${text}</div>
+                    <div class="transcript-text interim-text">${text} <span style="color: #888; font-size: 0.9em;">(speaking...)</span></div>
                 `;
+                
+                // Visual styling for interim transcript
+                interimElement.style.opacity = '0.8';
+                interimElement.style.fontStyle = 'italic';
+                interimElement.style.borderLeft = '3px solid #FFA500';
+                interimElement.style.background = 'rgba(255, 165, 0, 0.1)';
+                interimElement.style.display = 'block';
+                
+                console.log('✅ Interim transcript updated with text:', text);
+                
+                // Ensure visibility and scroll
+                content.style.display = 'block';
+                if (this.autoScroll) {
+                    content.scrollTop = content.scrollHeight;
+                }
             }
             
             getSpeakerInfo(speakerId) {
