@@ -147,7 +147,7 @@ def list_sessions():
     except Exception as e:
         logger.error(f"Error listing sessions: {e}")
         flash(f"Error loading sessions: {str(e)}", 'error')
-        return redirect(url_for('transcription.index'))
+        return redirect(url_for('transcription.list_sessions'))
 
 # Removed duplicate route - session details are handled by sessions blueprint
 
@@ -571,7 +571,7 @@ def not_found(error):
     if request.path.startswith('/api/'):
         return jsonify({'error': 'Resource not found'}), 404
     flash('The requested page was not found.', 'error')
-    return redirect(url_for('transcription.index'))
+    return redirect(url_for('transcription.list_sessions'))
 
 @transcription_bp.errorhandler(500)
 def internal_error(error):
@@ -580,4 +580,4 @@ def internal_error(error):
     if request.path.startswith('/api/'):
         return jsonify({'error': 'Internal server error'}), 500
     flash('An internal error occurred. Please try again later.', 'error')
-    return redirect(url_for('transcription.index'))
+    return redirect(url_for('transcription.list_sessions'))

@@ -37,7 +37,7 @@ def copilot_dashboard():
     except Exception as e:
         logger.error(f"Error loading AI Copilot: {e}")
         flash('Failed to load AI Copilot. Please try again.', 'error')
-        return redirect(url_for('dashboard.dashboard'))
+        return redirect(url_for('dashboard.index'))
 
 
 @copilot_bp.route('/api/chat', methods=['POST'])

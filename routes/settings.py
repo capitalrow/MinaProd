@@ -51,7 +51,7 @@ def settings_dashboard():
     except Exception as e:
         logger.error(f"Error loading settings dashboard: {e}")
         flash('Failed to load settings. Please try again.', 'error')
-        return redirect(url_for('dashboard.dashboard'))
+        return redirect(url_for('dashboard.index'))
 
 
 @settings_bp.route('/api/preferences', methods=['GET'])

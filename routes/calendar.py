@@ -42,7 +42,7 @@ def calendar_dashboard():
     except Exception as e:
         logger.error(f"Error loading calendar dashboard: {e}")
         flash('Failed to load calendar. Please try again.', 'error')
-        return redirect(url_for('dashboard.dashboard'))
+        return redirect(url_for('dashboard.index'))
 
 
 @calendar_bp.route('/api/providers', methods=['GET'])
