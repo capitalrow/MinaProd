@@ -53,6 +53,12 @@
             --success: #10B981;
             --info: #3B82F6;
             
+            /* Animation durations for smooth transitions */
+            --transition-fast: 0.2s ease-out;
+            --transition-medium: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-bounce: 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            
             /* Refined Professional Gradients */
             --gradient-primary: linear-gradient(135deg, #0EA5E9 0%, #6366F1 100%);
             --gradient-secondary: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
@@ -251,6 +257,86 @@
             100% { background-position: 0% 50%; }
         }
         
+        /* Premium keyframe animations for transcription */
+        @keyframes slideInFromBottom {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+            }
+        }
+        
+        @keyframes recordingPulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+                transform: scale(1.05);
+            }
+        }
+        
+        @keyframes typingDots {
+            0%, 20% { opacity: 0.4; }
+            40% { opacity: 0.7; }
+            60%, 100% { opacity: 1; }
+        }
+        
+        @keyframes confidenceBar {
+            from {
+                width: 0%;
+            }
+            to {
+                width: var(--confidence-width, 100%);
+            }
+        }
+        
+        @keyframes shimmer {
+            0% {
+                background-position: -1000px 0;
+            }
+            100% {
+                background-position: 1000px 0;
+            }
+        }
+        
+        @keyframes textReveal {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+                filter: blur(2px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+                filter: blur(0);
+            }
+        }
+        
         .control-panel::before {
             content: '';
             position: absolute;
@@ -389,7 +475,7 @@
         
         .record-button.recording {
             background: var(--gradient-accent);
-            animation: pulse-record 2s infinite, breathe 4s ease-in-out infinite;
+            animation: recordingPulse 2s infinite, breathe 4s ease-in-out infinite;
         }
         
         
@@ -533,6 +619,44 @@
             user-select: text;
             cursor: text;
             position: relative;
+            animation: textReveal var(--transition-medium) ease-out;
+            transition: all var(--transition-fast);
+        }
+        
+        .transcript-text.interim-text {
+            opacity: 0.7;
+            font-style: italic;
+            position: relative;
+            border-left: 3px solid var(--primary);
+            padding-left: 12px;
+            background: linear-gradient(
+                90deg,
+                rgba(15, 165, 233, 0.05) 0%,
+                transparent 20%
+            );
+            animation: shimmer 2s infinite, fadeInScale var(--transition-fast);
+        }
+        
+        .transcript-text.interim-text::after {
+            content: '';
+            animation: typingDots 1.5s infinite;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .transcript-text.final-text {
+            animation: slideInFromBottom var(--transition-medium) ease-out;
+        }
+        
+        .transcript-text.high-confidence {
+            animation: pulseGlow 3s infinite;
+            border-left: 3px solid var(--success);
+        }
+        
+        .transcript-text.low-confidence {
+            opacity: 0.6;
+            border-left: 3px solid var(--warning);
+            background: rgba(245, 158, 11, 0.05);
         }
 
         .text-selected {
@@ -1016,6 +1140,8 @@
             background-image: var(--gradient-border);
             background-origin: border-box;
             background-clip: padding-box, border-box;
+            animation: slideInFromBottom var(--transition-slow) ease-out;
+            transition: all var(--transition-medium);
             border-radius: var(--radius-2xl);
             display: flex;
             flex-direction: column;
@@ -2796,23 +2922,34 @@
                 }
                 
                 const segment = document.createElement('div');
-                segment.className = 'transcript-segment';
+                
+                // Apply confidence-based styling
+                const confidenceClass = confidence > 0.8 ? 'high-confidence' : 
+                                      confidence < 0.5 ? 'low-confidence' : '';
+                
+                segment.className = `transcript-segment final-text ${confidenceClass}`;
                 segment.innerHTML = `
                     <div class="segment-header">
                         <div class="speaker-info">
-                            <div class="speaker-avatar" style="background: ${speaker?.color || '#6366F1'};">
+                            <div class="speaker-avatar" style="background: ${speaker?.color || '#6366F1'}; animation: fadeInScale var(--transition-medium) ease-out;">
                                 ${speaker?.name ? speaker.name.substring(0, 2).toUpperCase() : 'U'}
                             </div>
                             <div class="speaker-name">${speaker?.name || 'Unknown Speaker'}</div>
                         </div>
                         <div class="segment-metadata">
                             <span class="timestamp">${this.formatTimestamp(timestamp)}</span>
-                            <span class="confidence-badge ${this.getConfidenceClass(confidence)}">
+                            <span class="confidence-badge ${this.getConfidenceClass(confidence)}" style="animation: slideInFromBottom var(--transition-medium) ease-out;">
+                                <div class="confidence-bar" style="width: ${confidence * 100}%; animation: confidenceBar 0.8s ease-out;"></div>
                                 ${Math.round(confidence * 100)}%
                             </span>
                         </div>
                     </div>
-                    <div class="transcript-text">${text}</div>
+                    <div class="transcript-text final-text ${confidenceClass}" style="animation: textReveal var(--transition-medium) ease-out;">
+                        ${text}
+                        <div class="confidence-bar-container" style="margin-top: 6px;">
+                            <div class="confidence-bar" style="width: ${confidence * 100}%; height: 3px; background: ${confidence > 0.8 ? 'var(--success)' : confidence < 0.5 ? 'var(--warning)' : 'var(--primary)'}; border-radius: 2px; animation: confidenceBar 1s ease-out;"></div>
+                        </div>
+                    </div>
                 `;
                 
                 content.appendChild(segment);
@@ -2838,20 +2975,29 @@
                 
                 console.log('✅ Found transcriptContent container');
                 
-                // Remove empty state if it exists
+                // Remove empty state with animation if it exists
                 const emptyState = content.querySelector('.empty-state');
                 if (emptyState) {
-                    emptyState.remove();
-                    console.log('✅ Removed empty state');
+                    emptyState.style.animation = 'fadeInScale var(--transition-fast) reverse';
+                    setTimeout(() => emptyState.remove(), 200);
+                    console.log('✅ Removed empty state with animation');
                 }
                 
                 let interimElement = document.getElementById('interimTranscript');
                 if (!interimElement) {
                     interimElement = document.createElement('div');
                     interimElement.id = 'interimTranscript';
-                    interimElement.className = 'transcript-segment';
+                    
+                    // Apply confidence-based styling with animations
+                    const confidenceClass = confidence > 0.8 ? 'high-confidence' : 
+                                          confidence < 0.5 ? 'low-confidence' : '';
+                    
+                    interimElement.className = `transcript-segment interim-text ${confidenceClass}`;
+                    
+                    // Add entrance animation
+                    interimElement.style.animation = 'slideInFromBottom var(--transition-medium) ease-out';
                     content.appendChild(interimElement);
-                    console.log('✅ Created new interim element');
+                    console.log('✅ Created new interim element with animations');
                 } else {
                     console.log('✅ Using existing interim element');
                 }
@@ -2871,14 +3017,16 @@
                             </span>
                         </div>
                     </div>
-                    <div class="transcript-text interim-text">${text} <span style="color: #888; font-size: 0.9em;">(speaking...)</span></div>
+                    <div class="transcript-text interim-text ${confidenceClass}" style="animation: textReveal var(--transition-medium) ease-out;">
+                        <span class="text-content">${text}</span>
+                        <span class="typing-indicator" style="color: var(--primary); font-size: 0.9em; animation: typingDots 1.5s infinite;">(speaking...)</span>
+                        <div class="confidence-bar-container" style="margin-top: 4px;">
+                            <div class="confidence-bar" style="width: ${confidence * 100}%; height: 2px; background: ${confidence > 0.8 ? 'var(--success)' : confidence < 0.5 ? 'var(--warning)' : 'var(--primary)'}; transition: all var(--transition-fast); animation: confidenceBar 0.5s ease-out;"></div>
+                        </div>
+                    </div>
                 `;
                 
-                // Visual styling for interim transcript
-                interimElement.style.opacity = '0.8';
-                interimElement.style.fontStyle = 'italic';
-                interimElement.style.borderLeft = '3px solid #FFA500';
-                interimElement.style.background = 'rgba(255, 165, 0, 0.1)';
+                // Enhanced visual styling with animations
                 interimElement.style.display = 'block';
                 
                 console.log('✅ Interim transcript updated with text:', text);
