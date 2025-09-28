@@ -17,7 +17,8 @@
             --secondary-light: #8B5CF6;
             --accent: #F59E0B;
             --accent-dark: #D97706;
-            --warning: #EF4444;
+            --warning: #F59E0B;
+            --danger: #EF4444;
             --success: #10B981;
             --info: #3B82F6;
             
@@ -122,26 +123,17 @@
             position: relative;
         }
         
-        /* COMPREHENSIVE MOTION ACCESSIBILITY - Disable animations for users who prefer reduced motion */
+        /* COMPREHENSIVE MOTION ACCESSIBILITY - Complete animation removal for reduced motion */
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
+                animation: none !important;
+                transition: none !important;
                 scroll-behavior: auto !important;
             }
             
-            /* Remove specific problematic animations */
-            .record-button, .status-dot, .typing-indicator, 
-            .metrics-container, .separator-line,
-            [class*="pulse"], [class*="spin"], [class*="rotate"],
-            [class*="glow"], [class*="shimmer"] { 
-                animation: none !important; 
-            }
-            
-            /* Keep essential state indicators but remove motion */
+            /* Keep essential state indicators but remove ALL motion */
             .record-button.recording { 
-                background: var(--danger) !important;
+                background: var(--danger) !important;  /* Using proper token */
                 transform: none !important;
             }
             .record-button.processing { 
@@ -685,11 +677,11 @@
             display: none;
         }
 
-        /* FIXED: Create task button with WCAG-compliant contrast */
+        /* FIXED: Create task button with TRUE WCAG-compliant contrast */
         .create-task-btn {
-            background: var(--primary);                      /* Solid color instead of gradient */
+            background: #0F172A;                             /* Dark background for white text */
             color: white;
-            border: none;
+            border: 2px solid var(--primary);
             padding: var(--space-sm) var(--space-md);
             border-radius: var(--radius-md);
             font-size: 0.85rem;
@@ -699,7 +691,6 @@
             align-items: center;
             gap: var(--space-xs);
             transition: all var(--transition-base);
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);      /* Ensure contrast */
         }
 
         .create-task-btn:hover {
@@ -839,17 +830,16 @@
             color: var(--text-primary);
         }
 
-        /* FIXED: Primary task button with WCAG-compliant contrast */
+        /* FIXED: Primary task button with TRUE WCAG-compliant contrast */
         .task-btn-primary {
-            background: var(--primary);                      /* Solid color instead of gradient */
+            background: #0F172A;                             /* Dark background for white text */
             color: white;
-            border: none;
+            border: 2px solid var(--primary);
             padding: var(--space-md) var(--space-xl);
             border-radius: var(--radius-lg);
             font-weight: 600;
             cursor: pointer;
             transition: all var(--transition-base);
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);      /* Ensure contrast */
         }
 
         .task-btn-primary:hover {
