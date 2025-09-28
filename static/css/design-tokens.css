@@ -1,5 +1,28 @@
 /* Design Tokens - Foundation CSS Custom Properties */
 :root {
+  /* =================================================
+     TOKEN ALIAS LAYER - Legacy Template Compatibility
+     ================================================= */
+  /* Map legacy tokens to Mina design system - PHASE OUT THESE EVENTUALLY */
+  --bg-primary: var(--mina-bg-primary);
+  --bg-secondary: var(--mina-bg-secondary);
+  --bg-tertiary: var(--mina-bg-tertiary);
+  --bg-hover: var(--mina-bg-hover);
+  
+  --text-primary: var(--mina-text-primary);
+  --text-secondary: var(--mina-text-secondary);
+  --text-muted: var(--mina-text-muted);
+  
+  --border-color: var(--mina-border-primary);
+  --border-hover: var(--mina-border-secondary);
+  
+  --accent-primary: var(--mina-primary);
+  --accent-secondary: var(--mina-secondary);
+  --accent-success: var(--mina-success);
+  --accent-warning: var(--mina-warning);
+  --accent-danger: var(--mina-danger);
+  --accent-info: var(--mina-info);
+
   /* 🎨 PROFESSIONAL BLUE COLOR SYSTEM */
   --mina-primary: #2563eb;
   --mina-primary-rgb: 37, 99, 235;
@@ -59,6 +82,7 @@
   --mina-bg-secondary: var(--mina-gray-50);
   --mina-bg-tertiary: var(--mina-gray-100);
   --mina-bg-accent: var(--mina-gray-200);
+  --mina-bg-hover: var(--mina-gray-100);
   
   --mina-text-primary: var(--mina-gray-900);
   --mina-text-secondary: var(--mina-gray-700);
