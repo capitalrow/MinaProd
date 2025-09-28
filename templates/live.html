@@ -2208,17 +2208,17 @@
 {% block content %}
     <div class="recording-studio">
         <!-- Control Panel -->
-        <div class="control-panel">
+        <section class="control-panel" role="region" aria-labelledby="studio-title">
             <div class="panel-header">
-                <h1 class="panel-title">Live Recording Studio</h1>
+                <h1 id="studio-title" class="panel-title">Live Recording Studio</h1>
                 <p class="panel-subtitle">Professional-grade transcription</p>
             </div>
             
             <!-- Record Section -->
             <div class="record-section">
                 <!-- Status Chip -->
-                <div class="status-chip ready" id="statusChip">
-                    <span class="status-dot"></span>
+                <div class="status-chip ready" id="statusChip" role="status" aria-live="polite" aria-label="Recording status">
+                    <span class="status-dot" aria-hidden="true"></span>
                     <span id="statusText">Ready</span>
                 </div>
                 
@@ -2227,47 +2227,66 @@
                     Start when you're ready
                 </div>
                 
-                <div class="recording-controls">
-                    <button class="record-button spotlight" id="recordButton" onclick="app.toggleRecording()">
-                        🎙️
+                <div class="recording-controls" role="group" aria-labelledby="recording-controls-label">
+                    <span id="recording-controls-label" class="sr-only">Recording controls</span>
+                    <button class="record-button spotlight" id="recordButton" 
+                            onclick="app.toggleRecording()" 
+                            aria-label="Start recording"
+                            aria-describedby="recording-help">
+                        <span aria-hidden="true">🎙️</span>
+                        <span class="sr-only">Record</span>
                     </button>
-                    <button class="stop-button" id="stopButton" onclick="app.stopRecordingFully()" style="display: none;">
-                        ⏹️
+                    <button class="stop-button" id="stopButton" 
+                            onclick="app.stopRecordingFully()" 
+                            style="display: none;"
+                            aria-label="Stop recording">
+                        <span aria-hidden="true">⏹️</span>
+                        <span class="sr-only">Stop</span>
                     </button>
+                    <div id="recording-help" class="sr-only">Press Space to start or stop recording using keyboard shortcuts</div>
                 </div>
             </div>
             
             <!-- Settings -->
-            <div class="settings-group">
-                <h3 class="settings-title">Recording Settings</h3>
+            <section class="settings-group" role="region" aria-labelledby="settings-title">
+                <h3 id="settings-title" class="settings-title">Recording Settings</h3>
                 
                 <div class="setting-item">
-                    <label class="setting-label">Language</label>
-                    <select class="setting-select" id="languageSelect" onchange="app.updateSettings()">
+                    <label for="languageSelect" class="setting-label">Language</label>
+                    <select class="setting-select" id="languageSelect" 
+                            onchange="app.updateSettings()" 
+                            aria-describedby="language-help">
                         <option value="en">English</option>
                         <option value="es">Spanish</option>
                         <option value="fr">French</option>
                         <option value="de">German</option>
                         <option value="auto">Auto-detect</option>
                     </select>
+                    <div id="language-help" class="sr-only">Select the primary language for transcription</div>
                 </div>
                 
                 <div class="setting-item">
-                    <label class="setting-label">Quality</label>
-                    <select class="setting-select" id="qualitySelect" onchange="app.updateSettings()">
+                    <label for="qualitySelect" class="setting-label">Quality</label>
+                    <select class="setting-select" id="qualitySelect" 
+                            onchange="app.updateSettings()" 
+                            aria-describedby="quality-help">
                         <option value="high">High Quality</option>
                         <option value="balanced">Balanced</option>
                         <option value="fast">Fast Processing</option>
                     </select>
+                    <div id="quality-help" class="sr-only">Choose transcription quality vs speed preference</div>
                 </div>
                 
                 <div class="setting-item">
-                    <label class="setting-label">Speaker Detection</label>
-                    <select class="setting-select" id="diarizationSelect" onchange="app.updateSettings()">
+                    <label for="diarizationSelect" class="setting-label">Speaker Detection</label>
+                    <select class="setting-select" id="diarizationSelect" 
+                            onchange="app.updateSettings()" 
+                            aria-describedby="speaker-help">
                         <option value="auto">Auto-detect</option>
                         <option value="off">Single Speaker</option>
                         <option value="multi">Multiple Speakers</option>
                     </select>
+                    <div id="speaker-help" class="sr-only">Configure speaker identification settings</div>
                 </div>
             </div>
             
@@ -2316,17 +2335,21 @@
         </div>
         
         <!-- Transcription Panel -->
-        <div class="transcription-panel">
+        <main id="main-content" class="transcription-panel" role="main" aria-labelledby="transcript-title">
             <!-- Header -->
             <div class="transcript-header">
-                <h2 class="transcript-title">Live Transcript</h2>
-                <div class="transcript-actions">
-                    <button class="transcript-btn" onclick="app.toggleAutoScroll()" id="autoScrollBtn">
-                        <i data-feather="arrow-down"></i>
+                <h2 id="transcript-title" class="transcript-title">Live Transcript</h2>
+                <div class="transcript-actions" role="group" aria-labelledby="transcript-actions-label">
+                    <span id="transcript-actions-label" class="sr-only">Transcript controls</span>
+                    <button class="transcript-btn" onclick="app.toggleAutoScroll()" id="autoScrollBtn"
+                            aria-label="Toggle automatic scrolling"
+                            aria-pressed="true">
+                        <i data-feather="arrow-down" aria-hidden="true"></i>
                         Auto-scroll
                     </button>
-                    <button class="transcript-btn" onclick="app.toggleFullscreen()">
-                        <i data-feather="maximize"></i>
+                    <button class="transcript-btn" onclick="app.toggleFullscreen()"
+                            aria-label="Enter fullscreen mode">
+                        <i data-feather="maximize" aria-hidden="true"></i>
                         Fullscreen
                     </button>
                 </div>
@@ -2361,11 +2384,19 @@
                 </div>
                 
                 <!-- Final Transcript Segments -->
-                <div id="finalSegments" class="final-segments"></div>
+                <div id="finalSegments" class="final-segments" 
+                     aria-live="polite" 
+                     aria-atomic="true"
+                     aria-relevant="additions"
+                     aria-label="Completed transcript segments"
+                     role="log"></div>
                 
                 <!-- Real-time Interim Line -->
-                <div id="interimLine" class="interim-line" aria-live="polite"></div>
-            </div>
+                <div id="interimLine" class="interim-line" 
+                     aria-live="polite" 
+                     aria-label="Live transcription in progress"
+                     role="status"></div>
+        </main>
             
             <!-- Speakers Panel -->
             <div class="speakers-panel" id="speakersPanel" style="display: none;">
@@ -2382,24 +2413,36 @@
     </div>
     
     <!-- Toast Notification -->
-    <div class="toast" id="toast">
+    <div class="toast" id="toast" 
+         role="alert" 
+         aria-live="assertive" 
+         aria-atomic="true" 
+         style="display: none;">
         <span id="toastMessage"></span>
     </div>
 
     <!-- Selection Tooltip for Highlight-to-Task -->
-    <div class="selection-tooltip" id="selectionTooltip">
-        <button class="create-task-btn" onclick="app.openTaskModal()">
-            <i data-feather="plus-circle"></i>
+    <div class="selection-tooltip" id="selectionTooltip" 
+         role="tooltip" 
+         aria-label="Text selection actions">
+        <button class="create-task-btn" onclick="app.openTaskModal()" 
+                aria-label="Create task from selected text">
+            <i data-feather="plus-circle" aria-hidden="true"></i>
             Create Task
         </button>
     </div>
 
     <!-- Task Creation Modal -->
-    <div class="task-modal" id="taskModal">
+    <div class="task-modal" id="taskModal" 
+         role="dialog" 
+         aria-labelledby="task-modal-title" 
+         aria-modal="true" 
+         aria-hidden="true">
         <div class="task-modal-content">
             <div class="task-modal-header">
-                <h3 class="task-modal-title">Create Task</h3>
-                <button class="close-modal-btn" onclick="app.closeTaskModal()">×</button>
+                <h3 id="task-modal-title" class="task-modal-title">Create Task</h3>
+                <button class="close-modal-btn" onclick="app.closeTaskModal()" 
+                        aria-label="Close task creation dialog">×</button>
             </div>
             
             <form id="taskForm" onsubmit="app.submitTask(event)">
@@ -2418,7 +2461,10 @@
                         class="task-form-input" 
                         placeholder="Enter a clear task title..."
                         required
+                        aria-describedby="taskTitle-help"
+                        aria-required="true"
                     >
+                    <div id="taskTitle-help" class="sr-only">Required field: Enter a descriptive title for this task</div>
                 </div>
                 
                 <div class="task-form-group">
@@ -2428,17 +2474,20 @@
                         class="task-form-textarea" 
                         placeholder="Add more details about this task..."
                         rows="3"
+                        aria-describedby="taskDescription-help"
                     ></textarea>
+                    <div id="taskDescription-help" class="sr-only">Optional: Add detailed description for context</div>
                 </div>
                 
                 <div class="task-form-group">
                     <label class="task-form-label" for="taskPriority">Priority</label>
-                    <select id="taskPriority" class="task-form-select">
+                    <select id="taskPriority" class="task-form-select" aria-describedby="taskPriority-help">
                         <option value="low">Low</option>
                         <option value="medium" selected>Medium</option>
                         <option value="high">High</option>
                         <option value="urgent">Urgent</option>
                     </select>
+                    <div id="taskPriority-help" class="sr-only">Select task priority level for organization</div>
                 </div>
                 
                 <div class="task-form-group">
@@ -4206,7 +4255,172 @@
             
             console.log('✅ Socket.IO loaded successfully, initializing app...');
             window.app = new MinaLiveRecording();
+            
+            // Add keyboard navigation support
+            initializeKeyboardNavigation();
         });
+        
+        // Comprehensive Keyboard Navigation & Accessibility Support
+        function initializeKeyboardNavigation() {
+            let lastFocusedElement = null; // Store focus before modal opens
+            
+            // Global keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Only handle if not typing in input/textarea
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    return;
+                }
+                
+                switch(e.key) {
+                    case ' ': // Space - toggle recording
+                        e.preventDefault();
+                        if (window.app) {
+                            window.app.toggleRecording();
+                        }
+                        break;
+                    case 'Escape': // ESC - close modal
+                        const modal = document.getElementById('taskModal');
+                        if (modal && modal.getAttribute('aria-hidden') === 'false') {
+                            closeModalAccessibly();
+                        }
+                        break;
+                    case 'c': // C - copy transcript (with Ctrl/Cmd)
+                        if (e.ctrlKey || e.metaKey) {
+                            e.preventDefault();
+                            if (window.app) {
+                                window.app.copyTranscript();
+                            }
+                        }
+                        break;
+                    case 'f': // F - toggle fullscreen (with Ctrl/Cmd)
+                        if (e.ctrlKey || e.metaKey) {
+                            e.preventDefault();
+                            if (window.app) {
+                                window.app.toggleFullscreen();
+                            }
+                        }
+                        break;
+                    case 'd': // D - download transcript (with Ctrl/Cmd)
+                        if (e.ctrlKey || e.metaKey) {
+                            e.preventDefault();
+                            if (window.app) {
+                                window.app.downloadTranscript();
+                            }
+                        }
+                        break;
+                }
+            });
+            
+            // Enhanced Modal Accessibility Management
+            const taskModal = document.getElementById('taskModal');
+            const focusableElements = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+            
+            // Modal focus trap
+            taskModal.addEventListener('keydown', (e) => {
+                if (e.key === 'Tab') {
+                    const focusable = Array.from(taskModal.querySelectorAll(focusableElements))
+                        .filter(el => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true');
+                    
+                    if (focusable.length === 0) return;
+                    
+                    const first = focusable[0];
+                    const last = focusable[focusable.length - 1];
+                    
+                    if (e.shiftKey) {
+                        if (document.activeElement === first) {
+                            e.preventDefault();
+                            last.focus();
+                        }
+                    } else {
+                        if (document.activeElement === last) {
+                            e.preventDefault();
+                            first.focus();
+                        }
+                    }
+                }
+                
+                if (e.key === 'Escape') {
+                    closeModalAccessibly();
+                }
+            });
+            
+            // Accessible modal open function
+            window.openModalAccessibly = function() {
+                lastFocusedElement = document.activeElement;
+                const modal = document.getElementById('taskModal');
+                
+                // Show modal
+                modal.style.display = 'flex';
+                modal.setAttribute('aria-hidden', 'false');
+                
+                // Set background as inert (disable interaction)
+                const mainContent = document.querySelector('main');
+                if (mainContent) {
+                    mainContent.setAttribute('aria-hidden', 'true');
+                    mainContent.style.pointerEvents = 'none';
+                }
+                
+                // Focus first focusable element
+                const focusable = modal.querySelectorAll(focusableElements);
+                if (focusable.length > 0) {
+                    focusable[0].focus();
+                }
+                
+                console.log('♿ Modal opened accessibly with focus trapped');
+            };
+            
+            // Accessible modal close function
+            window.closeModalAccessibly = function() {
+                const modal = document.getElementById('taskModal');
+                
+                // Hide modal
+                modal.style.display = 'none';
+                modal.setAttribute('aria-hidden', 'true');
+                
+                // Restore background interaction
+                const mainContent = document.querySelector('main');
+                if (mainContent) {
+                    mainContent.setAttribute('aria-hidden', 'false');
+                    mainContent.style.pointerEvents = 'auto';
+                }
+                
+                // Restore focus to triggering element
+                if (lastFocusedElement) {
+                    lastFocusedElement.focus();
+                    lastFocusedElement = null;
+                }
+                
+                console.log('♿ Modal closed accessibly with focus restored');
+            };
+            
+            // Enhanced button states for screen readers
+            const autoScrollBtn = document.getElementById('autoScrollBtn');
+            if (autoScrollBtn) {
+                autoScrollBtn.addEventListener('click', () => {
+                    const pressed = autoScrollBtn.getAttribute('aria-pressed') === 'true';
+                    autoScrollBtn.setAttribute('aria-pressed', (!pressed).toString());
+                    console.log(`♿ Auto-scroll toggled: ${!pressed}`);
+                });
+            }
+            
+            // Enhanced status announcements
+            window.announceStatus = function(message, type = 'polite') {
+                const announcer = document.createElement('div');
+                announcer.setAttribute('aria-live', type);
+                announcer.setAttribute('aria-atomic', 'true');
+                announcer.className = 'sr-only';
+                announcer.textContent = message;
+                
+                document.body.appendChild(announcer);
+                
+                // Remove after announcement
+                setTimeout(() => {
+                    document.body.removeChild(announcer);
+                }, 1000);
+            };
+            
+            console.log('♿ Enterprise-grade accessibility initialized: Focus management, modal trapping, and screen reader support active');
+        }
     </script>
 {% endblock %}
 
