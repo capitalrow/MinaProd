@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 class EnhancedTranscriptionConfig:
     """Configuration for enhanced transcription system"""
     # Streaming configuration
-    streaming_config: StreamingConfig = None
+    streaming_config: Optional[StreamingConfig] = None
     
     # Chunk management
     max_cache_size_mb: int = 200
@@ -515,7 +515,11 @@ class EnhancedTranscriptionIntegration:
         component_performance = {}
         
         if hasattr(self.streaming_processor, 'get_performance_metrics'):
-            component_performance['streaming_processor'] = self.streaming_processor.get_performance_metrics()
+            # Get streaming processor performance if available
+            if hasattr(self.streaming_processor, 'get_performance_metrics'):
+                component_performance['streaming_processor'] = self.streaming_processor.get_performance_metrics()
+            else:
+                component_performance['streaming_processor'] = {'status': 'active'}
         
         if hasattr(self.chunk_manager, 'get_system_performance'):
             component_performance['chunk_manager'] = self.chunk_manager.get_system_performance()
