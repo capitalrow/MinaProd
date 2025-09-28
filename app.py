@@ -279,6 +279,14 @@ def create_app() -> Flask:
         app.logger.info("Calendar routes registered")
     except Exception as e:
         app.logger.error(f"Failed to register calendar routes: {e}")
+    
+    # AI Copilot routes
+    try:
+        from routes.copilot import copilot_bp
+        app.register_blueprint(copilot_bp)
+        app.logger.info("AI Copilot routes registered")
+    except Exception as e:
+        app.logger.error(f"Failed to register AI Copilot routes: {e}")
 
     # other blueprints (guarded)
     _optional = [
