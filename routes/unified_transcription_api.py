@@ -196,6 +196,7 @@ def unified_transcribe_audio():
                 'text': '',
                 'final_text': '',
                 'confidence': 0.0,
+                'speaker_id': 'speaker_1',
                 'session_id': session_id,
                 'chunk_id': chunk_id,
                 'is_interim': is_interim,
@@ -358,6 +359,7 @@ def unified_transcribe_audio():
                     'text': text,
                     'final_text': text if not is_interim else '',
                     'confidence': confidence,
+                    'speaker_id': 'speaker_1',  # Default speaker for single-speaker transcription
                     'session_id': session_id,
                     'chunk_id': chunk_id,
                     'is_interim': is_interim,
@@ -449,6 +451,7 @@ def unified_transcribe_audio():
                     'text': '',
                     'final_text': '',
                     'confidence': 0.0,
+                    'speaker_id': 'speaker_1',
                     'session_id': session_id,
                     'chunk_id': chunk_id,
                     'is_interim': is_interim,
