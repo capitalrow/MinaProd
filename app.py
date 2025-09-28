@@ -191,33 +191,35 @@ def create_app() -> Flask:
         app.logger.warning(f"Failed to register comprehensive WebSocket handlers: {e}")
 
     # Register transcription APIs
-    try:
-        from routes.transcription_api import transcription_api_bp
-        app.register_blueprint(transcription_api_bp)
-        app.logger.info("Transcription API registered")
-    except Exception as e:
-        app.logger.warning(f"Failed to register transcription API: {e}")
-    
+    # FIXED: Only register the working unified transcription API to avoid route conflicts
     try:
         from routes.unified_transcription_api import unified_api_bp
         app.register_blueprint(unified_api_bp)
-        app.logger.info("Unified Transcription API registered")
+        app.logger.info("✅ Unified Transcription API registered (ACTIVE)")
     except Exception as e:
         app.logger.warning(f"Failed to register unified transcription API: {e}")
     
-    try:
-        from routes.enhanced_transcription_api import enhanced_api_bp
-        app.register_blueprint(enhanced_api_bp)
-        app.logger.info("Enhanced Transcription API registered")
-    except Exception as e:
-        app.logger.warning(f"Failed to register enhanced transcription API: {e}")
+    # Disable conflicting transcription endpoints to prevent route conflicts
+    # try:
+    #     from routes.transcription_api import transcription_api_bp
+    #     app.register_blueprint(transcription_api_bp)
+    #     app.logger.info("Transcription API registered")
+    # except Exception as e:
+    #     app.logger.warning(f"Failed to register transcription API: {e}")
     
-    try:
-        from routes.comprehensive_transcription_api import comprehensive_bp
-        app.register_blueprint(comprehensive_bp)
-        app.logger.info("Comprehensive Transcription API registered")
-    except Exception as e:
-        app.logger.warning(f"Failed to register comprehensive transcription API: {e}")
+    # try:
+    #     from routes.enhanced_transcription_api import enhanced_api_bp
+    #     app.register_blueprint(enhanced_api_bp)
+    #     app.logger.info("Enhanced Transcription API registered")
+    # except Exception as e:
+    #     app.logger.warning(f"Failed to register enhanced transcription API: {e}")
+    
+    # try:
+    #     from routes.comprehensive_transcription_api import comprehensive_bp
+    #     app.register_blueprint(comprehensive_bp)
+    #     app.logger.info("Comprehensive Transcription API registered")
+    # except Exception as e:
+    #     app.logger.warning(f"Failed to register comprehensive transcription API: {e}")
     
     # Register WORKING live transcription API (priority)
     try:
