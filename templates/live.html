@@ -580,31 +580,50 @@
             transition: all var(--transition-fast);
         }
         
-        /* FIXED: Interim text with better visibility */
+        /* FIXED: Interim text with proper hierarchy (subordinate to final) */
         .transcript-text.interim-text {
-            opacity: 0.9;                                    /* Increased from 0.7 for better readability */
+            color: var(--text-secondary);                   /* Secondary text, NO opacity reduction */
             font-style: italic;
+            font-weight: 400;                               /* Lighter than final text */
             position: relative;
-            border-left: 3px solid var(--primary);
+            border-left: 2px solid var(--text-tertiary);    /* Subtle border, not primary */
             padding-left: 12px;
-            color: var(--text-secondary);                    /* Ensure consistent readable color */
-            background: linear-gradient(
-                90deg,
-                rgba(15, 165, 233, 0.08) 0%,               /* Slightly more visible */
-                transparent 20%
-            );
-            animation: shimmer 2s infinite, fadeInScale var(--transition-fast);
+            background: rgba(0, 245, 212, 0.04);            /* Very subtle background */
+            z-index: 1;
         }
         
+        @media (prefers-reduced-motion: no-preference) {
+            .transcript-text.interim-text {
+                animation: fadeInScale var(--transition-fast);  /* No shimmer unless motion allowed */
+            }
+        }
+        
+        /* FIXED: Proper typing dots with motion accessibility */
         .transcript-text.interim-text::after {
-            content: '';
-            animation: typingDots 1.5s infinite;
-            font-weight: bold;
-            color: var(--primary);
+            content: '…';                                    /* Fixed: actual dots content */
+            margin-left: 4px;
+            color: var(--text-tertiary);
+            font-weight: normal;
         }
         
+        @media (prefers-reduced-motion: no-preference) {
+            .transcript-text.interim-text::after {
+                animation: typingDots 1.5s infinite;
+            }
+        }
+        
+        /* FIXED: Final text with highest hierarchy prominence */
         .transcript-text.final-text {
-            animation: slideInFromBottom var(--transition-medium) ease-out;
+            color: var(--text-primary);                     /* Primary text color */
+            font-weight: 500;                               /* More prominent than interim */
+            border-left: 3px solid var(--success);          /* Strong success indicator */
+            background: var(--surface-elevated);            /* Elevated background */
+        }
+        
+        @media (prefers-reduced-motion: no-preference) {
+            .transcript-text.final-text {
+                animation: slideInFromBottom var(--transition-medium) ease-out;
+            }
         }
         
         .transcript-text.high-confidence {
@@ -612,12 +631,12 @@
             border-left: 3px solid var(--success);
         }
         
-        /* FIXED: Low confidence text with accessible contrast */
+        /* FIXED: Low-confidence text with proper color tokens (no opacity reduction) */
         .transcript-text.low-confidence {
-            opacity: 0.85;                                   /* Increased from 0.6 for readability */
+            color: var(--text-tertiary);                    /* Tertiary text color, NO opacity */
             border-left: 3px solid var(--warning);
-            background: rgba(245, 158, 11, 0.08);           /* Slightly more visible background */
-            color: var(--text-tertiary);                    /* Ensure readable text color */
+            background: rgba(245, 158, 11, 0.12);           /* Slightly stronger background for visibility */
+            font-style: italic;                             /* Visual distinction without opacity */
         }
 
         .text-selected {
