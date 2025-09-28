@@ -126,13 +126,62 @@
             width: 24px;
             height: 24px;
             margin-right: 12px;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
+            transform-origin: center center;
         }
         
+        /* Enhanced Hover Effects */
         .nav-brand:hover .nav-brand-icon {
-            transform: translateY(-1px) scale(1.05);
-            filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.3));
+            transform: translateY(-2px) scale(1.08) rotateZ(1deg);
+            filter: drop-shadow(0 8px 24px rgba(99, 102, 241, 0.4)) brightness(1.1);
+        }
+        
+        /* Enhanced Click Effect */
+        .nav-brand:active .nav-brand-icon {
+            transform: translateY(0px) scale(1.02);
+            transition: all 0.1s ease;
+        }
+        
+        /* Sophisticated Pulse Animation for Audio Theme */
+        .nav-brand-icon .mina-bars {
+            animation: minaBarsBreathing 4s ease-in-out infinite;
+        }
+        
+        @keyframes minaBarsBreathing {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(1.02); }
+        }
+        
+        /* Individual Bar Hover Animations */
+        .nav-brand:hover .nav-brand-icon .mina-bar-left {
+            animation: minaBarPulse 1.2s ease-in-out infinite;
+        }
+        
+        .nav-brand:hover .nav-brand-icon .mina-bar-middle {
+            animation: minaBarPulse 1.4s ease-in-out infinite;
+            animation-delay: 0.1s;
+        }
+        
+        .nav-brand:hover .nav-brand-icon .mina-bar-right {
+            animation: minaBarPulse 1.1s ease-in-out infinite;
+            animation-delay: 0.2s;
+        }
+        
+        @keyframes minaBarPulse {
+            0%, 100% { transform: scaleY(1) scaleX(1); opacity: 1; }
+            50% { transform: scaleY(1.08) scaleX(1.02); opacity: 0.9; }
+        }
+        
+        /* Enhanced Sheen Effect on Hover */
+        .nav-brand:hover .nav-brand-icon .mina-sheen {
+            animation: minaEnhancedSheen 1.5s ease-in-out;
+        }
+        
+        @keyframes minaEnhancedSheen {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(-45deg); opacity: 0; }
+            50% { opacity: 0.6; }
+            100% { transform: translateX(150%) translateY(150%) rotate(-45deg); opacity: 0; }
         }
         
         /* Hide wave effects at small sizes */
