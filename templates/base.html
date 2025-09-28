@@ -42,8 +42,6 @@
     <!-- Socket.IO Client - Defer loading -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js" defer></script>
     
-    <!-- Feather Icons -->
-    <script src="https://unpkg.com/feather-icons" defer></script>
     
     
     {% block head %}{% endblock %}
@@ -69,7 +67,7 @@
             <div class="sidebar-section">
                 <div class="sidebar-section-label">Main</div>
                 
-                <a href="{{ url_for('dashboard.index') }}" class="sidebar-item" data-route="/dashboard/" role="menuitem">
+                <a href="{{ url_for('dashboard.index') }}" class="sidebar-item" data-route="/dashboard" role="menuitem">
                     <div class="sidebar-item-icon">
                         <i class="fas fa-th-large"></i>
                     </div>
@@ -77,7 +75,7 @@
                     <div class="sidebar-item-tooltip">Dashboard</div>
                 </a>
 
-                <a href="/live" class="sidebar-item" data-route="/live" role="menuitem">
+                <a href="{{ url_for('pages.live') }}" class="sidebar-item" data-route="/live" role="menuitem">
                     <div class="sidebar-item-icon">
                         <i class="fas fa-microphone"></i>
                     </div>
@@ -86,7 +84,7 @@
                     <div class="sidebar-item-tooltip">Live Recording</div>
                 </a>
 
-                <a href="{{ url_for('dashboard.meetings') }}" class="sidebar-item" data-route="/meetings" role="menuitem">
+                <a href="{{ url_for('dashboard.meetings') }}" class="sidebar-item" data-route="/dashboard/meetings" role="menuitem">
                     <div class="sidebar-item-icon">
                         <i class="fas fa-users"></i>
                     </div>
@@ -95,7 +93,7 @@
                     <div class="sidebar-item-tooltip">Meetings</div>
                 </a>
 
-                <a href="{{ url_for('dashboard.tasks') }}" class="sidebar-item" data-route="/tasks" role="menuitem">
+                <a href="{{ url_for('dashboard.tasks') }}" class="sidebar-item" data-route="/dashboard/tasks" role="menuitem">
                     <div class="sidebar-item-icon">
                         <i class="fas fa-check-square"></i>
                     </div>
@@ -109,7 +107,7 @@
             <div class="sidebar-section">
                 <div class="sidebar-section-label">Analytics</div>
                 
-                <a href="{{ url_for('dashboard.analytics') }}" class="sidebar-item" data-route="/analytics" role="menuitem">
+                <a href="{{ url_for('dashboard.analytics') }}" class="sidebar-item" data-route="/dashboard/analytics" role="menuitem">
                     <div class="sidebar-item-icon">
                         <i class="fas fa-chart-line"></i>
                     </div>
@@ -122,7 +120,7 @@
             <div class="sidebar-section">
                 <div class="sidebar-section-label">Tools</div>
                 
-                <a href="/calendar" class="sidebar-item" data-route="/calendar" role="menuitem">
+                <a href="{{ url_for('calendar.index') }}" class="sidebar-item" data-route="/calendar" role="menuitem">
                     <div class="sidebar-item-icon">
                         <i class="fas fa-calendar-alt"></i>
                     </div>
@@ -130,7 +128,7 @@
                     <div class="sidebar-item-tooltip">Calendar</div>
                 </a>
 
-                <a href="/settings" class="sidebar-item" data-route="/settings" role="menuitem">
+                <a href="{{ url_for('settings.index') }}" class="sidebar-item" data-route="/settings" role="menuitem">
                     <div class="sidebar-item-icon">
                         <i class="fas fa-cog"></i>
                     </div>
@@ -138,7 +136,7 @@
                     <div class="sidebar-item-tooltip">Settings</div>
                 </a>
 
-                <a href="/copilot" class="sidebar-item" data-route="/copilot" role="menuitem">
+                <a href="{{ url_for('copilot.index') }}" class="sidebar-item" data-route="/copilot" role="menuitem">
                     <div class="sidebar-item-icon">
                         <i class="fas fa-robot"></i>
                     </div>
