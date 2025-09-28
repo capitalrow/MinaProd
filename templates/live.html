@@ -1811,6 +1811,70 @@
                 0 1px 3px rgba(0, 245, 212, 0.1);
         }
         
+        /* CRITICAL: Real-time Transcript Visibility Fixes */
+        #transcriptContainer {
+            opacity: 1 !important;
+            visibility: visible !important;
+            position: relative !important;
+            z-index: 10 !important;
+        }
+        
+        /* Final Segments Container */
+        .final-segments {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        
+        /* Real-time Interim Line - ULTRA VISIBLE */
+        .interim-line {
+            opacity: 1 !important;
+            visibility: visible !important;
+            color: #FFFFFF !important;
+            background: rgba(0, 255, 0, 0.1) !important;
+            border-left: 4px solid #00FF00 !important;
+            padding: 12px 16px !important;
+            margin: 8px 0 !important;
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            font-size: 16px !important;
+            line-height: 1.6 !important;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8) !important;
+            z-index: 100 !important;
+            position: relative !important;
+            display: block !important;
+        }
+        
+        /* State Classes for Active Recording */
+        body.ui-state-recording #transcriptContainer {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        
+        .transcript-content.has-content {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        
+        .transcript-content.has-interim .interim-line {
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: block !important;
+        }
+        
+        /* CRITICAL: Reduced Motion Compatibility */
+        @media (prefers-reduced-motion: reduce) {
+            #transcriptContainer,
+            .final-segments,
+            .interim-line,
+            .transcript-content.has-content,
+            .transcript-content.has-interim .interim-line {
+                opacity: 1 !important;
+                visibility: visible !important;
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+        
         /* Enhanced Responsive Design */
         @media (max-width: 1400px) {
             .recording-studio {
@@ -2119,13 +2183,19 @@
                 </div>
             </div>
             
-            <!-- Transcript Content -->
-            <div class="transcript-content" id="transcriptContent">
+            <!-- Transcript Content - UNIFIED CONTAINER -->
+            <div class="transcript-content" id="transcriptContainer">
                 <div class="empty-state" id="emptyState">
                     <div class="empty-icon">🎙️</div>
                     <div class="empty-message">Ready to start recording</div>
                     <div class="empty-hint">Click the record button to begin live transcription</div>
                 </div>
+                
+                <!-- Final Transcript Segments -->
+                <div id="finalSegments" class="final-segments"></div>
+                
+                <!-- Real-time Interim Line -->
+                <div id="interimLine" class="interim-line" aria-live="polite"></div>
             </div>
             
             <!-- Speakers Panel -->
@@ -3201,59 +3271,39 @@
             }
             
             updateInterimTranscript(text, confidence, speaker, response) {
-                console.log('🔄 PREMIUM updateInterimTranscript called with:', { text, confidence, speaker, response });
+                console.log('🔄 UNIFIED updateInterimTranscript called with:', { text, confidence, speaker, response });
                 
-                const content = document.getElementById('transcriptContent');
-                if (!content) {
-                    console.error('❌ transcriptContent not found');
+                // CRITICAL: Use unified container as single source of truth
+                const container = document.getElementById('transcriptContainer');
+                const interimLine = document.getElementById('interimLine');
+                
+                if (!container || !interimLine) {
+                    console.error('❌ Required unified containers not found:', {container: !!container, interimLine: !!interimLine});
                     return;
                 }
                 
-                console.log('✅ transcriptContent found:', content);
+                console.log('✅ Unified containers found - implementing architect solution');
                 
-                // Remove empty state with seamless animation
-                const emptyState = content.querySelector('.empty-state');
-                if (emptyState) {
-                    console.log('🗑️ Removing empty state');
-                    emptyState.style.transition = 'all 0.3s ease-out';
-                    emptyState.style.opacity = '0';
-                    emptyState.style.transform = 'scale(0.95)';
-                    setTimeout(() => emptyState.remove(), 300);
+                // Hide empty state immediately when showing content
+                const emptyState = document.getElementById('emptyState');
+                if (emptyState && emptyState.style.display !== 'none') {
+                    console.log('🗑️ Hiding empty state for live transcript');
+                    emptyState.style.display = 'none';
                 }
                 
-                const confidenceClass = confidence > 0.8 ? 'high-confidence' : 
-                                      confidence < 0.5 ? 'low-confidence' : '';
+                // CRITICAL: Toggle state classes for CSS visibility control
+                document.body.classList.add('ui-state-recording');
+                container.classList.add('has-content', 'has-interim');
                 
-                let interimElement = document.getElementById('interimTranscript');
-                const isNewElement = !interimElement;
+                console.log('✅ State classes applied:', {
+                    body: document.body.classList.contains('ui-state-recording'),
+                    container: container.classList.contains('has-content'),
+                    interim: container.classList.contains('has-interim')
+                });
                 
-                if (!interimElement) {
-                    console.log('🆕 Creating new interim element');
-                    interimElement = document.createElement('div');
-                    interimElement.id = 'interimTranscript';
-                    interimElement.className = `transcript-segment interim-text premium-interim ${confidenceClass}`;
-                    
-                    // CRITICAL: Force visibility with inline styles
-                    interimElement.style.display = 'block';
-                    interimElement.style.visibility = 'visible';
-                    interimElement.style.opacity = '1';
-                    interimElement.style.position = 'relative';
-                    interimElement.style.zIndex = '10';
-                    interimElement.style.backgroundColor = '#1a1a2e';
-                    interimElement.style.border = '1px solid #3B82F6';
-                    interimElement.style.borderRadius = '8px';
-                    interimElement.style.padding = '12px';
-                    interimElement.style.margin = '8px 0';
-                    
-                    content.appendChild(interimElement);
-                    console.log('✅ Interim element created and appended');
-                } else {
-                    console.log('🔄 Updating existing interim element');
-                }
-                
-                // Create ULTRA-VISIBLE text content with maximum contrast
-                const simpleTextHTML = `
-                    <div style="color: #FFFFFF !important; font-size: 18px !important; font-weight: 700 !important; margin-bottom: 10px !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.8) !important;">
+                // Create interim content with ULTRA visibility
+                const interimHTML = `
+                    <div style="color: #FFFFFF !important; font-size: 18px !important; font-weight: 700 !important; margin-bottom: 8px !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.8) !important;">
                         <span style="color: #00FF00 !important; font-size: 14px !important; margin-right: 8px !important; font-weight: 900 !important;">● LIVE TRANSCRIPTION</span>
                         ${speaker?.name || 'Speaker 1'}
                     </div>
@@ -3266,26 +3316,29 @@
                     </div>
                 `;
                 
-                interimElement.innerHTML = simpleTextHTML;
+                // CRITICAL: Set content in dedicated interim line (don't replace container innerHTML)
+                interimLine.innerHTML = interimHTML;
                 
-                // CRITICAL: Force visibility again after content update
-                interimElement.style.display = 'block';
-                interimElement.style.visibility = 'visible';
-                interimElement.style.opacity = '1';
-                
-                console.log('✅ Interim element content updated:', interimElement);
-                console.log('📍 Element position in DOM:', interimElement.getBoundingClientRect());
-                
-                // PREMIUM: Store last interim text for seamless final replacement
+                // Store for seamless final replacement
                 this.lastInterimText = text;
-                this.lastInterimElement = interimElement;
+                this.lastInterimElement = interimLine;
+                
+                // Log positioning for debugging
+                const rect = interimLine.getBoundingClientRect();
+                console.log('📍 Interim line position:', {
+                    x: rect.x, y: rect.y, width: rect.width, height: rect.height,
+                    visible: rect.width > 0 && rect.height > 0,
+                    display: getComputedStyle(interimLine).display,
+                    visibility: getComputedStyle(interimLine).visibility,
+                    opacity: getComputedStyle(interimLine).opacity
+                });
                 
                 // Ensure optimal scroll behavior
                 if (this.autoScroll) {
                     this.scrollToBottomSmooth();
                 }
                 
-                console.log('✅ PREMIUM interim transcript updated with FORCED visibility');
+                console.log('✅ UNIFIED interim transcript updated with state classes & dedicated line');
             }
             
             createPremiumInterimText(text, wordTimestamps, confidence) {
