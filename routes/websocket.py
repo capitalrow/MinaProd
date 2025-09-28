@@ -84,14 +84,10 @@ def on_audio_chunk(data):
     data: { session_id, audio_data, settings }
     Frontend sends audio_data as array of bytes from MediaRecorder.
     """
-    logger.info(f"🔊 [ws] audio_chunk received from frontend")
     session_id = (data or {}).get("session_id")
     if not session_id:
-        logger.error(f"[ws] Missing session_id in audio_chunk")
         emit("error", {"message": "Missing session_id in audio_chunk"})
         return
-    
-    logger.info(f"[ws] Processing audio_chunk for session: {session_id}")
 
     # Get settings from frontend
     settings = (data or {}).get("settings", {})
@@ -193,11 +189,10 @@ def on_finalize(data):
             segment = Segment(
                 session_id=session.id,
                 text=final_text,
-                start_time=0,  # Could be calculated from audio duration
-                end_time=len(full_audio) / 16000,  # Rough estimate
-                confidence=0.9,  # Default confidence
-                is_final=True,
-                segment_type="final"
+                kind="final",
+                start_ms=0,  # Could be calculated from audio duration
+                end_ms=int(len(full_audio) / 16000 * 1000),  # Convert to milliseconds
+                avg_confidence=0.9  # Correct field name
             )
             db.session.add(segment)
             
