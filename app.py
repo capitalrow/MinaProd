@@ -90,6 +90,8 @@ def create_app() -> Flask:
     csrf = CSRFProtect(app)
     app.config["WTF_CSRF_TIME_LIMIT"] = None  # Don't expire tokens
     app.config["WTF_CSRF_SSL_STRICT"] = False  # Allow behind proxy
+    # Disable CSRF for JSON requests (APIs should use token auth)
+    app.config["WTF_CSRF_CHECK_DEFAULT"] = False  # We'll manually check where needed
 
     # gzip (optional)
     try:
