@@ -285,6 +285,7 @@ def create_app() -> Flask:
         ("routes.insights", "insights_bp", "/api"),
         ("routes.nudges", "nudges_bp", "/api"),
         ("routes.team_collaboration", "team_bp", "/api"),
+        ("routes.advanced_analytics", "analytics_bp", "/api"),
         ("routes.health", "health_bp", "/health"),
         ("routes.metrics_stream", "metrics_stream_bp", "/api"),
         ("routes.error_handlers", "errors_bp", None),
