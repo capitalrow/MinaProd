@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Socket.IO Connection Test - Monitoring System</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
 </head>
 <body>
     <h1>🔍 Manual Monitoring System - Connection Test</h1>
@@ -15,7 +15,7 @@
         console.log(message);
     }
     
-    logResult('🔄 Testing Socket.IO 2.3.0 compatibility...');
+    logResult('🔄 Testing Socket.IO 4.7.2 compatibility...');
     
     const socket = io({
         transports: ['polling', 'websocket'],
@@ -23,7 +23,7 @@
     });
     
     socket.on('connect', () => {
-        logResult('✅ Socket.IO 2.3.0 connection successful!');
+        logResult('✅ Socket.IO 4.7.2 connection successful!');
         socket.emit('test_message', {test: true});
     });
     
