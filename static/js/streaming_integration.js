@@ -151,7 +151,9 @@ class StreamingIntegration {
     }
     
     updateTranscriptDisplay(text) {
-        const transcriptDisplay = document.getElementById('transcriptDisplay') ||
+        const transcriptDisplay = document.getElementById('transcriptContent') ||
+                                document.querySelector('.transcript-content') ||
+                                document.getElementById('transcriptDisplay') ||
                                 document.querySelector('.live-transcript-container');
         
         if (transcriptDisplay) {

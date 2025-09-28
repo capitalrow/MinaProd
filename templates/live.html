@@ -3035,12 +3035,12 @@
                     // PREMIUM: Enhanced transcript handling with seamless transitions
                     if (is_final) {
                         console.log('✅ Adding PREMIUM final transcript segment');
-                        this.addTranscriptSegment(text, confidence, speakerInfo, timestamp, result);
+                        this.addTranscriptSegment(text, confidence, speakerInfo, timestamp, data);
                         this.totalWords += text.split(' ').length;
                         this.segmentCount++;
                     } else {
                         console.log('🔄 Updating PREMIUM interim transcript');
-                        this.updateInterimTranscript(text, confidence, speakerInfo, result);
+                        this.updateInterimTranscript(text, confidence, speakerInfo, data);
                         // Update word count for interim transcript
                         this.totalWords = text.split(' ').filter(word => word.length > 0).length;
                     }
@@ -3052,7 +3052,18 @@
                     }
                     
                 } catch (error) {
-                    console.error('Error handling transcription result:', error);
+                    console.error('❌ Error handling transcription result:', {
+                        error: error.message || error,
+                        stack: error.stack,
+                        data: data,
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    // Show user-friendly error message
+                    this.showToast('Failed to process transcription result', 'error');
+                    
+                    // Update status to indicate processing error
+                    this.updateStatus('Transcription processing error', 'error');
                 }
             }
             
