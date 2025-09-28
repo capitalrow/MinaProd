@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mina - Meeting Insights & Action{% endblock %}</title>
+    
+    <!-- Performance Optimizations -->
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="dns-prefetch" href="//unpkg.com">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    
+    <!-- Critical CSS - Progressive Loading -->
+    <link rel="preload" href="{{ url_for('static', filename='css/design-tokens.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}"></noscript>
+    
+    <link rel="preload" href="{{ url_for('static', filename='css/typography.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}"></noscript>
+    
+    <link rel="preload" href="{{ url_for('static', filename='css/components.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}"></noscript>
+    
+    <!-- Icons and External Dependencies -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
+    
+    <!-- Premium Page Transitions CSS -->
+    <style>
+        /* View Transitions API Support */
+        @supports (view-transition-name: root) {
+            ::view-transition {
+                pointer-events: none;
+            }
+            
+            ::view-transition-group(root) {
+                animation-duration: 0.25s;
+            }
+            
+            ::view-transition-old(root),
+            ::view-transition-new(root) {
+                animation-duration: 0.25s;
+            }
+        }
+        
+        /* Page Transition Container */
+        .page-transition-container {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                       transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .page-transition-container.page-loading {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        
+        /* Respect reduced motion preference */
+        @media (prefers-reduced-motion: reduce) {
+            .page-transition-container,
+            ::view-transition-group(root),
+            ::view-transition-old(root),
+            ::view-transition-new(root) {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* Premium Navigation Styles */
+        .nav-header {
+            background: rgba(16, 24, 40, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 1.5rem;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-brand:hover {
+            color: #0EA5E9;
+            text-decoration: none;
+        }
+        
+        .nav-brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #0EA5E9 0%, #6366F1 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 18px;
+        }
+        
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .nav-link:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        
+        .nav-link.active {
+            color: #0EA5E9;
+            background: rgba(14, 165, 233, 0.1);
+        }
+        
+        .nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 20px;
+            background: #0EA5E9;
+            border-radius: 0 2px 2px 0;
+        }
+        
+        .nav-link i {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+        
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: auto;
+        }
+        
+        .nav-user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 500;
+        }
+        
+        .nav-primary-cta {
+            background: linear-gradient(135deg, #0EA5E9 0%, #6366F1 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
+        }
+        
+        .nav-primary-cta:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+        
+        /* Mobile Navigation */
+        .nav-mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-mobile-toggle {
+                display: block;
+            }
+            
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: rgba(16, 24, 40, 0.98);
+                backdrop-filter: blur(20px);
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                flex-direction: column;
+                padding: 20px;
+                gap: 4px;
+            }
+            
+            .nav-menu.open {
+                display: flex;
+            }
+            
+            .nav-link {
+                width: 100%;
+                justify-content: flex-start;
+                padding: 12px 16px;
+            }
+        }
+    </style>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Skip Link for Accessibility -->
+    <a href="#main-content" class="skip-link" style="position: absolute; left: -9999px; z-index: 999; padding: 8px; background: #0EA5E9; color: white; text-decoration: none; border-radius: 4px; top: 8px;">Skip to main content</a>
+    
+    <!-- Unified Premium Navigation Header -->
+    <nav class="nav-header">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; height: 64px;">
+            <!-- Brand -->
+            <a href="{{ url_for('dashboard.index') if current_user and current_user.is_authenticated else url_for('pages.index') }}" class="nav-brand">
+                <div class="nav-brand-icon">🎤</div>
+                <span>Mina</span>
+            </a>
+            
+            <!-- Desktop Navigation -->
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                    <i data-feather="home"></i>Dashboard
+                </a></li>
+                <li><a href="{{ url_for('pages.live') }}" class="nav-link {% if request.endpoint == 'pages.live' %}active{% endif %}">
+                    <i data-feather="mic"></i>Live Recording
+                </a></li>
+                <li><a href="{{ url_for('dashboard.meetings') }}" class="nav-link {% if request.endpoint == 'dashboard.meetings' %}active{% endif %}">
+                    <i data-feather="users"></i>Meetings
+                </a></li>
+                <li><a href="{{ url_for('dashboard.tasks') }}" class="nav-link {% if request.endpoint == 'dashboard.tasks' %}active{% endif %}">
+                    <i data-feather="check-square"></i>Tasks
+                </a></li>
+                <li><a href="{{ url_for('dashboard.analytics') }}" class="nav-link {% if request.endpoint == 'dashboard.analytics' %}active{% endif %}">
+                    <i data-feather="bar-chart-2"></i>Analytics
+                </a></li>
+                <li><a href="{{ url_for('settings.settings_dashboard') }}" class="nav-link {% if request.endpoint == 'settings.settings_dashboard' %}active{% endif %}">
+                    <i data-feather="settings"></i>Settings
+                </a></li>
+            </ul>
+            
+            <!-- Mobile Toggle -->
+            <button class="nav-mobile-toggle" onclick="toggleMobileNav()" aria-label="Toggle navigation">
+                <i data-feather="menu"></i>
+            </button>
+            
+            <!-- User Section -->
+            <div class="nav-user">
+                <a href="{{ url_for('pages.live') }}" class="nav-primary-cta">
+                    <i data-feather="mic" style="width: 16px; height: 16px;"></i>
+                    Start Recording
+                </a>
+                
+                {% if current_user and current_user.is_authenticated %}
+                <div class="nav-user-avatar" title="{{ current_user.first_name or current_user.username }}">
+                    {{ (current_user.first_name or current_user.username)[0].upper() }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Page Content with Transition Container -->
+    <div class="page-transition-container" id="pageContent">
+        <main id="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    
+    <!-- Premium Page Transition Script -->
+    <script>
+        // Initialize Feather Icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+        
+        // Mobile Navigation Toggle
+        function toggleMobileNav() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('open');
+        }
+        
+        // Premium Page Transitions
+        function enablePremiumTransitions() {
+            // View Transitions API support
+            if ('startViewTransition' in document) {
+                // Modern browsers with View Transitions API
+                document.addEventListener('click', (e) => {
+                    const link = e.target.closest('a[href]');
+                    if (link && link.hostname === window.location.hostname && !link.hasAttribute('target')) {
+                        e.preventDefault();
+                        
+                        document.startViewTransition(() => {
+                            window.location.href = link.href;
+                        });
+                    }
+                });
+            } else {
+                // Fallback for older browsers
+                document.addEventListener('click', (e) => {
+                    const link = e.target.closest('a[href]');
+                    if (link && link.hostname === window.location.hostname && !link.hasAttribute('target')) {
+                        e.preventDefault();
+                        
+                        const pageContent = document.getElementById('pageContent');
+                        pageContent.classList.add('page-loading');
+                        
+                        setTimeout(() => {
+                            window.location.href = link.href;
+                        }, 100);
+                    }
+                });
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Respect reduced motion preference
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (!prefersReducedMotion) {
+                enablePremiumTransitions();
+            }
+            
+            // Initialize icons
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        });
+        
+        // Keyboard navigation support
+        document.addEventListener('keydown', (e) => {
+            // Alt + R for quick recording
+            if (e.altKey && e.key.toLowerCase() === 'r') {
+                e.preventDefault();
+                window.location.href = "{{ url_for('pages.live') }}";
+            }
+            // Alt + D for dashboard
+            if (e.altKey && e.key.toLowerCase() === 'd') {
+                e.preventDefault();
+                window.location.href = "{{ url_for('dashboard.index') }}";
+            }
+            // Alt + S for settings
+            if (e.altKey && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                window.location.href = "{{ url_for('settings.dashboard') }}";
+            }
+        });
+    </script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

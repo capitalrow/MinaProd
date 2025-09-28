@@ -1,42 +1,10 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mina - Live Recording Studio</title>
-    
-    <!-- Performance Optimizations -->
-    <link rel="preconnect" href="https://unpkg.com" crossorigin>
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <link rel="dns-prefetch" href="//unpkg.com">
-    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
-    
-    <!-- Critical CSS - Inline most important design tokens -->
-    <style>
-        :root {
-            --mina-breakpoint-xs: 360px; --mina-breakpoint-sm: 768px; --mina-breakpoint-md: 1024px; --mina-breakpoint-lg: 1440px;
-            --mina-primary: #2563eb; --mina-bg-primary: #ffffff; --mina-text-primary: #0f172a;
-        }
-        [data-theme="dark"] { --mina-bg-primary: #0f172a; --mina-text-primary: #f8fafc; }
-        body { font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; }
-    </style>
-    
-    <!-- Core CSS - Load progressively -->
-    <link rel="preload" href="{{ url_for('static', filename='css/design-tokens.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}"></noscript>
-    
-    <link rel="preload" href="{{ url_for('static', filename='css/typography.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}"></noscript>
-    
-    <link rel="preload" href="{{ url_for('static', filename='css/components.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}"></noscript>
-    
-    <!-- External Dependencies -->
-    <script src="https://unpkg.com/feather-icons"></script>
+{% extends "base_unified.html" %}
+
+{% block title %}Live Recording Studio - {{ super() }}{% endblock %}
+
+{% block extra_head %}
     <!-- Socket.IO loaded locally to bypass CDN issues -->
     <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
-    
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
     
     <style>
         :root {
@@ -1973,8 +1941,9 @@
                 );
         }
     </style>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
     <div class="recording-studio">
         <!-- Control Panel -->
         <div class="control-panel">
@@ -3253,14 +3222,44 @@
                     
                     console.log(`🎤 Sending ${isInterim ? 'interim' : 'final'} audio chunk (${audioBlob.size} bytes)`);
                     
+                    // CRITICAL FIX: Enhance audio blob with proper headers and fallback
+                    let processedBlob = audioBlob;
+                    let filename = 'chunk.webm';
+                    let mimeType = 'audio/webm';
+                    
+                    // Check if blob has valid WebM header, if not use PCM fallback
+                    const buffer = await audioBlob.arrayBuffer();
+                    const bytes = new Uint8Array(buffer);
+                    
+                    // Check for EBML header (0x1A45DFA3)
+                    const hasValidWebMHeader = bytes.length >= 4 && 
+                        bytes[0] === 0x1A && bytes[1] === 0x45 && 
+                        bytes[2] === 0xDF && bytes[3] === 0xA3;
+                    
+                    if (!hasValidWebMHeader && bytes.length > 1000) {
+                        console.log('🔧 WebM header missing, using PCM fallback');
+                        // Convert to PCM16/WAV format for better compatibility
+                        try {
+                            processedBlob = await this.convertToPCMWav(audioBlob);
+                            filename = 'chunk.wav';
+                            mimeType = 'audio/wav';
+                            console.log(`✅ PCM conversion successful: ${processedBlob.size} bytes`);
+                        } catch (conversionError) {
+                            console.warn('⚠️ PCM conversion failed, using original blob:', conversionError);
+                        }
+                    } else if (hasValidWebMHeader) {
+                        console.log('✅ Valid WebM header detected');
+                    }
+                    
                     const formData = new FormData();
-                    formData.append('audio', audioBlob, 'chunk.webm');
+                    formData.append('audio', processedBlob, filename);
                     formData.append('session_id', this.sessionId);
                     formData.append('is_interim', isInterim.toString());
                     formData.append('chunk_id', this.chunkCounter++);
                     formData.append('language', this.getCurrentSettings().language);
                     formData.append('quality', this.getCurrentSettings().quality);
                     formData.append('diarization', this.getCurrentSettings().diarization);
+                    formData.append('mime_type', mimeType);
                     
                     const startTime = Date.now();
                     
@@ -3302,6 +3301,109 @@
                         this.showToast('Network error during transcription', 'error');
                     }
                 }
+            }
+
+            async convertToPCMWav(audioBlob) {
+                /**
+                 * CRITICAL: Convert audio blob to PCM16/WAV format as fallback
+                 * when WebM header is missing or corrupted
+                 */
+                return new Promise((resolve, reject) => {
+                    try {
+                        // Use Web Audio API to decode and re-encode as WAV
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                            sampleRate: 16000
+                        });
+                        
+                        const reader = new FileReader();
+                        reader.onload = async () => {
+                            try {
+                                const arrayBuffer = reader.result;
+                                
+                                // Try to decode the audio buffer
+                                let audioBuffer;
+                                try {
+                                    audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice());
+                                } catch (decodeError) {
+                                    // If decoding fails, create a basic PCM buffer from raw data
+                                    console.warn('Audio decode failed, creating basic PCM buffer');
+                                    const length = Math.floor(arrayBuffer.byteLength / 2);
+                                    audioBuffer = audioContext.createBuffer(1, length, 16000);
+                                    const channelData = audioBuffer.getChannelData(0);
+                                    const view = new Int16Array(arrayBuffer);
+                                    for (let i = 0; i < Math.min(length, view.length); i++) {
+                                        channelData[i] = view[i] / 32768.0; // Convert to float
+                                    }
+                                }
+                                
+                                // Convert to PCM16 WAV format
+                                const wavBuffer = this.audioBufferToWav(audioBuffer);
+                                const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
+                                
+                                resolve(wavBlob);
+                            } catch (error) {
+                                console.error('PCM conversion failed:', error);
+                                reject(error);
+                            }
+                        };
+                        
+                        reader.onerror = () => reject(new Error('Failed to read audio blob'));
+                        reader.readAsArrayBuffer(audioBlob);
+                        
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            }
+
+            audioBufferToWav(audioBuffer) {
+                /**
+                 * Convert AudioBuffer to WAV format bytes
+                 */
+                const length = audioBuffer.length;
+                const numberOfChannels = audioBuffer.numberOfChannels;
+                const sampleRate = audioBuffer.sampleRate;
+                const bitsPerSample = 16;
+                const bytesPerSample = bitsPerSample / 8;
+                const blockAlign = numberOfChannels * bytesPerSample;
+                const byteRate = sampleRate * blockAlign;
+                const dataSize = length * blockAlign;
+                const buffer = new ArrayBuffer(44 + dataSize);
+                const view = new DataView(buffer);
+                
+                // WAV header
+                const writeString = (offset, string) => {
+                    for (let i = 0; i < string.length; i++) {
+                        view.setUint8(offset + i, string.charCodeAt(i));
+                    }
+                };
+                
+                writeString(0, 'RIFF');
+                view.setUint32(4, 36 + dataSize, true);
+                writeString(8, 'WAVE');
+                writeString(12, 'fmt ');
+                view.setUint32(16, 16, true); // Subchunk1Size
+                view.setUint16(20, 1, true); // AudioFormat (PCM)
+                view.setUint16(22, numberOfChannels, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, byteRate, true);
+                view.setUint16(32, blockAlign, true);
+                view.setUint16(34, bitsPerSample, true);
+                writeString(36, 'data');
+                view.setUint32(40, dataSize, true);
+                
+                // Convert audio data
+                let offset = 44;
+                for (let i = 0; i < length; i++) {
+                    for (let channel = 0; channel < numberOfChannels; channel++) {
+                        const sample = Math.max(-1, Math.min(1, audioBuffer.getChannelData(channel)[i]));
+                        const intSample = Math.floor(sample * 0x7FFF);
+                        view.setInt16(offset, intSample, true);
+                        offset += 2;
+                    }
+                }
+                
+                return buffer;
             }
 
             toggleFullscreen() {
@@ -3435,5 +3537,8 @@
             window.app = new MinaLiveRecording();
         });
     </script>
-</body>
-</html>
+{% endblock %}
+
+{% block extra_scripts %}
+    <!-- Additional live recording scripts can go here -->
+{% endblock %}

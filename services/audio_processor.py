@@ -36,35 +36,48 @@ class AudioProcessor:
         logger.info("Audio processor buffers cleared")
     
     def convert_to_wav(self, audio_data: bytes, input_format: str = 'webm',
-                       sample_rate: int = 16000, channels: int = 1) -> bytes:
+                       sample_rate: int = 16000, channels: int = 1, mime_type: str = None) -> bytes:
         """
         Convert audio data to WAV format with proper decoding.
         🔥 CRITICAL FIX: Implements proper WebM to WAV conversion for Google Recorder accuracy.
+        Enhanced with client-side format detection support.
         
         Args:
             audio_data: Raw audio bytes
             input_format: Input audio format
             sample_rate: Target sample rate
             channels: Number of audio channels
+            mime_type: Detected MIME type from client (audio/webm or audio/wav)
             
         Returns:
             WAV formatted audio bytes
         """
         try:
-            if input_format.lower() == 'wav':
+            # Use client-provided MIME type if available for better detection
+            detected_format = input_format
+            if mime_type:
+                if 'wav' in mime_type.lower():
+                    detected_format = 'wav'
+                elif 'webm' in mime_type.lower():
+                    detected_format = 'webm'
+                    
+            logger.info(f"🔧 Processing audio: {len(audio_data)} bytes, format: {detected_format}, mime: {mime_type}")
+            
+            if detected_format.lower() == 'wav':
                 return self._validate_wav_format(audio_data)
             
-            # 🔥 CRITICAL FIX: Proper WebM conversion using multiple strategies
-            return self._convert_webm_to_wav_professional(audio_data, sample_rate, channels)
+            # Enhanced WebM processing with header validation
+            return self._convert_webm_to_wav_enhanced(audio_data, sample_rate, channels)
             
         except Exception as e:
             logger.error(f"🚨 Audio conversion failed: {e}")
             # Emergency fallback with quality validation
             return self._emergency_wav_conversion(audio_data, sample_rate, channels)
     
-    def _convert_webm_to_wav_professional(self, webm_data: bytes, sample_rate: int = 16000, channels: int = 1) -> bytes:
+    def _convert_webm_to_wav_enhanced(self, webm_data: bytes, sample_rate: int = 16000, channels: int = 1) -> bytes:
         """
-        🔥 PROFESSIONAL WebM to WAV conversion using PyDub for accuracy.
+        🔥 ENHANCED WebM to WAV conversion using PyDub for accuracy.
+        Enhanced with EBML header validation and multiple fallback strategies.
         Implements Google Recorder-level audio processing quality.
         """
         try:
@@ -72,6 +85,16 @@ class AudioProcessor:
             from io import BytesIO
             
             logger.info(f"🔧 Converting {len(webm_data)} bytes of WebM to WAV (SR: {sample_rate}, Ch: {channels})")
+            
+            # CRITICAL: Check for EBML header first
+            has_ebml_header = (len(webm_data) >= 4 and 
+                             webm_data[0] == 0x1A and webm_data[1] == 0x45 and 
+                             webm_data[2] == 0xDF and webm_data[3] == 0xA3)
+            
+            if not has_ebml_header:
+                logger.warning(f"⚠️ Missing EBML header in WebM data, attempting repair")
+                # Try to add minimal EBML header if missing
+                webm_data = self._repair_webm_header(webm_data)
             
             # Strategy 1: Direct PyDub conversion
             try:
@@ -1100,3 +1123,27 @@ class AudioProcessor:
             return "Poor"
         else:
             return "Very Poor"
+    
+    def _repair_webm_header(self, webm_data: bytes) -> bytes:
+        """
+        🔧 Attempt to repair WebM data by adding minimal EBML header.
+        This is a basic repair attempt - may not work for all cases.
+        """
+        try:
+            # Minimal EBML header for WebM
+            ebml_header = bytes([
+                0x1A, 0x45, 0xDF, 0xA3,  # EBML signature
+                0x9F, 0x42, 0x86, 0x81, 0x01,  # EBML Version = 1
+                0x42, 0xF2, 0x81, 0x04,  # EBML ReadVersion = 1  
+                0x42, 0xF3, 0x81, 0x08,  # EBML MaxIDLength = 4
+                0x42, 0x82, 0x84, 0x77, 0x65, 0x62, 0x6D,  # DocType = "webm"
+                0x42, 0x87, 0x81, 0x02,  # DocTypeVersion = 2
+                0x42, 0x85, 0x81, 0x02,  # DocTypeReadVersion = 2
+            ])
+            
+            logger.info(f"🔧 Adding EBML header to {len(webm_data)} bytes")
+            return ebml_header + webm_data
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Could not repair WebM header: {e}")
+            return webm_data
