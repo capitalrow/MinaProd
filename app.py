@@ -53,7 +53,9 @@ socketio = SocketIO(
     async_mode="threading",
     ping_timeout=60,
     ping_interval=25,
-    path=os.getenv("SOCKETIO_PATH", "/socket.io"),
+    path="/socket.io",
+    engineio_logger=False,
+    socketio_logger=False,
     max_http_buffer_size=int(os.getenv("SIO_MAX_HTTP_BUFFER", str(10 * 1024 * 1024))),  # 10 MB per message
 )
 
@@ -319,12 +321,7 @@ def create_app() -> Flask:
         return jsonify(error="server_error"), 500
 
     # hook Socket.IO to app
-    socketio.init_app(
-        app,
-        cors_allowed_origins=getattr(Config, "CORS_ALLOWLIST", "*"),
-        path=getattr(Config, "SOCKETIO_PATH", "/socket.io"),
-        max_http_buffer_size=int(os.getenv("SIO_MAX_HTTP_BUFFER", str(10 * 1024 * 1024))),
-    )
+    socketio.init_app(app)
     app.extensions["socketio"] = socketio
 
     # Socket.IO origin guard (optional tighten)
