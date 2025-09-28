@@ -3032,16 +3032,16 @@
                         this.detectAndHandleMarkers(text, speakerInfo, timestamp);
                     }
                     
-                    // Add or update transcript segment
+                    // PREMIUM: Enhanced transcript handling with seamless transitions
                     if (is_final) {
-                        console.log('✅ Adding final transcript segment');
-                        this.addTranscriptSegment(text, confidence, speakerInfo, timestamp);
+                        console.log('✅ Adding PREMIUM final transcript segment');
+                        this.addTranscriptSegment(text, confidence, speakerInfo, timestamp, result);
                         this.totalWords += text.split(' ').length;
                         this.segmentCount++;
                     } else {
-                        console.log('🔄 Updating interim transcript');
-                        this.updateInterimTranscript(text, confidence, speakerInfo);
-                        // Update word count for interim transcript too
+                        console.log('🔄 Updating PREMIUM interim transcript');
+                        this.updateInterimTranscript(text, confidence, speakerInfo, result);
+                        // Update word count for interim transcript
                         this.totalWords = text.split(' ').filter(word => word.length > 0).length;
                     }
                     
@@ -3056,60 +3056,141 @@
                 }
             }
             
-            addTranscriptSegment(text, confidence, speaker, timestamp) {
+            addTranscriptSegment(text, confidence, speaker, timestamp, response) {
                 const content = document.getElementById('transcriptContent');
                 
-                // Remove interim text if exists
+                // PREMIUM: Seamless transition from interim to final transcript
                 const interimElement = document.getElementById('interimTranscript');
+                let shouldAnimate = true;
+                
+                if (interimElement && this.lastInterimText) {
+                    // Check if this final text is continuation of interim text
+                    const interimWords = this.lastInterimText.toLowerCase().split(' ');
+                    const finalWords = text.toLowerCase().split(' ');
+                    
+                    // If final text contains interim text, do seamless replacement
+                    if (text.toLowerCase().includes(this.lastInterimText.toLowerCase())) {
+                        shouldAnimate = false;
+                        console.log('🔄 SEAMLESS: Replacing interim with complete final transcript');
+                        
+                        // Animate interim element transformation to final
+                        interimElement.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+                        interimElement.style.transform = 'scale(1.02)';
+                        interimElement.style.filter = 'brightness(1.1)';
+                        
+                        setTimeout(() => {
+                            interimElement.style.transform = 'scale(1)';
+                            interimElement.style.filter = 'brightness(1)';
+                        }, 200);
+                    }
+                }
+                
+                // Remove interim element with smooth transition
                 if (interimElement) {
-                    interimElement.remove();
+                    if (shouldAnimate) {
+                        interimElement.style.transition = 'all 0.4s ease-out';
+                        interimElement.style.opacity = '0';
+                        interimElement.style.transform = 'translateY(-10px) scale(0.95)';
+                        setTimeout(() => interimElement.remove(), 400);
+                    } else {
+                        // Immediate replacement for seamless experience
+                        setTimeout(() => interimElement.remove(), 500);
+                    }
                 }
                 
                 const segment = document.createElement('div');
-                
-                // Apply confidence-based styling
                 const confidenceClass = confidence > 0.8 ? 'high-confidence' : 
                                       confidence < 0.5 ? 'low-confidence' : '';
                 
-                segment.className = `transcript-segment final-text ${confidenceClass}`;
+                segment.className = `transcript-segment final-text premium-final ${confidenceClass}`;
+                
+                // PREMIUM: Enhanced final transcript with word-level timestamps
+                const wordTimestamps = response?.word_timestamps || [];
+                const segments = response?.segments || [];
+                const finalTextHTML = this.createPremiumFinalText(text, wordTimestamps, confidence);
+                
                 segment.innerHTML = `
-                    <div class="segment-header">
+                    <div class="segment-header premium-final-header">
                         <div class="speaker-info">
-                            <div class="speaker-avatar" style="background: ${speaker?.color || '#6366F1'}; animation: fadeInScale var(--transition-medium) ease-out;">
+                            <div class="speaker-avatar premium-final-avatar" style="background: ${speaker?.color || '#6366F1'};">
                                 ${speaker?.name ? speaker.name.substring(0, 2).toUpperCase() : 'U'}
                             </div>
-                            <div class="speaker-name">${speaker?.name || 'Unknown Speaker'}</div>
+                            <div class="speaker-name premium-final-name">${speaker?.name || 'Unknown Speaker'}</div>
                         </div>
-                        <div class="segment-metadata">
-                            <span class="timestamp">${this.formatTimestamp(timestamp)}</span>
-                            <span class="confidence-badge ${this.getConfidenceClass(confidence)}" style="animation: slideInFromBottom var(--transition-medium) ease-out;">
-                                <div class="confidence-bar" style="width: ${confidence * 100}%; animation: confidenceBar 0.8s ease-out;"></div>
+                        <div class="segment-metadata premium-final-metadata">
+                            <span class="timestamp premium-final-timestamp">${this.formatTimestamp(timestamp)}</span>
+                            <span class="confidence-badge premium-final-confidence ${this.getConfidenceClass(confidence)}">
+                                <div class="confidence-fill premium-fill" style="width: ${confidence * 100}%; animation: finalConfidenceReveal 1s ease-out;"></div>
                                 ${Math.round(confidence * 100)}%
                             </span>
+                            <span class="final-indicator" style="color: var(--success); font-weight: 600; font-size: 0.75rem;">✓ FINAL</span>
                         </div>
                     </div>
-                    <div class="transcript-text final-text ${confidenceClass}" style="animation: textReveal var(--transition-medium) ease-out;">
-                        ${text}
-                        <div class="confidence-bar-container" style="margin-top: 6px;">
-                            <div class="confidence-bar" style="width: ${confidence * 100}%; height: 3px; background: ${confidence > 0.8 ? 'var(--success)' : confidence < 0.5 ? 'var(--warning)' : 'var(--primary)'}; border-radius: 2px; animation: confidenceBar 1s ease-out;"></div>
-                        </div>
+                    <div class="transcript-text premium-final-text ${confidenceClass}">
+                        ${finalTextHTML}
+                    </div>
+                    <div class="premium-final-bar">
+                        <div class="final-complete" style="animation: finalComplete 1.2s ease-out;"></div>
                     </div>
                 `;
                 
                 content.appendChild(segment);
                 
-                // Animate in
-                segment.style.opacity = '0';
-                segment.style.transform = 'translateY(20px)';
-                setTimeout(() => {
-                    segment.style.transition = 'all 0.3s ease';
+                // PREMIUM: Enhanced entrance animations
+                if (shouldAnimate) {
+                    segment.style.opacity = '0';
+                    segment.style.transform = 'translateY(15px) scale(0.98)';
+                    setTimeout(() => {
+                        segment.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                        segment.style.opacity = '1';
+                        segment.style.transform = 'translateY(0) scale(1)';
+                    }, shouldAnimate ? 100 : 0);
+                } else {
+                    // Seamless replacement - no entrance animation
                     segment.style.opacity = '1';
-                    segment.style.transform = 'translateY(0)';
-                }, 10);
+                    segment.style.transform = 'translateY(0) scale(1)';
+                }
+                
+                // Clear interim state
+                this.lastInterimText = null;
+                this.lastInterimElement = null;
+                
+                console.log('✅ PREMIUM final transcript segment added with enhanced experience');
             }
             
-            updateInterimTranscript(text, confidence, speaker) {
-                console.log('🔄 updateInterimTranscript called with:', { text, confidence, speaker });
+            createPremiumFinalText(text, wordTimestamps, confidence) {
+                if (!text) return '';
+                
+                // Enhanced final text with clickable timestamps
+                const words = text.split(' ');
+                const wordElements = [];
+                
+                words.forEach((word, index) => {
+                    const wordData = wordTimestamps.find(w => w.word && w.word.trim().toLowerCase() === word.toLowerCase());
+                    const wordConfidence = wordData?.confidence || confidence;
+                    const startTime = wordData?.start || 0;
+                    
+                    const wordClass = wordConfidence > 0.8 ? 'word-high-confidence' : 
+                                    wordConfidence < 0.5 ? 'word-low-confidence' : 'word-medium-confidence';
+                    
+                    wordElements.push(`
+                        <span class="premium-final-word ${wordClass}" 
+                              data-start="${startTime}"
+                              data-confidence="${wordConfidence}"
+                              style="animation: finalWordReveal 0.8s ease-out ${index * 0.03}s both;
+                                     cursor: pointer;"
+                              title="Confidence: ${Math.round(wordConfidence * 100)}% | Time: ${this.formatTimestamp(startTime * 1000)}"
+                              onclick="this.jumpToTime && this.jumpToTime(${startTime})">
+                            ${word}
+                        </span>
+                    `);
+                });
+                
+                return `<span class="premium-final-container">${wordElements.join(' ')}</span>`;
+            }
+            
+            updateInterimTranscript(text, confidence, speaker, response) {
+                console.log('🔄 PREMIUM updateInterimTranscript called with:', { text, confidence, speaker, response });
                 
                 const content = document.getElementById('transcriptContent');
                 if (!content) {
@@ -3117,70 +3198,129 @@
                     return;
                 }
                 
-                console.log('✅ Found transcriptContent container');
-                
-                // Remove empty state with animation if it exists
+                // Remove empty state with seamless animation
                 const emptyState = content.querySelector('.empty-state');
                 if (emptyState) {
-                    emptyState.style.animation = 'fadeInScale var(--transition-fast) reverse';
-                    setTimeout(() => emptyState.remove(), 200);
-                    console.log('✅ Removed empty state with animation');
+                    emptyState.style.transition = 'all 0.3s ease-out';
+                    emptyState.style.opacity = '0';
+                    emptyState.style.transform = 'scale(0.95)';
+                    setTimeout(() => emptyState.remove(), 300);
                 }
                 
-                // FIXED: Move confidenceClass definition outside conditional block
                 const confidenceClass = confidence > 0.8 ? 'high-confidence' : 
                                       confidence < 0.5 ? 'low-confidence' : '';
                 
                 let interimElement = document.getElementById('interimTranscript');
+                const isNewElement = !interimElement;
+                
                 if (!interimElement) {
                     interimElement = document.createElement('div');
                     interimElement.id = 'interimTranscript';
-                    
-                    interimElement.className = `transcript-segment interim-text ${confidenceClass}`;
-                    
-                    // Add entrance animation
-                    interimElement.style.animation = 'slideInFromBottom var(--transition-medium) ease-out';
+                    interimElement.className = `transcript-segment interim-text premium-interim ${confidenceClass}`;
                     content.appendChild(interimElement);
-                    console.log('✅ Created new interim element with animations');
-                } else {
-                    console.log('✅ Using existing interim element');
-                    // Update class for existing element
-                    interimElement.className = `transcript-segment interim-text ${confidenceClass}`;
                 }
                 
+                // PREMIUM: Enhanced interim transcript with word-level highlighting
+                const wordTimestamps = response?.word_timestamps || [];
+                const segments = response?.segments || [];
+                
+                // Create enhanced interim display with smooth word reveals
+                const textHTML = this.createPremiumInterimText(text, wordTimestamps, confidence);
+                
                 interimElement.innerHTML = `
-                    <div class="segment-header">
+                    <div class="segment-header premium-header">
                         <div class="speaker-info">
-                            <div class="speaker-avatar" style="background: ${speaker?.color || '#10b981'};">
+                            <div class="speaker-avatar premium-avatar" style="background: ${speaker?.color || '#10b981'}; animation: ${isNewElement ? 'pulseGlow 0.8s ease-out' : 'none'};">
                                 ${speaker?.name ? speaker.name.substring(0, 1).toUpperCase() : 'S'}
                             </div>
-                            <div class="speaker-name">${speaker?.name || 'Speaker 1'}</div>
+                            <div class="speaker-name premium-name">${speaker?.name || 'Speaker 1'}</div>
                         </div>
-                        <div class="segment-metadata">
-                            <span class="timestamp">${this.formatTimestamp()}</span>
-                            <span class="confidence-badge ${this.getConfidenceClass(confidence)}">
+                        <div class="segment-metadata premium-metadata">
+                            <span class="timestamp premium-timestamp">${this.formatTimestamp()}</span>
+                            <span class="confidence-badge premium-confidence ${this.getConfidenceClass(confidence)}">
+                                <div class="confidence-fill" style="width: ${confidence * 100}%; animation: confidenceFlow 0.6s ease-out;"></div>
                                 ${Math.round(confidence * 100)}%
                             </span>
+                            <span class="live-indicator" style="color: var(--danger); font-weight: 600; font-size: 0.75rem; animation: livePulse 2s infinite;">● LIVE</span>
                         </div>
                     </div>
-                    <div class="transcript-text interim-text ${confidenceClass}" style="animation: textReveal var(--transition-medium) ease-out;">
-                        <span class="text-content">${text}</span>
-                        <span class="typing-indicator" style="color: var(--primary); font-size: 0.9em; animation: typingDots 1.5s infinite;">(speaking...)</span>
-                        <div class="confidence-bar-container" style="margin-top: 4px;">
-                            <div class="confidence-bar" style="width: ${confidence * 100}%; height: 2px; background: ${confidence > 0.8 ? 'var(--success)' : confidence < 0.5 ? 'var(--warning)' : 'var(--primary)'}; transition: all var(--transition-fast); animation: confidenceBar 0.5s ease-out;"></div>
-                        </div>
+                    <div class="transcript-text premium-interim-text ${confidenceClass}">
+                        ${textHTML}
+                        <span class="premium-typing-indicator" style="margin-left: 8px; animation: typingDots 1.2s infinite;">⋯</span>
+                    </div>
+                    <div class="premium-progress-bar">
+                        <div class="progress-fill" style="width: ${Math.min(text.length * 2, 100)}%; animation: progressFlow 0.5s ease-out;"></div>
                     </div>
                 `;
                 
-                // Enhanced visual styling with animations
-                interimElement.style.display = 'block';
+                // PREMIUM: Seamless animations for new elements
+                if (isNewElement) {
+                    interimElement.style.opacity = '0';
+                    interimElement.style.transform = 'translateY(10px) scale(0.98)';
+                    setTimeout(() => {
+                        interimElement.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                        interimElement.style.opacity = '1';
+                        interimElement.style.transform = 'translateY(0) scale(1)';
+                    }, 50);
+                } else {
+                    // Smooth text update animation for existing element
+                    const textContent = interimElement.querySelector('.transcript-text');
+                    if (textContent) {
+                        textContent.style.animation = 'textUpdate 0.3s ease-out';
+                    }
+                }
                 
-                console.log('✅ Interim transcript updated with text:', text);
+                // PREMIUM: Store last interim text for seamless final replacement
+                this.lastInterimText = text;
+                this.lastInterimElement = interimElement;
                 
-                // Ensure visibility and scroll
-                content.style.display = 'block';
+                // Ensure optimal scroll behavior
                 if (this.autoScroll) {
-                    content.scrollTop = content.scrollHeight;
+                    this.scrollToBottomSmooth();
+                }
+                
+                console.log('✅ PREMIUM interim transcript updated with enhanced animations');
+            }
+            
+            createPremiumInterimText(text, wordTimestamps, confidence) {
+                if (!text) return '';
+                
+                // Split text into words and create enhanced display
+                const words = text.split(' ');
+                const wordElements = [];
+                
+                words.forEach((word, index) => {
+                    // Find corresponding timestamp data if available
+                    const wordData = wordTimestamps.find(w => w.word && w.word.trim().toLowerCase() === word.toLowerCase());
+                    const wordConfidence = wordData?.confidence || confidence;
+                    
+                    // Create confidence-based styling
+                    const wordClass = wordConfidence > 0.8 ? 'word-high-confidence' : 
+                                    wordConfidence < 0.5 ? 'word-low-confidence' : 'word-medium-confidence';
+                    
+                    // Add progressive reveal animation with stagger
+                    const staggerDelay = index * 0.05; // 50ms stagger between words
+                    
+                    wordElements.push(`
+                        <span class="premium-word ${wordClass}" 
+                              style="animation: wordReveal 0.4s ease-out ${staggerDelay}s both; 
+                                     animation-fill-mode: both;
+                                     opacity: 0;">
+                            ${word}
+                        </span>
+                    `);
+                });
+                
+                return `<span class="premium-text-container">${wordElements.join(' ')}</span>`;
+            }
+            
+            scrollToBottomSmooth() {
+                const content = document.getElementById('transcriptContent');
+                if (content) {
+                    content.scrollTo({
+                        top: content.scrollHeight,
+                        behavior: 'smooth'
+                    });
                 }
             }
             
