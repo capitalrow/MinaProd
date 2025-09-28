@@ -9,6 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, render_template, request, g, jsonify
 from flask_socketio import SocketIO
 from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect
 
 # ---------- Config (fallback if config.Config not present)
 try:
@@ -17,7 +18,7 @@ except Exception:
     class Config:
         JSON_LOGS: bool = os.getenv("JSON_LOGS", "false").lower() == "true"
         METRICS_DIR: str = os.getenv("METRICS_DIR", "./metrics")
-        SECRET_KEY: str = os.getenv("SESSION_SECRET", os.urandom(32).hex())
+        SECRET_KEY: str = os.getenv("SESSION_SECRET", "")  # No fallback - must be set
         SOCKETIO_PATH: str = os.getenv("SOCKETIO_PATH", "/socket.io")
         CORS_ALLOWLIST: str = os.getenv("CORS_ALLOWLIST", "*")
         MAX_CONTENT_LENGTH: int = int(os.getenv("MAX_CONTENT_LENGTH", str(32 * 1024 * 1024)))  # 32 MB
@@ -62,7 +63,15 @@ socketio = SocketIO(
 def create_app() -> Flask:
     app = Flask(__name__, static_folder="static", template_folder="templates")
     app.config.from_object(Config)
-    app.secret_key = os.environ.get("SESSION_SECRET", getattr(Config, "SECRET_KEY", os.urandom(32).hex()))
+    # Enforce SESSION_SECRET is set - fail fast in production
+    app.secret_key = os.environ.get("SESSION_SECRET") or getattr(Config, "SECRET_KEY")
+    if not app.secret_key:
+        # Only allow fallback in development
+        if os.getenv("REPLIT_DEV_ENV") or os.getenv("REPLIT_RUNTIME_TYPE") == "interactivedev":
+            app.secret_key = "dev-session-secret-only-for-testing-change-in-production"
+            app.logger.warning("SESSION_SECRET not set, using development key")
+        else:
+            raise ValueError("SESSION_SECRET environment variable must be set for production")
     app.config["MAX_CONTENT_LENGTH"] = getattr(Config, "MAX_CONTENT_LENGTH", 32 * 1024 * 1024)
 
     # logging
@@ -71,6 +80,16 @@ def create_app() -> Flask:
 
     # reverse proxy (Replit)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+    
+    # Set security headers
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    
+    # Initialize CSRF protection  
+    csrf = CSRFProtect(app)
+    app.config["WTF_CSRF_TIME_LIMIT"] = None  # Don't expire tokens
+    app.config["WTF_CSRF_SSL_STRICT"] = False  # Allow behind proxy
 
     # gzip (optional)
     try:
@@ -113,8 +132,9 @@ def create_app() -> Flask:
         resp.headers["Content-Security-Policy"] = (
             "default-src 'self' *.replit.dev *.replit.app; "
             "connect-src 'self' https: wss: ws:; "
-            "script-src 'self' 'unsafe-inline' https://cdn.socket.io; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "script-src 'self' 'unsafe-inline' https://cdn.socket.io https://cdnjs.cloudflare.com https://cdn.replit.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.replit.com; "
+            "font-src 'self' https://cdnjs.cloudflare.com data:; "
             "img-src 'self' blob: data:; "
             "media-src 'self' blob:; "
             "worker-src 'self' blob:;"
@@ -306,6 +326,14 @@ def create_app() -> Flask:
         app.logger.info("AI Copilot routes registered")
     except Exception as e:
         app.logger.error(f"Failed to register AI Copilot routes: {e}")
+    
+    # Missing API endpoints
+    try:
+        from routes.missing_endpoints import missing_api_bp
+        app.register_blueprint(missing_api_bp)
+        app.logger.info("Missing API endpoints registered")
+    except Exception as e:
+        app.logger.error(f"Failed to register missing API endpoints: {e}")
 
     # other blueprints (guarded)
     _optional = [
