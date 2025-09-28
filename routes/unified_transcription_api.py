@@ -14,6 +14,7 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime
 import openai
 import io
+from pydub import AudioSegment
 
 # Import robust services
 from services.circuit_breaker import get_openai_circuit_breaker, get_audio_processing_circuit_breaker, CircuitBreakerOpenError
@@ -38,8 +39,13 @@ _audio_processor = None
 
 # Production Safety Limits
 MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024  # 25MB max
-MAX_PROCESSING_TIME_SECONDS = 30  # 30s timeout
+MAX_PROCESSING_TIME_SECONDS = 15  # Reduced to 15s timeout
 MAX_REQUESTS_PER_MINUTE = 60  # Rate limiting
+
+# Performance Optimization Limits  
+OPENAI_TIMEOUT_SECONDS = 8  # Fast OpenAI timeout for low latency
+AUDIO_PROCESSING_TIMEOUT = 3  # Max audio conversion time
+WHISPER_RESPONSE_TIMEOUT = 5  # Max Whisper API response time
 
 def get_openai_client():
     """Get or initialize OpenAI client with proper error handling"""
@@ -48,7 +54,10 @@ def get_openai_client():
         api_key = os.getenv('OPENAI_API_KEY')
         if not api_key:
             raise ValueError("OPENAI_API_KEY environment variable is required")
-        _openai_client = openai.OpenAI(api_key=api_key)
+        _openai_client = openai.OpenAI(
+            api_key=api_key,
+            timeout=OPENAI_TIMEOUT_SECONDS
+        )
         logger.info("✅ OpenAI client initialized successfully")
     return _openai_client
 
@@ -286,11 +295,10 @@ def unified_transcribe_audio():
                     response = client.audio.transcriptions.create(
                         model="whisper-1",
                         file=audio_file,
-                        response_format="verbose_json",
+                        response_format="json",  # Simplified for faster response
                         language="en",
                         temperature=0.0,  # Lower temperature for accuracy
-                        # Add timestamp granularities for better analysis
-                        timestamp_granularities=["word"]
+                        timeout=WHISPER_RESPONSE_TIMEOUT  # Fast timeout for performance
                     )
                 
                 transcription_time = (time.time() - transcription_start) * 1000
@@ -540,12 +548,12 @@ def convert_audio_to_wav_enhanced(audio_data):
     except Exception as e2:
         logger.warning(f"⚠️ Strategy 2 failed: {e2}")
     
-    # Strategy 3: FFmpeg fallback using temporary files
+    # Strategy 3: Enhanced FFmpeg fallback with timeout protection
     try:
         import subprocess
         import tempfile
         
-        logger.info("🔧 Strategy 3: FFmpeg conversion")
+        logger.info("🔧 Strategy 3: Enhanced FFmpeg conversion with timeout")
         
         with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as webm_file:
             webm_file.write(audio_data)
@@ -564,7 +572,7 @@ def convert_audio_to_wav_enhanced(audio_data):
             wav_path
         ]
         
-        result = subprocess.run(cmd, capture_output=True, timeout=10)
+        result = subprocess.run(cmd, capture_output=True, timeout=AUDIO_PROCESSING_TIMEOUT)
         
         if result.returncode == 0 and os.path.exists(wav_path):
             with open(wav_path, 'rb') as f:
@@ -729,13 +737,13 @@ def persist_session():
             return jsonify({'error': 'Session ID required'}), 400
         
         # Basic in-memory session persistence (production would use Redis/DB)
-        session_store = getattr(persist_session, '_store', {})
-        session_store[session_id] = {
+        if not hasattr(persist_session, '_store'):
+            persist_session._store = {}
+        persist_session._store[session_id] = {
             'state': state_data,
             'timestamp': time.time(),
             'last_activity': time.time()
         }
-        persist_session._store = session_store
         
         return jsonify({
             'success': True,
