@@ -2,15 +2,169 @@
 
 {% block title %}{{ session.title }} - Mina{% endblock %}
 
+{% block head %}
+<!-- PREMIUM SESSION DETAIL DESIGN SYSTEM -->
+<style>
+    /* ELITE SESSION BACKGROUND */
+    body {
+        background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
+        background-attachment: fixed;
+        position: relative;
+        min-height: 100vh;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 200%;
+        height: 200%;
+        background: 
+            radial-gradient(circle at 30% 70%, rgba(168, 85, 247, 0.2) 0%, transparent 50%),
+            radial-gradient(circle at 70% 30%, rgba(59, 130, 246, 0.2) 0%, transparent 50%);
+        animation: premiumSessionFloat 25s ease-in-out infinite;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    @keyframes premiumSessionFloat {
+        0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+        50% { transform: translate(35px, -35px) rotate(180deg); }
+    }
+
+    /* PREMIUM CONTAINER */
+    .container {
+        position: relative;
+        z-index: 10;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    /* PREMIUM CARDS */
+    .card {
+        background: var(--glass-bg-light);
+        backdrop-filter: blur(40px) saturate(180%);
+        border-radius: 20px;
+        border: 1px solid var(--glass-border);
+        box-shadow: 
+            0 20px 40px rgba(0, 0, 0, 0.15),
+            0 10px 20px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    /* PREMIUM BREADCRUMB */
+    .breadcrumb {
+        background: var(--glass-bg-dark);
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--glass-border);
+    }
+
+    .breadcrumb-item a {
+        color: var(--elite-purple-500);
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .breadcrumb-item a:hover {
+        color: var(--premium-blue-500);
+    }
+
+    /* PREMIUM BADGES */
+    .badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .bg-success {
+        background: linear-gradient(135deg, var(--emerald-500), var(--emerald-600)) !important;
+    }
+
+    .bg-primary {
+        background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-500)) !important;
+    }
+
+    .bg-danger {
+        background: linear-gradient(135deg, var(--red-500), var(--red-600)) !important;
+    }
+
+    /* PREMIUM BUTTONS */
+    .btn {
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--emerald-500), var(--emerald-600));
+        color: white;
+        box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-500));
+        color: white;
+        box-shadow: 0 10px 20px rgba(168, 85, 247, 0.3);
+    }
+
+    .btn-outline-primary {
+        background: var(--glass-bg-light);
+        color: var(--elite-purple-500);
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 
+            0 20px 40px rgba(168, 85, 247, 0.4),
+            0 10px 20px rgba(59, 130, 246, 0.3);
+    }
+
+    /* PREMIUM TITLES */
+    h2 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+    }
+
+    /* RESPONSIVE DESIGN */
+    @media (max-width: 768px) {
+        .container {
+            padding: 1rem;
+        }
+        .btn-group {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <!-- Session Header -->
+<div class="container mt-4 animate-fade-in">
+    <!-- Premium Session Header -->
     <div class="row mb-4">
         <div class="col-md-8">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ url_for('sessions.list_sessions') }}">Sessions</a></li>
-                    <li class="breadcrumb-item active">{{ session.title }}</li>
+                    <li class="breadcrumb-item active" style="color: var(--neutral-600);">{{ session.title }}</li>
                 </ol>
             </nav>
             
