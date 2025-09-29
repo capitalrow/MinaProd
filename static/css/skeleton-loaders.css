@@ -1,0 +1,241 @@
+/* Premium Skeleton Loaders for Enhanced Loading States */
+
+/* Skeleton Animation */
+@keyframes skeleton-pulse {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Base Skeleton Style */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--mina-gray-200) 25%,
+        var(--mina-gray-100) 50%,
+        var(--mina-gray-200) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Skeleton Variants */
+.skeleton-text {
+    height: 16px;
+    margin-bottom: 8px;
+    width: 100%;
+}
+
+.skeleton-text.short {
+    width: 60%;
+}
+
+.skeleton-text.medium {
+    width: 80%;
+}
+
+.skeleton-title {
+    height: 24px;
+    width: 40%;
+    margin-bottom: 16px;
+}
+
+.skeleton-heading {
+    height: 32px;
+    width: 50%;
+    margin-bottom: 24px;
+}
+
+.skeleton-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+
+.skeleton-avatar.small {
+    width: 32px;
+    height: 32px;
+}
+
+.skeleton-avatar.large {
+    width: 64px;
+    height: 64px;
+}
+
+.skeleton-button {
+    height: 40px;
+    width: 120px;
+    border-radius: 6px;
+}
+
+.skeleton-card {
+    height: 200px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+.skeleton-card.small {
+    height: 120px;
+}
+
+.skeleton-card.large {
+    height: 300px;
+}
+
+/* Stat Card Skeleton */
+.skeleton-stat-card {
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--mina-border-primary);
+}
+
+.skeleton-stat-value {
+    height: 48px;
+    width: 80px;
+    margin-bottom: 12px;
+}
+
+.skeleton-stat-label {
+    height: 16px;
+    width: 120px;
+}
+
+/* Meeting Item Skeleton */
+.skeleton-meeting-item {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--mina-border-primary);
+    margin-bottom: 12px;
+}
+
+.skeleton-meeting-content {
+    flex: 1;
+}
+
+.skeleton-meeting-title {
+    height: 20px;
+    width: 70%;
+    margin-bottom: 8px;
+}
+
+.skeleton-meeting-meta {
+    height: 14px;
+    width: 50%;
+}
+
+/* Chart Skeleton */
+.skeleton-chart {
+    height: 300px;
+    border-radius: 12px;
+}
+
+/* Table Skeleton */
+.skeleton-table-row {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    border-bottom: 1px solid var(--mina-border-primary);
+}
+
+.skeleton-table-cell {
+    height: 20px;
+    flex: 1;
+}
+
+.skeleton-table-cell.small {
+    flex: 0.5;
+}
+
+/* Loading Container */
+.loading-container {
+    padding: 24px;
+}
+
+.loading-container.center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+/* Premium Shimmer Effect */
+.skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton-shimmer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 150%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -150%;
+    }
+    100% {
+        left: 150%;
+    }
+}
+
+/* Responsive Skeleton Spacing */
+@media (max-width: 768px) {
+    .skeleton-stat-card {
+        padding: 16px;
+    }
+    
+    .skeleton-meeting-item {
+        padding: 12px;
+    }
+}
+
+/* Reduced Motion Support - Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+        background: var(--mina-gray-200);
+    }
+    
+    .skeleton-shimmer::before {
+        animation: none;
+        display: none;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .skeleton {
+        background: linear-gradient(
+            90deg,
+            var(--mina-gray-700) 25%,
+            var(--mina-gray-600) 50%,
+            var(--mina-gray-700) 75%
+        );
+    }
+    
+    @media (prefers-reduced-motion: reduce) {
+        .skeleton {
+            background: var(--mina-gray-700);
+        }
+    }
+}
