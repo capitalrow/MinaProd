@@ -3,8 +3,9 @@
  * Sophisticated marketing and landing page design with glass morphism hero sections
  */
 
-/* LANDING PAGE FOUNDATION */
-:root {
+/* LANDING PAGE FOUNDATION - Scoped to avoid conflicts */
+body.page-landing,
+[data-page="landing"] {
     --landing-primary: #6366F1;
     --landing-secondary: #8B5CF6;
     --landing-accent: #10B981;

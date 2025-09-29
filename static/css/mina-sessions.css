@@ -3,8 +3,9 @@
  * Sophisticated session interfaces with glass morphism design and unified styling
  */
 
-/* SESSIONS FOUNDATION */
-:root {
+/* SESSIONS FOUNDATION - Scoped to avoid conflicts */
+body.page-sessions,
+[data-page="sessions"] {
     --sessions-primary: #6366F1;
     --sessions-secondary: #8B5CF6;
     --sessions-accent: #10B981;

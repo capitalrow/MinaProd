@@ -3,8 +3,9 @@
  * Sophisticated meeting detail view with glass morphism design and advanced interactions
  */
 
-/* MEETING PAGE FOUNDATION */
-:root {
+/* MEETING PAGE FOUNDATION - Scoped to avoid conflicts */
+body.page-meeting,
+[data-page="meeting"] {
     --meeting-primary: #6366F1;
     --meeting-secondary: #8B5CF6;
     --meeting-accent: #10B981;

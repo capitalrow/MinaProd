@@ -67,10 +67,7 @@
 .status-dot.processing { background: #f59e0b; }
 .status-dot.error { background: #ef4444; }
 
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
+/* Pulse animation defined in mina-animations.css */
 
 /* Main Grid Layout - MOBILE OPTIMIZED */
 .main-grid {

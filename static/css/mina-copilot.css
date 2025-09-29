@@ -3,7 +3,9 @@
  * Provides sophisticated glass morphism design for AI copilot interactions
  */
 
-:root {
+/* Scoped variables to avoid global conflicts */
+body.page-copilot,
+[data-page="copilot"] {
     --copilot-primary: #0EA5E9;
     --copilot-secondary: #6366F1;
     --copilot-accent: #F59E0B;

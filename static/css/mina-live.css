@@ -3,8 +3,9 @@
  * Real-time transcription interface with premium animations and neural network effects
  */
 
-/* LIVE TRANSCRIPTION FOUNDATION */
-:root {
+/* LIVE TRANSCRIPTION FOUNDATION - Scoped to avoid conflicts */
+body.page-live,
+[data-page="live"] {
     --live-primary: #A855F7;
     --live-secondary: #3B82F6;
     --live-accent: #10B981;
