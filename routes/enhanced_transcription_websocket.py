@@ -18,6 +18,7 @@ from queue import Queue, Empty
 from threading import Event
 
 from flask_socketio import emit, disconnect, join_room, leave_room
+from flask import request
 import flask_socketio
 from typing import Dict
 

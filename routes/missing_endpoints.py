@@ -14,6 +14,7 @@ from sqlalchemy import func, select
 from datetime import datetime, timedelta
 from flask import current_app
 from app import db
+from services.error_handler import error_handler, with_database_error_handling
 
 logger = logging.getLogger(__name__)
 
@@ -52,11 +53,8 @@ def start_transcription():
         }), 200
         
     except Exception as e:
-        logger.error(f"Failed to start transcription session: {e}")
-        return jsonify({
-            "success": False,
-            "error": "Failed to start transcription session"
-        }), 500
+        # Database rollback may not be needed here as SessionService handles its own transactions
+        return error_handler.handle_api_error(e, "transcription/start", current_user.id)
 
 @missing_api_bp.route("/api/transcription/stop", methods=["POST"])
 @login_required  
@@ -103,11 +101,8 @@ def stop_transcription():
             "error": str(e)
         }), 404
     except Exception as e:
-        logger.error(f"Failed to stop transcription session: {e}")
-        return jsonify({
-            "success": False,
-            "error": "Failed to stop transcription session"
-        }), 500
+        # Database rollback may not be needed here as SessionService handles its own transactions  
+        return error_handler.handle_api_error(e, "transcription/stop", current_user.id)
 
 @missing_api_bp.route("/api/analytics/trends", methods=["GET"])
 @login_required
@@ -173,11 +168,9 @@ def analytics_trends():
         }), 200
         
     except Exception as e:
-        logger.error(f"Failed to get analytics trends: {e}")
-        return jsonify({
-            "success": False,
-            "error": "Failed to retrieve analytics data"
-        }), 500
+        # CRITICAL: Always rollback database transactions on errors
+        db.session.rollback()
+        return error_handler.handle_api_error(e, "analytics/trends", current_user.id)
 
 @missing_api_bp.route("/api/markers", methods=["GET", "POST"])
 @login_required
@@ -268,12 +261,9 @@ def markers():
             }), 201
             
     except Exception as e:
-        logger.error(f"Failed to handle markers: {e}")
-        db.session.rollback()  # Rollback on any database error
-        return jsonify({
-            "success": False,
-            "error": "Failed to process markers"
-        }), 500
+        # CRITICAL: Always rollback database transactions on errors
+        db.session.rollback()
+        return error_handler.handle_api_error(e, "markers", current_user.id)
 
 @missing_api_bp.route("/api/copilot/suggestions", methods=["GET"])
 @login_required
