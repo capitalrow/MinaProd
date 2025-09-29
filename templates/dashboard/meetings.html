@@ -3,295 +3,19 @@
 {% block title %}Meetings - {{ super() }}{% endblock %}
 
 {% block head %}
-    <!-- PREMIUM MEETINGS DESIGN SYSTEM -->
-    <style>
-        /* Meetings page specific styles only - backgrounds unified in base.html */
-
-        /* PREMIUM MEETINGS CONTAINER */
-        .main-content {
-            position: relative;
-            z-index: 10;
-            padding: 2rem;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        /* PREMIUM DASHBOARD HEADER */
-        .dashboard-header {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(40px) saturate(180%);
-            border-radius: 24px;
-            padding: 3rem;
-            margin-bottom: 2rem;
-            border: 1px solid var(--glass-border);
-            box-shadow: 
-                0 32px 64px rgba(0, 0, 0, 0.25),
-                0 16px 32px rgba(0, 0, 0, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .dashboard-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-        }
-
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1.5rem;
-        }
-
-        .dashboard-title {
-            font-size: clamp(2.5rem, 5vw, 3.5rem);
-            font-weight: 800;
-            margin: 0;
-            letter-spacing: -0.025em;
-            line-height: 1.1;
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        /* PREMIUM STATS ROW */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(40px) saturate(180%);
-            border-radius: 20px;
-            padding: 2rem;
-            border: 1px solid var(--glass-border);
-            box-shadow: 
-                0 20px 40px rgba(168, 85, 247, 0.15),
-                0 10px 20px rgba(14, 165, 233, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-4px) scale(1.02);
-            box-shadow: 
-                0 30px 60px rgba(168, 85, 247, 0.2),
-                0 15px 30px rgba(14, 165, 233, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transition: left 0.8s;
-        }
-
-        .stat-card:hover::before {
-            left: 100%;
-        }
-
-        .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: white;
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
-            box-shadow: 0 10px 20px rgba(168, 85, 247, 0.3);
-        }
-
-        .stat-content {
-            flex: 1;
-        }
-
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin: 0 0 0.5rem 0;
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .stat-label {
-            font-size: 1rem;
-            color: var(--neutral-600);
-            font-weight: 500;
-            margin: 0;
-        }
-
-        /* PREMIUM BUTTONS */
-        .btn {
-            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--premium-blue-500) 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            box-shadow: 
-                0 10px 20px rgba(168, 85, 247, 0.3),
-                0 5px 10px rgba(14, 165, 233, 0.2);
-        }
-
-        .btn:hover {
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 
-                0 20px 40px rgba(168, 85, 247, 0.4),
-                0 10px 20px rgba(14, 165, 233, 0.3);
-            color: white;
-        }
-
-        .btn-outline-primary {
-            background: var(--glass-bg-light);
-            color: var(--elite-purple-500);
-            border: 1px solid var(--glass-border);
-            box-shadow: 
-                0 10px 20px rgba(0, 0, 0, 0.1),
-                0 5px 10px rgba(0, 0, 0, 0.05);
-        }
-
-        .btn-outline-primary:hover {
-            background: var(--glass-bg-dark);
-            color: var(--elite-purple-500);
-        }
-
-        /* PREMIUM SECTIONS */
-        .dashboard-section {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(40px) saturate(180%);
-            border-radius: 20px;
-            padding: 2rem;
-            border: 1px solid var(--glass-border);
-            box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.15),
-                0 10px 20px rgba(0, 0, 0, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            margin-bottom: 2rem;
-        }
-
-        /* PREMIUM SEARCH BOX */
-        .search-box {
-            position: relative;
-            max-width: 400px;
-        }
-
-        .search-box i {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--neutral-500);
-            z-index: 2;
-        }
-
-        .form-control {
-            background: var(--glass-bg-dark);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 0.75rem 1rem 0.75rem 3rem;
-            color: var(--neutral-800);
-            font-weight: 500;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--elite-purple-500);
-            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
-            background: var(--glass-bg-light);
-        }
-
-        /* PREMIUM ANIMATIONS */
-        .animate-fade-in {
-            animation: fadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* RESPONSIVE DESIGN */
-        @media (max-width: 768px) {
-            .main-content {
-                padding: 1rem;
-            }
-            .dashboard-header {
-                padding: 2rem;
-            }
-            .stats-row {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-            .header-content {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .header-actions {
-                flex-direction: column;
-            }
-        }
-    </style>
+    <!-- Meetings page uses mina-meetings.css for styling -->
 {% endblock %}
 
 {% block content %}
-    <div class="main-content">
+    <div class="meetings-main-content">
         <!-- Premium Meetings Header -->
-        <div class="dashboard-header animate-fade-in">
-            <div class="header-content">
-                <h1 class="dashboard-title">
+        <div class="meetings-dashboard-header animate-fade-in">
+            <div class="meetings-header-content">
+                <h1 class="meetings-dashboard-title">
                     <i class="fas fa-users"></i>
                     Meetings Dashboard
                 </h1>
-                <div class="header-actions">
+                <div class="meetings-header-actions">
                     <button class="btn btn-outline-primary" id="refresh-meetings">
                         <i class="fas fa-sync-alt"></i>
                         Refresh
@@ -305,34 +29,34 @@
         </div>
 
         <!-- Premium Meetings Stats -->
-        <div class="stats-row animate-fade-in">
-            <div class="stat-card">
-                <div class="stat-icon">
+        <div class="meetings-stats-row animate-fade-in">
+            <div class="meetings-stat-card">
+                <div class="meetings-stat-icon">
                     <i class="fas fa-calendar-check"></i>
                 </div>
-                <div class="stat-content">
-                    <h3 class="stat-number" id="total-meetings">0</h3>
-                    <p class="stat-label">Total Meetings</p>
+                <div class="meetings-stat-content">
+                    <h3 class="meetings-stat-number" id="total-meetings">0</h3>
+                    <p class="meetings-stat-label">Total Meetings</p>
                 </div>
             </div>
             
-            <div class="stat-card">
-                <div class="stat-icon">
+            <div class="meetings-stat-card">
+                <div class="meetings-stat-icon">
                     <i class="fas fa-clock"></i>
                 </div>
-                <div class="stat-content">
-                    <h3 class="stat-number" id="total-duration">0h</h3>
-                    <p class="stat-label">Total Duration</p>
+                <div class="meetings-stat-content">
+                    <h3 class="meetings-stat-number" id="total-duration">0h</h3>
+                    <p class="meetings-stat-label">Total Duration</p>
                 </div>
             </div>
             
-            <div class="stat-card">
-                <div class="stat-icon">
+            <div class="meetings-stat-card">
+                <div class="meetings-stat-icon">
                     <i class="fas fa-microphone"></i>
                 </div>
-                <div class="stat-content">
-                    <h3 class="stat-number" id="active-recordings">0</h3>
-                    <p class="stat-label">Active Recordings</p>
+                <div class="meetings-stat-content">
+                    <h3 class="meetings-stat-number" id="active-recordings">0</h3>
+                    <p class="meetings-stat-label">Active Recordings</p>
                 </div>
             </div>
         </div>
