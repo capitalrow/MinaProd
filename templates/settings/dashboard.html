@@ -3,6 +3,11 @@
 {% block title %}Settings - {{ super() }}{% endblock %}
 
 {% block head %}
+<!-- Premium Settings Styling -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mina-settings.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mina-animations.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mina-accessibility.css') }}">
+
 <style>
     .settings-container {
         max-width: 1200px;

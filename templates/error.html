@@ -1,23 +1,36 @@
 <!doctype html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8"/>
-  <title>Mina — Error</title>
+  <title>Mina — Error {{ code }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <style>
-    :root { color-scheme: dark; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:#0d1117; color:#e6edf3; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;}
-    .card { background:#0f141a; border:1px solid #1c212b; border-radius:12px; padding:24px; width:min(560px, 92vw);}
-    h1 { margin:0 0 12px; }
-    p { margin:0 0 6px; color:#9aa7b5;}
-    a { color:#2d6cdf; }
-  </style>
+  
+  <!-- Premium Error Page Styling -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-premium-system.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-errors.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-accessibility.css') }}">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
 </head>
 <body>
-  <div class="card">
-    <h1>Error {{ code }}</h1>
-    <p>{{ message }}</p>
-    <p><a href="/">Go home</a></p>
+  <div class="error-page">
+    <div class="error-card">
+      <div class="error-icon error-{{ code }}">
+        {% if code == 404 %}🔍{% elif code == 500 %}⚠️{% elif code == 403 %}🔒{% else %}❌{% endif %}
+      </div>
+      <div class="error-code">{{ code }}</div>
+      <h1 class="error-title">
+        {% if code == 404 %}Page Not Found{% elif code == 500 %}Server Error{% elif code == 403 %}Access Denied{% else %}Error{% endif %}
+      </h1>
+      <p class="error-message">{{ message }}</p>
+      <div class="error-actions">
+        <a href="/" class="error-btn error-btn-primary">
+          <span>← Go to Dashboard</span>
+        </a>
+        <a href="javascript:history.back()" class="error-btn error-btn-secondary">
+          <span>Go Back</span>
+        </a>
+      </div>
+    </div>
   </div>
 </body>
 </html>
