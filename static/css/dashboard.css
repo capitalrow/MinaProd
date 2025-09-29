@@ -38,10 +38,11 @@
   gap: 16px;
   margin-bottom: 24px;
   padding: 20px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
+  border: 1px solid #e9d5ff;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+  animation: fadeInUp 0.4s ease-out;
 }
 
 .dashboard-page .header-content {
@@ -54,13 +55,20 @@
   color: #0f172a;
   margin: 0 0 8px 0;
   line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.dashboard-page .dashboard-title i {
+  color: #6366f1;
+  margin-right: 12px;
 }
 
 .dashboard-page .dashboard-subtitle {
   font-size: 14px;
   color: #475569;
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
 }
 
 .dashboard-page .dashboard-header .btn {
@@ -88,7 +96,7 @@
 }
 
 .dashboard-page .stat-card {
-  background: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 20px;
@@ -96,14 +104,22 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeInUp 0.5s ease-out;
+  animation-fill-mode: both;
 }
+
+.dashboard-page .stat-card:nth-child(1) { animation-delay: 0.05s; }
+.dashboard-page .stat-card:nth-child(2) { animation-delay: 0.1s; }
+.dashboard-page .stat-card:nth-child(3) { animation-delay: 0.15s; }
+.dashboard-page .stat-card:nth-child(4) { animation-delay: 0.2s; }
 
 .dashboard-page .stat-card:hover {
   border-color: #6366f1;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.12), 0 4px 8px rgba(99, 102, 241, 0.08);
+  transform: translateY(-3px) scale(1.01);
+  background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
 }
 
 .dashboard-page .stat-card-content {
@@ -117,18 +133,31 @@
   font-weight: 700;
   color: #0f172a;
   line-height: 1;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .dashboard-page .stat-label {
   font-size: 14px;
   color: #64748b;
   font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: capitalize;
 }
 
 .dashboard-page .stat-icon {
-  font-size: 24px;
+  font-size: 28px;
   color: #6366f1;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.dashboard-page .stat-card:hover .stat-icon {
+  transform: scale(1.1) rotate(5deg);
 }
 
 /* ============================================================================
@@ -147,7 +176,13 @@
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.dashboard-page .content-section:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 .dashboard-page .section-header {
@@ -164,6 +199,18 @@
   font-weight: 700;
   color: #0f172a;
   margin: 0;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-page .section-title::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 2px;
 }
 
 .dashboard-page .section-content {
@@ -377,6 +424,28 @@
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* ============================================================================
