@@ -32,7 +32,7 @@ body::before {
     z-index: -2 !important;
 }
 
-/* Force premium card system */
+/* Force premium card system with progressive depth */
 .card, 
 .stat-card,
 .content-section,
@@ -45,44 +45,126 @@ body::before {
     border-radius: var(--radius-2xl) !important;
     box-shadow: var(--shadow-lg) !important;
     transition: all var(--duration-300) var(--ease-out-quart) !important;
+    position: relative !important;
+    overflow: hidden !important;
 }
 
+/* Enhanced card hierarchy with different depths */
+.dashboard-header {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(14, 165, 233, 0.10) 100%) !important;
+    border: 1px solid rgba(168, 85, 247, 0.3) !important;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.15),
+        0 8px 16px rgba(168, 85, 247, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 
+        0 12px 24px rgba(0, 0, 0, 0.12),
+        0 4px 8px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+    transform: scale(1) !important;
+}
+
+.content-section {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 
+        0 8px 16px rgba(0, 0, 0, 0.08),
+        0 2px 4px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Sophisticated hover states */
 .card:hover,
 .stat-card:hover,
 .content-section:hover {
-    transform: translateY(-4px) !important;
-    box-shadow: var(--shadow-xl), var(--shadow-glow) !important;
+    transform: translateY(-8px) scale(1.02) !important;
+    box-shadow: 
+        0 24px 48px rgba(0, 0, 0, 0.2),
+        0 12px 24px rgba(168, 85, 247, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(168, 85, 247, 0.4) !important;
 }
 
-/* Force premium button system */
+.stat-card:hover {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(14, 165, 233, 0.08) 100%) !important;
+}
+
+/* Force premium button system with sophisticated styling */
 .btn {
-    background: var(--glass-bg-primary) !important;
-    border: 1px solid var(--glass-border) !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
     border-radius: var(--radius-lg) !important;
     padding: var(--space-3) var(--space-6) !important;
     font-weight: var(--weight-semibold) !important;
-    transition: all var(--duration-200) var(--ease-out-quart) !important;
-    backdrop-filter: var(--glass-blur) !important;
+    transition: all var(--duration-200) cubic-bezier(0.4, 0, 0.2, 1) !important;
+    backdrop-filter: blur(12px) !important;
     color: var(--text-primary) !important;
+    position: relative !important;
+    overflow: hidden !important;
+    box-shadow: 
+        0 4px 8px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.btn::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent) !important;
+    transition: left var(--duration-500) var(--ease-out) !important;
+}
+
+.btn:hover::before {
+    left: 100% !important;
 }
 
 .btn:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: var(--shadow-lg) !important;
-    border-color: var(--primary-400) !important;
+    transform: translateY(-3px) scale(1.02) !important;
+    box-shadow: 
+        0 12px 24px rgba(0, 0, 0, 0.15),
+        0 4px 8px rgba(168, 85, 247, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(168, 85, 247, 0.4) !important;
     color: var(--text-primary) !important;
 }
 
 .btn-primary {
-    background: var(--bg-gradient-primary) !important;
+    background: linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #06b6d4 100%) !important;
     color: white !important;
     border: none !important;
-    box-shadow: var(--shadow-purple) !important;
+    box-shadow: 
+        0 8px 16px rgba(168, 85, 247, 0.3),
+        0 4px 8px rgba(59, 130, 246, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
 }
 
 .btn-primary:hover {
-    transform: translateY(-3px) !important;
-    box-shadow: var(--shadow-xl), var(--shadow-purple) !important;
+    transform: translateY(-4px) scale(1.05) !important;
+    box-shadow: 
+        0 20px 40px rgba(168, 85, 247, 0.4),
+        0 8px 16px rgba(59, 130, 246, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+    color: white !important;
+}
+
+.btn-outline-primary, .btn-outline-secondary {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(168, 85, 247, 0.3) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.btn-outline-primary:hover, .btn-outline-secondary:hover {
+    background: rgba(168, 85, 247, 0.1) !important;
+    border-color: rgba(168, 85, 247, 0.5) !important;
     color: white !important;
 }
 
@@ -152,13 +234,45 @@ body::before {
 
 .stat-value {
     font-family: var(--font-display) !important;
-    font-size: var(--text-5xl) !important;
+    font-size: clamp(2.5rem, 8vw, 4rem) !important;
     font-weight: var(--weight-extrabold) !important;
-    background: var(--bg-gradient-primary) !important;
+    background: linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #06b6d4 100%) !important;
     background-clip: text !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
-    margin-bottom: var(--space-3) !important;
+    margin-bottom: var(--space-2) !important;
+    line-height: 1.1 !important;
+    letter-spacing: -0.025em !important;
+    text-shadow: 0 0 20px rgba(168, 85, 247, 0.3) !important;
+    transition: all var(--duration-300) var(--ease-out-quart) !important;
+}
+
+.stat-card:hover .stat-value {
+    transform: scale(1.05) !important;
+    text-shadow: 0 0 30px rgba(168, 85, 247, 0.5) !important;
+}
+
+.stat-label {
+    font-size: var(--text-sm) !important;
+    font-weight: var(--weight-medium) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--space-2) !important;
+}
+
+.stat-icon {
+    font-size: var(--text-base) !important;
+    opacity: 0.8 !important;
+    transition: all var(--duration-200) var(--ease-out) !important;
+}
+
+.stat-card:hover .stat-icon {
+    opacity: 1 !important;
+    transform: scale(1.1) !important;
+    color: #a855f7 !important;
 }
 
 /* Force premium forms */
@@ -185,7 +299,45 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--text-primary) !important;
 }
 
-/* Mobile responsive overrides */
+/* Enhanced status indicators */
+.status-live {
+    background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%) !important;
+    color: white !important;
+    padding: var(--space-1) var(--space-3) !important;
+    border-radius: var(--radius-full) !important;
+    font-size: var(--text-xs) !important;
+    font-weight: var(--weight-semibold) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3) !important;
+    animation: pulse 2s infinite !important;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.status-completed {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    color: white !important;
+    padding: var(--space-1) var(--space-2) !important;
+    border-radius: var(--radius-md) !important;
+    font-size: var(--text-xs) !important;
+    font-weight: var(--weight-medium) !important;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Enhanced spacing system */
+.space-y-4 > * + * {
+    margin-top: var(--space-4) !important;
+}
+
+.space-y-3 > * + * {
+    margin-top: var(--space-3) !important;
+}
+
+/* Advanced mobile responsive design */
 @media (max-width: 768px) {
     .main-content-with-sidebar {
         margin-left: 0 !important;
@@ -194,11 +346,35 @@ h1, h2, h3, h4, h5, h6 {
     .dashboard-header {
         margin: var(--space-4) !important;
         padding: var(--space-6) !important;
+        border-radius: var(--radius-xl) !important;
     }
     
     .stats-grid {
         grid-template-columns: 1fr !important;
         padding: 0 var(--space-4) !important;
         gap: var(--space-4) !important;
+    }
+    
+    .stat-value {
+        font-size: clamp(2rem, 10vw, 3rem) !important;
+    }
+    
+    .btn {
+        padding: var(--space-4) var(--space-6) !important;
+        font-size: var(--text-base) !important;
+        min-height: 48px !important;
+    }
+    
+    .content-section {
+        margin: var(--space-4) !important;
+        padding: var(--space-6) !important;
+    }
+}
+
+/* Enhanced tablet responsive design */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: var(--space-5) !important;
     }
 }
