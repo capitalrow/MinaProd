@@ -1,12 +1,35 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en" data-bs-theme="dark" class="h-100">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="{% block description %}Mina - Professional AI-powered speech transcription platform with real-time insights and premium interface design{% endblock %}">
+    <meta name="keywords" content="{% block keywords %}speech transcription, AI, real-time, voice to text, meeting transcription, premium interface{% endblock %}">
+    <meta name="author" content="Mina Transcription Platform">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ self.description() }}{% endblock %}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:image" content="{{ url_for('static', filename='favicon-enhanced.svg', _external=True) }}">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}{{ self.title() }}{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}{{ self.description() }}{% endblock %}">
+    
+    <!-- PWA Configuration -->
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Mina">
+    
     <title>{% block title %}Mina - Meeting Insights & Action{% endblock %}</title>
     
     <!-- Favicon - Single ICO for Android WebView compatibility -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" id="app-favicon">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon-enhanced.svg') }}">
     
     <!-- Performance Optimizations -->
     <link rel="preconnect" href="https://cdn.replit.com" crossorigin>
@@ -68,9 +91,71 @@
     
     
     
+    <!-- Critical CSS for immediate rendering -->
+    <style>
+        /* Skip links for accessibility */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            background: #000;
+            color: #fff;
+            padding: 8px;
+            text-decoration: none;
+            border-radius: 4px;
+            z-index: 10000;
+        }
+        .skip-link:focus {
+            top: 6px;
+        }
+        
+        /* Loading screen to prevent FOUC */
+        .mina-loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .mina-loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .mina-loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(59, 130, 246, 0.3);
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Prevent flash of unstyled content */
+        body { visibility: hidden; }
+        body.loaded { visibility: visible; }
+    </style>
+    
     {% block head %}{% endblock %}
 </head>
 <body>
+    <!-- Skip Links for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <a href="#navigation" class="skip-link">Skip to navigation</a>
+    
+    <!-- Loading Screen -->
+    <div class="mina-loading-screen" id="loading-screen">
+        <div class="mina-loading-spinner"></div>
+    </div>
     <!-- Premium Sidebar Navigation -->
     <aside class="sidebar-navigation expanded" role="navigation" aria-label="Main navigation">
         <!-- Logo/Brand Section -->
@@ -394,6 +479,26 @@
         
         // Initialize settings on page load
         document.addEventListener('DOMContentLoaded', loadSettings);
+        
+        // Loading screen management
+        function hideLoadingScreen() {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) {
+                loadingScreen.classList.add('hidden');
+                setTimeout(() => loadingScreen.remove(), 500);
+            }
+            document.body.classList.add('loaded');
+        }
+        
+        // Hide loading screen when everything is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', hideLoadingScreen);
+        } else {
+            hideLoadingScreen();
+        }
+        
+        // Also hide after a maximum timeout to prevent eternal loading
+        setTimeout(hideLoadingScreen, 3000);
     </script>
     
     {% block scripts %}{% endblock %}
