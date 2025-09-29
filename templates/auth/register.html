@@ -29,15 +29,6 @@
             }
         }
 
-        .auth-container {
-            width: 100%;
-            max-width: 520px;
-            margin: 2rem;
-            position: relative;
-            z-index: 10;
-            animation: premiumSlideIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -228,6 +219,148 @@
             text-shadow: 0 1px 1px rgba(0,0,0,0.05);
         }
 
+        /* Password Strength Indicator */
+        .password-strength {
+            margin-top: 0.75rem;
+            position: relative;
+        }
+
+        .strength-bar {
+            height: 4px;
+            border-radius: 2px;
+            background: var(--glass-border);
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .strength-fill {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border-radius: 2px;
+        }
+
+        .strength-weak .strength-fill {
+            width: 25%;
+            background: linear-gradient(90deg, #ef4444, #f87171);
+        }
+
+        .strength-fair .strength-fill {
+            width: 50%;
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+
+        .strength-good .strength-fill {
+            width: 75%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+
+        .strength-strong .strength-fill {
+            width: 100%;
+            background: linear-gradient(90deg, var(--elite-purple-500), var(--premium-blue-500));
+        }
+
+        .strength-text {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .strength-weak .strength-text {
+            color: #ef4444;
+        }
+
+        .strength-fair .strength-text {
+            color: #f59e0b;
+        }
+
+        .strength-good .strength-text {
+            color: #10b981;
+        }
+
+        .strength-strong .strength-text {
+            color: var(--elite-purple-500);
+        }
+
+        /* Premium Checkbox System */
+        .terms-checkbox-group {
+            margin: 2rem 0;
+        }
+        
+        .premium-checkbox {
+            display: flex;
+            align-items: flex-start;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-left: 2rem;
+            line-height: 1.4;
+        }
+        
+        .premium-checkbox input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+        
+        .checkmark {
+            position: absolute;
+            left: 0;
+            top: 0.1rem;
+            height: 1.25rem;
+            width: 1.25rem;
+            background: var(--glass-bg-light);
+            border: 2px solid var(--glass-border);
+            border-radius: 6px;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .premium-checkbox:hover input ~ .checkmark {
+            background: rgba(168, 85, 247, 0.1);
+            border-color: var(--elite-purple-500);
+        }
+        
+        .premium-checkbox input:checked ~ .checkmark {
+            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-500));
+            border-color: var(--elite-purple-500);
+        }
+        
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+            left: 3px;
+            top: 0;
+            width: 4px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        
+        .premium-checkbox input:checked ~ .checkmark:after {
+            display: block;
+        }
+        
+        .checkbox-label {
+            font-size: 0.95rem;
+            color: var(--neutral-600);
+            font-weight: 500;
+        }
+
+        .checkbox-label a {
+            color: var(--elite-purple-500);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .checkbox-label a:hover {
+            text-decoration: underline;
+        }
+
         /* Premium Gradient Button */
         .btn-primary {
             width: 100%;
@@ -415,6 +548,8 @@
             {% endwith %}
             
             <form method="POST" action="{{ url_for('auth.register') }}" id="registerForm">
+                {{ csrf_token() }}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="form-row">
                     <div class="mina-floating-input">
                         <input 
@@ -477,6 +612,12 @@
                         minlength="8"
                     >
                     <label for="password">Password</label>
+                    <div class="password-strength" id="passwordStrength" style="display: none;">
+                        <div class="strength-bar">
+                            <div class="strength-fill"></div>
+                        </div>
+                        <div class="strength-text"></div>
+                    </div>
                     <div class="password-requirements">
                         Password must be at least 8 characters with letters and numbers
                     </div>
@@ -495,6 +636,14 @@
                     <label for="confirm_password">Confirm Password</label>
                 </div>
                 
+                <div class="terms-checkbox-group">
+                    <label class="premium-checkbox">
+                        <input type="checkbox" name="terms_accepted" required>
+                        <span class="checkmark"></span>
+                        <span class="checkbox-label">I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a></span>
+                    </label>
+                </div>
+
                 <button type="submit" class="btn-primary" id="registerButton">Create Account</button>
             </form>
             
@@ -515,22 +664,78 @@
             button.disabled = true;
         });
 
-        // Real-time password confirmation
+        // Password strength calculator
+        function calculatePasswordStrength(password) {
+            let score = 0;
+            const checks = {
+                length: password.length >= 8,
+                lowercase: /[a-z]/.test(password),
+                uppercase: /[A-Z]/.test(password),
+                number: /\d/.test(password),
+                special: /[!@#$%^&*(),.?\":{}|<>]/.test(password)
+            };
+            
+            Object.values(checks).forEach(check => check && score++);
+            
+            if (checks.length && checks.lowercase && checks.number) score += 1; // Bonus for meeting basic requirements
+            
+            if (score <= 2) return { level: 'weak', text: 'Weak' };
+            if (score <= 3) return { level: 'fair', text: 'Fair' };
+            if (score <= 4) return { level: 'good', text: 'Good' };
+            return { level: 'strong', text: 'Strong' };
+        }
+
+        // Real-time password strength and confirmation
         const password = document.getElementById('password');
         const confirmPassword = document.getElementById('confirm_password');
+        const passwordStrength = document.getElementById('passwordStrength');
         
-        function validatePassword() {
+        password.addEventListener('input', function() {
+            const value = this.value;
+            
+            if (value.length > 0) {
+                const strength = calculatePasswordStrength(value);
+                passwordStrength.style.display = 'block';
+                passwordStrength.className = `password-strength strength-${strength.level}`;
+                passwordStrength.querySelector('.strength-text').textContent = strength.text;
+            } else {
+                passwordStrength.style.display = 'none';
+            }
+            
+            validatePasswordMatch();
+        });
+        
+        function validatePasswordMatch() {
             if (confirmPassword.value && password.value !== confirmPassword.value) {
                 confirmPassword.setCustomValidity('Passwords do not match');
-                confirmPassword.style.borderColor = 'var(--mina-danger)';
+                confirmPassword.style.borderColor = '#ef4444';
             } else {
                 confirmPassword.setCustomValidity('');
-                confirmPassword.style.borderColor = 'var(--mina-border-primary)';
+                if (confirmPassword.value) {
+                    confirmPassword.style.borderColor = '#10b981';
+                } else {
+                    confirmPassword.style.borderColor = '';
+                }
             }
         }
         
-        password.addEventListener('input', validatePassword);
-        confirmPassword.addEventListener('input', validatePassword);
+        confirmPassword.addEventListener('input', validatePasswordMatch);
+
+        // Enhanced field validation with visual feedback
+        const inputs = document.querySelectorAll('.mina-floating-input input');
+        inputs.forEach(input => {
+            input.addEventListener('blur', function() {
+                if (this.checkValidity() && this.value) {
+                    this.style.borderColor = '#10b981';
+                } else if (!this.checkValidity() && this.value) {
+                    this.style.borderColor = '#ef4444';
+                }
+            });
+            
+            input.addEventListener('focus', function() {
+                this.style.borderColor = 'var(--elite-purple-500)';
+            });
+        });
 
         // Auto-focus first empty field
         document.addEventListener('DOMContentLoaded', function() {
