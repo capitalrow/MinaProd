@@ -83,6 +83,11 @@ class MinaDashboard {
         if (recentMeetingsContainer) {
             this.addSessionToRecentList(data);
         }
+        
+        // Update premium navigation state
+        if (window.PremiumNavigation) {
+            window.PremiumNavigation.updateNavigationState('live', 'live');
+        }
     }
 
     /**
@@ -113,6 +118,11 @@ class MinaDashboard {
         if (liveIndicator) {
             liveIndicator.classList.remove('has-updates');
             liveIndicator.classList.add('completed');
+        }
+        
+        // Update premium navigation state
+        if (window.PremiumNavigation) {
+            window.PremiumNavigation.updateNavigationState('ready', 'live');
         }
     }
 
