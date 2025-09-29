@@ -44,8 +44,8 @@ class Marker(Base):
             'content': self.content,
             'speaker': self.speaker,
             'session_id': self.session_id,
-            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'timestamp': self.timestamp.isoformat() if self.timestamp is not None else None,
+            'created_at': self.created_at.isoformat() if self.created_at is not None else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at is not None else None,
             'user_id': self.user_id
         }
