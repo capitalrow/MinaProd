@@ -394,20 +394,26 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.error(f"Failed to register meetings API fix: {e}")
 
-    # Export routes (with minimal implementation to avoid circular imports)
+    # Export routes (full functionality restored)
     try:
-        # Create a minimal export blueprint without complex dependencies
-        from flask import Blueprint
-        export_bp_minimal = Blueprint("export", __name__, url_prefix="/api/export")
-        
-        @export_bp_minimal.route("/ping", methods=["GET", "POST"])
-        def export_ping():
-            return {"ok": True}
-            
-        app.register_blueprint(export_bp_minimal)
-        app.logger.info("Export routes registered (minimal)")
+        from routes.export import export_bp
+        app.register_blueprint(export_bp)
+        app.logger.info("Export routes registered (full functionality)")
     except Exception as e:
         app.logger.error(f"Failed to register export routes: {e}")
+        # Fallback minimal implementation
+        try:
+            from flask import Blueprint
+            export_bp_minimal = Blueprint("export", __name__, url_prefix="/api/export")
+            
+            @export_bp_minimal.route("/ping", methods=["GET", "POST"])
+            def export_ping_fallback():
+                return {"ok": True}
+                
+            app.register_blueprint(export_bp_minimal)
+            app.logger.info("Export routes registered (fallback minimal)")
+        except Exception as fallback_error:
+            app.logger.error(f"Failed to register export routes fallback: {fallback_error}")
     
     # other blueprints (guarded)
     _optional = [
