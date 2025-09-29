@@ -301,6 +301,55 @@
     border-left: 4px solid var(--mina-primary);
 }
 
+/* ========================================= */
+/* ADVANCED FORM ACCESSIBILITY              */
+/* ========================================= */
+
+.mina-form-group[data-required="true"] .mina-floating-input__label::after {
+    content: ' *';
+    color: var(--mina-danger);
+    font-weight: var(--weight-heading);
+}
+
+.mina-form-input:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+}
+
+.mina-form-input:focus-visible {
+    outline: 2px solid var(--mina-primary);
+    outline-offset: 2px;
+}
+
+/* Screen Reader Support */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .mina-form-input {
+        border-width: 3px;
+    }
+    
+    .mina-form-input:focus {
+        border-width: 4px;
+    }
+    
+    .mina-form-validation-icon {
+        font-weight: var(--weight-heading);
+        font-size: var(--text-xl);
+    }
+}
+
 /* Enhanced Tooltip System */
 .mina-tooltip {
     position: relative;
@@ -378,7 +427,516 @@
     animation: progress-shine 2s infinite;
 }
 
+/* ========================================= */
+/* RESPONSIVE FORM ADAPTATIONS              */
+/* ========================================= */
+
+@media (max-width: 768px) {
+    .mina-floating-input {
+        margin-bottom: var(--space-4);
+    }
+    
+    .mina-floating-input__field {
+        padding: var(--space-3);
+        font-size: var(--text-sm);
+    }
+    
+    .mina-form-steps {
+        gap: var(--space-2);
+        margin-bottom: var(--space-6);
+    }
+    
+    .mina-form-step {
+        width: 32px;
+        height: 32px;
+        font-size: var(--text-xs);
+    }
+    
+    .mina-file-upload {
+        padding: var(--space-6);
+        min-height: 150px;
+    }
+    
+    .mina-form-actions {
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+    
+    .mina-form-actions .mina-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .mina-form-step {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .mina-multi-select__selected {
+        padding: var(--space-2);
+    }
+    
+    .mina-file-upload__icon {
+        font-size: var(--text-2xl);
+    }
+}
+
+/* Dark Mode Form Adaptations */
+@media (prefers-color-scheme: dark) {
+    .mina-form-input.valid {
+        background: linear-gradient(135deg,
+            rgba(16, 185, 129, 0.08),
+            var(--glass-bg-dark)
+        );
+    }
+    
+    .mina-form-input.invalid {
+        background: linear-gradient(135deg,
+            rgba(239, 68, 68, 0.08),
+            var(--glass-bg-dark)
+        );
+    }
+    
+    .mina-file-upload:hover {
+        background: linear-gradient(135deg,
+            rgba(var(--mina-primary-rgb), 0.08),
+            var(--glass-bg-dark)
+        );
+    }
+}
+
 @keyframes progress-shine {
     0% { transform: translateX(-100%); }
     100% { transform: translateX(100%); }
+}
+
+/* ========================================= */
+/* MODERN VALIDATION PATTERNS               */
+/* ========================================= */
+
+.mina-form-group {
+    position: relative;
+    margin-bottom: var(--space-6);
+}
+
+.mina-form-input {
+    width: 100%;
+    padding: var(--space-4) var(--space-4) var(--space-3) var(--space-4);
+    background: var(--glass-bg-dark);
+    border: 2px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-base);
+    font-weight: var(--weight-body);
+    color: var(--mina-text-primary);
+    transition: all 0.3s var(--transition-spring);
+    backdrop-filter: var(--glass-blur);
+    outline: none;
+    box-shadow: 
+        0 4px 6px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    will-change: border-color, box-shadow, transform;
+}
+
+/* Advanced Validation States */
+.mina-form-input:focus {
+    border-color: var(--mina-primary);
+    box-shadow: 
+        0 0 0 4px rgba(var(--mina-primary-rgb), 0.15),
+        0 8px 25px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.mina-form-input.valid {
+    border-color: var(--mina-success);
+    background: linear-gradient(135deg,
+        rgba(16, 185, 129, 0.05),
+        var(--glass-bg-dark)
+    );
+}
+
+.mina-form-input.valid:focus {
+    box-shadow: 
+        0 0 0 4px rgba(16, 185, 129, 0.15),
+        0 8px 25px rgba(16, 185, 129, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.mina-form-input.invalid {
+    border-color: var(--mina-danger);
+    background: linear-gradient(135deg,
+        rgba(239, 68, 68, 0.05),
+        var(--glass-bg-dark)
+    );
+    animation: shake 0.5s ease-in-out;
+}
+
+.mina-form-input.invalid:focus {
+    box-shadow: 
+        0 0 0 4px rgba(239, 68, 68, 0.15),
+        0 8px 25px rgba(239, 68, 68, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Real-time Validation Icons */
+.mina-form-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.mina-form-validation-icon {
+    position: absolute;
+    right: var(--space-4);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: var(--text-lg);
+    opacity: 0;
+    transition: all 0.3s var(--transition-spring);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.mina-form-input.valid ~ .mina-form-validation-icon.success {
+    color: var(--mina-success);
+    opacity: 1;
+    animation: validation-success 0.6s var(--transition-spring);
+}
+
+.mina-form-input.invalid ~ .mina-form-validation-icon.error {
+    color: var(--mina-danger);
+    opacity: 1;
+    animation: validation-error 0.6s var(--transition-spring);
+}
+
+@keyframes validation-success {
+    0% { opacity: 0; transform: translateY(-50%) scale(0.5); }
+    50% { opacity: 1; transform: translateY(-50%) scale(1.2); }
+    100% { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+
+@keyframes validation-error {
+    0% { opacity: 0; transform: translateY(-50%) scale(0.5) rotate(-10deg); }
+    50% { opacity: 1; transform: translateY(-50%) scale(1.2) rotate(5deg); }
+    100% { opacity: 1; transform: translateY(-50%) scale(1) rotate(0deg); }
+}
+
+/* Modern Validation Messages */
+.mina-form-message {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-button);
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s var(--transition-spring);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.mina-form-message.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.mina-form-message--success {
+    color: var(--mina-success);
+}
+
+.mina-form-message--error {
+    color: var(--mina-danger);
+}
+
+.mina-form-message--warning {
+    color: var(--mina-warning);
+}
+
+.mina-form-message--info {
+    color: var(--mina-primary);
+}
+
+/* Password Strength Indicator */
+.mina-password-strength {
+    margin-top: var(--space-3);
+}
+
+.mina-password-strength__bars {
+    display: flex;
+    gap: var(--space-1);
+    margin-bottom: var(--space-2);
+}
+
+.mina-password-strength__bar {
+    height: 4px;
+    flex: 1;
+    background: var(--glass-bg-dark);
+    border-radius: var(--radius-full);
+    transition: all 0.3s var(--transition-spring);
+}
+
+.mina-password-strength__bar.active {
+    background: var(--mina-danger);
+}
+
+.mina-password-strength__bar.active.medium {
+    background: var(--mina-warning);
+}
+
+.mina-password-strength__bar.active.strong {
+    background: var(--mina-success);
+}
+
+.mina-password-strength__text {
+    font-size: var(--text-xs);
+    color: var(--mina-text-muted);
+    font-weight: var(--weight-button);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: color 0.3s var(--transition-spring);
+}
+
+.mina-password-strength__text.weak {
+    color: var(--mina-danger);
+}
+
+.mina-password-strength__text.medium {
+    color: var(--mina-warning);
+}
+
+.mina-password-strength__text.strong {
+    color: var(--mina-success);
+}
+
+/* Interactive Form Steps */
+.mina-form-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-8);
+    gap: var(--space-4);
+}
+
+.mina-form-step {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--glass-bg-dark);
+    border: 2px solid var(--glass-border);
+    color: var(--mina-text-muted);
+    font-weight: var(--weight-heading);
+    font-size: var(--text-sm);
+    transition: all 0.3s var(--transition-spring);
+    position: relative;
+}
+
+.mina-form-step.active {
+    background: var(--mina-primary);
+    border-color: var(--mina-primary);
+    color: white;
+    box-shadow: 0 0 20px rgba(var(--mina-primary-rgb), 0.4);
+    animation: step-activate 0.6s var(--transition-spring);
+}
+
+.mina-form-step.completed {
+    background: var(--mina-success);
+    border-color: var(--mina-success);
+    color: white;
+}
+
+@keyframes step-activate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.mina-form-step-connector {
+    height: 2px;
+    flex: 1;
+    background: var(--glass-border);
+    transition: background 0.3s var(--transition-spring);
+}
+
+.mina-form-step-connector.completed {
+    background: var(--mina-success);
+}
+
+/* Advanced Multi-Select */
+.mina-multi-select {
+    position: relative;
+}
+
+.mina-multi-select__selected {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background: var(--glass-bg-dark);
+    border: 2px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    min-height: 48px;
+    cursor: pointer;
+    transition: all 0.3s var(--transition-spring);
+}
+
+.mina-multi-select__selected:hover {
+    border-color: var(--mina-primary);
+}
+
+.mina-multi-select__tag {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    background: linear-gradient(135deg, var(--mina-primary), var(--mina-secondary));
+    color: white;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-button);
+    animation: tag-enter 0.3s var(--transition-spring);
+}
+
+@keyframes tag-enter {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.mina-multi-select__tag-remove {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: var(--text-xs);
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    transition: background 0.2s ease;
+}
+
+.mina-multi-select__tag-remove:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* File Upload Enhancements */
+.mina-file-upload {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8);
+    background: var(--glass-bg-dark);
+    border: 2px dashed var(--glass-border);
+    border-radius: var(--radius-xl);
+    cursor: pointer;
+    transition: all 0.3s var(--transition-spring);
+    text-align: center;
+    min-height: 200px;
+}
+
+.mina-file-upload:hover {
+    border-color: var(--mina-primary);
+    background: linear-gradient(135deg,
+        rgba(var(--mina-primary-rgb), 0.05),
+        var(--glass-bg-dark)
+    );
+}
+
+.mina-file-upload.dragover {
+    border-color: var(--mina-secondary);
+    background: linear-gradient(135deg,
+        rgba(var(--mina-secondary-rgb), 0.1),
+        var(--glass-bg-dark)
+    );
+    transform: scale(1.02);
+}
+
+.mina-file-upload__icon {
+    font-size: var(--text-4xl);
+    color: var(--mina-text-muted);
+    margin-bottom: var(--space-4);
+    transition: all 0.3s var(--transition-spring);
+}
+
+.mina-file-upload:hover .mina-file-upload__icon {
+    color: var(--mina-primary);
+    transform: scale(1.1);
+}
+
+.mina-file-upload__text {
+    font-size: var(--text-base);
+    font-weight: var(--weight-button);
+    color: var(--mina-text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.mina-file-upload__subtext {
+    font-size: var(--text-sm);
+    color: var(--mina-text-muted);
+}
+
+.mina-file-upload__input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* Form Action Bar */
+.mina-form-actions {
+    display: flex;
+    gap: var(--space-4);
+    justify-content: flex-end;
+    align-items: center;
+    padding: var(--space-6) 0;
+    border-top: 1px solid var(--glass-border);
+    margin-top: var(--space-8);
+}
+
+.mina-form-actions--centered {
+    justify-content: center;
+}
+
+.mina-form-actions--space-between {
+    justify-content: space-between;
+}
+
+/* Real-time Character Counter */
+.mina-character-counter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--mina-text-muted);
+}
+
+.mina-character-counter__count {
+    font-weight: var(--weight-button);
+    transition: color 0.3s var(--transition-spring);
+}
+
+.mina-character-counter__count.warning {
+    color: var(--mina-warning);
+}
+
+.mina-character-counter__count.danger {
+    color: var(--mina-danger);
 }
