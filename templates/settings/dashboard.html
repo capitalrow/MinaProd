@@ -72,9 +72,74 @@
     }
     
     .settings-group p {
-        color: var(--text-secondary);
+        color: var(--neutral-600);
         margin-bottom: 1.5rem;
-        font-size: 0.9rem;
+        font-size: 1rem;
+        font-weight: 500;
+        line-height: 1.5;
+    }
+
+    /* PREMIUM FORM CONTROLS */
+    .form-control, .form-select {
+        background: var(--glass-bg-dark);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 0.875rem 1rem;
+        color: var(--neutral-800);
+        font-weight: 500;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        border-color: var(--elite-purple-500);
+        box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+        background: var(--glass-bg-light);
+    }
+
+    /* PREMIUM BUTTONS */
+    .btn {
+        background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--premium-blue-500) 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 0.875rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 
+            0 10px 20px rgba(168, 85, 247, 0.3),
+            0 5px 10px rgba(14, 165, 233, 0.2);
+    }
+
+    .btn:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 
+            0 20px 40px rgba(168, 85, 247, 0.4),
+            0 10px 20px rgba(14, 165, 233, 0.3);
+        color: white;
+    }
+
+    /* PREMIUM ANIMATIONS */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
     
     .setting-item {
