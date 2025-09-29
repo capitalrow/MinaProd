@@ -6,194 +6,63 @@
     <!-- Socket.IO and dependencies loaded via base.html -->
     
     <style>
-        :root {
-            /* Refined Professional Color System */
-            --primary: #0EA5E9;
-            --primary-dark: #0284C7;
-            --primary-light: #38BDF8;
-            --secondary: #6366F1;
-            --secondary-dark: #4F46E5;
-            --secondary-light: #8B5CF6;
-            --accent: #F59E0B;
-            --accent-dark: #D97706;
-            --warning: #F59E0B;
-            --danger: #EF4444;
-            --success: #10B981;
-            --info: #3B82F6;
-            
-            /* Animation durations for smooth transitions */
-            --transition-fast: 0.2s ease-out;
-            --transition-medium: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-slow: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-bounce: 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            
-            /* Refined Professional Gradients */
-            --gradient-primary: linear-gradient(135deg, #0EA5E9 0%, #6366F1 100%);
-            --gradient-secondary: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
-            --gradient-accent: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
-            --gradient-surface: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(15,165,233,0.02) 50%, rgba(99,102,241,0.02) 100%);
-            --gradient-border: linear-gradient(135deg, rgba(15,165,233,0.2) 0%, rgba(99,102,241,0.15) 50%, rgba(139,92,246,0.1) 100%);
-            --gradient-subtle: linear-gradient(135deg, rgba(15,165,233,0.1) 0%, rgba(99,102,241,0.08) 100%);
-            --gradient-glow: radial-gradient(circle, rgba(15,165,233,0.15) 0%, rgba(99,102,241,0.1) 50%, transparent 70%);
-            --gradient-muted: linear-gradient(135deg, rgba(71,85,105,0.1) 0%, rgba(51,65,85,0.05) 100%);
-            
-            /* FIXED: Accessible Glass Morphism with Better Contrast */
-            --glass-bg: rgba(16, 24, 40, 0.65);              /* Darker, more opaque */
-            --glass-bg-strong: rgba(16, 24, 40, 0.85);       /* Stronger background */
-            --glass-bg-ultra: rgba(16, 24, 40, 0.92);        /* Ultra strong for content */
-            --glass-bg-tinted: rgba(15, 165, 233, 0.08);     /* Slightly more visible */
-            --glass-bg-accent: rgba(99, 102, 241, 0.06);     /* Better accent visibility */
-            --glass-border: rgba(255, 255, 255, 0.15);
-            --glass-border-strong: rgba(255, 255, 255, 0.25);
-            --glass-border-subtle: rgba(15, 165, 233, 0.2);
-            --glass-blur: blur(20px);
-            --glass-blur-strong: blur(28px);
-            --glass-blur-ultra: blur(36px);
-            
-            /* Premium Surfaces */
-            --surface-1: rgba(16, 24, 40, 0.3);
-            --surface-2: rgba(16, 24, 40, 0.5);
-            --surface-3: rgba(16, 24, 40, 0.7);
-            --surface-primary: rgba(16, 24, 40, 0.85);        /* Added missing token */
-            --surface-elevated: rgba(255, 255, 255, 0.05);
-            --surface-hover: rgba(255, 255, 255, 0.08);
-            
-            /* FIXED: Enhanced Typography with Accessible Contrast */
-            --text-primary: #FFFFFF;
-            --text-secondary: rgba(255, 255, 255, 0.95);     /* Increased from 0.85 */
-            --text-tertiary: rgba(255, 255, 255, 0.85);      /* Increased from 0.65 */
-            --text-quaternary: rgba(255, 255, 255, 0.75);    /* Increased from 0.45 */
-            --text-muted: rgba(255, 255, 255, 0.65);         /* New muted level */
-            --text-on-glass: rgba(255, 255, 255, 0.98);      /* High contrast for glass */
-            --text-accent: var(--primary-light);             /* Accent text color */
-            
-            /* Professional Shadows & Subtle Glows */
-            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-            --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
-            --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1);
-            --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.18), 0 6px 12px rgba(0, 0, 0, 0.12);
-            --shadow-2xl: 0 16px 32px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.15);
-            --glow-primary: 0 0 20px rgba(15, 165, 233, 0.15), 0 0 40px rgba(15, 165, 233, 0.08);
-            --glow-secondary: 0 0 20px rgba(99, 102, 241, 0.15), 0 0 40px rgba(99, 102, 241, 0.08);
-            --glow-accent: 0 0 20px rgba(245, 158, 11, 0.15), 0 0 40px rgba(245, 158, 11, 0.08);
-            --glow-subtle: 0 0 16px rgba(15, 165, 233, 0.1), 0 0 32px rgba(99, 102, 241, 0.05);
-            --glow-rainbow: var(--glow-primary);              /* Added missing token */
-            --shadow-colored: 0 8px 25px rgba(15, 165, 233, 0.08), 0 4px 12px rgba(0, 0, 0, 0.1);
-            
-            /* Premium Transitions */
-            --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-spring: 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-            
-            /* Premium Spacing */
-            --space-xs: 0.25rem;
-            --space-sm: 0.5rem;
-            --space-md: 1rem;
-            --space-lg: 1.5rem;
-            --space-xl: 2rem;
-            --space-2xl: 3rem;
-            --space-3xl: 4rem;
-            
-            /* Premium Border Radius */
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --radius-xl: 20px;
-            --radius-2xl: 24px;
-            --radius-full: 9999px;
-        }
-        
-        /* Global Styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'SF Pro Display', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            /* SIMPLIFIED: Cleaner background with focus on content */
-            background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
-            color: var(--text-primary);
-            line-height: 1.6;
-            overflow-x: hidden;
-            min-height: 100vh;
+        /* Live Recording specific enhancements - work WITH premium system */
+        .live-recording-container {
             position: relative;
-        }
-        
-        /* COMPREHENSIVE MOTION ACCESSIBILITY - Complete animation removal for reduced motion */
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-                animation: none !important;
-                transition: none !important;
-                scroll-behavior: auto !important;
-            }
-            
-            /* Keep essential state indicators but remove ALL motion */
-            .record-button.recording { 
-                background: var(--danger) !important;  /* Using proper token */
-                transform: none !important;
-            }
-            .record-button.processing { 
-                background: var(--warning) !important;
-                transform: none !important;
-            }
-        }
-
-        /* Subtle ambient animation */
-        @keyframes subtle-glow {
-            0%, 100% { 
-                opacity: 0.6;
-            }
-            50% { 
-                opacity: 0.8;
-            }
-        }
-        
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            /* SIMPLIFIED: Subtle accent only when needed */
-            background: radial-gradient(circle at 50% 0%, rgba(15, 165, 233, 0.02) 0%, transparent 70%);
-            pointer-events: none;
             z-index: 1;
-            opacity: 0.7;
         }
         
+        /* Live recording specific wave animations */
+        .recording-pulse {
+            animation: recording-pulse 2s ease-in-out infinite;
+        }
         
-        /* REDESIGNED: Compact Professional Layout */
+        @keyframes recording-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        
+        /* Audio visualizer enhancements */
+        .audio-visualizer {
+            background: var(--glass-bg-primary);
+            border-radius: var(--radius-2xl);
+            backdrop-filter: var(--glass-blur);
+        }
+        
+        /* Live recording specific styles that enhance premium system */
         .recording-studio {
-            min-height: 100vh;
-            background: transparent;
-            display: flex;
-            flex-direction: column;
             position: relative;
-            z-index: 1;
+            z-index: 2;
         }
         
-        .recording-studio::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(15, 165, 233, 0.02), transparent 50%);
-            opacity: 0;
-            transition: opacity var(--transition-slow);
-            pointer-events: none;
-            z-index: -1;
+        /* Recording button special states */
+        .record-button.recording {
+            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.4);
         }
         
+        /* Real-time transcription display */
+        .transcription-display {
+            background: var(--glass-bg-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-2xl);
+            backdrop-filter: var(--glass-blur);
+            padding: var(--space-6);
+        }
         
-        .recording-studio:hover::before {
-            opacity: 1;
+        /* Audio level indicators */
+        .audio-levels {
+            display: flex;
+            gap: var(--space-2);
+            align-items: end;
+            height: 40px;
+        }
+        
+        .audio-bar {
+            width: 4px;
+            background: linear-gradient(to top, var(--primary-600), var(--primary-400));
+            border-radius: var(--radius-full);
+            transition: height var(--duration-100) ease-out;
         }
         
         /* Compact Header */
