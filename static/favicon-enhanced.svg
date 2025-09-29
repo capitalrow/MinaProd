@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <!-- Premium Purple Gradient matching reference image -->
+    <radialGradient id="enhancedFaviconGrad" cx="25%" cy="15%" r="95%">
+      <stop offset="0%" stop-color="#E879F9"/>
+      <stop offset="25%" stop-color="#D946EF"/>
+      <stop offset="50%" stop-color="#C026D3"/>
+      <stop offset="75%" stop-color="#A21CAF"/>
+      <stop offset="100%" stop-color="#86198F"/>
+    </radialGradient>
+    
+    <!-- Audio Wave Metallic Gradient -->
+    <linearGradient id="audioWaveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFF" stop-opacity="0.95"/>
+      <stop offset="25%" stop-color="#E2E8F0"/>
+      <stop offset="50%" stop-color="#E879F9"/>
+      <stop offset="75%" stop-color="#C026D3"/>
+      <stop offset="100%" stop-color="#A21CAF" stop-opacity="0.9"/>
+    </linearGradient>
+    
+    <!-- Premium 3D Shadow Filter -->
+    <filter id="premium3DShadow" x="-150%" y="-150%" width="400%" height="400%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="deepBlur"/>
+      <feOffset in="deepBlur" dx="1" dy="2" result="deepOffset"/>
+      <feColorMatrix in="deepOffset" type="matrix" values="0.3 0.1 0.6 0 0  0.1 0 0.4 0 0  0.6 0.2 0.8 0 0  0 0 0 0.3 0" result="deepShadow"/>
+      
+      <feGaussianBlur in="SourceAlpha" stdDeviation="0.8" result="closeBlur"/>
+      <feOffset in="closeBlur" dx="0.5" dy="1" result="closeOffset"/>
+      <feColorMatrix in="closeOffset" type="matrix" values="0.4 0.2 0.7 0 0  0.2 0.1 0.5 0 0  0.7 0.3 0.9 0 0  0 0 0 0.2 0" result="closeShadow"/>
+      
+      <feMerge>
+        <feMergeNode in="deepShadow"/>
+        <feMergeNode in="closeShadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Premium Squircle Background (App Icon Style) -->
+  <path d="M 6,2.5 L 26,2.5 Q 29.5,2.5 29.5,6 L 29.5,26 Q 29.5,29.5 26,29.5 L 6,29.5 Q 2.5,29.5 2.5,26 L 2.5,6 Q 2.5,2.5 6,2.5 Z" 
+        fill="url(#enhancedFaviconGrad)" 
+        filter="url(#premium3DShadow)"
+        stroke="rgba(255, 255, 255, 0.2)" 
+        stroke-width="0.5"/>
+  
+  <!-- Audio Wave Bars (3 bars with different heights) -->
+  <!-- Left bar (tall) -->
+  <rect x="8" y="10" width="3" height="12" rx="1.5" 
+        fill="url(#audioWaveGrad)" 
+        filter="url(#premium3DShadow)"
+        stroke="rgba(255, 255, 255, 0.15)" 
+        stroke-width="0.3">
+    <animateTransform attributeName="transform" type="scale" 
+                     values="1,1; 1,1.1; 1,0.9; 1,1" 
+                     dur="3s" repeatCount="indefinite" begin="0s"/>
+  </rect>
+  
+  <!-- Center bar (medium) -->
+  <rect x="14.5" y="13" width="3" height="6" rx="1.5" 
+        fill="url(#audioWaveGrad)" 
+        filter="url(#premium3DShadow)"
+        stroke="rgba(255, 255, 255, 0.15)" 
+        stroke-width="0.3">
+    <animateTransform attributeName="transform" type="scale" 
+                     values="1,1; 1,1.1; 1,0.9; 1,1" 
+                     dur="3.3s" repeatCount="indefinite" begin="0.2s"/>
+  </rect>
+  
+  <!-- Right bar (tall) -->
+  <rect x="21" y="10" width="3" height="12" rx="1.5" 
+        fill="url(#audioWaveGrad)" 
+        filter="url(#premium3DShadow)"
+        stroke="rgba(255, 255, 255, 0.15)" 
+        stroke-width="0.3">
+    <animateTransform attributeName="transform" type="scale" 
+                     values="1,1; 1,1.1; 1,0.9; 1,1" 
+                     dur="3.6s" repeatCount="indefinite" begin="0.4s"/>
+  </rect>
+  
+  <!-- Horizontal Connector Line -->
+  <rect x="7" y="23.5" width="18" height="1.5" rx="0.75" 
+        fill="url(#audioWaveGrad)" 
+        opacity="0.7"
+        stroke="rgba(255, 255, 255, 0.1)" 
+        stroke-width="0.2"/>
+  
+  <!-- Premium Glass Overlay -->
+  <path d="M 6,2.5 L 26,2.5 Q 29.5,2.5 29.5,6 L 29.5,26 Q 29.5,29.5 26,29.5 L 6,29.5 Q 2.5,29.5 2.5,26 L 2.5,6 Q 2.5,2.5 6,2.5 Z" 
+        fill="rgba(248, 250, 255, 0.15)" 
+        pointer-events="none"/>
+</svg>

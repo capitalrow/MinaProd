@@ -36,3 +36,8 @@ def live_enhanced():
 def live_comprehensive():
     """Legacy route - redirects to main live interface"""
     return redirect(url_for("pages.live"))
+
+@pages_bp.route("/logo-showcase")
+def logo_showcase():
+    """Enhanced logo system showcase and comparison"""
+    return render_template("mina_enhanced_logo_showcase.html")

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mina Enhanced Logo Showcase</title>
+    
+    <!-- Enhanced Logo Component -->
+    <script src="{{ url_for('static', filename='js/mina-enhanced-logo.js') }}"></script>
+    <!-- Original Logo for Comparison -->
+    <script src="{{ url_for('static', filename='js/mina-animated-logo.js') }}"></script>
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #312e81 100%);
+            margin: 0;
+            padding: 40px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .showcase-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .showcase-title {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #E879F9 0%, #C026D3 50%, #A21CAF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+        
+        .showcase-subtitle {
+            font-size: 1.25rem;
+            color: #94a3b8;
+            font-weight: 400;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 80px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .logo-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            backdrop-filter: blur(20px);
+        }
+        
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #E879F9;
+        }
+        
+        .section-subtitle {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            margin-bottom: 30px;
+        }
+        
+        .logo-demo {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .logo-size-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+        
+        .compact-demos {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .compact-demo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 60px auto;
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .feature-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #E879F9;
+            margin-bottom: 12px;
+        }
+        
+        .feature-description {
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(232, 121, 249, 0.1) 0%, rgba(192, 38, 211, 0.1) 100%);
+            border: 1px solid rgba(232, 121, 249, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 30px auto;
+            max-width: 600px;
+            text-align: center;
+        }
+        
+        .highlight-text {
+            color: #E879F9;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+            
+            .showcase-title {
+                font-size: 2rem;
+            }
+            
+            .compact-demos {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="showcase-header">
+        <h1 class="showcase-title">Mina Enhanced Logo System</h1>
+        <p class="showcase-subtitle">Premium 3D Audio-Focused Design with Sophisticated Animations</p>
+    </div>
+
+    <div class="comparison-grid">
+        <!-- Enhanced Version -->
+        <div class="logo-section">
+            <h2 class="section-title">✨ Enhanced Version</h2>
+            <p class="section-subtitle">Based on your reference image with premium purple gradients</p>
+            
+            <div class="logo-demo">
+                <div class="logo-size-title">Hero Logo (300px)</div>
+                <div id="enhancedHeroLogo"></div>
+            </div>
+            
+            <div class="logo-demo">
+                <div class="logo-size-title">Brand Logo (200px)</div>
+                <div id="enhancedBrandLogo"></div>
+            </div>
+            
+            <div class="logo-demo">
+                <div class="logo-size-title">Compact Navigation Logos</div>
+                <div class="compact-demos">
+                    <div class="compact-demo">
+                        <div id="enhancedCompact1"></div>
+                        <span>32px</span>
+                    </div>
+                    <div class="compact-demo">
+                        <div id="enhancedCompact2"></div>
+                        <span>28px</span>
+                    </div>
+                    <div class="compact-demo">
+                        <div id="enhancedCompact3"></div>
+                        <span>36px</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Original Version -->
+        <div class="logo-section">
+            <h2 class="section-title">🔄 Original Version</h2>
+            <p class="section-subtitle">Current holographic diamond system for comparison</p>
+            
+            <div class="logo-demo">
+                <div class="logo-size-title">Brand Logo (200px)</div>
+                <div id="originalBrandLogo"></div>
+            </div>
+            
+            <div class="logo-demo">
+                <div class="logo-size-title">Compact Navigation Logos</div>
+                <div class="compact-demos">
+                    <div class="compact-demo">
+                        <div id="originalCompact1"></div>
+                        <span>32px</span>
+                    </div>
+                    <div class="compact-demo">
+                        <div id="originalCompact2"></div>
+                        <span>28px</span>
+                    </div>
+                    <div class="compact-demo">
+                        <div id="originalCompact3"></div>
+                        <span>36px</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="highlight-box">
+        <p class="highlight-text">
+            🎯 Enhanced version matches your reference image with vibrant purple gradients, 
+            premium app icon styling, and sophisticated 3D audio wave animations
+        </p>
+    </div>
+
+    <div class="features-grid">
+        <div class="feature-card">
+            <h3 class="feature-title">🎨 Premium Purple Gradients</h3>
+            <p class="feature-description">
+                Vibrant purple color system matching your reference image with sophisticated 
+                radial gradients and premium metallic highlights on audio waves.
+            </p>
+        </div>
+        
+        <div class="feature-card">
+            <h3 class="feature-title">📱 App Icon Styling</h3>
+            <p class="feature-description">
+                Perfect squircle (superellipse) background with premium 3D depth, 
+                shadows, and glass morphism effects for modern app icon aesthetics.
+            </p>
+        </div>
+        
+        <div class="feature-card">
+            <h3 class="feature-title">🎵 Audio Wave Focus</h3>
+            <p class="feature-description">
+                Three dynamic audio bars with realistic proportions, individual animations, 
+                and premium metallic gradients that pulse with sophisticated timing.
+            </p>
+        </div>
+        
+        <div class="feature-card">
+            <h3 class="feature-title">✨ Advanced 3D Effects</h3>
+            <p class="feature-description">
+                Multi-layer shadow system, premium glass morphism, sophisticated lighting, 
+                and smooth hover effects with 3D transformations.
+            </p>
+        </div>
+        
+        <div class="feature-card">
+            <h3 class="feature-title">🎭 Smart Animations</h3>
+            <p class="feature-description">
+                Intelligent breathing effects, synchronized wave pulses, hover interactions, 
+                and proper reduced-motion support for accessibility.
+            </p>
+        </div>
+        
+        <div class="feature-card">
+            <h3 class="feature-title">🔧 Flexible System</h3>
+            <p class="feature-description">
+                Multiple size variants (hero, brand, compact), easy integration, 
+                consistent API, and optimized performance across all devices.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Enhanced logos
+            MinaEnhancedLogo.createHeroLogo('#enhancedHeroLogo', 300);
+            MinaEnhancedLogo.createBrandLogo('#enhancedBrandLogo', 200);
+            MinaEnhancedLogo.createCompactLogo('#enhancedCompact1', 32);
+            MinaEnhancedLogo.createCompactLogo('#enhancedCompact2', 28);
+            MinaEnhancedLogo.createCompactLogo('#enhancedCompact3', 36);
+            
+            // Original logos for comparison
+            MinaAnimatedLogo.createBrandLogo('#originalBrandLogo', 200);
+            MinaAnimatedLogo.createCompactLogo('#originalCompact1', 32);
+            MinaAnimatedLogo.createCompactLogo('#originalCompact2', 28);
+            MinaAnimatedLogo.createCompactLogo('#originalCompact3', 36);
+        });
+    </script>
+</body>
+</html>
