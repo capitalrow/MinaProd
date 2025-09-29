@@ -18,3 +18,4 @@ webrtcvad
 beautifulsoup4
 flask-wtf
 flask-compress
+python-Levenshtein

@@ -356,14 +356,12 @@ class MinaQAPipeline:
                 # Check if repetition was properly handled
                 unique_word_ratio = len(set(words)) / len(words) if words else 0
                 
-                results.update({
-                    'transcribed_text': text,
-                    'total_words': len(words),
-                    'unique_words': len(set(words)),
-                    'unique_ratio': unique_word_ratio,
-                    'repetition_detected': unique_word_ratio < 0.3,
-                    'status': 'pass' if unique_word_ratio > 0.1 else 'fail'  # Some variation expected
-                })
+                results['transcribed_text'] = text
+                results['total_words'] = len(words)
+                results['unique_words'] = len(set(words))
+                results['unique_ratio'] = unique_word_ratio
+                results['repetition_detected'] = unique_word_ratio < 0.3
+                results['status'] = 'pass' if unique_word_ratio > 0.1 else 'fail'  # Some variation expected
             else:
                 results.update({
                     'status': 'fail',
