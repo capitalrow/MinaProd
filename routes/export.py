@@ -229,6 +229,12 @@ def export_advanced():
         mime_type = mime_types.get(export_format.value, 'application/octet-stream')
         
         # Return file
+        if not result.file_content:
+            return jsonify({
+                'success': False,
+                'error': 'Export generated empty content'
+            }), 500
+            
         return send_file(
             io.BytesIO(result.file_content),
             as_attachment=True,
