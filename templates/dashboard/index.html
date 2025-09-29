@@ -180,8 +180,7 @@
 
 {% block scripts %}
     <script>
-        // Initialize Feather icons
-        feather.replace();
+        // Note: Using Font Awesome icons consistently - no initialization needed
         
         class MinaDashboard {
             constructor() {
@@ -245,29 +244,120 @@
             
             async loadRecentActivity() {
                 try {
-                    // Load recent sessions as activity
+                    // Load recent sessions as activity from real API
                     const activityContainer = document.getElementById('recent-activity');
                     
-                    // Mock recent activity for now
-                    const activities = [
-                        { type: 'session', title: 'Morning Standup', time: '2 hours ago', status: 'completed' },
-                        { type: 'session', title: 'Client Review', time: '4 hours ago', status: 'completed' },
-                        { type: 'session', title: 'Team Planning', time: '1 day ago', status: 'completed' }
-                    ];
+                    // Fetch real recent sessions from backend
+                    const response = await fetch('/api/meetings?limit=5');
+                    const data = await response.json();
                     
-                    activityContainer.innerHTML = activities.map(activity => `
-                        <div class="activity-item">
-                            <div class="activity-icon">
-                                <i class="fas fa-microphone"></i>
-                            </div>
-                            <div class="activity-content">
-                                <h4>${activity.title}</h4>
-                                <p>${activity.time} • ${activity.status}</p>
-                            </div>
-                        </div>
-                    `).join('');
+                    if (data.success && data.meetings && data.meetings.length > 0) {
+                        const activities = data.meetings.map(session => ({
+                            type: 'session',
+                            title: session.title || `Session ${session.session_id?.substring(0, 8)}`,
+                            time: this.formatRelativeTime(session.created_at || session.start_time),
+                            status: session.status || 'completed',
+                            duration: session.duration_seconds ? `${Math.round(session.duration_seconds / 60)}min` : ''
+                        }));
+                        
+                        // SECURITY: Build DOM nodes safely to prevent XSS instead of using innerHTML
+                        activityContainer.innerHTML = ''; // Clear container
+                        activities.forEach(activity => {
+                            const itemDiv = document.createElement('div');
+                            itemDiv.className = 'activity-item';
+                            
+                            const iconDiv = document.createElement('div');
+                            iconDiv.className = 'activity-icon';
+                            iconDiv.innerHTML = '<i class="fas fa-microphone"></i>';
+                            
+                            const contentDiv = document.createElement('div');
+                            contentDiv.className = 'activity-content';
+                            
+                            const titleH4 = document.createElement('h4');
+                            titleH4.textContent = activity.title; // Safe: textContent prevents XSS
+                            
+                            const metaP = document.createElement('p');
+                            metaP.textContent = `${activity.time} • ${activity.status}${activity.duration ? ` • ${activity.duration}` : ''}`; // Safe: textContent prevents XSS
+                            
+                            contentDiv.appendChild(titleH4);
+                            contentDiv.appendChild(metaP);
+                            itemDiv.appendChild(iconDiv);
+                            itemDiv.appendChild(contentDiv);
+                            activityContainer.appendChild(itemDiv);
+                        });
+                    } else {
+                        // Show empty state when no sessions - build DOM safely
+                        activityContainer.innerHTML = ''; // Clear container
+                        const emptyDiv = document.createElement('div');
+                        emptyDiv.className = 'activity-item';
+                        
+                        const emptyIconDiv = document.createElement('div');
+                        emptyIconDiv.className = 'activity-icon';
+                        emptyIconDiv.innerHTML = '<i class="fas fa-info-circle"></i>';
+                        
+                        const emptyContentDiv = document.createElement('div');
+                        emptyContentDiv.className = 'activity-content';
+                        
+                        const emptyTitleH4 = document.createElement('h4');
+                        emptyTitleH4.textContent = 'No recent activity';
+                        
+                        const emptyDescP = document.createElement('p');
+                        emptyDescP.textContent = 'Start your first recording session to see activity here';
+                        
+                        emptyContentDiv.appendChild(emptyTitleH4);
+                        emptyContentDiv.appendChild(emptyDescP);
+                        emptyDiv.appendChild(emptyIconDiv);
+                        emptyDiv.appendChild(emptyContentDiv);
+                        activityContainer.appendChild(emptyDiv);
+                    }
                 } catch (error) {
                     console.error('Failed to load recent activity:', error);
+                    // Show error state - build DOM safely
+                    const activityContainer = document.getElementById('recent-activity');
+                    activityContainer.innerHTML = ''; // Clear container
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'activity-item';
+                    
+                    const errorIconDiv = document.createElement('div');
+                    errorIconDiv.className = 'activity-icon';
+                    errorIconDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                    
+                    const errorContentDiv = document.createElement('div');
+                    errorContentDiv.className = 'activity-content';
+                    
+                    const errorTitleH4 = document.createElement('h4');
+                    errorTitleH4.textContent = 'Unable to load recent activity';
+                    
+                    const errorDescP = document.createElement('p');
+                    errorDescP.textContent = 'Please try refreshing the page';
+                    
+                    errorContentDiv.appendChild(errorTitleH4);
+                    errorContentDiv.appendChild(errorDescP);
+                    errorDiv.appendChild(errorIconDiv);
+                    errorDiv.appendChild(errorContentDiv);
+                    activityContainer.appendChild(errorDiv);
+                }
+            }
+            
+            // Helper function to format relative time
+            formatRelativeTime(timestamp) {
+                if (!timestamp) return 'Unknown time';
+                
+                const now = new Date();
+                const time = new Date(timestamp);
+                const diffInSeconds = Math.floor((now - time) / 1000);
+                
+                if (diffInSeconds < 60) {
+                    return 'Just now';
+                } else if (diffInSeconds < 3600) {
+                    const minutes = Math.floor(diffInSeconds / 60);
+                    return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+                } else if (diffInSeconds < 86400) {
+                    const hours = Math.floor(diffInSeconds / 3600);
+                    return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+                } else {
+                    const days = Math.floor(diffInSeconds / 86400);
+                    return `${days} day${days !== 1 ? 's' : ''} ago`;
                 }
             }
             
