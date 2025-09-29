@@ -1,6 +1,7 @@
-/* Clean Professional Styles for Mina */
-/* Overrides for Bootstrap and custom enhancements */
+/* Clean Professional Styles for Mina - DEPRECATED */
+/* This file is being replaced by premium design system */
 
+/* Temporarily disabled to prevent conflicts
 :root {
     --mina-primary: #0d6efd;
     --mina-secondary: #6c757d;
@@ -11,13 +12,9 @@
     --mina-dark: #212529;
     --mina-light: #f8f9fa;
 }
+*/
 
-/* Ensure Bootstrap loads properly */
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--bs-body-bg, #212529);
-    color: var(--bs-body-color, #fff);
-}
+/* Basic fallback only - premium styles take precedence */
 
 /* Clean card styling */
 .card {

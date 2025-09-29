@@ -28,18 +28,20 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer">
     
-    <!-- Premium Design System - Load in correct order for override -->
+    <!-- Design System Foundation - Load base styles first -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    
+    <!-- Premium Design System - Load LAST to override everything -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/premium-design-tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/premium-global.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/premium-sidebar.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/premium-navigation.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/premium-dashboard.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/clean.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/premium-override.css') }}">
     
     <!-- Defer non-critical JavaScript -->
     <script>
