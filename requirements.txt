@@ -21,3 +21,4 @@ flask-compress
 python-Levenshtein
 nltk
 scipy
+pydub

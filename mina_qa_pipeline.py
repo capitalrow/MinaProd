@@ -14,6 +14,10 @@ from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 import base64
 import requests
+import numpy as np
+import io
+from pydub import AudioSegment
+from pydub.generators import Sine, WhiteNoise
 from dataclasses import dataclass
 import difflib
 import re
@@ -503,16 +507,73 @@ class MinaQAPipeline:
     # Helper methods for test data generation
     def generate_test_webm_audio(self) -> bytes:
         """Generate test WebM audio data"""
-        # This is a placeholder - in production, would generate actual WebM
-        return b'WEBM_TEST_AUDIO_PLACEHOLDER' * 100
+        try:
+            # Generate a 2-second sine wave at 440 Hz (A4 note)
+            duration_ms = 2000
+            sine_wave = Sine(440).to_audio_segment(duration=duration_ms)
+            
+            # Export to WebM format (Opus codec)
+            buffer = io.BytesIO()
+            sine_wave.export(buffer, format="webm", codec="libopus")
+            return buffer.getvalue()
+        except Exception as e:
+            logger.error(f"Error generating WebM audio: {e}")
+            # Fallback to WAV format if WebM fails
+            try:
+                sine_wave = Sine(440).to_audio_segment(duration=2000)
+                buffer = io.BytesIO()
+                sine_wave.export(buffer, format="wav")
+                return buffer.getvalue()
+            except Exception as e2:
+                logger.error(f"Error generating WAV audio fallback: {e2}")
+                return b'AUDIO_GENERATION_FAILED'
     
     def generate_sine_wave_webm(self, frequency: int, duration_ms: int) -> bytes:
         """Generate sine wave WebM audio"""
-        return b'SINE_WAVE_PLACEHOLDER' * (duration_ms // 10)
+        try:
+            # Generate sine wave at specified frequency and duration
+            sine_wave = Sine(frequency).to_audio_segment(duration=duration_ms)
+            
+            # Export to WebM format
+            buffer = io.BytesIO()
+            sine_wave.export(buffer, format="webm", codec="libopus")
+            return buffer.getvalue()
+        except Exception as e:
+            logger.error(f"Error generating sine wave WebM: {e}")
+            # Fallback to WAV format
+            try:
+                sine_wave = Sine(frequency).to_audio_segment(duration=duration_ms)
+                buffer = io.BytesIO()
+                sine_wave.export(buffer, format="wav")
+                return buffer.getvalue()
+            except Exception as e2:
+                logger.error(f"Error generating sine wave WAV fallback: {e2}")
+                return b'SINE_WAVE_GENERATION_FAILED'
     
     def generate_noise_webm(self, duration_ms: int) -> bytes:
         """Generate white noise WebM audio"""
-        return b'NOISE_PLACEHOLDER' * (duration_ms // 10)
+        try:
+            # Generate white noise at specified duration
+            white_noise = WhiteNoise().to_audio_segment(duration=duration_ms)
+            
+            # Reduce volume to prevent clipping
+            white_noise = white_noise - 20  # Reduce by 20dB
+            
+            # Export to WebM format
+            buffer = io.BytesIO()
+            white_noise.export(buffer, format="webm", codec="libopus")
+            return buffer.getvalue()
+        except Exception as e:
+            logger.error(f"Error generating white noise WebM: {e}")
+            # Fallback to WAV format
+            try:
+                white_noise = WhiteNoise().to_audio_segment(duration=duration_ms) - 20
+                buffer = io.BytesIO()
+                white_noise.export(buffer, format="wav")
+                return buffer.getvalue()
+            except Exception as e2:
+                logger.error(f"Error generating white noise WAV fallback: {e2}")
+                return b'NOISE_GENERATION_FAILED'
     
     def generate_test_audio_for_content(self, words: List[str]) -> bytes:
         """Generate synthetic audio for specific word content"""
