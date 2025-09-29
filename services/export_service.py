@@ -13,9 +13,6 @@ from typing import Optional, Dict, List, Any, Union
 from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from services.session_service import SessionService
 
 # PDF generation
@@ -454,10 +451,7 @@ class AdvancedExportService:
             from models.segment import Segment  
             from models.summary import Summary
             from models.task import Task
-            # Use Flask current_app to access database
-            from flask import current_app
-            from flask_sqlalchemy import SQLAlchemy
-            db = current_app.extensions.get('sqlalchemy') or SQLAlchemy()
+            from app import db
             
             sessions_data = []
             

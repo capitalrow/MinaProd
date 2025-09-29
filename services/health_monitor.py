@@ -55,15 +55,14 @@ class HealthMonitor:
         self.cpu_samples = deque(maxlen=10)  # Keep last 10 samples for rolling average
         self.last_cpu_sample_time = 0
         
-        # Thresholds for health checks - CORRECTED for process memory
+        # Thresholds for health checks
         self.thresholds = {
             'cpu_usage': {'warning': 80.0, 'critical': 90.0},
-            'process_memory_mb': {'warning': 400.0, 'critical': 800.0},  # Process memory in MB
-            'system_memory_percent': {'warning': 80.0, 'critical': 95.0},  # System memory %
+            'memory_usage': {'warning': 80.0, 'critical': 95.0},
             'disk_usage': {'warning': 85.0, 'critical': 95.0},
             'api_response_time': {'warning': 5000.0, 'critical': 10000.0},  # milliseconds
             'error_rate': {'warning': 5.0, 'critical': 15.0},  # percentage
-            'memory_growth_rate': {'warning': 10.0, 'critical': 25.0},  # MB/minute for process memory
+            'memory_growth_rate': {'warning': 10.0, 'critical': 25.0},  # MB/minute
             'active_sessions': {'warning': 100, 'critical': 200},  # concurrent sessions
             'buffer_memory': {'warning': 100.0, 'critical': 200.0},  # MB total buffer memory
         }
@@ -77,17 +76,11 @@ class HealthMonitor:
         self.metrics['audio_quality'] = deque(maxlen=100)
         self.metrics['memory_growth_rate'] = deque(maxlen=100)
         self.metrics['buffer_memory'] = deque(maxlen=100)
-        self.metrics['process_memory_mb'] = deque(maxlen=100)
-        self.metrics['system_memory_percent'] = deque(maxlen=100)
         
-        # Memory leak detection with aggressive monitoring
+        # Memory leak detection
         self.baseline_memory = None
-        self.memory_samples = deque(maxlen=10)  # Reduce to 10 samples to save memory
+        self.memory_samples = deque(maxlen=20)  # Track last 20 memory samples
         self.last_memory_check = time.time()
-        
-        # Force immediate memory cleanup
-        import gc
-        gc.collect()
         
         logger.info("🏥 Health Monitor initialized")
     
@@ -131,15 +124,10 @@ class HealthMonitor:
             if cpu_usage is not None:
                 self.record_metric('cpu_usage', cpu_usage, current_time)
             
-            # Process memory usage (RSS) - accurate process memory
-            process = psutil.Process()
-            process_memory_mb = process.memory_info().rss / 1024 / 1024  # MB
-            self.record_metric('process_memory_mb', process_memory_mb, current_time)
-            
-            # System memory usage (for host monitoring)
-            system_memory = psutil.virtual_memory()
-            system_memory_percent = system_memory.percent
-            self.record_metric('system_memory_percent', system_memory_percent, current_time)
+            # Memory usage
+            memory = psutil.virtual_memory()
+            memory_usage = memory.percent
+            self.record_metric('memory_usage', memory_usage, current_time)
             
             # Disk usage
             disk = psutil.disk_usage('/')
@@ -351,14 +339,14 @@ class HealthMonitor:
     def _detect_memory_leaks(self, current_time: float):
         """Detect memory leaks by analyzing memory growth patterns"""
         try:
-            # Get current PROCESS memory usage in MB
-            process = psutil.Process()
-            current_memory_mb = process.memory_info().rss / (1024 * 1024)
+            # Get current memory usage in MB
+            memory = psutil.virtual_memory()
+            current_memory_mb = memory.used / (1024 * 1024)
             
             # Store baseline memory on first run
             if self.baseline_memory is None:
                 self.baseline_memory = current_memory_mb
-                logger.info(f"📊 Process memory baseline set: {self.baseline_memory:.2f} MB")
+                logger.info(f"📊 Baseline memory set: {self.baseline_memory:.2f} MB")
                 return
             
             # Add to memory samples

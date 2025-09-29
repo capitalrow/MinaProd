@@ -1,252 +1,50 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark" class="h-100">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Link Expired - Mina</title>
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
-    
-    <!-- PREMIUM EXPIRED LINK DESIGN -->
-    <style>
-        :root {
-            --elite-purple-500: #a855f7;
-            --elite-purple-700: #7c3aed;
-            --premium-blue-500: #3b82f6;
-            --premium-blue-600: #2563eb;
-            --red-500: #ef4444;
-            --red-600: #dc2626;
-            --amber-500: #f59e0b;
-            --glass-bg-light: rgba(255, 255, 255, 0.08);
-            --glass-border: rgba(255, 255, 255, 0.12);
-        }
-        
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
-            background-attachment: fixed;
-            color: #ffffff;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 200%;
-            height: 200%;
-            background: 
-                radial-gradient(circle at 30% 70%, rgba(239, 68, 68, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(168, 85, 247, 0.2) 0%, transparent 50%);
-            animation: premiumExpiredFloat 20s ease-in-out infinite;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        @keyframes premiumExpiredFloat {
-            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
-            50% { transform: translate(35px, -35px) rotate(180deg); }
-        }
-        
-        .expired-container {
-            position: relative;
-            z-index: 10;
-            text-align: center;
-        }
-        
-        .expired-card {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(40px) saturate(180%);
-            border-radius: 24px;
-            padding: 3rem;
-            border: 1px solid var(--glass-border);
-            box-shadow: 
-                0 32px 64px rgba(0, 0, 0, 0.25),
-                0 16px 32px rgba(0, 0, 0, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-            width: min(500px, 90vw);
-            animation: expiredCardEntry 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .expired-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-        }
-
-        @keyframes expiredCardEntry {
-            from {
-                opacity: 0;
-                transform: translateY(40px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-        
-        .expired-icon {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 2rem;
-            background: linear-gradient(135deg, var(--red-500), var(--red-600));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            color: white;
-            box-shadow: 
-                0 20px 40px rgba(239, 68, 68, 0.3),
-                0 10px 20px rgba(239, 68, 68, 0.2);
-            animation: expiredIconPulse 2s ease-in-out infinite;
-        }
-
-        @keyframes expiredIconPulse {
-            0%, 100% {
-                transform: scale(1);
-                box-shadow: 
-                    0 20px 40px rgba(239, 68, 68, 0.3),
-                    0 10px 20px rgba(239, 68, 68, 0.2);
-            }
-            50% {
-                transform: scale(1.05);
-                box-shadow: 
-                    0 25px 50px rgba(239, 68, 68, 0.4),
-                    0 15px 30px rgba(239, 68, 68, 0.3);
-            }
-        }
-        
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, var(--red-500), var(--amber-500));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .info-card {
-            background: var(--glass-bg-light);
-            border-radius: 16px;
-            padding: 2rem;
-            margin: 2rem 0;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            text-align: left;
-        }
-        
-        .info-list {
-            list-style: none;
-            padding: 0;
-            margin: 1rem 0;
-        }
-        
-        .info-list li {
-            padding: 0.5rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .info-list li:last-child {
-            border-bottom: none;
-        }
-        
-        .home-button {
-            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--premium-blue-500) 100%);
-            color: white;
-            text-decoration: none;
-            border: none;
-            border-radius: 12px;
-            padding: 1rem 2rem;
-            font-size: 1.125rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.75rem;
-            box-shadow: 
-                0 10px 20px rgba(168, 85, 247, 0.3),
-                0 5px 10px rgba(59, 130, 246, 0.2);
-        }
-
-        .home-button:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 
-                0 20px 40px rgba(168, 85, 247, 0.4),
-                0 10px 20px rgba(59, 130, 246, 0.3);
-            color: white;
-            text-decoration: none;
-        }
-        
-        @media (max-width: 768px) {
-            .expired-card {
-                padding: 2rem;
-                margin: 1rem;
-            }
-            h1 {
-                font-size: 2rem;
-            }
-            .expired-icon {
-                width: 80px;
-                height: 80px;
-                font-size: 2.5rem;
-            }
-        }
-    </style>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
-<body>
-    <div class="expired-container">
-        <div class="expired-card">
-            <div class="expired-icon">
-                <i class="fas fa-unlink"></i>
-            </div>
-            
-            <h1>Link Expired</h1>
-            <p style="color: rgba(255, 255, 255, 0.8); font-size: 1.125rem; margin-bottom: 2rem;">
-                This shared session link has expired or is no longer active.
-            </p>
-            
-            <div class="info-card">
-                <h6 style="color: var(--amber-500); font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-info-circle"></i>
+<body class="d-flex align-items-center justify-content-center min-vh-100">
+    <div class="text-center">
+        <div class="mb-4">
+            <i class="fas fa-link fa-3x text-danger mb-3"></i>
+            <h1 class="h3 text-danger">Link Expired</h1>
+            <p class="text-muted">This shared session link has expired or is no longer active.</p>
+        </div>
+        
+        <div class="card border-danger" style="max-width: 400px; margin: 0 auto;">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
                     What happened?
                 </h6>
-                
-                <ul class="info-list">
-                    <li><i class="fas fa-clock me-2 text-red-400"></i>The link may have expired</li>
-                    <li><i class="fas fa-ban me-2 text-red-400"></i>The link may have been deactivated</li>
-                    <li><i class="fas fa-trash me-2 text-red-400"></i>The session may no longer exist</li>
+                <ul class="list-unstyled text-start small">
+                    <li class="mb-2">• The link may have expired</li>
+                    <li class="mb-2">• The link may have been deactivated</li>
+                    <li class="mb-2">• The session may no longer exist</li>
                 </ul>
                 
-                <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-                    <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 1.5rem;">
-                        If you need access to this session, please contact the person who shared it with you.
-                    </p>
-                    
-                    <a href="/" class="home-button">
-                        <i class="fas fa-home"></i>
-                        Return to Dashboard
-                    </a>
-                </div>
+                <hr class="my-3">
+                
+                <p class="small text-muted mb-3">
+                    If you need access to this session, please contact the person who shared it with you.
+                </p>
+                
+                <a href="/" class="btn btn-primary">
+                    <i class="fas fa-home me-2"></i>
+                    Go to Mina Home
+                </a>
             </div>
-            
-            <div style="margin-top: 2rem; color: rgba(255, 255, 255, 0.6); font-size: 0.875rem;">
-                <i class="fas fa-shield-alt me-2"></i>
-                Shared links expire for security and privacy protection.
-            </div>
+        </div>
+        
+        <div class="mt-4">
+            <small class="text-muted">
+                <i class="fas fa-shield-alt me-1"></i>
+                Shared links expire for security and privacy.
+            </small>
         </div>
     </div>
 </body>

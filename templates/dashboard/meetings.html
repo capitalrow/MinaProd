@@ -3,24 +3,30 @@
 {% block title %}Meetings - {{ super() }}{% endblock %}
 
 {% block head %}
-    <!-- Meetings page uses mina-meetings.css for styling -->
+    <!-- Core Dashboard CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    
+    <!-- Feather Icons removed - using Font Awesome consistently -->
 {% endblock %}
 
 {% block content %}
-    <div class="meetings-main-content">
-        <!-- Premium Meetings Header -->
-        <div class="meetings-dashboard-header animate-fade-in">
-            <div class="meetings-header-content">
-                <h1 class="meetings-dashboard-title">
+    <div class="main-content">
+        <!-- Meetings Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <h1 class="dashboard-title">
                     <i class="fas fa-users"></i>
-                    Meetings Dashboard
+                    Meetings
                 </h1>
-                <div class="meetings-header-actions">
+                <div class="header-actions">
                     <button class="btn btn-outline-primary" id="refresh-meetings">
                         <i class="fas fa-sync-alt"></i>
                         Refresh
                     </button>
-                    <a href="/live" class="btn">
+                    <a href="{{ url_for('transcription.live_transcription') }}" class="btn btn-primary">
                         <i class="fas fa-plus"></i>
                         New Meeting
                     </a>
@@ -28,41 +34,41 @@
             </div>
         </div>
 
-        <!-- Premium Meetings Stats -->
-        <div class="meetings-stats-row animate-fade-in">
-            <div class="meetings-stat-card">
-                <div class="meetings-stat-icon">
+        <!-- Meetings Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon">
                     <i class="fas fa-calendar-check"></i>
                 </div>
-                <div class="meetings-stat-content">
-                    <h3 class="meetings-stat-number" id="total-meetings">0</h3>
-                    <p class="meetings-stat-label">Total Meetings</p>
+                <div class="stat-content">
+                    <h3 class="stat-number" id="total-meetings">0</h3>
+                    <p class="stat-label">Total Meetings</p>
                 </div>
             </div>
             
-            <div class="meetings-stat-card">
-                <div class="meetings-stat-icon">
+            <div class="stat-card">
+                <div class="stat-icon">
                     <i class="fas fa-clock"></i>
                 </div>
-                <div class="meetings-stat-content">
-                    <h3 class="meetings-stat-number" id="total-duration">0h</h3>
-                    <p class="meetings-stat-label">Total Duration</p>
+                <div class="stat-content">
+                    <h3 class="stat-number" id="total-duration">0h</h3>
+                    <p class="stat-label">Total Duration</p>
                 </div>
             </div>
             
-            <div class="meetings-stat-card">
-                <div class="meetings-stat-icon">
+            <div class="stat-card">
+                <div class="stat-icon">
                     <i class="fas fa-microphone"></i>
                 </div>
-                <div class="meetings-stat-content">
-                    <h3 class="meetings-stat-number" id="active-recordings">0</h3>
-                    <p class="meetings-stat-label">Active Recordings</p>
+                <div class="stat-content">
+                    <h3 class="stat-number" id="active-recordings">0</h3>
+                    <p class="stat-label">Active Recordings</p>
                 </div>
             </div>
         </div>
 
-        <!-- Premium Search and Filters -->
-        <div class="dashboard-section animate-fade-in">
+        <!-- Search and Filters -->
+        <div class="dashboard-section">
             <div class="search-filters">
                 <div class="search-box">
                     <i class="fas fa-search"></i>

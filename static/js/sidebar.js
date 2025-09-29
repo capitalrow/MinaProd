@@ -373,11 +373,6 @@ class SidebarNavigation {
                 badge.style.display = 'none';
             }
         }
-        
-        // Sync with premium navigation system if available
-        if (window.PremiumNavigation) {
-            window.PremiumNavigation.setBadgeCount(type, value);
-        }
     }
 }
 

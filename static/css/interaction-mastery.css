@@ -1,0 +1,480 @@
+/*
+INTERACTION DESIGN MASTERY - INDUSTRY STANDARD IMPLEMENTATION
+- Micro-interactions with perfect timing and easing
+- Advanced input handling and validation feedback
+- State-aware UI components with transitions
+- Gesture recognition and touch interactions
+- Voice UI feedback integration
+- Accessibility-first interaction patterns
+*/
+
+/* Micro-Interaction Foundation */
+.mina-micro-transition {
+  transition: all var(--mina-transition-base) cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center center;
+}
+
+.mina-micro-bounce {
+  transition: transform 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.mina-micro-elastic {
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Button Interaction Mastery */
+.mina-btn-interactive {
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
+  transition: all var(--mina-transition-base);
+  cursor: pointer;
+}
+
+.mina-btn-interactive::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+  pointer-events: none;
+}
+
+.mina-btn-interactive:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--mina-shadow-lg);
+}
+
+.mina-btn-interactive:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: var(--mina-shadow-sm);
+}
+
+.mina-btn-interactive:active::before {
+  width: 200%;
+  height: 200%;
+}
+
+/* Advanced Input Interactions */
+.mina-input-group {
+  position: relative;
+  margin-bottom: var(--mina-space-6);
+}
+
+.mina-input-enhanced {
+  width: 100%;
+  padding: 16px 16px 16px 48px;
+  border: 2px solid var(--mina-border-primary);
+  border-radius: var(--mina-radius-lg);
+  background: var(--mina-bg-primary);
+  font-size: var(--mina-font-size-base);
+  transition: all var(--mina-transition-base);
+  outline: none;
+}
+
+.mina-input-enhanced:focus {
+  border-color: var(--mina-primary);
+  box-shadow: 0 0 0 4px rgba(var(--mina-primary-rgb), 0.1);
+  transform: scale(1.01);
+}
+
+.mina-input-enhanced:valid {
+  border-color: var(--mina-success);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23198754' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+}
+
+.mina-input-enhanced:invalid:not(:placeholder-shown) {
+  border-color: var(--mina-danger);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23dc3545' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m11.796 4.204-7.592 7.592M4.204 4.204l7.592 7.592'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  animation: shakeError 0.3s ease-in-out;
+}
+
+@keyframes shakeError {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.mina-input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--mina-text-muted);
+  transition: color var(--mina-transition-base);
+  pointer-events: none;
+}
+
+.mina-input-enhanced:focus + .mina-input-icon,
+.mina-input-enhanced:not(:placeholder-shown) + .mina-input-icon {
+  color: var(--mina-primary);
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* Progressive Disclosure */
+.mina-progressive-reveal {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+}
+
+.mina-progressive-reveal.is-revealed {
+  max-height: 500px;
+  opacity: 1;
+  padding: var(--mina-space-4) 0;
+}
+
+/* State-Aware Components */
+.mina-state-component {
+  transition: all var(--mina-transition-base);
+  position: relative;
+}
+
+.mina-state-component[data-state="loading"] {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.mina-state-component[data-state="loading"]::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid var(--mina-border-primary);
+  border-top-color: var(--mina-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.mina-state-component[data-state="success"] {
+  background-color: rgba(var(--mina-success-rgb), 0.1);
+  border-color: var(--mina-success);
+  transform: scale(1.02);
+}
+
+.mina-state-component[data-state="error"] {
+  background-color: rgba(var(--mina-danger-rgb), 0.1);
+  border-color: var(--mina-danger);
+  animation: shakeError 0.3s ease-in-out;
+}
+
+/* Advanced Hover States */
+.mina-hover-lift {
+  transition: transform var(--mina-transition-base), box-shadow var(--mina-transition-base);
+}
+
+.mina-hover-lift:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--mina-shadow-xl);
+}
+
+.mina-hover-tilt {
+  transition: transform var(--mina-transition-base);
+  transform-style: preserve-3d;
+}
+
+.mina-hover-tilt:hover {
+  transform: perspective(1000px) rotateX(10deg) rotateY(10deg);
+}
+
+/* Touch Gesture Support */
+.mina-swipe-action {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-x;
+}
+
+.mina-swipe-indicator {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 60px;
+  background: var(--mina-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transform: translateX(100%);
+  transition: transform var(--mina-transition-base);
+}
+
+.mina-swipe-action.is-swiping .mina-swipe-indicator {
+  transform: translateX(0);
+}
+
+/* Voice UI Feedback */
+.mina-voice-active {
+  position: relative;
+  overflow: hidden;
+}
+
+.mina-voice-active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(var(--mina-primary-rgb), 0.3), transparent);
+  animation: voicePulse 2s ease-in-out infinite;
+}
+
+@keyframes voicePulse {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.mina-voice-listening {
+  border: 2px solid var(--mina-primary);
+  box-shadow: 0 0 20px rgba(var(--mina-primary-rgb), 0.3);
+  animation: listeningPulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes listeningPulse {
+  from { box-shadow: 0 0 20px rgba(var(--mina-primary-rgb), 0.3); }
+  to { box-shadow: 0 0 30px rgba(var(--mina-primary-rgb), 0.6); }
+}
+
+/* Card Interaction Mastery */
+.mina-interactive-card {
+  transition: all var(--mina-transition-base);
+  cursor: pointer;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+.mina-interactive-card:hover {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: var(--mina-shadow-xl);
+}
+
+.mina-interactive-card:active {
+  transform: translateY(-4px) scale(1.01);
+  transition-duration: 0.1s;
+}
+
+/* Notification Interactions */
+.mina-notification {
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.mina-notification.is-visible {
+  transform: translateX(0);
+}
+
+.mina-notification.is-dismissing {
+  transform: translateX(100%) scale(0.8);
+  opacity: 0;
+}
+
+/* Toggle Interactions */
+.mina-toggle-switch {
+  position: relative;
+  width: 60px;
+  height: 30px;
+  background: var(--mina-border-accent);
+  border-radius: var(--mina-radius-full);
+  cursor: pointer;
+  transition: background-color var(--mina-transition-base);
+}
+
+.mina-toggle-switch::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  border-radius: 50%;
+  transition: transform var(--mina-transition-base);
+  box-shadow: var(--mina-shadow-sm);
+}
+
+.mina-toggle-switch.is-checked {
+  background: var(--mina-primary);
+}
+
+.mina-toggle-switch.is-checked::before {
+  transform: translateX(30px);
+}
+
+/* Drag and Drop Interactions */
+.mina-draggable {
+  cursor: grab;
+  transition: transform var(--mina-transition-base), box-shadow var(--mina-transition-base);
+}
+
+.mina-draggable:active {
+  cursor: grabbing;
+  transform: scale(1.05) rotate(5deg);
+  box-shadow: var(--mina-shadow-xl);
+  z-index: 1000;
+}
+
+.mina-drop-target {
+  transition: all var(--mina-transition-base);
+  border: 2px dashed transparent;
+}
+
+.mina-drop-target.is-dragover {
+  border-color: var(--mina-primary);
+  background: rgba(var(--mina-primary-rgb), 0.05);
+  transform: scale(1.02);
+}
+
+/* Accordion Interactions */
+.mina-accordion-header {
+  cursor: pointer;
+  transition: all var(--mina-transition-base);
+  position: relative;
+}
+
+.mina-accordion-header:hover {
+  background: var(--mina-bg-accent);
+}
+
+.mina-accordion-header::after {
+  content: '';
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-right: 2px solid var(--mina-text-secondary);
+  border-bottom: 2px solid var(--mina-text-secondary);
+  transform: translateY(-50%) rotate(45deg);
+  transition: transform var(--mina-transition-base);
+}
+
+.mina-accordion-header.is-expanded::after {
+  transform: translateY(-50%) rotate(-135deg);
+}
+
+.mina-accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.mina-accordion-content.is-expanded {
+  max-height: 1000px;
+  padding: var(--mina-space-4) var(--mina-space-6);
+}
+
+/* Loading State Interactions */
+.mina-loading-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.mina-loading-dots::before,
+.mina-loading-dots::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mina-primary);
+  animation: loadingDots 1.4s ease-in-out infinite both;
+}
+
+.mina-loading-dots::before {
+  animation-delay: -0.32s;
+}
+
+.mina-loading-dots::after {
+  animation-delay: -0.16s;
+}
+
+@keyframes loadingDots {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Parallax Scroll Effects */
+.mina-parallax {
+  transform: translateZ(0);
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+}
+
+/* Scroll-Triggered Animations */
+.mina-scroll-reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.mina-scroll-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Focus Trap for Modals */
+.mina-focus-trap:focus {
+  outline: 2px solid var(--mina-primary);
+  outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .mina-btn-interactive:focus,
+  .mina-input-enhanced:focus,
+  .mina-interactive-card:focus {
+    outline: 3px solid currentColor;
+    outline-offset: 2px;
+  }
+}
+
+/* Reduced Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+  .mina-micro-transition,
+  .mina-micro-bounce,
+  .mina-micro-elastic,
+  .mina-btn-interactive,
+  .mina-input-enhanced,
+  .mina-progressive-reveal,
+  .mina-state-component,
+  .mina-hover-lift,
+  .mina-hover-tilt {
+    transition: none;
+    animation: none;
+    transform: none;
+  }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .mina-hover-lift:hover,
+  .mina-hover-tilt:hover {
+    transform: none;
+  }
+  
+  .mina-btn-interactive:hover {
+    transform: none;
+    box-shadow: var(--mina-shadow-base);
+  }
+}

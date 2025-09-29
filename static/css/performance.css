@@ -1,0 +1,470 @@
+/*
+PERFORMANCE EXCELLENCE - INDUSTRY STANDARD IMPLEMENTATION
+- Core Web Vitals optimization (LCP, FID, CLS, INP)
+- Loading performance enhancements
+- GPU acceleration for smooth animations
+- Memory-efficient CSS patterns
+- Battery-optimized animations
+- Network-conscious loading strategies
+*/
+
+/* Critical Rendering Path Optimization */
+.mina-critical {
+  /* Above-the-fold content optimization */
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
+
+.mina-lazy-load {
+  /* Lazy loading optimization */
+  content-visibility: auto;
+  contain-intrinsic-size: 0 200px;
+}
+
+/* GPU Acceleration for Performance */
+.mina-gpu-layer {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+}
+
+/* Hardware Acceleration for Animations */
+.mina-animate {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+.mina-animate.is-done {
+  will-change: auto;
+}
+
+/* Optimized Transitions */
+.mina-transition-optimized {
+  transition-property: transform, opacity, filter;
+  transition-duration: var(--mina-transition-base);
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* CLS Prevention - Layout Stability */
+.mina-stable-layout {
+  /* Prevent layout shifts */
+  min-height: 1px;
+  aspect-ratio: attr(width) / attr(height);
+}
+
+.mina-stable-image {
+  /* Image aspect ratio preservation */
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  width: 100%;
+  height: auto;
+}
+
+.mina-stable-video {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  height: auto;
+}
+
+/* LCP Optimization */
+.mina-lcp-optimized {
+  /* Largest Contentful Paint optimization */
+  font-display: swap;
+  loading: eager;
+  decoding: sync;
+}
+
+.mina-hero-image {
+  /* Hero image optimization */
+  loading: eager;
+  fetchpriority: high;
+  decoding: sync;
+  content-visibility: visible;
+}
+
+/* FID/INP Optimization */
+.mina-interaction-ready {
+  /* Fast interaction optimization */
+  pointer-events: auto;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Memory-Efficient Animations */
+@keyframes fadeInOptimized {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes slideInOptimized {
+  from {
+    transform: translate3d(-100%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes scaleInOptimized {
+  from {
+    opacity: 0;
+    transform: scale3d(0.95, 0.95, 1);
+  }
+  to {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+}
+
+/* Performance-Conscious Hover Effects */
+@media (hover: hover) and (pointer: fine) {
+  .mina-hover-optimized {
+    transition: transform var(--mina-transition-fast) ease-out;
+  }
+  
+  .mina-hover-optimized:hover {
+    transform: translateY(-2px) scale(1.02);
+  }
+}
+
+/* Battery-Efficient Animations */
+@media (prefers-reduced-motion: no-preference) {
+  .mina-battery-efficient {
+    animation: fadeInOptimized 0.3s ease-out;
+  }
+  
+  .mina-pulse-efficient {
+    animation: pulseEfficient 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulseEfficient {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mina-battery-efficient,
+  .mina-pulse-efficient {
+    animation: none;
+  }
+  
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Containment for Performance */
+.mina-contain-layout {
+  contain: layout;
+}
+
+.mina-contain-paint {
+  contain: paint;
+}
+
+.mina-contain-size {
+  contain: size;
+}
+
+.mina-contain-strict {
+  contain: strict;
+}
+
+/* Optimized Loading States */
+.mina-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--mina-bg-accent) 25%,
+    var(--mina-bg-secondary) 50%,
+    var(--mina-bg-accent) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeletonLoading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeletonLoading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Progressive Loading */
+.mina-progressive-image {
+  background-size: cover;
+  background-position: center;
+  filter: blur(5px);
+  transition: filter 0.3s ease;
+}
+
+.mina-progressive-image.loaded {
+  filter: none;
+}
+
+/* Network-Aware Loading */
+@media (prefers-reduced-data: reduce) {
+  .mina-data-saver {
+    background-image: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  .mina-skeleton {
+    animation: none;
+    background: var(--mina-bg-accent);
+  }
+  
+  .mina-hero-image {
+    display: none;
+  }
+}
+
+/* Efficient Grid Layouts */
+.mina-efficient-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--mina-space-6);
+  contain: layout;
+}
+
+.mina-efficient-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mina-space-4);
+  contain: layout;
+}
+
+/* Optimized Text Rendering */
+.mina-text-optimized {
+  text-rendering: optimizeSpeed;
+  font-display: swap;
+  font-synthesis: none;
+}
+
+.mina-text-quality {
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1;
+  font-variant-ligatures: common-ligatures;
+}
+
+/* Intersection Observer Optimization */
+.mina-fade-in-observer {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.mina-fade-in-observer.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Scroll Performance */
+.mina-smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.mina-scroll-snap {
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mina-scroll-snap-item {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* Efficient Backdrop Filters */
+.mina-backdrop-optimized {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  will-change: backdrop-filter;
+}
+
+.mina-backdrop-optimized.is-static {
+  will-change: auto;
+}
+
+/* Memory Management */
+.mina-memory-efficient {
+  /* Reduce memory usage for large lists */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Paint Optimization */
+.mina-paint-optimized {
+  contain: paint layout;
+  will-change: transform;
+}
+
+.mina-paint-optimized.is-done {
+  will-change: auto;
+}
+
+/* Critical CSS Inlining Support */
+.mina-critical-above-fold {
+  /* Above-the-fold critical styles */
+  display: block;
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Efficient Transforms */
+.mina-transform-optimized {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Loading Priority Classes */
+.mina-priority-high {
+  loading: eager;
+  fetchpriority: high;
+}
+
+.mina-priority-low {
+  loading: lazy;
+  fetchpriority: low;
+}
+
+/* Efficient Border Radius */
+.mina-border-optimized {
+  border-radius: var(--mina-radius-md);
+  overflow: hidden;
+  contain: paint;
+}
+
+/* Performance Monitoring Helpers */
+.mina-measure-paint {
+  /* Helper for measuring paint performance */
+  background: var(--mina-bg-primary);
+  contain: paint;
+}
+
+.mina-measure-layout {
+  /* Helper for measuring layout performance */
+  contain: layout size;
+}
+
+/* Efficient Shadows */
+.mina-shadow-optimized {
+  box-shadow: var(--mina-shadow-base);
+  will-change: box-shadow;
+  transition: box-shadow var(--mina-transition-fast);
+}
+
+.mina-shadow-optimized:hover {
+  box-shadow: var(--mina-shadow-lg);
+}
+
+.mina-shadow-optimized.is-static {
+  will-change: auto;
+}
+
+/* High Performance Mode */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  .mina-high-performance {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+    will-change: transform, opacity;
+  }
+  
+  .mina-high-performance:hover {
+    transform: translate3d(0, -2px, 0) scale(1.02);
+  }
+}
+
+/* CPU Efficient Animations */
+.mina-cpu-efficient {
+  /* Use transform instead of changing layout properties */
+  transition: transform var(--mina-transition-base), opacity var(--mina-transition-base);
+}
+
+/* Web Vitals Optimization Classes */
+.mina-lcp-target {
+  /* Optimize LCP target elements */
+  font-display: swap;
+  contain: paint;
+  content-visibility: visible;
+}
+
+.mina-fid-target {
+  /* Optimize FID target elements */
+  touch-action: manipulation;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.mina-cls-stable {
+  /* Prevent CLS in target elements */
+  aspect-ratio: attr(width) / attr(height);
+  min-height: 1px;
+  contain: layout;
+}
+
+/* Modern Browser Optimizations */
+@supports (content-visibility: auto) {
+  .mina-modern-optimized {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 300px;
+  }
+}
+
+@supports (aspect-ratio: 1) {
+  .mina-aspect-optimized {
+    aspect-ratio: 16 / 9;
+    height: auto;
+  }
+}
+
+@supports (backdrop-filter: blur(8px)) {
+  .mina-backdrop-modern {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+/* Performance Debug Classes */
+.mina-debug-paint {
+  /* Debug paint areas */
+  outline: 2px solid red;
+  background: rgba(255, 0, 0, 0.1);
+}
+
+.mina-debug-layout {
+  /* Debug layout areas */
+  outline: 2px solid blue;
+  background: rgba(0, 0, 255, 0.1);
+}
+
+.mina-debug-composite {
+  /* Debug composite layers */
+  outline: 2px solid green;
+  background: rgba(0, 255, 0, 0.1);
+}

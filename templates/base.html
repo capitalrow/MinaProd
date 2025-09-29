@@ -1,45 +1,19 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark" class="h-100">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="description" content="{% block description %}Mina - Professional AI-powered speech transcription platform with real-time insights and premium interface design{% endblock %}">
-    <meta name="keywords" content="{% block keywords %}speech transcription, AI, real-time, voice to text, meeting transcription, premium interface{% endblock %}">
-    <meta name="author" content="Mina Transcription Platform">
-    
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
-    <meta property="og:description" content="{% block og_description %}{{ self.description() }}{% endblock %}">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ request.url }}">
-    <meta property="og:image" content="{{ url_for('static', filename='favicon-enhanced.svg', _external=True) }}">
-    
-    <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{% block twitter_title %}{{ self.title() }}{% endblock %}">
-    <meta name="twitter:description" content="{% block twitter_description %}{{ self.description() }}{% endblock %}">
-    
-    <!-- PWA Configuration -->
-    <meta name="theme-color" content="#3b82f6">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Mina">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Mina - Meeting Insights & Action{% endblock %}</title>
     
-    <!-- Premium Favicon System -->
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" id="app-favicon">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='mina-logo-animated.svg') }}">
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='mina-logo-animated.svg') }}">
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     
     <!-- Performance Optimizations -->
     <link rel="preconnect" href="https://cdn.replit.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="dns-prefetch" href="//cdn.replit.com">
     <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
-    
-    <!-- Security Headers -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' https://cdnjs.cloudflare.com https://cdn.replit.com; script-src 'self' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; connect-src 'self' wss: https:; img-src 'self' data: https:;">
     
     <!-- Font Awesome - Load early for icons -->
     <link rel="stylesheet" 
@@ -54,21 +28,14 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer">
     
-    <!-- MINA PREMIUM DESIGN SYSTEM v2.0 - Comprehensive Professional System -->
-    <!-- Foundation: Design tokens, typography, spacing, colors -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-premium-system.css') }}">
-    <!-- State Management: Loading, empty, error, skeleton, toast, modal components -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-state-components.css') }}">
-    <!-- Page-specific Modules -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-meetings.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-settings.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-copilot.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-analytics.css') }}">
-    <!-- Legacy Support: Maintain compatibility while migrating -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-core.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-components.css') }}">
-    <!-- Application Styles -->
+    <!-- Premium Design System - Load in correct order for override -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/clean.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-live.css') }}">
     
     <!-- Defer non-critical JavaScript -->
     <script>
@@ -87,438 +54,11 @@
             referrerpolicy="no-referrer"
             defer></script>
     
-    <!-- Premium Interactions -->
-    <script src="{{ url_for('static', filename='js/premium-interactions.js') }}" defer></script>
-    <!-- State Management -->
-    <script src="{{ url_for('static', filename='js/mina-state-manager.js') }}" defer></script>
     
-    
-    
-    <!-- Critical CSS for immediate rendering -->
-    <style>
-        /* Skip links for accessibility */
-        .skip-link {
-            position: absolute;
-            top: -40px;
-            left: 6px;
-            background: #000;
-            color: #fff;
-            padding: 8px;
-            text-decoration: none;
-            border-radius: 4px;
-            z-index: 10000;
-        }
-        .skip-link:focus {
-            top: 6px;
-        }
-        
-        /* PREMIUM LOADING SCREEN - Updated with Design System Tokens */
-        .mina-loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, var(--purple-600) 0%, var(--purple-800) 35%, var(--blue-600) 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: var(--z-toast);
-            transition: opacity var(--duration-slowest) var(--ease-out), visibility var(--duration-slowest) var(--ease-out);
-        }
-
-        .mina-loading-screen::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 200%;
-            height: 200%;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.4) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.4) 0%, transparent 50%);
-            animation: premiumLoadingFloat 15s var(--ease-in-out) infinite;
-            pointer-events: none;
-        }
-
-        @keyframes premiumLoadingFloat {
-            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
-            50% { transform: translate(var(--space-12), calc(-1 * var(--space-12))) rotate(180deg); }
-        }
-
-        .mina-loading-screen.hidden {
-            opacity: 0;
-            visibility: hidden;
-        }
-
-        .mina-loading-content {
-            position: relative;
-            z-index: var(--z-docked);
-            text-align: center;
-            color: var(--text-inverse);
-        }
-
-        .mina-loading-spinner {
-            width: var(--space-20);
-            height: var(--space-20);
-            border: 6px solid rgba(255, 255, 255, 0.2);
-            border-top: 6px solid rgba(255, 255, 255, 0.8);
-            border-radius: var(--radius-full);
-            margin: 0 auto var(--space-8);
-            position: relative;
-            animation: premiumSpinGlow var(--duration-slowest) linear infinite;
-        }
-
-        .mina-loading-spinner::after {
-            content: '';
-            position: absolute;
-            top: -6px;
-            left: -6px;
-            right: -6px;
-            bottom: -6px;
-            border-radius: 50%;
-            border: 6px solid transparent;
-            border-top: 6px solid rgba(168, 85, 247, 0.6);
-            animation: premiumSpinGlow 1.5s linear infinite reverse;
-        }
-
-        @keyframes premiumSpinGlow {
-            0% { 
-                transform: rotate(0deg); 
-                filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
-            }
-            50% { 
-                filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.6));
-            }
-            100% { 
-                transform: rotate(360deg); 
-                filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
-            }
-        }
-
-        .mina-loading-text {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(168, 85, 247, 0.8));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .mina-loading-subtitle {
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.7);
-            font-weight: 500;
-        }
-
-        /* UNIFIED PREMIUM ANIMATED BACKGROUNDS - Applied globally to all pages */
-        body.premium-bg {
-            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
-            background-attachment: fixed;
-            position: relative;
-            min-height: 100vh;
-        }
-
-        body.premium-bg::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 200%;
-            height: 200%;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(14, 165, 233, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.2) 0%, transparent 50%);
-            animation: premiumUnifiedFloat 25s ease-in-out infinite;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        @keyframes premiumUnifiedFloat {
-            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
-            33% { transform: translate(30px, -30px) rotate(120deg); }
-            66% { transform: translate(-20px, 20px) rotate(240deg); }
-        }
-
-        /* PREMIUM PAGE TRANSITIONS */
-        .page-transition {
-            opacity: 0;
-            transform: translateY(20px);
-            animation: pageEnter 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-
-        @keyframes pageEnter {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* PREMIUM HOVER EFFECTS */
-        .premium-hover {
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .premium-hover:hover {
-            transform: translateY(-2px) scale(1.02);
-        }
-
-        /* PREMIUM SCROLL ANIMATIONS */
-        .animate-on-scroll {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .animate-on-scroll.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        /* PREMIUM COMPONENT ANIMATIONS */
-        .premium-fade-in {
-            animation: premiumFadeIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-        
-        .premium-slide-up {
-            animation: premiumSlideUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-        
-        .premium-scale-in {
-            animation: premiumScaleIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-        
-        @keyframes premiumFadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        @keyframes premiumSlideUp {
-            from {
-                opacity: 0;
-                transform: translateY(40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes premiumScaleIn {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* ========================================= */
-        /* PREMIUM NAVIGATION ENHANCEMENTS          */
-        /* ========================================= */
-        
-        /* Enhanced Sidebar with Premium Glass Effect */
-        .sidebar-navigation {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(50px) saturate(200%);
-            border-right: 1px solid var(--glass-border);
-            box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.15),
-                inset 1px 0 0 rgba(255, 255, 255, 0.1);
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-        
-        /* Premium Brand Section */
-        .sidebar-brand {
-            background: var(--glass-bg-dark);
-            border-bottom: 1px solid var(--glass-border);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .sidebar-brand::before {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-        }
-        
-        .sidebar-brand:hover {
-            background: var(--glass-bg-light);
-            transform: scale(1.02);
-        }
-        
-        .sidebar-brand-icon {
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-500));
-            box-shadow: 
-                0 10px 20px rgba(168, 85, 247, 0.3),
-                0 5px 10px rgba(59, 130, 246, 0.2);
-            transition: all 0.3s ease;
-        }
-        
-        .sidebar-brand:hover .sidebar-brand-icon {
-            transform: scale(1.1) rotate(5deg);
-            box-shadow: 
-                0 15px 30px rgba(168, 85, 247, 0.4),
-                0 8px 16px rgba(59, 130, 246, 0.3);
-        }
-        
-        /* Premium Menu Items */
-        .sidebar-item {
-            position: relative;
-            overflow: hidden;
-            border-radius: 12px;
-            margin: 0.25rem 0.75rem;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-        
-        .sidebar-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transition: left 0.5s ease;
-        }
-        
-        .sidebar-item:hover::before {
-            left: 100%;
-        }
-        
-        .sidebar-item:hover {
-            background: var(--glass-bg-light);
-            transform: translateX(4px);
-            box-shadow: 0 8px 16px rgba(168, 85, 247, 0.2);
-        }
-        
-        .sidebar-item.active {
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-500));
-            transform: translateX(8px);
-            box-shadow: 
-                0 10px 20px rgba(168, 85, 247, 0.4),
-                0 5px 10px rgba(59, 130, 246, 0.3);
-        }
-        
-        .sidebar-item-icon {
-            transition: all 0.3s ease;
-        }
-        
-        .sidebar-item:hover .sidebar-item-icon,
-        .sidebar-item.active .sidebar-item-icon {
-            transform: scale(1.1);
-        }
-        
-        /* Premium Badge Animations */
-        .sidebar-item-badge {
-            background: linear-gradient(135deg, var(--emerald-500), #059669);
-            animation: premiumBadgePulse 2s ease-in-out infinite;
-            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
-        }
-        
-        @keyframes premiumBadgePulse {
-            0%, 100% {
-                transform: scale(1);
-                box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
-            }
-            50% {
-                transform: scale(1.05);
-                box-shadow: 0 6px 12px rgba(16, 185, 129, 0.5);
-            }
-        }
-        
-        /* Premium Tooltip Enhancement */
-        .sidebar-item-tooltip {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(30px) saturate(170%);
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-            transform: translateX(8px);
-        }
-        
-        /* Section Labels with Premium Style */
-        .sidebar-section-label {
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-        
-        /* Collapse/Expand Animation Enhancement */
-        .sidebar-navigation.collapsed {
-            backdrop-filter: blur(60px) saturate(220%);
-            box-shadow: 
-                0 25px 50px rgba(0, 0, 0, 0.2),
-                inset 1px 0 0 rgba(255, 255, 255, 0.15);
-        }
-        
-        /* Mobile Navigation Overlay */
-        @media (max-width: 768px) {
-            .sidebar-navigation {
-                background: var(--glass-bg-dark);
-                backdrop-filter: blur(60px) saturate(200%);
-                box-shadow: 
-                    0 30px 60px rgba(0, 0, 0, 0.3),
-                    inset 1px 0 0 rgba(255, 255, 255, 0.2);
-            }
-        }
-        
-        /* Premium Scroll Enhancement */
-        .sidebar-menu::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .sidebar-menu::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 3px;
-        }
-        
-        .sidebar-menu::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-500));
-            border-radius: 3px;
-            transition: background 0.3s ease;
-        }
-        
-        .sidebar-menu::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, var(--elite-purple-700), var(--premium-blue-700));
-        }
-        
-        /* Prevent flash of unstyled content */
-        body { visibility: hidden; }
-        body.loaded { visibility: visible; }
-    </style>
     
     {% block head %}{% endblock %}
 </head>
-<body class="premium-bg loaded" data-theme="dark">
-    <!-- Skip Links for Accessibility -->
-    <a href="#main-content" class="skip-link">Skip to main content</a>
-    <a href="#navigation" class="skip-link">Skip to navigation</a>
-    
-    <!-- Loading Screen -->
-    <!-- Premium Loading Screen -->
-    <div class="mina-loading-screen" id="loading-screen">
-        <div class="mina-loading-content">
-            <div class="mina-loading-spinner"></div>
-            <div class="mina-loading-text">Mina</div>
-            <div class="mina-loading-subtitle">Preparing your premium experience...</div>
-        </div>
-    </div>
+<body>
     <!-- Premium Sidebar Navigation -->
     <aside class="sidebar-navigation expanded" role="navigation" aria-label="Main navigation">
         <!-- Logo/Brand Section -->
@@ -533,13 +73,13 @@
             <i class="fas fa-chevron-right sidebar-toggle-indicator"></i>
         </div>
 
-        <!-- Premium Navigation Menu -->
-        <nav class="sidebar-menu premium-neural-bg" role="menu">
+        <!-- Navigation Menu -->
+        <nav class="sidebar-menu" role="menu">
             <!-- Main Section -->
             <div class="sidebar-section">
                 <div class="sidebar-section-label">Main</div>
                 
-                <a href="{{ url_for('dashboard.index') }}" class="sidebar-item premium-magnetic" data-route="/dashboard" role="menuitem">
+                <a href="{{ url_for('dashboard.index') }}" class="sidebar-item" data-route="/dashboard" role="menuitem">
                     <div class="sidebar-item-icon">
                         <i class="fas fa-th-large"></i>
                     </div>
@@ -600,7 +140,7 @@
                     <div class="sidebar-item-tooltip">Calendar</div>
                 </a>
 
-                <a href="{{ url_for('simple_settings.settings_dashboard') }}" class="sidebar-item" data-route="/settings" role="menuitem">
+                <a href="{{ url_for('settings.settings_dashboard') }}" class="sidebar-item" data-route="/settings" role="menuitem">
                     <div class="sidebar-item-icon">
                         <i class="fas fa-cog"></i>
                     </div>
@@ -636,13 +176,6 @@
 
     <!-- Mobile Overlay for Sidebar -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <!-- Main Content Area -->
-    <main class="main-content page-transition" id="main-content" role="main" {% block main_style %}{% endblock %}>
-        {% block content %}
-        <!-- Page content goes here -->
-        {% endblock %}
-    </main>
 
     <!-- Load Sidebar Navigation Script -->
     <script src="{{ url_for('static', filename='js/sidebar.js') }}" defer></script>
@@ -696,6 +229,8 @@
                 {% block breadcrumb %}{% endblock %}
             </ol>
         </nav>
+        
+        {% block content %}{% endblock %}
     </main>
 
     <!-- Enhanced Footer -->
@@ -790,9 +325,6 @@
             crossorigin="anonymous"
             referrerpolicy="no-referrer"></script>
     
-    <!-- Premium Navigation System -->
-    <script src="{{ url_for('static', filename='js/premium-navigation.js') }}" defer></script>
-    
     <!-- Application JavaScript -->
     <script>
         // Global settings management
@@ -847,26 +379,6 @@
         
         // Initialize settings on page load
         document.addEventListener('DOMContentLoaded', loadSettings);
-        
-        // Loading screen management
-        function hideLoadingScreen() {
-            const loadingScreen = document.getElementById('loading-screen');
-            if (loadingScreen) {
-                loadingScreen.classList.add('hidden');
-                setTimeout(() => loadingScreen.remove(), 500);
-            }
-            document.body.classList.add('loaded');
-        }
-        
-        // Hide loading screen when everything is loaded
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', hideLoadingScreen);
-        } else {
-            hideLoadingScreen();
-        }
-        
-        // Also hide after a maximum timeout to prevent eternal loading
-        setTimeout(hideLoadingScreen, 3000);
     </script>
     
     {% block scripts %}{% endblock %}

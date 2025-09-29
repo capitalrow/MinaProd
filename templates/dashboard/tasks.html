@@ -3,47 +3,29 @@
 {% block title %}Tasks - {{ super() }}{% endblock %}
 
 {% block head %}
-    <!-- Tasks specific styles only - core CSS unified in base.html -->
+    <!-- Core Dashboard CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     
-    <!-- PREMIUM TASKS DESIGN SYSTEM -->
+    <!-- Feather Icons removed - using Font Awesome consistently -->
+    
     <style>
-        /* Tasks page specific styles only - backgrounds unified in base.html */
-
-        /* PREMIUM KANBAN BOARD */
         .kanban-board {
-            position: relative;
-            z-index: 10;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 2rem;
             margin-top: 1.5rem;
-            padding: 2rem;
-            max-width: 1400px;
-            margin: 0 auto;
         }
         
         .kanban-column {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(40px) saturate(180%);
-            border-radius: 20px;
-            border: 1px solid var(--glass-border);
+            background: var(--bg-secondary);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
             overflow: hidden;
-            min-height: 600px;
-            box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.15),
-                0 10px 20px rgba(0, 0, 0, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            position: relative;
-        }
-
-        .kanban-column::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            min-height: 500px;
         }
         
         .kanban-header {
@@ -55,15 +37,11 @@
         }
         
         .kanban-title {
-            font-weight: 700;
-            font-size: 1.25rem;
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-weight: 600;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
         }
         
         .task-count {
@@ -80,22 +58,18 @@
         }
         
         .task-card {
-            background: var(--glass-bg-dark);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
             cursor: move;
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
         }
         
         .task-card:hover {
-            transform: translateY(-4px) scale(1.02);
-            box-shadow: 
-                0 15px 30px rgba(168, 85, 247, 0.2),
-                0 8px 16px rgba(59, 130, 246, 0.15);
-            background: var(--glass-bg-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         
         .task-title {

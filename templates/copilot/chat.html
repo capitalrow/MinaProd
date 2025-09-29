@@ -1,11 +1,21 @@
-{% extends "base.html" %}
-
-{% block title %}AI Copilot - {{ super() }}{% endblock %}
-
-{% block main_style %}style="display: none;"{% endblock %}
-
-{% block head %}
-<style>
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Copilot - Mina</title>
+    
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    
+    <!-- External Dependencies -->
+    <!-- Feather Icons removed - using Font Awesome consistently -->
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    
+    <style>
         :root {
             --copilot-primary: #0EA5E9;
             --copilot-secondary: #6366F1;
@@ -15,31 +25,15 @@
             --copilot-user-bg: rgba(14, 165, 233, 0.1);
             --copilot-assistant-bg: rgba(99, 102, 241, 0.08);
         }
-
-        /* Hide sidebar for full-screen copilot experience */
-        .sidebar-navigation { display: none; }
-        .sidebar-overlay { display: none; }
         
-        /* PREMIUM NEURAL NETWORK ENHANCEMENT for Copilot */
-        body::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(45deg, transparent 48%, rgba(255, 255, 255, 0.03) 50%, transparent 52%),
-                linear-gradient(-45deg, transparent 48%, rgba(255, 255, 255, 0.02) 50%, transparent 52%);
-            background-size: 30px 30px, 25px 25px;
-            animation: premiumNeuralNetwork 40s linear infinite;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        @keyframes premiumNeuralNetwork {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(30px, 30px); }
+        body {
+            font-family: 'SF Pro Display', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 25%, #334155 50%, #475569 75%, #1E293B 100%);
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
         }
         
         .copilot-container {
@@ -49,28 +43,13 @@
             gap: 0;
         }
         
-        /* PREMIUM SIDEBAR */
+        /* Sidebar */
         .copilot-sidebar {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(40px) saturate(180%);
-            border-right: 1px solid var(--glass-border);
-            padding: 2rem;
+            background: var(--copilot-bg);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--copilot-border);
+            padding: 1.5rem;
             overflow-y: auto;
-            position: relative;
-            z-index: 10;
-            box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        }
-
-        .copilot-sidebar::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
         }
         
         .sidebar-header {
@@ -78,16 +57,10 @@
         }
         
         .sidebar-header h1 {
-            font-size: 2rem;
-            font-weight: 800;
-            margin: 0 0 1rem 0;
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+            color: var(--copilot-primary);
         }
         
         .sidebar-header p {
@@ -185,58 +158,25 @@
             margin-bottom: 1.5rem;
             display: flex;
             gap: 1rem;
-            animation: premiumMessageEntry 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        @keyframes premiumMessageEntry {
-            from {
-                opacity: 0;
-                transform: translateY(20px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
         }
         
         .message-avatar {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.125rem;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-        }
-
-        .message-avatar:hover {
-            transform: scale(1.1) rotate(5deg);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+            font-size: 1rem;
         }
         
         .user-avatar {
-            background: linear-gradient(135deg, var(--copilot-primary), #0284C7);
-            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
+            background: var(--copilot-primary);
         }
         
         .assistant-avatar {
-            background: linear-gradient(135deg, var(--copilot-secondary), #5B21B6);
-            box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
-            animation: premiumAIGlow 3s ease-in-out infinite;
-        }
-
-        @keyframes premiumAIGlow {
-            0%, 100% {
-                box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
-            }
-            50% {
-                box-shadow: 
-                    0 8px 16px rgba(99, 102, 241, 0.5),
-                    0 0 20px rgba(99, 102, 241, 0.3);
-            }
+            background: var(--copilot-secondary);
         }
         
         .message-content {
@@ -245,52 +185,21 @@
         }
         
         .message-bubble {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 1.25rem;
+            background: var(--copilot-bg);
+            border: 1px solid var(--copilot-border);
+            border-radius: 12px;
+            padding: 1rem;
             margin-bottom: 0.5rem;
-            box-shadow: 
-                0 8px 16px rgba(0, 0, 0, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .message-bubble::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transition: left 0.8s;
-        }
-
-        .message-bubble:hover::before {
-            left: 100%;
-        }
-
-        .message-bubble:hover {
-            transform: translateY(-2px);
-            box-shadow: 
-                0 12px 24px rgba(0, 0, 0, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
         }
         
         .user-message .message-bubble {
             background: var(--copilot-user-bg);
-            border-color: rgba(14, 165, 233, 0.4);
-            background: linear-gradient(135deg, var(--copilot-user-bg), rgba(14, 165, 233, 0.05));
+            border-color: rgba(14, 165, 233, 0.3);
         }
         
         .assistant-message .message-bubble {
             background: var(--copilot-assistant-bg);
-            border-color: rgba(99, 102, 241, 0.3);
-            background: linear-gradient(135deg, var(--copilot-assistant-bg), rgba(99, 102, 241, 0.05));
+            border-color: rgba(99, 102, 241, 0.2);
         }
         
         .message-text {
@@ -364,31 +273,22 @@
         
         .input-field {
             flex: 1;
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 1.25rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--copilot-border);
+            border-radius: 12px;
+            padding: 1rem;
             color: #ffffff;
             font-size: 1rem;
             resize: none;
             min-height: 24px;
             max-height: 120px;
             overflow-y: auto;
-            transition: all 0.3s ease;
-            box-shadow: 
-                0 8px 16px rgba(0, 0, 0, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
         
         .input-field:focus {
             outline: none;
             border-color: var(--copilot-primary);
-            box-shadow: 
-                0 0 0 3px rgba(14, 165, 233, 0.15),
-                0 12px 24px rgba(14, 165, 233, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
         }
         
         .input-field::placeholder {
@@ -396,50 +296,26 @@
         }
         
         .send-button {
-            background: linear-gradient(135deg, var(--copilot-primary), #0284C7);
+            background: var(--copilot-primary);
             border: none;
-            border-radius: 12px;
-            padding: 0.875rem;
+            border-radius: 8px;
+            padding: 0.75rem;
             color: #ffffff;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 
-                0 8px 16px rgba(14, 165, 233, 0.3),
-                0 4px 8px rgba(14, 165, 233, 0.2);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .send-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.6s;
-        }
-
-        .send-button:hover::before {
-            left: 100%;
         }
         
         .send-button:hover:not(:disabled) {
-            background: linear-gradient(135deg, #0284C7, #0369A1);
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 
-                0 12px 24px rgba(14, 165, 233, 0.4),
-                0 6px 12px rgba(14, 165, 233, 0.3);
+            background: #0284C7;
+            transform: translateY(-1px);
         }
         
         .send-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            transform: none;
         }
         
         .send-button i {
@@ -482,9 +358,8 @@
             }
         }
     </style>
-{% endblock %}
-
-{% block content %}
+</head>
+<body>
     <div class="copilot-container">
         <!-- Sidebar -->
         <div class="copilot-sidebar">
@@ -762,4 +637,5 @@
             messageInput.focus();
         });
     </script>
-{% endblock %}
+</body>
+</html>

@@ -57,33 +57,10 @@
       --glass-border: rgba(255, 255, 255, 0.18);
       --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
       
-      /* Advanced Motion System Foundation */
+      /* Animation Timings */
       --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
       --ease-in-out-cubic: cubic-bezier(0.65, 0, 0.35, 1);
       --spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
-      --ease-emphasized: cubic-bezier(0.05, 0.7, 0.1, 1);
-      --ease-exit: cubic-bezier(0.4, 0, 1, 1);
-      
-      /* Motion Duration Tokens */
-      --duration-xs: 150ms;
-      --duration-sm: 200ms;
-      --duration-md: 300ms;
-      --duration-lg: 400ms;
-      --duration-xl: 500ms;
-      --duration-2xl: 800ms;
-      
-      /* Z-depth Shadows for 3D Effects */
-      --shadow-depth-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-      --shadow-depth-2: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-      --shadow-depth-3: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
-      --shadow-depth-4: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
-      --shadow-depth-5: 0 19px 38px rgba(0, 0, 0, 0.30), 0 15px 12px rgba(0, 0, 0, 0.22);
-      
-      /* Glow Effects for CTAs */
-      --glow-blue: 0 0 20px rgba(59, 130, 246, 0.3), 0 0 40px rgba(59, 130, 246, 0.1);
-      --glow-cyan: 0 0 20px rgba(34, 211, 238, 0.3), 0 0 40px rgba(34, 211, 238, 0.1);
-      --glow-pulse: 0 0 0 0 rgba(59, 130, 246, 0.4);
     }
 
     * {
@@ -160,31 +137,20 @@
       color: #3b82f6;
     }
 
-    /* Enhanced CTA Button with Advanced Micro-interactions */
     .cta-button {
-      background: linear-gradient(135deg, var(--purple-600) 0%, var(--blue-500) 50%, var(--cyan-400) 100%);
-      background-size: 200% 200%;
+      background: linear-gradient(135deg, var(--blue-500) 0%, var(--cyan-400) 100%);
       color: #ffffff;
-      padding: 1rem 2rem;
-      border-radius: 16px;
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
       text-decoration: none;
-      font-weight: 700;
-      font-size: 1.125rem;
-      letter-spacing: -0.01em;
-      transition: all var(--duration-md) var(--ease-emphasized);
+      font-weight: 600;
+      transition: all 0.4s var(--spring);
       box-shadow: 
-        var(--shadow-depth-3),
-        var(--glow-blue),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+        0 4px 15px rgba(59, 130, 246, 0.4),
+        0 2px 4px rgba(59, 130, 246, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
       position: relative;
       overflow: hidden;
-      transform-style: preserve-3d;
-      animation: gradientShift 4s ease-in-out infinite;
-    }
-    
-    @keyframes gradientShift {
-      0%, 100% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
     }
     
     .cta-button::before {
@@ -194,89 +160,28 @@
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-      transition: left var(--duration-xl) var(--ease-emphasized);
-    }
-    
-    .cta-button::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-      opacity: 0;
-      transition: opacity var(--duration-md) var(--ease-standard);
-      border-radius: inherit;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s ease;
     }
     
     .cta-button:hover::before {
       left: 100%;
     }
-    
-    .cta-button:hover::after {
-      opacity: 1;
-    }
 
     .cta-button:hover {
-      transform: translateY(-6px) scale(1.08) rotateX(8deg) rotateY(2deg);
-      background-position: 150% 50%;
-      animation-duration: 1.5s;
+      transform: translateY(-3px) scale(1.02);
       box-shadow: 
-        var(--shadow-depth-5),
-        0 0 40px rgba(147, 51, 234, 0.6),
-        0 0 80px rgba(59, 130, 246, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        0 12px 40px rgba(59, 130, 246, 0.5),
+        0 8px 16px rgba(59, 130, 246, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
     }
     
     .cta-button:active {
-      transform: translateY(-2px) scale(1.02) rotateX(2deg);
-      transition: all var(--duration-xs) var(--ease-exit);
-      box-shadow: 
-        var(--shadow-depth-3),
-        var(--glow-blue);
-    }
-    
-    /* Primary CTA with enhanced pulse animation */
-    .cta-primary {
-      animation: ctaPulse 4s ease-in-out infinite;
-      position: relative;
-    }
-    
-    .cta-primary::after {
-      content: '';
-      position: absolute;
-      inset: -4px;
-      background: linear-gradient(135deg, var(--purple-600), var(--blue-500), var(--cyan-400));
-      border-radius: 20px;
-      z-index: -1;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-    
-    .cta-primary:hover::after {
-      opacity: 0.3;
-      animation: pulseGlow 2s ease-in-out infinite;
-    }
-    
-    @keyframes pulseGlow {
-      0%, 100% { transform: scale(1); opacity: 0.3; }
-      50% { transform: scale(1.1); opacity: 0.6; }
-    }
-    
-    @keyframes ctaPulse {
-      0%, 100% {
-        box-shadow: 
-          var(--shadow-depth-2),
-          var(--glow-blue);
-      }
-      50% {
-        box-shadow: 
-          var(--shadow-depth-3),
-          var(--glow-blue),
-          0 0 30px rgba(59, 130, 246, 0.6);
-      }
+      transform: translateY(-1px) scale(1.01);
+      transition: all 0.1s ease;
     }
 
-    /* Enhanced Hero Section with Animated Gradient */
+    /* Hero Section */
     .hero {
       padding: 4rem 0;
       position: relative;
@@ -290,56 +195,17 @@
       left: -50%;
       width: 200%;
       height: 200%;
-      background: 
-        conic-gradient(from 0deg at 25% 25%, rgba(59, 130, 246, 0.2) 0%, transparent 30%),
-        radial-gradient(circle at 30% 40%, rgba(34, 211, 238, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 70% 60%, rgba(147, 51, 234, 0.1) 0%, transparent 50%),
-        linear-gradient(45deg, rgba(59, 130, 246, 0.05), rgba(34, 211, 238, 0.05));
-      animation: heroSpectrum 20s ease-in-out infinite;
+      background: radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+                  radial-gradient(circle at 75% 75%, rgba(34, 211, 238, 0.1) 0%, transparent 50%);
+      animation: heroFloat 25s ease-in-out infinite;
       z-index: -1;
     }
     
-    .hero::after {
-      content: '';
-      position: absolute;
-      top: 10%;
-      left: 10%;
-      right: 10%;
-      bottom: 10%;
-      background: repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 2px,
-        rgba(255, 255, 255, 0.02) 2px,
-        rgba(255, 255, 255, 0.02) 4px
-      );
-      animation: audioSpectrumLines 15s linear infinite;
-      z-index: -1;
-    }
-    
-    @keyframes heroSpectrum {
-      0%, 100% { 
-        transform: translateY(0px) rotate(0deg) scale(1);
-        filter: blur(0px);
-      }
-      25% { 
-        transform: translateY(-40px) rotate(1deg) scale(1.05);
-        filter: blur(1px);
-      }
-      50% { 
-        transform: translateY(20px) rotate(-0.5deg) scale(1.02);
-        filter: blur(0.5px);
-      }
-      75% { 
-        transform: translateY(-20px) rotate(0.8deg) scale(1.03);
-        filter: blur(0.8px);
-      }
-    }
-    
-    @keyframes audioSpectrumLines {
-      0% { opacity: 0.3; transform: translateX(-100px); }
-      50% { opacity: 0.6; transform: translateX(0px); }
-      100% { opacity: 0.3; transform: translateX(100px); }
+    @keyframes heroFloat {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      25% { transform: translateY(-30px) rotate(1deg); }
+      50% { transform: translateY(20px) rotate(-0.5deg); }
+      75% { transform: translateY(-15px) rotate(0.5deg); }
     }
 
     .hero-content {
@@ -350,78 +216,12 @@
     }
 
     .hero-left h1 {
-      font-size: clamp(3rem, 10vw, 5rem);
-      font-weight: 900;
-      line-height: 0.95;
-      margin-bottom: 2rem;
-      letter-spacing: -0.035em;
+      font-size: clamp(2.5rem, 8vw, 4rem);
+      font-weight: 800;
+      line-height: 1.05;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.025em;
       font-feature-settings: 'kern' 1, 'liga' 1;
-      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-      position: relative;
-    }
-    
-    .hero-left h1::before {
-      content: '';
-      position: absolute;
-      top: -20px;
-      left: -20px;
-      right: -20px;
-      bottom: -20px;
-      background: radial-gradient(circle at 50% 50%, rgba(147, 51, 234, 0.1) 0%, transparent 70%);
-      z-index: -1;
-      animation: heroGlow 3s ease-in-out infinite alternate;
-    }
-    
-    @keyframes heroGlow {
-      0% { opacity: 0.5; transform: scale(0.95); }
-      100% { opacity: 1; transform: scale(1.05); }
-    }
-    
-    /* Word-by-word reveal animation */
-    .word-reveal {
-      overflow: hidden;
-    }
-    
-    .word-reveal .word {
-      display: inline-block;
-      opacity: 0;
-      transform: translateY(100%) rotateX(90deg);
-      transform-origin: bottom center;
-      animation: wordReveal var(--duration-lg) var(--ease-emphasized) forwards;
-    }
-    
-    @keyframes wordReveal {
-      0% {
-        opacity: 0;
-        transform: translateY(100%) rotateX(90deg);
-      }
-      50% {
-        opacity: 0.8;
-        transform: translateY(20%) rotateX(45deg);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0%) rotateX(0deg);
-      }
-    }
-    
-    /* Typewriter cursor effect */
-    .typing-cursor {
-      position: relative;
-    }
-    
-    .typing-cursor::after {
-      content: '|';
-      display: inline-block;
-      color: var(--blue-400);
-      animation: cursorBlink 1s infinite;
-      font-weight: 300;
-      margin-left: 2px;
-    }
-    
-    @keyframes cursorBlink {
-      0%, 50% { opacity: 1; }
-      51%, 100% { opacity: 0; }
     }
 
     .gradient-text {
@@ -442,14 +242,12 @@
     }
 
     .hero-left p {
-      font-size: clamp(1.25rem, 3vw, 1.5rem);
-      color: rgba(226, 232, 240, 0.95);
-      margin-bottom: 2.5rem;
-      line-height: 1.7;
-      font-weight: 450;
-      letter-spacing: -0.015em;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-      max-width: 90%;
+      font-size: clamp(1.125rem, 2.5vw, 1.25rem);
+      color: rgba(226, 232, 240, 0.9);
+      margin-bottom: 2rem;
+      line-height: 1.65;
+      font-weight: 400;
+      letter-spacing: -0.01em;
     }
 
     .hero-buttons {
@@ -566,11 +364,10 @@
       padding: 2rem;
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
-      transition: all var(--duration-lg) var(--ease-emphasized);
+      transition: all 0.4s var(--spring);
       box-shadow: var(--glass-shadow);
       position: relative;
       overflow: hidden;
-      transform-style: preserve-3d;
     }
     
     .step-card::before {
@@ -591,83 +388,43 @@
       top: 0;
       left: 0;
       right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.5), transparent);
-      transform: scaleX(0);
-      transition: transform var(--duration-lg) var(--ease-emphasized);
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
     }
 
     .step-card:hover {
-      transform: translateY(-8px) scale(1.03) perspective(1000px) rotateX(5deg) rotateY(2deg);
+      transform: translateY(-5px) scale(1.02);
       box-shadow: 
-        var(--shadow-depth-4),
-        0 0 30px rgba(59, 130, 246, 0.2);
-      border-color: rgba(255, 255, 255, 0.35);
-      background: rgba(255, 255, 255, 0.12);
-    }
-    
-    .step-card:hover::after {
-      transform: scaleX(1);
+        0 20px 40px rgba(31, 38, 135, 0.4),
+        0 8px 16px rgba(31, 38, 135, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.09);
     }
 
     .step-number {
-      width: 56px;
-      height: 56px;
-      border-radius: 16px;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
       background: linear-gradient(135deg, var(--blue-500) 0%, var(--cyan-400) 100%);
       color: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       margin-bottom: 1.25rem;
       box-shadow: 
-        var(--shadow-depth-2),
+        0 4px 15px rgba(59, 130, 246, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
-      transition: all var(--duration-lg) var(--ease-emphasized);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .step-number::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at center, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
-      opacity: 0;
-      transition: opacity var(--duration-md) var(--ease-standard);
+      transition: all 0.3s var(--ease-out-cubic);
     }
     
     .step-card:hover .step-number {
-      transform: scale(1.15) rotate(12deg) translateZ(10px);
+      transform: scale(1.1) rotate(5deg);
       box-shadow: 
-        var(--shadow-depth-4),
-        var(--glow-blue);
-    }
-    
-    .step-card:hover .step-number::before {
-      opacity: 1;
-    }
-    
-    /* Progressive number counting animation */
-    .step-number.counting {
-      animation: numberCount var(--duration-2xl) var(--ease-emphasized) forwards;
-    }
-    
-    @keyframes numberCount {
-      0% {
-        transform: scale(0.5) rotate(-180deg);
-        opacity: 0;
-      }
-      50% {
-        transform: scale(1.2) rotate(10deg);
-        opacity: 0.8;
-      }
-      100% {
-        transform: scale(1) rotate(0deg);
-        opacity: 1;
-      }
+        0 6px 20px rgba(59, 130, 246, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
     }
 
     .step-card h3 {
@@ -908,168 +665,63 @@
       100% { transform: translateX(calc(-100% - 1.75rem)); }
     }
     
-    /* Comprehensive Motion Utility Classes */
-    .fade-up {
+    /* Advanced Animation Framework */
+    .fade-in-up {
       opacity: 0;
       transform: translateY(30px);
-      transition: all var(--duration-lg) var(--ease-emphasized);
+      animation: fadeInUp 0.6s var(--ease-out-cubic) forwards;
     }
     
-    .fade-up.animate {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    .fade-in-up.delay-1 { animation-delay: 0.1s; }
+    .fade-in-up.delay-2 { animation-delay: 0.2s; }
+    .fade-in-up.delay-3 { animation-delay: 0.3s; }
+    .fade-in-up.delay-4 { animation-delay: 0.4s; }
+    .fade-in-up.delay-5 { animation-delay: 0.5s; }
+    .fade-in-up.delay-6 { animation-delay: 0.6s; }
     
-    .fade-in {
-      opacity: 0;
-      transition: opacity var(--duration-md) var(--ease-standard);
-    }
-    
-    .fade-in.animate {
-      opacity: 1;
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     
     .scale-in {
       opacity: 0;
-      transform: scale(0.85) translateY(20px);
-      transition: all var(--duration-lg) var(--spring);
+      transform: scale(0.8) translateY(20px);
+      animation: scaleIn 0.5s var(--spring) forwards;
     }
     
-    .scale-in.animate {
-      opacity: 1;
-      transform: scale(1) translateY(0);
+    @keyframes scaleIn {
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
     }
     
-    .slide-left {
+    .slide-in-left {
       opacity: 0;
-      transform: translateX(-60px);
-      transition: all var(--duration-lg) var(--ease-emphasized);
+      transform: translateX(-50px);
+      animation: slideInLeft 0.6s var(--ease-out-cubic) forwards;
     }
     
-    .slide-left.animate {
-      opacity: 1;
-      transform: translateX(0);
+    @keyframes slideInLeft {
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
     
-    .slide-right {
+    .slide-in-right {
       opacity: 0;
-      transform: translateX(60px);
-      transition: all var(--duration-lg) var(--ease-emphasized);
+      transform: translateX(50px);
+      animation: slideInRight 0.6s var(--ease-out-cubic) forwards;
     }
     
-    .slide-right.animate {
-      opacity: 1;
-      transform: translateX(0);
-    }
-    
-    /* Stagger Animation Classes */
-    .stagger-1 { transition-delay: 100ms; }
-    .stagger-2 { transition-delay: 200ms; }
-    .stagger-3 { transition-delay: 300ms; }
-    .stagger-4 { transition-delay: 400ms; }
-    .stagger-5 { transition-delay: 500ms; }
-    .stagger-6 { transition-delay: 600ms; }
-    
-    /* 3D Tilt Effect for Cards */
-    .tilt-card {
-      transform-style: preserve-3d;
-      transition: transform var(--duration-md) var(--ease-standard);
-    }
-    
-    .tilt-card:hover {
-      transform: perspective(1000px) rotateX(5deg) rotateY(5deg) translateZ(10px);
-    }
-    
-    /* Premium Floating Elements */
-    .floating-element {
-      position: absolute;
-      pointer-events: none;
-      opacity: 0.6;
-    }
-    
-    .floating-element-1 {
-      top: 10%;
-      right: 20%;
-      width: 100px;
-      height: 100px;
-      background: radial-gradient(circle, rgba(147, 51, 234, 0.3) 0%, transparent 70%);
-      border-radius: 50%;
-      animation: float1 6s ease-in-out infinite;
-    }
-    
-    .floating-element-2 {
-      bottom: 20%;
-      left: 10%;
-      width: 80px;
-      height: 80px;
-      background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
-      border-radius: 50%;
-      animation: float2 8s ease-in-out infinite;
-    }
-    
-    .floating-element-3 {
-      top: 60%;
-      right: 10%;
-      width: 60px;
-      height: 60px;
-      background: radial-gradient(circle, rgba(34, 211, 238, 0.3) 0%, transparent 70%);
-      border-radius: 50%;
-      animation: float3 7s ease-in-out infinite;
-    }
-    
-    @keyframes float1 {
-      0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
-      33% { transform: translateY(-20px) translateX(10px) rotate(120deg); }
-      66% { transform: translateY(10px) translateX(-15px) rotate(240deg); }
-    }
-    
-    @keyframes float2 {
-      0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
-      50% { transform: translateY(-30px) translateX(20px) rotate(180deg); }
-    }
-    
-    @keyframes float3 {
-      0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
-      25% { transform: translateY(-15px) translateX(-10px) rotate(90deg); }
-      75% { transform: translateY(15px) translateX(15px) rotate(270deg); }
-    }
-    
-    /* Enhanced Mobile Responsiveness */
-    @media (max-width: 768px) {
-      .floating-element {
-        display: none;
-      }
-      
-      .hero-content {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-        text-align: center;
-      }
-      
-      .hero-buttons {
-        justify-content: center;
-        flex-direction: column;
-        align-items: center;
-      }
-      
-      .cta-button, .btn-secondary {
-        width: 100%;
-        max-width: 280px;
-      }
-    }
-    }
-    
-    /* Pulse Animation for CTAs */
-    .pulse-glow {
-      animation: pulseGlow 2s ease-in-out infinite;
-    }
-    
-    @keyframes pulseGlow {
-      0%, 100% {
-        box-shadow: var(--shadow-lg), var(--glow-pulse);
-      }
-      50% {
-        box-shadow: var(--shadow-xl), 0 0 0 10px rgba(59, 130, 246, 0.2);
+    @keyframes slideInRight {
+      to {
+        opacity: 1;
+        transform: translateX(0);
       }
     }
     
@@ -1439,63 +1091,18 @@
       }
     }
 
-    /* Accessibility & Performance: Respect user preferences */
-    @media (prefers-reduced-motion: reduce) {
-      *,
-      *::before,
-      *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-      }
-      
-      .hero::before,
-      .hero::after {
-        animation: none !important;
-      }
-      
-      .gradient-text {
-        animation: none !important;
-      }
-      
-      .testimonial-track {
-        animation: none !important;
-      }
-      
-      .pulse-glow,
-      .cta-primary {
-        animation: none !important;
-      }
+    /* Animations */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeIn 0.6s ease forwards;
     }
-    
-    /* KPI Counter Animation */
-    .counter {
-      font-variant-numeric: tabular-nums;
-    }
-    
-    .counter.counting {
-      animation: counterGlow var(--duration-2xl) var(--ease-emphasized);
-    }
-    
-    @keyframes counterGlow {
-      0%, 100% { 
-        color: inherit; 
-        text-shadow: none;
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
-      50% { 
-        color: var(--blue-400);
-        text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-      }
-    }
-    
-    /* Enhanced Feature Cards with Stagger */
-    .feature-card {
-      transition: all var(--duration-lg) var(--ease-emphasized);
-    }
-    
-    .feature-card.tilt-card:hover {
-      transform: perspective(1000px) rotateX(8deg) rotateY(8deg) translateZ(20px) scale(1.02);
     }
   </style>
 </head>
@@ -1520,38 +1127,38 @@
     <div class="container">
       <div class="hero-content">
         <div class="hero-left">
-          <h1 class="word-reveal slide-left">
-            <span class="word">Meetings</span> <span class="word">that</span> 
-            <span class="gradient-text word">write<br></span><span class="gradient-text word typing-cursor">themselves</span>.
+          <h1 class="slide-in-left">
+            Meetings that 
+            <span class="gradient-text">write<br>themselves</span>.
           </h1>
-          <p class="slide-left stagger-2">
+          <p class="slide-in-left delay-1">
             Live transcription that turns into notes, action items, and ready‑to‑send emails. 
             Mina captures what matters and drafts the follow‑ups for you.
           </p>
-          <div class="hero-buttons slide-left stagger-3">
-            <a href="/app" class="cta-button cta-primary pulse-glow">Try Mina free</a>
-            <a href="#features" class="btn-secondary tilt-card">See how it works</a>
+          <div class="hero-buttons slide-in-left delay-2">
+            <a href="/app" class="cta-button interactive">Try Mina free</a>
+            <a href="#features" class="btn-secondary interactive">See how it works</a>
           </div>
-          <form class="waitlist-form slide-left stagger-4" id="waitlist">
+          <form class="waitlist-form slide-in-left delay-3" id="waitlist">
             <input type="email" name="email" placeholder="you@company.com" required>
-            <button type="submit" class="cta-button">Join waitlist</button>
+            <button type="submit" class="interactive">Join waitlist</button>
           </form>
-          <p class="disclaimer slide-left stagger-5">No spam. We'll only email important updates.</p>
+          <p class="disclaimer slide-in-left delay-4">No spam. We'll only email important updates.</p>
         </div>
         
-        <div class="step-cards step-reveal">
-          <div class="step-card tilt-card fade-up stagger-1">
-            <div class="step-number counting">1</div>
+        <div class="step-cards stagger-grid slide-in-right">
+          <div class="step-card interactive">
+            <div class="step-number">1</div>
             <h3>Dictate.</h3>
             <p>Speak freely—Mina captures in real time.</p>
           </div>
-          <div class="step-card tilt-card fade-up stagger-2">
-            <div class="step-number counting">2</div>
+          <div class="step-card interactive">
+            <div class="step-number">2</div>
             <h3>Understand.</h3>
             <p>We extract tasks, decisions, and owners.</p>
           </div>
-          <div class="step-card tilt-card fade-up stagger-3">
-            <div class="step-number counting">3</div>
+          <div class="step-card interactive">
+            <div class="step-number">3</div>
             <h3>Act.</h3>
             <p>Draft emails and shareable notes for one‑tap send.</p>
           </div>
@@ -1564,28 +1171,28 @@
   <section class="features" id="features">
     <div class="container">
       <h2 class="scroll-reveal">Why teams choose Mina</h2>
-      <div class="features-grid features-reveal">
-        <div class="feature-card tilt-card scale-in stagger-1">
+      <div class="features-grid stagger-grid">
+        <div class="feature-card interactive">
           <h3>Live transcription</h3>
           <p>Low‑latency interim text with final refinement. Meetings, interviews, and dictation.</p>
         </div>
-        <div class="feature-card tilt-card scale-in stagger-2">
+        <div class="feature-card interactive">
           <h3>Actions & emails</h3>
           <p>Turns decisions into drafts—ready to send via your connected email.</p>
         </div>
-        <div class="feature-card tilt-card scale-in stagger-3">
+        <div class="feature-card interactive">
           <h3>Organized library</h3>
           <p>Sessions auto‑saved with topics, speakers, and highlights you can search.</p>
         </div>
-        <div class="feature-card tilt-card scale-in stagger-4">
+        <div class="feature-card interactive">
           <h3>Secure by default</h3>
           <p>Scoped access, encryption at rest, and export controls per session.</p>
         </div>
-        <div class="feature-card tilt-card scale-in stagger-5">
+        <div class="feature-card interactive">
           <h3>Works everywhere</h3>
           <p>Web, mobile browsers, and desktop. No installs required.</p>
         </div>
-        <div class="feature-card tilt-card scale-in stagger-6">
+        <div class="feature-card interactive">
           <h3>Team‑ready</h3>
           <p>Share sessions, @mention teammates, and track action history.</p>
         </div>
@@ -1720,200 +1327,59 @@
   </footer>
 
   <script>
-    // Enhanced Animation System with Performance & Accessibility
-    class MinaAnimationSystem {
+    // Advanced Animation System
+    class AnimationController {
       constructor() {
-        this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        this.activeAnimations = new Set();
         this.init();
       }
       
       init() {
-        this.setupIntersectionObserver();
-        this.setupHeroWordReveal();
-        this.setupCounterAnimations();
-        this.setupTiltEffects();
+        this.setupScrollReveal();
+        this.setupStaggeredAnimations();
         this.setupParallaxEffects();
         this.setupSmoothScrolling();
+        this.setupHeroAnimations();
       }
       
-      setupIntersectionObserver() {
+      setupScrollReveal() {
         const observerOptions = {
-          threshold: [0.1, 0.3],
-          rootMargin: '0px 0px -80px 0px'
+          threshold: 0.1,
+          rootMargin: '0px 0px -100px 0px'
         };
         
-        this.observer = new IntersectionObserver((entries) => {
+        const observer = new IntersectionObserver((entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
-              this.triggerAnimation(entry.target);
-              // Continue observing for exit animations if needed
+              entry.target.classList.add('revealed');
+              // Don't unobserve for repeat animations on scroll
             }
           });
         }, observerOptions);
         
-        // Observe all animatable elements
-        document.querySelectorAll('.scroll-reveal, .step-reveal, .features-reveal, .fade-up, .scale-in, .slide-left, .slide-right').forEach((el) => {
-          this.observer.observe(el);
+        // Observe scroll-reveal elements
+        document.querySelectorAll('.scroll-reveal').forEach((el) => {
+          observer.observe(el);
         });
       }
       
-      triggerAnimation(element) {
-        if (this.reducedMotion) return;
-        
-        const children = element.querySelectorAll('.fade-up, .scale-in, .slide-left, .slide-right');
-        
-        if (children.length > 0) {
-          // Staggered animation for children
-          children.forEach((child, index) => {
-            setTimeout(() => {
-              child.classList.add('animate');
-              if (child.querySelector('.step-number')) {
-                this.animateStepNumber(child.querySelector('.step-number'));
-              }
-            }, index * 100);
-          });
-        } else {
-          // Direct animation
-          element.classList.add('animate', 'revealed');
-        }
-        
-        this.activeAnimations.add(element);
-      }
-      
-      setupHeroWordReveal() {
-        if (this.reducedMotion) return;
-        
-        const wordRevealEl = document.querySelector('.word-reveal');
-        if (!wordRevealEl) return;
-        
-        const words = wordRevealEl.querySelectorAll('.word');
-        
-        // Trigger word-by-word reveal on page load
-        setTimeout(() => {
-          words.forEach((word, index) => {
-            word.style.animationDelay = `${index * 200}ms`;
-            word.classList.add('animate');
-          });
-          
-          // Trigger hero content animations after words are revealed
-          setTimeout(() => {
-            this.triggerHeroContent();
-          }, words.length * 200 + 500);
-        }, 300);
-      }
-      
-      triggerHeroContent() {
-        const heroElements = document.querySelectorAll('.hero .slide-left');
-        heroElements.forEach((el, index) => {
-          setTimeout(() => {
-            el.classList.add('animate');
-          }, index * 150);
-        });
-        
-        // Trigger step cards after hero content
-        setTimeout(() => {
-          const stepReveal = document.querySelector('.step-reveal');
-          if (stepReveal) {
-            this.triggerAnimation(stepReveal);
-          }
-        }, heroElements.length * 150 + 300);
-      }
-      
-      animateStepNumber(numberEl) {
-        if (!numberEl || this.reducedMotion) return;
-        
-        const number = parseInt(numberEl.textContent);
-        let current = 0;
-        const duration = 800;
-        const increment = number / (duration / 16);
-        
-        numberEl.classList.add('counting');
-        
-        const counter = () => {
-          current += increment;
-          if (current < number) {
-            numberEl.textContent = Math.floor(current);
-            requestAnimationFrame(counter);
-          } else {
-            numberEl.textContent = number;
-          }
-        };
-        
-        requestAnimationFrame(counter);
-      }
-      
-      setupCounterAnimations() {
-        // For future KPI counters on scroll
-        const counterElements = document.querySelectorAll('.counter');
-        
-        const counterObserver = new IntersectionObserver((entries) => {
+      setupStaggeredAnimations() {
+        const staggerObserver = new IntersectionObserver((entries) => {
           entries.forEach((entry) => {
-            if (entry.isIntersecting && !entry.target.classList.contains('counted')) {
-              this.animateCounter(entry.target);
-              entry.target.classList.add('counted');
+            if (entry.isIntersecting) {
+              entry.target.classList.add('animate');
             }
           });
-        }, { threshold: 0.5 });
-        
-        counterElements.forEach(el => counterObserver.observe(el));
-      }
-      
-      animateCounter(element) {
-        if (this.reducedMotion) return;
-        
-        const finalValue = parseInt(element.dataset.count || element.textContent);
-        let current = 0;
-        const duration = 1200;
-        const increment = finalValue / (duration / 16);
-        
-        element.classList.add('counting');
-        
-        const animate = () => {
-          current += increment;
-          if (current < finalValue) {
-            element.textContent = Math.floor(current);
-            requestAnimationFrame(animate);
-          } else {
-            element.textContent = finalValue;
-          }
-        };
-        
-        requestAnimationFrame(animate);
-      }
-      
-      setupTiltEffects() {
-        if (this.reducedMotion) return;
-        
-        document.querySelectorAll('.tilt-card').forEach((card) => {
-          card.addEventListener('mousemove', this.handleTilt.bind(this));
-          card.addEventListener('mouseleave', this.resetTilt.bind(this));
+        }, {
+          threshold: 0.1,
+          rootMargin: '0px 0px -50px 0px'
         });
-      }
-      
-      handleTilt(e) {
-        const card = e.currentTarget;
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
         
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        
-        const rotateX = (y - centerY) / centerY * -10;
-        const rotateY = (x - centerX) / centerX * 10;
-        
-        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px)`;
-      }
-      
-      resetTilt(e) {
-        const card = e.currentTarget;
-        card.style.transform = '';
+        document.querySelectorAll('.stagger-grid').forEach((grid) => {
+          staggerObserver.observe(grid);
+        });
       }
       
       setupParallaxEffects() {
-        if (this.reducedMotion) return;
-        
         let ticking = false;
         
         const updateParallax = () => {
@@ -1921,7 +1387,7 @@
           const parallaxElements = document.querySelectorAll('.parallax-bg');
           
           parallaxElements.forEach((element) => {
-            const rate = scrolled * -0.3;
+            const rate = scrolled * -0.5;
             element.style.transform = `translateY(${rate}px)`;
           });
           
@@ -1957,26 +1423,20 @@
         });
       }
       
-      // Performance monitoring
-      getPerformanceStats() {
-        return {
-          activeAnimations: this.activeAnimations.size,
-          reducedMotion: this.reducedMotion,
-          memoryUsage: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) : 'N/A'
-        };
+      setupHeroAnimations() {
+        // Trigger step-cards animation after hero animations
+        setTimeout(() => {
+          const stepCards = document.querySelector('.step-cards.stagger-grid');
+          if (stepCards) {
+            stepCards.classList.add('animate');
+          }
+        }, 800);
       }
     }
     
     // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
-      window.minaAnimations = new MinaAnimationSystem();
-      
-      // Performance monitoring in development
-      if (window.location.hostname === 'localhost') {
-        setInterval(() => {
-          console.log('Animation Performance:', window.minaAnimations.getPerformanceStats());
-        }, 5000);
-      }
+      new AnimationController();
     });
 
     // FAQ Toggle
