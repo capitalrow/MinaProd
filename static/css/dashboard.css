@@ -1336,6 +1336,75 @@
    RESPONSIVE BREAKPOINTS - MOBILE FIRST
    ============================================================================ */
 
+/* Mobile-specific enhancements */
+@media (max-width: 767px) {
+  .dashboard-page .dashboard-header {
+    padding: 20px 16px;
+    border-radius: 12px;
+  }
+  
+  .dashboard-page .dashboard-title {
+    font-size: 22px;
+  }
+  
+  .dashboard-page .dashboard-subtitle {
+    font-size: 13px;
+  }
+  
+  .dashboard-page .stat-card {
+    padding: 20px;
+    min-height: 140px;
+    border-radius: 14px;
+  }
+  
+  .dashboard-page .stat-icon-wrapper {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+  }
+  
+  .dashboard-page .stat-icon-wrapper .stat-icon {
+    font-size: 22px;
+  }
+  
+  .dashboard-page .stat-value {
+    font-size: 28px;
+  }
+  
+  .dashboard-page .stat-label {
+    font-size: 13px;
+  }
+  
+  .dashboard-page .section-title {
+    font-size: 17px;
+  }
+  
+  .dashboard-page .activity-item {
+    padding: 16px;
+    min-height: 72px;
+  }
+  
+  .dashboard-page .activity-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+  
+  .dashboard-page .content-section {
+    padding: 20px 16px;
+    border-radius: 14px;
+  }
+  
+  .dashboard-page .action-grid .btn {
+    min-height: 60px;
+    padding: 16px 20px;
+  }
+  
+  .dashboard-page .status-item {
+    padding: 16px 12px;
+  }
+}
+
 /* Small phones: 375px */
 @media (min-width: 375px) {
   .dashboard-page {
@@ -1350,12 +1419,20 @@
 /* Standard phones: 428px */
 @media (min-width: 428px) {
   .dashboard-page .dashboard-title {
-    font-size: 28px;
+    font-size: 26px;
+  }
+  
+  .dashboard-page .stat-value {
+    font-size: 32px;
   }
 
   .dashboard-page .stats-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
+  }
+  
+  .dashboard-page .stat-card {
+    min-height: 150px;
   }
 }
 
@@ -1370,15 +1447,23 @@
     align-items: center;
     padding: 24px 28px;
   }
+  
+  .dashboard-page .dashboard-title {
+    font-size: 28px;
+  }
 
   .dashboard-page .dashboard-header .btn {
     width: auto;
-    min-width: 160px;
+    min-width: 180px;
   }
 
   .dashboard-page .stats-grid {
     grid-template-columns: repeat(4, 1fr);
     gap: 20px;
+  }
+  
+  .dashboard-page .stat-card {
+    min-height: 160px;
   }
 
   .dashboard-page .content-grid {
@@ -1390,6 +1475,17 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
+  }
+  
+  .dashboard-page .activity-item {
+    padding: 20px;
+    min-height: 80px;
+  }
+  
+  .dashboard-page .activity-icon {
+    width: 52px;
+    height: 52px;
+    font-size: 22px;
   }
 
   .dashboard-page .btn-sm {
@@ -1406,9 +1502,22 @@
   .dashboard-page .stat-value {
     font-size: 36px;
   }
+  
+  .dashboard-page .stat-icon-wrapper {
+    width: 64px;
+    height: 64px;
+  }
 
   .dashboard-page .content-section {
     padding: 24px 28px;
+  }
+  
+  .dashboard-page .section-title {
+    font-size: 19px;
+  }
+  
+  .dashboard-page .content-grid {
+    grid-template-columns: 1fr 450px;
   }
 }
 
@@ -1465,5 +1574,33 @@
   .dashboard-page button::before {
     min-width: 48px;
     min-height: 48px;
+  }
+  
+  /* Improve tap targets on mobile */
+  .dashboard-page .status-live {
+    padding: 12px 20px;
+    font-size: 12px;
+  }
+  
+  .dashboard-page .status-completed {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+  
+  /* Optimize mobile scrolling */
+  .dashboard-page .activity-list,
+  .dashboard-page .action-grid {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Better mobile spacing */
+  .dashboard-page .stats-grid {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  
+  .dashboard-page .content-grid {
+    gap: 16px;
+    margin-bottom: 20px;
   }
 }
