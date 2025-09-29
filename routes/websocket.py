@@ -17,6 +17,9 @@ from app import socketio
 # Import database models for persistence
 from models import db, Session, Segment, Participant
 
+# Import critical database session cleanup decorator
+from utils.db_helpers import socketio_db_cleanup
+
 from services.openai_whisper_client import transcribe_bytes
 from services.speaker_diarization import SpeakerDiarizationEngine, DiarizationConfig
 from services.multi_speaker_diarization import MultiSpeakerDiarization
@@ -53,6 +56,7 @@ def _decode_b64(b64: Optional[str]) -> bytes:
         raise ValueError(f"base64 decode failed: {e}")
 
 @socketio.on("join_session")
+@socketio_db_cleanup
 def on_join_session(data):
     session_id = (data or {}).get("session_id")
     if not session_id:
@@ -109,6 +113,7 @@ def on_join_session(data):
     logger.info(f"[ws] join_session {session_id}")
 
 @socketio.on("audio_chunk")  
+@socketio_db_cleanup
 def on_audio_chunk(data):
     """
     data: { session_id, audio_data, settings }
@@ -242,6 +247,7 @@ def on_audio_chunk(data):
     emit("ack", {"ok": True})
 
 @socketio.on("finalize_session")
+@socketio_db_cleanup
 def on_finalize(data):
     session_id = (data or {}).get("session_id")
     if not session_id:
@@ -312,6 +318,7 @@ def on_finalize(data):
     logger.info(f"🎤 Cleared speaker diarization state for session: {session_id}")
 
 @socketio.on("get_session_speakers")
+@socketio_db_cleanup
 def on_get_session_speakers(data):
     """Get current speakers for a session."""
     session_id = (data or {}).get("session_id")

@@ -62,7 +62,7 @@ def view_shared_session(token: str):
             from models.summary import Summary
             from sqlalchemy import select
             stmt = select(Summary).where(Summary.session_id == session.id)
-            summary = db_session.scalars(stmt).first()
+            summary = db.session.scalars(stmt).first()
         except ImportError:
             # Summary model not available
             pass
