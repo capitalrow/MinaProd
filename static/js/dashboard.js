@@ -8,6 +8,7 @@ class MinaDashboard {
         this.apiBase = '/api';
         this.refreshInterval = 30000; // 30 seconds
         this.refreshTimers = new Map();
+        this.socket = null;
         this.init();
     }
 
@@ -15,7 +16,221 @@ class MinaDashboard {
         console.log('[Dashboard] Initializing Mina Dashboard');
         this.loadDashboardData();
         this.setupEventListeners();
+        this.setupRealtimeUpdates();
         this.startAutoRefresh();
+    }
+
+    /**
+     * Setup real-time Socket.IO updates for live dashboard sync
+     */
+    setupRealtimeUpdates() {
+        try {
+            // Initialize Socket.IO connection for dashboard namespace
+            this.socket = io('/dashboard');
+            
+            this.socket.on('connect', () => {
+                console.log('✅ [Dashboard] Connected to real-time updates');
+            });
+            
+            this.socket.on('disconnect', () => {
+                console.log('🔌 [Dashboard] Disconnected from real-time updates');
+            });
+            
+            // Listen for new recording sessions
+            this.socket.on('session_created', (data) => {
+                console.log('🎙️ [Dashboard] New recording session:', data);
+                this.handleNewSession(data);
+                this.refreshMeetingsData();
+            });
+            
+            // Listen for transcription updates
+            this.socket.on('transcription_update', (data) => {
+                console.log('📝 [Dashboard] Transcription update:', data);
+                this.handleTranscriptionUpdate(data);
+            });
+            
+            // Listen for session completion
+            this.socket.on('session_completed', (data) => {
+                console.log('✅ [Dashboard] Session completed:', data);
+                this.handleSessionCompleted(data);
+                this.refreshMeetingsData();
+            });
+            
+            // Listen for task updates (for future AI task extraction)
+            this.socket.on('task_created', (data) => {
+                console.log('📋 [Dashboard] New task created:', data);
+                this.handleNewTask(data);
+                this.loadMyTasks();
+            });
+            
+        } catch (error) {
+            console.error('[Dashboard] Failed to setup real-time updates:', error);
+        }
+    }
+
+    /**
+     * Handle new recording session
+     */
+    handleNewSession(data) {
+        // Show live notification
+        this.showNotification(`🎙️ New recording session started: ${data.title}`, 'info');
+        
+        // Update active sessions counter
+        this.incrementStatCard('active-meetings');
+        
+        // Add to recent meetings if container exists
+        const recentMeetingsContainer = document.querySelector('.recent-meetings-list');
+        if (recentMeetingsContainer) {
+            this.addSessionToRecentList(data);
+        }
+    }
+
+    /**
+     * Handle transcription update
+     */
+    handleTranscriptionUpdate(data) {
+        // Update live transcription indicator if visible
+        const liveIndicator = document.querySelector(`[data-session-id="${data.session_id}"]`);
+        if (liveIndicator) {
+            liveIndicator.classList.add('has-updates');
+            liveIndicator.title = `Latest: ${data.text.substring(0, 50)}...`;
+        }
+    }
+
+    /**
+     * Handle session completion
+     */
+    handleSessionCompleted(data) {
+        // Show completion notification
+        this.showNotification(`✅ Recording session completed`, 'success');
+        
+        // Update counters
+        this.decrementStatCard('active-meetings');
+        this.incrementStatCard('total-meetings');
+        
+        // Remove live indicators
+        const liveIndicator = document.querySelector(`[data-session-id="${data.session_id}"]`);
+        if (liveIndicator) {
+            liveIndicator.classList.remove('has-updates');
+            liveIndicator.classList.add('completed');
+        }
+    }
+
+    /**
+     * Handle new task creation
+     */
+    handleNewTask(data) {
+        this.showNotification(`📋 New task: ${data.title}`, 'info');
+        this.incrementStatCard('total-tasks');
+        this.incrementStatCard('my-active-tasks');
+    }
+
+    /**
+     * Show real-time notification
+     */
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--glass-bg-strong);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 9999;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            max-width: 300px;
+        `;
+        notification.textContent = message;
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Animate in
+        requestAnimationFrame(() => {
+            notification.style.opacity = '1';
+            notification.style.transform = 'translateX(0)';
+        });
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
+    }
+
+    /**
+     * Increment stat card value
+     */
+    incrementStatCard(cardId) {
+        const card = document.querySelector(`[data-stat="${cardId}"]`);
+        if (card) {
+            const currentValue = parseInt(card.textContent) || 0;
+            card.textContent = currentValue + 1;
+        }
+    }
+
+    /**
+     * Decrement stat card value
+     */
+    decrementStatCard(cardId) {
+        const card = document.querySelector(`[data-stat="${cardId}"]`);
+        if (card) {
+            const currentValue = parseInt(card.textContent) || 0;
+            card.textContent = Math.max(0, currentValue - 1);
+        }
+    }
+
+    /**
+     * Add session to recent meetings list
+     */
+    addSessionToRecentList(data) {
+        const listContainer = document.querySelector('.recent-meetings-list');
+        if (!listContainer) return;
+        
+        const sessionElement = document.createElement('div');
+        sessionElement.className = 'meeting-item live-session';
+        sessionElement.setAttribute('data-session-id', data.session_id);
+        sessionElement.innerHTML = `
+            <div class="meeting-header">
+                <h4 class="meeting-title">${data.title}</h4>
+                <span class="meeting-status live">🔴 Live</span>
+            </div>
+            <div class="meeting-meta">
+                <span class="meeting-time">Started just now</span>
+            </div>
+        `;
+        
+        // Add to top of list
+        listContainer.insertBefore(sessionElement, listContainer.firstChild);
+        
+        // Remove oldest if more than 5 items
+        const items = listContainer.querySelectorAll('.meeting-item');
+        if (items.length > 5) {
+            items[items.length - 1].remove();
+        }
+    }
+
+    /**
+     * Refresh meetings data
+     */
+    async refreshMeetingsData() {
+        try {
+            await this.loadRecentMeetings();
+            await this.loadStats();
+        } catch (error) {
+            console.error('[Dashboard] Failed to refresh meetings data:', error);
+        }
     }
 
     /**
