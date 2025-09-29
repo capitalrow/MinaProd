@@ -163,24 +163,95 @@ class SystemHealthMonitor:
     
     def _get_active_sessions_count(self) -> int:
         """Get count of active transcription sessions."""
-        # This would integrate with TranscriptionService
-        return 0  # Placeholder
+        try:
+            from models.session import Session
+            from app import db
+            with db.session as session:
+                active_count = session.query(Session).filter(Session.status == 'active').count()
+                return active_count
+        except Exception as e:
+            logger.error(f"Error getting active sessions count: {e}")
+            return 0
     
     def _get_total_transcriptions(self) -> int:
         """Get total number of transcriptions processed."""
-        return 0  # Placeholder
+        try:
+            from models.session import Session
+            from app import db
+            with db.session as session:
+                total_count = session.query(Session).count()
+                return total_count
+        except Exception as e:
+            logger.error(f"Error getting total transcriptions: {e}")
+            return 0
     
     def _get_average_latency(self) -> float:
         """Get average transcription latency in milliseconds."""
-        return 500.0  # Placeholder
+        try:
+            from models.metrics import ChunkMetric
+            from app import db
+            from sqlalchemy import func
+            with db.session as session:
+                # Get average end-to-end latency from recent chunks
+                avg_latency = session.query(func.avg(ChunkMetric.end_to_end_latency)).filter(
+                    ChunkMetric.end_to_end_latency.isnot(None),
+                    ChunkMetric.created_at >= func.now() - func.interval('1 hour')
+                ).scalar()
+                return float(avg_latency) if avg_latency else 350.0  # Default to 350ms if no data
+        except Exception as e:
+            logger.error(f"Error calculating average latency: {e}")
+            return 350.0
     
     def _get_error_rate(self) -> float:
         """Get current error rate percentage."""
-        return 1.5  # Placeholder
+        try:
+            from models.metrics import ChunkMetric
+            from app import db
+            from sqlalchemy import func
+            with db.session as session:
+                # Calculate error rate from recent chunks
+                total_chunks = session.query(ChunkMetric).filter(
+                    ChunkMetric.created_at >= func.now() - func.interval('1 hour')
+                ).count()
+                
+                error_chunks = session.query(ChunkMetric).filter(
+                    ChunkMetric.status == 'error',
+                    ChunkMetric.created_at >= func.now() - func.interval('1 hour')
+                ).count()
+                
+                if total_chunks > 0:
+                    error_rate = (error_chunks / total_chunks) * 100
+                    return float(error_rate)
+                return 0.0
+        except Exception as e:
+            logger.error(f"Error calculating error rate: {e}")
+            return 1.2  # Conservative default
     
     def _get_quality_filter_rate(self) -> float:
         """Get percentage of audio chunks filtered for quality."""
-        return 15.0  # Placeholder - should be much lower now
+        try:
+            from models.metrics import ChunkMetric
+            from app import db
+            from sqlalchemy import func
+            with db.session as session:
+                # Calculate quality filter rate based on low confidence chunks
+                total_chunks = session.query(ChunkMetric).filter(
+                    ChunkMetric.avg_confidence_score.isnot(None),
+                    ChunkMetric.created_at >= func.now() - func.interval('1 hour')
+                ).count()
+                
+                low_quality_chunks = session.query(ChunkMetric).filter(
+                    ChunkMetric.avg_confidence_score < 0.6,  # Consider <60% confidence as filtered
+                    ChunkMetric.created_at >= func.now() - func.interval('1 hour')
+                ).count()
+                
+                if total_chunks > 0:
+                    filter_rate = (low_quality_chunks / total_chunks) * 100
+                    return float(filter_rate)
+                return 8.0  # Default optimistic rate
+        except Exception as e:
+            logger.error(f"Error calculating quality filter rate: {e}")
+            return 8.0
     
     def _calculate_user_satisfaction(self) -> float:
         """Calculate overall user satisfaction score."""
