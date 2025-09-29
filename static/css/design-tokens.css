@@ -85,8 +85,8 @@
   --mina-bg-hover: var(--mina-gray-100);
   
   --mina-text-primary: var(--mina-gray-900);
-  --mina-text-secondary: var(--mina-gray-700);
-  --mina-text-muted: var(--mina-gray-500);
+  --mina-text-secondary: var(--mina-gray-800);
+  --mina-text-muted: var(--mina-gray-600);
   --mina-text-inverse: #ffffff;
   
   --mina-border-primary: var(--mina-gray-200);

@@ -172,14 +172,14 @@ def get_engagement_analytics():
             })
         
         # Calculate engagement metrics
-        engagement_scores = [a.overall_engagement_score for a in analytics]
-        avg_engagement = sum(engagement_scores) / len(engagement_scores)
+        engagement_scores = [a.overall_engagement_score for a in analytics if a.overall_engagement_score is not None]
+        avg_engagement = sum(engagement_scores) / len(engagement_scores) if engagement_scores else 0
         
         # Engagement distribution
         score_ranges = {
-            'low': len([s for s in engagement_scores if s < 0.4]),
-            'medium': len([s for s in engagement_scores if 0.4 <= s < 0.7]),
-            'high': len([s for s in engagement_scores if s >= 0.7])
+            'low': len([s for s in engagement_scores if s is not None and s < 0.4]),
+            'medium': len([s for s in engagement_scores if s is not None and 0.4 <= s < 0.7]),
+            'high': len([s for s in engagement_scores if s is not None and s >= 0.7])
         }
         
         # Get top participants by engagement
@@ -276,7 +276,7 @@ def get_productivity_analytics():
             Analytics.meeting_efficiency_score.isnot(None)
         ).all()
         
-        avg_efficiency = sum(a.meeting_efficiency_score for a in efficiency_scores) / len(efficiency_scores) if efficiency_scores else 0
+        avg_efficiency = sum(a.meeting_efficiency_score for a in efficiency_scores if a.meeting_efficiency_score is not None) / len(efficiency_scores) if efficiency_scores else 0
         
         return jsonify({
             'success': True,
@@ -380,22 +380,23 @@ def get_sentiment_analytics():
                 }
             })
         
-        sentiment_scores = [a.overall_sentiment_score for a in analytics]
-        avg_sentiment = sum(sentiment_scores) / len(sentiment_scores)
+        sentiment_scores = [a.overall_sentiment_score for a in analytics if a.overall_sentiment_score is not None]
+        avg_sentiment = sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0
         
         # Sentiment distribution
-        positive_meetings = len([s for s in sentiment_scores if s > 0.1])
-        neutral_meetings = len([s for s in sentiment_scores if -0.1 <= s <= 0.1])
-        negative_meetings = len([s for s in sentiment_scores if s < -0.1])
+        positive_meetings = len([s for s in sentiment_scores if s is not None and s > 0.1])
+        neutral_meetings = len([s for s in sentiment_scores if s is not None and -0.1 <= s <= 0.1])
+        negative_meetings = len([s for s in sentiment_scores if s is not None and s < -0.1])
         
         # Sentiment trend over time
         sentiment_trend = []
         for analytics_record in sorted(analytics, key=lambda x: x.created_at):
-            sentiment_trend.append({
-                'date': analytics_record.created_at.strftime('%Y-%m-%d'),
-                'score': round(analytics_record.overall_sentiment_score * 100, 1),
-                'meeting_title': analytics_record.meeting.title
-            })
+            if analytics_record.overall_sentiment_score is not None:
+                sentiment_trend.append({
+                    'date': analytics_record.created_at.strftime('%Y-%m-%d'),
+                    'score': round(analytics_record.overall_sentiment_score * 100, 1),
+                    'meeting_title': analytics_record.meeting.title
+                })
         
         return jsonify({
             'success': True,

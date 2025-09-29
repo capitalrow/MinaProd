@@ -533,8 +533,318 @@
         </div>
     </div>
     
-    <!-- Other sections would follow similar patterns... -->
-    <!-- For brevity, I'll continue with just a few more key sections -->
+    <!-- Tasks Settings -->
+    <div class="settings-section" id="tasks">
+        <h2><i class="fas fa-tasks me-2"></i>Task Management</h2>
+        <p>Configure how tasks and action items are handled.</p>
+        
+        <div class="settings-group">
+            <h3>Task Defaults</h3>
+            <p>Set default values for newly created tasks</p>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Default Priority</div>
+                    <div class="setting-description">Initial priority for new tasks</div>
+                </div>
+                <div class="setting-control">
+                    <select class="form-select" style="width: 150px;" data-setting="tasks.default_priority">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Auto-assign Tasks</div>
+                    <div class="setting-description">Automatically assign tasks to the creator</div>
+                </div>
+                <div class="setting-control">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-setting="tasks.auto_assign">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Due Date Suggestions</div>
+                    <div class="setting-description">Suggest due dates based on task priority</div>
+                </div>
+                <div class="setting-control">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-setting="tasks.due_date_suggestions">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Notification Reminders</div>
+                    <div class="setting-description">Send reminders for upcoming task deadlines</div>
+                </div>
+                <div class="setting-control">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-setting="tasks.notification_reminders">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Audio Settings -->
+    <div class="settings-section" id="audio">
+        <h2><i class="fas fa-volume-up me-2"></i>Audio & Recording</h2>
+        <p>Configure audio processing and recording quality settings.</p>
+        
+        <div class="settings-group">
+            <h3>Audio Quality</h3>
+            <p>Optimize audio capture and processing</p>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Recording Quality</div>
+                    <div class="setting-description">Higher quality produces better results but uses more bandwidth</div>
+                </div>
+                <div class="setting-control">
+                    <select class="form-select" style="width: 150px;" data-setting="audio.quality">
+                        <option value="standard">Standard</option>
+                        <option value="high">High</option>
+                        <option value="ultra">Ultra</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Noise Reduction</div>
+                    <div class="setting-description">Filter background noise during recording</div>
+                </div>
+                <div class="setting-control">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-setting="audio.noise_reduction">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Echo Cancellation</div>
+                    <div class="setting-description">Remove echo and feedback from recordings</div>
+                </div>
+                <div class="setting-control">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-setting="audio.echo_cancellation">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Auto Gain Control</div>
+                    <div class="setting-description">Automatically adjust volume levels</div>
+                </div>
+                <div class="setting-control">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-setting="audio.auto_gain_control">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Integrations Settings -->
+    <div class="settings-section" id="integrations">
+        <h2><i class="fas fa-plug me-2"></i>Integrations</h2>
+        <p>Connect with your favorite tools and services.</p>
+        
+        <div class="settings-group">
+            <h3>Calendar Integration</h3>
+            <p>Sync meetings with your calendar</p>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Google Calendar <span class="status-indicator status-disconnected">Disconnected</span></div>
+                    <div class="setting-description">Sync meetings with Google Calendar</div>
+                </div>
+                <div class="setting-control">
+                    <button class="btn btn-sm btn-outline-primary" onclick="connectIntegration('google_calendar')">Connect</button>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Outlook Calendar <span class="status-indicator status-disconnected">Disconnected</span></div>
+                    <div class="setting-description">Sync meetings with Outlook Calendar</div>
+                </div>
+                <div class="setting-control">
+                    <button class="btn btn-sm btn-outline-primary" onclick="connectIntegration('outlook_calendar')">Connect</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="settings-group">
+            <h3>Collaboration Tools</h3>
+            <p>Connect with team collaboration platforms</p>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Slack <span class="status-indicator status-disconnected">Disconnected</span></div>
+                    <div class="setting-description">Send notifications and summaries to Slack</div>
+                </div>
+                <div class="setting-control">
+                    <button class="btn btn-sm btn-outline-primary" onclick="connectIntegration('slack')">Connect</button>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Microsoft Teams <span class="status-indicator status-disconnected">Disconnected</span></div>
+                    <div class="setting-description">Integrate with Microsoft Teams</div>
+                </div>
+                <div class="setting-control">
+                    <button class="btn btn-sm btn-outline-primary" onclick="connectIntegration('teams')">Connect</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- UI Settings -->
+    <div class="settings-section" id="ui">
+        <h2><i class="fas fa-palette me-2"></i>User Interface</h2>
+        <p>Customize the appearance and behavior of the interface.</p>
+        
+        <div class="settings-group">
+            <h3>Appearance</h3>
+            <p>Personalize the look and feel</p>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Theme</div>
+                    <div class="setting-description">Choose your preferred color theme</div>
+                </div>
+                <div class="setting-control">
+                    <select class="form-select" style="width: 150px;" data-setting="ui.theme">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="auto">Auto (System)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Animations</div>
+                    <div class="setting-description">Enable smooth transitions and animations</div>
+                </div>
+                <div class="setting-control">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-setting="ui.animations">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Compact Mode</div>
+                    <div class="setting-description">Reduce spacing for more content on screen</div>
+                </div>
+                <div class="setting-control">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-setting="ui.compact_mode">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- General Settings -->
+    <div class="settings-section" id="general">
+        <h2><i class="fas fa-cogs me-2"></i>General Settings</h2>
+        <p>Configure general application preferences.</p>
+        
+        <div class="settings-group">
+            <h3>Regional Settings</h3>
+            <p>Set your timezone and format preferences</p>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Timezone</div>
+                    <div class="setting-description">Your local timezone for meetings and notifications</div>
+                </div>
+                <div class="setting-control">
+                    <select class="form-select" style="width: 200px;" data-setting="general.timezone">
+                        <option value="auto">Auto-detect</option>
+                        <option value="America/New_York">Eastern Time (US)</option>
+                        <option value="America/Chicago">Central Time (US)</option>
+                        <option value="America/Los_Angeles">Pacific Time (US)</option>
+                        <option value="Europe/London">London</option>
+                        <option value="Europe/Paris">Paris</option>
+                        <option value="Asia/Tokyo">Tokyo</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Date Format</div>
+                    <div class="setting-description">How dates are displayed</div>
+                </div>
+                <div class="setting-control">
+                    <select class="form-select" style="width: 150px;" data-setting="general.date_format">
+                        <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                        <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                        <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Time Format</div>
+                    <div class="setting-description">12-hour or 24-hour clock</div>
+                </div>
+                <div class="setting-control">
+                    <select class="form-select" style="width: 150px;" data-setting="general.time_format">
+                        <option value="12h">12-hour</option>
+                        <option value="24h">24-hour</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="settings-group">
+            <h3>Notifications</h3>
+            <p>Manage how you receive updates</p>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Email Notifications</div>
+                    <div class="setting-description">Receive updates via email</div>
+                </div>
+                <div class="setting-control">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-setting="general.email_notifications">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Browser Notifications</div>
+                    <div class="setting-description">Show desktop notifications</div>
+                </div>
+                <div class="setting-control">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" data-setting="general.browser_notifications">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- Privacy Settings -->
     <div class="settings-section" id="privacy">

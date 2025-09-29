@@ -277,12 +277,15 @@ def end_meeting(meeting_id):
         # Update session if exists
         if meeting.session:
             meeting.session.status = 'completed'
-            meeting.session.end_time = datetime.now()
+            meeting.session.completed_at = datetime.now()
         
         db.session.commit()
         
-        # Trigger async processing
-        asyncio.create_task(process_meeting_async(meeting_id))
+        # Trigger async processing in background (WSGI-safe)
+        import threading
+        thread = threading.Thread(target=lambda: asyncio.run(process_meeting_async(meeting_id)))
+        thread.daemon = True
+        thread.start()
         
         return jsonify({
             'success': True,
@@ -323,9 +326,7 @@ def process_meeting(meeting_id):
         analytics_result = asyncio.run(analytics_service.analyze_meeting(meeting_id))
         processing_results['analytics'] = analytics_result
         
-        # Update meeting processing status
-        meeting.processing_status = 'completed'
-        meeting.processed_at = datetime.now()
+        # Meeting processing completed
         db.session.commit()
         
         return jsonify({
@@ -507,8 +508,6 @@ async def process_meeting_async(meeting_id: int):
         # Update meeting status
         meeting = db.session.query(Meeting).get(meeting_id)
         if meeting:
-            meeting.processing_status = 'completed'
-            meeting.processed_at = datetime.now()
             db.session.commit()
         
     except Exception as e:
@@ -516,6 +515,4 @@ async def process_meeting_async(meeting_id: int):
         # Update meeting with error status
         meeting = db.session.query(Meeting).get(meeting_id)
         if meeting:
-            meeting.processing_status = 'failed'
-            meeting.processing_error = str(e)
             db.session.commit()
