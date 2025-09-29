@@ -251,14 +251,71 @@
             font-weight: bold;
         }
 
-        .form-checkbox-label {
-            font-size: clamp(0.95rem, 3vw, 1.05rem);
-            color: #475569 !important;
+        /* Premium Checkbox System */
+        .premium-checkbox-group {
+            margin: 1.5rem 0;
+        }
+        
+        .premium-checkbox {
+            display: flex;
+            align-items: center;
             cursor: pointer;
             user-select: none;
-            letter-spacing: 0.02em;
-            font-weight: var(--mina-font-weight-semibold);
-            text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .premium-checkbox input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+        
+        .checkmark {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 1.25rem;
+            width: 1.25rem;
+            background: var(--glass-bg-light);
+            border: 2px solid var(--glass-border);
+            border-radius: 6px;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .premium-checkbox:hover input ~ .checkmark {
+            background: rgba(168, 85, 247, 0.1);
+            border-color: var(--elite-purple-500);
+        }
+        
+        .premium-checkbox input:checked ~ .checkmark {
+            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-500));
+            border-color: var(--elite-purple-500);
+        }
+        
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+            left: 3px;
+            top: 0;
+            width: 4px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        
+        .premium-checkbox input:checked ~ .checkmark:after {
+            display: block;
+        }
+        
+        .checkbox-label {
+            font-size: 1rem;
+            color: var(--neutral-600);
+            font-weight: 500;
         }
 
         /* Premium Gradient Button */
@@ -452,7 +509,6 @@
             
             <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm">
                 <div class="form-group">
-                    <label for="email_or_username" class="form-label">Email or Username</label>
                     <input 
                         type="text" 
                         id="email_or_username" 
@@ -461,12 +517,12 @@
                         required 
                         autocomplete="username"
                         value="{{ request.form.get('email_or_username', '') }}"
-                        placeholder="Enter your email or username"
+                        placeholder=" "
                     >
+                    <label for="email_or_username" class="form-label">Email or Username</label>
                 </div>
                 
                 <div class="form-group">
-                    <label for="password" class="form-label">Password</label>
                     <input 
                         type="password" 
                         id="password" 
@@ -474,13 +530,17 @@
                         class="form-input" 
                         required 
                         autocomplete="current-password"
-                        placeholder="Enter your password"
+                        placeholder=" "
                     >
+                    <label for="password" class="form-label">Password</label>
                 </div>
                 
-                <div class="form-checkbox-group">
-                    <input type="checkbox" id="remember_me" name="remember_me" class="form-checkbox">
-                    <label for="remember_me" class="form-checkbox-label">Keep me signed in</label>
+                <div class="premium-checkbox-group">
+                    <label class="premium-checkbox">
+                        <input type="checkbox" name="remember_me">
+                        <span class="checkmark"></span>
+                        <span class="checkbox-label">Keep me signed in for 30 days</span>
+                    </label>
                 </div>
                 
                 <button type="submit" class="btn-primary" id="loginButton">Sign In</button>
