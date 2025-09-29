@@ -1,0 +1,724 @@
+/* ============================================================================= */
+/* MINA SOPHISTICATED ANIMATIONS & PAGE TRANSITIONS                           */
+/* Professional Animation System with Advanced Motion Design                   */
+/* ============================================================================= */
+
+/* ========================================= */
+/* ADVANCED ANIMATION FRAMEWORK             */
+/* ========================================= */
+
+:root {
+    /* Advanced Easing Functions */
+    --ease-in-expo: cubic-bezier(0.95, 0.05, 0.795, 0.035);
+    --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+    --ease-in-out-expo: cubic-bezier(1, 0, 0, 1);
+    --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-in-out-back: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    
+    /* Animation Durations */
+    --duration-instant: 0.1s;
+    --duration-fast: 0.2s;
+    --duration-normal: 0.3s;
+    --duration-slow: 0.5s;
+    --duration-slower: 0.8s;
+    --duration-crawl: 1.2s;
+    
+    /* Advanced Motion Tokens */
+    --motion-enter: all var(--duration-normal) var(--ease-out-expo);
+    --motion-exit: all var(--duration-fast) var(--ease-in-expo);
+    --motion-bounce: all var(--duration-slow) var(--ease-out-back);
+    --motion-elastic: all var(--duration-slower) var(--ease-elastic);
+    --motion-smooth: all var(--duration-normal) var(--transition-ultra-smooth);
+}
+
+/* ========================================= */
+/* PAGE TRANSITION SYSTEM                   */
+/* ========================================= */
+
+.page-transition {
+    animation: page-enter var(--duration-slow) var(--ease-out-expo);
+}
+
+@keyframes page-enter {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Sophisticated Page Enter Variants */
+.page-transition--slide-up {
+    animation: page-slide-up var(--duration-slow) var(--ease-out-expo);
+}
+
+@keyframes page-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.page-transition--slide-down {
+    animation: page-slide-down var(--duration-slow) var(--ease-out-expo);
+}
+
+@keyframes page-slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(-40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.page-transition--slide-left {
+    animation: page-slide-left var(--duration-slow) var(--ease-out-expo);
+}
+
+@keyframes page-slide-left {
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.page-transition--scale {
+    animation: page-scale var(--duration-slow) var(--ease-out-back);
+}
+
+@keyframes page-scale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.page-transition--zoom {
+    animation: page-zoom var(--duration-slower) var(--ease-out-expo);
+}
+
+@keyframes page-zoom {
+    from {
+        opacity: 0;
+        transform: scale(1.1) blur(2px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) blur(0);
+    }
+}
+
+/* ========================================= */
+/* ADVANCED HOVER ANIMATIONS                */
+/* ========================================= */
+
+/* Sophisticated Float Effect */
+.mina-float {
+    transition: var(--motion-smooth);
+    will-change: transform;
+}
+
+.mina-float:hover {
+    transform: translateY(-4px);
+    animation: float-gentle 3s ease-in-out infinite;
+}
+
+@keyframes float-gentle {
+    0%, 100% { transform: translateY(-4px); }
+    50% { transform: translateY(-8px); }
+}
+
+/* Advanced Glow Effect */
+.mina-glow {
+    position: relative;
+    transition: var(--motion-smooth);
+    overflow: hidden;
+}
+
+.mina-glow::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, 
+        var(--mina-primary), 
+        var(--mina-secondary), 
+        var(--mina-primary)
+    );
+    border-radius: inherit;
+    opacity: 0;
+    filter: blur(6px);
+    transition: opacity var(--duration-slow) ease;
+    z-index: -1;
+}
+
+.mina-glow:hover::before {
+    opacity: 0.7;
+    animation: glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+    0%, 100% { opacity: 0.7; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+}
+
+/* Professional Tilt Effect */
+.mina-tilt {
+    transition: var(--motion-smooth);
+    will-change: transform;
+}
+
+.mina-tilt:hover {
+    transform: perspective(1000px) rotateX(5deg) rotateY(5deg) scale(1.02);
+}
+
+/* Advanced Shimmer Effect */
+.mina-shimmer {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(45deg, 
+        transparent 30%, 
+        rgba(255, 255, 255, 0.1) 50%, 
+        transparent 70%
+    );
+    background-size: 200% 200%;
+}
+
+.mina-shimmer:hover {
+    animation: shimmer-effect var(--duration-crawl) ease-in-out;
+}
+
+@keyframes shimmer-effect {
+    0% { background-position: -200% -200%; }
+    100% { background-position: 200% 200%; }
+}
+
+/* ========================================= */
+/* ELEMENT ENTRANCE ANIMATIONS              */
+/* ========================================= */
+
+/* Staggered Animation System */
+.mina-stagger-children > * {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: stagger-enter var(--duration-slow) var(--ease-out-expo) forwards;
+}
+
+.mina-stagger-children > *:nth-child(1) { animation-delay: 0.1s; }
+.mina-stagger-children > *:nth-child(2) { animation-delay: 0.2s; }
+.mina-stagger-children > *:nth-child(3) { animation-delay: 0.3s; }
+.mina-stagger-children > *:nth-child(4) { animation-delay: 0.4s; }
+.mina-stagger-children > *:nth-child(5) { animation-delay: 0.5s; }
+.mina-stagger-children > *:nth-child(6) { animation-delay: 0.6s; }
+.mina-stagger-children > *:nth-child(7) { animation-delay: 0.7s; }
+.mina-stagger-children > *:nth-child(8) { animation-delay: 0.8s; }
+
+@keyframes stagger-enter {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Fade In Animations */
+.mina-fade-in {
+    animation: fade-in var(--duration-normal) var(--ease-out-expo);
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.mina-fade-in-up {
+    animation: fade-in-up var(--duration-slow) var(--ease-out-expo);
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mina-fade-in-down {
+    animation: fade-in-down var(--duration-slow) var(--ease-out-expo);
+}
+
+@keyframes fade-in-down {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mina-fade-in-left {
+    animation: fade-in-left var(--duration-slow) var(--ease-out-expo);
+}
+
+@keyframes fade-in-left {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.mina-fade-in-right {
+    animation: fade-in-right var(--duration-slow) var(--ease-out-expo);
+}
+
+@keyframes fade-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ========================================= */
+/* ADVANCED SCALE ANIMATIONS                */
+/* ========================================= */
+
+.mina-scale-in {
+    animation: scale-in var(--duration-slow) var(--ease-out-back);
+}
+
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.mina-scale-bounce {
+    animation: scale-bounce var(--duration-slower) var(--ease-out-back);
+}
+
+@keyframes scale-bounce {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    70% { transform: scale(0.9); }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.mina-scale-elastic {
+    animation: scale-elastic var(--duration-crawl) var(--ease-elastic);
+}
+
+@keyframes scale-elastic {
+    0% {
+        opacity: 0;
+        transform: scale(0);
+    }
+    55% {
+        opacity: 1;
+        transform: scale(1.15);
+    }
+    75% { transform: scale(0.95); }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ========================================= */
+/* ROTATION & TRANSFORM ANIMATIONS          */
+/* ========================================= */
+
+.mina-rotate-in {
+    animation: rotate-in var(--duration-slow) var(--ease-out-expo);
+}
+
+@keyframes rotate-in {
+    from {
+        opacity: 0;
+        transform: rotate(-180deg) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+    }
+}
+
+.mina-flip-in {
+    animation: flip-in var(--duration-slower) var(--ease-out-expo);
+}
+
+@keyframes flip-in {
+    from {
+        opacity: 0;
+        transform: perspective(400px) rotateY(90deg);
+    }
+    40% {
+        opacity: 1;
+        transform: perspective(400px) rotateY(-20deg);
+    }
+    70% { transform: perspective(400px) rotateY(10deg); }
+    to {
+        opacity: 1;
+        transform: perspective(400px) rotateY(0deg);
+    }
+}
+
+.mina-swing-in {
+    animation: swing-in var(--duration-crawl) var(--ease-out-expo);
+}
+
+@keyframes swing-in {
+    0% {
+        opacity: 0;
+        transform: perspective(400px) rotateX(90deg);
+    }
+    40% {
+        opacity: 1;
+        transform: perspective(400px) rotateX(-20deg);
+    }
+    70% { transform: perspective(400px) rotateX(10deg); }
+    100% {
+        opacity: 1;
+        transform: perspective(400px) rotateX(0deg);
+    }
+}
+
+/* ========================================= */
+/* INTERACTIVE FEEDBACK ANIMATIONS          */
+/* ========================================= */
+
+/* Button Press Animation */
+.mina-btn-press {
+    transition: var(--motion-bounce);
+}
+
+.mina-btn-press:active {
+    transform: scale(0.95);
+    animation: btn-press-feedback var(--duration-fast) var(--ease-out-back);
+}
+
+@keyframes btn-press-feedback {
+    0% { transform: scale(0.95); }
+    50% { transform: scale(0.98); }
+    100% { transform: scale(1); }
+}
+
+/* Ripple Effect Animation */
+.mina-ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.mina-ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease-out, height 0.3s ease-out, opacity 0.3s ease-out;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.mina-ripple:active::after {
+    width: 200px;
+    height: 200px;
+    opacity: 0.4;
+    transition: width 0.1s ease-out, height 0.1s ease-out, opacity 0.1s ease-out;
+}
+
+/* Heart Beat Animation */
+.mina-heartbeat {
+    animation: heartbeat 2s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+    0%, 50%, 100% { transform: scale(1); }
+    25%, 75% { transform: scale(1.1); }
+}
+
+/* Pulse Animation */
+.mina-pulse {
+    animation: pulse var(--duration-crawl) ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+/* ========================================= */
+/* LOADING & PROGRESS ANIMATIONS            */
+/* ========================================= */
+
+/* Sophisticated Spinner */
+.mina-spinner-orbit {
+    width: 48px;
+    height: 48px;
+    position: relative;
+    animation: spinner-orbit var(--duration-crawl) linear infinite;
+}
+
+.mina-spinner-orbit::before,
+.mina-spinner-orbit::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    animation: inherit;
+}
+
+.mina-spinner-orbit::before {
+    width: 8px;
+    height: 8px;
+    background: var(--mina-primary);
+    top: 0;
+    left: calc(50% - 4px);
+    animation-duration: calc(var(--duration-crawl) * 0.75);
+}
+
+.mina-spinner-orbit::after {
+    width: 6px;
+    height: 6px;
+    background: var(--mina-secondary);
+    bottom: 0;
+    right: calc(50% - 3px);
+    animation-duration: calc(var(--duration-crawl) * 1.25);
+    animation-direction: reverse;
+}
+
+@keyframes spinner-orbit {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Progress Wave */
+.mina-progress-wave {
+    width: 100%;
+    height: 4px;
+    background: var(--skeleton-base);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    position: relative;
+}
+
+.mina-progress-wave::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        var(--mina-primary) 25%,
+        var(--mina-secondary) 50%,
+        var(--mina-primary) 75%,
+        transparent 100%
+    );
+    animation: progress-wave var(--duration-crawl) ease-in-out infinite;
+}
+
+@keyframes progress-wave {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* ========================================= */
+/* SCROLL-TRIGGERED ANIMATIONS              */
+/* ========================================= */
+
+/* Intersection Observer Ready Animations */
+.mina-scroll-trigger {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: var(--motion-enter);
+    will-change: opacity, transform;
+}
+
+.mina-scroll-trigger.in-view {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.mina-scroll-trigger--slide-left {
+    transform: translateX(-30px);
+}
+
+.mina-scroll-trigger--slide-left.in-view {
+    transform: translateX(0);
+}
+
+.mina-scroll-trigger--slide-right {
+    transform: translateX(30px);
+}
+
+.mina-scroll-trigger--slide-right.in-view {
+    transform: translateX(0);
+}
+
+.mina-scroll-trigger--scale {
+    transform: scale(0.9);
+}
+
+.mina-scroll-trigger--scale.in-view {
+    transform: scale(1);
+}
+
+.mina-scroll-trigger--rotate {
+    transform: rotate(-5deg) scale(0.9);
+}
+
+.mina-scroll-trigger--rotate.in-view {
+    transform: rotate(0deg) scale(1);
+}
+
+/* ========================================= */
+/* PARALLAX & DEPTH EFFECTS                 */
+/* ========================================= */
+
+.mina-parallax {
+    will-change: transform;
+    transition: transform var(--duration-instant) linear;
+}
+
+.mina-depth-1 {
+    transform: translateZ(0);
+}
+
+.mina-depth-2 {
+    transform: translateZ(20px);
+}
+
+.mina-depth-3 {
+    transform: translateZ(40px);
+}
+
+.mina-depth-4 {
+    transform: translateZ(60px);
+}
+
+.mina-depth-5 {
+    transform: translateZ(80px);
+}
+
+/* ========================================= */
+/* RESPONSIVE & ACCESSIBILITY               */
+/* ========================================= */
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    
+    .mina-float:hover {
+        animation: none;
+        transform: translateY(-2px);
+    }
+    
+    .mina-glow:hover::before {
+        animation: none;
+    }
+    
+    .mina-heartbeat,
+    .mina-pulse {
+        animation: none;
+    }
+}
+
+/* Performance Optimizations */
+.mina-animate {
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    perspective: 1000px;
+    transform: translateZ(0);
+}
+
+/* Mobile Adaptations */
+@media (max-width: 768px) {
+    :root {
+        --duration-fast: 0.15s;
+        --duration-normal: 0.25s;
+        --duration-slow: 0.4s;
+        --duration-slower: 0.6s;
+        --duration-crawl: 1s;
+    }
+    
+    .mina-float:hover {
+        transform: translateY(-2px);
+    }
+    
+    .mina-tilt:hover {
+        transform: perspective(1000px) rotateX(2deg) rotateY(2deg) scale(1.01);
+    }
+}
+
+/* High Refresh Rate Adaptations */
+@media (min-refresh-rate: 120Hz) {
+    :root {
+        --duration-instant: 0.05s;
+        --duration-fast: 0.1s;
+        --duration-normal: 0.2s;
+    }
+}
