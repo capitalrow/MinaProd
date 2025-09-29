@@ -182,16 +182,41 @@
             
             async loadAnalytics() {
                 try {
+                    // Show loading state
+                    document.querySelectorAll('.stat-number').forEach(el => {
+                        el.style.opacity = '0.5';
+                    });
+                    
                     const response = await fetch(`/api/analytics/trends?days=${this.currentRange}`);
                     const data = await response.json();
                     
                     if (data.success) {
                         this.updateMetrics(data.trends);
                         this.renderCharts(data);
+                    } else {
+                        console.error('Analytics API returned error:', data.message);
+                        this.showEmptyState();
                     }
                 } catch (error) {
                     console.error('Failed to load analytics:', error);
+                    this.showEmptyState();
+                } finally {
+                    // Restore opacity
+                    document.querySelectorAll('.stat-number').forEach(el => {
+                        el.style.opacity = '1';
+                    });
                 }
+            }
+            
+            showEmptyState() {
+                // Show empty state when no data available
+                document.getElementById('total-sessions').textContent = '0';
+                document.getElementById('total-hours').textContent = '0h';
+                document.getElementById('success-rate').textContent = '0%';
+                document.getElementById('avg-confidence').textContent = '0%';
+                
+                // Render empty charts
+                this.renderCharts({ trends: {} });
             }
             
             updateMetrics(trends) {
@@ -228,9 +253,11 @@
                         datasets: [{
                             label: 'Sessions',
                             data: weeklyData,
-                            borderColor: 'rgb(75, 192, 192)',
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            tension: 0.1
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            borderWidth: 2
                         }]
                     },
                     options: {
@@ -294,7 +321,8 @@
                         datasets: [{
                             label: 'Sessions',
                             data: durationDistribution,
-                            backgroundColor: 'rgba(59, 130, 246, 0.8)'
+                            backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                            borderRadius: 6
                         }]
                     },
                     options: {

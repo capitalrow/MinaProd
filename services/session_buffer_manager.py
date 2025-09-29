@@ -209,7 +209,7 @@ class SessionBufferManager:
     def __init__(self, session_id: str, config: Optional[BufferConfig] = None):
         self.session_id = session_id
         self.config = config or BufferConfig()
-        self.chunks: deque = deque(maxlen=1000)  # Bounded chunk buffer
+        self.chunks: deque = deque(maxlen=100)  # Reduced from 1000 to prevent memory bloat
         self.raw_buffer = bytearray()
         self.last_activity = time.time()
         self.last_flush = 0.0
