@@ -122,6 +122,152 @@
         .record-icon {
             font-size: 1.2rem;
         }
+
+        /* PREMIUM STATUS INDICATORS */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-indicator.recording {
+            background: linear-gradient(135deg, var(--red-500), var(--red-600));
+            color: white;
+            animation: premiumRecordingPulse 2s ease-in-out infinite;
+        }
+
+        .status-indicator.ready {
+            background: linear-gradient(135deg, var(--emerald-500), var(--emerald-600));
+            color: white;
+        }
+
+        .status-indicator.processing {
+            background: linear-gradient(135deg, var(--amber-500), var(--amber-600));
+            color: white;
+        }
+
+        /* PREMIUM CONTROL PANELS */
+        .control-panel {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(40px) saturate(180%);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.15),
+                0 10px 20px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            margin-bottom: 2rem;
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 1.5rem 0;
+            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* PREMIUM METRICS DISPLAY */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-item {
+            background: var(--glass-bg-dark);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .metric-item:hover {
+            transform: translateY(-2px);
+            background: var(--glass-bg-light);
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--neutral-600);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* PREMIUM ANIMATIONS */
+        .animate-fade-in {
+            animation: fadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* RESPONSIVE DESIGN */
+        @media (max-width: 768px) {
+            .live-recording-container {
+                padding: 1rem;
+            }
+            .recording-studio {
+                padding: 2rem;
+            }
+            .metrics-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .record-button, .live-record-btn {
+                width: 80px;
+                height: 80px;
+                font-size: 1.5rem;
+            }
+        }
         
         .record-text {
             font-size: 1rem;
