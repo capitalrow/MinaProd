@@ -482,27 +482,27 @@ def create_app() -> Flask:
         from services.business_metrics import get_business_metrics
         from services.dependency_monitor import get_dependency_monitor
         
-        # Initialize health monitoring
+        # Initialize monitoring services through service container
         health_monitor = HealthMonitor()
         health_monitor.start_monitoring(interval=30)
-        app.health_monitor = health_monitor
+        container.register_service('health_monitor', lambda: health_monitor)
         
         # Initialize alerting system
         alerting_system = get_alerting_system()
-        app.alerting_system = alerting_system
+        container.register_service('alerting_system', lambda: alerting_system)
         
         # Initialize WebSocket monitoring
         websocket_monitor = get_websocket_monitor()
-        app.websocket_monitor = websocket_monitor
+        container.register_service('websocket_monitor', lambda: websocket_monitor)
         
         # Initialize business metrics
         business_metrics = get_business_metrics()
-        app.business_metrics = business_metrics
+        container.register_service('business_metrics', lambda: business_metrics)
         
         # Initialize dependency monitoring
         dependency_monitor = get_dependency_monitor()
         dependency_monitor.start_monitoring()
-        app.dependency_monitor = dependency_monitor
+        container.register_service('dependency_monitor', lambda: dependency_monitor)
         
         app.logger.info("✅ Complete monitoring system initialized (100% coverage)")
         

@@ -25,18 +25,32 @@ class Session(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     external_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)  # WS/session key
+    session_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)  # Alias for external_id for route compatibility
     title: Mapped[str] = mapped_column(String(255), default="Untitled Meeting")
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # Added for route compatibility
     status: Mapped[str] = mapped_column(String(32), default="active")  # active|completed|error
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())  # Added for route compatibility
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())  # Added for route compatibility
     started_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    ended_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)  # Added for route compatibility
     locale: Mapped[Optional[str]] = mapped_column(String(10))
     device_info: Mapped[Optional[dict]] = mapped_column(JSON)
     meta: Mapped[Optional[dict]] = mapped_column(JSON)
     
-    # Statistics fields required by TranscriptionService
+    # Statistics fields required by TranscriptionService and routes
     total_segments: Mapped[Optional[int]] = mapped_column(Integer, default=0, nullable=True)
     average_confidence: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
+    confidence_avg: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)  # Alias for route compatibility
     total_duration: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
+    duration_seconds: Mapped[Optional[int]] = mapped_column(Integer, default=0, nullable=True)  # Added for route compatibility
+    participants_count: Mapped[Optional[int]] = mapped_column(Integer, default=0, nullable=True)  # Added for route compatibility
+    language_detected: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)  # Added for route compatibility
+    
+    # AI-generated content fields
+    ai_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # Added for route compatibility
+    key_insights: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # Added for route compatibility
+    action_items: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # Added for route compatibility
     
     segments: Mapped[list["Segment"]] = relationship(
         back_populates="session", cascade="all, delete-orphan", lazy="noload"

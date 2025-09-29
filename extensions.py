@@ -2,6 +2,8 @@
 🔧 Flask Extensions & Dependency Injection
 Centralizes all Flask extensions to eliminate circular imports and provide clean dependency injection.
 """
+import os
+import logging
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
 from flask_login import LoginManager
@@ -9,7 +11,6 @@ from flask_compress import Compress
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy.orm import DeclarativeBase
 from typing import Optional
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -20,14 +21,16 @@ class Base(DeclarativeBase):
 # Global extension instances (no app binding at import time)
 db = SQLAlchemy(model_class=Base)
 
-# Use eventlet for production stability (from original working config)
+# Use eventlet for production stability with Redis message queue for scaling
 socketio = SocketIO(
     cors_allowed_origins="*",
     async_mode="eventlet",  # More stable for production
     ping_timeout=60,
     ping_interval=25,
     logger=False,
-    engineio_logger=False
+    engineio_logger=False,
+    # Redis configuration for production scaling
+    message_queue=os.environ.get('REDIS_URL', 'redis://localhost:6379/0') if os.environ.get('REDIS_URL') else None
 )
 
 login_manager = LoginManager()
@@ -97,13 +100,10 @@ container = ServiceContainer()
 def init_extensions(app):
     """Initialize all extensions with the Flask app"""
     
-    # Configure SQLAlchemy - ensure database URL is set
-    import os
-    database_url = (
-        app.config.get("DATABASE_URL") or 
-        os.environ.get("DATABASE_URL") or
-        "sqlite:///mina.db"  # Fallback for development
-    )
+    # Configure SQLAlchemy - PostgreSQL database now available
+    database_url = os.environ.get("DATABASE_URL")
+    if not database_url:
+        raise ValueError("DATABASE_URL environment variable must be set. PostgreSQL database is required for production.")
     
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
@@ -117,15 +117,15 @@ def init_extensions(app):
     
     # Configure LoginManager
     login_manager.init_app(app)
-    login_manager.login_view = 'auth.login'
+    login_manager.login_view = 'auth.login'  # type: ignore
     login_manager.login_message = 'Please log in to access this page.'
     
     # Initialize other extensions
     compress.init_app(app)
     csrf.init_app(app)
     
-    # Attach container to app
-    app.container = container
+    # Store container in app config instead of as direct attribute
+    app.config['CONTAINER'] = container
     
     # Initialize services
     container.initialize_services(app)
@@ -147,7 +147,7 @@ def init_extensions(app):
 def get_service(name: str):
     """Get a service from the container (for use in routes)"""
     from flask import current_app
-    return current_app.container.get_service(name)
+    return current_app.config['CONTAINER'].get_service(name)
 
 # Convenience functions for common services
 def get_db():

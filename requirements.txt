@@ -23,3 +23,6 @@ nltk
 scipy
 pydub
 jiwer
+flask-sqlalchemy
+redis
+sqlalchemy
