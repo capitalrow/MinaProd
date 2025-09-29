@@ -5,33 +5,7 @@
 {% block head %}
 <!-- PREMIUM SESSION DETAIL DESIGN SYSTEM -->
 <style>
-    /* ELITE SESSION BACKGROUND */
-    body {
-        background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
-        background-attachment: fixed;
-        position: relative;
-        min-height: 100vh;
-    }
-
-    body::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 200%;
-        height: 200%;
-        background: 
-            radial-gradient(circle at 30% 70%, rgba(168, 85, 247, 0.2) 0%, transparent 50%),
-            radial-gradient(circle at 70% 30%, rgba(59, 130, 246, 0.2) 0%, transparent 50%);
-        animation: premiumSessionFloat 25s ease-in-out infinite;
-        z-index: 0;
-        pointer-events: none;
-    }
-
-    @keyframes premiumSessionFloat {
-        0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
-        50% { transform: translate(35px, -35px) rotate(180deg); }
-    }
+    /* Session detail specific styles only - backgrounds unified in base.html */
 
     /* PREMIUM CONTAINER */
     .container {
