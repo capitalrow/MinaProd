@@ -3,43 +3,11 @@
 {% block title %}Tasks - {{ super() }}{% endblock %}
 
 {% block head %}
-    <!-- Core Dashboard CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-    
-    <!-- Feather Icons removed - using Font Awesome consistently -->
+    <!-- Tasks specific styles only - core CSS unified in base.html -->
     
     <!-- PREMIUM TASKS DESIGN SYSTEM -->
     <style>
-        /* ELITE TASKS BACKGROUND */
-        body {
-            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
-            background-attachment: fixed;
-            position: relative;
-            min-height: 100vh;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 200%;
-            height: 200%;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.2) 0%, transparent 50%);
-            animation: premiumTasksFloat 26s ease-in-out infinite;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        @keyframes premiumTasksFloat {
-            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
-            50% { transform: translate(45px, -45px) rotate(180deg); }
-        }
+        /* Tasks page specific styles only - backgrounds unified in base.html */
 
         /* PREMIUM KANBAN BOARD */
         .kanban-board {
