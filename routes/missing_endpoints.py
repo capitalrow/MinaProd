@@ -6,12 +6,14 @@ from flask_login import login_required, current_user
 from services.session_service import SessionService
 from services.openai_client_manager import get_openai_client_manager
 from models.streaming_models import SessionAnalytics, TranscriptionSession
+from models.marker import Marker
 import datetime
 import uuid
 import logging
 from sqlalchemy import func, select
 from datetime import datetime, timedelta
 from flask import current_app
+from app import db
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +121,6 @@ def analytics_trends():
         session_stats = SessionService.get_session_stats()
         
         # Calculate trends from TranscriptionSession model  
-        from app import db
         recent_sessions = db.session.scalars(
             select(TranscriptionSession)
             .where(TranscriptionSession.created_at >= start_date)
@@ -183,19 +184,23 @@ def analytics_trends():
 def markers():
     """Handle markers/bookmarks for transcriptions with real database persistence"""
     try:
-        from app import db
-        
         if request.method == "GET":
             # Get session_id filter
             session_id = request.args.get('session_id')
             
-            # For now, return empty array since we don't have a markers table yet
-            # In production, you'd query a Markers table here
-            markers_data = []
+            # Query markers from database using real Marker model
+            query = select(Marker).where(Marker.user_id == current_user.id)
             
-            # If session_id provided, could filter by that session
+            # Filter by session if provided
             if session_id:
+                query = query.where(Marker.session_id == session_id)
                 logger.info(f"Fetching markers for session {session_id}")
+            
+            # Order by created date (newest first)
+            query = query.order_by(Marker.created_at.desc())
+            
+            markers = db.session.scalars(query).all()
+            markers_data = [marker.to_dict() for marker in markers]
             
             return jsonify({
                 "success": True,
@@ -214,31 +219,57 @@ def markers():
                     "error": "session_id is required"
                 }), 400
             
-            # Create marker (in production, save to Markers table)
-            marker = {
-                "id": str(uuid.uuid4()),
-                "session_id": data.get("session_id"),
-                "time_ms": data.get("time_ms", 0),
-                "label": data.get("label", ""),
-                "note": data.get("note", ""),
-                "user_id": current_user.id,
-                "created_at": datetime.now().isoformat()
-            }
+            if not data.get('type') or data.get('type') not in ['decision', 'todo', 'risk']:
+                return jsonify({
+                    "success": False,
+                    "error": "type is required and must be one of: decision, todo, risk"
+                }), 400
             
-            # TODO: Save to database when Markers table is created
-            # marker_record = Marker(**marker)
-            # db.session.add(marker_record)
-            # db.session.commit()
+            if not data.get('content'):
+                return jsonify({
+                    "success": False,
+                    "error": "content is required"
+                }), 400
             
-            logger.info(f"Created marker {marker['id']} for session {marker['session_id']}")
+            # Validate session ownership - ensure user can access this session
+            session_check = db.session.scalars(
+                select(TranscriptionSession)
+                .where(
+                    TranscriptionSession.session_id == data['session_id'],
+                    TranscriptionSession.user_id == current_user.id
+                )
+            ).first()
+            
+            if not session_check:
+                return jsonify({
+                    "success": False,
+                    "error": "Session not found or access denied"
+                }), 403
+            
+            # Create marker using real Marker model
+            marker_record = Marker(
+                type=data['type'],
+                content=data['content'],
+                speaker=data.get('speaker'),
+                session_id=data['session_id'],
+                timestamp=datetime.utcnow(),  # Use UTC for consistency
+                user_id=current_user.id
+            )
+            
+            # Save to database
+            db.session.add(marker_record)
+            db.session.commit()
+            
+            logger.info(f"Created marker {marker_record.id} for session {data['session_id']}")
             
             return jsonify({
                 "success": True,
-                "marker": marker
+                "marker": marker_record.to_dict()
             }), 201
             
     except Exception as e:
         logger.error(f"Failed to handle markers: {e}")
+        db.session.rollback()  # Rollback on any database error
         return jsonify({
             "success": False,
             "error": "Failed to process markers"
@@ -252,7 +283,6 @@ def copilot_suggestions():
         session_id = request.args.get('session_id')
         
         # Get recent user sessions for context
-        from app import db  
         recent_sessions = db.session.scalars(
             select(TranscriptionSession)
             .order_by(TranscriptionSession.created_at.desc())
@@ -341,12 +371,10 @@ def calendar_events():
         # In production, this would integrate with Google Calendar, Outlook, etc.
         # For now, return upcoming meetings based on user's transcription sessions
         
-        from app import db
         start_date = datetime.now()
         end_date = start_date + timedelta(days=7)
         
         # Get recent active sessions as "meeting" events
-        from app import db
         recent_sessions = db.session.scalars(
             select(TranscriptionSession)
             .where(TranscriptionSession.status == 'active')
@@ -472,10 +500,10 @@ def integrations_list():
         # Check for Redis connection
         redis_connected = False
         try:
-            from services.redis_cache_service import redis_cache
+            import services.redis_cache_service
             redis_connected = True  # If import succeeds, Redis is configured
-        except:
-            pass
+        except ImportError:
+            redis_connected = False
         
         integrations.append({
             "id": "redis",
