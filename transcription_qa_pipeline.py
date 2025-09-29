@@ -121,7 +121,7 @@ class TranscriptionQAPipeline:
         # Real-time quality checks
         self._check_segment_quality(session_id, segment)
         
-        logger.debug(f"📊 Recorded segment: {segment.text[:50]}... (confidence: {segment.avg_confidence:.2f})")
+        logger.debug(f"📊 Recorded segment: {segment.text[:50]}... (confidence: {segment.confidence:.2f})")
     
     def record_error(self, session_id: str, error_type: str, error_message: str):
         """Record error for analysis"""
@@ -186,7 +186,7 @@ class TranscriptionQAPipeline:
         for segment in segments:
             text_lower = segment.text.lower()
             for pattern in hallucination_patterns:
-                if pattern in text_lower and segment.avg_confidence > 0.8:
+                if pattern in text_lower and segment.confidence > 0.8:
                     hallucination_count += 1
                     logger.warning(f"🤖 Potential hallucination detected: {segment.text}")
                     break
@@ -245,9 +245,9 @@ class TranscriptionQAPipeline:
     def _check_segment_quality(self, session_id: str, segment: TranscriptionSegment):
         """Real-time quality checks for segments"""
         # Check for low confidence
-        if segment.avg_confidence < 0.3:
+        if segment.confidence < 0.3:
             self.record_error(session_id, 'low_confidence', 
-                            f"Low confidence segment: {segment.avg_confidence:.2f}")
+                            f"Low confidence segment: {segment.confidence:.2f}")
         
         # Check for excessive latency
         if segment.latency_ms > 3000:  # 3 seconds
@@ -304,9 +304,9 @@ class TranscriptionQAPipeline:
         
         # Calculate confidence metrics
         confidences = [seg.confidence for seg in segments]
-        avg_confidence = np.mean(confidences) if confidences else 0.0
+        avg_confidence = float(np.mean(confidences)) if confidences else 0.0
         min_confidence = min(confidences) if confidences else 0.0
-        confidence_variance = np.var(confidences) if confidences else 0.0
+        confidence_variance = float(np.var(confidences)) if confidences else 0.0
         
         # Calculate quality issues
         duplicate_count = self.detect_duplicates(segments)
@@ -314,8 +314,8 @@ class TranscriptionQAPipeline:
         
         # Calculate audio quality
         audio_quality = session_data.get('audio_quality', [])
-        avg_dropout = np.mean([aq['dropout_ratio'] for aq in audio_quality]) if audio_quality else 0.0
-        avg_signal_rms = np.mean([aq['signal_rms'] for aq in audio_quality]) if audio_quality else 0.0
+        avg_dropout = float(np.mean([aq['dropout_ratio'] for aq in audio_quality])) if audio_quality else 0.0
+        avg_signal_rms = float(np.mean([aq['signal_rms'] for aq in audio_quality])) if audio_quality else 0.0
         
         return TranscriptionQAMetrics(
             session_id=session_id,
@@ -335,9 +335,9 @@ class TranscriptionQAPipeline:
             retry_count=len([e for e in session_data['errors'] if e['type'] == 'retry']),
             duplicate_segments=duplicate_count,
             hallucination_count=hallucination_count,
-            audio_dropout_seconds=avg_dropout * len(audio_quality),  # Approximate
+            audio_dropout_seconds=float(avg_dropout * len(audio_quality)),  # Approximate
             noise_ratio=0.0,  # TODO: Implement noise analysis
-            signal_quality_score=min(avg_signal_rms / 1000, 1.0)  # Normalized signal quality
+            signal_quality_score=float(min(avg_signal_rms / 1000, 1.0))  # Normalized signal quality
         )
     
     def _generate_qa_report(self, session_id: str, metrics: TranscriptionQAMetrics):
