@@ -6,25 +6,337 @@
     <!-- Chart.js for premium data visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     
-    <!-- Dashboard-specific enhancements loaded AFTER premium system -->
+    <!-- PREMIUM DASHBOARD GLASS MORPHISM SYSTEM -->
     <style>
-        /* Dashboard-specific refinements that work WITH premium system */
-        .dashboard-container { 
-            position: relative; 
-            z-index: 1; 
-        }
-        
-        /* Ensure premium animations work smoothly */
-        .animate-dashboard-float {
-            will-change: transform;
-        }
-        
-        /* Chart.js container styling */
-        .chart-container {
+        /* Premium Animated Dashboard Background */
+        body {
+            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
+            background-attachment: fixed;
             position: relative;
-            background: var(--glass-bg-primary);
-            border-radius: var(--radius-2xl);
-            padding: var(--space-6);
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(14, 165, 233, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.15) 0%, transparent 50%);
+            animation: premiumDashboardFloat 25s ease-in-out infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes premiumDashboardFloat {
+            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+            33% { transform: translate(40px, -40px) rotate(120deg); }
+            66% { transform: translate(-30px, 30px) rotate(240deg); }
+        }
+
+        /* Premium Dashboard Container */
+        .dashboard-container {
+            position: relative;
+            z-index: 10;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Premium Dashboard Hero */
+        .dashboard-hero {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(40px) saturate(180%);
+            border-radius: 24px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 32px 64px rgba(0, 0, 0, 0.25),
+                0 16px 32px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+
+        /* Premium Typography */
+        .dashboard-title {
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            font-weight: 800;
+            margin: 0 0 1rem 0;
+            letter-spacing: -0.025em;
+            line-height: 1.1;
+            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .dashboard-subtitle {
+            font-size: 1.25rem;
+            color: var(--neutral-600);
+            margin: 0 0 2rem 0;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        /* Premium Metric Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .metric-card {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(40px) saturate(180%);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 20px 40px rgba(168, 85, 247, 0.15),
+                0 10px 20px rgba(14, 165, 233, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 
+                0 40px 80px rgba(168, 85, 247, 0.25),
+                0 20px 40px rgba(14, 165, 233, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.8s;
+        }
+
+        .metric-card:hover::before {
+            left: 100%;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--neutral-900);
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .metric-label {
+            font-size: 1rem;
+            color: var(--neutral-600);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metric-change {
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .metric-change.positive {
+            color: var(--emerald-600);
+        }
+
+        /* Premium Content Sections */
+        .glass-panel {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(40px) saturate(180%);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.15),
+                0 10px 20px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 1.5rem 0;
+            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Premium Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .quick-action-btn {
+            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--premium-blue-500) 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0.875rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 
+                0 10px 20px rgba(168, 85, 247, 0.3),
+                0 5px 10px rgba(14, 165, 233, 0.2);
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 
+                0 20px 40px rgba(168, 85, 247, 0.4),
+                0 10px 20px rgba(14, 165, 233, 0.3);
+            color: white;
+        }
+
+        /* Premium Animations */
+        .animate-fade-in {
+            animation: fadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-dashboard-float {
+            animation: dashboardFloat 6s ease-in-out infinite;
+        }
+
+        @keyframes dashboardFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Premium Action Cards Interactions */
+        .premium-action-card:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 
+                0 20px 40px rgba(168, 85, 247, 0.15),
+                0 10px 20px rgba(14, 165, 233, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .premium-action-card .action-icon {
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .premium-action-card:hover .action-icon {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Premium System Status */
+        .status-item {
+            background: var(--glass-bg-dark);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .status-item:hover {
+            transform: translateX(4px);
+            background: var(--glass-bg-light);
+        }
+
+        .status-completed {
+            background: linear-gradient(135deg, var(--emerald-500), var(--emerald-600));
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Premium Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 992px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+
+        /* Premium Recent Activity */
+        .glass-panel-secondary {
+            background: var(--glass-bg-dark);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 1rem;
+            }
+            .dashboard-hero {
+                padding: 2rem;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .quick-actions {
+                flex-direction: column;
+            }
         }
     </style>
 {% endblock %}
@@ -108,44 +420,52 @@
         <div class="content-grid animate-fade-in">
             <!-- Main Content Section -->
             <div class="content-section glass-panel">
-                <div class="section-header">
-                    <h2 class="section-title text-gradient">Quick Actions</h2>
-                    <button class="btn btn-outline-primary btn-sm">
+                <div class="section-header d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="section-title">Quick Actions</h2>
+                    <button class="btn btn-sm" style="background: var(--glass-bg-light); border: 1px solid var(--glass-border); border-radius: 8px; color: var(--neutral-700);">
                         <i class="fas fa-expand-alt me-1"></i>
                         View All
                     </button>
                 </div>
                 <div class="section-content">
-                    <div class="action-grid space-y-4">
-                        <a href="/live" class="content-item btn btn-primary animate-slide-in-right">
-                            <i class="fas fa-circle text-danger me-3"></i>
-                            <div>
+                    <div class="action-grid d-flex flex-column gap-3">
+                        <a href="/live" class="premium-action-card d-flex align-items-center p-3 text-decoration-none" style="background: var(--glass-bg-light); border: 1px solid var(--glass-border); border-radius: 16px; transition: all 0.3s ease;">
+                            <div class="action-icon me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--red-500), var(--red-600)); border-radius: 12px; color: white;">
+                                <i class="fas fa-circle"></i>
+                            </div>
+                            <div style="color: var(--neutral-800);">
                                 <div class="fw-semibold">Start Live Recording</div>
-                                <small class="opacity-75">Begin a new transcription session</small>
+                                <small style="color: var(--neutral-600);">Begin a new transcription session</small>
                             </div>
                         </a>
                         
-                        <a href="{{ url_for('dashboard.meetings') }}" class="content-item btn btn-outline-secondary animate-slide-in-right">
-                            <i class="fas fa-users me-3"></i>
-                            <div>
+                        <a href="{{ url_for('dashboard.meetings') }}" class="premium-action-card d-flex align-items-center p-3 text-decoration-none" style="background: var(--glass-bg-light); border: 1px solid var(--glass-border); border-radius: 16px; transition: all 0.3s ease;">
+                            <div class="action-icon me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-500)); border-radius: 12px; color: white;">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div style="color: var(--neutral-800);">
                                 <div class="fw-semibold">View Meetings</div>
-                                <small class="opacity-75">Browse your recorded sessions</small>
+                                <small style="color: var(--neutral-600);">Browse your recorded sessions</small>
                             </div>
                         </a>
                         
-                        <a href="{{ url_for('dashboard.analytics') }}" class="content-item btn btn-outline-secondary animate-slide-in-right">
-                            <i class="fas fa-chart-bar me-3"></i>
-                            <div>
+                        <a href="{{ url_for('dashboard.analytics') }}" class="premium-action-card d-flex align-items-center p-3 text-decoration-none" style="background: var(--glass-bg-light); border: 1px solid var(--glass-border); border-radius: 16px; transition: all 0.3s ease;">
+                            <div class="action-icon me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--emerald-500), var(--emerald-600)); border-radius: 12px; color: white;">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <div style="color: var(--neutral-800);">
                                 <div class="fw-semibold">Analytics</div>
-                                <small class="opacity-75">View detailed insights</small>
+                                <small style="color: var(--neutral-600);">View detailed insights</small>
                             </div>
                         </a>
                         
-                        <a href="/settings" class="content-item btn btn-outline-secondary animate-slide-in-right">
-                            <i class="fas fa-cog me-3"></i>
-                            <div>
+                        <a href="/settings" class="premium-action-card d-flex align-items-center p-3 text-decoration-none" style="background: var(--glass-bg-light); border: 1px solid var(--glass-border); border-radius: 16px; transition: all 0.3s ease;">
+                            <div class="action-icon me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--neutral-500), var(--neutral-600)); border-radius: 12px; color: white;">
+                                <i class="fas fa-cog"></i>
+                            </div>
+                            <div style="color: var(--neutral-800);">
                                 <div class="fw-semibold">Settings</div>
-                                <small class="opacity-75">Configure your preferences</small>
+                                <small style="color: var(--neutral-600);">Configure your preferences</small>
                             </div>
                         </a>
                     </div>
@@ -154,10 +474,10 @@
 
             <!-- Sidebar Content Section -->
             <div class="content-section glass-panel animate-slide-in-left">
-                <div class="section-header">
-                    <h2 class="section-title text-gradient">System Status</h2>
-                    <span class="status-live">
-                        <i class="fas fa-circle"></i>
+                <div class="section-header d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="section-title">System Status</h2>
+                    <span class="status-live d-flex align-items-center gap-2" style="color: var(--emerald-500); font-weight: 600; font-size: 0.875rem;">
+                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
                         Live
                     </span>
                 </div>
