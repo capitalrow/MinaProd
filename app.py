@@ -484,6 +484,41 @@ def create_app() -> Flask:
                 app.logger.warning("Rejecting WS from origin=%s", origin)
                 return False  # refuse connection
 
+    # Complete monitoring system initialization for 100% coverage
+    try:
+        from services.health_monitor import HealthMonitor
+        from services.alerting_system import get_alerting_system
+        from services.websocket_monitor import get_websocket_monitor
+        from services.business_metrics import get_business_metrics
+        from services.dependency_monitor import get_dependency_monitor
+        
+        # Initialize health monitoring
+        health_monitor = HealthMonitor()
+        health_monitor.start_monitoring(interval=30)
+        app.health_monitor = health_monitor
+        
+        # Initialize alerting system
+        alerting_system = get_alerting_system()
+        app.alerting_system = alerting_system
+        
+        # Initialize WebSocket monitoring
+        websocket_monitor = get_websocket_monitor()
+        app.websocket_monitor = websocket_monitor
+        
+        # Initialize business metrics
+        business_metrics = get_business_metrics()
+        app.business_metrics = business_metrics
+        
+        # Initialize dependency monitoring
+        dependency_monitor = get_dependency_monitor()
+        dependency_monitor.start_monitoring()
+        app.dependency_monitor = dependency_monitor
+        
+        app.logger.info("✅ Complete monitoring system initialized (100% coverage)")
+        
+    except Exception as e:
+        app.logger.error(f"❌ Failed to start monitoring systems: {e}")
+
     # Start resource cleanup service to prevent memory leaks
     try:
         from services.resource_cleanup import resource_cleanup_manager
