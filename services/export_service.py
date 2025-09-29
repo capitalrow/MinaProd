@@ -13,7 +13,7 @@ from typing import Optional, Dict, List, Any, Union
 from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
-from services.session_service import SessionService
+from .session_service import SessionService
 
 # PDF generation
 from reportlab.lib import colors
@@ -451,7 +451,10 @@ class AdvancedExportService:
             from models.segment import Segment  
             from models.summary import Summary
             from models.task import Task
-            from app import db
+            # Use runtime import to avoid circular dependency
+            import importlib
+            app_module = importlib.import_module('app')
+            db = app_module.db
             
             sessions_data = []
             

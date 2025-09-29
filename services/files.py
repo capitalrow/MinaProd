@@ -15,7 +15,8 @@ def session_audio_path(session_id: str) -> str:
 def session_transcript_path(session_id: str) -> str:
     return os.path.join(session_dir(session_id), "transcript.txt")
 
-def ensure_file_download(path: str, download_name: str) -> Tuple[str, str]:
+def ensure_file_download(path: str, download_name: str):
+    """Send file for download, aborting if file doesn't exist."""
     if not os.path.isfile(path) or os.path.getsize(path) <= 0:
         abort(404)
-    return send_file(path, as_attachment=True, download_name=download_name), "ok"
+    return send_file(path, as_attachment=True, download_name=download_name)
