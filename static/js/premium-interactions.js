@@ -101,7 +101,7 @@
             const clickHandler = (e) => {
                 if (this.isDestroyed) return;
                 
-                if (e.target.matches('.btn') || e.target.closest('.btn')) {
+                if (e.target.closest('.btn')) {
                     this.handleButtonClick(e);
                 }
             };
@@ -109,9 +109,9 @@
             const mouseEnterHandler = (e) => {
                 if (this.isDestroyed) return;
                 
-                if (e.target.matches('.btn') || e.target.closest('.btn')) {
+                if (e.target.closest('.btn')) {
                     this.handleButtonHover(e);
-                } else if (e.target.matches('.stat-card, .content-section') || e.target.closest('.stat-card, .content-section')) {
+                } else if (e.target.closest('.stat-card, .content-section')) {
                     this.handleCardHover(e);
                 }
             };
@@ -119,7 +119,7 @@
             const mouseLeaveHandler = (e) => {
                 if (this.isDestroyed) return;
                 
-                if (e.target.matches('.stat-card, .content-section') || e.target.closest('.stat-card, .content-section')) {
+                if (e.target.closest('.stat-card, .content-section')) {
                     this.handleCardLeave(e);
                 }
             };
