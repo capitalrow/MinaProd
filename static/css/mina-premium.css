@@ -809,6 +809,103 @@
 }
 
 /* ========================================= */
+/* PREMIUM MOBILE & ACCESSIBILITY           */
+/* ========================================= */
+
+/* ADVANCED MOBILE RESPONSIVENESS */
+@media (max-width: 768px) {
+    /* PREMIUM MOBILE CARDS */
+    .mina-card, .premium-glass-card {
+        padding: 1.5rem;
+        margin: 0.75rem;
+        border-radius: 16px;
+        backdrop-filter: blur(30px) saturate(160%);
+    }
+    
+    /* PREMIUM MOBILE BUTTONS */
+    .mina-btn, .btn {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1rem;
+        border-radius: 12px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* MOBILE TOUCH OPTIMIZATIONS */
+    .btn, .card, .premium-hover {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        cursor: pointer;
+    }
+    
+    /* ENHANCED MOBILE INTERACTIONS */
+    .btn:active, .premium-hover:active {
+        transform: scale(0.98) !important;
+        transition: transform 0.1s ease;
+    }
+    
+    /* MOBILE NAVIGATION */
+    .sidebar-navigation {
+        transform: translateX(-100%);
+        transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    .sidebar-navigation.expanded {
+        transform: translateX(0);
+    }
+    
+    /* MOBILE TYPOGRAPHY */
+    h1, h2 {
+        font-size: clamp(1.5rem, 5vw, 2.5rem);
+        line-height: 1.2;
+    }
+    
+    /* MOBILE SPACING */
+    .container {
+        padding: 1rem;
+    }
+}
+
+/* TABLET RESPONSIVENESS */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .three-pane-layout {
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    
+    .kanban-board {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+    
+    .premium-glass-card {
+        padding: 2rem;
+    }
+}
+
+/* HIGH CONTRAST MODE */
+@media (prefers-contrast: high) {
+    .glass-card, .premium-glass-card {
+        background: rgba(0, 0, 0, 0.9);
+        border: 2px solid white;
+    }
+    
+    .btn {
+        border: 2px solid currentColor;
+    }
+}
+
+/* DARK MODE PREFERENCE */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --glass-bg-light: rgba(255, 255, 255, 0.1);
+        --glass-bg-dark: rgba(255, 255, 255, 0.06);
+        --glass-border: rgba(255, 255, 255, 0.15);
+    }
+}
+
+/* ========================================= */
 /* PRINT FRIENDLY                          */
 /* ========================================= */
 
