@@ -11,7 +11,7 @@ import threading
 from datetime import datetime
 
 from flask import session
-from flask_socketio import emit, disconnect, join_room, leave_room, request
+from flask_socketio import emit, disconnect, join_room, leave_room
 from flask_login import current_user
 
 # Import the socketio instance from the consolidated app
@@ -86,7 +86,7 @@ def on_disconnect():
     # Clean up only sessions for this specific socket connection
     sessions_to_remove = []
     for session_id, session_info in active_sessions.items():
-        if session_info.get('socket_id') == request.sid:
+        if session_info.get('socket_id') == session.get('socket_id'):
             sessions_to_remove.append(session_id)
     
     for session_id in sessions_to_remove:
@@ -160,7 +160,7 @@ def on_start_session(data):
         
         active_sessions[session_id] = {
             'user_id': current_user.id,
-            'socket_id': request.sid,
+            'socket_id': f'user_{current_user.id}',  # Use user_id as socket identifier
             'db_session_id': db_session.id,
             'external_id': external_id,
             'started_at': datetime.utcnow(),
@@ -391,7 +391,7 @@ def on_end_session(data=None):
         # Find sessions for this client
         sessions_to_end = []
         for session_id, session_info in active_sessions.items():
-            if session_info.get('client_sid') == request.sid:
+            if session_info.get('user_id') == getattr(current_user, 'id', None):
                 sessions_to_end.append(session_id)
         
         for session_id in sessions_to_end:
