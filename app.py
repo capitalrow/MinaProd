@@ -187,9 +187,14 @@ def create_app() -> Flask:
     database_url = os.getenv("DATABASE_URL")
     if database_url:
         app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+        app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "pool_size": int(os.getenv("DB_POOL_SIZE", "10")),
+            "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "5")),
+            "pool_timeout": int(os.getenv("DB_POOL_TIMEOUT", "30")),
             "pool_recycle": 300,
             "pool_pre_ping": True,
+            "pool_use_lifo": True
         }
         
         # Initialize database models

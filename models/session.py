@@ -39,7 +39,7 @@ class Session(Base):
     total_duration: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
     
     segments: Mapped[list["Segment"]] = relationship(
-        back_populates="session", cascade="all, delete-orphan"
+        back_populates="session", cascade="all, delete-orphan", lazy="noload"
     )
     
     # M3: Summary relationship - accessed via backref from Summary model
@@ -70,8 +70,14 @@ class Session(Base):
     
     @property
     def segments_count(self):
-        """Get count of segments in session."""
-        return len(self.segments) if self.segments else 0
+        """Get count of segments in session using denormalized count."""
+        # Use denormalized total_segments field to avoid loading entire segments collection
+        if self.total_segments is not None:
+            return self.total_segments
+        # Fallback to database count query if denormalized field is not available
+        from . import db
+        from .segment import Segment
+        return db.session.scalar(func.count(Segment.id).where(Segment.session_id == self.id)) or 0
     
     def to_dict(self):
         """Convert session to dictionary for JSON serialization."""

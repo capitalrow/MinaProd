@@ -10,8 +10,8 @@ import requests
 import threading
 from datetime import datetime
 
-from flask import session, request
-from flask_socketio import emit, disconnect, join_room, leave_room
+from flask import session
+from flask_socketio import emit, disconnect, join_room, leave_room, request
 from flask_login import current_user
 
 # Import the socketio instance from the consolidated app
@@ -24,6 +24,9 @@ from services.session_buffer_manager import buffer_registry, BufferConfig
 from models import db
 from models.session import Session
 from models.segment import Segment
+
+# Import critical database session cleanup decorator
+from utils.db_helpers import socketio_db_cleanup
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +60,7 @@ def _background_processor(session_id: str, buffer_manager):
         logger.info(f"🔧 Background processor stopped for session {session_id}")
 
 @socketio.on('connect', namespace='/transcription')
+@socketio_db_cleanup
 def on_connect(auth=None):
     """Handle client connection to transcription namespace with authentication"""
     # Check authentication - require valid user session
@@ -75,6 +79,7 @@ def on_connect(auth=None):
     })
 
 @socketio.on('disconnect', namespace='/transcription')
+@socketio_db_cleanup
 def on_disconnect():
     """Handle client disconnection with comprehensive cleanup"""
     logger.info(f"[transcription] Client disconnected")
@@ -117,7 +122,7 @@ def on_disconnect():
                         'session_id': db_session_record.id,
                         'external_id': session_info.get('external_id'),
                         'user_id': session_info.get('user_id')
-                    }, namespace='/dashboard', room=f'user_{session_info.get("user_id")}')
+                    }, namespace='/dashboard', to=f'user_{session_info.get("user_id")}')
             except Exception as e:
                 logger.error(f"Error completing session in database: {e}")
         
@@ -126,6 +131,7 @@ def on_disconnect():
         logger.info(f"[transcription] Comprehensive cleanup completed for session: {session_id}")
 
 @socketio.on('start_session', namespace='/transcription')
+@socketio_db_cleanup
 def on_start_session(data):
     """Start a new transcription session with database persistence"""
     try:
@@ -187,7 +193,7 @@ def on_start_session(data):
             'title': db_session.title,
             'status': 'active',
             'user_id': current_user.id
-        }, namespace='/dashboard', room=f'user_{current_user.id}')
+        }, namespace='/dashboard', to=f'user_{current_user.id}')
         
         emit('session_started', {
             'session_id': session_id,
@@ -202,6 +208,7 @@ def on_start_session(data):
         emit('error', {'message': f'Failed to start session: {str(e)}'})
 
 @socketio.on('audio_data', namespace='/transcription')
+@socketio_db_cleanup
 def on_audio_data(data):
     """Handle incoming audio data"""
     try:
@@ -353,7 +360,7 @@ def on_audio_data(data):
                             'text': text,
                             'is_final': segment.is_final,
                             'user_id': current_user.id
-                        }, namespace='/dashboard', room=f'user_{current_user.id}')
+                        }, namespace='/dashboard', to=f'user_{current_user.id}')
                         
                         logger.info(f"✅ [transcription] Emitted result: '{text[:50]}...'")
                     else:
@@ -377,6 +384,7 @@ def on_audio_data(data):
         emit('error', {'message': f'Audio processing error: {str(e)}'})
 
 @socketio.on('end_session', namespace='/transcription')
+@socketio_db_cleanup
 def on_end_session(data=None):
     """End the current transcription session"""
     try:
