@@ -28,12 +28,34 @@
         
         body {
             font-family: 'SF Pro Display', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #0F172A 0%, #1E293B 25%, #334155 50%, #475569 75%, #1E293B 100%);
+            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
+            background-attachment: fixed;
             color: #ffffff;
             margin: 0;
             padding: 0;
             height: 100vh;
             overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(14, 165, 233, 0.3) 0%, transparent 50%);
+            animation: premiumCopilotFloat 20s ease-in-out infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes premiumCopilotFloat {
+            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+            50% { transform: translate(40px, -40px) rotate(180deg); }
         }
         
         .copilot-container {
@@ -43,13 +65,18 @@
             gap: 0;
         }
         
-        /* Sidebar */
+        /* PREMIUM SIDEBAR */
         .copilot-sidebar {
-            background: var(--copilot-bg);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid var(--copilot-border);
-            padding: 1.5rem;
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(40px) saturate(180%);
+            border-right: 1px solid var(--glass-border);
+            padding: 2rem;
             overflow-y: auto;
+            position: relative;
+            z-index: 10;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
         
         .sidebar-header {
@@ -57,10 +84,16 @@
         }
         
         .sidebar-header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 0 0 0.5rem 0;
-            color: var(--copilot-primary);
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 0 0 1rem 0;
+            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
         
         .sidebar-header p {
