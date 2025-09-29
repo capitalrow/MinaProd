@@ -13,7 +13,10 @@ from typing import Optional, Dict, List, Any, Union
 from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
-from .session_service import SessionService
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from services.session_service import SessionService
 
 # PDF generation
 from reportlab.lib import colors
@@ -451,10 +454,10 @@ class AdvancedExportService:
             from models.segment import Segment  
             from models.summary import Summary
             from models.task import Task
-            # Use runtime import to avoid circular dependency
-            import importlib
-            app_module = importlib.import_module('app')
-            db = app_module.db
+            # Use Flask current_app to access database
+            from flask import current_app
+            from flask_sqlalchemy import SQLAlchemy
+            db = current_app.extensions.get('sqlalchemy') or SQLAlchemy()
             
             sessions_data = []
             
