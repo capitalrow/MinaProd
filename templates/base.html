@@ -51,22 +51,28 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer">
     
-    <!-- MINA UNIFIED PREMIUM DESIGN SYSTEM - Single source of truth for all 28+ pages -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <!-- MINA ENHANCED PROFESSIONAL DESIGN SYSTEM - Optimized loading order -->
+    <!-- Core Foundation (Typography, Tokens, Base) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-core.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-components.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-forms.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-material.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-loading.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-animations.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-responsive.css') }}">
+    <!-- Theming & Color System -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-theming.css') }}">
+    <!-- Component Libraries -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-material.css') }}">
+    <!-- Interactive Elements -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-forms.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-animations.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-loading.css') }}">
+    <!-- Layout & Responsiveness -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-responsive.css') }}">
+    <!-- Accessibility -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-accessibility.css') }}">
+    <!-- Dashboard Enhancements -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-dashboard-enhanced.css') }}">
+    <!-- Premium Features -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-premium.css') }}">
+    <!-- Application Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     
     <!-- Defer non-critical JavaScript -->
