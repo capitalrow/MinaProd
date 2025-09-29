@@ -152,6 +152,16 @@ def create_app() -> Flask:
         resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
         resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         resp.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        
+        # Add strong caching for static assets to prevent favicon storm
+        if request.endpoint == 'static':
+            if 'favicon' in request.path.lower():
+                # Strong caching for favicon to prevent Android WebView storm
+                resp.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+                resp.headers['Expires'] = 'Thu, 31 Dec 2037 23:55:55 GMT'
+            elif request.path.endswith(('.css', '.js', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.woff', '.woff2')):
+                # Cache other static assets for 24 hours
+                resp.headers['Cache-Control'] = 'public, max-age=86400'
         resp.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
         resp.headers["Cross-Origin-Opener-Policy"] = "same-origin"
         resp.headers["Content-Security-Policy"] = (
