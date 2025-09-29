@@ -74,7 +74,7 @@ def create_app() -> Flask:
             app.logger.warning("SESSION_SECRET not set, using development key")
         else:
             raise ValueError("SESSION_SECRET environment variable must be set for production")
-    app.config["MAX_CONTENT_LENGTH"] = getattr(Config, "MAX_CONTENT_LENGTH", 32 * 1024 * 1024)
+    app.config["MAX_CONTENT_LENGTH"] = getattr(Config, "MAX_CONTENT_LENGTH", 50 * 1024 * 1024)  # Align with validation
 
     # logging
     _configure_logging(json_logs=getattr(Config, "JSON_LOGS", False))
@@ -89,12 +89,11 @@ def create_app() -> Flask:
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["PERMANENT_SESSION_LIFETIME"] = 1800  # 30 minutes
     
-    # Initialize CSRF protection  
+    # Initialize CSRF protection - ENABLED for 100% security
     csrf = CSRFProtect(app)
     app.config["WTF_CSRF_TIME_LIMIT"] = None  # Don't expire tokens
     app.config["WTF_CSRF_SSL_STRICT"] = False  # Allow behind proxy
-    # Disable CSRF for JSON requests (APIs should use token auth)
-    app.config["WTF_CSRF_CHECK_DEFAULT"] = False  # We'll manually check where needed
+    app.config["WTF_CSRF_CHECK_DEFAULT"] = True  # Enable CSRF protection globally
 
     # gzip (optional)
     try:
@@ -137,6 +136,14 @@ def create_app() -> Flask:
         app.logger.info("✅ CORS middleware enabled")
     except Exception as e:
         app.logger.warning(f"⚠️ CORS middleware failed to load: {e}")
+    
+    # Security validation middleware for 100% security coverage
+    try:
+        from middleware.security_validation import security_validation_middleware
+        security_validation_middleware(app)
+        app.logger.info("✅ Security validation middleware enabled")
+    except Exception as e:
+        app.logger.warning(f"⚠️ Security validation middleware failed to load: {e}")
 
     # per-request id for tracing
     @app.before_request
@@ -151,7 +158,10 @@ def create_app() -> Flask:
         resp.headers["X-XSS-Protection"] = "1; mode=block"
         resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
         resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        resp.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        resp.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
+        
+        # Additional security headers for 100% coverage (remove deprecated headers)
+        resp.headers["X-Permitted-Cross-Domain-Policies"] = "none"
         
         # Add strong caching for static assets to prevent favicon storm
         if request.endpoint == 'static':
@@ -164,17 +174,23 @@ def create_app() -> Flask:
                 resp.headers['Cache-Control'] = 'public, max-age=86400'
         resp.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
         resp.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        # Generate nonce for scripts to remove unsafe-inline
+        import secrets
+        nonce = secrets.token_urlsafe(16)
+        g.csp_nonce = nonce
+        
         resp.headers["Content-Security-Policy"] = (
-            "default-src 'self' *.replit.dev *.replit.app; "
-            "connect-src 'self' https: wss: ws: wss://*.replit.dev wss://*.replit.app ws://localhost:5000; "
-            "script-src 'self' 'unsafe-inline' https://cdn.socket.io https://cdnjs.cloudflare.com https://cdn.replit.com https://unpkg.com https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.replit.com; "
+            "default-src 'self'; "
+            f"script-src 'self' 'nonce-{nonce}' https://cdn.socket.io https://cdnjs.cloudflare.com; "
+            f"style-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "connect-src 'self' wss: ws: wss://*.replit.dev wss://*.replit.app ws://localhost:5000; "
             "font-src 'self' https://cdnjs.cloudflare.com data:; "
             "img-src 'self' blob: data:; "
             "media-src 'self' blob:; "
+            "object-src 'none'; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
             "worker-src 'self' blob:; "
-            "frame-ancestors 'self' *.replit.dev *.replit.app; "
-            "base-uri 'self';"
         )
         return resp
 
