@@ -1,0 +1,275 @@
+/* ============================================================================= */
+/* MINA PROFESSIONAL COLOR SYSTEM & ENHANCED THEMING                          */
+/* Advanced Theming Framework with Dynamic Color Management                    */
+/* ============================================================================= */
+
+/* ========================================= */
+/* ENHANCED COLOR PALETTE SYSTEM            */
+/* ========================================= */
+
+:root {
+    /* Primary Brand Colors - Professional Gradient */
+    --mina-primary-50: #f0f9ff;
+    --mina-primary-100: #e0f2fe;
+    --mina-primary-200: #bae6fd;
+    --mina-primary-300: #7dd3fc;
+    --mina-primary-400: #38bdf8;
+    --mina-primary-500: #0ea5e9;
+    --mina-primary-600: #0284c7;
+    --mina-primary-700: #0369a1;
+    --mina-primary-800: #075985;
+    --mina-primary-900: #0c4a6e;
+    --mina-primary-950: #082f49;
+    
+    /* Secondary Accent Colors */
+    --mina-secondary-50: #fdf4ff;
+    --mina-secondary-100: #fae8ff;
+    --mina-secondary-200: #f5d0fe;
+    --mina-secondary-300: #f0abfc;
+    --mina-secondary-400: #e879f9;
+    --mina-secondary-500: #d946ef;
+    --mina-secondary-600: #c026d3;
+    --mina-secondary-700: #a21caf;
+    --mina-secondary-800: #86198f;
+    --mina-secondary-900: #701a75;
+    --mina-secondary-950: #4a044e;
+    
+    /* Success Colors */
+    --mina-success-50: #f0fdf4;
+    --mina-success-100: #dcfce7;
+    --mina-success-200: #bbf7d0;
+    --mina-success-300: #86efac;
+    --mina-success-400: #4ade80;
+    --mina-success-500: #22c55e;
+    --mina-success-600: #16a34a;
+    --mina-success-700: #15803d;
+    --mina-success-800: #166534;
+    --mina-success-900: #14532d;
+    
+    /* Warning Colors */
+    --mina-warning-50: #fffbeb;
+    --mina-warning-100: #fef3c7;
+    --mina-warning-200: #fde68a;
+    --mina-warning-300: #fcd34d;
+    --mina-warning-400: #fbbf24;
+    --mina-warning-500: #f59e0b;
+    --mina-warning-600: #d97706;
+    --mina-warning-700: #b45309;
+    --mina-warning-800: #92400e;
+    --mina-warning-900: #78350f;
+    
+    /* Danger Colors */
+    --mina-danger-50: #fef2f2;
+    --mina-danger-100: #fee2e2;
+    --mina-danger-200: #fecaca;
+    --mina-danger-300: #fca5a5;
+    --mina-danger-400: #f87171;
+    --mina-danger-500: #ef4444;
+    --mina-danger-600: #dc2626;
+    --mina-danger-700: #b91c1c;
+    --mina-danger-800: #991b1b;
+    --mina-danger-900: #7f1d1d;
+    
+    /* Professional Neutral Palette */
+    --mina-neutral-50: #fafafa;
+    --mina-neutral-100: #f5f5f5;
+    --mina-neutral-200: #e5e5e5;
+    --mina-neutral-300: #d4d4d4;
+    --mina-neutral-400: #a3a3a3;
+    --mina-neutral-500: #737373;
+    --mina-neutral-600: #525252;
+    --mina-neutral-700: #404040;
+    --mina-neutral-800: #262626;
+    --mina-neutral-900: #171717;
+    --mina-neutral-950: #0a0a0a;
+    
+    /* Semantic Color Mappings */
+    --mina-primary: var(--mina-primary-600);
+    --mina-secondary: var(--mina-secondary-600);
+    --mina-success: var(--mina-success-600);
+    --mina-warning: var(--mina-warning-500);
+    --mina-danger: var(--mina-danger-600);
+    --mina-info: var(--mina-primary-500);
+    
+    /* RGB Values for Transparency */
+    --mina-primary-rgb: 2, 132, 199;
+    --mina-secondary-rgb: 192, 38, 211;
+    --mina-success-rgb: 22, 163, 74;
+    --mina-warning-rgb: 245, 158, 11;
+    --mina-danger-rgb: 220, 38, 38;
+    --mina-info-rgb: 14, 165, 233;
+}
+
+/* ========================================= */
+/* ADVANCED LIGHT THEME                     */
+/* ========================================= */
+
+:root,
+[data-theme="light"] {
+    /* Background System */
+    --mina-bg-primary: var(--mina-neutral-50);
+    --mina-bg-secondary: var(--mina-neutral-100);
+    --mina-bg-tertiary: var(--mina-neutral-200);
+    --mina-bg-elevated: #ffffff;
+    --mina-bg-overlay: rgba(0, 0, 0, 0.6);
+    --mina-bg-inverse: var(--mina-neutral-900);
+    
+    /* Surface Colors */
+    --mina-surface-primary: #ffffff;
+    --mina-surface-secondary: var(--mina-neutral-50);
+    --mina-surface-tertiary: var(--mina-neutral-100);
+    --mina-surface-inverse: var(--mina-neutral-900);
+    --mina-surface-brand: var(--mina-primary-50);
+    --mina-surface-success: var(--mina-success-50);
+    --mina-surface-warning: var(--mina-warning-50);
+    --mina-surface-danger: var(--mina-danger-50);
+    
+    /* Text Color System */
+    --mina-text-primary: var(--mina-neutral-900);
+    --mina-text-secondary: var(--mina-neutral-700);
+    --mina-text-tertiary: var(--mina-neutral-500);
+    --mina-text-disabled: var(--mina-neutral-400);
+    --mina-text-inverse: var(--mina-neutral-50);
+    --mina-text-brand: var(--mina-primary-700);
+    --mina-text-success: var(--mina-success-700);
+    --mina-text-warning: var(--mina-warning-700);
+    --mina-text-danger: var(--mina-danger-700);
+    
+    /* Border System */
+    --mina-border-primary: var(--mina-neutral-200);
+    --mina-border-secondary: var(--mina-neutral-300);
+    --mina-border-tertiary: var(--mina-neutral-400);
+    --mina-border-inverse: var(--mina-neutral-700);
+    --mina-border-brand: var(--mina-primary-300);
+    --mina-border-success: var(--mina-success-300);
+    --mina-border-warning: var(--mina-warning-300);
+    --mina-border-danger: var(--mina-danger-300);
+    
+    /* Interactive States */
+    --mina-interactive-hover: var(--mina-neutral-100);
+    --mina-interactive-active: var(--mina-neutral-200);
+    --mina-interactive-focus: var(--mina-primary-100);
+    --mina-interactive-disabled: var(--mina-neutral-100);
+    
+    /* Enhanced Glass Morphism */
+    --glass-bg-light: rgba(255, 255, 255, 0.85);
+    --glass-bg-medium: rgba(255, 255, 255, 0.65);
+    --glass-bg-dark: rgba(255, 255, 255, 0.45);
+    --glass-bg-subtle: rgba(255, 255, 255, 0.25);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-shadow: rgba(0, 0, 0, 0.1);
+    --glass-blur: blur(12px);
+    
+    /* Shadow System */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+    
+    /* Gradient System */
+    --gradient-primary: linear-gradient(135deg, var(--mina-primary-400), var(--mina-primary-600));
+    --gradient-secondary: linear-gradient(135deg, var(--mina-secondary-400), var(--mina-secondary-600));
+    --gradient-brand: linear-gradient(135deg, var(--mina-primary-500), var(--mina-secondary-500));
+    --gradient-warm: linear-gradient(135deg, var(--mina-warning-400), var(--mina-danger-400));
+    --gradient-cool: linear-gradient(135deg, var(--mina-primary-400), var(--mina-success-400));
+    --gradient-surface: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4));
+}
+
+/* ========================================= */
+/* SOPHISTICATED DARK THEME                 */
+/* ========================================= */
+
+[data-theme="dark"],
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Background System */
+        --mina-bg-primary: var(--mina-neutral-950);
+        --mina-bg-secondary: var(--mina-neutral-900);
+        --mina-bg-tertiary: var(--mina-neutral-800);
+        --mina-bg-elevated: var(--mina-neutral-900);
+        --mina-bg-overlay: rgba(0, 0, 0, 0.8);
+        --mina-bg-inverse: var(--mina-neutral-50);
+        
+        /* Surface Colors */
+        --mina-surface-primary: var(--mina-neutral-900);
+        --mina-surface-secondary: var(--mina-neutral-800);
+        --mina-surface-tertiary: var(--mina-neutral-700);
+        --mina-surface-inverse: var(--mina-neutral-50);
+        --mina-surface-brand: rgba(14, 165, 233, 0.1);
+        --mina-surface-success: rgba(22, 163, 74, 0.1);
+        --mina-surface-warning: rgba(245, 158, 11, 0.1);
+        --mina-surface-danger: rgba(220, 38, 38, 0.1);
+        
+        /* Text Color System */
+        --mina-text-primary: var(--mina-neutral-50);
+        --mina-text-secondary: var(--mina-neutral-300);
+        --mina-text-tertiary: var(--mina-neutral-500);
+        --mina-text-disabled: var(--mina-neutral-600);
+        --mina-text-inverse: var(--mina-neutral-900);
+        --mina-text-brand: var(--mina-primary-400);
+        --mina-text-success: var(--mina-success-400);
+        --mina-text-warning: var(--mina-warning-400);
+        --mina-text-danger: var(--mina-danger-400);
+        
+        /* Border System */
+        --mina-border-primary: var(--mina-neutral-800);
+        --mina-border-secondary: var(--mina-neutral-700);
+        --mina-border-tertiary: var(--mina-neutral-600);
+        --mina-border-inverse: var(--mina-neutral-300);
+        --mina-border-brand: var(--mina-primary-700);
+        --mina-border-success: var(--mina-success-700);
+        --mina-border-warning: var(--mina-warning-700);
+        --mina-border-danger: var(--mina-danger-700);
+        
+        /* Interactive States */
+        --mina-interactive-hover: var(--mina-neutral-800);
+        --mina-interactive-active: var(--mina-neutral-700);
+        --mina-interactive-focus: rgba(14, 165, 233, 0.2);
+        --mina-interactive-disabled: var(--mina-neutral-800);
+        
+        /* Enhanced Glass Morphism for Dark */
+        --glass-bg-light: rgba(0, 0, 0, 0.6);
+        --glass-bg-medium: rgba(0, 0, 0, 0.4);
+        --glass-bg-dark: rgba(0, 0, 0, 0.2);
+        --glass-bg-subtle: rgba(0, 0, 0, 0.1);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --glass-shadow: rgba(0, 0, 0, 0.5);
+        --glass-blur: blur(16px);
+        
+        /* Shadow System for Dark */
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+        --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+        --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.4);
+        
+        /* Gradient System for Dark */
+        --gradient-primary: linear-gradient(135deg, var(--mina-primary-600), var(--mina-primary-800));
+        --gradient-secondary: linear-gradient(135deg, var(--mina-secondary-600), var(--mina-secondary-800));
+        --gradient-brand: linear-gradient(135deg, var(--mina-primary-600), var(--mina-secondary-600));
+        --gradient-warm: linear-gradient(135deg, var(--mina-warning-600), var(--mina-danger-600));
+        --gradient-cool: linear-gradient(135deg, var(--mina-primary-600), var(--mina-success-600));
+        --gradient-surface: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.2));
+    }
+    
+    /* Adjust Primary Brand Colors for Better Dark Contrast */
+    --mina-primary: var(--mina-primary-400);
+    --mina-secondary: var(--mina-secondary-400);
+    --mina-success: var(--mina-success-400);
+    --mina-warning: var(--mina-warning-400);
+    --mina-danger: var(--mina-danger-400);
+    --mina-info: var(--mina-primary-400);
+}
+
+/* ========================================= */
+/* THEME SWITCHING SYSTEM                   */
+/* ========================================= */
+
+.mina-theme-toggle {\n    position: relative;\n    display: inline-flex;\n    align-items: center;\n    background: var(--glass-bg-medium);\n    border: 1px solid var(--glass-border);\n    border-radius: var(--radius-full);\n    padding: var(--space-1);\n    backdrop-filter: var(--glass-blur);\n    transition: all 0.3s var(--transition-spring);\n    cursor: pointer;\n    width: 60px;\n    height: 32px;\n}\n\n.mina-theme-toggle:hover {\n    background: var(--glass-bg-light);\n    border-color: var(--mina-border-brand);\n    box-shadow: 0 0 20px rgba(var(--mina-primary-rgb), 0.2);\n}\n\n.mina-theme-toggle__indicator {\n    position: absolute;\n    width: 24px;\n    height: 24px;\n    background: var(--gradient-primary);\n    border-radius: 50%;\n    transition: all 0.4s var(--transition-spring);\n    box-shadow: var(--shadow-md);\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    font-size: var(--text-xs);\n    color: white;\n    left: 4px;\n}\n\n[data-theme=\"dark\"] .mina-theme-toggle__indicator {\n    left: 32px;\n    background: var(--gradient-secondary);\n}\n\n.mina-theme-toggle__label {\n    position: absolute;\n    top: 100%;\n    left: 50%;\n    transform: translateX(-50%);\n    margin-top: var(--space-2);\n    font-size: var(--text-xs);\n    color: var(--mina-text-tertiary);\n    font-weight: var(--weight-button);\n    text-transform: uppercase;\n    letter-spacing: 0.1em;\n    opacity: 0;\n    transition: opacity 0.3s ease;\n    pointer-events: none;\n}\n\n.mina-theme-toggle:hover .mina-theme-toggle__label {\n    opacity: 1;\n}
+
+/* ========================================= */\n/* ADVANCED COMPONENT THEMING               */\n/* ========================================= */\n\n/* Button Theme Variants */\n.mina-btn {\n    transition: all 0.3s var(--transition-spring);\n}\n\n.mina-btn--primary {\n    background: var(--gradient-primary);\n    color: white;\n    border: 1px solid transparent;\n    box-shadow: var(--shadow-md);\n}\n\n.mina-btn--primary:hover {\n    box-shadow: var(--shadow-lg), 0 0 20px rgba(var(--mina-primary-rgb), 0.4);\n    transform: translateY(-2px);\n}\n\n.mina-btn--secondary {\n    background: var(--mina-surface-primary);\n    color: var(--mina-text-primary);\n    border: 1px solid var(--mina-border-primary);\n}\n\n.mina-btn--secondary:hover {\n    background: var(--mina-interactive-hover);\n    border-color: var(--mina-border-brand);\n}\n\n.mina-btn--ghost {\n    background: transparent;\n    color: var(--mina-text-secondary);\n    border: 1px solid transparent;\n}\n\n.mina-btn--ghost:hover {\n    background: var(--mina-interactive-hover);\n    color: var(--mina-text-primary);\n}\n\n.mina-btn--outline {\n    background: transparent;\n    color: var(--mina-primary);\n    border: 1px solid var(--mina-border-brand);\n}\n\n.mina-btn--outline:hover {\n    background: var(--mina-surface-brand);\n    border-color: var(--mina-primary);\n}\n\n/* Card Theme Variants */\n.mina-card {\n    background: var(--mina-surface-primary);\n    border: 1px solid var(--mina-border-primary);\n    box-shadow: var(--shadow-sm);\n    transition: all 0.3s var(--transition-spring);\n}\n\n.mina-card:hover {\n    box-shadow: var(--shadow-lg);\n    border-color: var(--mina-border-secondary);\n}\n\n.mina-card--elevated {\n    background: var(--mina-bg-elevated);\n    box-shadow: var(--shadow-lg);\n}\n\n.mina-card--glass {\n    background: var(--glass-bg-light);\n    border: 1px solid var(--glass-border);\n    backdrop-filter: var(--glass-blur);\n    box-shadow: var(--shadow-md);\n}\n\n.mina-card--brand {\n    background: var(--mina-surface-brand);\n    border-color: var(--mina-border-brand);\n}\n\n/* Input Theme Variants */\n.mina-input {\n    background: var(--mina-surface-primary);\n    border: 1px solid var(--mina-border-primary);\n    color: var(--mina-text-primary);\n    transition: all 0.3s var(--transition-spring);\n}\n\n.mina-input:focus {\n    border-color: var(--mina-primary);\n    box-shadow: 0 0 0 3px rgba(var(--mina-primary-rgb), 0.15);\n    background: var(--mina-bg-elevated);\n}\n\n.mina-input::placeholder {\n    color: var(--mina-text-tertiary);\n}\n\n/* Alert Theme Variants */\n.mina-alert {\n    border-radius: var(--radius-lg);\n    padding: var(--space-4);\n    border-left: 4px solid;\n    font-weight: var(--weight-body);\n}\n\n.mina-alert--success {\n    background: var(--mina-surface-success);\n    border-color: var(--mina-success);\n    color: var(--mina-text-success);\n}\n\n.mina-alert--warning {\n    background: var(--mina-surface-warning);\n    border-color: var(--mina-warning);\n    color: var(--mina-text-warning);\n}\n\n.mina-alert--danger {\n    background: var(--mina-surface-danger);\n    border-color: var(--mina-danger);\n    color: var(--mina-text-danger);\n}\n\n.mina-alert--info {\n    background: var(--mina-surface-brand);\n    border-color: var(--mina-primary);\n    color: var(--mina-text-brand);\n}
+
+/* ========================================= */\n/* DYNAMIC COLOR UTILITIES                  */\n/* ========================================= */\n\n/* Background Utilities */\n.mina-bg-primary { background-color: var(--mina-bg-primary); }\n.mina-bg-secondary { background-color: var(--mina-bg-secondary); }\n.mina-bg-tertiary { background-color: var(--mina-bg-tertiary); }\n.mina-bg-elevated { background-color: var(--mina-bg-elevated); }\n.mina-bg-brand { background: var(--gradient-brand); }\n.mina-bg-glass { background: var(--glass-bg-light); backdrop-filter: var(--glass-blur); }\n\n/* Text Color Utilities */\n.mina-text-primary { color: var(--mina-text-primary); }\n.mina-text-secondary { color: var(--mina-text-secondary); }\n.mina-text-tertiary { color: var(--mina-text-tertiary); }\n.mina-text-brand { color: var(--mina-text-brand); }\n.mina-text-success { color: var(--mina-text-success); }\n.mina-text-warning { color: var(--mina-text-warning); }\n.mina-text-danger { color: var(--mina-text-danger); }\n\n/* Border Utilities */\n.mina-border { border: 1px solid var(--mina-border-primary); }\n.mina-border-brand { border-color: var(--mina-border-brand); }\n.mina-border-success { border-color: var(--mina-border-success); }\n.mina-border-warning { border-color: var(--mina-border-warning); }\n.mina-border-danger { border-color: var(--mina-border-danger); }\n\n/* Shadow Utilities */\n.mina-shadow-sm { box-shadow: var(--shadow-sm); }\n.mina-shadow-md { box-shadow: var(--shadow-md); }\n.mina-shadow-lg { box-shadow: var(--shadow-lg); }\n.mina-shadow-xl { box-shadow: var(--shadow-xl); }\n.mina-shadow-2xl { box-shadow: var(--shadow-2xl); }\n.mina-shadow-inner { box-shadow: var(--shadow-inner); }\n\n/* ========================================= */\n/* ACCESSIBILITY & HIGH CONTRAST            */\n/* ========================================= */\n\n/* High Contrast Mode */\n@media (prefers-contrast: high) {\n    :root {\n        --mina-border-primary: var(--mina-neutral-600);\n        --mina-border-secondary: var(--mina-neutral-700);\n        --mina-text-secondary: var(--mina-neutral-800);\n    }\n    \n    [data-theme=\"dark\"] {\n        --mina-border-primary: var(--mina-neutral-400);\n        --mina-border-secondary: var(--mina-neutral-300);\n        --mina-text-secondary: var(--mina-neutral-200);\n    }\n    \n    .mina-btn {\n        border-width: 2px;\n    }\n    \n    .mina-input:focus {\n        outline: 3px solid var(--mina-primary);\n        outline-offset: 2px;\n    }\n}\n\n/* Forced Colors Mode */\n@media (forced-colors: active) {\n    .mina-btn {\n        border: 1px solid ButtonBorder;\n    }\n    \n    .mina-card {\n        border: 1px solid CanvasText;\n    }\n    \n    .mina-input {\n        border: 1px solid FieldText;\n    }\n}\n\n/* Reduced Motion Theme Transitions */\n@media (prefers-reduced-motion: reduce) {\n    .mina-theme-toggle,\n    .mina-theme-toggle__indicator,\n    .mina-btn,\n    .mina-card,\n    .mina-input {\n        transition: none;\n    }\n}\n\n/* ========================================= */\n/* CUSTOM THEME PROPERTIES                  */\n/* ========================================= */\n\n/* Theme-aware Custom Properties */\n.mina-themed {\n    --local-bg: var(--mina-surface-primary);\n    --local-text: var(--mina-text-primary);\n    --local-border: var(--mina-border-primary);\n    --local-shadow: var(--shadow-md);\n    \n    background: var(--local-bg);\n    color: var(--local-text);\n    border: 1px solid var(--local-border);\n    box-shadow: var(--local-shadow);\n}\n\n/* Brand Theme Variants */\n.mina-theme-primary {\n    --local-bg: var(--mina-primary-50);\n    --local-text: var(--mina-primary-900);\n    --local-border: var(--mina-primary-200);\n    --local-accent: var(--mina-primary-500);\n}\n\n[data-theme=\"dark\"] .mina-theme-primary {\n    --local-bg: rgba(var(--mina-primary-rgb), 0.1);\n    --local-text: var(--mina-primary-200);\n    --local-border: var(--mina-primary-800);\n    --local-accent: var(--mina-primary-400);\n}\n\n/* Environmental Theme Adaptations */\n@media (prefers-color-scheme: dark) and (max-width: 768px) {\n    :root {\n        --glass-blur: blur(8px);\n        --shadow-md: 0 2px 4px -1px rgba(0, 0, 0, 0.6);\n    }\n}\n\n/* Print Theme Override */\n@media print {\n    :root {\n        --mina-bg-primary: white;\n        --mina-text-primary: black;\n        --mina-border-primary: #ccc;\n        --shadow-md: none;\n    }\n    \n    .mina-bg-glass,\n    .mina-card--glass {\n        background: white;\n        backdrop-filter: none;\n    }\n}"
