@@ -48,19 +48,8 @@ def _configure_logging(json_logs: bool = False) -> None:
     root.addHandler(handler)
     root.setLevel(logging.INFO)
 
-# ---------- Create the SocketIO singleton with eventlet for production WebSocket support
-socketio = SocketIO(
-    cors_allowed_origins=["http://localhost:5000", "https://*.replit.dev", "https://*.replit.app"],
-    async_mode="eventlet",  # Changed from threading to eventlet for proper WebSocket support
-    ping_timeout=60,
-    ping_interval=25,
-    path="/socket.io",
-    engineio_logger=False,
-    socketio_logger=False,
-    max_http_buffer_size=int(os.getenv("SIO_MAX_HTTP_BUFFER", str(10 * 1024 * 1024))),  # 10 MB per message
-    allow_upgrades=True,  # Allow WebSocket upgrades
-    transports=['websocket', 'polling']  # WebSocket first, polling fallback
-)
+# Import extensions from centralized module to eliminate circular imports
+from extensions import init_extensions, socketio, db, container
 
 def create_app() -> Flask:
     app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -89,19 +78,13 @@ def create_app() -> Flask:
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["PERMANENT_SESSION_LIFETIME"] = 1800  # 30 minutes
     
-    # Initialize CSRF protection - ENABLED for 100% security
-    csrf = CSRFProtect(app)
+    # Initialize all extensions using centralized pattern (fixes circular imports)
+    init_extensions(app)
+    
+    # Configure CSRF after initialization
     app.config["WTF_CSRF_TIME_LIMIT"] = None  # Don't expire tokens
     app.config["WTF_CSRF_SSL_STRICT"] = False  # Allow behind proxy
     app.config["WTF_CSRF_CHECK_DEFAULT"] = True  # Enable CSRF protection globally
-
-    # gzip (optional)
-    try:
-        from flask_compress import Compress  # type: ignore
-        Compress(app)
-        app.logger.info("Compression enabled")
-    except Exception:
-        app.logger.info("Compression unavailable (flask-compress not installed)")
 
     # middlewares with proper error handling and logging
     try:
@@ -326,14 +309,36 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"Failed to register dashboard routes: {e}")
 
-    # Register API blueprints for REST endpoints
+    # Register consolidated API blueprints (eliminates route duplication)
     try:
-        from routes.api_meetings import api_meetings_bp
-        app.register_blueprint(api_meetings_bp)
-        app.logger.info("Meetings API routes registered")
+        from routes.transcription_http_consolidated import transcription_http_bp
+        app.register_blueprint(transcription_http_bp)
+        app.logger.info("✅ Consolidated Transcription HTTP API registered")
     except Exception as e:
-        app.logger.warning(f"Failed to register meetings API routes: {e}")
+        app.logger.warning(f"Failed to register consolidated transcription API: {e}")
     
+    try:
+        from routes.meetings_api_consolidated import meetings_api_bp
+        app.register_blueprint(meetings_api_bp)
+        app.logger.info("✅ Consolidated Meetings API registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register consolidated meetings API: {e}")
+    
+    try:
+        from routes.analytics_api_consolidated import analytics_api_bp
+        app.register_blueprint(analytics_api_bp)
+        app.logger.info("✅ Consolidated Analytics API registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register consolidated analytics API: {e}")
+    
+    try:
+        from routes.ops_consolidated import ops_bp
+        app.register_blueprint(ops_bp)
+        app.logger.info("✅ Consolidated Operations API registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register consolidated operations API: {e}")
+    
+    # Keep essential existing APIs for compatibility
     try:
         from routes.api_tasks import api_tasks_bp
         app.register_blueprint(api_tasks_bp)
@@ -342,25 +347,11 @@ def create_app() -> Flask:
         app.logger.warning(f"Failed to register tasks API routes: {e}")
     
     try:
-        from routes.api_analytics import api_analytics_bp
-        app.register_blueprint(api_analytics_bp)
-        app.logger.info("Analytics API routes registered")
-    except Exception as e:
-        app.logger.warning(f"Failed to register analytics API routes: {e}")
-    
-    try:
         from routes.api_markers import api_markers_bp
         app.register_blueprint(api_markers_bp)
         app.logger.info("Markers API routes registered")
     except Exception as e:
         app.logger.warning(f"Failed to register markers API routes: {e}")
-    
-    try:
-        from routes.api_generate_insights import api_generate_insights_bp
-        app.register_blueprint(api_generate_insights_bp)
-        app.logger.info("API Generate Insights route registered")
-    except Exception as e:
-        app.logger.warning(f"Failed to register API Generate Insights route: {e}")
 
     # Settings routes
     try:
@@ -394,8 +385,7 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.error(f"Failed to register Production Monitoring Dashboard: {e}")
     
-    # Missing API endpoints - temporarily disabled due to circular import
-    # Quick fix for analytics and meetings endpoints
+    # Register remaining API endpoints using dependency injection (fixes circular imports)
     try:
         from routes.quick_analytics_fix import quick_analytics_bp
         app.register_blueprint(quick_analytics_bp)
