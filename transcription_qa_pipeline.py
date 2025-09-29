@@ -14,6 +14,8 @@ from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 import base64
 import Levenshtein  # For WER calculation
+from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
+from scipy import signal
 
 logger = logging.getLogger(__name__)
 
@@ -302,6 +304,9 @@ class TranscriptionQAPipeline:
         p95_latency = np.percentile(latencies, 95) if latencies else 0.0
         max_latency = max(latencies) if latencies else 0.0
         
+        # Calculate interim-to-final latency
+        interim_to_final_latency = self._calculate_interim_to_final_latency(session_data)
+        
         # Calculate confidence metrics
         confidences = [seg.confidence for seg in segments]
         avg_confidence = float(np.mean(confidences)) if confidences else 0.0
@@ -312,21 +317,25 @@ class TranscriptionQAPipeline:
         duplicate_count = self.detect_duplicates(segments)
         hallucination_count = self.detect_hallucinations(segments)
         
-        # Calculate audio quality
+        # Calculate audio quality and noise analysis
         audio_quality = session_data.get('audio_quality', [])
         avg_dropout = float(np.mean([aq['dropout_ratio'] for aq in audio_quality])) if audio_quality else 0.0
         avg_signal_rms = float(np.mean([aq['signal_rms'] for aq in audio_quality])) if audio_quality else 0.0
+        
+        # Calculate BLEU score and noise ratio
+        bleu_score = self._calculate_bleu_score(session_id, complete_transcript)
+        noise_ratio = self._analyze_noise_ratio(session_data)
         
         return TranscriptionQAMetrics(
             session_id=session_id,
             timestamp=time.time(),
             wer=wer,
             cer=cer,
-            bleu_score=0.0,  # TODO: Implement BLEU calculation
+            bleu_score=bleu_score,
             avg_chunk_latency_ms=avg_latency,
             p95_chunk_latency_ms=p95_latency,
             max_chunk_latency_ms=max_latency,
-            interim_to_final_latency_ms=0.0,  # TODO: Calculate interim->final latency
+            interim_to_final_latency_ms=interim_to_final_latency,
             avg_confidence=avg_confidence,
             min_confidence=min_confidence,
             confidence_variance=confidence_variance,
@@ -336,7 +345,7 @@ class TranscriptionQAPipeline:
             duplicate_segments=duplicate_count,
             hallucination_count=hallucination_count,
             audio_dropout_seconds=float(avg_dropout * len(audio_quality)),  # Approximate
-            noise_ratio=0.0,  # TODO: Implement noise analysis
+            noise_ratio=noise_ratio,
             signal_quality_score=float(min(avg_signal_rms / 1000, 1.0))  # Normalized signal quality
         )
     
@@ -409,6 +418,142 @@ class TranscriptionQAPipeline:
             recommendations.append("Improve audio capture stability")
         
         return recommendations
+
+    def _calculate_bleu_score(self, session_id: str, hypothesis: str) -> float:
+        """Calculate BLEU score if reference transcript is available."""
+        if session_id not in self.reference_transcripts or not hypothesis.strip():
+            return 0.0
+        
+        try:
+            # Get reference transcript
+            reference = self.reference_transcripts[session_id]
+            
+            # Tokenize texts (simple word-level tokenization)
+            reference_tokens = reference.lower().split()
+            hypothesis_tokens = hypothesis.lower().split()
+            
+            # Calculate BLEU score with smoothing for short sentences
+            smoothing = SmoothingFunction().method1
+            bleu_score = sentence_bleu([reference_tokens], hypothesis_tokens, 
+                                     smoothing_function=smoothing)
+            
+            return float(bleu_score)
+        except Exception as e:
+            logger.error(f"Error calculating BLEU score: {e}")
+            return 0.0
+
+    def _calculate_interim_to_final_latency(self, session_data: Dict) -> float:
+        """Calculate average latency from interim to final results."""
+        try:
+            interim_segments = session_data.get('interim_segments', [])
+            final_segments = session_data.get('final_segments', [])
+            
+            if not interim_segments or not final_segments:
+                return 0.0
+            
+            latencies = []
+            
+            # Match interim and final segments and calculate latencies
+            for final_seg in final_segments:
+                final_time = getattr(final_seg, 'end_time', None)
+                if final_time is None:
+                    continue
+                    
+                # Find corresponding interim segments
+                for interim_seg in interim_segments:
+                    interim_time = getattr(interim_seg, 'end_time', None)
+                    if interim_time is None:
+                        continue
+                        
+                    # Check if they overlap or are related (simple text similarity)
+                    if self._segments_related(interim_seg, final_seg):
+                        latency = abs(final_time - interim_time) * 1000  # Convert to ms
+                        if latency > 0 and latency < 10000:  # Reasonable range
+                            latencies.append(latency)
+                        break
+            
+            return float(np.mean(latencies)) if latencies else 0.0
+            
+        except Exception as e:
+            logger.error(f"Error calculating interim-to-final latency: {e}")
+            return 0.0
+
+    def _segments_related(self, interim_seg, final_seg) -> bool:
+        """Check if interim and final segments are related."""
+        try:
+            interim_text = getattr(interim_seg, 'text', '').lower().strip()
+            final_text = getattr(final_seg, 'text', '').lower().strip()
+            
+            if not interim_text or not final_text:
+                return False
+                
+            # Simple similarity check - final text should contain or be similar to interim
+            return (interim_text in final_text or 
+                    final_text in interim_text or
+                    len(set(interim_text.split()) & set(final_text.split())) > len(interim_text.split()) * 0.5)
+        except Exception:
+            return False
+
+    def _analyze_noise_ratio(self, session_data: Dict) -> float:
+        """Analyze noise ratio from audio quality data."""
+        try:
+            audio_quality = session_data.get('audio_quality', [])
+            if not audio_quality:
+                return 0.0
+            
+            noise_ratios = []
+            
+            for aq in audio_quality:
+                signal_rms = aq.get('signal_rms', 0)
+                noise_floor = aq.get('noise_floor', 0)
+                
+                if signal_rms > 0:
+                    # Calculate signal-to-noise ratio
+                    snr = signal_rms / max(noise_floor, 0.001)  # Avoid division by zero
+                    # Convert to noise ratio (inverse of SNR, normalized)
+                    noise_ratio = 1.0 / (1.0 + snr)
+                    noise_ratios.append(noise_ratio)
+                elif 'audio_data' in aq:
+                    # Fallback: analyze audio data directly
+                    noise_ratio = self._analyze_audio_noise(aq['audio_data'])
+                    noise_ratios.append(noise_ratio)
+            
+            return float(np.mean(noise_ratios)) if noise_ratios else 0.1  # Default low noise
+            
+        except Exception as e:
+            logger.error(f"Error analyzing noise ratio: {e}")
+            return 0.1
+
+    def _analyze_audio_noise(self, audio_data: bytes) -> float:
+        """Analyze noise in raw audio data."""
+        try:
+            # Convert bytes to numpy array (assuming 16-bit PCM)
+            audio_array = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32)
+            
+            if len(audio_array) == 0:
+                return 0.5
+            
+            # Normalize audio
+            audio_array = audio_array / np.max(np.abs(audio_array))
+            
+            # Calculate RMS (signal strength)
+            rms = np.sqrt(np.mean(audio_array ** 2))
+            
+            # Estimate noise floor using quieter periods
+            # Use lower 25th percentile as noise estimate
+            abs_audio = np.abs(audio_array)
+            noise_floor = np.percentile(abs_audio, 25)
+            
+            # Calculate noise ratio
+            if rms > 0:
+                noise_ratio = noise_floor / rms
+                return min(noise_ratio, 1.0)  # Cap at 1.0
+            
+            return 0.5  # Default moderate noise if can't calculate
+            
+        except Exception as e:
+            logger.error(f"Error analyzing audio noise: {e}")
+            return 0.5
 
 # Global QA pipeline instance
 qa_pipeline = TranscriptionQAPipeline()
