@@ -166,15 +166,22 @@
         }
         
         
-        /* Main Layout */
+        /* REDESIGNED: Compact Dashboard Layout */
         .recording-studio {
             min-height: 100vh;
             display: grid;
-            grid-template-columns: 440px 1fr;
-            gap: var(--space-xl);
-            padding: var(--space-xl);
+            grid-template-areas: 
+                "header header header"
+                "controls recording transcript"
+                "metrics recording transcript";
+            grid-template-columns: 280px 1fr 320px;
+            grid-template-rows: auto 1fr auto;
+            gap: 16px;
+            padding: 16px;
             position: relative;
             z-index: 2;
+            max-width: 1400px;
+            margin: 0 auto;
         }
         
         .recording-studio::before {
@@ -197,20 +204,21 @@
             opacity: 1;
         }
         
-        /* FIXED: Control Panel with Clear Content Contrast */
+        /* REDESIGNED: Compact Control Panel */
         .control-panel {
-            background: var(--glass-bg-ultra);
-            backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--glass-border-strong);
-            border-radius: var(--radius-2xl);
-            padding: var(--space-2xl);
+            grid-area: controls;
+            background: linear-gradient(145deg, rgba(16, 24, 40, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 20px;
             height: fit-content;
-            position: sticky;
-            top: var(--space-xl);
-            transition: all var(--transition-base);
-            box-shadow: var(--shadow-lg);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.12),
+                0 2px 8px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
             position: relative;
-            /* ACCESSIBILITY: Ensure content is always readable */
             color: var(--text-on-glass);
         }
         
@@ -2206,209 +2214,190 @@
 {% endblock %}
 
 {% block content %}
+    <!-- REDESIGNED: Compact Professional Interface -->
     <div class="recording-studio">
-        <!-- Control Panel -->
-        <section class="control-panel" role="region" aria-labelledby="studio-title">
-            <div class="panel-header">
-                <h1 id="studio-title" class="panel-title">Live Recording Studio</h1>
-                <p class="panel-subtitle">Professional-grade transcription</p>
+        <!-- Compact Header -->
+        <header class="studio-header" role="banner">
+            <div class="brand-section">
+                <h1 class="brand-title">Mina</h1>
+                <span class="brand-subtitle">Professional Transcription</span>
             </div>
             
-            <!-- Record Section -->
-            <div class="record-section">
-                <!-- Status Chip -->
-                <div class="status-chip ready" id="statusChip" role="status" aria-live="polite" aria-label="Recording status">
-                    <span class="status-dot" aria-hidden="true"></span>
-                    <span id="statusText">Ready</span>
-                </div>
-                
-                <!-- First-Run Helper (shown only once) -->
-                <div class="first-run-helper auto-dismiss" id="firstRunHelper" style="display: none;">
-                    Start when you're ready
-                </div>
-                
-                <div class="recording-controls" role="group" aria-labelledby="recording-controls-label">
-                    <span id="recording-controls-label" class="sr-only">Recording controls</span>
-                    <button class="record-button spotlight" id="recordButton" 
-                            onclick="app.toggleRecording()" 
-                            aria-label="Start recording"
-                            aria-describedby="recording-help">
-                        <span aria-hidden="true">🎙️</span>
-                        <span class="sr-only">Record</span>
-                    </button>
-                    <button class="stop-button" id="stopButton" 
-                            onclick="app.stopRecordingFully()" 
-                            style="display: none;"
-                            aria-label="Stop recording">
-                        <span aria-hidden="true">⏹️</span>
-                        <span class="sr-only">Stop</span>
-                    </button>
-                    <div id="recording-help" class="sr-only">Press Space to start or stop recording using keyboard shortcuts</div>
+            <div class="header-status">
+                <div class="status-indicator" id="statusChip" role="status" aria-live="polite">
+                    <span class="status-dot" id="statusDot" aria-hidden="true"></span>
+                    <span class="status-text" id="statusText">Ready</span>
                 </div>
             </div>
             
-            <!-- Settings -->
-            <section class="settings-group" role="region" aria-labelledby="settings-title">
-                <h3 id="settings-title" class="settings-title">Recording Settings</h3>
+            <div class="header-actions">
+                <button class="header-btn" onclick="app.toggleTheme()" aria-label="Toggle theme">
+                    <i data-feather="moon" id="themeIcon"></i>
+                </button>
+                <button class="header-btn" onclick="app.toggleFullscreen()" aria-label="Toggle fullscreen">
+                    <i data-feather="maximize"></i>
+                </button>
+            </div>
+        </header>
+        
+        <!-- Main Controls Section -->
+        <section class="controls-section" role="region" aria-labelledby="controls-title">
+            <h2 id="controls-title" class="sr-only">Recording Controls</h2>
+            
+            <!-- Compact Recording Control -->
+            <div class="recording-control">
+                <button class="record-btn" id="recordButton" 
+                        onclick="app.toggleRecording()" 
+                        aria-label="Start recording">
+                    <div class="record-btn-inner">
+                        <span class="record-icon">🎙️</span>
+                        <span class="record-text">Start Recording</span>
+                    </div>
+                </button>
+                <button class="stop-btn" id="stopButton" 
+                        onclick="app.stopRecordingFully()" 
+                        style="display: none;"
+                        aria-label="Stop recording">
+                    <i data-feather="square"></i>
+                </button>
+            </div>
+            
+            <!-- Session Metrics -->
+            <div class="session-metrics">
+                <div class="metric">
+                    <span class="metric-value" id="durationMetric">00:00</span>
+                    <span class="metric-label">Duration</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value" id="wordsMetric">0</span>
+                    <span class="metric-label">Words</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value" id="confidenceMetric">--%</span>
+                    <span class="metric-label">Quality</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value" id="latencyMetric">--ms</span>
+                    <span class="metric-label">Latency</span>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Settings & Transcript Layout -->
+        <div class="content-layout">
+            <!-- Compact Settings Panel -->
+            <aside class="settings-panel" role="complementary" aria-labelledby="settings-title">
+                <h3 id="settings-title" class="panel-title">Settings</h3>
                 
-                <div class="setting-item">
+                <div class="setting-group">
                     <label for="languageSelect" class="setting-label">Language</label>
-                    <select class="setting-select" id="languageSelect" 
-                            onchange="app.updateSettings()" 
-                            aria-describedby="language-help">
+                    <select class="setting-input" id="languageSelect" onchange="app.updateSettings()">
                         <option value="en">English</option>
                         <option value="es">Spanish</option>
                         <option value="fr">French</option>
                         <option value="de">German</option>
                         <option value="auto">Auto-detect</option>
                     </select>
-                    <div id="language-help" class="sr-only">Select the primary language for transcription</div>
                 </div>
                 
-                <div class="setting-item">
+                <div class="setting-group">
                     <label for="qualitySelect" class="setting-label">Quality</label>
-                    <select class="setting-select" id="qualitySelect" 
-                            onchange="app.updateSettings()" 
-                            aria-describedby="quality-help">
+                    <select class="setting-input" id="qualitySelect" onchange="app.updateSettings()">
                         <option value="high">High Quality</option>
                         <option value="balanced">Balanced</option>
                         <option value="fast">Fast Processing</option>
                     </select>
-                    <div id="quality-help" class="sr-only">Choose transcription quality vs speed preference</div>
                 </div>
                 
-                <div class="setting-item">
-                    <label for="diarizationSelect" class="setting-label">Speaker Detection</label>
-                    <select class="setting-select" id="diarizationSelect" 
-                            onchange="app.updateSettings()" 
-                            aria-describedby="speaker-help">
+                <div class="setting-group">
+                    <label for="diarizationSelect" class="setting-label">Speakers</label>
+                    <select class="setting-input" id="diarizationSelect" onchange="app.updateSettings()">
                         <option value="auto">Auto-detect</option>
                         <option value="off">Single Speaker</option>
                         <option value="multi">Multiple Speakers</option>
                     </select>
-                    <div id="speaker-help" class="sr-only">Configure speaker identification settings</div>
                 </div>
-            </div>
-            
-            <!-- Real-time Metrics -->
-            <div class="settings-group">
-                <h3 class="settings-title">Session Metrics</h3>
-                <div class="metrics-grid">
-                    <div class="metric-card">
-                        <div class="metric-value" id="durationMetric">00:00</div>
-                        <div class="metric-label">Duration</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value" id="wordsMetric">0</div>
-                        <div class="metric-label">Words</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value" id="confidenceMetric">--%</div>
-                        <div class="metric-label">Confidence</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value" id="latencyMetric">--ms</div>
-                        <div class="metric-label">Latency</div>
+                
+                <!-- Action Buttons -->
+                <div class="action-group">
+                    <button class="action-btn secondary" onclick="app.clearTranscript()">
+                        <i data-feather="trash-2"></i>
+                        Clear
+                    </button>
+                    <button class="action-btn secondary" onclick="app.copyTranscript()">
+                        <i data-feather="copy"></i>
+                        Copy
+                    </button>
+                    <button class="action-btn primary" onclick="app.downloadTranscript()">
+                        <i data-feather="download"></i>
+                        Download
+                    </button>
+                </div>
+                
+                <!-- Live Stats -->
+                <div class="live-stats">
+                    <h4 class="stats-title">Live Stats</h4>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-value" id="segmentCount">0</span>
+                            <span class="stat-label">Segments</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="wordCount">0</span>
+                            <span class="stat-label">Words</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="speakerCount">0</span>
+                            <span class="stat-label">Speakers</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="qualityScore">--%</span>
+                            <span class="stat-label">Accuracy</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </aside>
             
-            <!-- Action Buttons -->
-            <div class="action-buttons">
-                <button class="action-btn" onclick="app.clearTranscript()">
-                    <i data-feather="trash-2"></i>
-                    Clear
-                </button>
-                <button class="action-btn" onclick="app.copyTranscript()">
-                    <i data-feather="copy"></i>
-                    Copy
-                </button>
-                <button class="action-btn" onclick="app.downloadTranscript()">
-                    <i data-feather="download"></i>
-                    Download
-                </button>
-                <button class="action-btn primary" onclick="app.toggleTheme()">
-                    <i data-feather="moon" id="themeIcon"></i>
-                    Theme
-                </button>
-            </div>
+            <!-- Main Transcript Area -->
+            <main class="transcript-area" role="main" aria-labelledby="transcript-title">
+                <div class="transcript-header">
+                    <h3 id="transcript-title" class="transcript-title">Live Transcript</h3>
+                    <div class="transcript-controls">
+                        <button class="control-btn" onclick="app.toggleAutoScroll()" id="autoScrollBtn"
+                                aria-label="Toggle auto-scroll" aria-pressed="true">
+                            <i data-feather="arrow-down"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="transcript-content" id="transcriptContainer">
+                    <div class="empty-state" id="emptyState">
+                        <div class="empty-icon">🎙️</div>
+                        <h4 class="empty-title">Ready to transcribe</h4>
+                        <p class="empty-message">Click "Start Recording" to begin live transcription</p>
+                    </div>
+                    
+                    <!-- Final Transcript Segments -->
+                    <div id="finalSegments" class="final-segments" 
+                         aria-live="polite" 
+                         aria-atomic="true"
+                         aria-relevant="additions"
+                         aria-label="Completed transcript"
+                         role="log"></div>
+                    
+                    <!-- Real-time Interim Line -->
+                    <div id="interimLine" class="interim-line" 
+                         aria-live="polite" 
+                         aria-label="Live transcription"
+                         role="status"></div>
+                </div>
+            </main>
         </div>
         
-        <!-- Transcription Panel -->
-        <main id="main-content" class="transcription-panel" role="main" aria-labelledby="transcript-title">
-            <!-- Header -->
-            <div class="transcript-header">
-                <h2 id="transcript-title" class="transcript-title">Live Transcript</h2>
-                <div class="transcript-actions" role="group" aria-labelledby="transcript-actions-label">
-                    <span id="transcript-actions-label" class="sr-only">Transcript controls</span>
-                    <button class="transcript-btn" onclick="app.toggleAutoScroll()" id="autoScrollBtn"
-                            aria-label="Toggle automatic scrolling"
-                            aria-pressed="true">
-                        <i data-feather="arrow-down" aria-hidden="true"></i>
-                        Auto-scroll
-                    </button>
-                    <button class="transcript-btn" onclick="app.toggleFullscreen()"
-                            aria-label="Enter fullscreen mode">
-                        <i data-feather="maximize" aria-hidden="true"></i>
-                        Fullscreen
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Live Metrics -->
-            <div class="live-metrics">
-                <div class="live-metric">
-                    <div class="live-metric-value" id="segmentCount">0</div>
-                    <div class="live-metric-label">Segments</div>
-                </div>
-                <div class="live-metric">
-                    <div class="live-metric-value" id="wordCount">0</div>
-                    <div class="live-metric-label">Words</div>
-                </div>
-                <div class="live-metric">
-                    <div class="live-metric-value" id="speakerCount">0</div>
-                    <div class="live-metric-label">Speakers</div>
-                </div>
-                <div class="live-metric">
-                    <div class="live-metric-value" id="qualityScore">--%</div>
-                    <div class="live-metric-label">Quality</div>
-                </div>
-            </div>
-            
-            <!-- Transcript Content - UNIFIED CONTAINER -->
-            <div class="transcript-content" id="transcriptContainer">
-                <div class="empty-state" id="emptyState">
-                    <div class="empty-icon">🎙️</div>
-                    <div class="empty-message">Ready to start recording</div>
-                    <div class="empty-hint">Click the record button to begin live transcription</div>
-                </div>
-                
-                <!-- Final Transcript Segments -->
-                <div id="finalSegments" class="final-segments" 
-                     aria-live="polite" 
-                     aria-atomic="true"
-                     aria-relevant="additions"
-                     aria-label="Completed transcript segments"
-                     role="log"></div>
-                
-                <!-- Real-time Interim Line -->
-                <div id="interimLine" class="interim-line" 
-                     aria-live="polite" 
-                     aria-label="Live transcription in progress"
-                     role="status"></div>
-        </main>
-            
-            <!-- Speakers Panel -->
-            <div class="speakers-panel" id="speakersPanel" style="display: none;">
-                <h3 class="speakers-title">Active Speakers</h3>
-                <div class="speakers-list" id="speakersList"></div>
-            </div>
-            
-            <!-- Markers Panel -->
-            <div class="markers-panel" id="markersPanel" style="display: none;">
-                <h3 class="markers-title">Key Moments <span class="markers-count" id="markersCount">0</span></h3>
-                <div class="markers-container" id="markersContainer"></div>
-            </div>
+        <!-- Speaker Panel (Hidden by default) -->
+        <div class="speakers-panel" id="speakersPanel" style="display: none;">
+            <h4 class="speakers-title">Active Speakers</h4>
+            <div class="speakers-list" id="speakersList"></div>
         </div>
     </div>
     
