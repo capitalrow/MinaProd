@@ -48,8 +48,19 @@ def _configure_logging(json_logs: bool = False) -> None:
     root.addHandler(handler)
     root.setLevel(logging.INFO)
 
-# Import extensions from centralized module to eliminate circular imports
-from extensions import init_extensions, socketio, db, container
+# ---------- Create the SocketIO singleton with eventlet for production WebSocket support
+socketio = SocketIO(
+    cors_allowed_origins=["http://localhost:5000", "https://*.replit.dev", "https://*.replit.app"],
+    async_mode="eventlet",  # Changed from threading to eventlet for proper WebSocket support
+    ping_timeout=60,
+    ping_interval=25,
+    path="/socket.io",
+    engineio_logger=False,
+    socketio_logger=False,
+    max_http_buffer_size=int(os.getenv("SIO_MAX_HTTP_BUFFER", str(10 * 1024 * 1024))),  # 10 MB per message
+    allow_upgrades=True,  # Allow WebSocket upgrades
+    transports=['websocket', 'polling']  # WebSocket first, polling fallback
+)
 
 def create_app() -> Flask:
     app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -63,7 +74,7 @@ def create_app() -> Flask:
             app.logger.warning("SESSION_SECRET not set, using development key")
         else:
             raise ValueError("SESSION_SECRET environment variable must be set for production")
-    app.config["MAX_CONTENT_LENGTH"] = getattr(Config, "MAX_CONTENT_LENGTH", 50 * 1024 * 1024)  # Align with validation
+    app.config["MAX_CONTENT_LENGTH"] = getattr(Config, "MAX_CONTENT_LENGTH", 32 * 1024 * 1024)
 
     # logging
     _configure_logging(json_logs=getattr(Config, "JSON_LOGS", False))
@@ -78,13 +89,20 @@ def create_app() -> Flask:
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["PERMANENT_SESSION_LIFETIME"] = 1800  # 30 minutes
     
-    # Initialize all extensions using centralized pattern (fixes circular imports)
-    init_extensions(app)
-    
-    # Configure CSRF after initialization
+    # Initialize CSRF protection  
+    csrf = CSRFProtect(app)
     app.config["WTF_CSRF_TIME_LIMIT"] = None  # Don't expire tokens
     app.config["WTF_CSRF_SSL_STRICT"] = False  # Allow behind proxy
-    app.config["WTF_CSRF_CHECK_DEFAULT"] = True  # Enable CSRF protection globally
+    # Disable CSRF for JSON requests (APIs should use token auth)
+    app.config["WTF_CSRF_CHECK_DEFAULT"] = False  # We'll manually check where needed
+
+    # gzip (optional)
+    try:
+        from flask_compress import Compress  # type: ignore
+        Compress(app)
+        app.logger.info("Compression enabled")
+    except Exception:
+        app.logger.info("Compression unavailable (flask-compress not installed)")
 
     # middlewares with proper error handling and logging
     try:
@@ -119,14 +137,6 @@ def create_app() -> Flask:
         app.logger.info("✅ CORS middleware enabled")
     except Exception as e:
         app.logger.warning(f"⚠️ CORS middleware failed to load: {e}")
-    
-    # Security validation middleware for 100% security coverage
-    try:
-        from middleware.security_validation import security_validation_middleware
-        security_validation_middleware(app)
-        app.logger.info("✅ Security validation middleware enabled")
-    except Exception as e:
-        app.logger.warning(f"⚠️ Security validation middleware failed to load: {e}")
 
     # per-request id for tracing
     @app.before_request
@@ -141,39 +151,20 @@ def create_app() -> Flask:
         resp.headers["X-XSS-Protection"] = "1; mode=block"
         resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
         resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        resp.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
-        
-        # Additional security headers for 100% coverage (remove deprecated headers)
-        resp.headers["X-Permitted-Cross-Domain-Policies"] = "none"
-        
-        # Add strong caching for static assets to prevent favicon storm
-        if request.endpoint == 'static':
-            if 'favicon' in request.path.lower():
-                # Strong caching for favicon to prevent Android WebView storm
-                resp.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
-                resp.headers['Expires'] = 'Thu, 31 Dec 2037 23:55:55 GMT'
-            elif request.path.endswith(('.css', '.js', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.woff', '.woff2')):
-                # Cache other static assets for 24 hours
-                resp.headers['Cache-Control'] = 'public, max-age=86400'
+        resp.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         resp.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
         resp.headers["Cross-Origin-Opener-Policy"] = "same-origin"
-        # Generate nonce for scripts to remove unsafe-inline
-        import secrets
-        nonce = secrets.token_urlsafe(16)
-        g.csp_nonce = nonce
-        
         resp.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            f"script-src 'self' 'nonce-{nonce}' https://cdn.socket.io https://cdnjs.cloudflare.com; "
-            f"style-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-            "connect-src 'self' wss: ws: wss://*.replit.dev wss://*.replit.app ws://localhost:5000; "
+            "default-src 'self' *.replit.dev *.replit.app; "
+            "connect-src 'self' https: wss: ws: wss://*.replit.dev wss://*.replit.app ws://localhost:5000; "
+            "script-src 'self' 'unsafe-inline' https://cdn.socket.io https://cdnjs.cloudflare.com https://cdn.replit.com https://unpkg.com https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.replit.com; "
             "font-src 'self' https://cdnjs.cloudflare.com data:; "
             "img-src 'self' blob: data:; "
             "media-src 'self' blob:; "
-            "object-src 'none'; "
-            "frame-ancestors 'none'; "
-            "base-uri 'self'; "
             "worker-src 'self' blob:; "
+            "frame-ancestors 'self' *.replit.dev *.replit.app; "
+            "base-uri 'self';"
         )
         return resp
 
@@ -186,14 +177,9 @@ def create_app() -> Flask:
     database_url = os.getenv("DATABASE_URL")
     if database_url:
         app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-        app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-            "pool_size": int(os.getenv("DB_POOL_SIZE", "10")),
-            "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "5")),
-            "pool_timeout": int(os.getenv("DB_POOL_TIMEOUT", "30")),
             "pool_recycle": 300,
             "pool_pre_ping": True,
-            "pool_use_lifo": True
         }
         
         # Initialize database models
@@ -302,43 +288,20 @@ def create_app() -> Flask:
         app.logger.warning(f"Failed to register auth routes: {e}")
     
     try:
-        from routes.dashboard import dashboard_bp, register_dashboard_socketio_handlers
+        from routes.dashboard import dashboard_bp
         app.register_blueprint(dashboard_bp)
-        register_dashboard_socketio_handlers(socketio)
         app.logger.info("Dashboard routes registered")
     except Exception as e:
         app.logger.warning(f"Failed to register dashboard routes: {e}")
 
-    # Register consolidated API blueprints (eliminates route duplication)
+    # Register API blueprints for REST endpoints
     try:
-        from routes.transcription_http_consolidated import transcription_http_bp
-        app.register_blueprint(transcription_http_bp)
-        app.logger.info("✅ Consolidated Transcription HTTP API registered")
+        from routes.api_meetings import api_meetings_bp
+        app.register_blueprint(api_meetings_bp)
+        app.logger.info("Meetings API routes registered")
     except Exception as e:
-        app.logger.warning(f"Failed to register consolidated transcription API: {e}")
+        app.logger.warning(f"Failed to register meetings API routes: {e}")
     
-    try:
-        from routes.meetings_api_consolidated import meetings_api_bp
-        app.register_blueprint(meetings_api_bp)
-        app.logger.info("✅ Consolidated Meetings API registered")
-    except Exception as e:
-        app.logger.warning(f"Failed to register consolidated meetings API: {e}")
-    
-    try:
-        from routes.analytics_api_consolidated import analytics_api_bp
-        app.register_blueprint(analytics_api_bp)
-        app.logger.info("✅ Consolidated Analytics API registered")
-    except Exception as e:
-        app.logger.warning(f"Failed to register consolidated analytics API: {e}")
-    
-    try:
-        from routes.ops_consolidated import ops_bp
-        app.register_blueprint(ops_bp)
-        app.logger.info("✅ Consolidated Operations API registered")
-    except Exception as e:
-        app.logger.warning(f"Failed to register consolidated operations API: {e}")
-    
-    # Keep essential existing APIs for compatibility
     try:
         from routes.api_tasks import api_tasks_bp
         app.register_blueprint(api_tasks_bp)
@@ -347,23 +310,37 @@ def create_app() -> Flask:
         app.logger.warning(f"Failed to register tasks API routes: {e}")
     
     try:
+        from routes.api_analytics import api_analytics_bp
+        app.register_blueprint(api_analytics_bp)
+        app.logger.info("Analytics API routes registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register analytics API routes: {e}")
+    
+    try:
         from routes.api_markers import api_markers_bp
         app.register_blueprint(api_markers_bp)
         app.logger.info("Markers API routes registered")
     except Exception as e:
         app.logger.warning(f"Failed to register markers API routes: {e}")
+    
+    try:
+        from routes.api_generate_insights import api_generate_insights_bp
+        app.register_blueprint(api_generate_insights_bp)
+        app.logger.info("API Generate Insights route registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register API Generate Insights route: {e}")
 
     # Settings routes
     try:
-        from routes.simple_settings import simple_settings_bp
-        app.register_blueprint(simple_settings_bp)
+        from routes.settings import settings_bp
+        app.register_blueprint(settings_bp)
         app.logger.info("Settings routes registered")
     except Exception as e:
         app.logger.error(f"Failed to register settings routes: {e}")
 
     # Calendar routes
     try:
-        from routes.calendar_pages import calendar_bp
+        from routes.calendar import calendar_bp
         app.register_blueprint(calendar_bp)
         app.logger.info("Calendar routes registered")
     except Exception as e:
@@ -385,7 +362,8 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.error(f"Failed to register Production Monitoring Dashboard: {e}")
     
-    # Register remaining API endpoints using dependency injection (fixes circular imports)
+    # Missing API endpoints - temporarily disabled due to circular import
+    # Quick fix for analytics and meetings endpoints
     try:
         from routes.quick_analytics_fix import quick_analytics_bp
         app.register_blueprint(quick_analytics_bp)
@@ -400,30 +378,10 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.error(f"Failed to register meetings API fix: {e}")
 
-    # Export routes (full functionality restored)
-    try:
-        from routes.export import export_bp
-        app.register_blueprint(export_bp)
-        app.logger.info("Export routes registered (full functionality)")
-    except Exception as e:
-        app.logger.error(f"Failed to register export routes: {e}")
-        # Fallback minimal implementation
-        try:
-            from flask import Blueprint
-            export_bp_minimal = Blueprint("export", __name__, url_prefix="/api/export")
-            
-            @export_bp_minimal.route("/ping", methods=["GET", "POST"])
-            def export_ping_fallback():
-                return {"ok": True}
-                
-            app.register_blueprint(export_bp_minimal)
-            app.logger.info("Export routes registered (fallback minimal)")
-        except Exception as fallback_error:
-            app.logger.error(f"Failed to register export routes fallback: {fallback_error}")
-    
     # other blueprints (guarded)
     _optional = [
         ("routes.final_upload", "final_bp", "/api"),
+        ("routes.export", "export_bp", "/api"),
         ("routes.insights", "insights_bp", "/api"),
         ("routes.nudges", "nudges_bp", "/api"),
         ("routes.team_collaboration", "team_bp", "/api"),
@@ -473,41 +431,6 @@ def create_app() -> Flask:
             if not any(origin.endswith(x) or origin == x for x in allowed):
                 app.logger.warning("Rejecting WS from origin=%s", origin)
                 return False  # refuse connection
-
-    # Complete monitoring system initialization for 100% coverage
-    try:
-        from services.health_monitor import HealthMonitor
-        from services.alerting_system import get_alerting_system
-        from services.websocket_monitor import get_websocket_monitor
-        from services.business_metrics import get_business_metrics
-        from services.dependency_monitor import get_dependency_monitor
-        
-        # Initialize monitoring services through service container
-        health_monitor = HealthMonitor()
-        health_monitor.start_monitoring(interval=30)
-        container.register_service('health_monitor', lambda: health_monitor)
-        
-        # Initialize alerting system
-        alerting_system = get_alerting_system()
-        container.register_service('alerting_system', lambda: alerting_system)
-        
-        # Initialize WebSocket monitoring
-        websocket_monitor = get_websocket_monitor()
-        container.register_service('websocket_monitor', lambda: websocket_monitor)
-        
-        # Initialize business metrics
-        business_metrics = get_business_metrics()
-        container.register_service('business_metrics', lambda: business_metrics)
-        
-        # Initialize dependency monitoring
-        dependency_monitor = get_dependency_monitor()
-        dependency_monitor.start_monitoring()
-        container.register_service('dependency_monitor', lambda: dependency_monitor)
-        
-        app.logger.info("✅ Complete monitoring system initialized (100% coverage)")
-        
-    except Exception as e:
-        app.logger.error(f"❌ Failed to start monitoring systems: {e}")
 
     # Start resource cleanup service to prevent memory leaks
     try:

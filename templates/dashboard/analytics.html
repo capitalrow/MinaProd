@@ -4,30 +4,75 @@
 
 {% block head %}
     <!-- Chart.js for analytics visualizations -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js" 
-            integrity="sha512-7U4rRB8aGAHGVad3u2jiC7GA5/1YhQcQjxKeaVms/bT66i3LVBMRcBI9KwABNWnxOSwulkuSXxZLGuyfvo7V1A==" 
-            crossorigin="anonymous" 
-            referrerpolicy="no-referrer" 
-            defer></script>
-    <!-- Analytics page uses mina-analytics.css for styling -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    
+    <!-- Core Dashboard CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    
+    <!-- Feather Icons removed - using Font Awesome consistently -->
+    
+    <style>
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-container {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-primary);
+        }
+        
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        canvas {
+            max-height: 300px;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-    <div class="analytics-main-content">
-        <!-- Premium Analytics Header -->
-        <div class="analytics-dashboard-header animate-fade-in">
-            <div class="analytics-header-content">
-                <h1 class="analytics-dashboard-title">
+    <div class="main-content">
+        <!-- Analytics Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <h1 class="dashboard-title">
                     <i class="fas fa-chart-bar"></i>
-                    Analytics Dashboard
+                    Analytics
                 </h1>
-                <div class="analytics-header-actions">
+                <div class="header-actions">
                     <select class="form-select" id="time-range">
                         <option value="7">Last 7 days</option>
                         <option value="30" selected>Last 30 days</option>
                         <option value="90">Last 90 days</option>
                     </select>
-                    <button class="btn" id="refresh-analytics">
+                    <button class="btn btn-primary" id="refresh-analytics">
                         <i class="fas fa-sync-alt"></i>
                         Refresh
                     </button>
@@ -81,8 +126,8 @@
         <!-- Analytics Charts -->
         <div class="analytics-grid">
             <!-- Sessions Over Time -->
-            <div class="analytics-chart-container">
-                <h3 class="analytics-chart-title">
+            <div class="chart-container">
+                <h3 class="chart-title">
                     <i class="fas fa-chart-line"></i>
                     Sessions Over Time
                 </h3>
@@ -90,8 +135,8 @@
             </div>
             
             <!-- Confidence Distribution -->
-            <div class="analytics-chart-container">
-                <h3 class="analytics-chart-title">
+            <div class="chart-container">
+                <h3 class="chart-title">
                     <i class="fas fa-chart-pie"></i>
                     Confidence Distribution
                 </h3>
@@ -99,8 +144,8 @@
             </div>
             
             <!-- Duration Analysis -->
-            <div class="analytics-chart-container">
-                <h3 class="analytics-chart-title">
+            <div class="chart-container">
+                <h3 class="chart-title">
                     <i class="fas fa-chart-bar"></i>
                     Session Duration Analysis
                 </h3>
@@ -108,8 +153,8 @@
             </div>
             
             <!-- Status Distribution -->
-            <div class="analytics-chart-container">
-                <h3 class="analytics-chart-title">
+            <div class="chart-container">
+                <h3 class="chart-title">
                     <i class="fas fa-chart-simple"></i>
                     Session Status
                 </h3>

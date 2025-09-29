@@ -2,184 +2,6 @@
 
 {% block title %}Dashboard - Mina{% endblock %}
 
-{% block head %}
-    <style>
-        /* PREMIUM DASHBOARD ENHANCEMENTS */
-        
-        /* Premium Metric Cards */
-        .premium-metric-card {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            border-radius: 24px !important;
-        }
-        
-        .premium-metric-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--elite-purple-500), var(--premium-blue-500), var(--emerald-500));
-            border-radius: 24px 24px 0 0;
-        }
-        
-        .premium-metric-card:hover {
-            transform: translateY(-8px) scale(1.03);
-            box-shadow: 
-                0 25px 50px rgba(168, 85, 247, 0.25),
-                0 12px 24px rgba(59, 130, 246, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        }
-        
-        /* Sparkle effect for metric cards */
-        .metric-sparkle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 8px;
-            height: 8px;
-            background: linear-gradient(45deg, var(--elite-purple-500), var(--premium-blue-500));
-            border-radius: 50%;
-            animation: sparkle 3s ease-in-out infinite;
-        }
-        
-        @keyframes sparkle {
-            0%, 100% { opacity: 0.3; transform: scale(0.8); }
-            50% { opacity: 1; transform: scale(1.2); }
-        }
-        
-        /* Pulse ring for live indicators */
-        .metric-pulse-ring {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            width: 16px;
-            height: 16px;
-            border: 2px solid var(--emerald-500);
-            border-radius: 50%;
-            animation: pulseRing 2s ease-in-out infinite;
-        }
-        
-        @keyframes pulseRing {
-            0% { transform: scale(0.8); opacity: 1; }
-            100% { transform: scale(1.8); opacity: 0; }
-        }
-        
-        /* Premium icon containers */
-        .premium-icon-container {
-            position: relative;
-            transition: all 0.3s ease;
-        }
-        
-        .premium-icon-container:hover {
-            transform: scale(1.1) rotate(5deg);
-        }
-        
-        .live-icon {
-            animation: livePulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes livePulse {
-            0%, 100% { box-shadow: 0 0 10px rgba(34, 197, 94, 0.3); }
-            50% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); }
-        }
-        
-        /* Premium badges */
-        .premium-badge {
-            position: relative;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-size: 0.75rem;
-        }
-        
-        .live-badge {
-            animation: liveBadgeGlow 2s ease-in-out infinite;
-        }
-        
-        @keyframes liveBadgeGlow {
-            0%, 100% { box-shadow: 0 0 8px rgba(34, 197, 94, 0.4); }
-            50% { box-shadow: 0 0 16px rgba(34, 197, 94, 0.8); }
-        }
-        
-        /* Premium Counter Animation */
-        .premium-counter {
-            position: relative;
-            font-weight: 900 !important;
-            text-shadow: 0 2px 8px rgba(168, 85, 247, 0.3);
-        }
-        
-        /* Premium Action Buttons */
-        .premium-action-btn {
-            position: relative;
-            overflow: hidden;
-            border-radius: 20px !important;
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            backdrop-filter: blur(10px);
-        }
-        
-        .premium-btn-glow {
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: conic-gradient(
-                from 0deg,
-                transparent,
-                rgba(59, 130, 246, 0.3),
-                transparent,
-                rgba(168, 85, 247, 0.3),
-                transparent
-            );
-            animation: btnGlowRotate 4s linear infinite;
-            z-index: -1;
-        }
-        
-        @keyframes btnGlowRotate {
-            to { transform: rotate(360deg); }
-        }
-        
-        .premium-action-btn:hover {
-            transform: translateY(-6px) scale(1.05);
-            box-shadow: 
-                0 20px 40px rgba(59, 130, 246, 0.3),
-                0 10px 20px rgba(168, 85, 247, 0.2);
-        }
-        
-        .premium-btn-icon {
-            transition: all 0.3s ease;
-        }
-        
-        .premium-action-btn:hover .premium-btn-icon {
-            transform: scale(1.2) rotate(10deg);
-        }
-        
-        /* Enhanced table styling */
-        .table-hover tbody tr:hover {
-            background-color: rgba(168, 85, 247, 0.05);
-            transform: translateX(4px);
-            transition: all 0.3s ease;
-        }
-        
-        /* Card enhancements */
-        .card {
-            border-radius: 20px !important;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .card-header {
-            border-radius: 20px 20px 0 0 !important;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-        }
-    </style>
-{% endblock %}
-
 {% block breadcrumb %}
 <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
 {% endblock %}
@@ -231,51 +53,42 @@
         <h2 id="metrics-heading" class="sr-only">Performance Metrics</h2>
         <div class="row g-4 mb-5">
             <div class="col-lg-3 col-md-6">
-                <div class="mina-glass-card premium-metric-card interactive h-100" data-stat="total_sessions" role="button" tabindex="0">
-                    <div class="metric-sparkle"></div>
-                    <div class="mina-card-header">
-                        <div class="d-flex align-items-center">
-                            <div class="premium-icon-container bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 56px; height: 56px;">
-                                <i class="fas fa-calendar-alt text-primary" aria-hidden="true"></i>
-                            </div>
-                            <span class="badge premium-badge bg-primary bg-opacity-10 text-primary">All Time</span>
+                <div class="card h-100 position-relative overflow-hidden" data-stat="total_sessions">
+                    <div class="card-body text-center p-4">
+                        <div class="empty-state-illustration mx-auto mb-3" style="width: 60px; height: 60px; background: var(--mina-primary-light);">
+                            <i class="fas fa-calendar-alt text-primary" aria-hidden="true"></i>
                         </div>
-                    </div>
-                    <div class="mina-card-body text-center">
-                        <h2 class="display-4 fw-bold mb-2 premium-counter" style="color: var(--elite-purple-500);" data-target="{{ stats.get('total_sessions', 0) }}">0</h2>
-                        <p class="mina-card-title mb-2">Total Sessions</p>
-                        <div class="mina-card-footer justify-content-center">
-                            <div class="d-flex align-items-center text-success premium-growth-indicator">
-                                <i class="fas fa-arrow-up me-1" aria-hidden="true"></i>
-                                <small class="fw-medium">+12% this month</small>
-                            </div>
+                        <h2 class="display-6 fw-bold text-primary mb-2">{{ stats.get('total_sessions', 0) }}</h2>
+                        <p class="text-muted mb-0 fw-medium">Total Sessions</p>
+                        <div class="position-absolute top-0 end-0 p-2">
+                            <span class="badge bg-primary bg-opacity-10 text-primary">All Time</span>
+                        </div>
+                        <!-- Trend Indicator -->
+                        <div class="mt-2 d-flex align-items-center justify-content-center text-success">
+                            <i class="fas fa-arrow-up me-1" aria-hidden="true"></i>
+                            <small class="fw-medium">+12% this month</small>
                         </div>
                     </div>
                 </div>
             </div>
     
-            <div class="col-lg-3 col-md-6">
-                <div class="mina-glass-card premium-metric-card premium interactive h-100" data-stat="total_segments" role="button" tabindex="0">
-                    <div class="metric-pulse-ring"></div>
-                    <div class="mina-card-header">
-                        <div class="d-flex align-items-center">
-                            <div class="premium-icon-container live-icon bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 56px; height: 56px;">
-                                <i class="fas fa-comments text-success" aria-hidden="true"></i>
-                            </div>
-                            <span class="badge premium-badge live-badge bg-success bg-opacity-10 text-success">Live</span>
-                        </div>
-                    </div>
-                    <div class="mina-card-body text-center">
-                        <h2 class="display-4 fw-bold mb-2 text-success premium-counter" data-target="{{ stats.get('total_segments', 0) }}">0</h2>
-                        <p class="mina-card-title mb-2">Transcribed Segments</p>
-                        <div class="mina-card-footer justify-content-center">
-                            <div class="d-flex align-items-center">
-                                <span class="text-success fw-medium real-time-indicator">Real-time processing</span>
-                            </div>
-                        </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card h-100 position-relative overflow-hidden">
+            <div class="card-body text-center p-4">
+                <div class="mb-3">
+                    <div class="bg-success bg-opacity-10 rounded-circle mx-auto d-flex align-items-center justify-content-center" 
+                         style="width: 60px; height: 60px;">
+                        <i class="fas fa-comments fa-2x text-success" aria-hidden="true"></i>
                     </div>
                 </div>
+                <h2 class="display-6 fw-bold text-success mb-2">{{ stats.get('total_segments', 0) }}</h2>
+                <p class="text-muted mb-0 fw-medium">Transcribed Segments</p>
+                <div class="position-absolute top-0 end-0 p-2">
+                    <span class="badge bg-success bg-opacity-10 text-success">Total</span>
+                </div>
             </div>
+        </div>
+    </div>
     
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="card h-100 position-relative overflow-hidden">
@@ -347,13 +160,12 @@
                 <div class="row g-3">
                     <div class="col-lg-4 col-md-6">
                         <a href="{{ url_for('transcription.live_transcription') }}" 
-                           class="btn btn-primary premium-action-btn w-100 h-100 py-4 d-flex flex-column align-items-center justify-content-center text-decoration-none position-relative"
+                           class="btn btn-primary w-100 h-100 py-4 d-flex flex-column align-items-center justify-content-center text-decoration-none position-relative"
                            aria-label="Start new live transcription session">
-                            <div class="premium-btn-glow"></div>
                             <div class="position-absolute top-0 end-0 m-2">
-                                <span class="badge bg-light text-primary premium-keyboard-hint">Ctrl+N</span>
+                                <span class="badge bg-light text-primary">Ctrl+N</span>
                             </div>
-                            <i class="fas fa-microphone fa-2x mb-3 premium-btn-icon" aria-hidden="true"></i>
+                            <i class="fas fa-microphone fa-2x mb-3" aria-hidden="true"></i>
                             <span class="fw-semibold mb-1">Start Live Transcription</span>
                             <small class="opacity-90">Begin real-time speech-to-text</small>
                         </a>
@@ -562,37 +374,6 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Premium Counter Animation
-    function animateCounters() {
-        const counters = document.querySelectorAll('.premium-counter');
-        
-        counters.forEach(counter => {
-            const target = parseInt(counter.getAttribute('data-target'));
-            const duration = 2000; // 2 seconds
-            const start = performance.now();
-            
-            function updateCounter(currentTime) {
-                const elapsed = currentTime - start;
-                const progress = Math.min(elapsed / duration, 1);
-                
-                // Easing function for smooth animation
-                const easeOutCubic = 1 - Math.pow(1 - progress, 3);
-                const current = Math.floor(easeOutCubic * target);
-                
-                counter.textContent = current.toLocaleString();
-                
-                if (progress < 1) {
-                    requestAnimationFrame(updateCounter);
-                }
-            }
-            
-            requestAnimationFrame(updateCounter);
-        });
-    }
-    
-    // Start counter animations with a slight delay for better effect
-    setTimeout(animateCounters, 500);
-    
     // Upload functionality
     document.getElementById('startUpload')?.addEventListener('click', function() {
         const fileInput = document.getElementById('audioFile');

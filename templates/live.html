@@ -6,14 +6,174 @@
     <!-- Socket.IO and dependencies loaded via base.html -->
     
     <style>
-        /* PREMIUM LIVE TRANSCRIPTION ENHANCEMENTS */
+        :root {
+            /* Refined Professional Color System */
+            --primary: #0EA5E9;
+            --primary-dark: #0284C7;
+            --primary-light: #38BDF8;
+            --secondary: #6366F1;
+            --secondary-dark: #4F46E5;
+            --secondary-light: #8B5CF6;
+            --accent: #F59E0B;
+            --accent-dark: #D97706;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --success: #10B981;
+            --info: #3B82F6;
+            
+            /* Animation durations for smooth transitions */
+            --transition-fast: 0.2s ease-out;
+            --transition-medium: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-bounce: 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            
+            /* Refined Professional Gradients */
+            --gradient-primary: linear-gradient(135deg, #0EA5E9 0%, #6366F1 100%);
+            --gradient-secondary: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+            --gradient-accent: linear-gradient(135deg, #F59E0B 0%, #EF4444 100%);
+            --gradient-surface: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(15,165,233,0.02) 50%, rgba(99,102,241,0.02) 100%);
+            --gradient-border: linear-gradient(135deg, rgba(15,165,233,0.2) 0%, rgba(99,102,241,0.15) 50%, rgba(139,92,246,0.1) 100%);
+            --gradient-subtle: linear-gradient(135deg, rgba(15,165,233,0.1) 0%, rgba(99,102,241,0.08) 100%);
+            --gradient-glow: radial-gradient(circle, rgba(15,165,233,0.15) 0%, rgba(99,102,241,0.1) 50%, transparent 70%);
+            --gradient-muted: linear-gradient(135deg, rgba(71,85,105,0.1) 0%, rgba(51,65,85,0.05) 100%);
+            
+            /* FIXED: Accessible Glass Morphism with Better Contrast */
+            --glass-bg: rgba(16, 24, 40, 0.65);              /* Darker, more opaque */
+            --glass-bg-strong: rgba(16, 24, 40, 0.85);       /* Stronger background */
+            --glass-bg-ultra: rgba(16, 24, 40, 0.92);        /* Ultra strong for content */
+            --glass-bg-tinted: rgba(15, 165, 233, 0.08);     /* Slightly more visible */
+            --glass-bg-accent: rgba(99, 102, 241, 0.06);     /* Better accent visibility */
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-border-strong: rgba(255, 255, 255, 0.25);
+            --glass-border-subtle: rgba(15, 165, 233, 0.2);
+            --glass-blur: blur(20px);
+            --glass-blur-strong: blur(28px);
+            --glass-blur-ultra: blur(36px);
+            
+            /* Premium Surfaces */
+            --surface-1: rgba(16, 24, 40, 0.3);
+            --surface-2: rgba(16, 24, 40, 0.5);
+            --surface-3: rgba(16, 24, 40, 0.7);
+            --surface-primary: rgba(16, 24, 40, 0.85);        /* Added missing token */
+            --surface-elevated: rgba(255, 255, 255, 0.05);
+            --surface-hover: rgba(255, 255, 255, 0.08);
+            
+            /* FIXED: Enhanced Typography with Accessible Contrast */
+            --text-primary: #FFFFFF;
+            --text-secondary: rgba(255, 255, 255, 0.95);     /* Increased from 0.85 */
+            --text-tertiary: rgba(255, 255, 255, 0.85);      /* Increased from 0.65 */
+            --text-quaternary: rgba(255, 255, 255, 0.75);    /* Increased from 0.45 */
+            --text-muted: rgba(255, 255, 255, 0.65);         /* New muted level */
+            --text-on-glass: rgba(255, 255, 255, 0.98);      /* High contrast for glass */
+            --text-accent: var(--primary-light);             /* Accent text color */
+            
+            /* Professional Shadows & Subtle Glows */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+            --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.18), 0 6px 12px rgba(0, 0, 0, 0.12);
+            --shadow-2xl: 0 16px 32px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.15);
+            --glow-primary: 0 0 20px rgba(15, 165, 233, 0.15), 0 0 40px rgba(15, 165, 233, 0.08);
+            --glow-secondary: 0 0 20px rgba(99, 102, 241, 0.15), 0 0 40px rgba(99, 102, 241, 0.08);
+            --glow-accent: 0 0 20px rgba(245, 158, 11, 0.15), 0 0 40px rgba(245, 158, 11, 0.08);
+            --glow-subtle: 0 0 16px rgba(15, 165, 233, 0.1), 0 0 32px rgba(99, 102, 241, 0.05);
+            --glow-rainbow: var(--glow-primary);              /* Added missing token */
+            --shadow-colored: 0 8px 25px rgba(15, 165, 233, 0.08), 0 4px 12px rgba(0, 0, 0, 0.1);
+            
+            /* Premium Transitions */
+            --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-spring: 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            
+            /* Premium Spacing */
+            --space-xs: 0.25rem;
+            --space-sm: 0.5rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+            --space-3xl: 4rem;
+            
+            /* Premium Border Radius */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-2xl: 24px;
+            --radius-full: 9999px;
+        }
         
-        /* Advanced Background Effects */
-        .recording-studio {
-            position: relative;
+        /* Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'SF Pro Display', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            /* SIMPLIFIED: Cleaner background with focus on content */
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
             min-height: 100vh;
-            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
-            background-attachment: fixed;
+            position: relative;
+        }
+        
+        /* COMPREHENSIVE MOTION ACCESSIBILITY - Complete animation removal for reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation: none !important;
+                transition: none !important;
+                scroll-behavior: auto !important;
+            }
+            
+            /* Keep essential state indicators but remove ALL motion */
+            .record-button.recording { 
+                background: var(--danger) !important;  /* Using proper token */
+                transform: none !important;
+            }
+            .record-button.processing { 
+                background: var(--warning) !important;
+                transform: none !important;
+            }
+        }
+
+        /* Subtle ambient animation */
+        @keyframes subtle-glow {
+            0%, 100% { 
+                opacity: 0.6;
+            }
+            50% { 
+                opacity: 0.8;
+            }
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* SIMPLIFIED: Subtle accent only when needed */
+            background: radial-gradient(circle at 50% 0%, rgba(15, 165, 233, 0.02) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.7;
+        }
+        
+        
+        /* REDESIGNED: Compact Professional Layout */
+        .recording-studio {
+            min-height: 100vh;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
         }
         
         .recording-studio::before {
@@ -21,334 +181,119 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 200%;
-            height: 200%;
-            background: 
-                radial-gradient(circle at 25% 75%, rgba(168, 85, 247, 0.4) 0%, transparent 50%),
-                radial-gradient(circle at 75% 25%, rgba(59, 130, 246, 0.4) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.2) 0%, transparent 60%);
-            animation: premiumLiveFloat 40s ease-in-out infinite;
-            z-index: 0;
-            pointer-events: none;
-        }
-        
-        @keyframes premiumLiveFloat {
-            0%, 100% { transform: translate(0px, 0px) rotate(0deg) scale(1); }
-            33% { transform: translate(80px, -60px) rotate(120deg) scale(1.2); }
-            66% { transform: translate(-60px, 80px) rotate(240deg) scale(0.8); }
-        }
-        
-        /* Premium Neural Background for Live Interface */
-        .recording-studio::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
             width: 100%;
             height: 100%;
-            opacity: 0.08;
+            background: 
+                radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(15, 165, 233, 0.02), transparent 50%);
+            opacity: 0;
+            transition: opacity var(--transition-slow);
             pointer-events: none;
-            z-index: 1;
-            background-image: 
-                radial-gradient(circle at 30% 70%, var(--elite-purple-500) 1px, transparent 1px),
-                radial-gradient(circle at 70% 30%, var(--premium-blue-500) 1px, transparent 1px),
-                radial-gradient(circle at 50% 50%, var(--emerald-500) 1px, transparent 1px);
-            background-size: 120px 120px, 180px 180px, 100px 100px;
-            animation: premiumLiveNeuralPulse 15s ease-in-out infinite;
-        }
-        
-        @keyframes premiumLiveNeuralPulse {
-            0%, 100% {
-                opacity: 0.08;
-                transform: scale(1);
-            }
-            50% {
-                opacity: 0.15;
-                transform: scale(1.1);
-            }
-        }
-        
-        /* Enhanced Studio Header */
-        .studio-header {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(60px) saturate(220%);
-            border-radius: 0 0 24px 24px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            border: 1px solid var(--glass-border);
-            box-shadow: 
-                0 32px 64px rgba(0, 0, 0, 0.25),
-                0 16px 32px rgba(0, 0, 0, 0.15),
-                inset 0 2px 0 rgba(255, 255, 255, 0.3);
-            position: relative;
-            z-index: 10;
-        }
-        
-        .brand-title {
-            font-size: 2rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin: 0;
-        }
-        
-        /* Premium Recording Button Enhancement */
-        .record-btn {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(40px) saturate(180%);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 2rem 3rem;
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            position: relative;
-            overflow: hidden;
-            box-shadow: 
-                0 20px 40px rgba(168, 85, 247, 0.3),
-                0 10px 20px rgba(59, 130, 246, 0.2);
-        }
-        
-        .record-btn::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: conic-gradient(
-                from 0deg,
-                transparent,
-                rgba(168, 85, 247, 0.4),
-                transparent,
-                rgba(59, 130, 246, 0.4),
-                transparent
-            );
-            animation: premiumRecordGlow 4s linear infinite;
             z-index: -1;
         }
         
-        @keyframes premiumRecordGlow {
-            to {
-                transform: rotate(360deg);
-            }
+        
+        .recording-studio:hover::before {
+            opacity: 1;
         }
         
-        .record-btn:hover {
-            transform: translateY(-8px) scale(1.05);
-            box-shadow: 
-                0 30px 60px rgba(168, 85, 247, 0.4),
-                0 15px 30px rgba(59, 130, 246, 0.3);
+        /* Compact Header */
+        .studio-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-md) var(--space-lg);
+            background: var(--glass-bg-strong);
+            backdrop-filter: var(--glass-blur);
+            border-bottom: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
         
-        /* Premium Metrics Enhancement */
-        .session-metrics {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(40px) saturate(180%);
-            border-radius: 20px;
-            padding: 2rem;
-            border: 1px solid var(--glass-border);
-            box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            margin: 2rem 0;
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
         }
         
-        .metric {
-            background: var(--glass-bg-dark);
-            border-radius: 16px;
-            padding: 1.5rem;
-            border: 1px solid var(--glass-border);
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-        
-        .metric:hover {
-            transform: translateY(-4px) scale(1.02);
-            background: var(--glass-bg-light);
-            box-shadow: 0 15px 30px rgba(168, 85, 247, 0.3);
-        }
-        
-        .metric-value {
-            font-size: 2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
+        .brand-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
         }
         
-        /* Premium Settings Panel */
-        .settings-panel {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(50px) saturate(200%);
-            border-radius: 24px;
-            border: 1px solid var(--glass-border);
-            box-shadow: 
-                0 25px 50px rgba(0, 0, 0, 0.2),
-                inset 1px 0 0 rgba(255, 255, 255, 0.15);
-            position: relative;
-            overflow: hidden;
+        .brand-subtitle {
+            color: var(--text-tertiary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            letter-spacing: 0.025em;
         }
         
-        .settings-panel::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--elite-purple-500), var(--premium-blue-500), var(--emerald-500));
-            border-radius: 24px 24px 0 0;
-        }
-        
-        .setting-input {
-            background: var(--glass-bg-dark);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            color: white;
-            padding: 1rem 1.5rem;
-            transition: all 0.3s ease;
-        }
-        
-        .setting-input:focus {
-            background: var(--glass-bg-light);
-            border-color: var(--elite-purple-500);
-            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.3);
-            transform: scale(1.02);
-        }
-        
-        /* Premium Transcript Area */
-        .transcript-area {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(50px) saturate(200%);
-            border-radius: 24px;
-            border: 1px solid var(--glass-border);
-            box-shadow: 
-                0 25px 50px rgba(0, 0, 0, 0.2),
-                inset 1px 0 0 rgba(255, 255, 255, 0.15);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .transcript-header {
-            background: var(--glass-bg-dark);
-            border-bottom: 1px solid var(--glass-border);
-            position: relative;
-        }
-        
-        .transcript-header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-        }
-        
-        /* Premium Transcript Content */
-        .transcript-content {
-            position: relative;
-            padding: 2rem;
-        }
-        
-        .transcript-content::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
-            pointer-events: none;
-        }
-        
-        .live-recording-container {
-            position: relative;
-            z-index: 10;
-        }
-        
-        /* Live recording specific wave animations */
-        .recording-pulse {
-            animation: recording-pulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes recording-pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-        }
-        
-        /* Audio visualizer enhancements */
-        .audio-visualizer {
-            background: var(--glass-bg-primary);
-            border-radius: var(--radius-2xl);
-            backdrop-filter: var(--glass-blur);
-        }
-        
-        /* Live recording specific styles that enhance premium system */
-        .recording-studio {
-            position: relative;
-            z-index: 2;
-        }
-        
-        /* Recording button special states */
-        .record-button.recording {
-            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
-            box-shadow: 0 0 30px rgba(239, 68, 68, 0.4);
-        }
-        
-        /* Real-time transcription display */
-        .transcription-display {
-            background: var(--glass-bg-primary);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-2xl);
-            backdrop-filter: var(--glass-blur);
-            padding: var(--space-6);
-        }
-        
-        /* Audio level indicators */
-        .audio-levels {
+        .header-status {
             display: flex;
-            gap: var(--space-2);
-            align-items: end;
-            height: 40px;
+            align-items: center;
         }
         
-        .audio-bar {
-            width: 4px;
-            background: linear-gradient(to top, var(--primary-600), var(--primary-400));
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: var(--space-xs) var(--space-sm);
+            background: var(--surface-2);
+            border: 1px solid var(--glass-border);
             border-radius: var(--radius-full);
-            transition: height var(--duration-100) ease-out;
+            font-size: 0.85rem;
+            font-weight: 500;
         }
         
-        /* Live recording-specific button styles */
-        .live-record-btn {
-            position: relative;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            border: none;
-            border-radius: var(--radius-full);
-            width: 80px;
-            height: 80px;
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+        
+        .header-btn {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: var(--space-xs);
+            color: var(--text-tertiary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            transition: all var(--duration-300) ease;
-            box-shadow: var(--shadow-lg);
+            width: 36px;
+            height: 36px;
         }
         
-        .live-record-btn:hover {
-            transform: scale(1.05);
-            box-shadow: var(--shadow-xl);
+        .header-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text-secondary);
+            border-color: var(--glass-border-strong);
         }
         
-        .live-record-btn.recording {
-            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
-            animation: recording-pulse 2s ease-in-out infinite;
+        /* Main Controls Section */
+        .controls-section {
+            padding: var(--space-lg);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-lg);
+            align-items: center;
         }
+        
+        .recording-control {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+        
+        .record-btn {
             background: var(--gradient-primary);
             border: none;
             border-radius: var(--radius-lg);
@@ -380,170 +325,6 @@
         
         .record-icon {
             font-size: 1.2rem;
-        }
-
-        /* PREMIUM STATUS INDICATORS */
-        .status-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.25rem;
-            border-radius: 24px;
-            font-size: 0.875rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-        }
-        
-        .status-indicator::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transition: left 0.8s ease;
-        }
-        
-        .status-indicator:hover::before {
-            left: 100%;
-        }
-
-        .status-indicator.recording {
-            background: linear-gradient(135deg, var(--red-500), var(--red-600));
-            color: white;
-            animation: premiumRecordingPulse 2s ease-in-out infinite;
-        }
-
-        .status-indicator.ready {
-            background: linear-gradient(135deg, var(--emerald-500), var(--emerald-600));
-            color: white;
-        }
-
-        .status-indicator.processing {
-            background: linear-gradient(135deg, var(--amber-500), var(--amber-600));
-            color: white;
-        }
-
-        /* PREMIUM CONTROL PANELS */
-        .control-panel {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(40px) saturate(180%);
-            border-radius: 20px;
-            padding: 2rem;
-            border: 1px solid var(--glass-border);
-            box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.15),
-                0 10px 20px rgba(0, 0, 0, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            margin-bottom: 2rem;
-        }
-
-        .panel-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 0 0 1.5rem 0;
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        /* PREMIUM METRICS DISPLAY */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .metric-item {
-            background: var(--glass-bg-dark);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .metric-item:hover {
-            transform: translateY(-2px);
-            background: var(--glass-bg-light);
-        }
-
-        .metric-value {
-            font-size: 2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.5rem;
-        }
-
-        .metric-label {
-            font-size: 0.875rem;
-            color: var(--neutral-600);
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        /* PREMIUM ANIMATIONS */
-        .animate-fade-in {
-            animation: fadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .animate-slide-up {
-            animation: slideUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* RESPONSIVE DESIGN */
-        @media (max-width: 768px) {
-            .live-recording-container {
-                padding: 1rem;
-            }
-            .recording-studio {
-                padding: 2rem;
-            }
-            .metrics-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-            .record-button, .live-record-btn {
-                width: 80px;
-                height: 80px;
-                font-size: 1.5rem;
-            }
         }
         
         .record-text {

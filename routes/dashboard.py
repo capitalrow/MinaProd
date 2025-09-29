@@ -5,50 +5,12 @@ Main dashboard with meetings, tasks, analytics overview.
 
 from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required, current_user
-from flask_socketio import emit, join_room, leave_room, disconnect
 from models import db, Meeting, Task, Analytics, Session, Marker
 from sqlalchemy import desc, func, and_
 from datetime import datetime, timedelta, date
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
-
-# Import socketio after the blueprint to avoid circular imports
-def register_dashboard_socketio_handlers(socketio):
-    """Register Socket.IO handlers for dashboard real-time updates"""
-    
-    @socketio.on('connect', namespace='/dashboard')
-    def on_dashboard_connect(auth=None):
-        """Handle dashboard client connection and join user-specific room"""
-        if not current_user.is_authenticated:
-            logger.warning(f"[dashboard] Unauthenticated connection attempt")
-            emit('error', {'message': 'Authentication required'})
-            disconnect()
-            return False
-        
-        # Join user-specific room for scoped updates
-        user_room = f'user_{current_user.id}'
-        join_room(user_room)
-        
-        logger.info(f"[dashboard] User {current_user.id} connected to dashboard, joined room: {user_room}")
-        emit('dashboard_connected', {
-            'status': 'connected',
-            'user_id': current_user.id,
-            'room': user_room
-        })
-    
-    @socketio.on('disconnect', namespace='/dashboard')
-    def on_dashboard_disconnect():
-        """Handle dashboard client disconnection"""
-        if current_user.is_authenticated:
-            user_room = f'user_{current_user.id}'
-            leave_room(user_room)
-            logger.info(f"[dashboard] User {current_user.id} disconnected from dashboard")
-    
-    logger.info("✅ Dashboard Socket.IO handlers registered")
 
 
 @dashboard_bp.route('/')

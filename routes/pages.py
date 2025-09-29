@@ -6,12 +6,9 @@ pages_bp = Blueprint("pages", __name__)
 
 @pages_bp.route("/")
 def index():
-    """Root route - redirect authenticated users to dashboard, others to login"""
     if current_user.is_authenticated:
         return redirect(url_for("dashboard.index"))
-    else:
-        # Redirect to login instead of showing marketing page
-        return redirect(url_for("auth.login"))
+    return render_template("marketing/landing.html")
 
 @pages_bp.route("/app")
 def app():
@@ -39,8 +36,3 @@ def live_enhanced():
 def live_comprehensive():
     """Legacy route - redirects to main live interface"""
     return redirect(url_for("pages.live"))
-
-@pages_bp.route("/logo-showcase")
-def logo_showcase():
-    """Enhanced logo system showcase and comparison"""
-    return render_template("mina_enhanced_logo_showcase.html")

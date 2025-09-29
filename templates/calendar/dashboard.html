@@ -3,38 +3,25 @@
 {% block title %}Calendar Integration - {{ super() }}{% endblock %}
 
 {% block head %}
-<!-- PREMIUM CALENDAR DESIGN SYSTEM -->
 <style>
-    /* Calendar page specific styles only - backgrounds unified in base.html */
-
     .calendar-container {
-        position: relative;
-        z-index: 10;
-        max-width: 1400px;
+        max-width: 1200px;
         margin: 0 auto;
         padding: 2rem;
     }
     
     .provider-card {
-        background: var(--glass-bg-light);
-        backdrop-filter: blur(40px) saturate(180%);
-        border-radius: 20px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        border: 1px solid var(--glass-border);
-        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        box-shadow: 
-            0 20px 40px rgba(0, 0, 0, 0.15),
-            0 10px 20px rgba(0, 0, 0, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
     }
     
     .provider-card:hover {
-        transform: translateY(-4px) scale(1.01);
-        box-shadow: 
-            0 30px 60px rgba(168, 85, 247, 0.2),
-            0 15px 30px rgba(14, 165, 233, 0.15),
-            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        border-color: var(--accent-primary);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     
     .provider-header {
@@ -50,22 +37,15 @@
     }
     
     .provider-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 16px;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-right: 1.5rem;
-        font-size: 2rem;
+        margin-right: 1rem;
+        font-size: 1.5rem;
         color: white;
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
-    }
-
-    .provider-card:hover .provider-icon {
-        transform: scale(1.1) rotate(5deg);
-        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
     }
     
     .google-icon {
@@ -77,21 +57,14 @@
     }
     
     .provider-details h4 {
-        margin: 0 0 0.5rem 0;
-        font-size: 1.25rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        margin: 0 0 0.25rem 0;
+        color: var(--text-primary);
     }
     
     .provider-details p {
         margin: 0;
-        color: var(--neutral-600);
-        font-size: 1rem;
-        font-weight: 500;
-        line-height: 1.5;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
     }
     
     .status-badge {

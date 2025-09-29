@@ -18,7 +18,8 @@ sharing_bp = Blueprint('sharing', __name__)
 def create_share_link(session_id: int):
     """Create a new share link for a session."""
     try:
-        share_service = ShareService(db.session())
+        db_session = db.session
+        share_service = ShareService(db_session)
         
         # Get expiry days from request or use default
         data = request.get_json() or {}
@@ -48,7 +49,8 @@ def create_share_link(session_id: int):
 def view_shared_session(token: str):
     """View a shared session via token."""
     try:
-        share_service = ShareService(db.session())
+        db_session = db.session
+        share_service = ShareService(db_session)
         
         # Validate token and get session
         session = share_service.validate_share_token(token)
@@ -62,7 +64,7 @@ def view_shared_session(token: str):
             from models.summary import Summary
             from sqlalchemy import select
             stmt = select(Summary).where(Summary.session_id == session.id)
-            summary = db.session.scalars(stmt).first()
+            summary = db_session.scalars(stmt).first()
         except ImportError:
             # Summary model not available
             pass
@@ -84,7 +86,8 @@ def view_shared_session(token: str):
 def deactivate_share_link(session_id: int, token: str):
     """Deactivate a specific share link."""
     try:
-        share_service = ShareService(db.session())
+        db_session = db.session
+        share_service = ShareService(db_session)
         
         success = share_service.deactivate_share_link(session_id, token)
         
@@ -101,7 +104,8 @@ def deactivate_share_link(session_id: int, token: str):
 def list_share_links(session_id: int):
     """List active share links for a session."""
     try:
-        share_service = ShareService(db.session())
+        db_session = db.session
+        share_service = ShareService(db_session)
         
         links = share_service.get_active_share_links(session_id)
         

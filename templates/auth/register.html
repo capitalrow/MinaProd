@@ -1,32 +1,32 @@
-{% extends "base.html" %}
-
-{% block title %}Create Account - {{ super() }}{% endblock %}
-
-{% block main_style %}style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem 0;"{% endblock %}
-
-{% block head %}
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - Mina</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
+    <style>
+        /* Enhanced Modern Authentication Layout */
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--mina-brand-primary) 0%, var(--mina-brand-secondary) 100%);
+            font-family: var(--mina-font-family-sans);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--mina-space-4) 0;
+        }
 
         .auth-container {
             width: 100%;
-            max-width: 520px;
-            margin: 2rem;
-            position: relative;
-            z-index: 10;
-            animation: premiumSlideIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        @keyframes premiumSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(60px) scale(0.95);
-                filter: blur(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-                filter: blur(0);
-            }
+            max-width: 480px;
+            margin: var(--mina-space-4);
+            animation: fadeInUp 0.6s ease-out;
         }
 
         @keyframes fadeInUp {
@@ -41,172 +41,124 @@
         }
 
         .auth-card {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(40px) saturate(180%);
-            border-radius: 24px;
-            padding: 3rem;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--mina-radius-xl);
+            padding: var(--mina-space-10);
             box-shadow: 
-                0 32px 64px rgba(0, 0, 0, 0.25),
-                0 16px 32px rgba(0, 0, 0, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3),
-                inset 0 -1px 0 rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--glass-border);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .auth-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+                0 20px 40px rgba(0, 0, 0, 0.1),
+                0 10px 20px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         .auth-header {
             text-align: center;
-            margin-bottom: 2.5rem;
+            margin-bottom: var(--mina-space-8);
         }
 
         .auth-logo {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--premium-blue-500) 100%);
-            border-radius: 20px;
-            margin-bottom: 1.5rem;
-            box-shadow: 
-                0 20px 40px rgba(168, 85, 247, 0.3),
-                0 10px 20px rgba(14, 165, 233, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .auth-logo::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-            animation: logoShimmer 2s ease-in-out infinite;
-        }
-
-        @keyframes logoShimmer {
-            0% { left: -100%; }
-            100% { left: 100%; }
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
+            border-radius: var(--mina-radius-lg);
+            margin-bottom: var(--mina-space-4);
+            box-shadow: var(--mina-shadow-lg);
         }
 
         .auth-logo-text {
-            font-size: 2rem;
-            font-weight: 800;
+            font-size: var(--mina-font-size-2xl);
+            font-weight: var(--mina-font-weight-bold);
             color: white;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            z-index: 1;
+            font-family: var(--mina-font-family-display);
         }
 
         .auth-title {
-            font-size: clamp(2rem, 5vw, 2.75rem);
-            font-weight: 800;
-            color: var(--neutral-900);
-            margin: 0 0 0.75rem 0;
-            letter-spacing: -0.025em;
-            line-height: 1.1;
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-size: clamp(2rem, 5vw, 2.5rem);
+            font-weight: var(--mina-font-weight-bold);
+            color: var(--mina-text-primary);
+            margin: 0 0 var(--mina-space-3) 0;
+            font-family: var(--mina-font-family-display);
+            letter-spacing: -0.02em;
+            line-height: 1.2;
         }
 
         .auth-subtitle {
-            font-size: clamp(1.125rem, 3.5vw, 1.25rem);
-            color: var(--neutral-600);
-            margin: 0 0 2rem 0;
-            line-height: 1.5;
-            letter-spacing: 0.01em;
-            font-weight: 500;
+            font-size: clamp(1.1rem, 3.5vw, 1.25rem);
+            color: #475569 !important;
+            margin: 0 0 var(--mina-space-6) 0;
+            line-height: var(--mina-line-height-relaxed);
+            letter-spacing: 0.02em;
+            font-weight: var(--mina-font-weight-semibold);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
-        /* Premium Form Layout System */
+        /* Enhanced Form Styling */
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            gap: var(--mina-space-4);
+            margin-bottom: var(--mina-space-6);
         }
 
         .form-group {
-            position: relative;
-            margin-bottom: 2rem;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 1.25rem 1rem 0.75rem 1rem;
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(20px);
-            border: 2px solid var(--glass-border);
-            border-radius: 16px;
-            font-size: 1.125rem;
-            color: var(--neutral-800);
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            outline: none;
-            box-sizing: border-box;
+            margin-bottom: var(--mina-space-6);
         }
 
         .form-label {
-            position: absolute;
-            top: 1.25rem;
-            left: 1rem;
-            font-size: 1.125rem;
-            color: var(--neutral-500);
-            pointer-events: none;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            background: transparent;
-            font-weight: 500;
+            display: block;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            font-weight: var(--mina-font-weight-bold);
+            color: #1e293b !important;
+            margin-bottom: var(--mina-space-3);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            line-height: 1.4;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
         .form-label--required::after {
             content: ' *';
-            color: var(--red-500);
+            color: var(--mina-danger);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: clamp(1rem, 3vw, 1.25rem);
+            border: 2px solid var(--mina-border-primary);
+            border-radius: var(--mina-radius-md);
+            font-size: clamp(1rem, 3vw, 1.125rem);
+            color: #1e293b !important;
+            background: #ffffff !important;
+            transition: all var(--mina-transition-base);
+            font-family: var(--mina-font-family-sans);
+            box-sizing: border-box;
+            letter-spacing: 0.01em;
+            line-height: 1.5;
         }
 
         .form-input:focus {
-            border-color: var(--elite-purple-500);
+            outline: none;
+            border-color: var(--mina-brand-primary) !important;
             box-shadow: 
-                0 0 0 4px rgba(168, 85, 247, 0.15),
-                0 20px 40px rgba(168, 85, 247, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .form-input:focus + .form-label,
-        .form-input:not(:placeholder-shown) + .form-label {
-            top: 0.25rem;
-            left: 0.75rem;
-            font-size: 0.8rem;
-            color: var(--elite-purple-500);
-            font-weight: 600;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 0 0.5rem;
-            border-radius: 6px;
+                0 0 0 3px rgba(99, 102, 241, 0.2),
+                0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
         }
 
         .form-input::placeholder {
-            color: transparent;
+            color: #94a3b8 !important;
         }
 
         .form-input:invalid {
-            border-color: var(--red-500);
+            border-color: var(--mina-danger);
         }
 
-        .form-input:valid:not(:placeholder-shown) {
-            border-color: var(--emerald-500);
+        .form-input:valid {
+            border-color: var(--mina-success);
         }
 
         .password-requirements {
@@ -219,195 +171,36 @@
             text-shadow: 0 1px 1px rgba(0,0,0,0.05);
         }
 
-        /* Password Strength Indicator */
-        .password-strength {
-            margin-top: 0.75rem;
-            position: relative;
-        }
-
-        .strength-bar {
-            height: 4px;
-            border-radius: 2px;
-            background: var(--glass-border);
-            overflow: hidden;
-            margin-bottom: 0.5rem;
-        }
-
-        .strength-fill {
-            height: 100%;
-            width: 0%;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            border-radius: 2px;
-        }
-
-        .strength-weak .strength-fill {
-            width: 25%;
-            background: linear-gradient(90deg, #ef4444, #f87171);
-        }
-
-        .strength-fair .strength-fill {
-            width: 50%;
-            background: linear-gradient(90deg, #f59e0b, #fbbf24);
-        }
-
-        .strength-good .strength-fill {
-            width: 75%;
-            background: linear-gradient(90deg, #10b981, #34d399);
-        }
-
-        .strength-strong .strength-fill {
-            width: 100%;
-            background: linear-gradient(90deg, var(--elite-purple-500), var(--premium-blue-500));
-        }
-
-        .strength-text {
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .strength-weak .strength-text {
-            color: #ef4444;
-        }
-
-        .strength-fair .strength-text {
-            color: #f59e0b;
-        }
-
-        .strength-good .strength-text {
-            color: #10b981;
-        }
-
-        .strength-strong .strength-text {
-            color: var(--elite-purple-500);
-        }
-
-        /* Premium Checkbox System */
-        .terms-checkbox-group {
-            margin: 2rem 0;
-        }
-        
-        .premium-checkbox {
-            display: flex;
-            align-items: flex-start;
-            cursor: pointer;
-            user-select: none;
-            position: relative;
-            padding-left: 2rem;
-            line-height: 1.4;
-        }
-        
-        .premium-checkbox input {
-            position: absolute;
-            opacity: 0;
-            cursor: pointer;
-            height: 0;
-            width: 0;
-        }
-        
-        .checkmark {
-            position: absolute;
-            left: 0;
-            top: 0.1rem;
-            height: 1.25rem;
-            width: 1.25rem;
-            background: var(--glass-bg-light);
-            border: 2px solid var(--glass-border);
-            border-radius: 6px;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-        
-        .premium-checkbox:hover input ~ .checkmark {
-            background: rgba(168, 85, 247, 0.1);
-            border-color: var(--elite-purple-500);
-        }
-        
-        .premium-checkbox input:checked ~ .checkmark {
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-500));
-            border-color: var(--elite-purple-500);
-        }
-        
-        .checkmark:after {
-            content: "";
-            position: absolute;
-            display: none;
-            left: 3px;
-            top: 0;
-            width: 4px;
-            height: 8px;
-            border: solid white;
-            border-width: 0 2px 2px 0;
-            transform: rotate(45deg);
-        }
-        
-        .premium-checkbox input:checked ~ .checkmark:after {
-            display: block;
-        }
-        
-        .checkbox-label {
-            font-size: 0.95rem;
-            color: var(--neutral-600);
-            font-weight: 500;
-        }
-
-        .checkbox-label a {
-            color: var(--elite-purple-500);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .checkbox-label a:hover {
-            text-decoration: underline;
-        }
-
-        /* Premium Gradient Button */
+        /* Enhanced Button */
         .btn-primary {
             width: 100%;
-            padding: 1.25rem 2rem;
-            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--premium-blue-500) 100%);
+            padding: clamp(1rem, 3vw, 1.25rem) var(--mina-space-6);
+            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
             color: white;
             border: none;
-            border-radius: 16px;
-            font-size: 1.125rem;
-            font-weight: 600;
+            border-radius: var(--mina-radius-md);
+            font-size: clamp(1rem, 3vw, 1.125rem);
+            font-weight: var(--mina-font-weight-bold);
+            font-family: var(--mina-font-family-sans);
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transition: all var(--mina-transition-base);
+            text-transform: none;
             letter-spacing: 0.025em;
-            box-shadow: 
-                0 20px 40px rgba(168, 85, 247, 0.3),
-                0 10px 20px rgba(14, 165, 233, 0.2);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-primary::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transition: left 0.6s;
+            box-shadow: var(--mina-shadow-sm);
+            min-height: clamp(48px, 12vw, 56px);
+            text-transform: uppercase;
+            font-size: 0.9rem;
         }
 
         .btn-primary:hover {
-            transform: translateY(-4px) scale(1.02);
-            box-shadow: 
-                0 32px 64px rgba(168, 85, 247, 0.4),
-                0 16px 32px rgba(14, 165, 233, 0.3);
-        }
-
-        .btn-primary:hover::before {
-            left: 100%;
+            transform: translateY(-2px);
+            box-shadow: var(--mina-shadow-lg);
+            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-secondary));
         }
 
         .btn-primary:active {
-            transform: translateY(-2px) scale(1.01);
-            box-shadow: 
-                0 20px 40px rgba(168, 85, 247, 0.3),
-                0 10px 20px rgba(14, 165, 233, 0.2);
+            transform: translateY(0);
+            box-shadow: var(--mina-shadow-base);
         }
 
         .btn-primary:focus {
@@ -525,9 +318,8 @@
             }
         }
     </style>
-{% endblock %}
-
-{% block content %}
+</head>
+<body>
     <div class="auth-container">
         <div class="auth-card">
             <div class="auth-header">
@@ -548,102 +340,92 @@
             {% endwith %}
             
             <form method="POST" action="{{ url_for('auth.register') }}" id="registerForm">
-                {{ csrf_token() }}
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="form-row">
-                    <div class="mina-floating-input">
+                    <div class="form-group">
+                        <label for="first_name" class="form-label">First Name</label>
                         <input 
                             type="text" 
                             id="first_name" 
                             name="first_name" 
+                            class="form-input" 
                             value="{{ request.form.get('first_name', '') }}"
-                            placeholder=" "
+                            placeholder="John"
                         >
-                        <label for="first_name">First Name</label>
                     </div>
                     
-                    <div class="mina-floating-input">
+                    <div class="form-group">
+                        <label for="last_name" class="form-label">Last Name</label>
                         <input 
                             type="text" 
                             id="last_name" 
                             name="last_name" 
+                            class="form-input" 
                             value="{{ request.form.get('last_name', '') }}"
-                            placeholder=" "
+                            placeholder="Doe"
                         >
-                        <label for="last_name">Last Name</label>
                     </div>
                 </div>
                 
-                <div class="mina-floating-input">
+                <div class="form-group">
+                    <label for="email" class="form-label form-label--required">Email Address</label>
                     <input 
                         type="email" 
                         id="email" 
                         name="email" 
+                        class="form-input" 
                         required 
                         autocomplete="email"
                         value="{{ request.form.get('email', '') }}"
-                        placeholder=" "
+                        placeholder="john@example.com"
                     >
-                    <label for="email">Email Address</label>
                 </div>
                 
-                <div class="mina-floating-input">
+                <div class="form-group">
+                    <label for="username" class="form-label form-label--required">Username</label>
                     <input 
                         type="text" 
                         id="username" 
                         name="username" 
+                        class="form-input" 
                         required 
                         autocomplete="username"
                         value="{{ request.form.get('username', '') }}"
-                        placeholder=" "
+                        placeholder="johndoe"
                         minlength="3"
                     >
-                    <label for="username">Username</label>
                 </div>
                 
-                <div class="mina-floating-input">
+                <div class="form-group">
+                    <label for="password" class="form-label form-label--required">Password</label>
                     <input 
                         type="password" 
                         id="password" 
                         name="password" 
+                        class="form-input" 
                         required 
                         autocomplete="new-password"
-                        placeholder=" "
+                        placeholder="Create a secure password"
                         minlength="8"
                     >
-                    <label for="password">Password</label>
-                    <div class="password-strength" id="passwordStrength" style="display: none;">
-                        <div class="strength-bar">
-                            <div class="strength-fill"></div>
-                        </div>
-                        <div class="strength-text"></div>
-                    </div>
                     <div class="password-requirements">
                         Password must be at least 8 characters with letters and numbers
                     </div>
                 </div>
                 
-                <div class="mina-floating-input">
+                <div class="form-group">
+                    <label for="confirm_password" class="form-label form-label--required">Confirm Password</label>
                     <input 
                         type="password" 
                         id="confirm_password" 
                         name="confirm_password" 
+                        class="form-input" 
                         required 
                         autocomplete="new-password"
-                        placeholder=" "
+                        placeholder="Confirm your password"
                         minlength="8"
                     >
-                    <label for="confirm_password">Confirm Password</label>
                 </div>
                 
-                <div class="terms-checkbox-group">
-                    <label class="premium-checkbox">
-                        <input type="checkbox" name="terms_accepted" required>
-                        <span class="checkmark"></span>
-                        <span class="checkbox-label">I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a></span>
-                    </label>
-                </div>
-
                 <button type="submit" class="btn-primary" id="registerButton">Create Account</button>
             </form>
             
@@ -664,78 +446,22 @@
             button.disabled = true;
         });
 
-        // Password strength calculator
-        function calculatePasswordStrength(password) {
-            let score = 0;
-            const checks = {
-                length: password.length >= 8,
-                lowercase: /[a-z]/.test(password),
-                uppercase: /[A-Z]/.test(password),
-                number: /\d/.test(password),
-                special: /[!@#$%^&*(),.?\":{}|<>]/.test(password)
-            };
-            
-            Object.values(checks).forEach(check => check && score++);
-            
-            if (checks.length && checks.lowercase && checks.number) score += 1; // Bonus for meeting basic requirements
-            
-            if (score <= 2) return { level: 'weak', text: 'Weak' };
-            if (score <= 3) return { level: 'fair', text: 'Fair' };
-            if (score <= 4) return { level: 'good', text: 'Good' };
-            return { level: 'strong', text: 'Strong' };
-        }
-
-        // Real-time password strength and confirmation
+        // Real-time password confirmation
         const password = document.getElementById('password');
         const confirmPassword = document.getElementById('confirm_password');
-        const passwordStrength = document.getElementById('passwordStrength');
         
-        password.addEventListener('input', function() {
-            const value = this.value;
-            
-            if (value.length > 0) {
-                const strength = calculatePasswordStrength(value);
-                passwordStrength.style.display = 'block';
-                passwordStrength.className = `password-strength strength-${strength.level}`;
-                passwordStrength.querySelector('.strength-text').textContent = strength.text;
-            } else {
-                passwordStrength.style.display = 'none';
-            }
-            
-            validatePasswordMatch();
-        });
-        
-        function validatePasswordMatch() {
+        function validatePassword() {
             if (confirmPassword.value && password.value !== confirmPassword.value) {
                 confirmPassword.setCustomValidity('Passwords do not match');
-                confirmPassword.style.borderColor = '#ef4444';
+                confirmPassword.style.borderColor = 'var(--mina-danger)';
             } else {
                 confirmPassword.setCustomValidity('');
-                if (confirmPassword.value) {
-                    confirmPassword.style.borderColor = '#10b981';
-                } else {
-                    confirmPassword.style.borderColor = '';
-                }
+                confirmPassword.style.borderColor = 'var(--mina-border-primary)';
             }
         }
         
-        confirmPassword.addEventListener('input', validatePasswordMatch);
-
-        // Enhanced field validation with visual feedback
-        const inputs = document.querySelectorAll('.mina-floating-input input');
-        inputs.forEach(input => {
-            input.addEventListener('blur', function() {
-                if (this.checkValidity() && this.value) {
-                    this.style.borderColor = '#10b981';
-                } else if (!this.checkValidity() && this.value) {
-                    this.style.borderColor = '#ef4444';
-                }
-            });
-            
-            input.addEventListener('focus', function() {
-                this.style.borderColor = 'var(--elite-purple-500)';
-            });
-        });
+        password.addEventListener('input', validatePassword);
+        confirmPassword.addEventListener('input', validatePassword);
 
         // Auto-focus first empty field
         document.addEventListener('DOMContentLoaded', function() {
@@ -758,4 +484,5 @@
             });
         {% endif %}
     </script>
-{% endblock %}
+</body>
+</html>

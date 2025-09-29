@@ -10,7 +10,7 @@ import requests
 import threading
 from datetime import datetime
 
-from flask import session
+from flask import session, request
 from flask_socketio import emit, disconnect, join_room, leave_room
 from flask_login import current_user
 
@@ -19,14 +19,6 @@ from app import socketio
 
 # Import advanced buffer management
 from services.session_buffer_manager import buffer_registry, BufferConfig
-
-# Import database models for persistence
-from models import db
-from models.session import Session
-from models.segment import Segment
-
-# Import critical database session cleanup decorator
-from utils.db_helpers import socketio_db_cleanup
 
 logger = logging.getLogger(__name__)
 
@@ -60,17 +52,16 @@ def _background_processor(session_id: str, buffer_manager):
         logger.info(f"🔧 Background processor stopped for session {session_id}")
 
 @socketio.on('connect', namespace='/transcription')
-@socketio_db_cleanup
 def on_connect(auth=None):
     """Handle client connection to transcription namespace with authentication"""
     # Check authentication - require valid user session
     if not current_user.is_authenticated:
-        logger.warning(f"[transcription] Unauthenticated connection attempt")
+        logger.warning(f"[transcription] Unauthenticated connection attempt from {request.sid}")
         emit('error', {'message': 'Authentication required'})
         disconnect()
         return False
     
-    logger.info(f"[transcription] Authenticated client connected (user: {current_user.id})")
+    logger.info(f"[transcription] Authenticated client connected: {request.sid} (user: {current_user.id})")
     join_room(f"user_{current_user.id}")
     emit('status', {
         'status': 'connected', 
@@ -79,14 +70,13 @@ def on_connect(auth=None):
     })
 
 @socketio.on('disconnect', namespace='/transcription')
-@socketio_db_cleanup
 def on_disconnect():
     """Handle client disconnection with comprehensive cleanup"""
-    logger.info(f"[transcription] Client disconnected")
-    # Clean up only sessions for this specific socket connection
+    logger.info(f"[transcription] Client disconnected: {request.sid}")
+    # Clean up any active sessions for this client
     sessions_to_remove = []
     for session_id, session_info in active_sessions.items():
-        if session_info.get('socket_id') == session.get('socket_id'):
+        if session_info.get('client_sid') == request.sid:
             sessions_to_remove.append(session_id)
     
     for session_id in sessions_to_remove:
@@ -108,61 +98,21 @@ def on_disconnect():
             # The thread will terminate when session is removed from active_sessions
             processing_workers.pop(session_id, None)
         
-        # Complete session in database before cleanup
-        if 'db_session_id' in session_info:
-            try:
-                db_session_record = db.session.get(Session, session_info['db_session_id'])
-                if db_session_record:
-                    db_session_record.complete()
-                    db.session.commit()
-                    logger.info(f"✅ [database] Completed session: {db_session_record.id}")
-                    
-                    # Broadcast session completion to user's dashboard room
-                    socketio.emit('session_completed', {
-                        'session_id': db_session_record.id,
-                        'external_id': session_info.get('external_id'),
-                        'user_id': session_info.get('user_id')
-                    }, namespace='/dashboard', to=f'user_{session_info.get("user_id")}')
-            except Exception as e:
-                logger.error(f"Error completing session in database: {e}")
-        
         # Remove from active sessions
         active_sessions.pop(session_id, None)
         logger.info(f"[transcription] Comprehensive cleanup completed for session: {session_id}")
 
 @socketio.on('start_session', namespace='/transcription')
-@socketio_db_cleanup
 def on_start_session(data):
-    """Start a new transcription session with database persistence"""
+    """Start a new transcription session"""
     try:
-        # Generate session IDs
         session_id = str(uuid.uuid4())
-        external_id = Session.generate_external_id()
-        
-        # Create database session record
-        db_session = Session(
-            external_id=external_id,
-            title=data.get('title', 'Live Recording Session'),
-            status='active',
-            locale=data.get('language', 'en'),
-            device_info=data.get('device_info', {}),
-            meta={'created_via': 'websocket', 'user_id': current_user.id}
-        )
-        
-        # Save to database
-        db.session.add(db_session)
-        db.session.commit()
-        
-        logger.info(f"✅ [database] Created session record: {db_session.id} (external: {external_id})")
         
         # Store session info with advanced buffer manager
         buffer_manager = buffer_registry.get_or_create_session(session_id)
         
         active_sessions[session_id] = {
-            'user_id': current_user.id,
-            'socket_id': f'user_{current_user.id}',  # Use user_id as socket identifier
-            'db_session_id': db_session.id,
-            'external_id': external_id,
+            'client_sid': request.sid,
             'started_at': datetime.utcnow(),
             'language': data.get('language', 'en'),
             'enhance_audio': data.get('enhance_audio', True),
@@ -186,19 +136,8 @@ def on_start_session(data):
         
         logger.info(f"[transcription] Started session: {session_id}")
         
-        # Broadcast to user's dashboard room for real-time updates
-        socketio.emit('session_created', {
-            'session_id': db_session.id,
-            'external_id': external_id,
-            'title': db_session.title,
-            'status': 'active',
-            'user_id': current_user.id
-        }, namespace='/dashboard', to=f'user_{current_user.id}')
-        
         emit('session_started', {
             'session_id': session_id,
-            'db_session_id': db_session.id,
-            'external_id': external_id,
             'status': 'ready',
             'message': 'Transcription session started'
         })
@@ -208,7 +147,6 @@ def on_start_session(data):
         emit('error', {'message': f'Failed to start session: {str(e)}'})
 
 @socketio.on('audio_data', namespace='/transcription')
-@socketio_db_cleanup
 def on_audio_data(data):
     """Handle incoming audio data"""
     try:
@@ -257,10 +195,10 @@ def on_audio_data(data):
             emit('error', {'message': 'Unsupported audio data format'})
             return
         
-        # Find the current session for this user
+        # Find the current session for this client
         session_id = None
         for sid, session_info in active_sessions.items():
-            if session_info.get('user_id') == current_user.id:
+            if session_info.get('client_sid') == request.sid:
                 session_id = sid
                 break
         
@@ -323,45 +261,15 @@ def on_audio_data(data):
                     result = response.json()
                     text = result.get('final_text', '') or result.get('text', '')
                     if text and text.strip():
-                        # Save segment to database
-                        db_session_id = session_info['db_session_id']
-                        segment = Segment(
-                            session_id=db_session_id,
-                            kind='final' if result.get('is_final', True) else 'interim',
-                            text=text,
-                            avg_confidence=result.get('confidence', 0.9),
-                            start_ms=result.get('start_ms'),
-                            end_ms=result.get('end_ms')
-                        )
-                        
-                        db.session.add(segment)
-                        db.session.commit()
-                        
-                        logger.info(f"✅ [database] Saved segment: {segment.id}")
-                        
                         # Emit properly formatted transcription result
-                        transcription_data = {
+                        emit('transcription_result', {
                             'text': text,
                             'is_final': result.get('is_final', True),
                             'confidence': result.get('confidence', 0.9),
                             'timestamp': int(time.time() * 1000),
                             'speaker_id': result.get('speaker_id', 'Speaker 1'),
-                            'processing_time_ms': result.get('processing_time_ms', 100),
-                            'segment_id': segment.id,
-                            'session_id': db_session_id
-                        }
-                        
-                        emit('transcription_result', transcription_data)
-                        
-                        # Broadcast to user's dashboard room for real-time updates
-                        socketio.emit('transcription_update', {
-                            'session_id': db_session_id,
-                            'segment_id': segment.id,
-                            'text': text,
-                            'is_final': segment.is_final,
-                            'user_id': current_user.id
-                        }, namespace='/dashboard', to=f'user_{current_user.id}')
-                        
+                            'processing_time_ms': result.get('processing_time_ms', 100)
+                        })
                         logger.info(f"✅ [transcription] Emitted result: '{text[:50]}...'")
                     else:
                         logger.debug(f"📝 [transcription] Empty result, skipping emission")
@@ -384,14 +292,13 @@ def on_audio_data(data):
         emit('error', {'message': f'Audio processing error: {str(e)}'})
 
 @socketio.on('end_session', namespace='/transcription')
-@socketio_db_cleanup
 def on_end_session(data=None):
     """End the current transcription session"""
     try:
         # Find sessions for this client
         sessions_to_end = []
         for session_id, session_info in active_sessions.items():
-            if session_info.get('user_id') == getattr(current_user, 'id', None):
+            if session_info.get('client_sid') == request.sid:
                 sessions_to_end.append(session_id)
         
         for session_id in sessions_to_end:

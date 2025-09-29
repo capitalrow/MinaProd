@@ -1,220 +1,21 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark" class="h-100">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Connection Test - Mina</title>
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
-    
-    <!-- Socket.IO -->
+    <title>Socket.IO Connection Test - Monitoring System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-    
-    <!-- PREMIUM CONNECTION TEST DESIGN -->
-    <style>
-        :root {
-            --elite-purple-500: #a855f7;
-            --elite-purple-700: #7c3aed;
-            --premium-blue-500: #3b82f6;
-            --premium-blue-600: #2563eb;
-            --emerald-500: #10b981;
-            --red-500: #ef4444;
-            --glass-bg-light: rgba(255, 255, 255, 0.08);
-            --glass-border: rgba(255, 255, 255, 0.12);
-        }
-        
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
-            background-attachment: fixed;
-            color: #ffffff;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 200%;
-            height: 200%;
-            background: 
-                radial-gradient(circle at 25% 75%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 75% 25%, rgba(59, 130, 246, 0.3) 0%, transparent 50%);
-            animation: premiumConnectionFloat 22s ease-in-out infinite;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        @keyframes premiumConnectionFloat {
-            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
-            50% { transform: translate(40px, -40px) rotate(180deg); }
-        }
-        
-        .connection-card {
-            position: relative;
-            z-index: 10;
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(40px) saturate(180%);
-            border-radius: 24px;
-            padding: 3rem;
-            border: 1px solid var(--glass-border);
-            box-shadow: 
-                0 32px 64px rgba(0, 0, 0, 0.25),
-                0 16px 32px rgba(0, 0, 0, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-            width: min(700px, 90vw);
-            text-align: center;
-            animation: connectionCardEntry 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .connection-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-        }
-
-        @keyframes connectionCardEntry {
-            from {
-                opacity: 0;
-                transform: translateY(40px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-        
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 2rem;
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .test-icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 2rem;
-            background: linear-gradient(135deg, var(--premium-blue-500), var(--elite-purple-500));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: white;
-            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3);
-            animation: testIconPulse 2s ease-in-out infinite;
-        }
-
-        @keyframes testIconPulse {
-            0%, 100% {
-                transform: scale(1);
-                box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3);
-            }
-            50% {
-                transform: scale(1.05);
-                box-shadow: 0 25px 50px rgba(168, 85, 247, 0.4);
-            }
-        }
-        
-        #results {
-            background: var(--glass-bg-light);
-            border-radius: 16px;
-            padding: 2rem;
-            margin-top: 2rem;
-            text-align: left;
-            min-height: 200px;
-            border: 1px solid var(--glass-border);
-        }
-        
-        .result-item {
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border-left: 4px solid var(--premium-blue-500);
-            animation: resultItemEntry 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .result-item.success {
-            border-left-color: var(--emerald-500);
-            background: rgba(16, 185, 129, 0.1);
-        }
-
-        .result-item.error {
-            border-left-color: var(--red-500);
-            background: rgba(239, 68, 68, 0.1);
-        }
-
-        @keyframes resultItemEntry {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .connection-card {
-                padding: 2rem;
-                margin: 1rem;
-            }
-            h1 {
-                font-size: 2rem;
-            }
-            .test-icon {
-                width: 60px;
-                height: 60px;
-                font-size: 1.5rem;
-            }
-        }
-    </style>
 </head>
 <body>
-    <div class="connection-card">
-        <div class="test-icon">
-            <i class="fas fa-network-wired"></i>
-        </div>
-        
-        <h1>Connection Test</h1>
-        <p style="color: rgba(255, 255, 255, 0.8); font-size: 1.125rem; margin-bottom: 2rem;">Testing Socket.IO 4.7.2 compatibility and connection quality</p>
-        
-        <div id="results"></div>
-    </div>
+    <h1>🔍 Manual Monitoring System - Connection Test</h1>
+    <div id="results"></div>
     
     <script>
-    // Premium Connection Test with Enhanced Logging
-    function logResult(message, type = 'info') {
-        const resultsContainer = document.getElementById('results');
-        const resultItem = document.createElement('div');
-        resultItem.className = `result-item ${type}`;
-        resultItem.innerHTML = message;
-        resultsContainer.appendChild(resultItem);
+    // Monitoring System Test - Socket.IO Compatibility Check
+    function logResult(message) {
+        document.getElementById('results').innerHTML += '<p>' + message + '</p>';
         console.log(message);
-        
-        // Auto-scroll to latest result
-        resultItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
     
-    logResult('🔄 Initializing premium connection test...', 'info');
+    logResult('🔄 Testing Socket.IO 4.7.2 compatibility...');
     
     const socket = io({
         transports: ['polling', 'websocket'],
@@ -222,29 +23,27 @@
     });
     
     socket.on('connect', () => {
-        logResult('<i class="fas fa-check-circle me-2"></i>Socket.IO 4.7.2 connection established successfully!', 'success');
-        logResult('<i class="fas fa-paper-plane me-2"></i>Sending test message to server...', 'info');
-        socket.emit('test_message', {test: true, timestamp: Date.now()});
+        logResult('✅ Socket.IO 4.7.2 connection successful!');
+        socket.emit('test_message', {test: true});
     });
     
     socket.on('connected', (data) => {
-        logResult('<i class="fas fa-server me-2"></i>Server response received: ' + JSON.stringify(data), 'success');
-        logResult('<i class="fas fa-clock me-2"></i>Scheduling disconnect in 2 seconds...', 'info');
+        logResult('✅ Server response received: ' + JSON.stringify(data));
         setTimeout(() => socket.disconnect(), 2000);
     });
     
     socket.on('connect_error', (error) => {
-        logResult('<i class="fas fa-times-circle me-2"></i>Connection failed: ' + error, 'error');
-        logResult('<i class="fas fa-exclamation-triangle me-2"></i>Version incompatible, testing alternative...', 'error');
+        logResult('❌ Connection failed: ' + error);
+        logResult('🔄 This version incompatible, would try next...');
     });
     
     socket.on('disconnect', () => {
-        logResult('<i class="fas fa-plug me-2"></i>Connection closed - Test sequence complete', 'success');
+        logResult('🔌 Disconnected - Test complete');
     });
     
     setTimeout(() => {
         if (!socket.connected) {
-            logResult('<i class="fas fa-hourglass-end me-2"></i>Connection timeout - Version incompatible', 'error');
+            logResult('⏰ Connection timeout - version incompatible');
         }
     }, 5000);
     </script>
