@@ -33,45 +33,23 @@
         </div>
 
         <!-- Premium Stats Grid with Interactive Cards -->
-        <div class="stats-grid">
-            <div class="stat-card" data-stat="active-sessions">
-                <div class="stat-card-content">
-                    <div class="stat-value" id="active-sessions">0</div>
-                    <div class="stat-label">
-                        <i class="fas fa-microphone stat-icon"></i>
-                        Active Sessions
-                    </div>
-                </div>
+        <div class="stats-grid" id="stats-grid">
+            <!-- Skeleton loaders shown initially, replaced by real data -->
+            <div class="stat-card skeleton-stat-card">
+                <div class="skeleton skeleton-stat-value"></div>
+                <div class="skeleton skeleton-stat-label"></div>
             </div>
-            
-            <div class="stat-card" data-stat="total-hours">
-                <div class="stat-card-content">
-                    <div class="stat-value" id="total-hours">0</div>
-                    <div class="stat-label">
-                        <i class="fas fa-clock stat-icon"></i>
-                        Hours Recorded
-                    </div>
-                </div>
+            <div class="stat-card skeleton-stat-card">
+                <div class="skeleton skeleton-stat-value"></div>
+                <div class="skeleton skeleton-stat-label"></div>
             </div>
-            
-            <div class="stat-card" data-stat="success-rate">
-                <div class="stat-card-content">
-                    <div class="stat-value" id="success-rate">0%</div>
-                    <div class="stat-label">
-                        <i class="fas fa-chart-line stat-icon"></i>
-                        Success Rate
-                    </div>
-                </div>
+            <div class="stat-card skeleton-stat-card">
+                <div class="skeleton skeleton-stat-value"></div>
+                <div class="skeleton skeleton-stat-label"></div>
             </div>
-            
-            <div class="stat-card" data-stat="avg-confidence">
-                <div class="stat-card-content">
-                    <div class="stat-value" id="avg-confidence">0%</div>
-                    <div class="stat-label">
-                        <i class="fas fa-star stat-icon"></i>
-                        Avg Confidence
-                    </div>
-                </div>
+            <div class="stat-card skeleton-stat-card">
+                <div class="skeleton skeleton-stat-value"></div>
+                <div class="skeleton skeleton-stat-label"></div>
             </div>
         </div>
 
@@ -207,19 +185,61 @@
             }
             
             updateStatsDisplay(stats) {
-                // Update active sessions
+                const statsGrid = document.getElementById('stats-grid');
+                
+                // Replace skeleton loaders with real stat cards
+                statsGrid.innerHTML = `
+                    <div class="stat-card" data-stat="active-sessions">
+                        <div class="stat-card-content">
+                            <div class="stat-value" id="active-sessions">0</div>
+                            <div class="stat-label">
+                                <i class="fas fa-microphone stat-icon"></i>
+                                Active Sessions
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card" data-stat="total-hours">
+                        <div class="stat-card-content">
+                            <div class="stat-value" id="total-hours">0</div>
+                            <div class="stat-label">
+                                <i class="fas fa-clock stat-icon"></i>
+                                Hours Recorded
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card" data-stat="success-rate">
+                        <div class="stat-card-content">
+                            <div class="stat-value" id="success-rate">0%</div>
+                            <div class="stat-label">
+                                <i class="fas fa-chart-line stat-icon"></i>
+                                Success Rate
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card" data-stat="avg-confidence">
+                        <div class="stat-card-content">
+                            <div class="stat-value" id="avg-confidence">0%</div>
+                            <div class="stat-label">
+                                <i class="fas fa-star stat-icon"></i>
+                                Avg Confidence
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Animate the values
                 const activeSessions = stats.meetings?.total || 0;
                 this.animateValue(document.getElementById('active-sessions'), 0, activeSessions);
                 
-                // Update total hours
                 const totalHours = stats.transcription_hours?.total || 0;
                 this.animateValue(document.getElementById('total-hours'), 0, totalHours);
                 
-                // Update success rate
                 const successRate = stats.success_rate?.total || 0;
                 this.animateValue(document.getElementById('success-rate'), 0, successRate, '%');
                 
-                // Update average confidence
                 const avgConfidence = stats.avg_confidence?.total || 0;
                 this.animateValue(document.getElementById('avg-confidence'), 0, avgConfidence, '%');
             }
