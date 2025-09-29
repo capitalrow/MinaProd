@@ -333,8 +333,8 @@ def create_app() -> Flask:
 
     # Settings routes
     try:
-        from routes.settings import settings_bp
-        app.register_blueprint(settings_bp)
+        from routes.simple_settings import simple_settings_bp
+        app.register_blueprint(simple_settings_bp)
         app.logger.info("Settings routes registered")
     except Exception as e:
         app.logger.error(f"Failed to register settings routes: {e}")
