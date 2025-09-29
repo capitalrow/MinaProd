@@ -53,42 +53,49 @@
         <h2 id="metrics-heading" class="sr-only">Performance Metrics</h2>
         <div class="row g-4 mb-5">
             <div class="col-lg-3 col-md-6">
-                <div class="card h-100 position-relative overflow-hidden" data-stat="total_sessions">
-                    <div class="card-body text-center p-4">
-                        <div class="empty-state-illustration mx-auto mb-3" style="width: 60px; height: 60px; background: var(--mina-primary-light);">
-                            <i class="fas fa-calendar-alt text-primary" aria-hidden="true"></i>
-                        </div>
-                        <h2 class="display-6 fw-bold text-primary mb-2">{{ stats.get('total_sessions', 0) }}</h2>
-                        <p class="text-muted mb-0 fw-medium">Total Sessions</p>
-                        <div class="position-absolute top-0 end-0 p-2">
+                <div class="mina-glass-card interactive h-100" data-stat="total_sessions" role="button" tabindex="0">
+                    <div class="mina-card-header">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                                <i class="fas fa-calendar-alt text-primary" aria-hidden="true"></i>
+                            </div>
                             <span class="badge bg-primary bg-opacity-10 text-primary">All Time</span>
                         </div>
-                        <!-- Trend Indicator -->
-                        <div class="mt-2 d-flex align-items-center justify-content-center text-success">
-                            <i class="fas fa-arrow-up me-1" aria-hidden="true"></i>
-                            <small class="fw-medium">+12% this month</small>
+                    </div>
+                    <div class="mina-card-body text-center">
+                        <h2 class="display-5 fw-bold mb-2" style="color: var(--elite-purple-500);">{{ stats.get('total_sessions', 0) }}</h2>
+                        <p class="mina-card-title mb-2">Total Sessions</p>
+                        <div class="mina-card-footer justify-content-center">
+                            <div class="d-flex align-items-center text-success">
+                                <i class="fas fa-arrow-up me-1" aria-hidden="true"></i>
+                                <small class="fw-medium">+12% this month</small>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
     
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card h-100 position-relative overflow-hidden">
-            <div class="card-body text-center p-4">
-                <div class="mb-3">
-                    <div class="bg-success bg-opacity-10 rounded-circle mx-auto d-flex align-items-center justify-content-center" 
-                         style="width: 60px; height: 60px;">
-                        <i class="fas fa-comments fa-2x text-success" aria-hidden="true"></i>
+            <div class="col-lg-3 col-md-6">
+                <div class="mina-glass-card premium interactive h-100" data-stat="total_segments" role="button" tabindex="0">
+                    <div class="mina-card-header">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                                <i class="fas fa-comments text-success" aria-hidden="true"></i>
+                            </div>
+                            <span class="badge bg-success bg-opacity-10 text-success">Live</span>
+                        </div>
+                    </div>
+                    <div class="mina-card-body text-center">
+                        <h2 class="display-5 fw-bold mb-2 text-success">{{ stats.get('total_segments', 0) }}</h2>
+                        <p class="mina-card-title mb-2">Transcribed Segments</p>
+                        <div class="mina-card-footer justify-content-center">
+                            <div class="d-flex align-items-center">
+                                <span class="text-success fw-medium">Real-time processing</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <h2 class="display-6 fw-bold text-success mb-2">{{ stats.get('total_segments', 0) }}</h2>
-                <p class="text-muted mb-0 fw-medium">Transcribed Segments</p>
-                <div class="position-absolute top-0 end-0 p-2">
-                    <span class="badge bg-success bg-opacity-10 text-success">Total</span>
-                </div>
             </div>
-        </div>
-    </div>
     
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="card h-100 position-relative overflow-hidden">

@@ -61,6 +61,29 @@
     --neutral-900: #171717;
     --neutral-950: #0a0a0a;
 
+    /* Premium Glass Morphism System */
+    --glass-bg-light: rgba(255, 255, 255, 0.08);
+    --glass-bg-dark: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+    --glass-blur: blur(20px);
+
+    /* Premium Animation System */
+    --transition-instant: 0.1s;
+    --transition-fast: 0.2s;
+    --transition-medium: 0.3s;
+    --transition-slow: 0.5s;
+    --transition-ultra-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-elastic: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --neutral-400: #a3a3a3;
+    --neutral-500: #737373;
+    --neutral-600: #525252;
+    --neutral-700: #404040;
+    --neutral-800: #262626;
+    --neutral-900: #171717;
+    --neutral-950: #0a0a0a;
+
     /* Glass Morphism Alpha Values */
     --glass-alpha-10: rgba(255, 255, 255, 0.1);
     --glass-alpha-20: rgba(255, 255, 255, 0.2);
