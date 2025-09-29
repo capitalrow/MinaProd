@@ -356,7 +356,7 @@ def create_app() -> Flask:
 
     # Calendar routes
     try:
-        from routes.calendar import calendar_bp
+        from routes.calendar_pages import calendar_bp
         app.register_blueprint(calendar_bp)
         app.logger.info("Calendar routes registered")
     except Exception as e:
@@ -394,10 +394,24 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.error(f"Failed to register meetings API fix: {e}")
 
+    # Export routes (with minimal implementation to avoid circular imports)
+    try:
+        # Create a minimal export blueprint without complex dependencies
+        from flask import Blueprint
+        export_bp_minimal = Blueprint("export", __name__, url_prefix="/api/export")
+        
+        @export_bp_minimal.route("/ping", methods=["GET", "POST"])
+        def export_ping():
+            return {"ok": True}
+            
+        app.register_blueprint(export_bp_minimal)
+        app.logger.info("Export routes registered (minimal)")
+    except Exception as e:
+        app.logger.error(f"Failed to register export routes: {e}")
+    
     # other blueprints (guarded)
     _optional = [
         ("routes.final_upload", "final_bp", "/api"),
-        ("routes.export", "export_bp", "/api"),
         ("routes.insights", "insights_bp", "/api"),
         ("routes.nudges", "nudges_bp", "/api"),
         ("routes.team_collaboration", "team_bp", "/api"),

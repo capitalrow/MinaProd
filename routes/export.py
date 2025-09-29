@@ -3,6 +3,9 @@ import os, io, zipfile, logging
 from flask import Blueprint, jsonify, send_file, abort, request
 from flask_login import login_required, current_user
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from services.files import session_audio_path, session_transcript_path
 from services.export_service import (
     ExportService, 
@@ -14,9 +17,9 @@ from services.export_service import (
 
 logger = logging.getLogger(__name__)
 
-export_bp = Blueprint("export", __name__)
+export_bp = Blueprint("export", __name__, url_prefix="/api/export")
 
-@export_bp.route("/export/ping", methods=["GET"])
+@export_bp.route("/ping", methods=["GET", "POST"])
 def export_ping():
     return jsonify({"ok": True})
 
@@ -50,7 +53,7 @@ def get_bundle(session_id: str):
 
 
 # Advanced Export Routes
-@export_bp.route("/api/formats", methods=["GET"])
+@export_bp.route("/formats", methods=["GET"])
 @login_required
 def get_export_formats():
     """Get available export formats and templates."""
@@ -68,7 +71,7 @@ def get_export_formats():
         }), 500
 
 
-@export_bp.route("/api/sessions/<int:session_id>/<format_type>", methods=["GET"])
+@export_bp.route("/sessions/<int:session_id>/<format_type>", methods=["GET"])
 @login_required
 def export_single_session_legacy(session_id: int, format_type: str):
     """Export a single session using enhanced legacy export functionality."""
@@ -156,7 +159,7 @@ def export_single_session_legacy(session_id: int, format_type: str):
         }), 500
 
 
-@export_bp.route("/api/advanced", methods=["POST"])
+@export_bp.route("/advanced", methods=["POST"])
 @login_required
 def export_advanced():
     """Export multiple sessions with advanced formatting options."""
@@ -250,7 +253,7 @@ def export_advanced():
         }), 500
 
 
-@export_bp.route("/api/templates", methods=["GET"])
+@export_bp.route("/templates", methods=["GET"])
 @login_required
 def get_export_templates():
     """Get available export templates with descriptions."""
@@ -296,7 +299,7 @@ def get_export_templates():
         }), 500
 
 
-@export_bp.route("/api/preview", methods=["POST"])
+@export_bp.route("/preview", methods=["POST"])
 @login_required
 def preview_export():
     """Generate a preview of what the export would look like."""
