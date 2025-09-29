@@ -432,6 +432,21 @@ def create_app() -> Flask:
                 app.logger.warning("Rejecting WS from origin=%s", origin)
                 return False  # refuse connection
 
+    # Start resource cleanup service to prevent memory leaks
+    try:
+        from services.resource_cleanup import resource_cleanup_manager
+        
+        # Register default cleanup tasks
+        resource_cleanup_manager.register_cleanup_task('memory_gc', resource_cleanup_manager.force_garbage_collection, 60)
+        resource_cleanup_manager.register_cleanup_task('temp_files', resource_cleanup_manager.cleanup_temp_files, 600)
+        resource_cleanup_manager.register_cleanup_task('websocket_buffers', resource_cleanup_manager.cleanup_websocket_buffers, 300)
+        
+        # Start the background service
+        resource_cleanup_manager.start_cleanup_service()
+        app.logger.info("✅ Resource cleanup service started with default tasks registered")
+    except Exception as e:
+        app.logger.error(f"❌ Failed to start resource cleanup service: {e}")
+    
     app.logger.info("Mina app ready")
     return app
 
