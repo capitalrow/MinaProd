@@ -97,10 +97,11 @@ class MinaQAPipeline:
         
         # Test 1: Generate test WebM audio
         try:
-            test_audio = self.generate_test_webm_audio()
+            test_audio, audio_format = self.generate_test_webm_audio()
             results['subtests']['webm_generation'] = {
                 'status': 'pass',
                 'size_bytes': len(test_audio),
+                'format': audio_format,
                 'message': 'Test WebM audio generated successfully'
             }
         except Exception as e:
@@ -151,11 +152,14 @@ class MinaQAPipeline:
         logger.info("🔍 Testing WebM conversion quality")
         
         # Create reference audio patterns
-        test_patterns = [
-            self.generate_sine_wave_webm(440, 1000),  # A4 note, 1 second
-            self.generate_sine_wave_webm(880, 500),   # A5 note, 0.5 seconds
-            self.generate_noise_webm(2000)            # White noise, 2 seconds
-        ]
+        test_patterns = []
+        for freq, dur, name in [(440, 1000, "A4"), (880, 500, "A5")]:
+            audio_data, audio_format = self.generate_sine_wave_webm(freq, dur)
+            test_patterns.append((audio_data, f"{name}_sine_{audio_format}"))
+        
+        # Add white noise pattern
+        noise_data, noise_format = self.generate_noise_webm(2000)
+        test_patterns.append((noise_data, f"white_noise_{noise_format}"))
         
         results = {
             'test_name': 'WebM Conversion Quality',
@@ -164,24 +168,26 @@ class MinaQAPipeline:
             'conversion_results': []
         }
         
-        for i, pattern in enumerate(test_patterns):
+        for i, (audio_bytes, label) in enumerate(test_patterns):
             try:
                 # Test conversion
-                converted = self.test_ffmpeg_conversion(pattern)
+                converted = self.test_ffmpeg_conversion(audio_bytes)
                 
                 if converted:
                     # Analyze converted audio quality
                     quality_score = self.analyze_audio_quality(converted)
                     results['conversion_results'].append({
                         'pattern_id': i,
+                        'pattern_label': label,
                         'success': True,
                         'quality_score': quality_score,
-                        'input_size': len(pattern),
+                        'input_size': len(audio_bytes),
                         'output_size': len(converted)
                     })
                 else:
                     results['conversion_results'].append({
                         'pattern_id': i,
+                        'pattern_label': label,
                         'success': False,
                         'error': 'Conversion failed'
                     })
@@ -189,6 +195,7 @@ class MinaQAPipeline:
             except Exception as e:
                 results['conversion_results'].append({
                     'pattern_id': i,
+                    'pattern_label': label,
                     'success': False,
                     'error': str(e)
                 })
@@ -505,7 +512,7 @@ class MinaQAPipeline:
         return actions
     
     # Helper methods for test data generation
-    def generate_test_webm_audio(self) -> bytes:
+    def generate_test_webm_audio(self) -> Tuple[bytes, str]:
         """Generate test WebM audio data"""
         try:
             # Generate a 2-second sine wave at 440 Hz (A4 note)
@@ -515,7 +522,7 @@ class MinaQAPipeline:
             # Export to WebM format (Opus codec)
             buffer = io.BytesIO()
             sine_wave.export(buffer, format="webm", codec="libopus")
-            return buffer.getvalue()
+            return buffer.getvalue(), "webm"
         except Exception as e:
             logger.error(f"Error generating WebM audio: {e}")
             # Fallback to WAV format if WebM fails
@@ -523,12 +530,12 @@ class MinaQAPipeline:
                 sine_wave = Sine(440).to_audio_segment(duration=2000)
                 buffer = io.BytesIO()
                 sine_wave.export(buffer, format="wav")
-                return buffer.getvalue()
+                return buffer.getvalue(), "wav"
             except Exception as e2:
                 logger.error(f"Error generating WAV audio fallback: {e2}")
-                return b'AUDIO_GENERATION_FAILED'
+                return b'AUDIO_GENERATION_FAILED', "error"
     
-    def generate_sine_wave_webm(self, frequency: int, duration_ms: int) -> bytes:
+    def generate_sine_wave_webm(self, frequency: int, duration_ms: int) -> Tuple[bytes, str]:
         """Generate sine wave WebM audio"""
         try:
             # Generate sine wave at specified frequency and duration
@@ -537,7 +544,7 @@ class MinaQAPipeline:
             # Export to WebM format
             buffer = io.BytesIO()
             sine_wave.export(buffer, format="webm", codec="libopus")
-            return buffer.getvalue()
+            return buffer.getvalue(), "webm"
         except Exception as e:
             logger.error(f"Error generating sine wave WebM: {e}")
             # Fallback to WAV format
@@ -545,12 +552,12 @@ class MinaQAPipeline:
                 sine_wave = Sine(frequency).to_audio_segment(duration=duration_ms)
                 buffer = io.BytesIO()
                 sine_wave.export(buffer, format="wav")
-                return buffer.getvalue()
+                return buffer.getvalue(), "wav"
             except Exception as e2:
                 logger.error(f"Error generating sine wave WAV fallback: {e2}")
-                return b'SINE_WAVE_GENERATION_FAILED'
+                return b'SINE_WAVE_GENERATION_FAILED', "error"
     
-    def generate_noise_webm(self, duration_ms: int) -> bytes:
+    def generate_noise_webm(self, duration_ms: int) -> Tuple[bytes, str]:
         """Generate white noise WebM audio"""
         try:
             # Generate white noise at specified duration
@@ -562,7 +569,7 @@ class MinaQAPipeline:
             # Export to WebM format
             buffer = io.BytesIO()
             white_noise.export(buffer, format="webm", codec="libopus")
-            return buffer.getvalue()
+            return buffer.getvalue(), "webm"
         except Exception as e:
             logger.error(f"Error generating white noise WebM: {e}")
             # Fallback to WAV format
@@ -570,10 +577,10 @@ class MinaQAPipeline:
                 white_noise = WhiteNoise().to_audio_segment(duration=duration_ms) - 20
                 buffer = io.BytesIO()
                 white_noise.export(buffer, format="wav")
-                return buffer.getvalue()
+                return buffer.getvalue(), "wav"
             except Exception as e2:
                 logger.error(f"Error generating white noise WAV fallback: {e2}")
-                return b'NOISE_GENERATION_FAILED'
+                return b'NOISE_GENERATION_FAILED', "error"
     
     def generate_test_audio_for_content(self, words: List[str]) -> bytes:
         """Generate synthetic audio for specific word content"""

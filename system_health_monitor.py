@@ -6,8 +6,8 @@ Real-time monitoring of system performance, quality metrics, and user experience
 
 import logging
 import time
-import json
 from datetime import datetime, timedelta
+import json
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, asdict
 import psutil
@@ -192,10 +192,11 @@ class SystemHealthMonitor:
             from app import db
             from sqlalchemy import func
             with db.session as session:
-                # Get average end-to-end latency from recent chunks
+                # Get average end-to-end latency from recent chunks (last hour)
+                one_hour_ago = datetime.utcnow() - timedelta(hours=1)
                 avg_latency = session.query(func.avg(ChunkMetric.end_to_end_latency)).filter(
                     ChunkMetric.end_to_end_latency.isnot(None),
-                    ChunkMetric.created_at >= func.now() - func.interval('1 hour')
+                    ChunkMetric.created_at >= one_hour_ago
                 ).scalar()
                 return float(avg_latency) if avg_latency else 350.0  # Default to 350ms if no data
         except Exception as e:
@@ -209,14 +210,15 @@ class SystemHealthMonitor:
             from app import db
             from sqlalchemy import func
             with db.session as session:
-                # Calculate error rate from recent chunks
+                # Calculate error rate from recent chunks (last hour)
+                one_hour_ago = datetime.utcnow() - timedelta(hours=1)
                 total_chunks = session.query(ChunkMetric).filter(
-                    ChunkMetric.created_at >= func.now() - func.interval('1 hour')
+                    ChunkMetric.created_at >= one_hour_ago
                 ).count()
                 
                 error_chunks = session.query(ChunkMetric).filter(
                     ChunkMetric.status == 'error',
-                    ChunkMetric.created_at >= func.now() - func.interval('1 hour')
+                    ChunkMetric.created_at >= one_hour_ago
                 ).count()
                 
                 if total_chunks > 0:
@@ -234,15 +236,16 @@ class SystemHealthMonitor:
             from app import db
             from sqlalchemy import func
             with db.session as session:
-                # Calculate quality filter rate based on low confidence chunks
+                # Calculate quality filter rate based on low confidence chunks (last hour)
+                one_hour_ago = datetime.utcnow() - timedelta(hours=1)
                 total_chunks = session.query(ChunkMetric).filter(
                     ChunkMetric.avg_confidence_score.isnot(None),
-                    ChunkMetric.created_at >= func.now() - func.interval('1 hour')
+                    ChunkMetric.created_at >= one_hour_ago
                 ).count()
                 
                 low_quality_chunks = session.query(ChunkMetric).filter(
                     ChunkMetric.avg_confidence_score < 0.6,  # Consider <60% confidence as filtered
-                    ChunkMetric.created_at >= func.now() - func.interval('1 hour')
+                    ChunkMetric.created_at >= one_hour_ago
                 ).count()
                 
                 if total_chunks > 0:
