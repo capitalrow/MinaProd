@@ -232,6 +232,46 @@
             opacity: 1;
             transform: translateY(0);
         }
+        
+        /* PREMIUM COMPONENT ANIMATIONS */
+        .premium-fade-in {
+            animation: premiumFadeIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .premium-slide-up {
+            animation: premiumSlideUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .premium-scale-in {
+            animation: premiumScaleIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        @keyframes premiumFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes premiumSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes premiumScaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
