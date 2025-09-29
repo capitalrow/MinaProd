@@ -562,7 +562,7 @@
     <script>
         // Initialize Feather icons
         if (typeof feather !== 'undefined') {
-            feather.replace();
+            // Note: Using Font Awesome icons consistently - no initialization needed
         }
 
         // Dark mode toggle
@@ -584,7 +584,7 @@
             if (themeIcon) {
                 themeIcon.setAttribute('data-feather', theme === 'light' ? 'moon' : 'sun');
                 if (typeof feather !== 'undefined') {
-                    feather.replace();
+                    // Note: Using Font Awesome icons consistently - no initialization needed
                 }
             }
         }
