@@ -277,6 +277,183 @@
             100% { transform: rotate(360deg); }
         }
         
+        /* ========================================= */
+        /* PREMIUM NAVIGATION ENHANCEMENTS          */
+        /* ========================================= */
+        
+        /* Enhanced Sidebar with Premium Glass Effect */
+        .sidebar-navigation {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(50px) saturate(200%);
+            border-right: 1px solid var(--glass-border);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.15),
+                inset 1px 0 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        /* Premium Brand Section */
+        .sidebar-brand {
+            background: var(--glass-bg-dark);
+            border-bottom: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-brand::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+        
+        .sidebar-brand:hover {
+            background: var(--glass-bg-light);
+            transform: scale(1.02);
+        }
+        
+        .sidebar-brand-icon {
+            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-500));
+            box-shadow: 
+                0 10px 20px rgba(168, 85, 247, 0.3),
+                0 5px 10px rgba(59, 130, 246, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-brand:hover .sidebar-brand-icon {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 
+                0 15px 30px rgba(168, 85, 247, 0.4),
+                0 8px 16px rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Premium Menu Items */
+        .sidebar-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            margin: 0.25rem 0.75rem;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .sidebar-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .sidebar-item:hover::before {
+            left: 100%;
+        }
+        
+        .sidebar-item:hover {
+            background: var(--glass-bg-light);
+            transform: translateX(4px);
+            box-shadow: 0 8px 16px rgba(168, 85, 247, 0.2);
+        }
+        
+        .sidebar-item.active {
+            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-500));
+            transform: translateX(8px);
+            box-shadow: 
+                0 10px 20px rgba(168, 85, 247, 0.4),
+                0 5px 10px rgba(59, 130, 246, 0.3);
+        }
+        
+        .sidebar-item-icon {
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-item:hover .sidebar-item-icon,
+        .sidebar-item.active .sidebar-item-icon {
+            transform: scale(1.1);
+        }
+        
+        /* Premium Badge Animations */
+        .sidebar-item-badge {
+            background: linear-gradient(135deg, var(--emerald-500), #059669);
+            animation: premiumBadgePulse 2s ease-in-out infinite;
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+        }
+        
+        @keyframes premiumBadgePulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 6px 12px rgba(16, 185, 129, 0.5);
+            }
+        }
+        
+        /* Premium Tooltip Enhancement */
+        .sidebar-item-tooltip {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(30px) saturate(170%);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            transform: translateX(8px);
+        }
+        
+        /* Section Labels with Premium Style */
+        .sidebar-section-label {
+            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        /* Collapse/Expand Animation Enhancement */
+        .sidebar-navigation.collapsed {
+            backdrop-filter: blur(60px) saturate(220%);
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.2),
+                inset 1px 0 0 rgba(255, 255, 255, 0.15);
+        }
+        
+        /* Mobile Navigation Overlay */
+        @media (max-width: 768px) {
+            .sidebar-navigation {
+                background: var(--glass-bg-dark);
+                backdrop-filter: blur(60px) saturate(200%);
+                box-shadow: 
+                    0 30px 60px rgba(0, 0, 0, 0.3),
+                    inset 1px 0 0 rgba(255, 255, 255, 0.2);
+            }
+        }
+        
+        /* Premium Scroll Enhancement */
+        .sidebar-menu::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar-menu::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+        
+        .sidebar-menu::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-500));
+            border-radius: 3px;
+            transition: background 0.3s ease;
+        }
+        
+        .sidebar-menu::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--elite-purple-700), var(--premium-blue-700));
+        }
+        
         /* Prevent flash of unstyled content */
         body { visibility: hidden; }
         body.loaded { visibility: visible; }
@@ -312,13 +489,13 @@
             <i class="fas fa-chevron-right sidebar-toggle-indicator"></i>
         </div>
 
-        <!-- Navigation Menu -->
-        <nav class="sidebar-menu" role="menu">
+        <!-- Premium Navigation Menu -->
+        <nav class="sidebar-menu premium-neural-bg" role="menu">
             <!-- Main Section -->
             <div class="sidebar-section">
                 <div class="sidebar-section-label">Main</div>
                 
-                <a href="{{ url_for('dashboard.index') }}" class="sidebar-item" data-route="/dashboard" role="menuitem">
+                <a href="{{ url_for('dashboard.index') }}" class="sidebar-item premium-magnetic" data-route="/dashboard" role="menuitem">
                     <div class="sidebar-item-icon">
                         <i class="fas fa-th-large"></i>
                     </div>
