@@ -214,7 +214,7 @@ class DependencyMonitor:
             
             # Try a simple API call to check health
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 messages=[{"role": "user", "content": "test"}],
                 max_tokens=1
             )
@@ -222,7 +222,7 @@ class DependencyMonitor:
             return {
                 'success': True,
                 'metadata': {
-                    'model': 'gpt-3.5-turbo',
+                    'model': 'gpt-4o-mini',
                     'api_version': 'v1'
                 }
             }
@@ -236,11 +236,26 @@ class DependencyMonitor:
     def _check_database(self) -> Dict:
         """Check database connectivity"""
         try:
-            from app import db
+            from flask import current_app
+            from extensions import db
             from sqlalchemy import text
             
-            # Simple database query
-            result = db.session.execute(text('SELECT 1')).fetchone()
+            # Execute database query with proper app context handling
+            try:
+                # Try to get current app context
+                from flask import has_app_context
+                if has_app_context():
+                    result = db.session.execute(text('SELECT 1')).fetchone()
+                else:
+                    # Create app context if none exists
+                    from flask import current_app
+                    with current_app.app_context():
+                        result = db.session.execute(text('SELECT 1')).fetchone()
+            except RuntimeError:
+                # Fallback for when no app context is available
+                from app import app
+                with app.app_context():
+                    result = db.session.execute(text('SELECT 1')).fetchone()
             
             return {
                 'success': True,

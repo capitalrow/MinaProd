@@ -64,6 +64,217 @@
 .mina-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ========================================= */
+/* PREMIUM GLASS MORPHISM CARDS             */
+/* ========================================= */
+
+.mina-glass-card {
+    background: var(--glass-bg-light);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--glass-shadow);
+    padding: var(--space-6);
+    transition: all var(--transition-medium) var(--transition-ultra-smooth);
+    position: relative;
+    overflow: hidden;
+}
+
+.mina-glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        var(--elite-purple-400), 
+        transparent
+    );
+    opacity: 0;
+    transition: opacity var(--transition-medium);
+}
+
+.mina-glass-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 
+        var(--glass-shadow),
+        0 20px 40px rgba(168, 85, 247, 0.15);
+    border-color: rgba(168, 85, 247, 0.3);
+}
+
+.mina-glass-card:hover::before {
+    opacity: 1;
+}
+
+.mina-glass-card.premium {
+    background: linear-gradient(135deg, 
+        var(--glass-bg-light) 0%, 
+        var(--glass-bg-dark) 100%
+    );
+}
+
+.mina-glass-card.interactive {
+    cursor: pointer;
+    user-select: none;
+}
+
+.mina-glass-card.interactive:active {
+    transform: translateY(-2px);
+}
+
+/* Card Content Layout */
+.mina-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.mina-card-title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.mina-card-subtitle {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: var(--space-1) 0 0 0;
+}
+
+.mina-card-body {
+    color: var(--text-primary);
+}
+
+.mina-card-footer {
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* ========================================= */
+/* PREMIUM ANIMATED LOGO SYSTEM             */
+/* ========================================= */
+
+.mina-logo-container {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-medium) var(--transition-ultra-smooth);
+}
+
+.mina-logo-container:hover {
+    background: var(--glass-bg-light);
+    backdrop-filter: var(--glass-blur);
+}
+
+.mina-logo-svg {
+    width: 40px;
+    height: 32px;
+    transition: transform var(--transition-medium) var(--transition-bounce);
+}
+
+.mina-logo-container:hover .mina-logo-svg {
+    transform: scale(1.1);
+}
+
+.mina-logo-text {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-bold);
+    background: linear-gradient(135deg, var(--elite-purple-500), var(--elite-purple-600));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-decoration: none;
+    transition: all var(--transition-medium);
+}
+
+.mina-logo-container:hover .mina-logo-text {
+    background: linear-gradient(135deg, var(--elite-purple-400), var(--elite-purple-700));
+    background-clip: text;
+    -webkit-background-clip: text;
+    transform: translateX(2px);
+}
+
+/* ========================================= */
+/* PREMIUM NAVIGATION SYSTEM                */
+/* ========================================= */
+
+.mina-nav {
+    background: var(--glass-bg-light);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid var(--glass-border);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: all var(--transition-fast);
+}
+
+.mina-nav.scrolled {
+    background: var(--glass-bg-dark);
+    box-shadow: var(--glass-shadow);
+}
+
+.mina-nav-item {
+    position: relative;
+    padding: var(--space-3) var(--space-4);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: var(--font-weight-medium);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    overflow: hidden;
+}
+
+.mina-nav-item::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--elite-purple-500), var(--elite-purple-600));
+    transition: all var(--transition-medium) var(--transition-ultra-smooth);
+    transform: translateX(-50%);
+}
+
+.mina-nav-item:hover {
+    background: var(--glass-bg-light);
+    color: var(--elite-purple-500);
+    transform: translateY(-1px);
+}
+
+.mina-nav-item:hover::before {
+    width: 80%;
+}
+
+.mina-nav-item.active {
+    background: linear-gradient(135deg, 
+        rgba(168, 85, 247, 0.1), 
+        rgba(168, 85, 247, 0.05)
+    );
+    color: var(--elite-purple-500);
+}
+
+.mina-nav-item.active::before {
+    width: 100%;
+}
+    cursor: not-allowed;
     transform: none !important;
     box-shadow: none !important;
 }

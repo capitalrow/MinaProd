@@ -1,7 +1,154 @@
 /* ============================================================================= */
 /* MINA PREMIUM EFFECTS - SOPHISTICATED ANIMATIONS & VISUAL ENHANCEMENTS      */
+/* Enhanced with Glass Morphism, Elite Purple Gradients, and Professional UX   */
 /* Consolidated from: premium-animations.css, interaction-mastery.css, enhanced_ui.css, performance.css */
 /* ============================================================================= */
+
+/* ========================================= */
+/* PREMIUM FLOATING LABELS SYSTEM           */
+/* ========================================= */
+
+.mina-floating-input {
+    position: relative;
+    margin-bottom: var(--space-6);
+}
+
+.mina-floating-input input,
+.mina-floating-input textarea {
+    width: 100%;
+    padding: var(--space-4) var(--space-4) var(--space-3) var(--space-4);
+    background: var(--glass-bg-light);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    color: var(--text-primary);
+    transition: all var(--transition-medium) var(--transition-ultra-smooth);
+    outline: none;
+}
+
+.mina-floating-input label {
+    position: absolute;
+    top: var(--space-4);
+    left: var(--space-4);
+    font-size: var(--text-base);
+    color: var(--text-secondary);
+    pointer-events: none;
+    transition: all var(--transition-medium) var(--transition-ultra-smooth);
+    background: transparent;
+    padding: 0 var(--space-2);
+}
+
+.mina-floating-input input:focus,
+.mina-floating-input textarea:focus {
+    border-color: var(--elite-purple-500);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+}
+
+.mina-floating-input input:focus + label,
+.mina-floating-input input:not(:placeholder-shown) + label,
+.mina-floating-input textarea:focus + label,
+.mina-floating-input textarea:not(:placeholder-shown) + label {
+    top: -var(--space-2);
+    left: var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--elite-purple-500);
+    background: var(--surface-primary);
+}
+
+/* ========================================= */
+/* PREMIUM PROGRESS INDICATORS              */
+/* ========================================= */
+
+.mina-progress {
+    width: 100%;
+    height: var(--space-2);
+    background: var(--glass-bg-dark);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    position: relative;
+}
+
+.mina-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, 
+        var(--elite-purple-500), 
+        var(--elite-purple-600)
+    );
+    border-radius: var(--radius-full);
+    transition: width var(--transition-slow) var(--transition-ultra-smooth);
+    position: relative;
+    overflow: hidden;
+}
+
+.mina-progress-bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* ========================================= */
+/* PREMIUM TOOLTIPS SYSTEM                  */
+/* ========================================= */
+
+.mina-tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.mina-tooltip .tooltip-content {
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--glass-bg-dark);
+    backdrop-filter: var(--glass-blur);
+    color: var(--text-primary);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition-medium) var(--transition-ultra-smooth);
+    z-index: 1000;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+.mina-tooltip .tooltip-content::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--glass-border);
+}
+
+.mina-tooltip:hover .tooltip-content {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-8px);
+}
 
 /* ========================================= */
 /* PREMIUM ANIMATIONS FOUNDATION            */

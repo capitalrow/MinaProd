@@ -62,7 +62,7 @@ class OpenAIClientManager:
                 "api_key": api_key,
             }
             
-            # Add optional configurations if needed
+            # Add optional configurations with proper type handling
             timeout = os.environ.get("OPENAI_TIMEOUT")
             if timeout:
                 try:
@@ -77,8 +77,12 @@ class OpenAIClientManager:
                 except ValueError:
                     logger.warning(f"Invalid OPENAI_MAX_RETRIES value: {max_retries}")
             
-            # Initialize client with only clean, supported parameters
-            self._client = OpenAI(**client_config)
+            # Initialize client with clean configuration
+            self._client = OpenAI(
+                api_key=api_key,
+                timeout=client_config.get("timeout", 30.0),
+                max_retries=client_config.get("max_retries", 3)
+            )
             self._initialization_error = None
             
             logger.info("✅ OpenAI client initialized successfully")
