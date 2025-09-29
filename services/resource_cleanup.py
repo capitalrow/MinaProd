@@ -22,12 +22,12 @@ class ResourceCleanupManager:
         self.active_sessions = weakref.WeakValueDictionary()
         self.cleanup_tasks = defaultdict(list)
         self.cleanup_intervals = {
-            'websocket_buffers': 300,    # 5 minutes
-            'temp_files': 600,           # 10 minutes
+            'websocket_buffers': 120,    # 2 minutes - more frequent cleanup
+            'temp_files': 300,           # 5 minutes
             'expired_tokens': 900,       # 15 minutes
             'database_connections': 120, # 2 minutes
-            'audio_buffers': 180,        # 3 minutes
-            'memory_gc': 60              # 1 minute
+            'audio_buffers': 60,         # 1 minute - more aggressive audio cleanup
+            'memory_gc': 30              # 30 seconds - more frequent GC
         }
         self.last_cleanup = defaultdict(float)
         self.cleanup_stats = defaultdict(int)
