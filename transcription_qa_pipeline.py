@@ -13,9 +13,12 @@ from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 import base64
-import Levenshtein  # For WER calculation
+import Levenshtein
+import jiwer  # For WER calculation
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from scipy import signal
+import io
+from pydub import AudioSegment
 
 logger = logging.getLogger(__name__)
 
@@ -140,21 +143,17 @@ class TranscriptionQAPipeline:
         logger.warning(f"🚨 QA Error recorded: {error_type} - {error_message}")
     
     def calculate_wer(self, reference: str, hypothesis: str) -> float:
-        """Calculate Word Error Rate"""
+        """Calculate Word Error Rate using jiwer for proper token-level comparison"""
         if not reference or not hypothesis:
             return 1.0
             
-        ref_words = reference.lower().split()
-        hyp_words = hypothesis.lower().split()
-        
-        if not ref_words:
-            return 1.0 if hyp_words else 0.0
-            
-        # Use Levenshtein distance for word-level comparison
-        distance = Levenshtein.distance(ref_words, hyp_words)
-        wer = distance / len(ref_words)
-        
-        return min(wer, 1.0)  # Cap at 100%
+        # Use jiwer for proper WER calculation with token-level comparison
+        try:
+            wer = jiwer.wer(reference.lower(), hypothesis.lower())
+            return min(wer, 1.0)  # Cap at 100%
+        except Exception as e:
+            logger.error(f"Error calculating WER: {e}")
+            return 1.0
     
     def calculate_cer(self, reference: str, hypothesis: str) -> float:
         """Calculate Character Error Rate"""
@@ -214,10 +213,10 @@ class TranscriptionQAPipeline:
     def _analyze_audio_quality(self, session_id: str, audio_data: bytes):
         """Analyze audio quality metrics"""
         try:
-            # Convert audio to numpy array for analysis
-            audio_array = np.frombuffer(audio_data, dtype=np.int16)
+            # Try to decode audio data first (could be WebM/Opus or other format)
+            audio_array = self._decode_audio_to_array(audio_data)
             
-            if len(audio_array) == 0:
+            if audio_array is None or len(audio_array) == 0:
                 return
                 
             # Calculate signal quality metrics
@@ -524,17 +523,61 @@ class TranscriptionQAPipeline:
             logger.error(f"Error analyzing noise ratio: {e}")
             return 0.1
 
+    def _decode_audio_to_array(self, audio_data: bytes) -> Optional[np.ndarray]:
+        """Decode audio data from various formats to numpy array"""
+        try:
+            # Try to decode as encoded audio first (WebM, WAV, etc.)
+            buffer = io.BytesIO(audio_data)
+            try:
+                # Try common formats
+                audio_segment = AudioSegment.from_file(buffer, format="webm")
+            except:
+                try:
+                    buffer.seek(0)
+                    audio_segment = AudioSegment.from_file(buffer, format="wav")
+                except:
+                    try:
+                        buffer.seek(0)
+                        audio_segment = AudioSegment.from_file(buffer)
+                    except:
+                        # Fall back to treating as raw PCM
+                        try:
+                            audio_array = np.frombuffer(audio_data, dtype=np.int16)
+                            return audio_array.astype(np.float32)
+                        except:
+                            logger.warning("Failed to decode audio data in any format")
+                            return None
+            
+            # Convert to numpy array
+            audio_array = np.array(audio_segment.get_array_of_samples(), dtype=np.float32)
+            
+            # Handle stereo (convert to mono by averaging channels)
+            if audio_segment.channels == 2:
+                audio_array = audio_array.reshape((-1, 2)).mean(axis=1)
+            
+            return audio_array
+            
+        except Exception as e:
+            logger.error(f"Error decoding audio data: {e}")
+            return None
+
     def _analyze_audio_noise(self, audio_data: bytes) -> float:
         """Analyze noise in raw audio data."""
         try:
-            # Convert bytes to numpy array (assuming 16-bit PCM)
-            audio_array = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32)
+            # Decode audio data first (could be WebM/Opus or other format)
+            audio_array = self._decode_audio_to_array(audio_data)
             
-            if len(audio_array) == 0:
+            if audio_array is None or len(audio_array) == 0:
                 return 0.5
             
+            # Ensure audio is normalized float32
+            if audio_array.dtype != np.float32:
+                audio_array = audio_array.astype(np.float32)
+            
             # Normalize audio
-            audio_array = audio_array / np.max(np.abs(audio_array))
+            max_val = np.max(np.abs(audio_array))
+            if max_val > 0:
+                audio_array = audio_array / max_val
             
             # Calculate RMS (signal strength)
             rms = np.sqrt(np.mean(audio_array ** 2))
