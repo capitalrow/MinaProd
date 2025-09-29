@@ -6,9 +6,12 @@ pages_bp = Blueprint("pages", __name__)
 
 @pages_bp.route("/")
 def index():
+    """Root route - redirect authenticated users to dashboard, others to login"""
     if current_user.is_authenticated:
         return redirect(url_for("dashboard.index"))
-    return render_template("marketing/landing.html")
+    else:
+        # Redirect to login instead of showing marketing page
+        return redirect(url_for("auth.login"))
 
 @pages_bp.route("/app")
 def app():
