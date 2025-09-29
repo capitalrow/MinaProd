@@ -22,12 +22,12 @@ class ResourceCleanupManager:
         self.active_sessions = weakref.WeakValueDictionary()
         self.cleanup_tasks = defaultdict(list)
         self.cleanup_intervals = {
-            'websocket_buffers': 300,    # 5 minutes
+            'websocket_buffers': 300,    # 5 minutes - normal cleanup
             'temp_files': 600,           # 10 minutes
             'expired_tokens': 900,       # 15 minutes
             'database_connections': 120, # 2 minutes
             'audio_buffers': 180,        # 3 minutes
-            'memory_gc': 60              # 1 minute
+            'memory_gc': 120             # 2 minutes - normal GC
         }
         self.last_cleanup = defaultdict(float)
         self.cleanup_stats = defaultdict(int)
@@ -72,7 +72,37 @@ class ResourceCleanupManager:
             logger.error(f"Failed to cleanup session {session_id}: {e}")
     
     def force_garbage_collection(self) -> Dict[str, int]:
-        """Force garbage collection and return statistics"""
+        """Force aggressive garbage collection and return statistics"""
+        logger.info("🧹 Starting aggressive garbage collection...")
+        
+        # Get initial stats
+        import psutil
+        process = psutil.Process()
+        initial_memory = process.memory_info().rss / 1024 / 1024  # MB
+        
+        # Multiple GC cycles for thorough cleanup
+        total_collected = 0
+        for i in range(5):  # 5 aggressive cycles
+            collected = gc.collect()
+            total_collected += collected
+            logger.info(f"🧹 GC cycle {i+1}: collected {collected} objects")
+        
+        # Clear caches and unreferenced objects
+        gc.garbage.clear()
+        
+        # Final memory check
+        final_memory = process.memory_info().rss / 1024 / 1024  # MB
+        memory_saved = initial_memory - final_memory
+        
+        stats = {
+            'objects_collected': total_collected,
+            'memory_saved_mb': memory_saved,
+            'initial_memory_mb': initial_memory,
+            'final_memory_mb': final_memory
+        }
+        
+        logger.info(f"🎯 Aggressive GC complete: {total_collected} objects, {memory_saved:.2f} MB saved")
+        return stats
         try:
             # Get memory before cleanup - with fallback if psutil unavailable
             memory_before = 0
