@@ -33,24 +33,62 @@
             </button>
         </div>
 
-        <!-- Premium Stats Grid with Interactive Cards -->
+        <!-- Premium Stats Grid with Interactive Cards - Server Rendered -->
         <div class="stats-grid" id="stats-grid">
-            <!-- Skeleton loaders shown initially, replaced by real data -->
-            <div class="stat-card skeleton-stat-card">
-                <div class="skeleton skeleton-stat-value"></div>
-                <div class="skeleton skeleton-stat-label"></div>
+            <div class="stat-card">
+                <div class="stat-icon-wrapper">
+                    <i class="fas fa-video stat-icon"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ stats.total_meetings }}</div>
+                    <div class="stat-label">Total Meetings</div>
+                    <div class="stat-trend positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>{{ stats.this_week_meetings }} this week</span>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card skeleton-stat-card">
-                <div class="skeleton skeleton-stat-value"></div>
-                <div class="skeleton skeleton-stat-label"></div>
+            
+            <div class="stat-card">
+                <div class="stat-icon-wrapper">
+                    <i class="fas fa-tasks stat-icon"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ stats.total_tasks }}</div>
+                    <div class="stat-label">Total Tasks</div>
+                    <div class="stat-trend positive">
+                        <i class="fas fa-check-circle"></i>
+                        <span>{{ stats.completed_tasks }} completed</span>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card skeleton-stat-card">
-                <div class="skeleton skeleton-stat-value"></div>
-                <div class="skeleton skeleton-stat-label"></div>
+            
+            <div class="stat-card">
+                <div class="stat-icon-wrapper">
+                    <i class="fas fa-chart-line stat-icon"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ stats.task_completion_rate }}%</div>
+                    <div class="stat-label">Completion Rate</div>
+                    <div class="stat-trend {% if stats.task_completion_rate >= 70 %}positive{% else %}neutral{% endif %}">
+                        <i class="fas fa-{% if stats.task_completion_rate >= 70 %}arrow-up{% else %}minus{% endif %}"></i>
+                        <span>{% if stats.task_completion_rate >= 70 %}Excellent{% else %}On track{% endif %}</span>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card skeleton-stat-card">
-                <div class="skeleton skeleton-stat-value"></div>
-                <div class="skeleton skeleton-stat-label"></div>
+            
+            <div class="stat-card">
+                <div class="stat-icon-wrapper">
+                    <i class="fas fa-calendar-day stat-icon"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ stats.todays_meetings }}</div>
+                    <div class="stat-label">Today's Meetings</div>
+                    <div class="stat-trend neutral">
+                        <i class="fas fa-clock"></i>
+                        <span>Active today</span>
+                    </div>
+                </div>
             </div>
         </div>
 
