@@ -1,0 +1,358 @@
+/**
+ * MINA ANALYTICS - Analytics Dashboard Premium Styling
+ * Provides sophisticated glass morphism design for analytics and data visualization
+ */
+
+/* ANALYTICS CONTAINER */
+.analytics-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--space-8);
+}
+
+/* ANALYTICS HEADER */
+.analytics-header {
+    margin-bottom: var(--space-8);
+}
+
+.analytics-header h1 {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--space-2);
+}
+
+.analytics-header p {
+    color: var(--text-secondary);
+    font-size: var(--font-size-lg);
+}
+
+/* STATS GRID */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+    margin-bottom: var(--space-8);
+}
+
+.stat-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop-strong);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-6);
+    transition: all var(--duration-normal) var(--ease-out);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--glass-border-strong);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-4);
+    font-size: var(--font-size-2xl);
+}
+
+.stat-icon.primary {
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+}
+
+.stat-icon.secondary {
+    background: linear-gradient(135deg, var(--secondary-500), var(--secondary-600));
+}
+
+.stat-icon.success {
+    background: linear-gradient(135deg, var(--success), #059669);
+}
+
+.stat-icon.warning {
+    background: linear-gradient(135deg, var(--warning), #D97706);
+}
+
+.stat-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    margin-bottom: var(--space-2);
+}
+
+.stat-value {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.stat-change {
+    font-size: var(--font-size-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.stat-change.positive {
+    color: var(--success);
+}
+
+.stat-change.negative {
+    color: var(--danger);
+}
+
+/* CHART CONTAINER */
+.chart-container {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop-strong);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-6);
+}
+
+.chart-title {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.chart-filters {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.chart-filter-btn {
+    padding: var(--space-2) var(--space-4);
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all var(--duration-normal) var(--ease-out);
+}
+
+.chart-filter-btn:hover {
+    background: var(--glass-bg-light);
+    color: var(--text-primary);
+    border-color: var(--glass-border-strong);
+}
+
+.chart-filter-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: var(--text-inverse);
+    border-color: transparent;
+}
+
+.chart-wrapper {
+    height: 400px;
+    position: relative;
+}
+
+/* DATA TABLE */
+.data-table-container {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop-strong);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-6);
+    overflow: hidden;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.data-table thead th {
+    padding: var(--space-4);
+    text-align: left;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.data-table tbody td {
+    padding: var(--space-4);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tbody tr {
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.data-table tbody tr:hover {
+    background: var(--glass-bg-light);
+}
+
+/* TREND INDICATORS */
+.trend-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+.trend-indicator.up {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.trend-indicator.down {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.trend-indicator.neutral {
+    background: var(--info-light);
+    color: var(--info);
+}
+
+/* METRIC BADGE */
+.metric-badge {
+    display: inline-block;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+}
+
+/* ANALYTICS GRID */
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--space-6);
+    margin-bottom: var(--space-8);
+}
+
+/* HEATMAP */
+.heatmap-container {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--space-1);
+    margin-top: var(--space-4);
+}
+
+.heatmap-cell {
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.heatmap-cell:hover {
+    transform: scale(1.1);
+    z-index: var(--z-raised);
+}
+
+.heatmap-cell[data-intensity="1"] {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+.heatmap-cell[data-intensity="2"] {
+    background: rgba(99, 102, 241, 0.4);
+}
+
+.heatmap-cell[data-intensity="3"] {
+    background: rgba(99, 102, 241, 0.6);
+}
+
+.heatmap-cell[data-intensity="4"] {
+    background: rgba(99, 102, 241, 0.8);
+}
+
+.heatmap-cell[data-intensity="5"] {
+    background: rgba(99, 102, 241, 1);
+}
+
+/* PROGRESS BAR */
+.progress-bar-container {
+    margin-top: var(--space-2);
+}
+
+.progress-bar {
+    height: 8px;
+    background: var(--glass-bg);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    border-radius: var(--radius-full);
+    transition: width var(--duration-normal) var(--ease-out);
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 1024px) {
+    .analytics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .analytics-container {
+        padding: var(--space-4);
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-4);
+    }
+    
+    .chart-wrapper {
+        height: 300px;
+    }
+    
+    .data-table-container {
+        overflow-x: auto;
+    }
+}
+
+/* ACCESSIBILITY */
+@media (prefers-reduced-motion: reduce) {
+    .stat-card:hover,
+    .heatmap-cell:hover {
+        transform: none;
+    }
+}
