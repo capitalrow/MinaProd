@@ -18,25 +18,25 @@
 {% block content %}
     <div class="dashboard-layout">
         <!-- Premium Dashboard Header with Glass Effect -->
-        <div class="dashboard-header">
+        <div class="dashboard-header glass-panel">
             <div class="header-content">
-                <h1 class="dashboard-title">
+                <h1 class="dashboard-title text-gradient">
                     <i class="fas fa-tachometer-alt me-3"></i>
                     Dashboard
                 </h1>
                 <p class="dashboard-subtitle">Real-time meeting insights and transcription analytics</p>
             </div>
-            <button class="btn btn-primary" id="refresh-dashboard">
+            <button class="btn btn-primary animate-scale-in" id="refresh-dashboard">
                 <i class="fas fa-sync-alt me-2"></i>
                 Refresh Data
             </button>
         </div>
 
         <!-- Premium Stats Grid with Interactive Cards -->
-        <div class="stats-grid">
-            <div class="stat-card" data-stat="active-sessions">
+        <div class="stats-grid animate-fade-in">
+            <div class="stat-card glass-panel animate-scale-in" data-stat="active-sessions">
                 <div class="stat-card-content">
-                    <div class="stat-value" id="active-sessions">0</div>
+                    <div class="stat-value text-gradient" id="active-sessions">0</div>
                     <div class="stat-label">
                         <i class="fas fa-microphone stat-icon"></i>
                         Active Sessions
@@ -44,9 +44,9 @@
                 </div>
             </div>
             
-            <div class="stat-card" data-stat="total-hours">
+            <div class="stat-card glass-panel animate-scale-in" data-stat="total-hours">
                 <div class="stat-card-content">
-                    <div class="stat-value" id="total-hours">0</div>
+                    <div class="stat-value text-gradient" id="total-hours">0</div>
                     <div class="stat-label">
                         <i class="fas fa-clock stat-icon"></i>
                         Hours Recorded
@@ -54,9 +54,9 @@
                 </div>
             </div>
             
-            <div class="stat-card" data-stat="success-rate">
+            <div class="stat-card glass-panel animate-scale-in" data-stat="success-rate">
                 <div class="stat-card-content">
-                    <div class="stat-value" id="success-rate">0%</div>
+                    <div class="stat-value text-gradient" id="success-rate">0%</div>
                     <div class="stat-label">
                         <i class="fas fa-chart-line stat-icon"></i>
                         Success Rate
@@ -64,9 +64,9 @@
                 </div>
             </div>
             
-            <div class="stat-card" data-stat="avg-confidence">
+            <div class="stat-card glass-panel animate-scale-in" data-stat="avg-confidence">
                 <div class="stat-card-content">
-                    <div class="stat-value" id="avg-confidence">0%</div>
+                    <div class="stat-value text-gradient" id="avg-confidence">0%</div>
                     <div class="stat-label">
                         <i class="fas fa-star stat-icon"></i>
                         Avg Confidence
@@ -76,19 +76,19 @@
         </div>
 
         <!-- Premium Content Grid Layout -->
-        <div class="content-grid">
+        <div class="content-grid animate-fade-in">
             <!-- Main Content Section -->
-            <div class="content-section">
+            <div class="content-section glass-panel">
                 <div class="section-header">
-                    <h2 class="section-title">Quick Actions</h2>
+                    <h2 class="section-title text-gradient">Quick Actions</h2>
                     <button class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-expand-alt me-1"></i>
                         View All
                     </button>
                 </div>
                 <div class="section-content">
-                    <div class="action-grid">
-                        <a href="/live" class="content-item btn btn-primary mb-3 d-flex align-items-center">
+                    <div class="action-grid space-y-4">
+                        <a href="/live" class="content-item btn btn-primary animate-slide-in-right">
                             <i class="fas fa-circle text-danger me-3"></i>
                             <div>
                                 <div class="fw-semibold">Start Live Recording</div>
@@ -96,7 +96,7 @@
                             </div>
                         </a>
                         
-                        <a href="{{ url_for('dashboard.meetings') }}" class="content-item btn btn-outline-secondary mb-3 d-flex align-items-center">
+                        <a href="{{ url_for('dashboard.meetings') }}" class="content-item btn btn-outline-secondary animate-slide-in-right">
                             <i class="fas fa-users me-3"></i>
                             <div>
                                 <div class="fw-semibold">View Meetings</div>
@@ -104,7 +104,7 @@
                             </div>
                         </a>
                         
-                        <a href="{{ url_for('dashboard.analytics') }}" class="content-item btn btn-outline-secondary mb-3 d-flex align-items-center">
+                        <a href="{{ url_for('dashboard.analytics') }}" class="content-item btn btn-outline-secondary animate-slide-in-right">
                             <i class="fas fa-chart-bar me-3"></i>
                             <div>
                                 <div class="fw-semibold">Analytics</div>
@@ -112,7 +112,7 @@
                             </div>
                         </a>
                         
-                        <a href="/settings" class="content-item btn btn-outline-secondary d-flex align-items-center">
+                        <a href="/settings" class="content-item btn btn-outline-secondary animate-slide-in-right">
                             <i class="fas fa-cog me-3"></i>
                             <div>
                                 <div class="fw-semibold">Settings</div>
@@ -124,28 +124,28 @@
             </div>
 
             <!-- Sidebar Content Section -->
-            <div class="content-section">
+            <div class="content-section glass-panel animate-slide-in-left">
                 <div class="section-header">
-                    <h2 class="section-title">System Status</h2>
+                    <h2 class="section-title text-gradient">System Status</h2>
                     <span class="status-live">
                         <i class="fas fa-circle"></i>
                         Live
                     </span>
                 </div>
-                <div class="section-content">
-                    <div class="content-item status-item mb-3">
+                <div class="section-content space-y-3">
+                    <div class="content-item status-item animate-fade-in">
                         <div class="d-flex justify-content-between align-items-center">
                             <span>Transcription Service</span>
                             <span class="status-completed">Active</span>
                         </div>
                     </div>
-                    <div class="content-item status-item mb-3">
+                    <div class="content-item status-item animate-fade-in">
                         <div class="d-flex justify-content-between align-items-center">
                             <span>WebSocket Connection</span>
                             <span class="status-completed">Connected</span>
                         </div>
                     </div>
-                    <div class="content-item status-item mb-3">
+                    <div class="content-item status-item animate-fade-in">
                         <div class="d-flex justify-content-between align-items-center">
                             <span>AI Processing</span>
                             <span class="status-completed">Ready</span>
@@ -156,16 +156,16 @@
         </div>
 
         <!-- Recent Activity Section -->
-        <div class="content-section mt-4">
+        <div class="content-section glass-panel mt-4 animate-fade-in">
             <div class="section-header">
-                <h2 class="section-title">Recent Activity</h2>
+                <h2 class="section-title text-gradient">Recent Activity</h2>
                 <a href="{{ url_for('dashboard.meetings') }}" class="btn btn-outline-primary btn-sm">
                     <i class="fas fa-history me-1"></i>
                     View All
                 </a>
             </div>
             <div class="section-content">
-                <div class="activity-list" id="recent-activity">
+                <div class="activity-list glass-panel-secondary" id="recent-activity">
                     <div class="d-flex align-items-center justify-content-center py-5">
                         <div class="text-center">
                             <i class="fas fa-spinner fa-spin fa-2x mb-3 text-muted"></i>
