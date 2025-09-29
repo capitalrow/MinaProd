@@ -3,8 +3,9 @@
  * Application entry point with sophisticated welcome experience and onboarding
  */
 
-/* HOME PAGE FOUNDATION */
-:root {
+/* HOME PAGE FOUNDATION - Scoped to avoid conflicts */
+body.page-home,
+[data-page="home"] {
     --home-primary: #6366F1;
     --home-secondary: #8B5CF6;
     --home-accent: #10B981;

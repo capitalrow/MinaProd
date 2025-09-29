@@ -3,8 +3,9 @@
  * Sophisticated design for registration, login, and authentication flows
  */
 
-/* AUTH PAGE FOUNDATION */
-:root {
+/* AUTH PAGE FOUNDATION - Scoped to avoid conflicts */
+body.page-auth,
+[data-page="auth"] {
     --auth-primary: #6366F1;
     --auth-secondary: #8B5CF6;
     --auth-accent: #10B981;

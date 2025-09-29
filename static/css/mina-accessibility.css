@@ -107,7 +107,7 @@ textarea:focus-visible,
     }
 }
 
-/* REDUCED MOTION */
+/* REDUCED MOTION & PERFORMANCE */
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -116,6 +116,48 @@ textarea:focus-visible,
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
+    }
+    
+    /* Disable all animations and transitions on pseudo-elements */
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+    
+    /* Disable heavy glassmorphism effects for performance */
+    * {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    
+    /* Simplify animated backgrounds - ::before elements */
+    .recording-studio::before,
+    .auth-container::before,
+    .home-hero::before,
+    .landing-hero::before {
+        background: none !important;
+        animation: none !important;
+    }
+    
+    /* Simplify animated backgrounds - ::after elements */
+    .recording-studio::after,
+    .auth-container::after,
+    .home-hero::after,
+    .landing-hero::after {
+        background: none !important;
+        animation: none !important;
+    }
+    
+    /* Disable gradient animations */
+    .animated-gradient {
+        animation: none !important;
+        background-size: 100% 100% !important;
+    }
+    
+    /* Simplify fixed backgrounds */
+    * {
+        background-attachment: scroll !important;
     }
 }
 

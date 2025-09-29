@@ -508,16 +508,7 @@
     animation: spin var(--duration-slowest) linear infinite;
 }
 
-/* ANIMATIONS */
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
-}
-
+/* ANIMATIONS - pulse defined in mina-animations.css */
 @keyframes shimmer {
     0% {
         left: -100%;
