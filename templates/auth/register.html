@@ -4,330 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account - Mina</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
-    <style>
-        /* Enhanced Modern Authentication Layout */
-        body {
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            background: linear-gradient(135deg, var(--mina-brand-primary) 0%, var(--mina-brand-secondary) 100%);
-            font-family: var(--mina-font-family-sans);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: var(--mina-space-4) 0;
-        }
-
-        .auth-container {
-            width: 100%;
-            max-width: 480px;
-            margin: var(--mina-space-4);
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .auth-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: var(--mina-radius-xl);
-            padding: var(--mina-space-10);
-            box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.1),
-                0 10px 20px rgba(0, 0, 0, 0.05),
-                inset 0 1px 0 rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .auth-header {
-            text-align: center;
-            margin-bottom: var(--mina-space-8);
-        }
-
-        .auth-logo {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
-            border-radius: var(--mina-radius-lg);
-            margin-bottom: var(--mina-space-4);
-            box-shadow: var(--mina-shadow-lg);
-        }
-
-        .auth-logo-text {
-            font-size: var(--mina-font-size-2xl);
-            font-weight: var(--mina-font-weight-bold);
-            color: white;
-            font-family: var(--mina-font-family-display);
-        }
-
-        .auth-title {
-            font-size: clamp(2rem, 5vw, 2.5rem);
-            font-weight: var(--mina-font-weight-bold);
-            color: var(--mina-text-primary);
-            margin: 0 0 var(--mina-space-3) 0;
-            font-family: var(--mina-font-family-display);
-            letter-spacing: -0.02em;
-            line-height: 1.2;
-        }
-
-        .auth-subtitle {
-            font-size: clamp(1.1rem, 3.5vw, 1.25rem);
-            color: #475569 !important;
-            margin: 0 0 var(--mina-space-6) 0;
-            line-height: var(--mina-line-height-relaxed);
-            letter-spacing: 0.02em;
-            font-weight: var(--mina-font-weight-semibold);
-            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
-
-        /* Enhanced Form Styling */
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--mina-space-4);
-            margin-bottom: var(--mina-space-6);
-        }
-
-        .form-group {
-            margin-bottom: var(--mina-space-6);
-        }
-
-        .form-label {
-            display: block;
-            font-size: clamp(0.9rem, 3vw, 1.1rem);
-            font-weight: var(--mina-font-weight-bold);
-            color: #1e293b !important;
-            margin-bottom: var(--mina-space-3);
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            line-height: 1.4;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
-
-        .form-label--required::after {
-            content: ' *';
-            color: var(--mina-danger);
-        }
-
-        .form-input {
-            width: 100%;
-            padding: clamp(1rem, 3vw, 1.25rem);
-            border: 2px solid var(--mina-border-primary);
-            border-radius: var(--mina-radius-md);
-            font-size: clamp(1rem, 3vw, 1.125rem);
-            color: #1e293b !important;
-            background: #ffffff !important;
-            transition: all var(--mina-transition-base);
-            font-family: var(--mina-font-family-sans);
-            box-sizing: border-box;
-            letter-spacing: 0.01em;
-            line-height: 1.5;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--mina-brand-primary) !important;
-            box-shadow: 
-                0 0 0 3px rgba(99, 102, 241, 0.2),
-                0 4px 12px rgba(0, 0, 0, 0.1);
-            transform: translateY(-1px);
-        }
-
-        .form-input::placeholder {
-            color: #94a3b8 !important;
-        }
-
-        .form-input:invalid {
-            border-color: var(--mina-danger);
-        }
-
-        .form-input:valid {
-            border-color: var(--mina-success);
-        }
-
-        .password-requirements {
-            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
-            color: #64748b !important;
-            margin-top: var(--mina-space-2);
-            line-height: var(--mina-line-height-normal);
-            letter-spacing: 0.02em;
-            font-weight: var(--mina-font-weight-medium);
-            text-shadow: 0 1px 1px rgba(0,0,0,0.05);
-        }
-
-        /* Enhanced Button */
-        .btn-primary {
-            width: 100%;
-            padding: clamp(1rem, 3vw, 1.25rem) var(--mina-space-6);
-            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
-            color: white;
-            border: none;
-            border-radius: var(--mina-radius-md);
-            font-size: clamp(1rem, 3vw, 1.125rem);
-            font-weight: var(--mina-font-weight-bold);
-            font-family: var(--mina-font-family-sans);
-            cursor: pointer;
-            transition: all var(--mina-transition-base);
-            text-transform: none;
-            letter-spacing: 0.025em;
-            box-shadow: var(--mina-shadow-sm);
-            min-height: clamp(48px, 12vw, 56px);
-            text-transform: uppercase;
-            font-size: 0.9rem;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--mina-shadow-lg);
-            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-secondary));
-        }
-
-        .btn-primary:active {
-            transform: translateY(0);
-            box-shadow: var(--mina-shadow-base);
-        }
-
-        .btn-primary:focus {
-            outline: none;
-            box-shadow: 
-                0 0 0 3px rgba(var(--mina-brand-primary-rgb), 0.3),
-                var(--mina-shadow-lg);
-        }
-
-        /* Alert Messages */
-        .alert {
-            padding: var(--mina-space-4);
-            border-radius: var(--mina-radius-md);
-            margin-bottom: var(--mina-space-6);
-            font-size: var(--mina-font-size-sm);
-            line-height: var(--mina-line-height-normal);
-            border: 1px solid transparent;
-        }
-
-        .alert-error {
-            background: rgba(220, 53, 69, 0.1);
-            color: #b02a37 !important;
-            border-color: rgba(220, 53, 69, 0.3);
-            font-weight: var(--mina-font-weight-semibold);
-            font-size: clamp(0.9rem, 2.5vw, 1rem);
-        }
-
-        .alert-success {
-            background: rgba(25, 135, 84, 0.1);
-            color: #146c43 !important;
-            border-color: rgba(25, 135, 84, 0.3);
-            font-weight: var(--mina-font-weight-semibold);
-            font-size: clamp(0.9rem, 2.5vw, 1rem);
-        }
-
-        /* Footer */
-        .auth-footer {
-            text-align: center;
-            margin-top: var(--mina-space-8);
-            padding-top: var(--mina-space-6);
-            border-top: 1px solid var(--mina-border-primary);
-        }
-
-        .auth-link {
-            color: var(--mina-brand-primary) !important;
-            text-decoration: none;
-            font-weight: var(--mina-font-weight-bold);
-            transition: color var(--mina-transition-fast);
-            text-shadow: 0 1px 1px rgba(0,0,0,0.1);
-        }
-
-        .auth-link:hover {
-            color: var(--mina-brand-secondary);
-            text-decoration: underline;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 640px) {
-            .auth-container {
-                margin: var(--mina-space-2);
-            }
-            
-            .auth-card {
-                padding: var(--mina-space-6);
-            }
-            
-            .auth-title {
-                font-size: var(--mina-font-size-2xl);
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-                gap: 0;
-            }
-        }
-
-        /* Loading State */
-        .btn-primary.loading {
-            position: relative;
-            color: transparent;
-        }
-
-        .btn-primary.loading::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top: 2px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-
-        /* Accessibility improvements */
-        .form-input:focus,
-        .btn-primary:focus {
-            outline: 2px solid var(--mina-brand-primary);
-            outline-offset: 2px;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .auth-container,
-            .form-input,
-            .btn-primary {
-                animation: none;
-                transition: none;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-premium-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-auth.css') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
 </head>
 <body>
     <div class="auth-container">
-        <div class="auth-card">
+        <div class="auth-form-card">
             <div class="auth-header">
-                <div class="auth-logo">
-                    <span class="auth-logo-text">M</span>
-                </div>
+                <div class="auth-logo">M</div>
                 <h1 class="auth-title">Create Account</h1>
                 <p class="auth-subtitle">Join Mina to transform your meetings into actionable moments</p>
+                <p class="auth-description">Experience professional transcription with advanced AI capabilities</p>
             </div>
             
             <!-- Flash Messages -->
@@ -339,129 +27,233 @@
                 {% endif %}
             {% endwith %}
             
-            <form method="POST" action="{{ url_for('auth.register') }}" id="registerForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="first_name" class="form-label">First Name</label>
-                        <input 
-                            type="text" 
-                            id="first_name" 
-                            name="first_name" 
-                            class="form-input" 
-                            value="{{ request.form.get('first_name', '') }}"
-                            placeholder="John"
-                        >
+            <form method="POST" action="{{ url_for('auth.register') }}" id="registerForm" class="auth-form">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-6);">
+                    <div class="auth-form-group">
+                        <label for="first_name" class="auth-form-label">First Name</label>
+                        <div class="auth-input-group">
+                            <input 
+                                type="text" 
+                                id="first_name" 
+                                name="first_name" 
+                                class="auth-form-input" 
+                                value="{{ request.form.get('first_name', '') }}"
+                                placeholder="John"
+                            >
+                            <i class="auth-input-icon fas fa-user"></i>
+                        </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="last_name" class="form-label">Last Name</label>
+                    <div class="auth-form-group">
+                        <label for="last_name" class="auth-form-label">Last Name</label>
+                        <div class="auth-input-group">
+                            <input 
+                                type="text" 
+                                id="last_name" 
+                                name="last_name" 
+                                class="auth-form-input" 
+                                value="{{ request.form.get('last_name', '') }}"
+                                placeholder="Doe"
+                            >
+                            <i class="auth-input-icon fas fa-user"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="auth-form-group">
+                    <label for="email" class="auth-form-label">Email Address *</label>
+                    <div class="auth-input-group">
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            class="auth-form-input" 
+                            required 
+                            autocomplete="email"
+                            value="{{ request.form.get('email', '') }}"
+                            placeholder="john@example.com"
+                        >
+                        <i class="auth-input-icon fas fa-envelope"></i>
+                    </div>
+                </div>
+                
+                <div class="auth-form-group">
+                    <label for="username" class="auth-form-label">Username *</label>
+                    <div class="auth-input-group">
                         <input 
                             type="text" 
-                            id="last_name" 
-                            name="last_name" 
-                            class="form-input" 
-                            value="{{ request.form.get('last_name', '') }}"
-                            placeholder="Doe"
+                            id="username" 
+                            name="username" 
+                            class="auth-form-input" 
+                            required 
+                            autocomplete="username"
+                            value="{{ request.form.get('username', '') }}"
+                            placeholder="johndoe"
+                            minlength="3"
                         >
+                        <i class="auth-input-icon fas fa-at"></i>
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <label for="email" class="form-label form-label--required">Email Address</label>
-                    <input 
-                        type="email" 
-                        id="email" 
-                        name="email" 
-                        class="form-input" 
-                        required 
-                        autocomplete="email"
-                        value="{{ request.form.get('email', '') }}"
-                        placeholder="john@example.com"
-                    >
-                </div>
-                
-                <div class="form-group">
-                    <label for="username" class="form-label form-label--required">Username</label>
-                    <input 
-                        type="text" 
-                        id="username" 
-                        name="username" 
-                        class="form-input" 
-                        required 
-                        autocomplete="username"
-                        value="{{ request.form.get('username', '') }}"
-                        placeholder="johndoe"
-                        minlength="3"
-                    >
-                </div>
-                
-                <div class="form-group">
-                    <label for="password" class="form-label form-label--required">Password</label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        name="password" 
-                        class="form-input" 
-                        required 
-                        autocomplete="new-password"
-                        placeholder="Create a secure password"
-                        minlength="8"
-                    >
-                    <div class="password-requirements">
-                        Password must be at least 8 characters with letters and numbers
+                <div class="auth-form-group">
+                    <label for="password" class="auth-form-label">Password *</label>
+                    <div class="auth-input-group">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            class="auth-form-input" 
+                            required 
+                            autocomplete="new-password"
+                            placeholder="Create a secure password"
+                            minlength="8"
+                        >
+                        <i class="auth-input-icon fas fa-lock"></i>
+                        <button type="button" class="auth-password-toggle" onclick="togglePassword('password')">
+                            <i class="fas fa-eye" id="password-eye"></i>
+                        </button>
+                    </div>
+                    <div class="auth-strength-meter" id="passwordStrength" style="display: none;">
+                        <div class="auth-strength-label">
+                            <span>Password Strength</span>
+                            <span id="strengthText">Weak</span>
+                        </div>
+                        <div class="auth-strength-bar">
+                            <div class="auth-strength-fill weak" id="strengthFill"></div>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <label for="confirm_password" class="form-label form-label--required">Confirm Password</label>
-                    <input 
-                        type="password" 
-                        id="confirm_password" 
-                        name="confirm_password" 
-                        class="form-input" 
-                        required 
-                        autocomplete="new-password"
-                        placeholder="Confirm your password"
-                        minlength="8"
-                    >
+                <div class="auth-form-group">
+                    <label for="confirm_password" class="auth-form-label">Confirm Password *</label>
+                    <div class="auth-input-group">
+                        <input 
+                            type="password" 
+                            id="confirm_password" 
+                            name="confirm_password" 
+                            class="auth-form-input" 
+                            required 
+                            autocomplete="new-password"
+                            placeholder="Confirm your password"
+                            minlength="8"
+                        >
+                        <i class="auth-input-icon fas fa-lock"></i>
+                        <button type="button" class="auth-password-toggle" onclick="togglePassword('confirm_password')">
+                            <i class="fas fa-eye" id="confirm_password-eye"></i>
+                        </button>
+                    </div>
+                    <div class="auth-form-error" id="confirmPasswordError" style="display: none;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Passwords do not match
+                    </div>
                 </div>
                 
-                <button type="submit" class="btn-primary" id="registerButton">Create Account</button>
+                <button type="submit" class="auth-btn" id="registerButton">
+                    <div class="auth-btn-content">
+                        <span class="auth-btn-text">Create Account</span>
+                        <div class="auth-btn-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </div>
+                </button>
             </form>
             
             <div class="auth-footer">
-                <p style="color: #475569 !important; margin: 0; font-weight: 500; font-size: clamp(0.95rem, 3vw, 1.05rem);">
+                <p class="auth-footer-text">
                     Already have an account? 
-                    <a href="{{ url_for('auth.login') }}" class="auth-link">Sign in here</a>
+                    <a href="{{ url_for('auth.login') }}" class="auth-footer-link">Sign in here</a>
                 </p>
             </div>
         </div>
     </div>
 
     <script>
-        // Enhanced form handling
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
-            const button = document.getElementById('registerButton');
-            button.classList.add('loading');
-            button.disabled = true;
-        });
-
-        // Real-time password confirmation
-        const password = document.getElementById('password');
-        const confirmPassword = document.getElementById('confirm_password');
-        
-        function validatePassword() {
-            if (confirmPassword.value && password.value !== confirmPassword.value) {
-                confirmPassword.setCustomValidity('Passwords do not match');
-                confirmPassword.style.borderColor = 'var(--mina-danger)';
+        // Password toggle functionality
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            const eye = document.getElementById(fieldId + '-eye');
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                eye.className = 'fas fa-eye-slash';
             } else {
-                confirmPassword.setCustomValidity('');
-                confirmPassword.style.borderColor = 'var(--mina-border-primary)';
+                field.type = 'password';
+                eye.className = 'fas fa-eye';
             }
         }
         
-        password.addEventListener('input', validatePassword);
-        confirmPassword.addEventListener('input', validatePassword);
+        // Password strength meter
+        function checkPasswordStrength(password) {
+            const strengthMeter = document.getElementById('passwordStrength');
+            const strengthFill = document.getElementById('strengthFill');
+            const strengthText = document.getElementById('strengthText');
+            
+            if (!password) {
+                strengthMeter.style.display = 'none';
+                return;
+            }
+            
+            strengthMeter.style.display = 'block';
+            
+            let score = 0;
+            if (password.length >= 8) score++;
+            if (/[a-z]/.test(password)) score++;
+            if (/[A-Z]/.test(password)) score++;
+            if (/[0-9]/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+            
+            strengthFill.className = 'auth-strength-fill ';
+            
+            if (score <= 2) {
+                strengthFill.classList.add('weak');
+                strengthText.textContent = 'Weak';
+            } else if (score === 3) {
+                strengthFill.classList.add('fair');
+                strengthText.textContent = 'Fair';
+            } else if (score === 4) {
+                strengthFill.classList.add('good');
+                strengthText.textContent = 'Good';
+            } else {
+                strengthFill.classList.add('strong');
+                strengthText.textContent = 'Strong';
+            }
+        }
+        
+        // Real-time password validation
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirm_password');
+        const confirmPasswordError = document.getElementById('confirmPasswordError');
+        
+        password.addEventListener('input', function() {
+            checkPasswordStrength(this.value);
+            validatePasswordMatch();
+        });
+        
+        confirmPassword.addEventListener('input', validatePasswordMatch);
+        
+        function validatePasswordMatch() {
+            if (confirmPassword.value && password.value !== confirmPassword.value) {
+                confirmPassword.classList.add('error');
+                confirmPasswordError.style.display = 'flex';
+            } else {
+                confirmPassword.classList.remove('error');
+                confirmPasswordError.style.display = 'none';
+            }
+        }
+        
+        // Form submission
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const button = document.getElementById('registerButton');
+            
+            if (password.value !== confirmPassword.value) {
+                e.preventDefault();
+                validatePasswordMatch();
+                return false;
+            }
+            
+            button.classList.add('loading');
+            button.disabled = true;
+        });
 
         // Auto-focus first empty field
         document.addEventListener('DOMContentLoaded', function() {
