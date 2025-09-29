@@ -1,11 +1,114 @@
-{% extends "base_clean.html" %}
+{% extends "base.html" %}
 
 {% block title %}Dashboard - Mina{% endblock %}
 
+{% block head %}
+<!-- PREMIUM PROFESSIONAL DASHBOARD -->
+<style>
+    body {
+        background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
+        background-attachment: fixed;
+        position: relative;
+        min-height: 100vh;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 200%;
+        height: 200%;
+        background: 
+            radial-gradient(circle at 25% 75%, rgba(168, 85, 247, 0.4) 0%, transparent 50%),
+            radial-gradient(circle at 75% 25%, rgba(59, 130, 246, 0.4) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.2) 0%, transparent 60%);
+        animation: premiumProfessionalFloat 35s ease-in-out infinite;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    @keyframes premiumProfessionalFloat {
+        0%, 100% { transform: translate(0px, 0px) rotate(0deg) scale(1); }
+        33% { transform: translate(65px, -45px) rotate(120deg) scale(1.15); }
+        66% { transform: translate(-45px, 65px) rotate(240deg) scale(0.85); }
+    }
+    
+    .app-container {
+        position: relative;
+        z-index: 10;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .app-header {
+        background: var(--glass-bg-light);
+        backdrop-filter: blur(50px) saturate(200%);
+        border-radius: 24px;
+        padding: 2.5rem;
+        margin-bottom: 3rem;
+        border: 1px solid var(--glass-border);
+        box-shadow: 
+            0 32px 64px rgba(0, 0, 0, 0.25),
+            0 16px 32px rgba(0, 0, 0, 0.15),
+            inset 0 2px 0 rgba(255, 255, 255, 0.3);
+    }
+    
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .app-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .connection-status {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: var(--glass-bg-dark);
+        padding: 1rem 1.5rem;
+        border-radius: 20px;
+        border: 1px solid var(--glass-border);
+    }
+    
+    .status-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--emerald-500);
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        animation: statusPulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes statusPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    
+    .status-text {
+        color: white;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="app-container">
-    <!-- Header -->
-    <header class="app-header">
+    <!-- Premium Header -->
+    <header class="app-header premium-glow-pulse">
         <div class="header-content">
             <h1 class="app-title">
                 <i class="fas fa-microphone-alt"></i>
@@ -18,27 +121,27 @@
         </div>
     </header>
 
-    <!-- Dashboard Content -->
+    <!-- Premium Dashboard Content -->
     <div class="dashboard-grid">
-        <div class="welcome-section">
-            <h2>Welcome to Mina</h2>
-            <p>Professional AI-powered transcription platform</p>
+        <div class="welcome-section premium-glass-refraction" style="border-radius: 20px; padding: 3rem; margin-bottom: 2rem;">
+            <h2 class="premium-holographic" style="font-size: 2rem; margin-bottom: 1rem;">Welcome to Mina</h2>
+            <p style="color: rgba(255, 255, 255, 0.8); font-size: 1.125rem;">Professional AI-powered transcription platform</p>
             
-            <div class="action-cards">
-                <a href="{{ url_for('transcription.live_transcription') }}" class="action-card primary">
-                    <div class="card-icon">
+            <div class="action-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-top: 2rem;">
+                <a href="{{ url_for('transcription.live_transcription') }}" class="action-card primary premium-3d-card premium-magnetic" style="background: var(--glass-bg-light); padding: 2rem; border-radius: 16px; text-decoration: none; color: white; border: 1px solid var(--glass-border);">
+                    <div class="card-icon" style="background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-500)); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; font-size: 1.5rem;">
                         <i class="fas fa-microphone"></i>
                     </div>
-                    <h3>Start Transcription</h3>
-                    <p>Begin a new live recording session</p>
+                    <h3 style="color: white; margin-bottom: 0.5rem;">Start Transcription</h3>
+                    <p style="color: rgba(255, 255, 255, 0.7); margin: 0;">Begin a new live recording session</p>
                 </a>
                 
-                <a href="{{ url_for('sessions.list_sessions') }}" class="action-card secondary">
-                    <div class="card-icon">
+                <a href="{{ url_for('sessions.list_sessions') }}" class="action-card secondary premium-3d-card premium-magnetic" style="background: var(--glass-bg-light); padding: 2rem; border-radius: 16px; text-decoration: none; color: white; border: 1px solid var(--glass-border);">
+                    <div class="card-icon" style="background: linear-gradient(135deg, var(--emerald-500), var(--premium-blue-500)); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; font-size: 1.5rem;">
                         <i class="fas fa-history"></i>
                     </div>
-                    <h3>View Sessions</h3>
-                    <p>Browse previous recordings</p>
+                    <h3 style="color: white; margin-bottom: 0.5rem;">View Sessions</h3>
+                    <p style="color: rgba(255, 255, 255, 0.7); margin: 0;">Browse previous recordings</p>
                 </a>
             </div>
         </div>

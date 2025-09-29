@@ -1,38 +1,233 @@
-{% extends "base_clean.html" %}
+{% extends "base.html" %}
 
 {% block title %}Sessions - Mina{% endblock %}
 
+{% block head %}
+<!-- PREMIUM SESSIONS LIST DESIGN -->
+<style>
+    :root {
+        --elite-purple-500: #a855f7;
+        --elite-purple-700: #7c3aed;
+        --premium-blue-500: #3b82f6;
+        --premium-blue-600: #2563eb;
+        --emerald-500: #10b981;
+        --amber-500: #f59e0b;
+        --red-500: #ef4444;
+        --glass-bg-light: rgba(255, 255, 255, 0.08);
+        --glass-bg-dark: rgba(255, 255, 255, 0.05);
+        --glass-border: rgba(255, 255, 255, 0.12);
+    }
+    
+    body {
+        background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
+        background-attachment: fixed;
+        position: relative;
+        min-height: 100vh;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 200%;
+        height: 200%;
+        background: 
+            radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.2) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.2) 0%, transparent 50%);
+        animation: premiumSessionsFloat 28s ease-in-out infinite;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    @keyframes premiumSessionsFloat {
+        0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+        50% { transform: translate(50px, -50px) rotate(180deg); }
+    }
+    
+    .container {
+        position: relative;
+        z-index: 10;
+        max-width: 1400px;
+    }
+    
+    .premium-header {
+        background: var(--glass-bg-light);
+        backdrop-filter: blur(40px) saturate(180%);
+        border-radius: 20px;
+        padding: 3rem;
+        margin-bottom: 3rem;
+        border: 1px solid var(--glass-border);
+        box-shadow: 
+            0 20px 40px rgba(0, 0, 0, 0.15),
+            0 10px 20px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    
+    .premium-header h2 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+    }
+    
+    .premium-controls {
+        background: var(--glass-bg-light);
+        backdrop-filter: blur(30px) saturate(170%);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    
+    .premium-search {
+        background: var(--glass-bg-dark);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        color: white;
+        font-weight: 500;
+    }
+    
+    .premium-search::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .premium-search:focus {
+        outline: none;
+        border-color: var(--elite-purple-500);
+        box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
+        background: var(--glass-bg-light);
+    }
+    
+    .btn {
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        border: none;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-500));
+        color: white;
+        box-shadow: 0 10px 20px rgba(168, 85, 247, 0.3);
+    }
+    
+    .btn-outline-secondary {
+        background: var(--glass-bg-light);
+        color: white;
+        border: 1px solid var(--glass-border);
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px) scale(1.02);
+    }
+    
+    .premium-table-container {
+        background: var(--glass-bg-light);
+        backdrop-filter: blur(40px) saturate(180%);
+        border-radius: 20px;
+        border: 1px solid var(--glass-border);
+        box-shadow: 
+            0 20px 40px rgba(0, 0, 0, 0.15),
+            0 10px 20px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        overflow: hidden;
+    }
+    
+    .table {
+        margin: 0;
+        color: white;
+    }
+    
+    .table thead th {
+        background: rgba(0, 0, 0, 0.2);
+        border: none;
+        color: white;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1.5rem;
+    }
+    
+    .table tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .table tbody tr:hover {
+        background: rgba(168, 85, 247, 0.1);
+        transform: scale(1.01);
+    }
+    
+    .table tbody td {
+        padding: 1.5rem;
+        border: none;
+        vertical-align: middle;
+    }
+    
+    .badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .badge.bg-success {
+        background: linear-gradient(135deg, var(--emerald-500), #059669) !important;
+    }
+    
+    .badge.bg-primary {
+        background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-500)) !important;
+    }
+    
+    .badge.bg-warning {
+        background: linear-gradient(135deg, var(--amber-500), #d97706) !important;
+        color: white !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h2 class="mb-0">Meeting Sessions</h2>
-            <p class="text-muted">View and manage your transcription sessions</p>
-        </div>
-        <div class="col-md-4 text-end">
-            <a href="{{ url_for('transcription.live_transcription') }}" class="btn btn-primary">
-                <i class="fas fa-microphone"></i> Start Live Session
-            </a>
+    <!-- Premium Header -->
+    <div class="premium-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2>Meeting Sessions</h2>
+                <p style="color: rgba(255, 255, 255, 0.8); font-size: 1.125rem; margin: 0;">View and manage your transcription sessions</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('transcription.live_transcription') }}" class="btn btn-primary">
+                    <i class="fas fa-microphone me-2"></i>Start Live Session
+                </a>
+            </div>
         </div>
     </div>
 
-    <!-- Search and Filters -->
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <form method="GET" class="d-flex">
-                <input type="text" 
-                       name="q" 
-                       value="{{ query or '' }}" 
-                       class="form-control me-2" 
-                       placeholder="Search sessions..."
-                       aria-label="Search sessions">
-                <input type="hidden" name="status" value="{{ status or '' }}">
-                <button class="btn btn-outline-secondary" type="submit">
-                    <i class="fas fa-search"></i>
-                </button>
-            </form>
-        </div>
+    <!-- Premium Search and Filters -->
+    <div class="premium-controls">
+        <div class="row">
+            <div class="col-md-6">
+                <form method="GET" class="d-flex">
+                    <input type="text" 
+                           name="q" 
+                           value="{{ query or '' }}" 
+                           class="premium-search flex-grow-1 me-2" 
+                           placeholder="Search sessions..."
+                           aria-label="Search sessions">
+                    <input type="hidden" name="status" value="{{ status or '' }}">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
         <div class="col-md-6">
             <div class="btn-group w-100" role="group">
                 <a href="{{ url_for('sessions.list_sessions') }}" 
@@ -51,9 +246,9 @@
         </div>
     </div>
 
-    <!-- Sessions Table -->
+    <!-- Premium Sessions Table -->
     {% if sessions %}
-    <div class="card">
+    <div class="premium-table-container">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
                 <thead class="table-dark">
