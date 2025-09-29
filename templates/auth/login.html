@@ -10,135 +10,211 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-premium.css') }}">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
     <style>
-        /* Enhanced Modern Authentication Layout */
+        /* Premium Glass Morphism Authentication Layout */
         body {
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            background: linear-gradient(135deg, var(--mina-brand-primary) 0%, var(--mina-brand-secondary) 100%);
-            font-family: var(--mina-font-family-sans);
+            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
+            background-attachment: fixed;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Premium Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(14, 165, 233, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.2) 0%, transparent 50%);
+            animation: premiumFloat 20s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        @keyframes premiumFloat {
+            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
         }
 
         .auth-container {
             width: 100%;
-            max-width: 420px;
-            margin: var(--mina-space-4);
-            animation: fadeInUp 0.6s ease-out;
+            max-width: 440px;
+            margin: 2rem;
+            position: relative;
+            z-index: 10;
+            animation: premiumSlideIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
-        @keyframes fadeInUp {
+        @keyframes premiumSlideIn {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(60px) scale(0.95);
+                filter: blur(10px);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
+                filter: blur(0);
             }
         }
 
         .auth-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: var(--mina-radius-xl);
-            padding: var(--mina-space-10);
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(40px) saturate(180%);
+            border-radius: 24px;
+            padding: 3rem;
             box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.1),
-                0 10px 20px rgba(0, 0, 0, 0.05),
-                inset 0 1px 0 rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+                0 32px 64px rgba(0, 0, 0, 0.25),
+                0 16px 32px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
         }
 
         .auth-header {
             text-align: center;
-            margin-bottom: var(--mina-space-8);
+            margin-bottom: 2.5rem;
         }
 
         .auth-logo {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
-            border-radius: var(--mina-radius-lg);
-            margin-bottom: var(--mina-space-4);
-            box-shadow: var(--mina-shadow-lg);
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--premium-blue-500) 100%);
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            box-shadow: 
+                0 20px 40px rgba(168, 85, 247, 0.3),
+                0 10px 20px rgba(14, 165, 233, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-logo::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: logoShimmer 2s ease-in-out infinite;
+        }
+
+        @keyframes logoShimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
         }
 
         .auth-logo-text {
-            font-size: var(--mina-font-size-2xl);
-            font-weight: var(--mina-font-weight-bold);
+            font-size: 2rem;
+            font-weight: 800;
             color: white;
-            font-family: var(--mina-font-family-display);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            z-index: 1;
         }
 
         .auth-title {
-            font-size: clamp(2rem, 5vw, 2.5rem);
-            font-weight: var(--mina-font-weight-bold);
-            color: var(--mina-text-primary);
-            margin: 0 0 var(--mina-space-3) 0;
-            font-family: var(--mina-font-family-display);
-            letter-spacing: -0.02em;
-            line-height: 1.2;
+            font-size: clamp(2.25rem, 5vw, 3rem);
+            font-weight: 800;
+            color: var(--neutral-900);
+            margin: 0 0 0.75rem 0;
+            letter-spacing: -0.025em;
+            line-height: 1.1;
+            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .auth-subtitle {
-            font-size: clamp(1.1rem, 3.5vw, 1.25rem);
-            color: #475569 !important;
-            margin: 0 0 var(--mina-space-6) 0;
-            line-height: var(--mina-line-height-relaxed);
-            letter-spacing: 0.02em;
-            font-weight: var(--mina-font-weight-semibold);
-            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            font-size: clamp(1.125rem, 3.5vw, 1.25rem);
+            color: var(--neutral-600);
+            margin: 0 0 2rem 0;
+            line-height: 1.5;
+            letter-spacing: 0.01em;
+            font-weight: 500;
         }
 
-        /* Enhanced Form Styling */
+        /* Premium Floating Label Form System */
         .form-group {
-            margin-bottom: var(--mina-space-6);
-        }
-
-        .form-label {
-            display: block;
-            font-size: clamp(0.9rem, 3vw, 1.1rem);
-            font-weight: var(--mina-font-weight-bold);
-            color: #1e293b !important;
-            margin-bottom: var(--mina-space-3);
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            line-height: 1.4;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            position: relative;
+            margin-bottom: 2rem;
         }
 
         .form-input {
             width: 100%;
-            padding: clamp(1rem, 3vw, 1.25rem);
-            border: 2px solid var(--mina-border-primary);
-            border-radius: var(--mina-radius-md);
-            font-size: clamp(1rem, 3vw, 1.125rem);
-            color: #1e293b !important;
-            background: #ffffff !important;
-            transition: all var(--mina-transition-base);
-            font-family: var(--mina-font-family-sans);
+            padding: 1.25rem 1rem 0.75rem 1rem;
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--glass-border);
+            border-radius: 16px;
+            font-size: 1.125rem;
+            color: var(--neutral-800);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            outline: none;
             box-sizing: border-box;
-            letter-spacing: 0.01em;
-            line-height: 1.5;
+        }
+
+        .form-label {
+            position: absolute;
+            top: 1.25rem;
+            left: 1rem;
+            font-size: 1.125rem;
+            color: var(--neutral-500);
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            background: transparent;
+            font-weight: 500;
         }
 
         .form-input:focus {
-            outline: none;
-            border-color: var(--mina-brand-primary) !important;
+            border-color: var(--elite-purple-500);
             box-shadow: 
-                0 0 0 3px rgba(99, 102, 241, 0.2),
-                0 4px 12px rgba(0, 0, 0, 0.1);
-            transform: translateY(-1px);
+                0 0 0 4px rgba(168, 85, 247, 0.15),
+                0 20px 40px rgba(168, 85, 247, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .form-input:focus + .form-label,
+        .form-input:not(:placeholder-shown) + .form-label {
+            top: 0.25rem;
+            left: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--elite-purple-500);
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 0 0.5rem;
+            border-radius: 6px;
         }
 
         .form-input::placeholder {
-            color: #94a3b8 !important;
+            color: transparent;
         }
 
         .form-checkbox-group {
@@ -185,36 +261,53 @@
             text-shadow: 0 1px 1px rgba(0,0,0,0.1);
         }
 
-        /* Enhanced Button */
+        /* Premium Gradient Button */
         .btn-primary {
             width: 100%;
-            padding: clamp(1rem, 3vw, 1.25rem) var(--mina-space-6);
-            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-accent));
+            padding: 1.25rem 2rem;
+            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--premium-blue-500) 100%);
             color: white;
             border: none;
-            border-radius: var(--mina-radius-md);
-            font-size: clamp(1rem, 3vw, 1.125rem);
-            font-weight: var(--mina-font-weight-bold);
-            font-family: var(--mina-font-family-sans);
+            border-radius: 16px;
+            font-size: 1.125rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: all var(--mina-transition-base);
-            text-transform: none;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             letter-spacing: 0.025em;
-            box-shadow: var(--mina-shadow-sm);
-            min-height: clamp(48px, 12vw, 56px);
-            text-transform: uppercase;
-            font-size: 0.9rem;
+            box-shadow: 
+                0 20px 40px rgba(168, 85, 247, 0.3),
+                0 10px 20px rgba(14, 165, 233, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s;
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--mina-shadow-lg);
-            background: linear-gradient(135deg, var(--mina-brand-primary), var(--mina-brand-secondary));
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 
+                0 32px 64px rgba(168, 85, 247, 0.4),
+                0 16px 32px rgba(14, 165, 233, 0.3);
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
         }
 
         .btn-primary:active {
-            transform: translateY(0);
-            box-shadow: var(--mina-shadow-base);
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 
+                0 20px 40px rgba(168, 85, 247, 0.3),
+                0 10px 20px rgba(14, 165, 233, 0.2);
         }
 
         .btn-primary:focus {
