@@ -6,7 +6,7 @@
   <title>Mina — AI Meeting Assistant & Live Transcription</title>
   <meta name="description" content="Mina captures meetings in real time, turns speech into structured notes and actions, and drafts ready‑to‑send emails and follow‑ups.">
   <link rel="canonical" href="/">
-  <meta name="theme-color" content="#0b0f1a">
+  <meta name="theme-color" content="#6366F1">
   
   <!-- Open Graph / Twitter -->
   <meta property="og:type" content="website">
@@ -20,48 +20,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <style>
-    :root {
-      /* Advanced Color System */
-      --purple-50: hsl(252, 100%, 97%);
-      --purple-100: hsl(251, 91%, 95%);
-      --purple-200: hsl(251, 95%, 92%);
-      --purple-300: hsl(252, 95%, 85%);
-      --purple-400: hsl(255, 92%, 76%);
-      --purple-500: hsl(258, 90%, 66%);
-      --purple-600: hsl(262, 83%, 58%);
-      --purple-700: hsl(263, 70%, 50%);
-      --purple-800: hsl(263, 69%, 42%);
-      --purple-900: hsl(264, 67%, 35%);
-      --purple-950: hsl(264, 69%, 24%);
-      
-      --blue-400: hsl(213, 93%, 68%);
-      --blue-500: hsl(217, 91%, 60%);
-      --blue-600: hsl(221, 83%, 53%);
-      
-      --cyan-400: hsl(187, 85%, 53%);
-      --cyan-500: hsl(188, 78%, 41%);
-      
-      /* Sophisticated Shadows */
-      --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-      --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
-      
-      /* Glass-morphism Variables */
-      --glass-bg: rgba(255, 255, 255, 0.07);
-      --glass-border: rgba(255, 255, 255, 0.18);
-      --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-      
-      /* Animation Timings */
-      --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
-      --ease-in-out-cubic: cubic-bezier(0.65, 0, 0.35, 1);
-      --spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
+  
+  <!-- Premium Design System -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-premium-system.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-landing.css') }}">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
 
     * {
       margin: 0;
@@ -181,65 +144,6 @@
       transition: all 0.1s ease;
     }
 
-    /* Hero Section */
-    .hero {
-      padding: 4rem 0;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .hero::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-                  radial-gradient(circle at 75% 75%, rgba(34, 211, 238, 0.1) 0%, transparent 50%);
-      animation: heroFloat 25s ease-in-out infinite;
-      z-index: -1;
-    }
-    
-    @keyframes heroFloat {
-      0%, 100% { transform: translateY(0px) rotate(0deg); }
-      25% { transform: translateY(-30px) rotate(1deg); }
-      50% { transform: translateY(20px) rotate(-0.5deg); }
-      75% { transform: translateY(-15px) rotate(0.5deg); }
-    }
-
-    .hero-content {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3rem;
-      align-items: center;
-    }
-
-    .hero-left h1 {
-      font-size: clamp(2.5rem, 8vw, 4rem);
-      font-weight: 800;
-      line-height: 1.05;
-      margin-bottom: 1.5rem;
-      letter-spacing: -0.025em;
-      font-feature-settings: 'kern' 1, 'liga' 1;
-    }
-
-    .gradient-text {
-      background: linear-gradient(135deg, var(--blue-500) 0%, var(--cyan-400) 50%, var(--blue-400) 100%);
-      background-size: 200% 200%;
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      color: transparent;
-      animation: gradient-shift 6s ease-in-out infinite;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-    
-    @keyframes gradient-shift {
-      0%, 100% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-    }
 
     .hero-left p {
       font-size: clamp(1.125rem, 2.5vw, 1.25rem);
@@ -1109,16 +1013,16 @@
 
 <body>
   <!-- Header -->
-  <header class="header">
-    <nav class="nav container">
-      <a href="#" class="logo">Mina</a>
-      <ul class="nav-links">
-        <li><a href="#features">Features</a></li>
-        <li><a href="#how">How it works</a></li>
-        <li><a href="#pricing">Pricing</a></li>
-        <li><a href="#faq">FAQ</a></li>
+  <header style="background: var(--glass-bg); backdrop-filter: var(--glass-backdrop-strong); border-bottom: 1px solid var(--glass-border); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm);">
+    <nav style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; max-width: 1200px; margin: 0 auto; padding-left: 20px; padding-right: 20px;">
+      <a href="/" style="font-size: 1.5rem; font-weight: 700; color: #ffffff; text-decoration: none;">Mina</a>
+      <ul style="display: flex; gap: 2rem; list-style: none; margin: 0; padding: 0;">
+        <li><a href="#features" style="color: #e2e8f0; text-decoration: none; font-weight: 500; transition: color 0.3s ease;">Features</a></li>
+        <li><a href="#how" style="color: #e2e8f0; text-decoration: none; font-weight: 500; transition: color 0.3s ease;">How it works</a></li>
+        <li><a href="#pricing" style="color: #e2e8f0; text-decoration: none; font-weight: 500; transition: color 0.3s ease;">Pricing</a></li>
+        <li><a href="#faq" style="color: #e2e8f0; text-decoration: none; font-weight: 500; transition: color 0.3s ease;">FAQ</a></li>
       </ul>
-      <a href="/app" class="cta-button">Open the App</a>
+      <a href="/app" class="landing-hero-btn primary">Open the App</a>
     </nav>
   </header>
 

@@ -11,6 +11,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     
+    <!-- Premium Design System -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-premium-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-meeting.css') }}">
+    
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
     <!-- Feather Icons removed - using Font Awesome consistently -->
     <script src="{{ url_for('static', filename='js/mina-animated-logo.js') }}"></script>
@@ -361,43 +365,63 @@
         
         <main class="main-content">
             <!-- Meeting Header -->
-            <header class="dashboard-header">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <a href="{{ url_for('dashboard.meetings') }}" class="btn btn-sm btn-secondary">
+            <header class="meeting-header">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: var(--space-4);">
+                    <a href="{{ url_for('dashboard.meetings') }}" class="meeting-action-btn">
                         <i data-feather="arrow-left"></i>
                         Back to Meetings
                     </a>
-                    <div>
-                        <h1 class="dashboard-title">{{ meeting.title or 'Untitled Meeting' }}</h1>
-                        <p class="dashboard-subtitle">
-                            {{ meeting.created_at.strftime('%B %d, %Y at %I:%M %p') }}
-                            {% if summary.duration %} • {{ summary.duration }}{% endif %}
-                            {% if summary.participants %} • {{ summary.participants|length }} participants{% endif %}
-                        </p>
-                    </div>
                 </div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-sm btn-secondary" onclick="exportMeeting()">
+                <h1 class="meeting-title">{{ meeting.title or 'Untitled Meeting' }}</h1>
+                <div class="meeting-meta">
+                    <div class="meeting-meta-item">
+                        <div class="meeting-meta-icon">📅</div>
+                        <span>{{ meeting.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                    </div>
+                    {% if summary.duration %}
+                    <div class="meeting-meta-item">
+                        <div class="meeting-meta-icon">⏱️</div>
+                        <span>{{ summary.duration }}</span>
+                    </div>
+                    {% endif %}
+                    {% if summary.participants %}
+                    <div class="meeting-meta-item">
+                        <div class="meeting-meta-icon">👥</div>
+                        <span>{{ summary.participants|length }} participants</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <p class="meeting-description">Detailed insights and analysis from your meeting session with advanced AI-powered transcription and action item extraction.</p>
+                <div class="meeting-actions">
+                    <button class="meeting-action-btn primary" onclick="exportMeeting()">
                         <i data-feather="download"></i>
                         Export
                     </button>
-                    <button class="btn btn-sm btn-secondary" onclick="shareMeeting()">
+                    <button class="meeting-action-btn" onclick="shareMeeting()">
                         <i data-feather="share-2"></i>
                         Share
+                    </button>
+                    <button class="meeting-action-btn" onclick="printMeeting()">
+                        <i data-feather="printer"></i>
+                        Print
                     </button>
                 </div>
             </header>
             
-            <!-- Three-Pane Layout -->
-            <div class="three-pane-layout">
-                <!-- Left Pane: Transcript -->
-                <div class="pane">
-                    <div class="pane-header">
-                        <h2 class="pane-title">
+            <!-- Premium Meeting Content -->
+            <div class="meeting-content">
+                <!-- Transcript Section -->
+                <div class="meeting-transcript">
+                    <div class="meeting-transcript-header">
+                        <h2 class="meeting-transcript-title">
                             <i data-feather="file-text"></i>
-                            Transcript
+                            Live Transcript
                         </h2>
-                        <span class="badge">{{ segments|length }} segments</span>
+                        <div class="meeting-transcript-controls">
+                            <button class="meeting-transcript-btn active">All</button>
+                            <button class="meeting-transcript-btn">Search</button>
+                            <button class="meeting-transcript-btn">{{ segments|length }} segments</button>
+                        </div>
                     </div>
                     <div class="pane-content">
                         {% if segments %}
