@@ -4,301 +4,24 @@
 
 {% block head %}
     <!-- Chart.js for analytics visualizations -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    
-    <!-- PREMIUM ANALYTICS DESIGN SYSTEM -->
-    <style>
-        /* Analytics page specific styles only - backgrounds unified in base.html */
-
-        /* PREMIUM ANALYTICS CONTAINER */
-        .main-content {
-            position: relative;
-            z-index: 10;
-            padding: 2rem;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        /* PREMIUM DASHBOARD HEADER */
-        .dashboard-header {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(40px) saturate(180%);
-            border-radius: 24px;
-            padding: 3rem;
-            margin-bottom: 2rem;
-            border: 1px solid var(--glass-border);
-            box-shadow: 
-                0 32px 64px rgba(0, 0, 0, 0.25),
-                0 16px 32px rgba(0, 0, 0, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .dashboard-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-        }
-
-        .dashboard-title {
-            font-size: clamp(2.5rem, 5vw, 3.5rem);
-            font-weight: 800;
-            margin: 0 0 1rem 0;
-            letter-spacing: -0.025em;
-            line-height: 1.1;
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        /* PREMIUM ANALYTICS GRID */
-        .analytics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-        
-        /* PREMIUM CHART CONTAINERS */
-        .chart-container {
-            background: var(--glass-bg-light);
-            backdrop-filter: blur(40px) saturate(180%);
-            border-radius: 20px;
-            padding: 2rem;
-            border: 1px solid var(--glass-border);
-            box-shadow: 
-                0 20px 40px rgba(168, 85, 247, 0.15),
-                0 10px 20px rgba(14, 165, 233, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            position: relative;
-            overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        .chart-container:hover {
-            transform: translateY(-4px) scale(1.01);
-            box-shadow: 
-                0 30px 60px rgba(168, 85, 247, 0.2),
-                0 15px 30px rgba(14, 165, 233, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-        }
-        
-        .chart-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-        }
-        
-        .chart-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin: 0 0 1.5rem 0;
-            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        
-        canvas {
-            max-height: 350px;
-            border-radius: 12px;
-        }
-
-        /* PREMIUM FORM CONTROLS */
-        .form-select {
-            background: var(--glass-bg-light);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 0.75rem 1rem;
-            color: var(--neutral-800);
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .form-select:focus {
-            outline: none;
-            border-color: var(--elite-purple-500);
-            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
-        }
-
-        .btn {
-            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--premium-blue-500) 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            box-shadow: 
-                0 10px 20px rgba(168, 85, 247, 0.3),
-                0 5px 10px rgba(14, 165, 233, 0.2);
-        }
-
-        .btn:hover {
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 
-                0 20px 40px rgba(168, 85, 247, 0.4),
-                0 10px 20px rgba(14, 165, 233, 0.3);
-            color: white;
-        }
-
-        /* PREMIUM KEY METRICS */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: var(--space-8);
-            margin-bottom: var(--space-12);
-        }
-        
-        .stat-card {
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-backdrop-strong);
-            border-radius: var(--radius-3xl);
-            padding: var(--space-10);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--shadow-lg), var(--shadow-glow-primary);
-            position: relative;
-            overflow: hidden;
-            transition: all var(--duration-normal) var(--ease-out);
-            display: flex;
-            align-items: center;
-            gap: var(--space-6);
-        }
-        
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
-            border-radius: var(--radius-3xl) var(--radius-3xl) 0 0;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-6px) scale(1.02);
-            box-shadow: var(--shadow-xl), var(--shadow-glow-secondary);
-        }
-        
-        .stat-icon {
-            width: var(--space-16);
-            height: var(--space-16);
-            border-radius: var(--radius-2xl);
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-inverse);
-            font-size: var(--font-size-2xl);
-            box-shadow: var(--shadow-base), var(--shadow-glow-primary);
-            transition: all var(--duration-normal) var(--ease-out);
-        }
-        
-        .stat-card:hover .stat-icon {
-            transform: scale(1.1) rotate(10deg);
-            box-shadow: var(--shadow-lg), var(--shadow-glow-secondary);
-        }
-        
-        .stat-content {
-            flex: 1;
-        }
-        
-        .stat-number {
-            font-size: var(--font-size-4xl);
-            font-weight: var(--font-weight-black);
-            margin: 0 0 var(--space-2) 0;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: var(--shadow-glow-primary);
-        }
-        
-        .stat-label {
-            font-size: var(--font-size-base);
-            font-weight: var(--font-weight-semibold);
-            color: var(--text-secondary);
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: var(--letter-spacing-wide);
-        }
-
-        /* PREMIUM ANIMATIONS */
-        .animate-fade-in {
-            animation: fadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* RESPONSIVE DESIGN */
-        @media (max-width: 768px) {
-            .main-content {
-                padding: 1rem;
-            }
-            .dashboard-header {
-                padding: 2rem;
-            }
-            .analytics-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-            .header-actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
-        }
-    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js" 
+            integrity="sha512-7U4rRB8aGAHGVad3u2jiC7GA5/1YhQcQjxKeaVms/bT66i3LVBMRcBI9KwABNWnxOSwulkuSXxZLGuyfvo7V1A==" 
+            crossorigin="anonymous" 
+            referrerpolicy="no-referrer" 
+            defer></script>
+    <!-- Analytics page uses mina-analytics.css for styling -->
 {% endblock %}
 
 {% block content %}
-    <div class="main-content">
+    <div class="analytics-main-content">
         <!-- Premium Analytics Header -->
-        <div class="dashboard-header animate-fade-in">
-            <div class="header-content">
-                <h1 class="dashboard-title">
+        <div class="analytics-dashboard-header animate-fade-in">
+            <div class="analytics-header-content">
+                <h1 class="analytics-dashboard-title">
                     <i class="fas fa-chart-bar"></i>
                     Analytics Dashboard
                 </h1>
-                <div class="header-actions">
+                <div class="analytics-header-actions">
                     <select class="form-select" id="time-range">
                         <option value="7">Last 7 days</option>
                         <option value="30" selected>Last 30 days</option>
@@ -358,8 +81,8 @@
         <!-- Analytics Charts -->
         <div class="analytics-grid">
             <!-- Sessions Over Time -->
-            <div class="chart-container">
-                <h3 class="chart-title">
+            <div class="analytics-chart-container">
+                <h3 class="analytics-chart-title">
                     <i class="fas fa-chart-line"></i>
                     Sessions Over Time
                 </h3>
@@ -367,8 +90,8 @@
             </div>
             
             <!-- Confidence Distribution -->
-            <div class="chart-container">
-                <h3 class="chart-title">
+            <div class="analytics-chart-container">
+                <h3 class="analytics-chart-title">
                     <i class="fas fa-chart-pie"></i>
                     Confidence Distribution
                 </h3>
@@ -376,8 +99,8 @@
             </div>
             
             <!-- Duration Analysis -->
-            <div class="chart-container">
-                <h3 class="chart-title">
+            <div class="analytics-chart-container">
+                <h3 class="analytics-chart-title">
                     <i class="fas fa-chart-bar"></i>
                     Session Duration Analysis
                 </h3>
@@ -385,8 +108,8 @@
             </div>
             
             <!-- Status Distribution -->
-            <div class="chart-container">
-                <h3 class="chart-title">
+            <div class="analytics-chart-container">
+                <h3 class="analytics-chart-title">
                     <i class="fas fa-chart-simple"></i>
                     Session Status
                 </h3>
