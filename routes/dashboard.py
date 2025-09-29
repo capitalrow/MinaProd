@@ -202,9 +202,9 @@ def meeting_detail(meeting_id):
             'Identified three main blockers requiring immediate attention',
             'Agreed on next steps for team coordination'
         ],
-        'decisions': [marker for marker in meeting_markers if hasattr(marker, 'type') and marker.type == 'decision'],
-        'action_items': [marker for marker in meeting_markers if hasattr(marker, 'type') and marker.type == 'todo'],
-        'risks_concerns': [marker for marker in meeting_markers if hasattr(marker, 'type') and marker.type == 'risk'],
+        'decisions': [marker for marker in meeting_markers if getattr(marker, 'type', None) == 'decision'],
+        'action_items': [marker for marker in meeting_markers if getattr(marker, 'type', None) == 'todo'],
+        'risks_concerns': [marker for marker in meeting_markers if getattr(marker, 'type', None) == 'risk'],
         'participants': ['Speaker 1', 'Speaker 2'],  # Placeholder - segments don't have speaker info
         'duration': calculate_meeting_duration(segments),
         'word_count': sum(len(segment.text.split()) for segment in segments if segment.text)
