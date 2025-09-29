@@ -162,19 +162,29 @@
 
     /* Enhanced CTA Button with Advanced Micro-interactions */
     .cta-button {
-      background: linear-gradient(135deg, var(--blue-500) 0%, var(--cyan-400) 100%);
+      background: linear-gradient(135deg, var(--purple-600) 0%, var(--blue-500) 50%, var(--cyan-400) 100%);
+      background-size: 200% 200%;
       color: #ffffff;
-      padding: 0.75rem 1.5rem;
-      border-radius: 12px;
+      padding: 1rem 2rem;
+      border-radius: 16px;
       text-decoration: none;
-      font-weight: 600;
+      font-weight: 700;
+      font-size: 1.125rem;
+      letter-spacing: -0.01em;
       transition: all var(--duration-md) var(--ease-emphasized);
       box-shadow: 
-        var(--shadow-depth-2),
-        var(--glow-blue);
+        var(--shadow-depth-3),
+        var(--glow-blue),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
       position: relative;
       overflow: hidden;
       transform-style: preserve-3d;
+      animation: gradientShift 4s ease-in-out infinite;
+    }
+    
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
     }
     
     .cta-button::before {
@@ -207,11 +217,14 @@
     }
 
     .cta-button:hover {
-      transform: translateY(-4px) scale(1.05) rotateX(5deg);
+      transform: translateY(-6px) scale(1.08) rotateX(8deg) rotateY(2deg);
+      background-position: 150% 50%;
+      animation-duration: 1.5s;
       box-shadow: 
-        var(--shadow-depth-4),
-        var(--glow-blue),
-        0 0 50px rgba(59, 130, 246, 0.4);
+        var(--shadow-depth-5),
+        0 0 40px rgba(147, 51, 234, 0.6),
+        0 0 80px rgba(59, 130, 246, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
     }
     
     .cta-button:active {
@@ -222,9 +235,31 @@
         var(--glow-blue);
     }
     
-    /* Primary CTA with pulse animation */
+    /* Primary CTA with enhanced pulse animation */
     .cta-primary {
-      animation: ctaPulse 3s ease-in-out infinite;
+      animation: ctaPulse 4s ease-in-out infinite;
+      position: relative;
+    }
+    
+    .cta-primary::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      background: linear-gradient(135deg, var(--purple-600), var(--blue-500), var(--cyan-400));
+      border-radius: 20px;
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .cta-primary:hover::after {
+      opacity: 0.3;
+      animation: pulseGlow 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); opacity: 0.3; }
+      50% { transform: scale(1.1); opacity: 0.6; }
     }
     
     @keyframes ctaPulse {
@@ -315,12 +350,31 @@
     }
 
     .hero-left h1 {
-      font-size: clamp(2.5rem, 8vw, 4rem);
-      font-weight: 800;
-      line-height: 1.05;
-      margin-bottom: 1.5rem;
-      letter-spacing: -0.025em;
+      font-size: clamp(3rem, 10vw, 5rem);
+      font-weight: 900;
+      line-height: 0.95;
+      margin-bottom: 2rem;
+      letter-spacing: -0.035em;
       font-feature-settings: 'kern' 1, 'liga' 1;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+    
+    .hero-left h1::before {
+      content: '';
+      position: absolute;
+      top: -20px;
+      left: -20px;
+      right: -20px;
+      bottom: -20px;
+      background: radial-gradient(circle at 50% 50%, rgba(147, 51, 234, 0.1) 0%, transparent 70%);
+      z-index: -1;
+      animation: heroGlow 3s ease-in-out infinite alternate;
+    }
+    
+    @keyframes heroGlow {
+      0% { opacity: 0.5; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1.05); }
     }
     
     /* Word-by-word reveal animation */
@@ -388,12 +442,14 @@
     }
 
     .hero-left p {
-      font-size: clamp(1.125rem, 2.5vw, 1.25rem);
-      color: rgba(226, 232, 240, 0.9);
-      margin-bottom: 2rem;
-      line-height: 1.65;
-      font-weight: 400;
-      letter-spacing: -0.01em;
+      font-size: clamp(1.25rem, 3vw, 1.5rem);
+      color: rgba(226, 232, 240, 0.95);
+      margin-bottom: 2.5rem;
+      line-height: 1.7;
+      font-weight: 450;
+      letter-spacing: -0.015em;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      max-width: 90%;
     }
 
     .hero-buttons {
@@ -922,6 +978,85 @@
     
     .tilt-card:hover {
       transform: perspective(1000px) rotateX(5deg) rotateY(5deg) translateZ(10px);
+    }
+    
+    /* Premium Floating Elements */
+    .floating-element {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+    
+    .floating-element-1 {
+      top: 10%;
+      right: 20%;
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle, rgba(147, 51, 234, 0.3) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: float1 6s ease-in-out infinite;
+    }
+    
+    .floating-element-2 {
+      bottom: 20%;
+      left: 10%;
+      width: 80px;
+      height: 80px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: float2 8s ease-in-out infinite;
+    }
+    
+    .floating-element-3 {
+      top: 60%;
+      right: 10%;
+      width: 60px;
+      height: 60px;
+      background: radial-gradient(circle, rgba(34, 211, 238, 0.3) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: float3 7s ease-in-out infinite;
+    }
+    
+    @keyframes float1 {
+      0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+      33% { transform: translateY(-20px) translateX(10px) rotate(120deg); }
+      66% { transform: translateY(10px) translateX(-15px) rotate(240deg); }
+    }
+    
+    @keyframes float2 {
+      0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+      50% { transform: translateY(-30px) translateX(20px) rotate(180deg); }
+    }
+    
+    @keyframes float3 {
+      0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+      25% { transform: translateY(-15px) translateX(-10px) rotate(90deg); }
+      75% { transform: translateY(15px) translateX(15px) rotate(270deg); }
+    }
+    
+    /* Enhanced Mobile Responsiveness */
+    @media (max-width: 768px) {
+      .floating-element {
+        display: none;
+      }
+      
+      .hero-content {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        text-align: center;
+      }
+      
+      .hero-buttons {
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .cta-button, .btn-secondary {
+        width: 100%;
+        max-width: 280px;
+      }
+    }
     }
     
     /* Pulse Animation for CTAs */
