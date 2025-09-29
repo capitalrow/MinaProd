@@ -6,10 +6,269 @@
     <!-- Socket.IO and dependencies loaded via base.html -->
     
     <style>
-        /* Live Recording specific enhancements - work WITH premium system */
+        /* PREMIUM LIVE TRANSCRIPTION ENHANCEMENTS */
+        
+        /* Advanced Background Effects */
+        .recording-studio {
+            position: relative;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
+            background-attachment: fixed;
+        }
+        
+        .recording-studio::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 25% 75%, rgba(168, 85, 247, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 75% 25%, rgba(59, 130, 246, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.2) 0%, transparent 60%);
+            animation: premiumLiveFloat 40s ease-in-out infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        @keyframes premiumLiveFloat {
+            0%, 100% { transform: translate(0px, 0px) rotate(0deg) scale(1); }
+            33% { transform: translate(80px, -60px) rotate(120deg) scale(1.2); }
+            66% { transform: translate(-60px, 80px) rotate(240deg) scale(0.8); }
+        }
+        
+        /* Premium Neural Background for Live Interface */
+        .recording-studio::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.08;
+            pointer-events: none;
+            z-index: 1;
+            background-image: 
+                radial-gradient(circle at 30% 70%, var(--elite-purple-500) 1px, transparent 1px),
+                radial-gradient(circle at 70% 30%, var(--premium-blue-500) 1px, transparent 1px),
+                radial-gradient(circle at 50% 50%, var(--emerald-500) 1px, transparent 1px);
+            background-size: 120px 120px, 180px 180px, 100px 100px;
+            animation: premiumLiveNeuralPulse 15s ease-in-out infinite;
+        }
+        
+        @keyframes premiumLiveNeuralPulse {
+            0%, 100% {
+                opacity: 0.08;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.15;
+                transform: scale(1.1);
+            }
+        }
+        
+        /* Enhanced Studio Header */
+        .studio-header {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(60px) saturate(220%);
+            border-radius: 0 0 24px 24px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 32px 64px rgba(0, 0, 0, 0.25),
+                0 16px 32px rgba(0, 0, 0, 0.15),
+                inset 0 2px 0 rgba(255, 255, 255, 0.3);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .brand-title {
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+        }
+        
+        /* Premium Recording Button Enhancement */
+        .record-btn {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(40px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem 3rem;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 20px 40px rgba(168, 85, 247, 0.3),
+                0 10px 20px rgba(59, 130, 246, 0.2);
+        }
+        
+        .record-btn::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                from 0deg,
+                transparent,
+                rgba(168, 85, 247, 0.4),
+                transparent,
+                rgba(59, 130, 246, 0.4),
+                transparent
+            );
+            animation: premiumRecordGlow 4s linear infinite;
+            z-index: -1;
+        }
+        
+        @keyframes premiumRecordGlow {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .record-btn:hover {
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 
+                0 30px 60px rgba(168, 85, 247, 0.4),
+                0 15px 30px rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Premium Metrics Enhancement */
+        .session-metrics {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(40px) saturate(180%);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            margin: 2rem 0;
+        }
+        
+        .metric {
+            background: var(--glass-bg-dark);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .metric:hover {
+            transform: translateY(-4px) scale(1.02);
+            background: var(--glass-bg-light);
+            box-shadow: 0 15px 30px rgba(168, 85, 247, 0.3);
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--elite-purple-500), var(--premium-blue-600));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Premium Settings Panel */
+        .settings-panel {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(50px) saturate(200%);
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.2),
+                inset 1px 0 0 rgba(255, 255, 255, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .settings-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--elite-purple-500), var(--premium-blue-500), var(--emerald-500));
+            border-radius: 24px 24px 0 0;
+        }
+        
+        .setting-input {
+            background: var(--glass-bg-dark);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: white;
+            padding: 1rem 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .setting-input:focus {
+            background: var(--glass-bg-light);
+            border-color: var(--elite-purple-500);
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.3);
+            transform: scale(1.02);
+        }
+        
+        /* Premium Transcript Area */
+        .transcript-area {
+            background: var(--glass-bg-light);
+            backdrop-filter: blur(50px) saturate(200%);
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.2),
+                inset 1px 0 0 rgba(255, 255, 255, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .transcript-header {
+            background: var(--glass-bg-dark);
+            border-bottom: 1px solid var(--glass-border);
+            position: relative;
+        }
+        
+        .transcript-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        }
+        
+        /* Premium Transcript Content */
+        .transcript-content {
+            position: relative;
+            padding: 2rem;
+        }
+        
+        .transcript-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
         .live-recording-container {
             position: relative;
-            z-index: 1;
+            z-index: 10;
         }
         
         /* Live recording specific wave animations */
