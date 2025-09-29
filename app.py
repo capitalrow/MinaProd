@@ -288,8 +288,9 @@ def create_app() -> Flask:
         app.logger.warning(f"Failed to register auth routes: {e}")
     
     try:
-        from routes.dashboard import dashboard_bp
+        from routes.dashboard import dashboard_bp, register_dashboard_socketio_handlers
         app.register_blueprint(dashboard_bp)
+        register_dashboard_socketio_handlers(socketio)
         app.logger.info("Dashboard routes registered")
     except Exception as e:
         app.logger.warning(f"Failed to register dashboard routes: {e}")
