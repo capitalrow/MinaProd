@@ -122,21 +122,25 @@
   }
 }
 
-[data-theme="dark"] .breadcrumb {
+[data-theme="dark"] .breadcrumb,
+[data-bs-theme="dark"] .breadcrumb {
   background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
   border-color: #475569;
 }
 
-[data-theme="dark"] .breadcrumb-item a {
+[data-theme="dark"] .breadcrumb-item a,
+[data-bs-theme="dark"] .breadcrumb-item a {
   color: #cbd5e1;
 }
 
-[data-theme="dark"] .breadcrumb-item a:hover {
+[data-theme="dark"] .breadcrumb-item a:hover,
+[data-bs-theme="dark"] .breadcrumb-item a:hover {
   background: linear-gradient(135deg, #334155 0%, #475569 100%);
   color: #a5b4fc;
 }
 
-[data-theme="dark"] .breadcrumb-item.active {
+[data-theme="dark"] .breadcrumb-item.active,
+[data-bs-theme="dark"] .breadcrumb-item.active {
   color: #f1f5f9;
 }
 
@@ -889,7 +893,10 @@
 
 [data-theme="dark"] .dashboard-page .dashboard-header,
 [data-theme="dark"] .dashboard-page .stat-card,
-[data-theme="dark"] .dashboard-page .content-section {
+[data-theme="dark"] .dashboard-page .content-section,
+[data-bs-theme="dark"] .dashboard-page .dashboard-header,
+[data-bs-theme="dark"] .dashboard-page .stat-card,
+[data-bs-theme="dark"] .dashboard-page .content-section {
   background: #111827;
   border-color: #334155;
 }
@@ -897,55 +904,70 @@
 [data-theme="dark"] .dashboard-page .dashboard-title,
 [data-theme="dark"] .dashboard-page .stat-value,
 [data-theme="dark"] .dashboard-page .section-title,
-[data-theme="dark"] .dashboard-page .activity-title {
+[data-theme="dark"] .dashboard-page .activity-title,
+[data-bs-theme="dark"] .dashboard-page .dashboard-title,
+[data-bs-theme="dark"] .dashboard-page .stat-value,
+[data-bs-theme="dark"] .dashboard-page .section-title,
+[data-bs-theme="dark"] .dashboard-page .activity-title {
   color: #f8fafc;
 }
 
 [data-theme="dark"] .dashboard-page .dashboard-subtitle,
-[data-theme="dark"] .dashboard-page .stat-label {
+[data-theme="dark"] .dashboard-page .stat-label,
+[data-bs-theme="dark"] .dashboard-page .dashboard-subtitle,
+[data-bs-theme="dark"] .dashboard-page .stat-label {
   color: #cbd5e1;
 }
 
-[data-theme="dark"] .dashboard-page .status-item span {
+[data-theme="dark"] .dashboard-page .status-item span,
+[data-bs-theme="dark"] .dashboard-page .status-item span {
   color: #e2e8f0;
 }
 
-[data-theme="dark"] .dashboard-page .activity-meta {
+[data-theme="dark"] .dashboard-page .activity-meta,
+[data-bs-theme="dark"] .dashboard-page .activity-meta {
   color: #94a3b8;
 }
 
-[data-theme="dark"] .dashboard-page .activity-item {
+[data-theme="dark"] .dashboard-page .activity-item,
+[data-bs-theme="dark"] .dashboard-page .activity-item {
   background: #1e293b;
   border-color: #334155;
 }
 
-[data-theme="dark"] .dashboard-page .activity-item:hover {
+[data-theme="dark"] .dashboard-page .activity-item:hover,
+[data-bs-theme="dark"] .dashboard-page .activity-item:hover {
   background: #334155;
   border-color: #475569;
 }
 
-[data-theme="dark"] .dashboard-page .btn-outline-secondary {
+[data-theme="dark"] .dashboard-page .btn-outline-secondary,
+[data-bs-theme="dark"] .dashboard-page .btn-outline-secondary {
   color: #cbd5e1;
   border-color: #475569;
 }
 
-[data-theme="dark"] .dashboard-page .btn-outline-secondary:hover {
+[data-theme="dark"] .dashboard-page .btn-outline-secondary:hover,
+[data-bs-theme="dark"] .dashboard-page .btn-outline-secondary:hover {
   background: #334155;
   border-color: #64748b;
   color: #f1f5f9;
 }
 
-[data-theme="dark"] .dashboard-page .stat-trend.positive {
+[data-theme="dark"] .dashboard-page .stat-trend.positive,
+[data-bs-theme="dark"] .dashboard-page .stat-trend.positive {
   color: #34d399;
   background: rgba(52, 211, 153, 0.15);
 }
 
-[data-theme="dark"] .dashboard-page .stat-trend.neutral {
+[data-theme="dark"] .dashboard-page .stat-trend.neutral,
+[data-bs-theme="dark"] .dashboard-page .stat-trend.neutral {
   color: #94a3b8;
   background: rgba(148, 163, 184, 0.15);
 }
 
-[data-theme="dark"] .dashboard-page .stat-trend.negative {
+[data-theme="dark"] .dashboard-page .stat-trend.negative,
+[data-bs-theme="dark"] .dashboard-page .stat-trend.negative {
   color: #f87171;
   background: rgba(248, 113, 113, 0.15);
 }
