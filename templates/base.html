@@ -51,7 +51,10 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer">
     
-    <!-- MINA PREMIUM DESIGN SYSTEM - Elite 5-file architecture (85% CSS reduction achieved) -->
+    <!-- MINA UNIFIED PREMIUM DESIGN SYSTEM - Single source of truth for all 28+ pages -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-core.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-components.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-dashboard.css') }}">
@@ -196,6 +199,36 @@
             font-size: 1rem;
             color: rgba(255, 255, 255, 0.7);
             font-weight: 500;
+        }
+
+        /* UNIFIED PREMIUM ANIMATED BACKGROUNDS - Applied globally to all pages */
+        body.premium-bg {
+            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
+            background-attachment: fixed;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        body.premium-bg::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(14, 165, 233, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.2) 0%, transparent 50%);
+            animation: premiumUnifiedFloat 25s ease-in-out infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes premiumUnifiedFloat {
+            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
         }
 
         /* PREMIUM PAGE TRANSITIONS */
@@ -461,7 +494,7 @@
     
     {% block head %}{% endblock %}
 </head>
-<body>
+<body class="premium-bg loaded" data-theme="dark">
     <!-- Skip Links for Accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <a href="#navigation" class="skip-link">Skip to navigation</a>
@@ -592,6 +625,13 @@
 
     <!-- Mobile Overlay for Sidebar -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content page-transition" id="main-content" role="main" {% block main_style %}{% endblock %}>
+        {% block content %}
+        <!-- Page content goes here -->
+        {% endblock %}
+    </main>
 
     <!-- Load Sidebar Navigation Script -->
     <script src="{{ url_for('static', filename='js/sidebar.js') }}" defer></script>

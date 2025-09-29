@@ -1,21 +1,11 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Copilot - Mina</title>
-    
-    <!-- Core CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
-    
-    <!-- External Dependencies -->
-    <!-- Feather Icons removed - using Font Awesome consistently -->
-    
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
-    
-    <style>
+{% extends "base.html" %}
+
+{% block title %}AI Copilot - {{ super() }}{% endblock %}
+
+{% block main_style %}style="display: none;"{% endblock %}
+
+{% block head %}
+<style>
         :root {
             --copilot-primary: #0EA5E9;
             --copilot-secondary: #6366F1;
@@ -25,37 +15,12 @@
             --copilot-user-bg: rgba(14, 165, 233, 0.1);
             --copilot-assistant-bg: rgba(99, 102, 241, 0.08);
         }
+
+        /* Hide sidebar for full-screen copilot experience */
+        .sidebar-navigation { display: none; }
+        .sidebar-overlay { display: none; }
         
-        body {
-            font-family: 'SF Pro Display', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
-            background-attachment: fixed;
-            color: #ffffff;
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            overflow: hidden;
-            position: relative;
-        }
-
-        /* PREMIUM NEURAL NETWORK BACKGROUND */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 200%;
-            height: 200%;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(14, 165, 233, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 50% 10%, rgba(99, 102, 241, 0.2) 0%, transparent 40%),
-                radial-gradient(circle at 90% 90%, rgba(168, 85, 247, 0.25) 0%, transparent 45%);
-            animation: premiumCopilotFloat 25s ease-in-out infinite;
-            z-index: 0;
-            pointer-events: none;
-        }
-
+        /* PREMIUM NEURAL NETWORK ENHANCEMENT for Copilot */
         body::after {
             content: '';
             position: fixed;
@@ -70,12 +35,6 @@
             animation: premiumNeuralNetwork 40s linear infinite;
             z-index: 1;
             pointer-events: none;
-        }
-
-        @keyframes premiumCopilotFloat {
-            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
-            33% { transform: translate(30px, -30px) rotate(120deg); }
-            66% { transform: translate(-20px, 20px) rotate(240deg); }
         }
 
         @keyframes premiumNeuralNetwork {
@@ -523,8 +482,9 @@
             }
         }
     </style>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
     <div class="copilot-container">
         <!-- Sidebar -->
         <div class="copilot-sidebar">
@@ -802,5 +762,4 @@
             messageInput.focus();
         });
     </script>
-</body>
-</html>
+{% endblock %}

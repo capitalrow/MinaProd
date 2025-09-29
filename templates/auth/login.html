@@ -1,51 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - Mina</title>
-    <!-- Premium Glass Morphism Design System -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-core.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-components.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-premium.css') }}">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
-    <style>
-        /* Premium Glass Morphism Authentication Layout */
-        body {
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            background: linear-gradient(135deg, var(--elite-purple-500) 0%, var(--elite-purple-700) 35%, var(--premium-blue-600) 100%);
-            background-attachment: fixed;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow-x: hidden;
-        }
+{% extends "base.html" %}
 
-        /* Premium Animated Background */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 200%;
-            height: 200%;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(14, 165, 233, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.2) 0%, transparent 50%);
-            animation: premiumFloat 20s ease-in-out infinite;
-            z-index: 0;
-        }
+{% block title %}Sign In - {{ super() }}{% endblock %}
 
-        @keyframes premiumFloat {
-            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
-            33% { transform: translate(30px, -30px) rotate(120deg); }
-            66% { transform: translate(-20px, 20px) rotate(240deg); }
-        }
+{% block main_style %}style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem;"{% endblock %}
 
+{% block head %}
+<style>
         .auth-container {
             width: 100%;
             max-width: 440px;
@@ -161,12 +121,7 @@
             font-weight: 500;
         }
 
-        /* Premium Floating Label Form System */
-        .form-group {
-            position: relative;
-            margin-bottom: 2rem;
-        }
-
+        /* Use mina-floating-input system from premium.css */
         .form-input {
             width: 100%;
             padding: 1.25rem 1rem 0.75rem 1rem;
@@ -485,9 +440,10 @@
                 transition: none;
             }
         }
-    </style>
-</head>
-<body>
+</style>
+{% endblock %}
+
+{% block content %}
     <div class="auth-container">
         <div class="auth-card">
             <div class="auth-header">
@@ -584,5 +540,4 @@
             });
         {% endif %}
     </script>
-</body>
-</html>
+{% endblock %}
