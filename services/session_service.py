@@ -4,13 +4,16 @@ Service layer for managing session CRUD operations and persistence.
 """
 
 import uuid
+import logging
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
-from app import db
+from models import db
 from models.session import Session
 from models.segment import Segment
+
+logger = logging.getLogger(__name__)
 
 
 class SessionService:
@@ -126,7 +129,7 @@ class SessionService:
         stmt = stmt.order_by(Session.started_at.desc())
         stmt = stmt.offset(offset).limit(limit)
         
-        return db.session.scalars(stmt).all()
+        return list(db.session.scalars(stmt).all())
     
     @staticmethod
     def get_session_detail(session_id: int) -> Optional[Dict[str, Any]]:
@@ -304,7 +307,7 @@ class SessionService:
         return finalized_count
 
     @staticmethod
-    def finalize_session(session_id: int, final_text: Optional[str] = None, trigger_summary: bool = None) -> Dict[str, any]:
+    def finalize_session(session_id: int, final_text: Optional[str] = None, trigger_summary: Optional[bool] = None) -> Dict[str, Any]:
         """
         Complete a session by finalizing segments and updating status.
         
@@ -336,7 +339,7 @@ class SessionService:
         
         if should_trigger:
             try:
-                from app_refactored import socketio
+                from app import socketio
                 from routes.summary import trigger_auto_summary
                 
                 # Start background task for summary generation
