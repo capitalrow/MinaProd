@@ -121,8 +121,16 @@ class PageTransitionManager {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'text/html,application/xhtml+xml'
-                }
+                },
+                redirect: 'follow'
             });
+
+            // If the server redirected us (e.g., to login page), do a full page navigation
+            // This is important for auth flows and other server-side redirects
+            if (response.redirected) {
+                window.location.href = response.url;
+                return;
+            }
 
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
