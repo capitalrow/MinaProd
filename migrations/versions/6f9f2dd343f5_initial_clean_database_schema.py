@@ -36,6 +36,7 @@ def upgrade():
     with op.batch_alter_table('sessions', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_sessions_external_id'), ['external_id'], unique=True)
 
+    # Create users table WITHOUT workspace FK (circular dependency - add later)
     op.create_table('users',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('email', sa.String(length=120), nullable=False),
@@ -54,13 +55,13 @@ def upgrade():
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('last_login', sa.DateTime(), nullable=True),
     sa.Column('preferences', sa.Text(), nullable=True),
-    sa.ForeignKeyConstraint(['workspace_id'], ['workspaces.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('users', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_users_email'), ['email'], unique=True)
         batch_op.create_index(batch_op.f('ix_users_username'), ['username'], unique=True)
 
+    # Create workspaces table WITHOUT owner FK (circular dependency - add later)
     op.create_table('workspaces',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('name', sa.String(length=128), nullable=False),
@@ -75,11 +76,17 @@ def upgrade():
     sa.Column('integrations', sa.JSON(), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['owner_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('workspaces', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_workspaces_slug'), ['slug'], unique=True)
+
+    # Add BOTH circular foreign keys AFTER both tables exist
+    with op.batch_alter_table('users', schema=None) as batch_op:
+        batch_op.create_foreign_key('fk_users_workspace_id', 'workspaces', ['workspace_id'], ['id'])
+    
+    with op.batch_alter_table('workspaces', schema=None) as batch_op:
+        batch_op.create_foreign_key('fk_workspaces_owner_id', 'users', ['owner_id'], ['id'])
 
     op.create_table('chunk_metrics',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
@@ -398,7 +405,13 @@ def downgrade():
         batch_op.drop_index(batch_op.f('ix_chunk_metrics_chunk_id'))
 
     op.drop_table('chunk_metrics')
+    
+    # Drop BOTH circular FKs before dropping tables
+    with op.batch_alter_table('users', schema=None) as batch_op:
+        batch_op.drop_constraint('fk_users_workspace_id', type_='foreignkey')
+    
     with op.batch_alter_table('workspaces', schema=None) as batch_op:
+        batch_op.drop_constraint('fk_workspaces_owner_id', type_='foreignkey')
         batch_op.drop_index(batch_op.f('ix_workspaces_slug'))
 
     op.drop_table('workspaces')
