@@ -31,7 +31,7 @@
     <!-- Premium Design System - Load in correct order for override -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/top-navbar.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/clean.css') }}">
@@ -65,126 +65,115 @@
     {% block head %}{% endblock %}
 </head>
 <body>
-    <!-- Premium Sidebar Navigation -->
-    <aside class="sidebar-navigation expanded" role="navigation" aria-label="Main navigation">
-        <!-- Logo/Brand Section -->
-        <div class="sidebar-brand" role="button" tabindex="0" aria-label="Toggle sidebar menu">
-            <div class="sidebar-brand-icon">
+    <!-- Premium Top Navigation Bar -->
+    <nav class="top-navbar" role="navigation" aria-label="Main navigation">
+        <div class="navbar-container">
+            <!-- Logo/Brand -->
+            <a href="{{ url_for('dashboard.index') }}" class="navbar-brand">
                 <i class="fas fa-microphone"></i>
-            </div>
-            <div class="sidebar-brand-text">
-                <h1>Mina</h1>
-                <small>AI Platform</small>
-            </div>
-            <i class="fas fa-chevron-right sidebar-toggle-indicator"></i>
-        </div>
+                <span class="navbar-brand-text">Mina</span>
+            </a>
 
-        <!-- Navigation Menu -->
-        <nav class="sidebar-menu" role="menu">
-            <!-- Main Section -->
-            <div class="sidebar-section">
-                <div class="sidebar-section-label">Main</div>
-                
-                <a href="{{ url_for('dashboard.index') }}" class="sidebar-item" data-route="/dashboard" role="menuitem">
-                    <div class="sidebar-item-icon">
-                        <i class="fas fa-th-large"></i>
-                    </div>
-                    <span class="sidebar-item-text">Dashboard</span>
-                    <div class="sidebar-item-tooltip">Dashboard</div>
+            <!-- Main Navigation -->
+            <div class="navbar-menu" id="navbarMenu" role="menubar">
+                <a href="{{ url_for('dashboard.index') }}" class="navbar-item" data-route="/dashboard" aria-label="Dashboard">
+                    <i class="fas fa-th-large" aria-hidden="true"></i>
+                    <span>Dashboard</span>
                 </a>
 
-                <a href="{{ url_for('pages.live') }}" class="sidebar-item" data-route="/live" role="menuitem">
-                    <div class="sidebar-item-icon">
-                        <i class="fas fa-microphone"></i>
-                    </div>
-                    <span class="sidebar-item-text">Live Recording</span>
-                    <div class="sidebar-item-badge" id="recording-badge" style="display: none;">LIVE</div>
-                    <div class="sidebar-item-tooltip">Live Recording</div>
+                <a href="{{ url_for('pages.live') }}" class="navbar-item" data-route="/live" aria-label="Live Recording">
+                    <i class="fas fa-microphone" aria-hidden="true"></i>
+                    <span>Live Recording</span>
+                    <span class="navbar-badge" id="recording-badge" style="display: none;">LIVE</span>
                 </a>
 
-                <a href="{{ url_for('dashboard.meetings') }}" class="sidebar-item" data-route="/dashboard/meetings" role="menuitem">
-                    <div class="sidebar-item-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <span class="sidebar-item-text">Meetings</span>
-                    <div class="sidebar-item-badge" id="meetings-badge" style="display: none;">0</div>
-                    <div class="sidebar-item-tooltip">Meetings</div>
+                <a href="{{ url_for('dashboard.meetings') }}" class="navbar-item" data-route="/dashboard/meetings" aria-label="Meetings">
+                    <i class="fas fa-users" aria-hidden="true"></i>
+                    <span>Meetings</span>
+                    <span class="navbar-badge" id="meetings-badge" style="display: none;">0</span>
                 </a>
 
-                <a href="{{ url_for('dashboard.tasks') }}" class="sidebar-item" data-route="/dashboard/tasks" role="menuitem">
-                    <div class="sidebar-item-icon">
-                        <i class="fas fa-check-square"></i>
-                    </div>
-                    <span class="sidebar-item-text">Tasks</span>
-                    <div class="sidebar-item-badge" id="tasks-badge" style="display: none;">0</div>
-                    <div class="sidebar-item-tooltip">Tasks</div>
-                </a>
-            </div>
-
-            <!-- Analytics Section -->
-            <div class="sidebar-section">
-                <div class="sidebar-section-label">Analytics</div>
-                
-                <a href="{{ url_for('dashboard.analytics') }}" class="sidebar-item" data-route="/dashboard/analytics" role="menuitem">
-                    <div class="sidebar-item-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <span class="sidebar-item-text">Analytics</span>
-                    <div class="sidebar-item-tooltip">Analytics</div>
-                </a>
-            </div>
-
-            <!-- Tools Section -->
-            <div class="sidebar-section">
-                <div class="sidebar-section-label">Tools</div>
-                
-                <a href="{{ url_for('calendar.calendar_dashboard') }}" class="sidebar-item" data-route="/calendar" role="menuitem">
-                    <div class="sidebar-item-icon">
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
-                    <span class="sidebar-item-text">Calendar</span>
-                    <div class="sidebar-item-tooltip">Calendar</div>
+                <a href="{{ url_for('dashboard.tasks') }}" class="navbar-item" data-route="/dashboard/tasks" aria-label="Tasks">
+                    <i class="fas fa-check-square" aria-hidden="true"></i>
+                    <span>Tasks</span>
+                    <span class="navbar-badge" id="tasks-badge" style="display: none;">0</span>
                 </a>
 
-                <a href="{{ url_for('settings.settings_dashboard') }}" class="sidebar-item" data-route="/settings" role="menuitem">
-                    <div class="sidebar-item-icon">
-                        <i class="fas fa-cog"></i>
-                    </div>
-                    <span class="sidebar-item-text">Settings</span>
-                    <div class="sidebar-item-tooltip">Settings</div>
+                <a href="{{ url_for('dashboard.analytics') }}" class="navbar-item" data-route="/dashboard/analytics" aria-label="Analytics">
+                    <i class="fas fa-chart-line" aria-hidden="true"></i>
+                    <span>Analytics</span>
                 </a>
 
-                <a href="{{ url_for('copilot.copilot_dashboard') }}" class="sidebar-item" data-route="/copilot" role="menuitem">
-                    <div class="sidebar-item-icon">
-                        <i class="fas fa-robot"></i>
+                <!-- More dropdown -->
+                <div class="navbar-dropdown">
+                    <button class="navbar-item" id="moreDropdownBtn" aria-expanded="false" aria-haspopup="true" aria-label="More options" aria-controls="moreDropdownMenu">
+                        <i class="fas fa-ellipsis-h" aria-hidden="true"></i>
+                        <span>More</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="navbar-dropdown-menu" id="moreDropdownMenu">
+                        <a href="{{ url_for('calendar.calendar_dashboard') }}" class="navbar-dropdown-item">
+                            <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                            <span>Calendar</span>
+                        </a>
+                        <a href="{{ url_for('settings.settings_dashboard') }}" class="navbar-dropdown-item">
+                            <i class="fas fa-cog" aria-hidden="true"></i>
+                            <span>Settings</span>
+                        </a>
+                        <a href="{{ url_for('copilot.copilot_dashboard') }}" class="navbar-dropdown-item">
+                            <i class="fas fa-robot" aria-hidden="true"></i>
+                            <span>AI Copilot</span>
+                        </a>
                     </div>
-                    <span class="sidebar-item-text">AI Copilot</span>
-                    <div class="sidebar-item-tooltip">AI Copilot</div>
-                </a>
-            </div>
-        </nav>
-
-        <!-- Footer Section -->
-        <div class="sidebar-footer">
-            <div class="sidebar-user">
-                <div class="sidebar-user-avatar">
-                    U
-                </div>
-                <div class="sidebar-user-info">
-                    <span class="sidebar-user-name">User</span>
-                    <span class="sidebar-user-status">
-                        <i class="fas fa-circle text-success" style="font-size: 8px;"></i> Online
-                    </span>
                 </div>
             </div>
+
+            <!-- Right Side Actions -->
+            <div class="navbar-actions">
+                <!-- User Profile -->
+                <div class="navbar-user">
+                    <button class="navbar-user-btn" id="userMenuBtn" aria-expanded="false" aria-haspopup="true" aria-label="User menu" aria-controls="userMenu">
+                        <div class="navbar-user-avatar">U</div>
+                        <span class="navbar-user-name">User</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="navbar-user-menu" id="userMenu">
+                        <div class="navbar-user-info">
+                            <div class="navbar-user-avatar-large">U</div>
+                            <div>
+                                <div class="navbar-user-name-large">User</div>
+                                <div class="navbar-user-status">
+                                    <i class="fas fa-circle text-success" aria-hidden="true"></i> Online
+                                </div>
+                            </div>
+                        </div>
+                        <div class="navbar-user-menu-divider"></div>
+                        <a href="{{ url_for('settings.settings_dashboard') }}" class="navbar-user-menu-item">
+                            <i class="fas fa-cog" aria-hidden="true"></i>
+                            <span>Settings</span>
+                        </a>
+                        <a href="{{ url_for('auth.logout') if url_for else '#' }}" class="navbar-user-menu-item" onclick="return confirm('Are you sure you want to sign out?');">
+                            <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+                            <span>Sign Out</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Mobile Menu Toggle -->
+                <button class="navbar-mobile-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
         </div>
-    </aside>
+    </nav>
 
-    <!-- Mobile Overlay for Sidebar -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <!-- Load Sidebar Navigation Script -->
-    <script src="{{ url_for('static', filename='js/sidebar.js') }}" defer></script>
+    <!-- Mobile Menu Overlay -->
+    <div class="navbar-mobile-overlay" id="navbarMobileOverlay"></div>
+    
+    <!-- Top Navigation Script -->
+    <script src="{{ url_for('static', filename='js/top-navbar.js') }}" defer></script>
     
     <!-- Premium Page Transitions -->
     <script src="{{ url_for('static', filename='js/page-transitions.js') }}" defer></script>
@@ -222,8 +211,8 @@
         {% endif %}
     {% endwith %}
 
-    <!-- Main Content with Sidebar Layout -->
-    <main id="main-content" class="main-content-with-sidebar" role="main" tabindex="-1">
+    <!-- Main Content -->
+    <main id="main-content" class="main-content" role="main" tabindex="-1">
         <!-- Breadcrumb Navigation -->
         <nav aria-label="Breadcrumb" class="mb-3">
             <ol class="breadcrumb">

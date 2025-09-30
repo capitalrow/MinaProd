@@ -1,0 +1,577 @@
+/* ============================================================================
+   PREMIUM TOP NAVIGATION BAR - ULTRA-MODERN DESIGN
+   ============================================================================
+   
+   Modern top navigation replacing sidebar for:
+   - Full-screen utilization on all pages
+   - Better mobile experience
+   - Consistent navigation across the platform
+   - Professional, distraction-free interface
+   
+   ============================================================================ */
+
+:root {
+    --navbar-height: 64px;
+    --navbar-bg: rgba(17, 24, 39, 0.95);
+    --navbar-border: rgba(255, 255, 255, 0.08);
+    --navbar-item-hover: rgba(102, 126, 234, 0.1);
+    --navbar-item-active: rgba(102, 126, 234, 0.2);
+}
+
+/* Global body offset for fixed navbar */
+body {
+    padding-top: var(--navbar-height);
+}
+
+/* Navigation Bar Container */
+.top-navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--navbar-height);
+    background: var(--navbar-bg);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--navbar-border);
+    z-index: 1000;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.navbar-container {
+    max-width: 100%;
+    height: 100%;
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+/* Logo/Brand */
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: white;
+    font-weight: 700;
+    font-size: 1.25rem;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.navbar-brand i {
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.navbar-brand:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+}
+
+.navbar-brand-text {
+    letter-spacing: -0.02em;
+}
+
+/* Main Navigation Menu */
+.navbar-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    max-width: 900px;
+}
+
+.navbar-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    white-space: nowrap;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.navbar-item i {
+    font-size: 1.125rem;
+    transition: transform 0.3s ease;
+}
+
+.navbar-item:hover {
+    background: var(--navbar-item-hover);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.navbar-item:hover i {
+    transform: scale(1.1);
+}
+
+.navbar-item.active {
+    background: var(--navbar-item-active);
+    color: white;
+}
+
+.navbar-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 1rem;
+    right: 1rem;
+    height: 2px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 2px;
+}
+
+/* Navigation Badge */
+.navbar-badge {
+    padding: 0.125rem 0.5rem;
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Dropdown Menu */
+.navbar-dropdown {
+    position: relative;
+}
+
+.navbar-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    min-width: 200px;
+    background: rgba(17, 24, 39, 0.98);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--navbar-border);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1001;
+    overflow: hidden;
+}
+
+.navbar-dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.navbar-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 0.9375rem;
+    transition: all 0.2s ease;
+}
+
+.navbar-dropdown-item:hover {
+    background: var(--navbar-item-hover);
+    color: white;
+}
+
+.navbar-dropdown-item i {
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+}
+
+/* Right Side Actions */
+.navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+}
+
+/* User Menu */
+.navbar-user {
+    position: relative;
+}
+
+.navbar-user-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: transparent;
+    border: 1px solid var(--navbar-border);
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9375rem;
+}
+
+.navbar-user-btn:hover {
+    background: var(--navbar-item-hover);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+.navbar-user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.navbar-user-name {
+    font-weight: 500;
+}
+
+.navbar-user-btn i {
+    font-size: 0.75rem;
+    opacity: 0.6;
+    transition: transform 0.3s ease;
+}
+
+.navbar-user-btn[aria-expanded="true"] i {
+    transform: rotate(180deg);
+}
+
+/* User Dropdown Menu */
+.navbar-user-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    min-width: 240px;
+    background: rgba(17, 24, 39, 0.98);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--navbar-border);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1001;
+    overflow: hidden;
+}
+
+.navbar-user-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.navbar-user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--navbar-border);
+}
+
+.navbar-user-avatar-large {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.125rem;
+}
+
+.navbar-user-name-large {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: white;
+}
+
+.navbar-user-status {
+    font-size: 0.8125rem;
+    color: rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.navbar-user-status i {
+    font-size: 0.625rem;
+}
+
+.navbar-user-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 0.9375rem;
+    transition: all 0.2s ease;
+}
+
+.navbar-user-menu-item:hover {
+    background: var(--navbar-item-hover);
+    color: white;
+}
+
+.navbar-user-menu-item i {
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+}
+
+/* Mobile Menu Toggle */
+.navbar-mobile-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    width: 32px;
+    height: 32px;
+    padding: 4px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 1002;
+}
+
+.navbar-mobile-toggle span {
+    width: 100%;
+    height: 2px;
+    background: white;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.navbar-mobile-toggle[aria-expanded="true"] span:nth-child(1) {
+    transform: rotate(45deg) translateY(10px);
+}
+
+.navbar-mobile-toggle[aria-expanded="true"] span:nth-child(2) {
+    opacity: 0;
+}
+
+.navbar-mobile-toggle[aria-expanded="true"] span:nth-child(3) {
+    transform: rotate(-45deg) translateY(-10px);
+}
+
+/* Mobile Menu Overlay */
+.navbar-mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 999;
+}
+
+.navbar-mobile-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Main Content Spacing */
+.main-content,
+.main-content-with-sidebar {
+    margin-top: 0;
+    margin-left: 0 !important;
+    min-height: calc(100vh - var(--navbar-height));
+    padding: 2rem 1.5rem;
+    transition: none;
+}
+
+/* Hide breadcrumb on specific pages */
+.live-page .breadcrumb,
+.auth-page .breadcrumb,
+.recording-studio .breadcrumb {
+    display: none;
+}
+
+/* Remove sidebar spacing globally */
+.sidebar-navigation {
+    display: none !important;
+}
+
+.sidebar-overlay {
+    display: none !important;
+}
+
+/* Ensure full-width pages */
+.container-fluid {
+    max-width: 100%;
+}
+
+/* Live page specific adjustments */
+.live-page,
+.recording-studio {
+    padding: 0;
+    margin: 0;
+}
+
+.live-page .main-content,
+.recording-studio .main-content,
+.recording-studio {
+    padding: 0;
+    margin-top: 0;
+}
+
+/* Ensure live page content starts below navbar */
+body:has(.recording-studio),
+body:has(.live-page) {
+    padding-top: var(--navbar-height);
+}
+
+/* Mobile Responsive */
+@media (max-width: 1024px) {
+    /* Keep navbar items accessible on desktop tablets */
+    .navbar-item {
+        padding: 0.625rem 0.875rem;
+    }
+    
+    .navbar-item span:not(.navbar-badge) {
+        font-size: 0.875rem;
+    }
+    
+    .navbar-user-name {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar-container {
+        padding: 0 1rem;
+    }
+    
+    .navbar-menu {
+        position: fixed;
+        top: var(--navbar-height);
+        left: 0;
+        right: 0;
+        bottom: 0;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        background: rgba(17, 24, 39, 0.98);
+        backdrop-filter: blur(20px);
+        padding: 1rem;
+        overflow-y: auto;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1000;
+        max-width: none;
+    }
+    
+    .navbar-menu.show {
+        transform: translateX(0);
+    }
+    
+    .navbar-item {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    
+    .navbar-item span {
+        display: inline;
+    }
+    
+    .navbar-item i {
+        font-size: 1.25rem;
+    }
+    
+    .navbar-dropdown {
+        width: 100%;
+    }
+    
+    .navbar-dropdown-menu {
+        position: static;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        background: rgba(0, 0, 0, 0.3);
+        border: none;
+        box-shadow: none;
+        margin-top: 0.5rem;
+        display: none;
+    }
+    
+    .navbar-dropdown-menu.show {
+        display: block;
+    }
+    
+    .navbar-mobile-toggle {
+        display: flex;
+    }
+    
+    .navbar-actions {
+        gap: 0.5rem;
+    }
+}
+
+/* Dark Theme Support */
+[data-bs-theme="light"] .top-navbar {
+    --navbar-bg: rgba(255, 255, 255, 0.95);
+    --navbar-border: rgba(0, 0, 0, 0.08);
+    --navbar-item-hover: rgba(102, 126, 234, 0.08);
+}
+
+[data-bs-theme="light"] .navbar-item,
+[data-bs-theme="light"] .navbar-dropdown-item,
+[data-bs-theme="light"] .navbar-user-menu-item {
+    color: rgba(0, 0, 0, 0.7);
+}
+
+[data-bs-theme="light"] .navbar-item:hover,
+[data-bs-theme="light"] .navbar-dropdown-item:hover,
+[data-bs-theme="light"] .navbar-user-menu-item:hover,
+[data-bs-theme="light"] .navbar-item.active {
+    color: rgba(0, 0, 0, 0.9);
+}
+
+[data-bs-theme="light"] .navbar-brand {
+    color: rgba(0, 0, 0, 0.9);
+}
+
+[data-bs-theme="light"] .navbar-user-btn {
+    color: rgba(0, 0, 0, 0.9);
+}
+
+/* Accessibility */
+.navbar-item:focus-visible,
+.navbar-user-btn:focus-visible,
+.navbar-mobile-toggle:focus-visible {
+    outline: 3px solid rgba(102, 126, 234, 0.5);
+    outline-offset: 2px;
+}
+
+/* Print Styles */
+@media print {
+    .top-navbar {
+        display: none;
+    }
+    
+    .main-content {
+        margin-top: 0;
+    }
+}
