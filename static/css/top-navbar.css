@@ -478,13 +478,17 @@ body:has(.live-page) {
         padding: 1rem;
         overflow-y: auto;
         transform: translateX(-100%);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, visibility 0.3s ease;
+        z-index: 1001;
         max-width: none;
     }
     
     .navbar-menu.show {
         transform: translateX(0);
+        opacity: 1;
+        visibility: visible;
     }
     
     .navbar-item {
