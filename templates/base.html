@@ -72,41 +72,36 @@
     {% block head %}{% endblock %}
 </head>
 <body>
-    <!-- Premium Top Navigation Bar -->
-    <nav class="top-navbar" role="navigation" aria-label="Main navigation">
-        <div class="navbar-container">
+    <!-- Crown+ Premium Navigation Bar -->
+    <nav class="crown-navbar" role="navigation" aria-label="Main navigation">
+        <div class="crown-navbar-container">
             <!-- Logo/Brand -->
-            <a href="{{ url_for('dashboard.index') }}" class="navbar-brand">
-                <i class="fas fa-microphone"></i>
-                <span class="navbar-brand-text">Mina</span>
+            <a href="{{ url_for('dashboard.index') }}" class="crown-navbar-brand">
+                <div class="crown-navbar-brand-icon">
+                    <i class="fas fa-microphone"></i>
+                </div>
+                <span>Mina</span>
             </a>
 
             <!-- Main Navigation -->
-            <div class="navbar-menu" id="navbarMenu" role="menubar">
-                <a href="{{ url_for('dashboard.index') }}" class="navbar-item" data-route="/dashboard" aria-label="Dashboard">
+            <nav class="crown-navbar-nav hide-mobile" role="menubar">
+                <a href="{{ url_for('dashboard.index') }}" class="crown-navbar-link" data-route="/dashboard" aria-label="Dashboard">
                     <i class="fas fa-th-large" aria-hidden="true"></i>
                     <span>Dashboard</span>
                 </a>
 
-                <a href="{{ url_for('pages.live') }}" class="navbar-item" data-route="/live" aria-label="Live Recording">
+                <a href="{{ url_for('pages.live') }}" class="crown-navbar-link" data-route="/live" aria-label="Live Recording">
                     <i class="fas fa-microphone" aria-hidden="true"></i>
-                    <span>Live Recording</span>
-                    <span class="navbar-badge" id="recording-badge" style="display: none;">LIVE</span>
+                    <span>Live</span>
+                    <span class="badge badge-error badge-dot" id="recording-badge" style="display: none;"></span>
                 </a>
 
-                <a href="{{ url_for('dashboard.meetings') }}" class="navbar-item" data-route="/dashboard/meetings" aria-label="Meetings">
+                <a href="{{ url_for('dashboard.meetings') }}" class="crown-navbar-link" data-route="/dashboard/meetings" aria-label="Meetings">
                     <i class="fas fa-users" aria-hidden="true"></i>
                     <span>Meetings</span>
-                    <span class="navbar-badge" id="meetings-badge" style="display: none;">0</span>
                 </a>
 
-                <a href="{{ url_for('dashboard.tasks') }}" class="navbar-item" data-route="/dashboard/tasks" aria-label="Tasks">
-                    <i class="fas fa-check-square" aria-hidden="true"></i>
-                    <span>Tasks</span>
-                    <span class="navbar-badge" id="tasks-badge" style="display: none;">0</span>
-                </a>
-
-                <a href="{{ url_for('dashboard.analytics') }}" class="navbar-item" data-route="/dashboard/analytics" aria-label="Analytics">
+                <a href="{{ url_for('dashboard.analytics') }}" class="crown-navbar-link" data-route="/dashboard/analytics" aria-label="Analytics">
                     <i class="fas fa-chart-line" aria-hidden="true"></i>
                     <span>Analytics</span>
                 </a>
