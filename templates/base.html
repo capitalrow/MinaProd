@@ -28,7 +28,7 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer">
     
-    <!-- Premium Design System - Load in correct order for override -->
+    <!-- Legacy Design System - Load first so Crown+ can override -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/top-navbar.css') }}">
@@ -42,6 +42,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-meeting.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-sessions.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton-loaders.css') }}">
+    
+    <!-- ═══ CROWN+ DESIGN SYSTEM - Premium Foundation (Loads last to override legacy) ═══ -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-design-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-navigation.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-transcript.css') }}">
     
     <!-- Defer non-critical JavaScript -->
     <script>
