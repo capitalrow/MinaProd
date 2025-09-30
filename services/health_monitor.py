@@ -339,9 +339,9 @@ class HealthMonitor:
     def _detect_memory_leaks(self, current_time: float):
         """Detect memory leaks by analyzing memory growth patterns"""
         try:
-            # Get current memory usage in MB
-            memory = psutil.virtual_memory()
-            current_memory_mb = memory.used / (1024 * 1024)
+            # Get current PROCESS memory usage in MB (not system memory)
+            process = psutil.Process()
+            current_memory_mb = process.memory_info().rss / (1024 * 1024)
             
             # Store baseline memory on first run
             if self.baseline_memory is None:
