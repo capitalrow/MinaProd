@@ -4,10 +4,12 @@
 
 {% block head %}
     <!-- Live transcription page uses mina-live.css for styling -->
+    <!-- Premium Live CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/premium-live.css') }}">
 {% endblock %}
 
 {% block content %}
-    <div class="recording-studio">
+    <div class="recording-studio live-page">
         <!-- Studio Header -->
         <header class="live-studio-header" role="banner">
             <h1 class="live-brand-title">Mina</h1>

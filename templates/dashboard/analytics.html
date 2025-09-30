@@ -11,54 +11,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-    
-    <!-- Feather Icons removed - using Font Awesome consistently -->
-    
-    <style>
-        .analytics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-        
-        .chart-container {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 1.5rem;
-            border: 1px solid var(--border-color);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .chart-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--accent-primary);
-        }
-        
-        .chart-title {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        canvas {
-            max-height: 300px;
-        }
-    </style>
+    <!-- Premium Analytics CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/premium-analytics.css') }}">
 {% endblock %}
 
 {% block content %}
-    <div class="main-content">
+    <div class="main-content analytics-page">
         <!-- Analytics Header -->
         <div class="dashboard-header">
             <div class="header-content">
