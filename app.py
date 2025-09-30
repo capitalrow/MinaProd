@@ -50,7 +50,7 @@ def _configure_logging(json_logs: bool = False) -> None:
 
 # ---------- Create the SocketIO singleton with eventlet for production WebSocket support
 socketio = SocketIO(
-    cors_allowed_origins=["http://localhost:5000", "https://*.replit.dev", "https://*.replit.app"],
+    cors_allowed_origins="*",  # Allow all origins for development and dynamic Replit URLs
     async_mode="eventlet",  # Changed from threading to eventlet for proper WebSocket support
     ping_timeout=60,
     ping_interval=25,
@@ -239,6 +239,14 @@ def create_app() -> Flask:
         app.logger.info("Comprehensive WebSocket handlers registered")
     except Exception as e:
         app.logger.warning(f"Failed to register comprehensive WebSocket handlers: {e}")
+    
+    # Register live transcription Socket.IO handlers
+    try:
+        from routes.live_socketio import register_live_socketio
+        register_live_socketio()
+        app.logger.info("✅ Live transcription Socket.IO handlers registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register live Socket.IO handlers: {e}")
 
     # Register transcription APIs
     # FIXED: Only register the working unified transcription API to avoid route conflicts
