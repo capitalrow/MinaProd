@@ -65,8 +65,10 @@ def list_sessions():
         })
     
     # Return HTML template for browser requests
+    # Create meetings object with total count for template compatibility
+    meetings_obj = type('obj', (object,), {'items': sessions, 'total': total_count})()
     return render_template('dashboard/meetings.html', 
-                         sessions=sessions,
+                         meetings=meetings_obj,
                          query=q, 
                          status=status,
                          limit=limit,
@@ -102,7 +104,7 @@ def get_session_detail(session_identifier):
     
     # Return HTML template for browser requests  
     return render_template('dashboard/meeting_detail.html',
-                         session=session_detail['session'],
+                         meeting=session_detail['session'],
                          segments=session_detail['segments'])
 
 
