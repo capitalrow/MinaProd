@@ -42,7 +42,7 @@
                     <i class="fas fa-calendar-check"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value">{{ meetings.total if meetings else 0 }}</div>
+                    <div class="stat-number">{{ meetings.total if meetings else 0 }}</div>
                     <div class="stat-label">Total Meetings</div>
                     <div class="stat-trend positive">
                         <i class="fas fa-arrow-up"></i>
@@ -56,7 +56,7 @@
                     <i class="fas fa-clock"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value" id="total-duration">0h</div>
+                    <div class="stat-number" id="total-duration">0h</div>
                     <div class="stat-label">Total Duration</div>
                     <div class="stat-trend neutral">
                         <i class="fas fa-hourglass-half"></i>
@@ -70,7 +70,7 @@
                     <i class="fas fa-microphone"></i>
                 </div>
                 <div class="stat-content">
-                    <div class="stat-value" id="active-recordings">0</div>
+                    <div class="stat-number" id="active-recordings">0</div>
                     <div class="stat-label">Active Now</div>
                     <div class="stat-trend positive">
                         <i class="fas fa-circle text-danger"></i>
@@ -116,20 +116,20 @@
                     Recent Meetings
                 </h2>
             </div>
-            <div class="section-content" id="meetings-list">
+            <div class="section-content">
                 {% if meetings and meetings.items %}
-                    {% for meeting in meetings.items %}
-                    <div class="meeting-card">
-                        <div class="meeting-header">
-                            <div class="meeting-title-section">
-                                <h3 class="meeting-title">{{ meeting.title or 'Untitled Meeting' }}</h3>
-                                <span class="meeting-status status-{{ meeting.status }}">
-                                    <i class="fas fa-{% if meeting.status == 'active' %}circle text-danger{% elif meeting.status == 'completed' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
-                                    {{ meeting.status|title }}
-                                </span>
+                    <div class="meetings-grid" id="meetings-list">
+                        {% for meeting in meetings.items %}
+                        <article class="meeting-card" data-status="{{ meeting.status }}">
+                            <div class="meeting-header">
+                                <div class="meeting-title-section">
+                                    <h3 class="meeting-title">{{ meeting.title or 'Untitled Meeting' }}</h3>
+                                    <span class="meeting-status status-{{ meeting.status }}">
+                                        <i class="fas fa-{% if meeting.status == 'active' %}circle text-danger{% elif meeting.status == 'completed' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                                        {{ meeting.status|title }}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="meeting-details">
                             <div class="meeting-meta">
                                 <span><i class="fas fa-calendar me-1"></i> {{ meeting.created_at.strftime('%b %d, %Y') }}</span>
                                 <span><i class="fas fa-clock me-1"></i> {{ meeting.created_at.strftime('%I:%M %p') }}</span>
@@ -154,9 +154,9 @@
                                     Delete
                                 </button>
                             </div>
-                        </div>
+                        </article>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                     
                     <!-- Pagination -->
                     {% if meetings.pages > 1 %}
