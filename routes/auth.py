@@ -8,6 +8,8 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
 from models import db, User, Workspace
 import re
+import logging
+import traceback
 
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -87,12 +89,13 @@ def register():
             )
             user.set_password(password)
             
-            # For first user, create personal workspace
+            # For first user, set owner role
             if db.session.query(User).count() == 0:
                 user.role = 'owner'
             
+            # Add user to session but don't commit yet
             db.session.add(user)
-            db.session.commit()
+            db.session.flush()  # Flush to get user.id assigned
             
             # Create personal workspace for new user
             workspace_name = f"{first_name}'s Workspace" if first_name else f"{username}'s Workspace"
@@ -102,10 +105,12 @@ def register():
                 owner_id=user.id
             )
             db.session.add(workspace)
-            db.session.flush()  # Flush to get the workspace.id assigned
+            db.session.flush()  # Flush to get workspace.id assigned
             
-            # Assign user to workspace
+            # Assign user to workspace (circular FK handled by post_update=True)
             user.workspace_id = workspace.id
+            
+            # Commit both user and workspace together
             db.session.commit()
             
             # Auto-login the new user for smooth onboarding
@@ -120,7 +125,9 @@ def register():
             
         except Exception as e:
             db.session.rollback()
-            flash('Registration failed. Please try again.', 'error')
+            logging.error(f"Registration failed for user {username} ({email}): {str(e)}")
+            logging.error(traceback.format_exc())
+            flash(f'Registration failed: {str(e)}', 'error')
             return render_template('auth/register.html')
     
     return render_template('auth/register.html')
@@ -137,6 +144,8 @@ def login():
         password = request.form.get('password', '')
         remember_me = request.form.get('remember_me') == 'on'
         
+        logging.info(f"Login attempt for: {email_or_username}")
+        
         if not email_or_username or not password:
             flash('Please enter both email/username and password', 'error')
             return render_template('auth/login.html')
@@ -145,25 +154,37 @@ def login():
         user = None
         if '@' in email_or_username:
             user = db.session.query(User).filter_by(email=email_or_username.lower()).first()
+            logging.debug(f"Searching by email: {email_or_username.lower()} - User found: {user is not None}")
         else:
             user = db.session.query(User).filter_by(username=email_or_username).first()
+            logging.debug(f"Searching by username: {email_or_username} - User found: {user is not None}")
         
-        if user and user.check_password(password):
-            if not user.active:
-                flash('Your account has been deactivated. Please contact support.', 'error')
-                return render_template('auth/login.html')
+        if user:
+            password_valid = user.check_password(password)
+            logging.debug(f"Password check for user {user.username}: {password_valid}")
             
-            # Log in user
-            login_user(user, remember=remember_me)
-            user.update_last_login()
-            db.session.commit()
-            
-            # Redirect to next page or dashboard
-            next_page = request.args.get('next')
-            if next_page and next_page.startswith('/'):
-                return redirect(next_page)
-            return redirect(url_for('dashboard.index'))
+            if password_valid:
+                if not user.active:
+                    logging.warning(f"Login denied - inactive account: {user.username}")
+                    flash('Your account has been deactivated. Please contact support.', 'error')
+                    return render_template('auth/login.html')
+                
+                # Log in user
+                login_user(user, remember=remember_me)
+                user.update_last_login()
+                db.session.commit()
+                logging.info(f"Login successful for user: {user.username}")
+                
+                # Redirect to next page or dashboard
+                next_page = request.args.get('next')
+                if next_page and next_page.startswith('/'):
+                    return redirect(next_page)
+                return redirect(url_for('dashboard.index'))
+            else:
+                logging.warning(f"Login failed - invalid password for user: {user.username}")
+                flash('Invalid email/username or password', 'error')
         else:
+            logging.warning(f"Login failed - user not found: {email_or_username}")
             flash('Invalid email/username or password', 'error')
     
     return render_template('auth/login.html')
