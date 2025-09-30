@@ -699,18 +699,20 @@
 .dashboard-page .status-live {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 20px;
+  gap: 8px;
+  padding: 8px 16px;
+  min-width: 90px;
+  justify-content: center;
   background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
   color: #15803d;
-  border-radius: 30px;
+  border-radius: 20px;
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   box-shadow: 0 4px 12px rgba(22, 101, 52, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.5);
   transition: all 0.3s ease;
-  border: 2px solid rgba(22, 163, 74, 0.3);
+  border: 1px solid rgba(22, 163, 74, 0.3);
 }
 
 .dashboard-page .status-live:hover {
@@ -758,7 +760,9 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
+  padding: 8px 16px;
+  min-width: 90px;
+  justify-content: center;
   background: linear-gradient(135deg, rgba(220, 252, 231, 0.5) 0%, rgba(187, 247, 208, 0.5) 100%);
   border-radius: 20px;
   border: 1px solid rgba(34, 197, 94, 0.2);
@@ -1659,13 +1663,15 @@
   
   /* Improve tap targets on mobile */
   .dashboard-page .status-live {
-    padding: 12px 20px;
+    padding: 8px 16px;
     font-size: 12px;
+    min-width: 85px;
   }
   
   .dashboard-page .status-completed {
     padding: 8px 16px;
     font-size: 12px;
+    min-width: 85px;
   }
   
   /* Optimize mobile scrolling */
