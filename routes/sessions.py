@@ -65,7 +65,7 @@ def list_sessions():
         })
     
     # Return HTML template for browser requests
-    return render_template('sessions_professional.html', 
+    return render_template('dashboard/meetings.html', 
                          sessions=sessions,
                          query=q, 
                          status=status,
@@ -101,7 +101,7 @@ def get_session_detail(session_identifier):
         return jsonify(session_detail)
     
     # Return HTML template for browser requests  
-    return render_template('sessions_detail.html',
+    return render_template('dashboard/meeting_detail.html',
                          session=session_detail['session'],
                          segments=session_detail['segments'])
 
