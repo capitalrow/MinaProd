@@ -762,3 +762,67 @@
         border: 1px solid ButtonText;
     }
 }
+
+/* ============================================================================
+   ENHANCED SETTINGS TOGGLE - SMOOTH ANIMATIONS & VISUAL FEEDBACK
+   ============================================================================
+   Premium animated toggle with rotation, glow effects, and accessibility
+   ============================================================================ */
+
+/* Animation easing variables */
+.live-page {
+    --panel-ease: cubic-bezier(.22, 1, .36, 1);
+    --panel-ease-out: cubic-bezier(.55, 0, .55, .2);
+}
+
+/* Enhanced Button States - Active indication with rotation and glow */
+.live-page .live-settings-toggle i {
+    transition: transform 320ms var(--panel-ease);
+    display: inline-block;
+}
+
+.live-page .live-settings-toggle.is-active {
+    color: var(--accent-primary);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.25);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.12), rgba(118, 75, 162, 0.12));
+    border-color: var(--accent-primary);
+}
+
+.live-page .live-settings-toggle.is-active i {
+    transform: rotate(180deg);
+    color: var(--accent-primary);
+}
+
+/* Enhanced Panel Animation States */
+.live-page .live-settings-grid {
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-4px);
+    height: 0;
+    pointer-events: none;
+    will-change: height, opacity, transform;
+}
+
+.live-page .live-settings-grid.is-opening,
+.live-page .live-settings-grid.is-open {
+    pointer-events: auto;
+}
+
+.live-page .live-settings-grid.is-open {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .live-page .live-settings-grid,
+    .live-page .live-settings-toggle i {
+        transition: none !important;
+    }
+    
+    .live-page .live-settings-grid.is-open {
+        height: auto !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}
