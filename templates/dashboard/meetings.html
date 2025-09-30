@@ -14,35 +14,40 @@
 
 {% block content %}
     <div class="main-content meetings-page">
-        <!-- Meetings Header -->
+        <!-- Premium Meetings Header with Glass Effect -->
         <div class="dashboard-header">
             <div class="header-content">
                 <h1 class="dashboard-title">
-                    <i class="fas fa-users"></i>
+                    <i class="fas fa-users me-3"></i>
                     Meetings
                 </h1>
-                <div class="header-actions">
-                    <button class="btn btn-outline-primary" id="refresh-meetings">
-                        <i class="fas fa-sync-alt"></i>
-                        Refresh
-                    </button>
-                    <a href="{{ url_for('pages.live') }}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i>
-                        New Meeting
-                    </a>
-                </div>
+                <p class="dashboard-subtitle">Manage and review your recorded meetings</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline-primary" id="refresh-meetings">
+                    <i class="fas fa-sync-alt me-2"></i>
+                    Refresh
+                </button>
+                <a href="{{ url_for('pages.live') }}" class="btn btn-primary">
+                    <i class="fas fa-circle text-danger me-2"></i>
+                    Start Recording
+                </a>
             </div>
         </div>
 
-        <!-- Meetings Stats -->
+        <!-- Premium Stats Grid - Server Rendered -->
         <div class="stats-row">
             <div class="stat-card">
                 <div class="stat-icon">
                     <i class="fas fa-calendar-check"></i>
                 </div>
                 <div class="stat-content">
-                    <h3 class="stat-number" id="total-meetings">0</h3>
-                    <p class="stat-label">Total Meetings</p>
+                    <div class="stat-value">{{ meetings.total if meetings else 0 }}</div>
+                    <div class="stat-label">Total Meetings</div>
+                    <div class="stat-trend positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>All time</span>
+                    </div>
                 </div>
             </div>
             
@@ -51,8 +56,12 @@
                     <i class="fas fa-clock"></i>
                 </div>
                 <div class="stat-content">
-                    <h3 class="stat-number" id="total-duration">0h</h3>
-                    <p class="stat-label">Total Duration</p>
+                    <div class="stat-value" id="total-duration">0h</div>
+                    <div class="stat-label">Total Duration</div>
+                    <div class="stat-trend neutral">
+                        <i class="fas fa-hourglass-half"></i>
+                        <span>Recorded time</span>
+                    </div>
                 </div>
             </div>
             
@@ -61,8 +70,12 @@
                     <i class="fas fa-microphone"></i>
                 </div>
                 <div class="stat-content">
-                    <h3 class="stat-number" id="active-recordings">0</h3>
-                    <p class="stat-label">Active Recordings</p>
+                    <div class="stat-value" id="active-recordings">0</div>
+                    <div class="stat-label">Active Now</div>
+                    <div class="stat-trend positive">
+                        <i class="fas fa-circle text-danger"></i>
+                        <span>Live sessions</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -72,191 +85,269 @@
             <div class="search-filters">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="meeting-search" placeholder="Search meetings..." class="form-control">
+                    <input type="text" id="meeting-search" placeholder="Search meetings..." class="form-control" value="{{ search_query or '' }}">
                 </div>
-                <div class="filter-tabs">
-                    <button class="filter-tab active" data-filter="all">All</button>
-                    <button class="filter-tab" data-filter="active">Active</button>
-                    <button class="filter-tab" data-filter="completed">Completed</button>
-                    <button class="filter-tab" data-filter="failed">Failed</button>
+                <div class="filter-buttons">
+                    <button class="filter-btn {% if not status_filter or status_filter == 'all' %}active{% endif %}" data-filter="all">
+                        <i class="fas fa-list"></i>
+                        All
+                    </button>
+                    <button class="filter-btn {% if status_filter == 'active' %}active{% endif %}" data-filter="active">
+                        <i class="fas fa-circle text-danger"></i>
+                        Active
+                    </button>
+                    <button class="filter-btn {% if status_filter == 'completed' %}active{% endif %}" data-filter="completed">
+                        <i class="fas fa-check-circle"></i>
+                        Completed
+                    </button>
+                    <button class="filter-btn {% if status_filter == 'failed' %}active{% endif %}" data-filter="failed">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Failed
+                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Meetings List -->
         <div class="dashboard-section">
-            <div class="meetings-grid" id="meetings-list">
-                <div class="loading-spinner">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Loading meetings...</p>
-                </div>
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-history me-2"></i>
+                    Recent Meetings
+                </h2>
+            </div>
+            <div class="section-content" id="meetings-list">
+                {% if meetings and meetings.items %}
+                    {% for meeting in meetings.items %}
+                    <div class="meeting-card">
+                        <div class="meeting-header">
+                            <div class="meeting-title-section">
+                                <h3 class="meeting-title">{{ meeting.title or 'Untitled Meeting' }}</h3>
+                                <span class="meeting-status status-{{ meeting.status }}">
+                                    <i class="fas fa-{% if meeting.status == 'active' %}circle text-danger{% elif meeting.status == 'completed' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                                    {{ meeting.status|title }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="meeting-details">
+                            <div class="meeting-meta">
+                                <span><i class="fas fa-calendar me-1"></i> {{ meeting.created_at.strftime('%b %d, %Y') }}</span>
+                                <span><i class="fas fa-clock me-1"></i> {{ meeting.created_at.strftime('%I:%M %p') }}</span>
+                                {% if meeting.duration %}
+                                <span><i class="fas fa-hourglass-half me-1"></i> {{ (meeting.duration // 60)|int }} min</span>
+                                {% endif %}
+                                {% if meeting.participant_count %}
+                                <span><i class="fas fa-users me-1"></i> {{ meeting.participant_count }} participants</span>
+                                {% endif %}
+                            </div>
+                            <div class="meeting-actions">
+                                <a href="{{ url_for('dashboard.meeting_detail', meeting_id=meeting.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>
+                                    View
+                                </a>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="exportMeeting({{ meeting.id }})">
+                                    <i class="fas fa-download me-1"></i>
+                                    Export
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteMeeting({{ meeting.id }})">
+                                    <i class="fas fa-trash me-1"></i>
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Pagination -->
+                    {% if meetings.pages > 1 %}
+                    <nav class="pagination-nav" aria-label="Meetings pagination">
+                        <ul class="pagination">
+                            {% if meetings.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('dashboard.meetings', page=meetings.prev_num, status=status_filter, search=search_query) }}">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in meetings.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    <li class="page-item {% if page_num == meetings.page %}active{% endif %}">
+                                        <a class="page-link" href="{{ url_for('dashboard.meetings', page=page_num, status=status_filter, search=search_query) }}">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if meetings.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('dashboard.meetings', page=meetings.next_num, status=status_filter, search=search_query) }}">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-microphone-slash"></i>
+                        </div>
+                        <h3 class="empty-state-title">No meetings found</h3>
+                        <p class="empty-state-description">Start your first recording to see it here</p>
+                        <a href="{{ url_for('pages.live') }}" class="btn btn-primary">
+                            <i class="fas fa-circle text-danger me-2"></i>
+                            Start Recording Now
+                        </a>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        // Note: Using Font Awesome icons consistently - no initialization needed
+<script>
+    // Meetings Management
+    class MeetingsManager {
+        constructor() {
+            this.currentFilter = '{{ status_filter or "all" }}';
+            this.searchQuery = '{{ search_query or "" }}';
+            this.initializeEventListeners();
+        }
         
-        class MeetingsManager {
-            constructor() {
-                this.currentFilter = 'all';
-                this.meetings = [];
-                this.init();
-            }
-            
-            init() {
-                this.loadMeetings();
-                this.setupEventListeners();
-            }
-            
-            async loadMeetings() {
-                try {
-                    // Load meetings from the API
-                    const response = await fetch('/api/meetings');
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        this.meetings = data.meetings || [];
-                        this.updateStats();
-                        this.renderMeetings();
-                    }
-                } catch (error) {
-                    console.error('Failed to load meetings:', error);
-                    this.showError('Failed to load meetings');
-                }
-            }
-            
-            updateStats() {
-                const totalMeetings = this.meetings.length;
-                const activeMeetings = this.meetings.filter(m => m.status === 'active').length;
-                const totalDuration = this.meetings.reduce((acc, m) => acc + (m.duration || 0), 0);
-                
-                document.getElementById('total-meetings').textContent = totalMeetings;
-                document.getElementById('active-recordings').textContent = activeMeetings;
-                document.getElementById('total-duration').textContent = Math.round(totalDuration / 3600) + 'h';
-            }
-            
-            renderMeetings() {
-                const container = document.getElementById('meetings-list');
-                
-                if (this.meetings.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-microphone-slash"></i>
-                            <h3>No meetings found</h3>
-                            <p>Start your first recording to see it here</p>
-                            <a href="{{ url_for('transcription.live_transcription') }}" class="btn btn-primary">
-                                <i class="fas fa-plus"></i>
-                                Start Recording
-                            </a>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                const filteredMeetings = this.filterMeetings();
-                container.innerHTML = filteredMeetings.map(meeting => this.renderMeetingCard(meeting)).join('');
-            }
-            
-            filterMeetings() {
-                if (this.currentFilter === 'all') {
-                    return this.meetings;
-                }
-                return this.meetings.filter(meeting => meeting.status === this.currentFilter);
-            }
-            
-            renderMeetingCard(meeting) {
-                const statusClass = meeting.status === 'active' ? 'status-active' : 
-                                  meeting.status === 'completed' ? 'status-completed' : 
-                                  'status-failed';
-                
-                return `
-                    <div class="meeting-card">
-                        <div class="meeting-header">
-                            <h3 class="meeting-title">${meeting.title || 'Untitled Meeting'}</h3>
-                            <span class="meeting-status ${statusClass}">${meeting.status}</span>
-                        </div>
-                        <div class="meeting-details">
-                            <div class="meeting-meta">
-                                <span><i class="fas fa-calendar"></i> ${new Date(meeting.created_at).toLocaleDateString()}</span>
-                                <span><i class="fas fa-clock"></i> ${Math.round((meeting.duration || 0) / 60)} min</span>
-                                <span><i class="fas fa-star"></i> ${Math.round((meeting.avg_confidence || 0) * 100)}%</span>
-                            </div>
-                            <div class="meeting-actions">
-                                <button class="btn btn-sm btn-outline-primary" onclick="viewMeeting('${meeting.id}')">
-                                    <i class="fas fa-eye"></i>
-                                    View
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary" onclick="exportMeeting('${meeting.id}')">
-                                    <i class="fas fa-download"></i>
-                                    Export
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            setupEventListeners() {
-                // Filter tabs
-                document.querySelectorAll('.filter-tab').forEach(tab => {
-                    tab.addEventListener('click', (e) => {
-                        document.querySelector('.filter-tab.active').classList.remove('active');
-                        tab.classList.add('active');
-                        this.currentFilter = tab.dataset.filter;
-                        this.renderMeetings();
-                    });
-                });
-                
-                // Search
-                document.getElementById('meeting-search').addEventListener('input', (e) => {
-                    this.searchMeetings(e.target.value);
-                });
-                
-                // Refresh button
-                document.getElementById('refresh-meetings').addEventListener('click', () => {
-                    this.loadMeetings();
+        initializeEventListeners() {
+            // Search input
+            const searchInput = document.getElementById('meeting-search');
+            if (searchInput) {
+                let searchTimeout;
+                searchInput.addEventListener('input', (e) => {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        this.handleSearch(e.target.value);
+                    }, 300);
                 });
             }
             
-            searchMeetings(query) {
-                // Implement search functionality
-                const filteredMeetings = this.meetings.filter(meeting => 
-                    meeting.title?.toLowerCase().includes(query.toLowerCase())
-                );
-                
-                const container = document.getElementById('meetings-list');
-                container.innerHTML = filteredMeetings.map(meeting => this.renderMeetingCard(meeting)).join('');
-            }
+            // Filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const filter = btn.dataset.filter;
+                    this.handleFilter(filter);
+                });
+            });
             
-            showError(message) {
-                const container = document.getElementById('meetings-list');
-                container.innerHTML = `
-                    <div class="error-state">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <h3>Error</h3>
-                        <p>${message}</p>
-                        <button class="btn btn-primary" onclick="location.reload()">Retry</button>
-                    </div>
-                `;
+            // Refresh button
+            const refreshBtn = document.getElementById('refresh-meetings');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', () => {
+                    this.refreshMeetings();
+                });
             }
         }
         
-        // Global functions for meeting actions
-        function viewMeeting(meetingId) {
-            window.location.href = `/meetings/${meetingId}`;
+        handleSearch(query) {
+            const url = new URL(window.location.href);
+            if (query) {
+                url.searchParams.set('search', query);
+            } else {
+                url.searchParams.delete('search');
+            }
+            url.searchParams.set('page', '1');
+            window.location.href = url.toString();
         }
         
-        function exportMeeting(meetingId) {
-            // Implement export functionality
-            console.log('Exporting meeting:', meetingId);
+        handleFilter(filter) {
+            const url = new URL(window.location.href);
+            if (filter === 'all') {
+                url.searchParams.delete('status');
+            } else {
+                url.searchParams.set('status', filter);
+            }
+            url.searchParams.set('page', '1');
+            window.location.href = url.toString();
         }
-
-        // Initialize meetings manager when DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            new MeetingsManager();
+        
+        refreshMeetings() {
+            const refreshBtn = document.getElementById('refresh-meetings');
+            const icon = refreshBtn.querySelector('i');
+            
+            icon.classList.add('fa-spin');
+            refreshBtn.disabled = true;
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        }
+    }
+    
+    // Export meeting
+    function exportMeeting(meetingId) {
+        fetch(`/api/meetings/${meetingId}/export`, {
+            method: 'POST'
+        })
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `meeting-${meetingId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        })
+        .catch(error => {
+            console.error('Export failed:', error);
+            alert('Failed to export meeting. Please try again.');
         });
-    </script>
+    }
+    
+    // Delete meeting
+    function deleteMeeting(meetingId) {
+        if (!confirm('Are you sure you want to delete this meeting? This action cannot be undone.')) {
+            return;
+        }
+        
+        fetch(`/api/meetings/${meetingId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Failed to delete meeting: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Delete failed:', error);
+            alert('Failed to delete meeting. Please try again.');
+        });
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        new MeetingsManager();
+        
+        // Update stats from API
+        fetch('/api/meetings/stats')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.stats.total_duration) {
+                        document.getElementById('total-duration').textContent = 
+                            Math.round(data.stats.total_duration / 3600) + 'h';
+                    }
+                    if (data.stats.active_count !== undefined) {
+                        document.getElementById('active-recordings').textContent = data.stats.active_count;
+                    }
+                }
+            })
+            .catch(error => console.error('Failed to load stats:', error));
+    });
+</script>
 {% endblock %}
