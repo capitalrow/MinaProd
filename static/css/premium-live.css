@@ -420,20 +420,10 @@
 }
 
 .live-page .live-settings-toggle {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
     width: 36px;
     height: 36px;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.live-page .live-settings-toggle:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-    border-color: var(--accent-primary);
 }
 
 .live-page .live-settings-grid {
@@ -680,4 +670,95 @@
 
 .live-page .live-transcript-container {
     margin-top: clamp(12px, 1.5vw, 20px);
+}
+
+/* ============================================================================
+   HIGH-CONTRAST SETTINGS ICON - WCAG AA COMPLIANT
+   ============================================================================
+   Optimized for dark mode visibility with proper contrast and touch targets
+   ============================================================================ */
+
+/* Icon color tokens */
+.live-page {
+    --icon-on-surface: #E6EAF2;
+    --icon-on-surface-muted: #C8D0E0;
+    --icon-on-surface-dark: #334155;
+}
+
+/* Base styles - dark mode optimized with clear surface */
+.live-page .live-settings-toggle {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--icon-on-surface);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.12s ease, box-shadow 0.2s ease;
+    backdrop-filter: saturate(140%) blur(6px);
+    cursor: pointer;
+}
+
+.live-page .live-settings-toggle i {
+    font-size: 18px;
+    line-height: 1;
+}
+
+/* Hover state - enhanced visibility */
+.live-page .live-settings-toggle:hover {
+    background: rgba(255, 255, 255, 0.10);
+    color: #fff;
+    border-color: var(--accent-primary);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
+}
+
+/* Active state - pressed feedback */
+.live-page .live-settings-toggle:active {
+    transform: translateY(0) scale(0.98);
+    background: rgba(255, 255, 255, 0.14);
+}
+
+/* Focus visible - keyboard navigation */
+.live-page .live-settings-toggle:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.45), 0 2px 10px rgba(0, 0, 0, 0.35);
+    border-color: var(--accent-primary);
+}
+
+/* Light theme variant */
+[data-theme="light"] .live-page .live-settings-toggle,
+[data-bs-theme="light"] .live-page .live-settings-toggle {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.12);
+    color: var(--icon-on-surface-dark);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="light"] .live-page .live-settings-toggle:hover,
+[data-bs-theme="light"] .live-page .live-settings-toggle:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--text-primary);
+    border-color: var(--accent-primary);
+}
+
+/* Active/toggled state */
+.live-page .live-settings-toggle.active {
+    background: var(--live-gradient-1);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 6px 18px rgba(102, 126, 234, 0.35);
+}
+
+/* High contrast OS mode - Windows High Contrast support */
+@media (forced-colors: active) {
+    .live-page .live-settings-toggle {
+        background: ButtonFace;
+        color: ButtonText;
+        border: 1px solid ButtonText;
+    }
 }
