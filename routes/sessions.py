@@ -65,12 +65,34 @@ def list_sessions():
         })
     
     # Return HTML template for browser requests
-    # Create meetings object with total count for template compatibility
-    meetings_obj = type('obj', (object,), {'items': sessions, 'total': total_count})()
+    # Pass pagination object or create simple wrapper for template compatibility
+    if hasattr(sessions_result, 'items'):
+        # Already a pagination object from SQLAlchemy
+        meetings_obj = sessions_result
+    else:
+        # Create simple pagination wrapper with proper method signatures
+        class SimplePagination:
+            def __init__(self, items, total):
+                self.items = items
+                self.total = total
+                self.pages = 1
+                self.page = 1
+                self.per_page = len(items) if items else 0
+                self.has_prev = False
+                self.has_next = False
+                self.prev_num = None
+                self.next_num = None
+            
+            def iter_pages(self, left_edge=0, right_edge=0, left_current=0, right_current=0):
+                """Generator for page numbers"""
+                yield 1
+        
+        meetings_obj = SimplePagination(sessions, total_count)
+    
     return render_template('dashboard/meetings.html', 
                          meetings=meetings_obj,
-                         query=q, 
-                         status=status,
+                         search_query=q, 
+                         status_filter=status,
                          limit=limit,
                          offset=offset)
 

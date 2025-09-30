@@ -301,6 +301,10 @@ def create_app() -> Flask:
         app.logger.info("Dashboard routes registered")
     except Exception as e:
         app.logger.warning(f"Failed to register dashboard routes: {e}")
+    
+    # Note: sessions blueprint causes circular import (SessionService → app.db)
+    # Meetings API (api_meetings_bp) provides equivalent functionality
+    # Template fixes completed in routes/sessions.py for future use
 
     # Register API blueprints for REST endpoints
     try:
