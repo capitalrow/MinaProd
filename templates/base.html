@@ -130,14 +130,15 @@
 
             <!-- Right Side Actions -->
             <div class="navbar-actions">
-                <!-- User Profile -->
+                <!-- Comprehensive Navigation Menu -->
                 <div class="navbar-user">
-                    <button class="navbar-user-btn" id="userMenuBtn" aria-expanded="false" aria-haspopup="true" aria-label="User menu" aria-controls="userMenu">
-                        <div class="navbar-user-avatar">U</div>
-                        <span class="navbar-user-name">User</span>
+                    <button class="navbar-user-btn" id="userMenuBtn" aria-expanded="false" aria-haspopup="true" aria-label="Navigation menu" aria-controls="userMenu">
+                        <i class="fas fa-bars"></i>
+                        <span class="navbar-user-name">Menu</span>
                         <i class="fas fa-chevron-down" aria-hidden="true"></i>
                     </button>
-                    <div class="navbar-user-menu" id="userMenu">
+                    <div class="navbar-user-menu navbar-comprehensive-menu" id="userMenu">
+                        <!-- User Info Section -->
                         <div class="navbar-user-info">
                             <div class="navbar-user-avatar-large">U</div>
                             <div>
@@ -148,10 +149,94 @@
                             </div>
                         </div>
                         <div class="navbar-user-menu-divider"></div>
-                        <a href="{{ url_for('settings.settings_dashboard') }}" class="navbar-user-menu-item">
-                            <i class="fas fa-cog" aria-hidden="true"></i>
-                            <span>Settings</span>
-                        </a>
+                        
+                        <!-- Main Pages Section -->
+                        <div class="navbar-menu-section">
+                            <div class="navbar-menu-section-title">Pages</div>
+                            <a href="{{ url_for('dashboard.index') }}" class="navbar-user-menu-item">
+                                <i class="fas fa-th-large" aria-hidden="true"></i>
+                                <span>Dashboard</span>
+                            </a>
+                            <a href="{{ url_for('pages.live') }}" class="navbar-user-menu-item">
+                                <i class="fas fa-microphone" aria-hidden="true"></i>
+                                <span>Live Recording</span>
+                                <span class="navbar-badge-sm" id="recording-badge-menu" style="display: none;">LIVE</span>
+                            </a>
+                            <a href="{{ url_for('dashboard.meetings') }}" class="navbar-user-menu-item">
+                                <i class="fas fa-users" aria-hidden="true"></i>
+                                <span>Meetings</span>
+                            </a>
+                            <a href="{{ url_for('dashboard.tasks') }}" class="navbar-user-menu-item">
+                                <i class="fas fa-check-square" aria-hidden="true"></i>
+                                <span>Tasks</span>
+                            </a>
+                            <a href="{{ url_for('dashboard.analytics') }}" class="navbar-user-menu-item">
+                                <i class="fas fa-chart-line" aria-hidden="true"></i>
+                                <span>Analytics</span>
+                            </a>
+                            <a href="{{ url_for('calendar.calendar_dashboard') }}" class="navbar-user-menu-item">
+                                <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                                <span>Calendar</span>
+                            </a>
+                            <a href="{{ url_for('copilot.copilot_dashboard') }}" class="navbar-user-menu-item">
+                                <i class="fas fa-robot" aria-hidden="true"></i>
+                                <span>AI Copilot</span>
+                            </a>
+                        </div>
+                        
+                        <div class="navbar-user-menu-divider"></div>
+                        
+                        <!-- Settings Section with Sub-menu -->
+                        <div class="navbar-menu-section">
+                            <div class="navbar-menu-section-title">Settings</div>
+                            <div class="navbar-submenu-parent">
+                                <a href="{{ url_for('settings.settings_dashboard') }}" class="navbar-user-menu-item">
+                                    <i class="fas fa-cog" aria-hidden="true"></i>
+                                    <span>All Settings</span>
+                                </a>
+                                <button class="navbar-submenu-toggle" aria-label="Expand settings menu" data-target="settingsSubmenu">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                            </div>
+                            <div class="navbar-submenu" id="settingsSubmenu">
+                                <a href="{{ url_for('settings.settings_dashboard') }}#transcription" class="navbar-user-menu-item navbar-submenu-item">
+                                    <i class="fas fa-microphone" aria-hidden="true"></i>
+                                    <span>Transcription</span>
+                                </a>
+                                <a href="{{ url_for('settings.settings_dashboard') }}#summary" class="navbar-user-menu-item navbar-submenu-item">
+                                    <i class="fas fa-file-alt" aria-hidden="true"></i>
+                                    <span>Summary</span>
+                                </a>
+                                <a href="{{ url_for('settings.settings_dashboard') }}#tasks" class="navbar-user-menu-item navbar-submenu-item">
+                                    <i class="fas fa-tasks" aria-hidden="true"></i>
+                                    <span>Task Settings</span>
+                                </a>
+                                <a href="{{ url_for('settings.settings_dashboard') }}#audio" class="navbar-user-menu-item navbar-submenu-item">
+                                    <i class="fas fa-volume-up" aria-hidden="true"></i>
+                                    <span>Audio</span>
+                                </a>
+                                <a href="{{ url_for('settings.settings_dashboard') }}#privacy" class="navbar-user-menu-item navbar-submenu-item">
+                                    <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                                    <span>Privacy & Security</span>
+                                </a>
+                                <a href="{{ url_for('settings.settings_dashboard') }}#integrations" class="navbar-user-menu-item navbar-submenu-item">
+                                    <i class="fas fa-plug" aria-hidden="true"></i>
+                                    <span>Integrations</span>
+                                </a>
+                                <a href="{{ url_for('settings.settings_dashboard') }}#ui" class="navbar-user-menu-item navbar-submenu-item">
+                                    <i class="fas fa-palette" aria-hidden="true"></i>
+                                    <span>Interface & Theme</span>
+                                </a>
+                                <a href="{{ url_for('settings.settings_dashboard') }}#general" class="navbar-user-menu-item navbar-submenu-item">
+                                    <i class="fas fa-cogs" aria-hidden="true"></i>
+                                    <span>General</span>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="navbar-user-menu-divider"></div>
+                        
+                        <!-- Account Actions -->
                         <a href="{{ url_for('auth.logout') if url_for else '#' }}" class="navbar-user-menu-item" onclick="return confirm('Are you sure you want to sign out?');">
                             <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
                             <span>Sign Out</span>
