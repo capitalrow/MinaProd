@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <!-- Ultra-Premium Dashboard CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/premium-dashboard-enhanced.css') }}">
     
     <!-- Feather Icons loaded via base.html -->
 {% endblock %}
@@ -227,45 +229,53 @@
             updateStatsDisplay(stats) {
                 const statsGrid = document.getElementById('stats-grid');
                 
-                // Replace skeleton loaders with real stat cards
+                // Replace skeleton loaders with ultra-premium stat cards
                 statsGrid.innerHTML = `
                     <div class="stat-card" data-stat="active-sessions">
-                        <div class="stat-card-content">
-                            <div class="stat-value" id="active-sessions">0</div>
-                            <div class="stat-label">
-                                <i class="fas fa-microphone stat-icon"></i>
-                                Active Sessions
-                            </div>
+                        <div class="stat-icon-wrapper">
+                            <i class="fas fa-microphone stat-icon"></i>
+                        </div>
+                        <div class="stat-value" id="active-sessions">0</div>
+                        <div class="stat-label">Active Sessions</div>
+                        <div class="stat-trend positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>Live monitoring</span>
                         </div>
                     </div>
                     
                     <div class="stat-card" data-stat="total-hours">
-                        <div class="stat-card-content">
-                            <div class="stat-value" id="total-hours">0</div>
-                            <div class="stat-label">
-                                <i class="fas fa-clock stat-icon"></i>
-                                Hours Recorded
-                            </div>
+                        <div class="stat-icon-wrapper">
+                            <i class="fas fa-clock stat-icon"></i>
+                        </div>
+                        <div class="stat-value" id="total-hours">0</div>
+                        <div class="stat-label">Hours Recorded</div>
+                        <div class="stat-trend neutral">
+                            <i class="fas fa-activity"></i>
+                            <span>Total time</span>
                         </div>
                     </div>
                     
                     <div class="stat-card" data-stat="success-rate">
-                        <div class="stat-card-content">
-                            <div class="stat-value" id="success-rate">0%</div>
-                            <div class="stat-label">
-                                <i class="fas fa-chart-line stat-icon"></i>
-                                Success Rate
-                            </div>
+                        <div class="stat-icon-wrapper">
+                            <i class="fas fa-chart-line stat-icon"></i>
+                        </div>
+                        <div class="stat-value" id="success-rate">0%</div>
+                        <div class="stat-label">Success Rate</div>
+                        <div class="stat-trend positive">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Performance</span>
                         </div>
                     </div>
                     
                     <div class="stat-card" data-stat="avg-confidence">
-                        <div class="stat-card-content">
-                            <div class="stat-value" id="avg-confidence">0%</div>
-                            <div class="stat-label">
-                                <i class="fas fa-star stat-icon"></i>
-                                Avg Confidence
-                            </div>
+                        <div class="stat-icon-wrapper">
+                            <i class="fas fa-star stat-icon"></i>
+                        </div>
+                        <div class="stat-value" id="avg-confidence">0%</div>
+                        <div class="stat-label">Avg Confidence</div>
+                        <div class="stat-trend neutral">
+                            <i class="fas fa-signal"></i>
+                            <span>Quality score</span>
                         </div>
                     </div>
                 `;
