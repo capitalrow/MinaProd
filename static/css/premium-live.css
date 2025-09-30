@@ -1,5 +1,21 @@
 /* Premium Live Recording Page Styling */
-/* Matching dashboard.css premium quality standards */
+/* Ultra-Premium Enterprise Quality Standards */
+
+/* Premium Animation Keyframes */
+@keyframes live-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 81, 47, 0.7); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(255, 81, 47, 0); }
+}
+
+@keyframes live-recording-glow {
+  0%, 100% { box-shadow: 0 0 30px rgba(255, 81, 47, 0.5), 0 0 60px rgba(221, 36, 118, 0.3); }
+  50% { box-shadow: 0 0 50px rgba(255, 81, 47, 0.7), 0 0 100px rgba(221, 36, 118, 0.5); }
+}
+
+@keyframes live-shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
 
 /* Namespace all live-specific styles */
 .live-page {
@@ -7,6 +23,7 @@
     --live-gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     --live-gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     --live-gradient-recording: linear-gradient(135deg, #ff512f 0%, #dd2476 100%);
+    --live-recording-shadow: 0 25px 70px rgba(255, 81, 47, 0.4);
 }
 
 /* Accessibility - Reduced Motion Support */

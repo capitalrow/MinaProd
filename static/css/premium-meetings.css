@@ -1,11 +1,30 @@
 /* Premium Meetings Page Styling */
-/* Matching dashboard.css premium quality standards */
+/* Ultra-Premium Enterprise Quality Standards */
+
+/* Premium Animation Keyframes */
+@keyframes meetings-shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes meetings-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes meetings-scale-in {
+  0% { transform: scale(0.96); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
 
 /* Namespace all meetings-specific styles */
 .meetings-page {
     --meetings-gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     --meetings-gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     --meetings-gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --meetings-glow-1: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
+    --meetings-glow-2: linear-gradient(135deg, rgba(240, 147, 251, 0.3), rgba(245, 87, 108, 0.3));
+    --meetings-glow-3: linear-gradient(135deg, rgba(79, 172, 254, 0.3), rgba(0, 242, 254, 0.3));
 }
 
 /* Accessibility - Reduced Motion Support */
@@ -29,13 +48,24 @@
 
 .meetings-page .stat-card {
     background: var(--bg-secondary);
-    border-radius: 16px;
-    padding: 1.5rem;
+    border-radius: 20px;
+    padding: 2rem;
     border: 1px solid var(--border-color);
     position: relative;
     overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: meetings-scale-in 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    animation-fill-mode: both;
+    backdrop-filter: blur(14px);
+    box-shadow: 
+        0 4px 6px rgba(0, 0, 0, 0.1),
+        0 10px 30px -10px rgba(102, 126, 234, 0.1);
+    z-index: 0;
 }
+
+.meetings-page .stat-card:nth-child(1) { animation-delay: 0.05s; }
+.meetings-page .stat-card:nth-child(2) { animation-delay: 0.1s; }
+.meetings-page .stat-card:nth-child(3) { animation-delay: 0.15s; }
 
 .meetings-page .stat-card::before {
     content: '';
@@ -43,23 +73,58 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
+    height: 5px;
     background: var(--meetings-gradient-1);
-    opacity: 0.8;
+    opacity: 0.9;
+    transition: all 0.4s ease;
+}
+
+.meetings-page .stat-card::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: var(--meetings-glow-1);
+    border-radius: 20px;
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
 }
 
 .meetings-page .stat-card:nth-child(2)::before {
     background: var(--meetings-gradient-2);
 }
 
+.meetings-page .stat-card:nth-child(2)::after {
+    background: var(--meetings-glow-2);
+}
+
 .meetings-page .stat-card:nth-child(3)::before {
     background: var(--meetings-gradient-3);
 }
 
+.meetings-page .stat-card:nth-child(3)::after {
+    background: var(--meetings-glow-3);
+}
+
 .meetings-page .stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-    border-color: rgba(102, 126, 234, 0.3);
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 
+        0 20px 50px rgba(102, 126, 234, 0.2),
+        0 10px 30px rgba(118, 75, 162, 0.15);
+    border-color: rgba(102, 126, 234, 0.4);
+}
+
+.meetings-page .stat-card:hover::before {
+    height: 100%;
+    opacity: 0.05;
+}
+
+.meetings-page .stat-card:hover::after {
+    opacity: 0.1;
 }
 
 .meetings-page .stat-card .stat-icon {
@@ -73,6 +138,12 @@
     margin-bottom: 1rem;
     font-size: 1.5rem;
     color: var(--accent-primary);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.meetings-page .stat-card:hover .stat-icon {
+    transform: scale(1.2) rotate(8deg);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
 }
 
 .meetings-page .stat-card:nth-child(2) .stat-icon {
