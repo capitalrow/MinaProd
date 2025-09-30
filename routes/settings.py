@@ -28,20 +28,26 @@ def settings_dashboard():
     Returns:
         Rendered settings template with current user preferences
     """
+    logger.info(f"🔍 Settings dashboard accessed - User authenticated: {current_user.is_authenticated}")
+    
     try:
         from app import db
         
         # Type check current_user
         if not current_user.is_authenticated:
+            logger.warning(f"⚠️ User not authenticated, redirecting to login")
             return redirect(url_for('auth.login'))
+        
+        logger.info(f"✅ Loading settings for user {current_user.id} ({current_user.username})")
         
         # Get current user preferences  
         user_preferences = _get_user_preferences(current_user)
+        logger.debug(f"📝 User preferences loaded: {list(user_preferences.keys())}")
         
         # Get workspace settings if user has access
         workspace_settings = _get_workspace_settings(current_user)
         
-        logger.debug(f"Loading settings dashboard for user {current_user.id}")
+        logger.info(f"✅ Rendering settings dashboard template")
         
         return render_template('settings/dashboard.html',
                              user_preferences=user_preferences,
@@ -49,8 +55,9 @@ def settings_dashboard():
                              page_title="Settings")
     
     except Exception as e:
-        logger.error(f"Error loading settings dashboard: {e}")
+        logger.error(f"❌ Error loading settings dashboard: {e}", exc_info=True)
         flash('Failed to load settings. Please try again.', 'error')
+        logger.error(f"🔄 Redirecting to dashboard due to error")
         return redirect(url_for('dashboard.index'))
 
 
