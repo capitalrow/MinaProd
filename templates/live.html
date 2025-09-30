@@ -6,6 +6,29 @@
     <!-- Live transcription page uses mina-live.css for styling -->
     <!-- Premium Live CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/premium-live.css') }}">
+    <style>
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -202,8 +225,49 @@
                 this.setupEventListeners();
                 this.initializeAudioVisualization();
                 this.initializeSettingsPanel();
+                this.createToastContainer();
                 this.updateStatus('ready');
                 console.log('Live Transcription App initialized');
+            }
+            
+            createToastContainer() {
+                if (!document.getElementById('toastContainer')) {
+                    const container = document.createElement('div');
+                    container.id = 'toastContainer';
+                    container.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;';
+                    document.body.appendChild(container);
+                }
+            }
+            
+            showToast(message, type = 'error') {
+                const container = document.getElementById('toastContainer');
+                const toast = document.createElement('div');
+                const colors = {
+                    error: '#ef4444',
+                    warning: '#f59e0b',
+                    success: '#10b981',
+                    info: '#3b82f6'
+                };
+                
+                toast.style.cssText = `
+                    background: ${colors[type] || colors.error};
+                    color: white;
+                    padding: 16px 20px;
+                    border-radius: 12px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+                    max-width: 350px;
+                    animation: slideIn 0.3s ease-out;
+                    font-size: 14px;
+                    line-height: 1.5;
+                `;
+                toast.textContent = message;
+                
+                container.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(() => toast.remove(), 300);
+                }, 5000);
             }
             
             initializeSettingsPanel() {
@@ -315,7 +379,7 @@
                     this.setupAudioProcessing();
                     this.setupMediaRecorder();
                     
-                    this.mediaRecorder.start(100); // Send data every 100ms
+                    this.mediaRecorder.start(100);
                     this.isRecording = true;
                     this.sessionStartTime = Date.now();
                     
@@ -331,10 +395,29 @@
                         });
                     }
                     
+                    this.showToast('Recording started successfully!', 'success');
                     console.log('Recording started');
                 } catch (error) {
                     console.error('Error starting recording:', error);
                     this.updateStatus('error');
+                    
+                    let message = 'Unable to start recording. ';
+                    
+                    if (error.name === 'NotAllowedError') {
+                        message += 'Please allow microphone access in your browser settings.';
+                    } else if (error.name === 'NotFoundError') {
+                        message += 'No microphone found. Please connect a microphone and try again.';
+                    } else if (error.name === 'NotReadableError') {
+                        message += 'Microphone is in use by another application. Please close other apps and try again.';
+                    } else if (error.name === 'NotSupportedError' || error.message.includes('browser does not support')) {
+                        message += error.message;
+                    } else if (error.name === 'SecurityError') {
+                        message += 'Recording requires a secure connection (HTTPS). Please access this page via HTTPS.';
+                    } else {
+                        message += error.message || 'Please check your browser settings and try again.';
+                    }
+                    
+                    this.showToast(message, 'error');
                 }
             }
             
@@ -369,23 +452,48 @@
                 this.visualizeAudio();
             }
             
-            setupMediaRecorder() {
-                this.mediaRecorder = new MediaRecorder(this.audioStream, {
-                    mimeType: 'audio/webm;codecs=opus'
-                });
+            getSupportedMimeType() {
+                const types = [
+                    'audio/webm;codecs=opus',
+                    'audio/webm',
+                    'audio/mp4',
+                    'audio/ogg;codecs=opus',
+                    ''
+                ];
                 
-                this.mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0 && this.socket) {
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                            this.socket.emit('audio_data', {
-                                data: reader.result,
-                                timestamp: Date.now()
-                            });
-                        };
-                        reader.readAsArrayBuffer(event.data);
+                for (const type of types) {
+                    if (type === '' || MediaRecorder.isTypeSupported(type)) {
+                        console.log('Using audio format:', type || 'browser default');
+                        return type;
                     }
-                };
+                }
+                
+                throw new Error('No supported audio format found');
+            }
+            
+            setupMediaRecorder() {
+                try {
+                    const mimeType = this.getSupportedMimeType();
+                    const options = mimeType ? { mimeType } : {};
+                    
+                    this.mediaRecorder = new MediaRecorder(this.audioStream, options);
+                    
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0 && this.socket) {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                this.socket.emit('audio_data', {
+                                    data: reader.result,
+                                    timestamp: Date.now()
+                                });
+                            };
+                            reader.readAsArrayBuffer(event.data);
+                        }
+                    };
+                } catch (error) {
+                    console.error('MediaRecorder setup error:', error);
+                    throw new Error('Your browser does not support audio recording. Please try a different browser.');
+                }
             }
             
             visualizeAudio() {
