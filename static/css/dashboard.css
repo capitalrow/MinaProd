@@ -1,5 +1,5 @@
 /* ============================================================================
-   MINA DASHBOARD - MOBILE-FIRST PREMIUM DESIGN
+   MINA DASHBOARD - ULTRA-PREMIUM ENTERPRISE DESIGN
    ============================================================================
    
    Design Principles:
@@ -7,9 +7,32 @@
    - WCAG AAA contrast ratios (7:1 normal, 4.5:1 large text)
    - 44px minimum touch targets (48px on mobile)
    - Namespaced under .dashboard-page to avoid conflicts
-   - Professional enterprise-grade polish
+   - Ultra-premium enterprise polish with advanced micro-interactions
+   - Sophisticated 3D effects and premium animations
+   - Glass morphism and layered shadow systems
    
    ============================================================================ */
+
+/* Premium Animation Keyframes */
+@keyframes premium-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes premium-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3), 0 0 40px rgba(139, 92, 246, 0.2); }
+  50% { box-shadow: 0 0 30px rgba(99, 102, 241, 0.5), 0 0 60px rgba(139, 92, 246, 0.3); }
+}
+
+@keyframes premium-shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes premium-scale-in {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
 
 /* ============================================================================
    SKIP LINK & ACCESSIBILITY - PREMIUM DESIGN
@@ -231,19 +254,25 @@
 .dashboard-page .stat-card {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 24px;
+  border-radius: 20px;
+  padding: 28px;
   min-height: 160px;
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: fadeInUp 0.5s ease-out;
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.08), 
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 10px 40px -10px rgba(99, 102, 241, 0.1);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: premium-scale-in 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   animation-fill-mode: both;
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(14px);
+  transform-style: preserve-3d;
+  z-index: 0;
 }
 
 .dashboard-page .stat-card:nth-child(1) { animation-delay: 0.05s; }
@@ -258,20 +287,51 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.05), transparent);
-  transform: translateX(-100%);
-  transition: transform 0.6s ease;
+  background: linear-gradient(
+    135deg, 
+    transparent 0%, 
+    rgba(99, 102, 241, 0.1) 50%, 
+    transparent 100%
+  );
+  background-size: 200% 200%;
+  animation: premium-shimmer 8s linear infinite;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dashboard-page .stat-card::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+  border-radius: 20px;
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
 }
 
 .dashboard-page .stat-card:hover::before {
-  transform: translateX(100%);
+  opacity: 1;
+}
+
+.dashboard-page .stat-card:hover::after {
+  opacity: 0.08;
 }
 
 .dashboard-page .stat-card:hover {
-  border-color: #a5b4fc;
-  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.15), 0 4px 12px rgba(99, 102, 241, 0.1);
-  transform: translateY(-4px) scale(1.02);
-  background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 
+    0 20px 50px rgba(99, 102, 241, 0.2), 
+    0 10px 30px rgba(139, 92, 246, 0.15),
+    0 0 60px rgba(99, 102, 241, 0.08);
+  transform: translateY(-6px) scale(1.02);
+  background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
 }
 
 .dashboard-page .stat-card-content {
@@ -346,16 +406,20 @@
   font-size: 24px;
   color: #ffffff;
   margin: 0;
-  transition: transform 0.3s ease;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dashboard-page .stat-card:hover .stat-icon-wrapper {
-  transform: scale(1.1) rotate(-3deg);
-  box-shadow: 0 12px 28px rgba(99, 102, 241, 0.4), 0 0 0 4px rgba(99, 102, 241, 0.1);
+  transform: scale(1.15) rotate(-5deg);
+  box-shadow: 
+    0 15px 35px rgba(99, 102, 241, 0.5), 
+    0 0 0 6px rgba(99, 102, 241, 0.15),
+    0 0 50px rgba(99, 102, 241, 0.2);
 }
 
 .dashboard-page .stat-card:hover .stat-icon {
-  transform: scale(1.15) rotate(8deg);
+  transform: scale(1.25) rotate(12deg);
+  filter: drop-shadow(0 4px 12px rgba(255, 255, 255, 0.5));
 }
 
 @keyframes pulse-ring {
@@ -425,13 +489,18 @@
 .dashboard-page .content-section {
   background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: fadeInUp 0.6s ease-out;
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.08), 
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 8px 32px -8px rgba(99, 102, 241, 0.08);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: premium-scale-in 0.7s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(14px);
+  z-index: 0;
 }
 
 .dashboard-page .content-section::before {
@@ -441,19 +510,31 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.03), transparent);
-  transform: translateX(-100%);
-  transition: transform 0.6s ease;
+  background: linear-gradient(
+    135deg, 
+    transparent 0%, 
+    rgba(99, 102, 241, 0.05) 50%, 
+    transparent 100%
+  );
+  background-size: 200% 200%;
+  animation: premium-shimmer 10s linear infinite;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .dashboard-page .content-section:hover::before {
-  transform: translateX(100%);
+  opacity: 1;
 }
 
 .dashboard-page .content-section:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
-  border-color: #c7d2fe;
-  transform: translateY(-2px);
+  box-shadow: 
+    0 16px 40px rgba(99, 102, 241, 0.12), 
+    0 8px 20px rgba(139, 92, 246, 0.08),
+    0 0 40px rgba(99, 102, 241, 0.05);
+  border-color: rgba(99, 102, 241, 0.25);
+  transform: translateY(-4px) scale(1.01);
 }
 
 .dashboard-page .section-header {

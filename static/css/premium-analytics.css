@@ -1,5 +1,26 @@
 /* Premium Analytics Page Styling */
-/* Matching dashboard.css premium quality standards */
+/* Ultra-Premium Enterprise Quality Standards */
+
+/* Premium Animation Keyframes */
+@keyframes analytics-shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes analytics-glow {
+  0%, 100% { box-shadow: 0 0 30px rgba(102, 126, 234, 0.3); }
+  50% { box-shadow: 0 0 50px rgba(118, 75, 162, 0.4); }
+}
+
+@keyframes analytics-scale-in {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes chart-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
 
 /* Namespace all analytics-specific styles */
 .analytics-page {
@@ -7,6 +28,10 @@
     --analytics-gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     --analytics-gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     --analytics-gradient-4: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    --analytics-shadow-1: 0 20px 60px rgba(102, 126, 234, 0.25);
+    --analytics-shadow-2: 0 20px 60px rgba(240, 147, 251, 0.25);
+    --analytics-shadow-3: 0 20px 60px rgba(79, 172, 254, 0.25);
+    --analytics-shadow-4: 0 20px 60px rgba(67, 233, 123, 0.25);
 }
 
 /* Accessibility - Reduced Motion Support */
@@ -30,13 +55,25 @@
 
 .analytics-page .stat-card {
     background: var(--bg-secondary);
-    border-radius: 16px;
-    padding: 1.5rem;
+    border-radius: 20px;
+    padding: 2rem;
     border: 1px solid var(--border-color);
     position: relative;
     overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: analytics-scale-in 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    animation-fill-mode: both;
+    backdrop-filter: blur(14px);
+    box-shadow: 
+        0 4px 6px rgba(0, 0, 0, 0.1),
+        0 10px 30px -10px rgba(102, 126, 234, 0.15);
+    z-index: 0;
 }
+
+.analytics-page .stat-card:nth-child(1) { animation-delay: 0.05s; }
+.analytics-page .stat-card:nth-child(2) { animation-delay: 0.1s; }
+.analytics-page .stat-card:nth-child(3) { animation-delay: 0.15s; }
+.analytics-page .stat-card:nth-child(4) { animation-delay: 0.2s; }
 
 .analytics-page .stat-card::before {
     content: '';
@@ -44,9 +81,35 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
+    height: 5px;
     background: var(--analytics-gradient-1);
-    opacity: 0.8;
+    opacity: 0.9;
+    transition: all 0.5s ease;
+}
+
+.analytics-page .stat-card::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: var(--analytics-gradient-1);
+    border-radius: 20px;
+    opacity: 0;
+    z-index: -1;
+    filter: blur(20px);
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+}
+
+.analytics-page .stat-card:nth-child(2)::after {
+    background: var(--analytics-gradient-2);
+}
+
+.analytics-page .stat-card:nth-child(3)::after {
+    background: var(--analytics-gradient-3);
+}
+
+.analytics-page .stat-card:nth-child(4)::after {
+    background: var(--analytics-gradient-4);
 }
 
 .analytics-page .stat-card:nth-child(2)::before {
@@ -62,9 +125,30 @@
 }
 
 .analytics-page .stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-    border-color: rgba(102, 126, 234, 0.3);
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: var(--analytics-shadow-1);
+    border-color: rgba(102, 126, 234, 0.4);
+}
+
+.analytics-page .stat-card:hover::before {
+    height: 100%;
+    opacity: 0.06;
+}
+
+.analytics-page .stat-card:hover::after {
+    opacity: 0.15;
+}
+
+.analytics-page .stat-card:nth-child(2):hover {
+    box-shadow: var(--analytics-shadow-2);
+}
+
+.analytics-page .stat-card:nth-child(3):hover {
+    box-shadow: var(--analytics-shadow-3);
+}
+
+.analytics-page .stat-card:nth-child(4):hover {
+    box-shadow: var(--analytics-shadow-4);
 }
 
 .analytics-page .stat-icon {
@@ -78,6 +162,12 @@
     margin-bottom: 1rem;
     font-size: 1.5rem;
     color: var(--accent-primary);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.analytics-page .stat-card:hover .stat-icon {
+    transform: scale(1.2) rotate(8deg);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
 }
 
 .analytics-page .stat-card:nth-child(2) .stat-icon {
