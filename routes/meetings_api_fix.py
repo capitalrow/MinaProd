@@ -4,17 +4,10 @@ import datetime
 
 meetings_api_fix_bp = Blueprint("meetings_api_fix", __name__)
 
-@meetings_api_fix_bp.route("/api/meetings", methods=["GET", "OPTIONS"])
+@meetings_api_fix_bp.route("/api/meetings", methods=["GET"])
 def meetings_list():
     """Quick meetings endpoint fix for production validation"""
-    if request.method == "OPTIONS":
-        # Handle CORS preflight
-        response = jsonify()
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-        return response
-        
+    # CORS handled by middleware - removed wildcard OPTIONS handler
     # Mock meetings data for production validation
     mock_meetings = {
         "success": True,

@@ -4,17 +4,10 @@ import datetime
 
 quick_analytics_bp = Blueprint("quick_analytics", __name__)
 
-@quick_analytics_bp.route("/api/analytics/trends", methods=["GET", "OPTIONS"])
+@quick_analytics_bp.route("/api/analytics/trends", methods=["GET"])
 def analytics_trends():
     """Quick analytics trends endpoint for production validation"""
-    if request.method == "OPTIONS":
-        # Handle CORS preflight
-        response = jsonify()
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-        return response
-        
+    # CORS handled by middleware - removed wildcard OPTIONS handler
     # Mock analytics data for production validation
     days = request.args.get('days', 30, type=int)
     

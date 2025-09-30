@@ -124,12 +124,18 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"⚠️ Rate limiting middleware failed to load: {e}")
 
-    # Set CORS defaults - secure for production, permissive for development
+    # Set CORS defaults - secure for both production and development
     env = os.environ.get("FLASK_ENV", "development")
     if env == "production":
         app.config.setdefault("ALLOWED_ORIGINS", [])  # Require explicit config in production
     else:
-        app.config.setdefault("ALLOWED_ORIGINS", ["*"])  # Allow all origins for development
+        # Development: Allow localhost only, never use ["*"] to prevent reflection attacks
+        app.config.setdefault("ALLOWED_ORIGINS", [
+            "http://localhost:5000",
+            "https://localhost:5000",
+            "http://127.0.0.1:5000",
+            "https://127.0.0.1:5000"
+        ])
     
     try:
         from middleware.cors import cors_middleware  # type: ignore
