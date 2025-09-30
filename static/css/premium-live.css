@@ -318,6 +318,27 @@
     flex: 1;
     overflow-y: auto;
     padding: 1.5rem;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+.live-page .live-transcript-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.live-page .live-transcript-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+}
+
+.live-page .live-transcript-content::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.3);
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.live-page .live-transcript-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.5);
 }
 
 .live-page .live-transcript-segment {
