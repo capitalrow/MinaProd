@@ -211,19 +211,36 @@ class SecurityConfig:
                 self.blocked_ips = set()
 
 def require_api_key(f):
-    """Decorator to require API key for sensitive endpoints."""
+    """Decorator to require API key for sensitive endpoints.
+    
+    Supports dual-key rotation: During rotation period, both API_SECRET_KEY
+    and API_SECRET_KEY_OLD are accepted for zero-downtime migration.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         api_key = request.headers.get('X-API-Key')
         expected_key = os.getenv('API_SECRET_KEY')
+        expected_key_old = os.getenv('API_SECRET_KEY_OLD')
         
         if not expected_key:
             logger.error("API_SECRET_KEY not configured")
             abort(500)
         
-        if not api_key or api_key != expected_key:
+        if not api_key:
+            logger.warning(f"Missing API key from {request.remote_addr}")
+            abort(401)
+        
+        valid_keys = [expected_key]
+        if expected_key_old:
+            valid_keys.append(expected_key_old)
+            logger.debug("Dual-key rotation mode active")
+        
+        if api_key not in valid_keys:
             logger.warning(f"Invalid API key from {request.remote_addr}")
             abort(401)
+        
+        if api_key == expected_key_old:
+            logger.info(f"Request authenticated with OLD API key from {request.remote_addr} - migration needed")
         
         return f(*args, **kwargs)
     return decorated_function

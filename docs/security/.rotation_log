@@ -1,0 +1,9 @@
+# Secret Rotation Log
+# Format: YYYY-MM-DD | Secret Name | Rotated By | Next Rotation | Notes
+
+2025-10-01 | SESSION_SECRET | admin | 2025-11-01 | Initial setup
+2025-10-01 | API_SECRET_KEY | admin | 2025-11-01 | Initial setup (placeholder)
+2025-10-01 | OPENAI_API_KEY | admin | 2025-12-30 | Production key set
+2025-10-01 | DATABASE_URL | admin | 2025-12-30 | Neon PostgreSQL credentials
+2025-10-01 | SENTRY_DSN | admin | 2026-10-01 | Annual rotation scheduled
+2025-10-01 | SESSION_SECRET | runner | 2025-10-31 | Automated rotation
