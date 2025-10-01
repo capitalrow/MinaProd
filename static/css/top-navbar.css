@@ -754,6 +754,173 @@ body:has(.live-page) {
     }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   CROWN+ MOBILE MENU - Slide-in Navigation with Glass Morphism
+   Enterprise-grade mobile menu with smooth animations
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    /* Transform comprehensive menu into slide-in mobile menu */
+    .navbar-user-menu.mobile-menu-active {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 85%;
+        max-width: 380px;
+        min-width: 0;
+        max-height: 100vh;
+        margin: 0;
+        padding: 1.5rem 0;
+        
+        /* Crown+ Glass Morphism */
+        background: rgba(15, 20, 25, 0.95);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border-left: 1px solid rgba(139, 92, 246, 0.2);
+        box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5), 
+                    -2px 0 8px rgba(139, 92, 246, 0.1);
+        
+        /* Slide-in Animation */
+        transform: translateX(0);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1001;
+        
+        /* Scrolling */
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+    }
+    
+    /* Hidden state - slides off screen */
+    .navbar-user-menu:not(.mobile-menu-active) {
+        transform: translateX(100%);
+    }
+    
+    /* Desktop dropdown should not show on mobile */
+    .navbar-user-menu:not(.mobile-menu-active).show {
+        transform: translateX(100%);
+        opacity: 0;
+        pointer-events: none;
+    }
+    
+    /* Mobile Menu Header Enhancement */
+    .navbar-user-menu.mobile-menu-active .navbar-user-info {
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        background: rgba(139, 92, 246, 0.05);
+        border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+        border-radius: 0;
+    }
+    
+    /* Menu Items Spacing */
+    .navbar-user-menu.mobile-menu-active .navbar-user-menu-item {
+        margin: 0.25rem 1rem;
+        padding: 0.875rem 1rem;
+        font-size: 0.9375rem;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+    
+    /* Menu Item Hover Effect */
+    .navbar-user-menu.mobile-menu-active .navbar-user-menu-item:hover {
+        background: rgba(139, 92, 246, 0.1);
+        border-color: rgba(139, 92, 246, 0.3);
+        transform: translateX(4px);
+    }
+    
+    /* Section Titles */
+    .navbar-user-menu.mobile-menu-active .navbar-menu-section-title {
+        padding: 0.75rem 1.5rem 0.5rem;
+        font-size: 0.75rem;
+        color: rgba(139, 92, 246, 0.7);
+        margin-top: 0.5rem;
+    }
+    
+    /* Dividers */
+    .navbar-user-menu.mobile-menu-active .navbar-user-menu-divider {
+        margin: 1rem 1.5rem;
+        background: rgba(255, 255, 255, 0.08);
+    }
+    
+    /* Icons Enhancement */
+    .navbar-user-menu.mobile-menu-active .navbar-user-menu-item i {
+        font-size: 1.125rem;
+        color: rgba(139, 92, 246, 0.8);
+    }
+    
+    /* Submenu Adjustments */
+    .navbar-user-menu.mobile-menu-active .navbar-submenu-parent .navbar-user-menu-item {
+        margin-left: 1rem;
+        border-radius: 10px 0 0 10px;
+    }
+    
+    .navbar-user-menu.mobile-menu-active .navbar-submenu-toggle {
+        margin-right: 1rem;
+        border-radius: 0 10px 10px 0;
+    }
+    
+    .navbar-user-menu.mobile-menu-active .navbar-submenu-item {
+        padding-left: 3.5rem !important;
+        margin: 0.125rem 1rem;
+    }
+    
+    /* Custom Scrollbar for Mobile Menu */
+    .navbar-user-menu.mobile-menu-active::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .navbar-user-menu.mobile-menu-active::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .navbar-user-menu.mobile-menu-active::-webkit-scrollbar-thumb {
+        background: rgba(139, 92, 246, 0.4);
+        border-radius: 2px;
+    }
+    
+    .navbar-user-menu.mobile-menu-active::-webkit-scrollbar-thumb:hover {
+        background: rgba(139, 92, 246, 0.6);
+    }
+    
+    /* Badge Styling */
+    .navbar-user-menu.mobile-menu-active .navbar-badge-sm {
+        font-size: 0.6875rem;
+        padding: 0.125rem 0.5rem;
+    }
+    
+    /* User Avatar Large */
+    .navbar-user-menu.mobile-menu-active .navbar-user-avatar-large {
+        width: 56px;
+        height: 56px;
+        font-size: 1.5rem;
+    }
+    
+    /* User Name Large */
+    .navbar-user-menu.mobile-menu-active .navbar-user-name-large {
+        font-size: 1.125rem;
+        font-weight: 600;
+    }
+    
+    /* Enhanced Overlay for Mobile */
+    .navbar-mobile-overlay.show {
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+}
+
+/* Reduced Motion for Mobile Menu */
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+    .navbar-user-menu.mobile-menu-active,
+    .navbar-user-menu:not(.mobile-menu-active) {
+        transition: none;
+    }
+    
+    .navbar-user-menu.mobile-menu-active .navbar-user-menu-item:hover {
+        transform: none;
+    }
+}
+
 /* Print Styles */
 @media print {
     .top-navbar {
