@@ -129,3 +129,40 @@ All tests run automatically in GitHub Actions:
 - ✅ Code quality (Ruff, Black)
 - ✅ Security scanning (Bandit)
 
+## 🗄️ Database Migrations
+
+Mina uses Flask-Migrate (Alembic) for safe database schema management.
+
+### Quick Commands
+
+```bash
+# Create new migration
+python manage_migrations.py migrate "Description of changes"
+
+# Apply migrations
+python manage_migrations.py upgrade
+
+# Rollback last migration
+python manage_migrations.py downgrade
+```
+
+### Workflow
+
+1. **Modify models** in `models.py`
+2. **Generate migration**: `python manage_migrations.py migrate "Add field"`
+3. **Review migration** in `migrations/versions/`
+4. **Apply**: `python manage_migrations.py upgrade`
+5. **Test** your changes
+
+### Documentation
+
+- 📖 [Database Migrations Guide](docs/database-migrations.md) - Complete migration documentation
+
+### Best Practices
+
+- ✅ Always review auto-generated migrations
+- ✅ Test migrations locally before deploying
+- ✅ Use descriptive migration messages
+- ✅ One logical change per migration
+- ✅ Never edit applied migrations
+
