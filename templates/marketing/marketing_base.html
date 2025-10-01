@@ -33,12 +33,22 @@
   {% block scripts %}{% endblock %}
   
   <script>
-    // Initialize Feather icons
-    document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Feather icons immediately and after dynamic content loads
+    function initFeatherIcons() {
       if (typeof feather !== 'undefined') {
         feather.replace();
       }
-    });
+    }
+    
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initFeatherIcons);
+    } else {
+      initFeatherIcons();
+    }
+    
+    // Re-initialize after any dynamic content (for SPAs or lazy-loaded sections)
+    window.initFeatherIcons = initFeatherIcons;
   </script>
 </body>
 </html>
