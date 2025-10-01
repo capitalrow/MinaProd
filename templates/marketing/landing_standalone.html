@@ -1,0 +1,462 @@
+{% extends "marketing/marketing_base.html" %}
+
+{% block title %}Mina — AI Meeting Assistant & Live Transcription{% endblock %}
+
+{% block head_extra %}
+<meta name="description" content="Mina captures meetings in real time, turns speech into structured notes and actions, and drafts ready‑to‑send emails and follow‑ups.">
+<link rel="canonical" href="/">
+
+<!-- Open Graph / Twitter -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mina — AI Meeting Assistant & Live Transcription">
+<meta property="og:description" content="Capture, understand, and act — real-time transcription with action drafting and sharing.">
+<meta property="og:image" content="/static/brand/og.png">
+<meta property="og:url" content="/">
+<meta name="twitter:card" content="summary_large_image">
+{% endblock %}
+
+{% block content %}
+<div class="lp-content">
+  <!-- Navigation -->
+  <nav class="lp-nav" id="lpNav">
+    <div class="lp-nav-content">
+      <a href="/" class="lp-logo">Mina</a>
+      <ul class="lp-nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+      <a href="/app" class="lp-btn lp-btn-primary">Open the App</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="lp-hero">
+    <div class="lp-hero-content">
+      <div>
+        <h1 class="lp-fade-in-up">
+          Meetings that 
+          <span class="lp-gradient-text">write<br>themselves</span>.
+        </h1>
+        <p class="lp-fade-in-up delay-1">
+          Live transcription that turns into notes, action items, and ready‑to‑send emails. 
+          Mina captures what matters and drafts the follow‑ups for you.
+        </p>
+        <div class="lp-hero-buttons lp-fade-in-up delay-2">
+          <a href="/app" class="lp-btn lp-btn-primary lp-btn-lg">
+            <i data-feather="mic"></i>
+            Try Mina free
+          </a>
+          <a href="#features" class="lp-btn lp-btn-secondary lp-btn-lg">
+            <i data-feather="play"></i>
+            See how it works
+          </a>
+        </div>
+        
+        <!-- Waitlist Form -->
+        <form class="lp-fade-in-up delay-3" id="waitlistForm" style="display: flex; gap: var(--space-4); margin-top: var(--space-8); margin-bottom: var(--space-4);">
+          <input type="email" name="email" placeholder="you@company.com" required
+                 style="flex: 1; padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); color: var(--text-primary); font-size: var(--text-base);">
+          <button type="submit" class="lp-btn lp-btn-primary">Join waitlist</button>
+        </form>
+        <p class="lp-fade-in-up delay-4" style="font-size: var(--text-sm); color: var(--text-muted);">
+          No spam. We'll only email important updates.
+        </p>
+      </div>
+      
+      <!-- Step Cards -->
+      <div style="display: flex; flex-direction: column; gap: var(--space-6);" class="lp-scale-in">
+        <div class="lp-step-card">
+          <div class="lp-step-number">1</div>
+          <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); margin-bottom: var(--space-2);">Dictate.</h3>
+          <p style="color: var(--text-secondary); line-height: 1.6;">Speak freely—Mina captures in real time.</p>
+        </div>
+        <div class="lp-step-card">
+          <div class="lp-step-number">2</div>
+          <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); margin-bottom: var(--space-2);">Understand.</h3>
+          <p style="color: var(--text-secondary); line-height: 1.6;">We extract tasks, decisions, and owners.</p>
+        </div>
+        <div class="lp-step-card">
+          <div class="lp-step-number">3</div>
+          <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); margin-bottom: var(--space-2);">Act.</h3>
+          <p style="color: var(--text-secondary); line-height: 1.6;">Draft emails and shareable notes for one‑tap send.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="lp-section" id="features">
+    <div class="lp-section-container">
+      <h2 class="lp-reveal">Why teams choose Mina</h2>
+      <div class="lp-grid lp-stagger">
+        <div class="lp-card">
+          <div style="margin-bottom: var(--space-4);">
+            <i data-feather="mic" style="width: 32px; height: 32px; color: var(--blue-400);"></i>
+          </div>
+          <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); margin-bottom: var(--space-3); color: var(--text-primary);">Live transcription</h3>
+          <p style="color: var(--text-secondary); line-height: 1.6;">Low‑latency interim text with final refinement. Meetings, interviews, and dictation.</p>
+        </div>
+        
+        <div class="lp-card">
+          <div style="margin-bottom: var(--space-4);">
+            <i data-feather="mail" style="width: 32px; height: 32px; color: var(--cyan-400);"></i>
+          </div>
+          <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); margin-bottom: var(--space-3); color: var(--text-primary);">Actions & emails</h3>
+          <p style="color: var(--text-secondary); line-height: 1.6;">Turns decisions into drafts—ready to send via your connected email.</p>
+        </div>
+        
+        <div class="lp-card">
+          <div style="margin-bottom: var(--space-4);">
+            <i data-feather="folder" style="width: 32px; height: 32px; color: var(--purple-400);"></i>
+          </div>
+          <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); margin-bottom: var(--space-3); color: var(--text-primary);">Organized library</h3>
+          <p style="color: var(--text-secondary); line-height: 1.6;">Sessions auto‑saved with topics, speakers, and highlights you can search.</p>
+        </div>
+        
+        <div class="lp-card">
+          <div style="margin-bottom: var(--space-4);">
+            <i data-feather="shield" style="width: 32px; height: 32px; color: var(--green-400);"></i>
+          </div>
+          <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); margin-bottom: var(--space-3); color: var(--text-primary);">Secure by default</h3>
+          <p style="color: var(--text-secondary); line-height: 1.6;">Scoped access, encryption at rest, and export controls per session.</p>
+        </div>
+        
+        <div class="lp-card">
+          <div style="margin-bottom: var(--space-4);">
+            <i data-feather="monitor" style="width: 32px; height: 32px; color: var(--orange-400);"></i>
+          </div>
+          <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); margin-bottom: var(--space-3); color: var(--text-primary);">Works everywhere</h3>
+          <p style="color: var(--text-secondary); line-height: 1.6;">Web, mobile browsers, and desktop. No installs required.</p>
+        </div>
+        
+        <div class="lp-card">
+          <div style="margin-bottom: var(--space-4);">
+            <i data-feather="users" style="width: 32px; height: 32px; color: var(--pink-400);"></i>
+          </div>
+          <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); margin-bottom: var(--space-3); color: var(--text-primary);">Team‑ready</h3>
+          <p style="color: var(--text-secondary); line-height: 1.6;">Share sessions, @mention teammates, and track action history.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it Works -->
+  <section class="lp-section lp-section-alt" id="how">
+    <div class="lp-section-container">
+      <h2 class="lp-reveal">How Mina works</h2>
+      <div class="lp-grid lp-stagger">
+        <div class="lp-card">
+          <div style="width: 48px; height: 48px; border-radius: var(--radius-lg); background: linear-gradient(135deg, var(--blue-500), var(--cyan-400)); display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-4); color: white; font-weight: var(--font-bold); font-size: var(--text-xl);">1</div>
+          <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); margin-bottom: var(--space-3); color: var(--text-primary);">Capture</h3>
+          <p style="color: var(--text-secondary); line-height: 1.6;">Start a live session or upload audio. Mina streams interim text in ~250ms cadence.</p>
+        </div>
+        
+        <div class="lp-card">
+          <div style="width: 48px; height: 48px; border-radius: var(--radius-lg); background: linear-gradient(135deg, var(--purple-500), var(--pink-400)); display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-4); color: white; font-weight: var(--font-bold); font-size: var(--text-xl);">2</div>
+          <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); margin-bottom: var(--space-3); color: var(--text-primary);">Understand</h3>
+          <p style="color: var(--text-secondary); line-height: 1.6;">Detects tasks, owners, dates, and decisions from context—no rigid commands.</p>
+        </div>
+        
+        <div class="lp-card">
+          <div style="width: 48px; height: 48px; border-radius: var(--radius-lg); background: linear-gradient(135deg, var(--green-500), var(--emerald-400)); display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-4); color: white; font-weight: var(--font-bold); font-size: var(--text-xl);">3</div>
+          <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); margin-bottom: var(--space-3); color: var(--text-primary);">Draft</h3>
+          <p style="color: var(--text-secondary); line-height: 1.6;">Action cards propose emails, notes, and shares. You edit and approve.</p>
+        </div>
+        
+        <div class="lp-card">
+          <div style="width: 48px; height: 48px; border-radius: var(--radius-lg); background: linear-gradient(135deg, var(--orange-500), var(--red-400)); display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-4); color: white; font-weight: var(--font-bold); font-size: var(--text-xl);">4</div>
+          <h3 style="font-size: var(--text-xl); font-weight: var(--font-semibold); margin-bottom: var(--space-3); color: var(--text-primary);">Send & share</h3>
+          <p style="color: var(--text-secondary); line-height: 1.6;">Send via your connected email. Share a secure link with teammates.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="lp-section" id="pricing">
+    <div class="lp-section-container">
+      <h2 class="lp-reveal">Simple pricing</h2>
+      <p style="text-align: center; color: var(--text-secondary); margin-bottom: var(--space-16); font-size: var(--text-lg);" class="lp-reveal">Start free. Upgrade as you grow.</p>
+      <div class="lp-grid lp-stagger">
+        <div class="lp-card" style="text-align: center;">
+          <h3 style="font-size: var(--text-2xl); font-weight: var(--font-bold); margin-bottom: var(--space-4); color: var(--text-primary);">Free</h3>
+          <div style="font-size: var(--text-5xl); font-weight: var(--font-bold); margin-bottom: var(--space-6); color: var(--text-primary);">
+            £0<span style="font-size: var(--text-lg); font-weight: var(--font-normal); color: var(--text-secondary);">/mo</span>
+          </div>
+          <ul style="list-style: none; padding: 0; margin-bottom: var(--space-8); text-align: left;">
+            <li style="padding: var(--space-2) 0; color: var(--text-secondary);"><i data-feather="check" style="width: 20px; height: 20px; color: var(--green-400); vertical-align: middle;"></i> 60 mins / month</li>
+            <li style="padding: var(--space-2) 0; color: var(--text-secondary);"><i data-feather="check" style="width: 20px; height: 20px; color: var(--green-400); vertical-align: middle;"></i> Live transcription</li>
+            <li style="padding: var(--space-2) 0; color: var(--text-secondary);"><i data-feather="check" style="width: 20px; height: 20px; color: var(--green-400); vertical-align: middle;"></i> Basic exports</li>
+          </ul>
+          <a href="/app" class="lp-btn lp-btn-primary" style="width: 100%;">Get started</a>
+        </div>
+        
+        <div class="lp-card" style="text-align: center; border-color: var(--blue-500); background: rgba(99, 102, 241, 0.08); transform: scale(1.05);">
+          <div style="background: linear-gradient(135deg, var(--blue-500), var(--cyan-400)); color: white; padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); display: inline-block; margin-bottom: var(--space-4); font-size: var(--text-sm); font-weight: var(--font-semibold);">POPULAR</div>
+          <h3 style="font-size: var(--text-2xl); font-weight: var(--font-bold); margin-bottom: var(--space-4); color: var(--text-primary);">Pro</h3>
+          <div style="font-size: var(--text-5xl); font-weight: var(--font-bold); margin-bottom: var(--space-6); color: var(--text-primary);">
+            £15<span style="font-size: var(--text-lg); font-weight: var(--font-normal); color: var(--text-secondary);">/mo</span>
+          </div>
+          <ul style="list-style: none; padding: 0; margin-bottom: var(--space-8); text-align: left;">
+            <li style="padding: var(--space-2) 0; color: var(--text-secondary);"><i data-feather="check" style="width: 20px; height: 20px; color: var(--green-400); vertical-align: middle;"></i> Unlimited sessions</li>
+            <li style="padding: var(--space-2) 0; color: var(--text-secondary);"><i data-feather="check" style="width: 20px; height: 20px; color: var(--green-400); vertical-align: middle;"></i> Action drafting</li>
+            <li style="padding: var(--space-2) 0; color: var(--text-secondary);"><i data-feather="check" style="width: 20px; height: 20px; color: var(--green-400); vertical-align: middle;"></i> Team sharing</li>
+          </ul>
+          <a href="/app" class="lp-btn lp-btn-primary" style="width: 100%;">Upgrade</a>
+        </div>
+        
+        <div class="lp-card" style="text-align: center;">
+          <h3 style="font-size: var(--text-2xl); font-weight: var(--font-bold); margin-bottom: var(--space-4); color: var(--text-primary);">Team</h3>
+          <div style="font-size: var(--text-5xl); font-weight: var(--font-bold); margin-bottom: var(--space-6); color: var(--text-primary);">Custom</div>
+          <ul style="list-style: none; padding: 0; margin-bottom: var(--space-8); text-align: left;">
+            <li style="padding: var(--space-2) 0; color: var(--text-secondary);"><i data-feather="check" style="width: 20px; height: 20px; color: var(--green-400); vertical-align: middle;"></i> SAML/SSO</li>
+            <li style="padding: var(--space-2) 0; color: var(--text-secondary);"><i data-feather="check" style="width: 20px; height: 20px; color: var(--green-400); vertical-align: middle;"></i> Admin controls</li>
+            <li style="padding: var(--space-2) 0; color: var(--text-secondary);"><i data-feather="check" style="width: 20px; height: 20px; color: var(--green-400); vertical-align: middle;"></i> Priority support</li>
+          </ul>
+          <a href="#contact" class="lp-btn lp-btn-secondary" style="width: 100%;">Contact sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="lp-section lp-section-alt" id="faq">
+    <div class="lp-section-container">
+      <h2 class="lp-reveal">Frequently asked</h2>
+      <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-4);" class="lp-stagger">
+        <div class="lp-card faq-item" style="cursor: pointer;">
+          <div class="faq-question" style="font-weight: var(--font-semibold); color: var(--text-primary); user-select: none;">
+            <i data-feather="chevron-right" style="width: 20px; height: 20px; vertical-align: middle; transition: transform 0.3s ease;"></i>
+            How is Mina different?
+          </div>
+          <div class="faq-answer" style="color: var(--text-secondary); margin-top: var(--space-3); line-height: 1.6; display: none;">
+            Mina doesn't stop at transcription—your follow‑ups are drafted as you speak.
+          </div>
+        </div>
+        
+        <div class="lp-card faq-item" style="cursor: pointer;">
+          <div class="faq-question" style="font-weight: var(--font-semibold); color: var(--text-primary); user-select: none;">
+            <i data-feather="chevron-right" style="width: 20px; height: 20px; vertical-align: middle; transition: transform 0.3s ease;"></i>
+            Is my data private?
+          </div>
+          <div class="faq-answer" style="color: var(--text-secondary); margin-top: var(--space-3); line-height: 1.6; display: none;">
+            Yes. Scopes per session, encryption at rest, and exports whenever you want.
+          </div>
+        </div>
+        
+        <div class="lp-card faq-item" style="cursor: pointer;">
+          <div class="faq-question" style="font-weight: var(--font-semibold); color: var(--text-primary); user-select: none;">
+            <i data-feather="chevron-right" style="width: 20px; height: 20px; vertical-align: middle; transition: transform 0.3s ease;"></i>
+            Do you support teams?
+          </div>
+          <div class="faq-answer" style="color: var(--text-secondary); margin-top: var(--space-3); line-height: 1.6; display: none;">
+            Yes—shared sessions, mentions, and admin controls are built‑in.
+          </div>
+        </div>
+        
+        <div class="lp-card faq-item" style="cursor: pointer;">
+          <div class="faq-question" style="font-weight: var(--font-semibold); color: var(--text-primary); user-select: none;">
+            <i data-feather="chevron-right" style="width: 20px; height: 20px; vertical-align: middle; transition: transform 0.3s ease;"></i>
+            Which languages are supported?
+          </div>
+          <div class="faq-answer" style="color: var(--text-secondary); margin-top: var(--space-3); line-height: 1.6; display: none;">
+            English at launch; more languages on the roadmap.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="lp-section">
+    <div class="lp-section-container" style="text-align: center;">
+      <h2 class="lp-reveal">Join the waitlist</h2>
+      <p class="lp-reveal" style="color: var(--text-secondary); margin-bottom: var(--space-8); font-size: var(--text-lg);">
+        Be the first to experience Mina. Enter your email to get early access.
+      </p>
+      <form class="lp-reveal" id="waitlistForm2" style="display: flex; gap: var(--space-4); max-width: 500px; margin: 0 auto;">
+        <input type="email" name="email" placeholder="you@example.com" required
+               style="flex: 1; padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); color: var(--text-primary); font-size: var(--text-base);">
+        <button type="submit" class="lp-btn lp-btn-primary">Join</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="lp-footer">
+    <div class="lp-section-container">
+      <p>© 2025 Mina. All rights reserved.</p>
+      <p>
+        <a href="/privacy">Privacy</a> • 
+        <a href="/terms">Terms</a> • 
+        <a href="#top">Back to top</a>
+      </p>
+    </div>
+  </footer>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Landing Page Interactions
+  class LandingPage {
+    constructor() {
+      this.init();
+    }
+    
+    init() {
+      this.setupScrollReveal();
+      this.setupStaggeredAnimations();
+      this.setupSmoothScrolling();
+      this.setupNavScroll();
+      this.setupFAQ();
+      this.setupWaitlistForms();
+    }
+    
+    setupScrollReveal() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -100px 0px'
+      });
+      
+      document.querySelectorAll('.lp-reveal').forEach((el) => {
+        observer.observe(el);
+      });
+    }
+    
+    setupStaggeredAnimations() {
+      const staggerObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate');
+          }
+        });
+      }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      });
+      
+      document.querySelectorAll('.lp-stagger').forEach((grid) => {
+        staggerObserver.observe(grid);
+      });
+    }
+    
+    setupSmoothScrolling() {
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            const headerOffset = 80;
+            const elementPosition = target.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+            
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: 'smooth'
+            });
+          }
+        });
+      });
+    }
+    
+    setupNavScroll() {
+      const nav = document.getElementById('lpNav');
+      let lastScroll = 0;
+      
+      window.addEventListener('scroll', () => {
+        const currentScroll = window.pageYOffset;
+        
+        if (currentScroll > 50) {
+          nav.classList.add('scrolled');
+        } else {
+          nav.classList.remove('scrolled');
+        }
+        
+        lastScroll = currentScroll;
+      }, { passive: true });
+    }
+    
+    setupFAQ() {
+      document.querySelectorAll('.faq-item').forEach((item) => {
+        const question = item.querySelector('.faq-question');
+        const answer = item.querySelector('.faq-answer');
+        const icon = question.querySelector('i');
+        
+        question.addEventListener('click', () => {
+          const isOpen = answer.style.display === 'block';
+          
+          // Close all other FAQs
+          document.querySelectorAll('.faq-answer').forEach((a) => {
+            a.style.display = 'none';
+          });
+          document.querySelectorAll('.faq-question i').forEach((i) => {
+            i.style.transform = 'rotate(0deg)';
+          });
+          
+          // Toggle current FAQ
+          if (!isOpen) {
+            answer.style.display = 'block';
+            icon.style.transform = 'rotate(90deg)';
+          }
+        });
+      });
+    }
+    
+    setupWaitlistForms() {
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const email = formData.get('email');
+        
+        try {
+          const response = await fetch('/api/waitlist', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+          });
+          
+          if (response.ok) {
+            if (window.CrownToast) {
+              CrownToast.show('Thanks for joining! We\'ll be in touch soon.', 'success');
+            } else {
+              alert('Thanks for joining! We\'ll be in touch soon.');
+            }
+            e.target.reset();
+          } else {
+            if (window.CrownToast) {
+              CrownToast.show('Something went wrong. Please try again.', 'error');
+            } else {
+              alert('Something went wrong. Please try again.');
+            }
+          }
+        } catch (error) {
+          if (window.CrownToast) {
+            CrownToast.show('Something went wrong. Please try again.', 'error');
+          } else {
+            alert('Something went wrong. Please try again.');
+          }
+        }
+      };
+      
+      document.getElementById('waitlistForm')?.addEventListener('submit', handleSubmit);
+      document.getElementById('waitlistForm2')?.addEventListener('submit', handleSubmit);
+    }
+  }
+  
+  // Initialize when DOM is loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    new LandingPage();
+  });
+</script>
+{% endblock %}

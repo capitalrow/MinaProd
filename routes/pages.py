@@ -8,7 +8,7 @@ pages_bp = Blueprint("pages", __name__)
 def index():
     if current_user.is_authenticated:
         return redirect(url_for("dashboard.index"))
-    return render_template("marketing/landing.html")
+    return render_template("marketing/landing_standalone.html")
 
 @pages_bp.route("/app")
 def app():
