@@ -9,6 +9,7 @@ from models import db, Meeting, Session, Task, Participant, Analytics, Workspace
 from services.task_extraction_service import task_extraction_service
 from services.meeting_metadata_service import meeting_metadata_service
 from services.analytics_service import analytics_service
+from middleware.cache_decorator import cache_response, invalidate_cache, invalidate_meeting_cache
 from datetime import datetime
 import asyncio
 import json
@@ -19,6 +20,7 @@ api_meetings_bp = Blueprint('api_meetings', __name__, url_prefix='/api/meetings'
 
 
 @api_meetings_bp.route('/', methods=['GET'])
+@cache_response(ttl=300, prefix='session')  # 5 min cache for meeting lists
 @login_required
 def list_meetings():
     """Get list of meetings for current user's workspace."""
@@ -69,6 +71,7 @@ def list_meetings():
 
 
 @api_meetings_bp.route('/<int:meeting_id>', methods=['GET'])
+@cache_response(ttl=600, prefix='session')  # 10 min cache for meeting details
 @login_required
 def get_meeting(meeting_id):
     """Get detailed meeting information."""
@@ -103,6 +106,8 @@ def get_meeting(meeting_id):
 
 
 @api_meetings_bp.route('/', methods=['POST'])
+@invalidate_cache(prefix='session')  # Invalidate meeting list cache
+@invalidate_cache(prefix='analytics')  # Invalidate analytics cache
 @login_required
 def create_meeting():
     """Create a new meeting."""
@@ -172,6 +177,9 @@ def update_meeting(meeting_id):
         
         meeting.updated_at = datetime.now()
         db.session.commit()
+        
+        # Invalidate cache for this meeting
+        invalidate_meeting_cache(meeting_id)
         
         return jsonify({
             'success': True,
