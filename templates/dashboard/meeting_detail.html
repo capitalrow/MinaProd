@@ -1,92 +1,170 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ meeting.title or 'Meeting' }} - Mina</title>
-    
-    <!-- Core CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-    
-    <!-- Premium Design System -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-premium-system.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-meeting.css') }}">
-    
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
-    <!-- Feather Icons removed - using Font Awesome consistently -->
-    <script src="{{ url_for('static', filename='js/mina-animated-logo.js') }}"></script>
+{% extends "base.html" %}
+
+{% block title %}{{ meeting.title or 'Meeting' }} - {{ super() }}{% endblock %}
+
+{% block head %}
+    <!-- Crown+ Design System -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-design-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-components.css') }}">
     
     <style>
-        /* Three-pane layout styles */
-        .three-pane-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 2rem;
-            height: calc(100vh - 200px);
-            overflow: hidden;
+        .meeting-detail-container {
+            min-height: 100vh;
+            background: var(--bg-primary);
+            padding: var(--spacing-6) var(--spacing-4);
         }
         
-        .pane {
-            background: var(--surface-1);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            overflow-y: auto;
+        .meeting-header {
+            margin-bottom: var(--spacing-6);
+        }
+        
+        .meeting-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            margin-bottom: var(--spacing-4);
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+        
+        .meeting-breadcrumb a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+        
+        .meeting-breadcrumb a:hover {
+            color: var(--text-accent);
+        }
+        
+        .meeting-title-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-4);
+        }
+        
+        .meeting-title {
+            font-size: var(--font-size-3xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-2);
+        }
+        
+        .meeting-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-4);
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+        
+        .meeting-meta span {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+        }
+        
+        .meeting-actions {
+            display: flex;
+            gap: var(--spacing-2);
+        }
+        
+        .content-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: var(--spacing-6);
+        }
+        
+        .main-content {
             display: flex;
             flex-direction: column;
+            gap: var(--spacing-6);
         }
         
-        .pane-header {
+        .content-card {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-6);
+        }
+        
+        .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: var(--spacing-5);
+            padding-bottom: var(--spacing-4);
+            border-bottom: 1px solid var(--border-subtle);
         }
         
-        .pane-title {
-            font-size: 1.25rem;
-            font-weight: 600;
+        .card-title {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
             color: var(--text-primary);
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: var(--spacing-2);
         }
         
-        .pane-content {
-            flex: 1;
+        .card-actions {
+            display: flex;
+            gap: var(--spacing-2);
+        }
+        
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+        }
+        
+        .icon-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border-interactive);
+        }
+        
+        /* Transcript */
+        .transcript-content {
+            max-height: 600px;
             overflow-y: auto;
+            padding: var(--spacing-2);
         }
         
-        /* Transcript pane */
         .transcript-segment {
-            margin-bottom: 1.5rem;
-            padding: 1rem;
-            background: var(--surface-2);
-            border-radius: 12px;
-            border-left: 4px solid var(--primary);
+            margin-bottom: var(--spacing-4);
+            padding: var(--spacing-4);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border-left: 3px solid var(--color-accent-vibrant);
         }
         
         .segment-meta {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.75rem;
-            font-size: 0.875rem;
+            margin-bottom: var(--spacing-3);
+            font-size: var(--font-size-sm);
         }
         
         .speaker-name {
-            font-weight: 600;
-            color: var(--primary);
+            font-weight: var(--font-weight-semibold);
+            color: var(--text-accent);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
         }
         
         .segment-time {
             color: var(--text-tertiary);
-            font-size: 0.75rem;
+            font-size: var(--font-size-xs);
         }
         
         .segment-text {
@@ -94,21 +172,7 @@
             line-height: 1.6;
         }
         
-        /* Summary pane */
-        .summary-section {
-            margin-bottom: 2rem;
-        }
-        
-        .summary-section h3 {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
+        /* Summary */
         .summary-list {
             list-style: none;
             padding: 0;
@@ -116,514 +180,406 @@
         }
         
         .summary-item {
-            padding: 0.75rem;
-            background: var(--surface-2);
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-            color: var(--text-secondary);
+            padding: var(--spacing-3);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-2);
+            color: var(--text-primary);
             line-height: 1.5;
+            display: flex;
+            gap: var(--spacing-3);
         }
         
         .summary-item::before {
             content: '•';
-            color: var(--primary);
-            margin-right: 0.5rem;
-            font-weight: bold;
+            color: var(--color-accent-vibrant);
+            font-weight: var(--font-weight-bold);
         }
         
-        .meeting-stats {
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-6);
+        }
+        
+        .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
+            gap: var(--spacing-3);
         }
         
         .stat-item {
-            background: var(--surface-2);
-            padding: 1rem;
-            border-radius: 12px;
+            padding: var(--spacing-4);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
             text-align: center;
         }
         
         .stat-value {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--primary);
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--text-accent);
+            margin-bottom: var(--spacing-1);
         }
         
         .stat-label {
-            font-size: 0.875rem;
-            color: var(--text-tertiary);
-            margin-top: 0.25rem;
+            font-size: var(--font-size-xs);
+            color: var(--text-secondary);
         }
         
-        /* Tasks pane */
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-3);
+        }
+        
         .task-item {
-            background: var(--surface-2);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            transition: all 0.3s ease;
+            padding: var(--spacing-4);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            transition: all var(--transition-normal);
         }
         
         .task-item:hover {
-            background: var(--surface-3);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            background: var(--bg-tertiary);
+            border-color: var(--border-interactive);
         }
         
         .task-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 0.75rem;
+            margin-bottom: var(--spacing-2);
         }
         
         .task-title {
-            font-weight: 600;
+            font-weight: var(--font-weight-medium);
             color: var(--text-primary);
-            font-size: 0.9rem;
-            line-height: 1.4;
+            margin-bottom: var(--spacing-1);
         }
         
-        .task-type {
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.25rem 0.5rem;
-            border-radius: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .task-badge {
+            padding: var(--spacing-1) var(--spacing-2);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
         }
         
-        .task-type-decision {
-            background: rgba(16, 185, 129, 0.1);
-            color: #10b981;
+        .task-badge.todo {
+            background: var(--status-warning-bg);
+            color: var(--status-warning);
         }
         
-        .task-type-todo {
-            background: rgba(245, 158, 11, 0.1);
-            color: #f59e0b;
+        .task-badge.in-progress {
+            background: var(--status-info-bg);
+            color: var(--status-info);
         }
         
-        .task-type-risk {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
+        .task-badge.completed {
+            background: var(--status-success-bg);
+            color: var(--status-success);
         }
         
-        .task-type-task {
-            background: rgba(99, 102, 241, 0.1);
-            color: #6366f1;
-        }
-        
-        .task-content {
+        .task-description {
+            font-size: var(--font-size-sm);
             color: var(--text-secondary);
-            font-size: 0.875rem;
-            line-height: 1.5;
-            margin-bottom: 0.75rem;
+            margin-bottom: var(--spacing-2);
         }
         
         .task-meta {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.75rem;
+            gap: var(--spacing-3);
+            font-size: var(--font-size-xs);
             color: var(--text-tertiary);
         }
         
-        .task-speaker {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-        
-        .task-time {
-            font-weight: 500;
-        }
-        
-        /* Empty states */
-        .empty-pane {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 200px;
-            color: var(--text-tertiary);
+        .empty-state {
             text-align: center;
+            padding: var(--spacing-8) var(--spacing-4);
+            color: var(--text-tertiary);
         }
         
         .empty-icon {
-            width: 48px;
-            height: 48px;
-            margin-bottom: 1rem;
+            font-size: 48px;
+            margin-bottom: var(--spacing-3);
             opacity: 0.5;
         }
         
-        /* Responsive design */
-        @media (max-width: 1200px) {
-            .three-pane-layout {
+        /* Mobile responsive */
+        @media (max-width: 1024px) {
+            .content-layout {
                 grid-template-columns: 1fr;
-                gap: 1rem;
-                height: auto;
-            }
-            
-            .pane {
-                height: 400px;
             }
         }
         
         @media (max-width: 768px) {
-            .three-pane-layout {
-                gap: 0.5rem;
+            .meeting-detail-container {
+                padding: var(--spacing-4) var(--spacing-3);
             }
             
-            .pane {
-                padding: 1rem;
-                height: 350px;
+            .meeting-title {
+                font-size: var(--font-size-2xl);
             }
             
-            .meeting-stats {
+            .meeting-title-section {
+                flex-direction: column;
+                gap: var(--spacing-4);
+            }
+            
+            .stats-grid {
                 grid-template-columns: 1fr;
             }
         }
-    </style>
-</head>
-<body>
-    <!-- Dark Mode Toggle -->
-    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
-        <i data-feather="sun" id="themeIcon"></i>
-    </button>
-
-    <div class="dashboard-layout">
-        <aside class="sidebar">
-            <div class="sidebar-logo">
-                <div class="sidebar-logo-container">
-                    <svg class="sidebar-logo-icon mina-logo-size-lg mina-logo-sidebar" width="44" height="44" aria-label="Mina logo">
-                        <use href="#minaEnhancedLogo"/>
-                        <!-- Fallback for no-JS/failed-load -->
-                        <g class="mina-fallback" style="display: none;">
-                            <defs>
-                                <linearGradient id="meetingDetailFallbackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="var(--mina-primary, #6366F1)"/>
-                                    <stop offset="100%" stop-color="var(--mina-secondary, #8B5CF6)"/>
-                                </linearGradient>
-                            </defs>
-                            <rect x="9" y="13" width="6" height="22" rx="3" fill="url(#meetingDetailFallbackGrad)"/>
-                            <rect x="19" y="17" width="6" height="16" rx="3" fill="url(#meetingDetailFallbackGrad)"/>
-                            <rect x="29" y="13" width="6" height="22" rx="3" fill="url(#meetingDetailFallbackGrad)"/>
-                            <rect x="9" y="37" width="26" height="3" rx="1.5" fill="url(#meetingDetailFallbackGrad)"/>
-                        </g>
-                    </svg>
-                    <div class="sidebar-logo-text">Mina</div>
-                </div>
-            </div>
-            
-            <nav>
-                <ul class="nav-menu">
-                    <li class="nav-item">
-                        <a href="{{ url_for('dashboard.index') }}" class="nav-link">
-                            <i data-feather="home"></i>
-                            Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('pages.live') }}" class="nav-link">
-                            <i data-feather="mic"></i>
-                            Live Meeting
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('dashboard.meetings') }}" class="nav-link active">
-                            <i data-feather="users"></i>
-                            Meetings
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('dashboard.tasks') }}" class="nav-link">
-                            <i data-feather="check-square"></i>
-                            Tasks
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('dashboard.analytics') }}" class="nav-link">
-                            <i data-feather="bar-chart-2"></i>
-                            Analytics
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-            
-            <div class="user-info">
-                <div class="user-name">{{ current_user.first_name or current_user.username }}</div>
-                <div class="user-email">{{ current_user.email }}</div>
-                <a href="{{ url_for('auth.logout') }}" class="nav-link">
-                    <i data-feather="log-out"></i>
-                    Sign Out
-                </a>
-            </div>
-        </aside>
         
-        <main class="main-content">
-            <!-- Meeting Header -->
-            <header class="meeting-header">
-                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: var(--space-4);">
-                    <a href="{{ url_for('dashboard.meetings') }}" class="meeting-action-btn">
-                        <i data-feather="arrow-left"></i>
-                        Back to Meetings
-                    </a>
-                </div>
-                <h1 class="meeting-title">{{ meeting.title or 'Untitled Meeting' }}</h1>
-                <div class="meeting-meta">
-                    <div class="meeting-meta-item">
-                        <div class="meeting-meta-icon">📅</div>
-                        <span>{{ meeting.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
-                    </div>
-                    {% if summary.duration %}
-                    <div class="meeting-meta-item">
-                        <div class="meeting-meta-icon">⏱️</div>
-                        <span>{{ summary.duration }}</span>
-                    </div>
-                    {% endif %}
-                    {% if summary.participants %}
-                    <div class="meeting-meta-item">
-                        <div class="meeting-meta-icon">👥</div>
-                        <span>{{ summary.participants|length }} participants</span>
-                    </div>
-                    {% endif %}
-                </div>
-                <p class="meeting-description">Detailed insights and analysis from your meeting session with advanced AI-powered transcription and action item extraction.</p>
-                <div class="meeting-actions">
-                    <button class="meeting-action-btn primary" onclick="exportMeeting()">
-                        <i data-feather="download"></i>
-                        Export
-                    </button>
-                    <button class="meeting-action-btn" onclick="shareMeeting()">
-                        <i data-feather="share-2"></i>
-                        Share
-                    </button>
-                    <button class="meeting-action-btn" onclick="printMeeting()">
-                        <i data-feather="printer"></i>
-                        Print
-                    </button>
-                </div>
-            </header>
-            
-            <!-- Premium Meeting Content -->
-            <div class="meeting-content">
-                <!-- Transcript Section -->
-                <div class="meeting-transcript">
-                    <div class="meeting-transcript-header">
-                        <h2 class="meeting-transcript-title">
-                            <i data-feather="file-text"></i>
-                            Live Transcript
-                        </h2>
-                        <div class="meeting-transcript-controls">
-                            <button class="meeting-transcript-btn active">All</button>
-                            <button class="meeting-transcript-btn">Search</button>
-                            <button class="meeting-transcript-btn">{{ segments|length }} segments</button>
-                        </div>
-                    </div>
-                    <div class="pane-content">
-                        {% if segments %}
-                            {% for segment in segments %}
-                            <div class="transcript-segment">
-                                <div class="segment-meta">
-                                    <span class="speaker-name">
-                                        <i data-feather="user"></i>
-                                        Unknown Speaker
-                                    </span>
-                                    <span class="segment-time">
-                                        {{ segment.start_time_formatted if hasattr(segment, 'start_time_formatted') else 'No timestamp' }}
-                                    </span>
-                                </div>
-                                <div class="segment-text">{{ segment.text or 'No text available' }}</div>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="empty-pane">
-                                <i data-feather="mic-off" class="empty-icon"></i>
-                                <h3>No transcript available</h3>
-                                <p>This meeting doesn't have a transcript yet.</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <!-- Middle Pane: Summary -->
-                <div class="pane">
-                    <div class="pane-header">
-                        <h2 class="pane-title">
-                            <i data-feather="brain"></i>
-                            AI Summary
-                        </h2>
-                        <span class="badge">{{ summary.word_count }} words</span>
-                    </div>
-                    <div class="pane-content">
-                        <!-- Meeting Stats -->
-                        <div class="meeting-stats">
-                            <div class="stat-item">
-                                <div class="stat-value">{{ summary.duration }}</div>
-                                <div class="stat-label">Duration</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value">{{ summary.participants|length }}</div>
-                                <div class="stat-label">Participants</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Key Points -->
-                        {% if summary.key_points %}
-                        <div class="summary-section">
-                            <h3>
-                                <i data-feather="key"></i>
-                                Key Points
-                            </h3>
-                            <ul class="summary-list">
-                                {% for point in summary.key_points %}
-                                <li class="summary-item">{{ point }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                        {% endif %}
-                        
-                        <!-- Decisions -->
-                        {% if summary.decisions %}
-                        <div class="summary-section">
-                            <h3>
-                                <i data-feather="check-circle"></i>
-                                Decisions Made
-                            </h3>
-                            <ul class="summary-list">
-                                {% for decision in summary.decisions %}
-                                <li class="summary-item">{{ decision.content }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                        {% endif %}
-                        
-                        <!-- Participants -->
-                        {% if summary.participants %}
-                        <div class="summary-section">
-                            <h3>
-                                <i data-feather="users"></i>
-                                Participants
-                            </h3>
-                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                                {% for participant in summary.participants %}
-                                <span class="badge" style="background: var(--surface-3); color: var(--text-primary);">
-                                    {{ participant }}
-                                </span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <!-- Right Pane: Tasks & Actions -->
-                <div class="pane">
-                    <div class="pane-header">
-                        <h2 class="pane-title">
-                            <i data-feather="check-square"></i>
-                            Tasks & Actions
-                        </h2>
-                        <span class="badge">{{ (markers|length) + (tasks|length) }}</span>
-                    </div>
-                    <div class="pane-content">
-                        <!-- Markers from live recording -->
-                        {% for marker in markers %}
-                        <div class="task-item">
-                            <div class="task-header">
-                                <div class="task-title">{{ marker.content[:60] }}{% if marker.content|length > 60 %}...{% endif %}</div>
-                                <span class="task-type task-type-{{ marker.type }}">{{ marker.type }}</span>
-                            </div>
-                            {% if marker.content|length > 60 %}
-                            <div class="task-content">{{ marker.content }}</div>
-                            {% endif %}
-                            <div class="task-meta">
-                                {% if marker.speaker %}
-                                <span class="task-speaker">
-                                    <i data-feather="user"></i>
-                                    {{ marker.speaker }}
-                                </span>
-                                {% endif %}
-                                <span class="task-time">{{ marker.timestamp.strftime('%I:%M %p') if hasattr(marker, 'timestamp') and marker.timestamp else 'No time' }}</span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                        
-                        <!-- Regular tasks -->
-                        {% for task in tasks %}
-                        <div class="task-item">
-                            <div class="task-header">
-                                <div class="task-title">{{ task.title }}</div>
-                                <span class="task-type task-type-task">task</span>
-                            </div>
-                            {% if task.description %}
-                            <div class="task-content">{{ task.description }}</div>
-                            {% endif %}
-                            <div class="task-meta">
-                                <span>Priority: {{ task.priority or 'Medium' }}</span>
-                                <span class="task-time">{{ task.created_at.strftime('%m/%d') if task.created_at else 'No date' }}</span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                        
-                        {% if not markers and not tasks %}
-                        <div class="empty-pane">
-                            <i data-feather="inbox" class="empty-icon"></i>
-                            <h3>No tasks or actions</h3>
-                            <p>No action items were identified in this meeting.</p>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Scripts -->
-    <script>
-        // Initialize Feather icons
-        if (typeof feather !== 'undefined') {
-            // Note: Using Font Awesome icons consistently - no initialization needed
-        }
-
-        // Dark mode toggle
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        const currentTheme = localStorage.getItem('mina-theme') || 'light';
-
-        document.documentElement.setAttribute('data-theme', currentTheme);
-        updateThemeIcon(currentTheme);
-
-        themeToggle.addEventListener('click', () => {
-            const newTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('mina-theme', newTheme);
-            updateThemeIcon(newTheme);
-        });
-
-        function updateThemeIcon(theme) {
-            if (themeIcon) {
-                themeIcon.setAttribute('data-feather', theme === 'light' ? 'moon' : 'sun');
-                if (typeof feather !== 'undefined') {
-                    // Note: Using Font Awesome icons consistently - no initialization needed
-                }
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
             }
         }
+    </style>
+{% endblock %}
 
-        // Export functionality
-        function exportMeeting() {
-            // TODO: Implement meeting export functionality
-            alert('Export functionality coming soon!');
-        }
+{% block content %}
+<div class="meeting-detail-container">
+    <!-- Breadcrumb -->
+    <div class="meeting-breadcrumb">
+        <a href="{{ url_for('dashboard.index') }}">
+            <i data-feather="home" style="width: 14px; height: 14px;"></i>
+        </a>
+        <i data-feather="chevron-right" style="width: 14px; height: 14px;"></i>
+        <a href="{{ url_for('dashboard.meetings') }}">Meetings</a>
+        <i data-feather="chevron-right" style="width: 14px; height: 14px;"></i>
+        <span>{{ meeting.title or 'Meeting Detail' }}</span>
+    </div>
+    
+    <!-- Meeting Header -->
+    <div class="meeting-header">
+        <div class="meeting-title-section">
+            <div>
+                <h1 class="meeting-title">{{ meeting.title or 'Untitled Meeting' }}</h1>
+                <div class="meeting-meta">
+                    <span>
+                        <i data-feather="calendar" style="width: 14px; height: 14px;"></i>
+                        {{ meeting.created_at.strftime('%B %d, %Y') }}
+                    </span>
+                    <span>
+                        <i data-feather="clock" style="width: 14px; height: 14px;"></i>
+                        {{ meeting.created_at.strftime('%I:%M %p') }}
+                    </span>
+                    {% if meeting.duration_seconds %}
+                    <span>
+                        <i data-feather="watch" style="width: 14px; height: 14px;"></i>
+                        {{ (meeting.duration_seconds // 60)|int }} minutes
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="meeting-actions">
+                <button class="btn">
+                    <i data-feather="download" style="width: 16px; height: 16px;"></i>
+                    <span>Export</span>
+                </button>
+                <button class="btn btn-danger">
+                    <i data-feather="trash-2" style="width: 16px; height: 16px;"></i>
+                    <span>Delete</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Content Layout -->
+    <div class="content-layout">
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Transcript -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i data-feather="file-text" style="width: 20px; height: 20px;"></i>
+                        Transcript
+                    </div>
+                    <div class="card-actions">
+                        <button class="icon-btn" title="Copy transcript" onclick="copyTranscript()">
+                            <i data-feather="copy" style="width: 16px; height: 16px;"></i>
+                        </button>
+                        <button class="icon-btn" title="Download transcript" onclick="downloadTranscript()">
+                            <i data-feather="download" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="transcript-content" id="transcriptContent">
+                    {% if segments %}
+                        {% for segment in segments %}
+                        <div class="transcript-segment">
+                            <div class="segment-meta">
+                                <div class="speaker-name">
+                                    <i data-feather="user" style="width: 14px; height: 14px;"></i>
+                                    {{ segment.speaker or 'Speaker' }}
+                                </div>
+                                <div class="segment-time">
+                                    {{ segment.timestamp.strftime('%H:%M:%S') if segment.timestamp else '00:00:00' }}
+                                </div>
+                            </div>
+                            <div class="segment-text">{{ segment.text }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i data-feather="file-text"></i>
+                        </div>
+                        <p>No transcript available</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Summary -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i data-feather="bookmark" style="width: 20px; height: 20px;"></i>
+                        Meeting Summary
+                    </div>
+                </div>
+                {% if meeting.summary %}
+                <ul class="summary-list">
+                    {% for item in meeting.summary.split('\n') if item.strip() %}
+                    <li class="summary-item">{{ item.strip() }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i data-feather="bookmark"></i>
+                    </div>
+                    <p>Summary not yet generated</p>
+                    <button class="btn btn-primary" style="margin-top: var(--spacing-4);">
+                        <i data-feather="zap" style="width: 16px; height: 16px;"></i>
+                        <span>Generate Summary</span>
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Stats -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i data-feather="bar-chart-2" style="width: 20px; height: 20px;"></i>
+                        Statistics
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ segments|length if segments else 0 }}</div>
+                        <div class="stat-label">Segments</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="wordCount">0</div>
+                        <div class="stat-label">Words</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ (meeting.duration_seconds // 60)|int if meeting.duration_seconds else 0 }}</div>
+                        <div class="stat-label">Minutes</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">1</div>
+                        <div class="stat-label">Speakers</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tasks -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i data-feather="check-square" style="width: 20px; height: 20px;"></i>
+                        Action Items
+                    </div>
+                </div>
+                {% if tasks %}
+                <div class="task-list">
+                    {% for task in tasks %}
+                    <div class="task-item">
+                        <div class="task-header">
+                            <div class="task-title">{{ task.title }}</div>
+                            <div class="task-badge {{ task.status }}">{{ task.status|replace('_', ' ')|title }}</div>
+                        </div>
+                        {% if task.description %}
+                        <div class="task-description">{{ task.description }}</div>
+                        {% endif %}
+                        <div class="task-meta">
+                            {% if task.due_date %}
+                            <span>
+                                <i data-feather="calendar" style="width: 12px; height: 12px;"></i>
+                                {{ task.due_date.strftime('%b %d') }}
+                            </span>
+                            {% endif %}
+                            <span>
+                                <i data-feather="flag" style="width: 12px; height: 12px;"></i>
+                                {{ task.priority|title }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i data-feather="check-square"></i>
+                    </div>
+                    <p>No action items found</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-        // Share functionality
-        function shareMeeting() {
-            // TODO: Implement meeting sharing functionality
-            alert('Share functionality coming soon!');
-        }
-    </script>
-</body>
-</html>
+{% block scripts %}
+<script>
+// Initialize Feather icons
+if (typeof feather !== 'undefined') {
+    feather.replace();
+}
+
+// Calculate word count
+document.addEventListener('DOMContentLoaded', function() {
+    const transcriptContent = document.getElementById('transcriptContent');
+    if (transcriptContent) {
+        const text = transcriptContent.textContent || '';
+        const wordCount = text.trim().split(/\s+/).filter(word => word.length > 0).length;
+        document.getElementById('wordCount').textContent = wordCount;
+    }
+});
+
+function copyTranscript() {
+    const transcriptContent = document.getElementById('transcriptContent');
+    const text = transcriptContent.textContent || '';
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Transcript copied to clipboard!');
+    });
+}
+
+function downloadTranscript() {
+    const transcriptContent = document.getElementById('transcriptContent');
+    const text = transcriptContent.textContent || '';
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'meeting-transcript-{{ meeting.id }}.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}
