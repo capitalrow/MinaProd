@@ -85,11 +85,15 @@ def get_dashboard_analytics():
         days = request.args.get('days', 7, type=int)
         cutoff_date = datetime.now() - timedelta(days=days)
         
-        # Get recent analytics
+        # Get recent analytics with eager loading to prevent N+1
+        from sqlalchemy.orm import joinedload
+        
         recent_analytics = db.session.query(Analytics).join(Meeting).filter(
             Meeting.workspace_id == workspace_id,
             Meeting.created_at >= cutoff_date,
             Analytics.analysis_status == 'completed'
+        ).options(
+            joinedload(Analytics.meeting)
         ).order_by(desc(Analytics.created_at)).limit(10).all()
         
         # Calculate averages
@@ -105,17 +109,31 @@ def get_dashboard_analytics():
         total_tasks_created = sum(a.action_items_created or 0 for a in recent_analytics)
         total_decisions_made = sum(a.decisions_made_count or 0 for a in recent_analytics)
         
-        # Meeting trends
+        # Meeting trends - Single query with GROUP BY to prevent N+1 (was 7-30 queries, now 1)
+        from sqlalchemy import cast, Date
+        
+        trend_data = db.session.query(
+            cast(Meeting.created_at, Date).label('date'),
+            func.count(Meeting.id).label('meetings')
+        ).filter(
+            Meeting.workspace_id == workspace_id,
+            Meeting.created_at >= cutoff_date
+        ).group_by(
+            cast(Meeting.created_at, Date)
+        ).order_by(
+            cast(Meeting.created_at, Date)
+        ).all()
+        
+        # Create date map for O(1) lookup
+        trend_map = {row.date: row.meetings for row in trend_data}
+        
+        # Build complete trend with zeros for missing days
         meeting_trend = []
         for i in range(days):
-            day = datetime.now() - timedelta(days=i)
-            day_meetings = db.session.query(Meeting).filter(
-                Meeting.workspace_id == workspace_id,
-                func.date(Meeting.created_at) == day.date()
-            ).count()
+            day = (datetime.now() - timedelta(days=i)).date()
             meeting_trend.append({
                 'date': day.strftime('%Y-%m-%d'),
-                'meetings': day_meetings
+                'meetings': trend_map.get(day, 0)
             })
         
         meeting_trend.reverse()
