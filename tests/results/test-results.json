@@ -123,20 +123,20 @@
   },
   "suites": [
     {
-      "title": "01-live-transcription.spec.js",
-      "file": "01-live-transcription.spec.js",
+      "title": "06-axe-core-automated.spec.js",
+      "file": "06-axe-core-automated.spec.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Live Transcription - Core User Journey",
-          "file": "01-live-transcription.spec.js",
-          "line": 9,
+          "title": "Axe-Core Automated Accessibility Tests",
+          "file": "06-axe-core-automated.spec.js",
+          "line": 63,
           "column": 6,
           "specs": [
             {
-              "title": "should load live transcription page successfully",
+              "title": "Home page should have no critical accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -150,13 +150,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "98e44ed2893d51eb3980-9c4a5c0eaae640e7750c",
-              "file": "01-live-transcription.spec.js",
-              "line": 18,
+              "id": "991b073527b72585dbb1-b1ca8d08077fd8a86bed",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 68,
               "column": 3
             },
             {
-              "title": "should handle record button interaction",
+              "title": "Login page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -170,13 +170,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "98e44ed2893d51eb3980-9bd5cc125d51d7a4870b",
-              "file": "01-live-transcription.spec.js",
-              "line": 35,
+              "id": "991b073527b72585dbb1-c9ae48a8492c1f1522f8",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 90,
               "column": 3
             },
             {
-              "title": "should initialize microphone and audio recording",
+              "title": "Register page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -190,13 +190,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "98e44ed2893d51eb3980-ca8ff3c9023bd65067f0",
-              "file": "01-live-transcription.spec.js",
-              "line": 59,
+              "id": "991b073527b72585dbb1-0f688e83fde213a6e4d5",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 108,
               "column": 3
             },
             {
-              "title": "should display transcription content",
+              "title": "Live transcription page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -210,13 +210,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "98e44ed2893d51eb3980-00be47130bdc4550c853",
-              "file": "01-live-transcription.spec.js",
-              "line": 87,
+              "id": "991b073527b72585dbb1-752b398d0f59f34e2aca",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 126,
               "column": 3
             },
             {
-              "title": "should handle session lifecycle correctly",
+              "title": "Dashboard should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -230,13 +230,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "98e44ed2893d51eb3980-0fcc8d49768849c06624",
-              "file": "01-live-transcription.spec.js",
-              "line": 114,
+              "id": "991b073527b72585dbb1-16033de2e4e2a3b754e2",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 144,
               "column": 3
             },
             {
-              "title": "should maintain UI responsiveness during recording",
+              "title": "Settings page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -250,13 +250,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "98e44ed2893d51eb3980-359a06fee5df1b68ef08",
-              "file": "01-live-transcription.spec.js",
-              "line": 141,
+              "id": "991b073527b72585dbb1-87c87d49a92857a8d525",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 163,
               "column": 3
             },
             {
-              "title": "should handle browser refresh during recording",
+              "title": "Test specific WCAG 2.1 Level A rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -270,13 +270,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "98e44ed2893d51eb3980-2d3eac9e88a623c73662",
-              "file": "01-live-transcription.spec.js",
-              "line": 169,
+              "id": "991b073527b72585dbb1-31b810e4a25519f0bd7d",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 181,
               "column": 3
             },
             {
-              "title": "should capture performance metrics",
+              "title": "Test keyboard navigation rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -290,670 +290,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "98e44ed2893d51eb3980-bb5bfccb90e4c802e0c7",
-              "file": "01-live-transcription.spec.js",
-              "line": 193,
+              "id": "991b073527b72585dbb1-afcbf68d94377eb12a55",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 203,
               "column": 3
             },
             {
-              "title": "should load live transcription page successfully",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-2f8fe7d9cf686ea0a42c",
-              "file": "01-live-transcription.spec.js",
-              "line": 18,
-              "column": 3
-            },
-            {
-              "title": "should handle record button interaction",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-fd523bd977709a731f99",
-              "file": "01-live-transcription.spec.js",
-              "line": 35,
-              "column": 3
-            },
-            {
-              "title": "should initialize microphone and audio recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-d5da04ccb58617112119",
-              "file": "01-live-transcription.spec.js",
-              "line": 59,
-              "column": 3
-            },
-            {
-              "title": "should display transcription content",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-ec67046de1239dd81595",
-              "file": "01-live-transcription.spec.js",
-              "line": 87,
-              "column": 3
-            },
-            {
-              "title": "should handle session lifecycle correctly",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-5f32a3321369d48f00ea",
-              "file": "01-live-transcription.spec.js",
-              "line": 114,
-              "column": 3
-            },
-            {
-              "title": "should maintain UI responsiveness during recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-ba34b7157af7283e897a",
-              "file": "01-live-transcription.spec.js",
-              "line": 141,
-              "column": 3
-            },
-            {
-              "title": "should handle browser refresh during recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-bae8313253dedc9cc3fa",
-              "file": "01-live-transcription.spec.js",
-              "line": 169,
-              "column": 3
-            },
-            {
-              "title": "should capture performance metrics",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-d54c9f9db5e321910af2",
-              "file": "01-live-transcription.spec.js",
-              "line": 193,
-              "column": 3
-            },
-            {
-              "title": "should load live transcription page successfully",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-67ecceae640dc07e1d1e",
-              "file": "01-live-transcription.spec.js",
-              "line": 18,
-              "column": 3
-            },
-            {
-              "title": "should handle record button interaction",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-9af309dbab41b55fc4f6",
-              "file": "01-live-transcription.spec.js",
-              "line": 35,
-              "column": 3
-            },
-            {
-              "title": "should initialize microphone and audio recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-73b9c661c8abf2f32c6a",
-              "file": "01-live-transcription.spec.js",
-              "line": 59,
-              "column": 3
-            },
-            {
-              "title": "should display transcription content",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-c745a40c04326ebc1c14",
-              "file": "01-live-transcription.spec.js",
-              "line": 87,
-              "column": 3
-            },
-            {
-              "title": "should handle session lifecycle correctly",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-7ad71056e8daf12828df",
-              "file": "01-live-transcription.spec.js",
-              "line": 114,
-              "column": 3
-            },
-            {
-              "title": "should maintain UI responsiveness during recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-0e07ebc939308758957f",
-              "file": "01-live-transcription.spec.js",
-              "line": 141,
-              "column": 3
-            },
-            {
-              "title": "should handle browser refresh during recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-43e07b060175c33311c5",
-              "file": "01-live-transcription.spec.js",
-              "line": 169,
-              "column": 3
-            },
-            {
-              "title": "should capture performance metrics",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-54933233d343c4fc30a8",
-              "file": "01-live-transcription.spec.js",
-              "line": 193,
-              "column": 3
-            },
-            {
-              "title": "should load live transcription page successfully",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-03a2396481f549fcbebc",
-              "file": "01-live-transcription.spec.js",
-              "line": 18,
-              "column": 3
-            },
-            {
-              "title": "should handle record button interaction",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-87b937d60c0705ee15d0",
-              "file": "01-live-transcription.spec.js",
-              "line": 35,
-              "column": 3
-            },
-            {
-              "title": "should initialize microphone and audio recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-ad1c50f07f5b4b978785",
-              "file": "01-live-transcription.spec.js",
-              "line": 59,
-              "column": 3
-            },
-            {
-              "title": "should display transcription content",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-a01cb89a311de27fae70",
-              "file": "01-live-transcription.spec.js",
-              "line": 87,
-              "column": 3
-            },
-            {
-              "title": "should handle session lifecycle correctly",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-eac0eb76c076bdd7fe19",
-              "file": "01-live-transcription.spec.js",
-              "line": 114,
-              "column": 3
-            },
-            {
-              "title": "should maintain UI responsiveness during recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-ee2815f3e12cebf50722",
-              "file": "01-live-transcription.spec.js",
-              "line": 141,
-              "column": 3
-            },
-            {
-              "title": "should handle browser refresh during recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-24ecfeaf1f9adaa2c34b",
-              "file": "01-live-transcription.spec.js",
-              "line": 169,
-              "column": 3
-            },
-            {
-              "title": "should capture performance metrics",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-f6fec34be48ae3fccadb",
-              "file": "01-live-transcription.spec.js",
-              "line": 193,
-              "column": 3
-            },
-            {
-              "title": "should load live transcription page successfully",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-68317c58306c0662765f",
-              "file": "01-live-transcription.spec.js",
-              "line": 18,
-              "column": 3
-            },
-            {
-              "title": "should handle record button interaction",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-c9bfcb439e86c7dab4e8",
-              "file": "01-live-transcription.spec.js",
-              "line": 35,
-              "column": 3
-            },
-            {
-              "title": "should initialize microphone and audio recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-dcc9c352725985de6b98",
-              "file": "01-live-transcription.spec.js",
-              "line": 59,
-              "column": 3
-            },
-            {
-              "title": "should display transcription content",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-4926d6a174a2f97bdf54",
-              "file": "01-live-transcription.spec.js",
-              "line": 87,
-              "column": 3
-            },
-            {
-              "title": "should handle session lifecycle correctly",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-514799eb2c550f9ebc0b",
-              "file": "01-live-transcription.spec.js",
-              "line": 114,
-              "column": 3
-            },
-            {
-              "title": "should maintain UI responsiveness during recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-c12a2d3bc23c74c18a38",
-              "file": "01-live-transcription.spec.js",
-              "line": 141,
-              "column": 3
-            },
-            {
-              "title": "should handle browser refresh during recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-d8e1ec1005b1085c472d",
-              "file": "01-live-transcription.spec.js",
-              "line": 169,
-              "column": 3
-            },
-            {
-              "title": "should capture performance metrics",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "98e44ed2893d51eb3980-6a5bada5c45c03d9f3f4",
-              "file": "01-live-transcription.spec.js",
-              "line": 193,
-              "column": 3
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "02-api-integration.spec.js",
-      "file": "02-api-integration.spec.js",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "API Integration Tests",
-          "file": "02-api-integration.spec.js",
-          "line": 9,
-          "column": 6,
-          "specs": [
-            {
-              "title": "should validate health endpoints",
+              "title": "Test color contrast rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -967,13 +310,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "b818b387ad8f672b9986-42e9da2c227a3810f4f8",
-              "file": "02-api-integration.spec.js",
-              "line": 17,
+              "id": "991b073527b72585dbb1-abf572fcbd337dedf192",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 227,
               "column": 3
             },
             {
-              "title": "should handle session CRUD operations",
+              "title": "Test form labels and accessibility",
               "ok": true,
               "tags": [],
               "tests": [
@@ -987,13 +330,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "b818b387ad8f672b9986-716bffea93d6c25bf45c",
-              "file": "02-api-integration.spec.js",
-              "line": 36,
+              "id": "991b073527b72585dbb1-fe743ecf4f80c4d23916",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 249,
               "column": 3
             },
             {
-              "title": "should handle transcription API endpoint",
+              "title": "Test ARIA attributes and roles",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1007,13 +350,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "b818b387ad8f672b9986-27be7534654ad524553c",
-              "file": "02-api-integration.spec.js",
-              "line": 71,
+              "id": "991b073527b72585dbb1-ed1cd966ea9d42f4af15",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 273,
               "column": 3
             },
             {
-              "title": "should handle session segments API",
+              "title": "Comprehensive accessibility audit across multiple pages",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1027,113 +370,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "b818b387ad8f672b9986-700c21146fec64ce3cd0",
-              "file": "02-api-integration.spec.js",
-              "line": 98,
+              "id": "991b073527b72585dbb1-ee1f1a487ccc1f5d24d2",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 295,
               "column": 3
             },
             {
-              "title": "should handle export functionality",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-f3e996b80d1412b456f7",
-              "file": "02-api-integration.spec.js",
-              "line": 124,
-              "column": 3
-            },
-            {
-              "title": "should validate API error handling",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-6ba989704c316c36024f",
-              "file": "02-api-integration.spec.js",
-              "line": 150,
-              "column": 3
-            },
-            {
-              "title": "should handle concurrent API requests",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-563af6dd54d75114330f",
-              "file": "02-api-integration.spec.js",
-              "line": 168,
-              "column": 3
-            },
-            {
-              "title": "should validate API response times",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-3e80803ddacd32b6b5db",
-              "file": "02-api-integration.spec.js",
-              "line": 194,
-              "column": 3
-            },
-            {
-              "title": "should handle authentication and authorization",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-7c644db51b77456d7e12",
-              "file": "02-api-integration.spec.js",
-              "line": 219,
-              "column": 3
-            },
-            {
-              "title": "should validate health endpoints",
+              "title": "Home page should have no critical accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1147,13 +390,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "b818b387ad8f672b9986-a0ef6bd19da7109310c1",
-              "file": "02-api-integration.spec.js",
-              "line": 17,
+              "id": "991b073527b72585dbb1-011df11ae397466f1d5f",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 68,
               "column": 3
             },
             {
-              "title": "should handle session CRUD operations",
+              "title": "Login page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1167,13 +410,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "b818b387ad8f672b9986-7f77e9a86b2c207ac7b8",
-              "file": "02-api-integration.spec.js",
-              "line": 36,
+              "id": "991b073527b72585dbb1-0107c157cbbeabfe70b6",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 90,
               "column": 3
             },
             {
-              "title": "should handle transcription API endpoint",
+              "title": "Register page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1187,13 +430,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "b818b387ad8f672b9986-829b2889416e77648da0",
-              "file": "02-api-integration.spec.js",
-              "line": 71,
+              "id": "991b073527b72585dbb1-b51d6d50120531c8e712",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 108,
               "column": 3
             },
             {
-              "title": "should handle session segments API",
+              "title": "Live transcription page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1207,13 +450,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "b818b387ad8f672b9986-f92d4cf4a8cad2b634bd",
-              "file": "02-api-integration.spec.js",
-              "line": 98,
+              "id": "991b073527b72585dbb1-146d47cd26581603cf63",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 126,
               "column": 3
             },
             {
-              "title": "should handle export functionality",
+              "title": "Dashboard should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1227,13 +470,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "b818b387ad8f672b9986-08bd8a5ef4120c5991f6",
-              "file": "02-api-integration.spec.js",
-              "line": 124,
+              "id": "991b073527b72585dbb1-02d83996e16660c6d39a",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 144,
               "column": 3
             },
             {
-              "title": "should validate API error handling",
+              "title": "Settings page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1247,13 +490,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "b818b387ad8f672b9986-213148ec67f2471be509",
-              "file": "02-api-integration.spec.js",
-              "line": 150,
+              "id": "991b073527b72585dbb1-0c8d1c45b7ed911f63ac",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 163,
               "column": 3
             },
             {
-              "title": "should handle concurrent API requests",
+              "title": "Test specific WCAG 2.1 Level A rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1267,13 +510,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "b818b387ad8f672b9986-ac0bde7fbf6901bcd24c",
-              "file": "02-api-integration.spec.js",
-              "line": 168,
+              "id": "991b073527b72585dbb1-24c1e4633b4ff14feaec",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 181,
               "column": 3
             },
             {
-              "title": "should validate API response times",
+              "title": "Test keyboard navigation rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1287,13 +530,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "b818b387ad8f672b9986-2c5b1114738e08e64a09",
-              "file": "02-api-integration.spec.js",
-              "line": 194,
+              "id": "991b073527b72585dbb1-a75757ac66b071d27af5",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 203,
               "column": 3
             },
             {
-              "title": "should handle authentication and authorization",
+              "title": "Test color contrast rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1307,770 +550,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "b818b387ad8f672b9986-af9be8728bacc2f294be",
-              "file": "02-api-integration.spec.js",
-              "line": 219,
+              "id": "991b073527b72585dbb1-fe9e3460d28c9b918843",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 227,
               "column": 3
             },
             {
-              "title": "should validate health endpoints",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-685051defc045ca6137c",
-              "file": "02-api-integration.spec.js",
-              "line": 17,
-              "column": 3
-            },
-            {
-              "title": "should handle session CRUD operations",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-1c9f1601594ef489ce2a",
-              "file": "02-api-integration.spec.js",
-              "line": 36,
-              "column": 3
-            },
-            {
-              "title": "should handle transcription API endpoint",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-fcacb8725378145cc13c",
-              "file": "02-api-integration.spec.js",
-              "line": 71,
-              "column": 3
-            },
-            {
-              "title": "should handle session segments API",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-f2def0a1e8019fa70ad1",
-              "file": "02-api-integration.spec.js",
-              "line": 98,
-              "column": 3
-            },
-            {
-              "title": "should handle export functionality",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-55f0a05487ebb6fb7106",
-              "file": "02-api-integration.spec.js",
-              "line": 124,
-              "column": 3
-            },
-            {
-              "title": "should validate API error handling",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-a2044a6cbea8d30c833c",
-              "file": "02-api-integration.spec.js",
-              "line": 150,
-              "column": 3
-            },
-            {
-              "title": "should handle concurrent API requests",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-f66bb9de9899d66991f5",
-              "file": "02-api-integration.spec.js",
-              "line": 168,
-              "column": 3
-            },
-            {
-              "title": "should validate API response times",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-0367c261fe003c136ed2",
-              "file": "02-api-integration.spec.js",
-              "line": 194,
-              "column": 3
-            },
-            {
-              "title": "should handle authentication and authorization",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-2d2ae82cd2cca2ae5cd6",
-              "file": "02-api-integration.spec.js",
-              "line": 219,
-              "column": 3
-            },
-            {
-              "title": "should validate health endpoints",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-dc98a4de5b6f1a9e5eeb",
-              "file": "02-api-integration.spec.js",
-              "line": 17,
-              "column": 3
-            },
-            {
-              "title": "should handle session CRUD operations",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-2498b71037941c600c06",
-              "file": "02-api-integration.spec.js",
-              "line": 36,
-              "column": 3
-            },
-            {
-              "title": "should handle transcription API endpoint",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-c758457d425de26a8337",
-              "file": "02-api-integration.spec.js",
-              "line": 71,
-              "column": 3
-            },
-            {
-              "title": "should handle session segments API",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-602041d8f265f2b2c641",
-              "file": "02-api-integration.spec.js",
-              "line": 98,
-              "column": 3
-            },
-            {
-              "title": "should handle export functionality",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-3a8f5cd69fb25204c2fa",
-              "file": "02-api-integration.spec.js",
-              "line": 124,
-              "column": 3
-            },
-            {
-              "title": "should validate API error handling",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-171070d4bb0cc4e85a13",
-              "file": "02-api-integration.spec.js",
-              "line": 150,
-              "column": 3
-            },
-            {
-              "title": "should handle concurrent API requests",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-116d16b6848cc7c9a096",
-              "file": "02-api-integration.spec.js",
-              "line": 168,
-              "column": 3
-            },
-            {
-              "title": "should validate API response times",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-e56f3419b9006d9e65c3",
-              "file": "02-api-integration.spec.js",
-              "line": 194,
-              "column": 3
-            },
-            {
-              "title": "should handle authentication and authorization",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-6c4e7923f55fe594cd1d",
-              "file": "02-api-integration.spec.js",
-              "line": 219,
-              "column": 3
-            },
-            {
-              "title": "should validate health endpoints",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-636e5c302ba441861a6a",
-              "file": "02-api-integration.spec.js",
-              "line": 17,
-              "column": 3
-            },
-            {
-              "title": "should handle session CRUD operations",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-2409deaaa0d37e70e8c2",
-              "file": "02-api-integration.spec.js",
-              "line": 36,
-              "column": 3
-            },
-            {
-              "title": "should handle transcription API endpoint",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-0d10102623d8e74ae932",
-              "file": "02-api-integration.spec.js",
-              "line": 71,
-              "column": 3
-            },
-            {
-              "title": "should handle session segments API",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-b9e171d0f4bf2a869484",
-              "file": "02-api-integration.spec.js",
-              "line": 98,
-              "column": 3
-            },
-            {
-              "title": "should handle export functionality",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-b84bda8768d0a52639c4",
-              "file": "02-api-integration.spec.js",
-              "line": 124,
-              "column": 3
-            },
-            {
-              "title": "should validate API error handling",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-95b43e69a9197767e450",
-              "file": "02-api-integration.spec.js",
-              "line": 150,
-              "column": 3
-            },
-            {
-              "title": "should handle concurrent API requests",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-4ca3685e161477fecfaf",
-              "file": "02-api-integration.spec.js",
-              "line": 168,
-              "column": 3
-            },
-            {
-              "title": "should validate API response times",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-883bd4594a4324ad61a1",
-              "file": "02-api-integration.spec.js",
-              "line": 194,
-              "column": 3
-            },
-            {
-              "title": "should handle authentication and authorization",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "b818b387ad8f672b9986-4dd9dd167f8e1dd6173b",
-              "file": "02-api-integration.spec.js",
-              "line": 219,
-              "column": 3
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "03-edge-cases.spec.js",
-      "file": "03-edge-cases.spec.js",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Edge Cases and Negative Testing",
-          "file": "03-edge-cases.spec.js",
-          "line": 9,
-          "column": 6,
-          "specs": [
-            {
-              "title": "should handle microphone permission denial",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-07517c965446bf96ff7e",
-              "file": "03-edge-cases.spec.js",
-              "line": 16,
-              "column": 3
-            },
-            {
-              "title": "should handle network connectivity issues",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-0543c6722a826185d1de",
-              "file": "03-edge-cases.spec.js",
-              "line": 57,
-              "column": 3
-            },
-            {
-              "title": "should handle invalid session data",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-80f4d1244c6d58080834",
-              "file": "03-edge-cases.spec.js",
-              "line": 92,
-              "column": 3
-            },
-            {
-              "title": "should handle malformed audio data",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-4e1d04aad39eb8ad7904",
-              "file": "03-edge-cases.spec.js",
-              "line": 118,
-              "column": 3
-            },
-            {
-              "title": "should handle rapid button clicking",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-c2f8c5079bca31b959cb",
-              "file": "03-edge-cases.spec.js",
-              "line": 148,
-              "column": 3
-            },
-            {
-              "title": "should handle browser refresh during active session",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-5c7e31da1bf55af1e8ca",
-              "file": "03-edge-cases.spec.js",
-              "line": 174,
-              "column": 3
-            },
-            {
-              "title": "should handle extremely long recording sessions",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-a4baf54cbc496d229c4b",
-              "file": "03-edge-cases.spec.js",
-              "line": 201,
-              "column": 3
-            },
-            {
-              "title": "should handle concurrent user sessions",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-55a33a38a36c8b4e563d",
-              "file": "03-edge-cases.spec.js",
-              "line": 235,
-              "column": 3
-            },
-            {
-              "title": "should handle invalid API tokens and authentication",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-ac0267e9c27118f1396f",
-              "file": "03-edge-cases.spec.js",
-              "line": 287,
-              "column": 3
-            },
-            {
-              "title": "should handle resource exhaustion scenarios",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-b96f32b512633affedc7",
-              "file": "03-edge-cases.spec.js",
-              "line": 312,
-              "column": 3
-            },
-            {
-              "title": "should handle microphone permission denial",
+              "title": "Test form labels and accessibility",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2084,13 +570,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "925aace7230b6d951cfa-bf327e661b89dfb36111",
-              "file": "03-edge-cases.spec.js",
-              "line": 16,
+              "id": "991b073527b72585dbb1-84eaf40c5961aad9ad00",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 249,
               "column": 3
             },
             {
-              "title": "should handle network connectivity issues",
+              "title": "Test ARIA attributes and roles",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2104,13 +590,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "925aace7230b6d951cfa-8f34fc4cfa32bca16053",
-              "file": "03-edge-cases.spec.js",
-              "line": 57,
+              "id": "991b073527b72585dbb1-85593539681dda4889db",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 273,
               "column": 3
             },
             {
-              "title": "should handle invalid session data",
+              "title": "Comprehensive accessibility audit across multiple pages",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2124,153 +610,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "925aace7230b6d951cfa-7486c3c30bd5a4463db1",
-              "file": "03-edge-cases.spec.js",
-              "line": 92,
+              "id": "991b073527b72585dbb1-0b35114f6eb3505d9f9d",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 295,
               "column": 3
             },
             {
-              "title": "should handle malformed audio data",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-7ca1704d27804fe2ef50",
-              "file": "03-edge-cases.spec.js",
-              "line": 118,
-              "column": 3
-            },
-            {
-              "title": "should handle rapid button clicking",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-5bd7191632270d3e0284",
-              "file": "03-edge-cases.spec.js",
-              "line": 148,
-              "column": 3
-            },
-            {
-              "title": "should handle browser refresh during active session",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-91cfa6f2c5249532e06a",
-              "file": "03-edge-cases.spec.js",
-              "line": 174,
-              "column": 3
-            },
-            {
-              "title": "should handle extremely long recording sessions",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-589b147c14f874bc3392",
-              "file": "03-edge-cases.spec.js",
-              "line": 201,
-              "column": 3
-            },
-            {
-              "title": "should handle concurrent user sessions",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-79b40569f3b9698ade14",
-              "file": "03-edge-cases.spec.js",
-              "line": 235,
-              "column": 3
-            },
-            {
-              "title": "should handle invalid API tokens and authentication",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-83dc9e7309f1a8e6ff76",
-              "file": "03-edge-cases.spec.js",
-              "line": 287,
-              "column": 3
-            },
-            {
-              "title": "should handle resource exhaustion scenarios",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-4c8023f6967b3118c862",
-              "file": "03-edge-cases.spec.js",
-              "line": 312,
-              "column": 3
-            },
-            {
-              "title": "should handle microphone permission denial",
+              "title": "Home page should have no critical accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2284,13 +630,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "925aace7230b6d951cfa-22f0b559048f8815f6b6",
-              "file": "03-edge-cases.spec.js",
-              "line": 16,
+              "id": "991b073527b72585dbb1-8477c6df3afa8c8d65bb",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 68,
               "column": 3
             },
             {
-              "title": "should handle network connectivity issues",
+              "title": "Login page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2304,13 +650,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "925aace7230b6d951cfa-e53b32207742b70d3b74",
-              "file": "03-edge-cases.spec.js",
-              "line": 57,
+              "id": "991b073527b72585dbb1-1c7aa7d02ba65ec48178",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 90,
               "column": 3
             },
             {
-              "title": "should handle invalid session data",
+              "title": "Register page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2324,13 +670,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "925aace7230b6d951cfa-a0276f7570e1722312f0",
-              "file": "03-edge-cases.spec.js",
-              "line": 92,
+              "id": "991b073527b72585dbb1-d1c0b62440f6bb9b9bfa",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 108,
               "column": 3
             },
             {
-              "title": "should handle malformed audio data",
+              "title": "Live transcription page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2344,13 +690,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "925aace7230b6d951cfa-71393ce15b94e8dbd5b0",
-              "file": "03-edge-cases.spec.js",
-              "line": 118,
+              "id": "991b073527b72585dbb1-394e2f1448dc5738ab83",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 126,
               "column": 3
             },
             {
-              "title": "should handle rapid button clicking",
+              "title": "Dashboard should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2364,13 +710,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "925aace7230b6d951cfa-a505ad510cb32c80e366",
-              "file": "03-edge-cases.spec.js",
-              "line": 148,
+              "id": "991b073527b72585dbb1-9a3b15fb33a800b0f818",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 144,
               "column": 3
             },
             {
-              "title": "should handle browser refresh during active session",
+              "title": "Settings page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2384,13 +730,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "925aace7230b6d951cfa-fa977f84f7040d18c0f9",
-              "file": "03-edge-cases.spec.js",
-              "line": 174,
+              "id": "991b073527b72585dbb1-375df2de97368cfce35f",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 163,
               "column": 3
             },
             {
-              "title": "should handle extremely long recording sessions",
+              "title": "Test specific WCAG 2.1 Level A rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2404,13 +750,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "925aace7230b6d951cfa-22f81a58584e41cdb399",
-              "file": "03-edge-cases.spec.js",
-              "line": 201,
+              "id": "991b073527b72585dbb1-30db7657155f153cc021",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 181,
               "column": 3
             },
             {
-              "title": "should handle concurrent user sessions",
+              "title": "Test keyboard navigation rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2424,13 +770,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "925aace7230b6d951cfa-7211aafb218d8cd59317",
-              "file": "03-edge-cases.spec.js",
-              "line": 235,
+              "id": "991b073527b72585dbb1-68d7688276cdfbf71b07",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 203,
               "column": 3
             },
             {
-              "title": "should handle invalid API tokens and authentication",
+              "title": "Test color contrast rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2444,13 +790,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "925aace7230b6d951cfa-79e11ccae3b7c3e99836",
-              "file": "03-edge-cases.spec.js",
-              "line": 287,
+              "id": "991b073527b72585dbb1-365cbe9b626e9850660b",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 227,
               "column": 3
             },
             {
-              "title": "should handle resource exhaustion scenarios",
+              "title": "Test form labels and accessibility",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2464,710 +810,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "925aace7230b6d951cfa-d6f1bee5cb818594e002",
-              "file": "03-edge-cases.spec.js",
-              "line": 312,
+              "id": "991b073527b72585dbb1-25aaf392580d10237a17",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 249,
               "column": 3
             },
             {
-              "title": "should handle microphone permission denial",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-99e63c5ccac226cefccf",
-              "file": "03-edge-cases.spec.js",
-              "line": 16,
-              "column": 3
-            },
-            {
-              "title": "should handle network connectivity issues",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-5398193afdd83656330d",
-              "file": "03-edge-cases.spec.js",
-              "line": 57,
-              "column": 3
-            },
-            {
-              "title": "should handle invalid session data",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-0cf2fe8d8c4fcd99c300",
-              "file": "03-edge-cases.spec.js",
-              "line": 92,
-              "column": 3
-            },
-            {
-              "title": "should handle malformed audio data",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-dac4b2e92ea389fd89ed",
-              "file": "03-edge-cases.spec.js",
-              "line": 118,
-              "column": 3
-            },
-            {
-              "title": "should handle rapid button clicking",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-72f4bcfa755b85ebb86c",
-              "file": "03-edge-cases.spec.js",
-              "line": 148,
-              "column": 3
-            },
-            {
-              "title": "should handle browser refresh during active session",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-674449a77b1c83f519cc",
-              "file": "03-edge-cases.spec.js",
-              "line": 174,
-              "column": 3
-            },
-            {
-              "title": "should handle extremely long recording sessions",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-572d464110e111a0002e",
-              "file": "03-edge-cases.spec.js",
-              "line": 201,
-              "column": 3
-            },
-            {
-              "title": "should handle concurrent user sessions",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-eba00b7e8040e37d3439",
-              "file": "03-edge-cases.spec.js",
-              "line": 235,
-              "column": 3
-            },
-            {
-              "title": "should handle invalid API tokens and authentication",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-8acea94e9f2c294695d6",
-              "file": "03-edge-cases.spec.js",
-              "line": 287,
-              "column": 3
-            },
-            {
-              "title": "should handle resource exhaustion scenarios",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-b8fbb1fa62d58964847e",
-              "file": "03-edge-cases.spec.js",
-              "line": 312,
-              "column": 3
-            },
-            {
-              "title": "should handle microphone permission denial",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-0c09b75307821a471455",
-              "file": "03-edge-cases.spec.js",
-              "line": 16,
-              "column": 3
-            },
-            {
-              "title": "should handle network connectivity issues",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-912b11fc1946bfc5c889",
-              "file": "03-edge-cases.spec.js",
-              "line": 57,
-              "column": 3
-            },
-            {
-              "title": "should handle invalid session data",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-4e03af480561a99abc1d",
-              "file": "03-edge-cases.spec.js",
-              "line": 92,
-              "column": 3
-            },
-            {
-              "title": "should handle malformed audio data",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-6e3da19faf8f8efa38e0",
-              "file": "03-edge-cases.spec.js",
-              "line": 118,
-              "column": 3
-            },
-            {
-              "title": "should handle rapid button clicking",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-461e8be346b30abe7eee",
-              "file": "03-edge-cases.spec.js",
-              "line": 148,
-              "column": 3
-            },
-            {
-              "title": "should handle browser refresh during active session",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-d5712c480062a48915ae",
-              "file": "03-edge-cases.spec.js",
-              "line": 174,
-              "column": 3
-            },
-            {
-              "title": "should handle extremely long recording sessions",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-223a4a9376ec41190b7c",
-              "file": "03-edge-cases.spec.js",
-              "line": 201,
-              "column": 3
-            },
-            {
-              "title": "should handle concurrent user sessions",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-b31e3d5a1cc87b3740d9",
-              "file": "03-edge-cases.spec.js",
-              "line": 235,
-              "column": 3
-            },
-            {
-              "title": "should handle invalid API tokens and authentication",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-0f6e20ebe2db8535c5f5",
-              "file": "03-edge-cases.spec.js",
-              "line": 287,
-              "column": 3
-            },
-            {
-              "title": "should handle resource exhaustion scenarios",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "925aace7230b6d951cfa-aa3e3fb76de794b2e431",
-              "file": "03-edge-cases.spec.js",
-              "line": 312,
-              "column": 3
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "04-performance.spec.js",
-      "file": "04-performance.spec.js",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Performance and Load Testing",
-          "file": "04-performance.spec.js",
-          "line": 9,
-          "column": 6,
-          "specs": [
-            {
-              "title": "should measure page load performance",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-5639adf9fdd867cf924c",
-              "file": "04-performance.spec.js",
-              "line": 16,
-              "column": 3
-            },
-            {
-              "title": "should handle multiple concurrent transcription sessions",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-1dba304452b1829aca2d",
-              "file": "04-performance.spec.js",
-              "line": 55,
-              "column": 3
-            },
-            {
-              "title": "should measure transcription latency",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-50ac2a884640b87519b4",
-              "file": "04-performance.spec.js",
-              "line": 138,
-              "column": 3
-            },
-            {
-              "title": "should monitor memory usage during recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-88673aa07f6aaed21754",
-              "file": "04-performance.spec.js",
-              "line": 198,
-              "column": 3
-            },
-            {
-              "title": "should test application under CPU stress",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-59d5f4b9099586198820",
-              "file": "04-performance.spec.js",
-              "line": 248,
-              "column": 3
-            },
-            {
-              "title": "should measure WebSocket performance",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-03e05293ef5f8dcbffe1",
-              "file": "04-performance.spec.js",
-              "line": 306,
-              "column": 3
-            },
-            {
-              "title": "should test rapid session creation and cleanup",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-730c91864566dc22f97d",
-              "file": "04-performance.spec.js",
-              "line": 363,
-              "column": 3
-            },
-            {
-              "title": "should measure page load performance",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-d63f9dd7c9e598cbc47f",
-              "file": "04-performance.spec.js",
-              "line": 16,
-              "column": 3
-            },
-            {
-              "title": "should handle multiple concurrent transcription sessions",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-ec345076863c29387d3e",
-              "file": "04-performance.spec.js",
-              "line": 55,
-              "column": 3
-            },
-            {
-              "title": "should measure transcription latency",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-6bfa52f58c6c727e293a",
-              "file": "04-performance.spec.js",
-              "line": 138,
-              "column": 3
-            },
-            {
-              "title": "should monitor memory usage during recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-87556086d29f64ebaf4c",
-              "file": "04-performance.spec.js",
-              "line": 198,
-              "column": 3
-            },
-            {
-              "title": "should test application under CPU stress",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-941feda18e822b182c83",
-              "file": "04-performance.spec.js",
-              "line": 248,
-              "column": 3
-            },
-            {
-              "title": "should measure WebSocket performance",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-0afb65f73ffe1ae881ca",
-              "file": "04-performance.spec.js",
-              "line": 306,
-              "column": 3
-            },
-            {
-              "title": "should test rapid session creation and cleanup",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-65ddbc1d7f912b3b2ce7",
-              "file": "04-performance.spec.js",
-              "line": 363,
-              "column": 3
-            },
-            {
-              "title": "should measure page load performance",
+              "title": "Test ARIA attributes and roles",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3181,13 +830,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "3a71443d6a770561ca7a-cb34e1710fdf048e1fa1",
-              "file": "04-performance.spec.js",
-              "line": 16,
+              "id": "991b073527b72585dbb1-e0d4c624c8aad1c302e9",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 273,
               "column": 3
             },
             {
-              "title": "should handle multiple concurrent transcription sessions",
+              "title": "Comprehensive accessibility audit across multiple pages",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3201,113 +850,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "3a71443d6a770561ca7a-cd650565834bd0a7df6e",
-              "file": "04-performance.spec.js",
-              "line": 55,
+              "id": "991b073527b72585dbb1-877f72abb52b3fadfc84",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 295,
               "column": 3
             },
             {
-              "title": "should measure transcription latency",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-b674c89911e975d845d1",
-              "file": "04-performance.spec.js",
-              "line": 138,
-              "column": 3
-            },
-            {
-              "title": "should monitor memory usage during recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-66af50ad8f868f51c896",
-              "file": "04-performance.spec.js",
-              "line": 198,
-              "column": 3
-            },
-            {
-              "title": "should test application under CPU stress",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-2e948d09de41992d7ee0",
-              "file": "04-performance.spec.js",
-              "line": 248,
-              "column": 3
-            },
-            {
-              "title": "should measure WebSocket performance",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-775dc9a505d9f393af11",
-              "file": "04-performance.spec.js",
-              "line": 306,
-              "column": 3
-            },
-            {
-              "title": "should test rapid session creation and cleanup",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-c7f9d5e168230bcc21c0",
-              "file": "04-performance.spec.js",
-              "line": 363,
-              "column": 3
-            },
-            {
-              "title": "should measure page load performance",
+              "title": "Home page should have no critical accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3321,13 +870,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "3a71443d6a770561ca7a-eae8d17d5cff9b4151ae",
-              "file": "04-performance.spec.js",
-              "line": 16,
+              "id": "991b073527b72585dbb1-281c84634d9183266a74",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 68,
               "column": 3
             },
             {
-              "title": "should handle multiple concurrent transcription sessions",
+              "title": "Login page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3341,13 +890,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "3a71443d6a770561ca7a-6eff3dbcc095570f8b09",
-              "file": "04-performance.spec.js",
-              "line": 55,
+              "id": "991b073527b72585dbb1-b598b27abcbaae902a49",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 90,
               "column": 3
             },
             {
-              "title": "should measure transcription latency",
+              "title": "Register page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3361,13 +910,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "3a71443d6a770561ca7a-ca76ef58ba9322e09e2e",
-              "file": "04-performance.spec.js",
-              "line": 138,
+              "id": "991b073527b72585dbb1-951497212e9d59f5419d",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 108,
               "column": 3
             },
             {
-              "title": "should monitor memory usage during recording",
+              "title": "Live transcription page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3381,13 +930,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "3a71443d6a770561ca7a-aac9df84350fa54a549d",
-              "file": "04-performance.spec.js",
-              "line": 198,
+              "id": "991b073527b72585dbb1-a37c1acc2fae79022101",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 126,
               "column": 3
             },
             {
-              "title": "should test application under CPU stress",
+              "title": "Dashboard should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3401,13 +950,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "3a71443d6a770561ca7a-006e9a200953946f14a8",
-              "file": "04-performance.spec.js",
-              "line": 248,
+              "id": "991b073527b72585dbb1-64f0a5df1e0511f0eee2",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 144,
               "column": 3
             },
             {
-              "title": "should measure WebSocket performance",
+              "title": "Settings page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3421,13 +970,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "3a71443d6a770561ca7a-b7a2032e0d61f2c8560c",
-              "file": "04-performance.spec.js",
-              "line": 306,
+              "id": "991b073527b72585dbb1-55114fe5f907ae7b3e9f",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 163,
               "column": 3
             },
             {
-              "title": "should test rapid session creation and cleanup",
+              "title": "Test specific WCAG 2.1 Level A rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3441,710 +990,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "3a71443d6a770561ca7a-19bc2ca56823ed989f36",
-              "file": "04-performance.spec.js",
-              "line": 363,
+              "id": "991b073527b72585dbb1-f6f317e27344cb57b56b",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 181,
               "column": 3
             },
             {
-              "title": "should measure page load performance",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-6da71e6694571abdc89d",
-              "file": "04-performance.spec.js",
-              "line": 16,
-              "column": 3
-            },
-            {
-              "title": "should handle multiple concurrent transcription sessions",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-820037986d45c4f13a81",
-              "file": "04-performance.spec.js",
-              "line": 55,
-              "column": 3
-            },
-            {
-              "title": "should measure transcription latency",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-26c32f8288cb187cb440",
-              "file": "04-performance.spec.js",
-              "line": 138,
-              "column": 3
-            },
-            {
-              "title": "should monitor memory usage during recording",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-87bf2c6c70cfbbed676e",
-              "file": "04-performance.spec.js",
-              "line": 198,
-              "column": 3
-            },
-            {
-              "title": "should test application under CPU stress",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-af7ce73e5e33051c3c44",
-              "file": "04-performance.spec.js",
-              "line": 248,
-              "column": 3
-            },
-            {
-              "title": "should measure WebSocket performance",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-e47f66a777b782eb7b25",
-              "file": "04-performance.spec.js",
-              "line": 306,
-              "column": 3
-            },
-            {
-              "title": "should test rapid session creation and cleanup",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "3a71443d6a770561ca7a-198df8bcbb302b9c0c81",
-              "file": "04-performance.spec.js",
-              "line": 363,
-              "column": 3
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "05-accessibility.spec.js",
-      "file": "05-accessibility.spec.js",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Accessibility Compliance Tests",
-          "file": "05-accessibility.spec.js",
-          "line": 9,
-          "column": 6,
-          "specs": [
-            {
-              "title": "should support keyboard navigation",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-871216ca9fadde42c36b",
-              "file": "05-accessibility.spec.js",
-              "line": 16,
-              "column": 3
-            },
-            {
-              "title": "should have proper ARIA labels and roles",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-ef7d83e993870f8a2c8e",
-              "file": "05-accessibility.spec.js",
-              "line": 55,
-              "column": 3
-            },
-            {
-              "title": "should support screen reader announcements",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-9e9023f2e2fbed30580d",
-              "file": "05-accessibility.spec.js",
-              "line": 81,
-              "column": 3
-            },
-            {
-              "title": "should have sufficient color contrast",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-63ded9de11bcd892573e",
-              "file": "05-accessibility.spec.js",
-              "line": 104,
-              "column": 3
-            },
-            {
-              "title": "should support high contrast mode",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-183cac98a6ff969fb777",
-              "file": "05-accessibility.spec.js",
-              "line": 168,
-              "column": 3
-            },
-            {
-              "title": "should support focus indicators",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-e378ca1cb328aa8131c8",
-              "file": "05-accessibility.spec.js",
-              "line": 190,
-              "column": 3
-            },
-            {
-              "title": "should have proper heading structure",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-ae1ded66947f2b1e3aa8",
-              "file": "05-accessibility.spec.js",
-              "line": 222,
-              "column": 3
-            },
-            {
-              "title": "should support alternative text for images",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-7ab4d25aad71c4996eb5",
-              "file": "05-accessibility.spec.js",
-              "line": 252,
-              "column": 3
-            },
-            {
-              "title": "should support reduced motion preferences",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-3d40c2738434bcd0556f",
-              "file": "05-accessibility.spec.js",
-              "line": 277,
-              "column": 3
-            },
-            {
-              "title": "should support keyboard navigation",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-de3c2a7f20422b905b05",
-              "file": "05-accessibility.spec.js",
-              "line": 16,
-              "column": 3
-            },
-            {
-              "title": "should have proper ARIA labels and roles",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-ae6c568972805f6f7573",
-              "file": "05-accessibility.spec.js",
-              "line": 55,
-              "column": 3
-            },
-            {
-              "title": "should support screen reader announcements",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-e089c7c1d94a54266d01",
-              "file": "05-accessibility.spec.js",
-              "line": 81,
-              "column": 3
-            },
-            {
-              "title": "should have sufficient color contrast",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-4ca38c8d46b459a33bb0",
-              "file": "05-accessibility.spec.js",
-              "line": 104,
-              "column": 3
-            },
-            {
-              "title": "should support high contrast mode",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-f708a80f2d390cc35919",
-              "file": "05-accessibility.spec.js",
-              "line": 168,
-              "column": 3
-            },
-            {
-              "title": "should support focus indicators",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-121e3b739fb877cc7067",
-              "file": "05-accessibility.spec.js",
-              "line": 190,
-              "column": 3
-            },
-            {
-              "title": "should have proper heading structure",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-2895fcb8643fc37eb63c",
-              "file": "05-accessibility.spec.js",
-              "line": 222,
-              "column": 3
-            },
-            {
-              "title": "should support alternative text for images",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-4905199b23fcea399feb",
-              "file": "05-accessibility.spec.js",
-              "line": 252,
-              "column": 3
-            },
-            {
-              "title": "should support reduced motion preferences",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "firefox",
-                  "projectName": "firefox",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-a1d8e2d16ff0c6f099e3",
-              "file": "05-accessibility.spec.js",
-              "line": 277,
-              "column": 3
-            },
-            {
-              "title": "should support keyboard navigation",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-7924544e952e923e6127",
-              "file": "05-accessibility.spec.js",
-              "line": 16,
-              "column": 3
-            },
-            {
-              "title": "should have proper ARIA labels and roles",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-94a0bb8c090fe2676e2b",
-              "file": "05-accessibility.spec.js",
-              "line": 55,
-              "column": 3
-            },
-            {
-              "title": "should support screen reader announcements",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-4c9849a45550f9963167",
-              "file": "05-accessibility.spec.js",
-              "line": 81,
-              "column": 3
-            },
-            {
-              "title": "should have sufficient color contrast",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-316c510bbcd261b3ccf2",
-              "file": "05-accessibility.spec.js",
-              "line": 104,
-              "column": 3
-            },
-            {
-              "title": "should support high contrast mode",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-b8923afd89170ed2411b",
-              "file": "05-accessibility.spec.js",
-              "line": 168,
-              "column": 3
-            },
-            {
-              "title": "should support focus indicators",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-ed01a3cb8f1472c9e1c2",
-              "file": "05-accessibility.spec.js",
-              "line": 190,
-              "column": 3
-            },
-            {
-              "title": "should have proper heading structure",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-e2c5cc1685171992c462",
-              "file": "05-accessibility.spec.js",
-              "line": 222,
-              "column": 3
-            },
-            {
-              "title": "should support alternative text for images",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-7b5c6354e71e7a308e2b",
-              "file": "05-accessibility.spec.js",
-              "line": 252,
-              "column": 3
-            },
-            {
-              "title": "should support reduced motion preferences",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "webkit",
-                  "projectName": "webkit",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-741b1cc449d481e600fe",
-              "file": "05-accessibility.spec.js",
-              "line": 277,
-              "column": 3
-            },
-            {
-              "title": "should support keyboard navigation",
+              "title": "Test keyboard navigation rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -4158,13 +1010,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "e8ce583392bfd5e65732-bfc7679b603a21cd04f7",
-              "file": "05-accessibility.spec.js",
-              "line": 16,
+              "id": "991b073527b72585dbb1-663fa0fe25a3ed42de04",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 203,
               "column": 3
             },
             {
-              "title": "should have proper ARIA labels and roles",
+              "title": "Test color contrast rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -4178,13 +1030,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "e8ce583392bfd5e65732-e4787b982a2ffddf6b76",
-              "file": "05-accessibility.spec.js",
-              "line": 55,
+              "id": "991b073527b72585dbb1-cc06784f86d7ad10cb04",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 227,
               "column": 3
             },
             {
-              "title": "should support screen reader announcements",
+              "title": "Test form labels and accessibility",
               "ok": true,
               "tags": [],
               "tests": [
@@ -4198,13 +1050,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "e8ce583392bfd5e65732-386c7f57d7d67805d214",
-              "file": "05-accessibility.spec.js",
-              "line": 81,
+              "id": "991b073527b72585dbb1-1cb5ebb7a609dc111d56",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 249,
               "column": 3
             },
             {
-              "title": "should have sufficient color contrast",
+              "title": "Test ARIA attributes and roles",
               "ok": true,
               "tags": [],
               "tests": [
@@ -4218,13 +1070,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "e8ce583392bfd5e65732-8b5046d64240b4c2c5f6",
-              "file": "05-accessibility.spec.js",
-              "line": 104,
+              "id": "991b073527b72585dbb1-68b16beeefaabda9be23",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 273,
               "column": 3
             },
             {
-              "title": "should support high contrast mode",
+              "title": "Comprehensive accessibility audit across multiple pages",
               "ok": true,
               "tags": [],
               "tests": [
@@ -4238,93 +1090,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "e8ce583392bfd5e65732-af3aae489776dd4d8e41",
-              "file": "05-accessibility.spec.js",
-              "line": 168,
+              "id": "991b073527b72585dbb1-cc45b42aa7434f43be04",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 295,
               "column": 3
             },
             {
-              "title": "should support focus indicators",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-d402d9cb15c20b5f2586",
-              "file": "05-accessibility.spec.js",
-              "line": 190,
-              "column": 3
-            },
-            {
-              "title": "should have proper heading structure",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-e31b1ca0462671296249",
-              "file": "05-accessibility.spec.js",
-              "line": 222,
-              "column": 3
-            },
-            {
-              "title": "should support alternative text for images",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-9741eaadd631ce3d23f7",
-              "file": "05-accessibility.spec.js",
-              "line": 252,
-              "column": 3
-            },
-            {
-              "title": "should support reduced motion preferences",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "e8ce583392bfd5e65732-1df26e3eaeefc819f7a8",
-              "file": "05-accessibility.spec.js",
-              "line": 277,
-              "column": 3
-            },
-            {
-              "title": "should support keyboard navigation",
+              "title": "Home page should have no critical accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -4338,13 +1110,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "e8ce583392bfd5e65732-01b8e1454674b8edcdd1",
-              "file": "05-accessibility.spec.js",
-              "line": 16,
+              "id": "991b073527b72585dbb1-a066e0d2cac2c9b3611e",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 68,
               "column": 3
             },
             {
-              "title": "should have proper ARIA labels and roles",
+              "title": "Login page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -4358,13 +1130,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "e8ce583392bfd5e65732-5fcfae217932ae44a06f",
-              "file": "05-accessibility.spec.js",
-              "line": 55,
+              "id": "991b073527b72585dbb1-ef4f2a71102fbbd48452",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 90,
               "column": 3
             },
             {
-              "title": "should support screen reader announcements",
+              "title": "Register page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -4378,13 +1150,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "e8ce583392bfd5e65732-84fea0965e2a5d2d47e5",
-              "file": "05-accessibility.spec.js",
-              "line": 81,
+              "id": "991b073527b72585dbb1-abb360f88361e610a6fd",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 108,
               "column": 3
             },
             {
-              "title": "should have sufficient color contrast",
+              "title": "Live transcription page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -4398,13 +1170,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "e8ce583392bfd5e65732-0cb70088e3e14f0359a0",
-              "file": "05-accessibility.spec.js",
-              "line": 104,
+              "id": "991b073527b72585dbb1-c358530b25ff06bb2f62",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 126,
               "column": 3
             },
             {
-              "title": "should support high contrast mode",
+              "title": "Dashboard should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -4418,13 +1190,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "e8ce583392bfd5e65732-ae3250eba50f76b3621d",
-              "file": "05-accessibility.spec.js",
-              "line": 168,
+              "id": "991b073527b72585dbb1-db2b6ff9ad10ba802b34",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 144,
               "column": 3
             },
             {
-              "title": "should support focus indicators",
+              "title": "Settings page should have no accessibility violations",
               "ok": true,
               "tags": [],
               "tests": [
@@ -4438,13 +1210,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "e8ce583392bfd5e65732-76e8e729ad036ed6285f",
-              "file": "05-accessibility.spec.js",
-              "line": 190,
+              "id": "991b073527b72585dbb1-5f67ad8bcf60b157383e",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 163,
               "column": 3
             },
             {
-              "title": "should have proper heading structure",
+              "title": "Test specific WCAG 2.1 Level A rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -4458,13 +1230,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "e8ce583392bfd5e65732-0329b81da1d3b2a9b150",
-              "file": "05-accessibility.spec.js",
-              "line": 222,
+              "id": "991b073527b72585dbb1-eb60703ba61f413b2fe9",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 181,
               "column": 3
             },
             {
-              "title": "should support alternative text for images",
+              "title": "Test keyboard navigation rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -4478,13 +1250,13 @@
                   "status": "skipped"
                 }
               ],
-              "id": "e8ce583392bfd5e65732-a87d844707335a30018e",
-              "file": "05-accessibility.spec.js",
-              "line": 252,
+              "id": "991b073527b72585dbb1-0f4cd00568494a1389f3",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 203,
               "column": 3
             },
             {
-              "title": "should support reduced motion preferences",
+              "title": "Test color contrast rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -4498,9 +1270,69 @@
                   "status": "skipped"
                 }
               ],
-              "id": "e8ce583392bfd5e65732-dcd58040a95f98647784",
-              "file": "05-accessibility.spec.js",
-              "line": 277,
+              "id": "991b073527b72585dbb1-6b2568036ed868eaf595",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 227,
+              "column": 3
+            },
+            {
+              "title": "Test form labels and accessibility",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "991b073527b72585dbb1-28b6e4b9ceea60bbf2e4",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 249,
+              "column": 3
+            },
+            {
+              "title": "Test ARIA attributes and roles",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "991b073527b72585dbb1-0e08ebb902d1fcc5e243",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 273,
+              "column": 3
+            },
+            {
+              "title": "Comprehensive accessibility audit across multiple pages",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "991b073527b72585dbb1-2f47cadcc6ca879b5d8b",
+              "file": "06-axe-core-automated.spec.js",
+              "line": 295,
               "column": 3
             }
           ]
@@ -4510,10 +1342,10 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-09-03T19:42:26.907Z",
-    "duration": 888.8370000000002,
+    "startTime": "2025-10-01T19:43:49.297Z",
+    "duration": 241.12799999999993,
     "expected": 0,
-    "skipped": 215,
+    "skipped": 60,
     "unexpected": 0,
     "flaky": 0
   }
