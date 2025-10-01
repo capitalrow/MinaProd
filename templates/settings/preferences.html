@@ -1,0 +1,763 @@
+{% extends "base.html" %}
+
+{% block title %}Preferences - {{ super() }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/crown-design-system.css') }}">
+<style>
+    .preferences-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+    }
+    
+    .tab-button {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.9375rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+    
+    .tab-button:hover {
+        color: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.03);
+    }
+    
+    .tab-button.active {
+        color: #8b5cf6;
+        border-bottom-color: #8b5cf6;
+    }
+    
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    .preference-section {
+        margin-bottom: 2rem;
+    }
+    
+    .preference-group {
+        display: grid;
+        gap: 1rem;
+    }
+    
+    .preference-item {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .preference-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(139, 92, 246, 0.3);
+    }
+    
+    .preference-info {
+        flex: 1;
+        margin-right: 1rem;
+    }
+    
+    .preference-label {
+        font-size: 0.9375rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+    
+    .preference-description {
+        font-size: 0.8125rem;
+        color: rgba(255, 255, 255, 0.5);
+        line-height: 1.5;
+    }
+    
+    .preference-control {
+        flex-shrink: 0;
+    }
+    
+    .preference-control select,
+    .preference-control input[type="number"] {
+        min-width: 150px;
+    }
+    
+    .preference-control .crown-input-range {
+        width: 150px;
+    }
+    
+    .range-value {
+        display: inline-block;
+        min-width: 40px;
+        text-align: center;
+        margin-left: 0.75rem;
+        color: #8b5cf6;
+        font-weight: 600;
+    }
+    
+    .actions-bar {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    @media (max-width: 768px) {
+        .preference-item {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .preference-control {
+            width: 100%;
+        }
+        
+        .preference-control select,
+        .preference-control input {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Crown+ Breadcrumb -->
+    <nav class="crown-breadcrumb mb-4">
+        <a href="{{ url_for('dashboard.index') }}">
+            <i data-feather="home"></i>
+            Home
+        </a>
+        <i data-feather="chevron-right"></i>
+        <a href="{{ url_for('settings.settings_dashboard') }}">Settings</a>
+        <i data-feather="chevron-right"></i>
+        <span>Preferences</span>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="crown-page-title">
+                <i data-feather="sliders"></i>
+                Preferences
+            </h1>
+            <p class="crown-page-subtitle">Customize how Mina works for you</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="crown-btn secondary" onclick="resetAllPreferences()">
+                <i data-feather="rotate-ccw"></i>
+                Reset All
+            </button>
+            <button class="crown-btn primary" onclick="saveAllPreferences()">
+                <i data-feather="save"></i>
+                Save Changes
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="preferences-tabs">
+        <button class="tab-button active" data-tab="transcription" onclick="switchTab('transcription')">
+            <i data-feather="mic"></i>
+            Transcription
+        </button>
+        <button class="tab-button" data-tab="notifications" onclick="switchTab('notifications')">
+            <i data-feather="bell"></i>
+            Notifications
+        </button>
+        <button class="tab-button" data-tab="privacy" onclick="switchTab('privacy')">
+            <i data-feather="shield"></i>
+            Privacy
+        </button>
+        <button class="tab-button" data-tab="appearance" onclick="switchTab('appearance')">
+            <i data-feather="palette"></i>
+            Interface
+        </button>
+    </div>
+
+    <!-- Tab Content: Transcription -->
+    <div class="tab-content active" id="tab-transcription">
+        <div class="crown-card glass">
+            <div class="preference-section">
+                <h3 class="crown-section-title">Language & Recognition</h3>
+                <p class="crown-section-subtitle">Configure speech recognition and language processing</p>
+                
+                <div class="preference-group">
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Primary Language</div>
+                            <div class="preference-description">Default language for transcription. Auto-detect will identify the language automatically.</div>
+                        </div>
+                        <div class="preference-control">
+                            <select class="crown-select" data-preference="transcription.language">
+                                <option value="auto">Auto-detect</option>
+                                <option value="en">English</option>
+                                <option value="es">Spanish</option>
+                                <option value="fr">French</option>
+                                <option value="de">German</option>
+                                <option value="zh">Chinese (Mandarin)</option>
+                                <option value="ja">Japanese</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Transcription Quality</div>
+                            <div class="preference-description">Higher quality provides better accuracy but uses more processing power</div>
+                        </div>
+                        <div class="preference-control">
+                            <select class="crown-select" data-preference="transcription.quality">
+                                <option value="low">Fast (Lower Accuracy)</option>
+                                <option value="medium">Balanced</option>
+                                <option value="high">High Quality (Best Accuracy)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Confidence Threshold</div>
+                            <div class="preference-description">Minimum confidence level (0-100%) for displaying transcribed text</div>
+                        </div>
+                        <div class="preference-control">
+                            <input type="range" class="crown-input-range" min="50" max="100" step="5" value="80" data-preference="transcription.confidence_threshold" data-convert="percent" oninput="updateRangeValue(this)">
+                            <span class="range-value">80%</span>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Speaker Detection</div>
+                            <div class="preference-description">Automatically identify and label different speakers in the conversation</div>
+                        </div>
+                        <div class="preference-control">
+                            <label class="crown-switch">
+                                <input type="checkbox" checked data-preference="transcription.speaker_detection">
+                                <span class="crown-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Auto Punctuation</div>
+                            <div class="preference-description">Automatically add punctuation marks to transcribed text</div>
+                        </div>
+                        <div class="preference-control">
+                            <label class="crown-switch">
+                                <input type="checkbox" checked data-preference="transcription.punctuation">
+                                <span class="crown-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Real-time Display</div>
+                            <div class="preference-description">Show transcription results as they are being processed</div>
+                        </div>
+                        <div class="preference-control">
+                            <label class="crown-switch">
+                                <input type="checkbox" checked data-preference="transcription.real_time_display">
+                                <span class="crown-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Content: Notifications -->
+    <div class="tab-content" id="tab-notifications">
+        <div class="crown-card glass">
+            <div class="preference-section">
+                <h3 class="crown-section-title">Notification Preferences</h3>
+                <p class="crown-section-subtitle">Choose how and when you want to be notified</p>
+                
+                <div class="preference-group">
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Enable Notifications</div>
+                            <div class="preference-description">Receive notifications about meetings, summaries, and important updates</div>
+                        </div>
+                        <div class="preference-control">
+                            <label class="crown-switch">
+                                <input type="checkbox" checked data-preference="general.notifications">
+                                <span class="crown-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Email Notifications</div>
+                            <div class="preference-description">Receive email notifications for meeting summaries and reports</div>
+                        </div>
+                        <div class="preference-control">
+                            <label class="crown-switch">
+                                <input type="checkbox" checked data-preference="general.email_notifications">
+                                <span class="crown-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Browser Notifications</div>
+                            <div class="preference-description">Show desktop notifications while using Mina</div>
+                        </div>
+                        <div class="preference-control">
+                            <label class="crown-switch">
+                                <input type="checkbox" checked data-preference="general.browser_notifications">
+                                <span class="crown-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Meeting Reminders</div>
+                            <div class="preference-description">Get reminded before scheduled meetings start</div>
+                        </div>
+                        <div class="preference-control">
+                            <label class="crown-switch">
+                                <input type="checkbox" checked data-preference="tasks.notification_reminders">
+                                <span class="crown-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Summary Email</div>
+                            <div class="preference-description">Automatically email meeting summaries after they're generated</div>
+                        </div>
+                        <div class="preference-control">
+                            <label class="crown-switch">
+                                <input type="checkbox" data-preference="summary.email_summary">
+                                <span class="crown-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Content: Privacy -->
+    <div class="tab-content" id="tab-privacy">
+        <div class="crown-card glass">
+            <div class="preference-section">
+                <h3 class="crown-section-title">Privacy & Data</h3>
+                <p class="crown-section-subtitle">Control how your data is stored and used</p>
+                
+                <div class="preference-group">
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Data Retention</div>
+                            <div class="preference-description">How long to keep your meeting transcripts and recordings</div>
+                        </div>
+                        <div class="preference-control">
+                            <select class="crown-select" data-preference="privacy.data_retention_days">
+                                <option value="30">30 Days</option>
+                                <option value="90">90 Days</option>
+                                <option value="180">180 Days</option>
+                                <option value="365">1 Year</option>
+                                <option value="730">2 Years</option>
+                                <option value="-1">Forever</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Encrypt Storage</div>
+                            <div class="preference-description">Encrypt all stored transcripts and recordings at rest</div>
+                        </div>
+                        <div class="preference-control">
+                            <label class="crown-switch">
+                                <input type="checkbox" checked data-preference="privacy.encrypt_storage">
+                                <span class="crown-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Recording Consent</div>
+                            <div class="preference-description">Require explicit consent before starting a recording</div>
+                        </div>
+                        <div class="preference-control">
+                            <label class="crown-switch">
+                                <input type="checkbox" checked data-preference="privacy.recording_consent">
+                                <span class="crown-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Share Analytics</div>
+                            <div class="preference-description">Share anonymous usage data to help improve Mina</div>
+                        </div>
+                        <div class="preference-control">
+                            <label class="crown-switch">
+                                <input type="checkbox" data-preference="privacy.share_analytics">
+                                <span class="crown-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Delete on Export</div>
+                            <div class="preference-description">Automatically delete data from servers after you export it</div>
+                        </div>
+                        <div class="preference-control">
+                            <label class="crown-switch">
+                                <input type="checkbox" data-preference="privacy.delete_on_export">
+                                <span class="crown-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Content: Appearance -->
+    <div class="tab-content" id="tab-appearance">
+        <div class="crown-card glass">
+            <div class="preference-section">
+                <h3 class="crown-section-title">Appearance & Interface</h3>
+                <p class="crown-section-subtitle">Customize the look and feel of Mina</p>
+                
+                <div class="preference-group">
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Theme</div>
+                            <div class="preference-description">Choose your preferred color theme</div>
+                        </div>
+                        <div class="preference-control">
+                            <select class="crown-select" data-preference="ui.theme">
+                                <option value="dark">Dark</option>
+                                <option value="light">Light</option>
+                                <option value="auto">Auto (System)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Language</div>
+                            <div class="preference-description">Interface language for Mina</div>
+                        </div>
+                        <div class="preference-control">
+                            <select class="crown-select" data-preference="ui.language">
+                                <option value="en">English</option>
+                                <option value="es">Español</option>
+                                <option value="fr">Français</option>
+                                <option value="de">Deutsch</option>
+                                <option value="zh">中文</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Date Format</div>
+                            <div class="preference-description">How dates are displayed throughout the application</div>
+                        </div>
+                        <div class="preference-control">
+                            <select class="crown-select" data-preference="general.date_format">
+                                <option value="MM/DD/YYYY">MM/DD/YYYY (US)</option>
+                                <option value="DD/MM/YYYY">DD/MM/YYYY (EU)</option>
+                                <option value="YYYY-MM-DD">YYYY-MM-DD (ISO)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Time Format</div>
+                            <div class="preference-description">12-hour or 24-hour time format</div>
+                        </div>
+                        <div class="preference-control">
+                            <select class="crown-select" data-preference="general.time_format">
+                                <option value="12h">12-hour (AM/PM)</option>
+                                <option value="24h">24-hour</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Enable Animations</div>
+                            <div class="preference-description">Show smooth transitions and animations</div>
+                        </div>
+                        <div class="preference-control">
+                            <label class="crown-switch">
+                                <input type="checkbox" checked data-preference="ui.animations">
+                                <span class="crown-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Keyboard Shortcuts</div>
+                            <div class="preference-description">Enable keyboard shortcuts for faster navigation</div>
+                        </div>
+                        <div class="preference-control">
+                            <label class="crown-switch">
+                                <input type="checkbox" checked data-preference="ui.keyboard_shortcuts">
+                                <span class="crown-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="preference-item">
+                        <div class="preference-info">
+                            <div class="preference-label">Compact Mode</div>
+                            <div class="preference-description">Use a more condensed layout to fit more information</div>
+                        </div>
+                        <div class="preference-control">
+                            <label class="crown-switch">
+                                <input type="checkbox" data-preference="ui.compact_mode">
+                                <span class="crown-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="crown-toast-container" id="toastContainer"></div>
+
+<script>
+// Initialize Feather icons
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+    
+    // Load saved preferences
+    loadPreferences();
+});
+
+// Toast notification system
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `crown-toast ${type}`;
+    toast.innerHTML = `
+        <i data-feather="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i>
+        <span>${message}</span>
+    `;
+    container.appendChild(toast);
+    
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+    
+    setTimeout(() => toast.classList.add('show'), 100);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Switch tabs
+function switchTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+    
+    // Re-initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+// Update range value display
+function updateRangeValue(input) {
+    const value = input.value;
+    const display = input.nextElementSibling;
+    if (display && display.classList.contains('range-value')) {
+        display.textContent = value + '%';
+    }
+}
+
+// Load preferences from server
+async function loadPreferences() {
+    try {
+        const response = await fetch('/settings/api/preferences');
+        const data = await response.json();
+        
+        if (data.success && data.preferences) {
+            applyPreferences(data.preferences);
+        }
+    } catch (error) {
+        console.error('Failed to load preferences:', error);
+    }
+}
+
+// Apply preferences to form elements
+function applyPreferences(preferences) {
+    document.querySelectorAll('[data-preference]').forEach(element => {
+        const path = element.getAttribute('data-preference');
+        const [category, key] = path.split('.');
+        
+        // Map 'appearance' to 'ui' for backward compatibility
+        const actualCategory = category === 'appearance' ? 'ui' : category;
+        
+        if (preferences[actualCategory] && preferences[actualCategory][key] !== undefined) {
+            const value = preferences[actualCategory][key];
+            
+            if (element.type === 'checkbox') {
+                element.checked = value;
+            } else if (element.type === 'range') {
+                // Check if this needs percentage conversion
+                const isPercent = element.getAttribute('data-convert') === 'percent';
+                if (isPercent) {
+                    // Convert 0.0-1.0 to 0-100
+                    element.value = Math.round(value * 100);
+                } else {
+                    element.value = value;
+                }
+                updateRangeValue(element);
+            } else {
+                element.value = value;
+            }
+        }
+    });
+}
+
+// Save all preferences
+async function saveAllPreferences() {
+    const preferences = {};
+    
+    // Collect all preferences from form elements
+    document.querySelectorAll('[data-preference]').forEach(element => {
+        const path = element.getAttribute('data-preference');
+        let [category, key] = path.split('.');
+        
+        // Map 'appearance' to 'ui' for backend compatibility
+        const actualCategory = category === 'appearance' ? 'ui' : category;
+        
+        if (!preferences[actualCategory]) {
+            preferences[actualCategory] = {};
+        }
+        
+        let value;
+        if (element.type === 'checkbox') {
+            value = element.checked;
+        } else if (element.type === 'range') {
+            // Check if this needs percentage conversion
+            const isPercent = element.getAttribute('data-convert') === 'percent';
+            if (isPercent) {
+                // Convert 0-100 to 0.0-1.0
+                value = parseFloat(element.value) / 100;
+            } else {
+                value = parseFloat(element.value);
+            }
+        } else if (element.type === 'number') {
+            value = parseInt(element.value);
+        } else {
+            value = element.value;
+        }
+        
+        preferences[actualCategory][key] = value;
+    });
+    
+    // Save each category
+    for (const [category, settings] of Object.entries(preferences)) {
+        try {
+            const response = await fetch('/settings/api/preferences', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ category, settings })
+            });
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to save preferences');
+            }
+        } catch (error) {
+            showToast(`Failed to save ${category} preferences`, 'error');
+            console.error(`Error saving ${category}:`, error);
+            return;
+        }
+    }
+    
+    showToast('All preferences saved successfully!', 'success');
+}
+
+// Reset all preferences
+async function resetAllPreferences() {
+    if (!confirm('Reset all preferences to default values? This cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/settings/api/preferences/reset', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('All preferences reset to defaults!', 'success');
+            // Reload preferences
+            setTimeout(() => {
+                loadPreferences();
+            }, 1000);
+        } else {
+            showToast(data.error || 'Failed to reset preferences', 'error');
+        }
+    } catch (error) {
+        showToast('Failed to reset preferences', 'error');
+        console.error('Reset error:', error);
+    }
+}
+</script>
+{% endblock %}
