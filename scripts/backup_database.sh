@@ -13,6 +13,13 @@ DATE_ONLY=$(date +"%Y%m%d")
 BACKUP_NAME="mina_db_backup_${TIMESTAMP}"
 LOG_FILE="/tmp/backup_${DATE_ONLY}.log"
 
+# Load retention configuration if available
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="$(dirname "$SCRIPT_DIR")/config/backup_retention.conf"
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -45,7 +52,16 @@ validate_environment() {
         exit 1
     fi
     
-    if [ -z "${GPG_BACKUP_PASSPHRASE:-}" ]; then
+    # Check encryption requirements
+    if [ "${REQUIRE_ENCRYPTION:-false}" = "true" ]; then
+        if [ -z "${GPG_BACKUP_PASSPHRASE:-}" ]; then
+            log_error "REQUIRE_ENCRYPTION=true but GPG_BACKUP_PASSPHRASE not set"
+            log_error "Add GPG_BACKUP_PASSPHRASE to Replit Secrets or set REQUIRE_ENCRYPTION=false"
+            exit 1
+        fi
+        USE_ENCRYPTION=true
+        log "🔒 Encryption required and enabled"
+    elif [ -z "${GPG_BACKUP_PASSPHRASE:-}" ]; then
         log_warning "GPG_BACKUP_PASSPHRASE not set - backups will NOT be encrypted"
         log_warning "Set GPG_BACKUP_PASSPHRASE in Replit Secrets for encrypted backups"
         USE_ENCRYPTION=false
@@ -158,7 +174,7 @@ encrypt_backup() {
 
 # Cleanup old backups
 cleanup_old_backups() {
-    local retention_days=${BACKUP_RETENTION_DAYS:-30}
+    local retention_days=${RETENTION_HOT_DAYS:-${BACKUP_RETENTION_DAYS:-30}}
     
     log "🧹 Cleaning up backups older than ${retention_days} days..."
     
