@@ -30,18 +30,10 @@ def list_meetings():
         status_filter = request.args.get('status', None)
         search_query = request.args.get('search', None)
         
-        # Base query for user's workspace
-        query = db.session.query(Meeting).filter_by(workspace_id=current_user.workspace_id)
-        
-        # Apply filters
-        if status_filter:
-            query = query.filter_by(status=status_filter)
-        
-        if search_query:
-            query = query.filter(Meeting.title.contains(search_query))
-        
-        # Paginate results (Flask-SQLAlchemy 3.x compatible)
+        # Paginate results (Flask-SQLAlchemy 3.x compatible) with eager loading to prevent N+1 queries
         from sqlalchemy import select
+        from sqlalchemy.orm import selectinload, joinedload
+        
         stmt = select(Meeting).where(Meeting.workspace_id == current_user.workspace_id)
         
         # Apply filters to statement
@@ -50,7 +42,15 @@ def list_meetings():
         if search_query:
             stmt = stmt.where(Meeting.title.contains(search_query))
         
-        stmt = stmt.order_by(Meeting.created_at.desc())
+        # Eager load relationships to prevent N+1 queries
+        # Use selectinload for *-to-many, joinedload for *-to-one
+        stmt = stmt.options(
+            selectinload(Meeting.tasks).selectinload(Task.assigned_to),
+            selectinload(Meeting.participants),
+            joinedload(Meeting.analytics),
+            joinedload(Meeting.organizer)
+        ).order_by(Meeting.created_at.desc())
+        
         meetings = db.paginate(stmt, page=page, per_page=per_page, error_out=False)
         
         return jsonify({
@@ -76,24 +76,28 @@ def list_meetings():
 def get_meeting(meeting_id):
     """Get detailed meeting information."""
     try:
+        from sqlalchemy.orm import selectinload, joinedload
+        
+        # Single query with eager loading to prevent N+1 queries (was 4 queries, now 1)
         meeting = db.session.query(Meeting).filter_by(
             id=meeting_id,
             workspace_id=current_user.workspace_id
+        ).options(
+            selectinload(Meeting.tasks).joinedload(Task.assigned_to),
+            selectinload(Meeting.participants).joinedload(Participant.user),
+            joinedload(Meeting.analytics),
+            joinedload(Meeting.organizer)
         ).first()
         
         if not meeting:
             return jsonify({'success': False, 'message': 'Meeting not found'}), 404
         
-        # Get additional data
-        tasks = db.session.query(Task).filter_by(meeting_id=meeting_id).all()
-        participants = db.session.query(Participant).filter_by(meeting_id=meeting_id).all()
-        analytics = db.session.query(Analytics).filter_by(meeting_id=meeting_id).first()
-        
+        # All data already loaded via eager loading - no additional queries
         meeting_data = meeting.to_dict()
         meeting_data.update({
-            'tasks': [task.to_dict() for task in tasks],
-            'participants': [participant.to_dict() for participant in participants],
-            'analytics': analytics.to_dict() if analytics else None
+            'tasks': [task.to_dict() for task in meeting.tasks],
+            'participants': [participant.to_dict() for participant in meeting.participants],
+            'analytics': meeting.analytics.to_dict() if meeting.analytics else None
         })
         
         return jsonify({
