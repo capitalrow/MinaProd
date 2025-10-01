@@ -813,6 +813,15 @@ body:has(.live-page) {
         border-radius: 0;
     }
     
+    /* User info text colors */
+    .navbar-user-menu.mobile-menu-active .navbar-user-name-large {
+        color: rgba(255, 255, 255, 0.95) !important;
+    }
+    
+    .navbar-user-menu.mobile-menu-active .navbar-user-status {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+    
     /* Menu Items Spacing */
     .navbar-user-menu.mobile-menu-active .navbar-user-menu-item {
         margin: 0.25rem 1rem;
@@ -820,6 +829,7 @@ body:has(.live-page) {
         font-size: 0.9375rem;
         border-radius: 10px;
         transition: all 0.2s ease;
+        color: rgba(255, 255, 255, 0.9) !important;
     }
     
     /* Menu Item Hover Effect */
@@ -900,6 +910,7 @@ body:has(.live-page) {
     .navbar-user-menu.mobile-menu-active .navbar-user-name-large {
         font-size: 1.125rem;
         font-weight: 600;
+        color: rgba(255, 255, 255, 0.95);
     }
     
     /* Enhanced Overlay for Mobile */
