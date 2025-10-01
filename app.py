@@ -92,9 +92,18 @@ def create_app() -> Flask:
     # Initialize CSRF protection  
     csrf = CSRFProtect(app)
     app.config["WTF_CSRF_TIME_LIMIT"] = None  # Don't expire tokens
-    app.config["WTF_CSRF_SSL_STRICT"] = False  # Allow behind proxy
-    # Disable CSRF for JSON requests (APIs should use token auth)
-    app.config["WTF_CSRF_CHECK_DEFAULT"] = False  # We'll manually check where needed
+    app.config["WTF_CSRF_SSL_STRICT"] = True  # Enforce HTTPS referer/origin checks (ProxyFix sets is_secure)
+    app.config["WTF_CSRF_CHECK_DEFAULT"] = True  # Enable CSRF by default
+    
+    # Exempt Socket.IO Engine.IO endpoint from CSRF (polling/handshake POST requests)
+    # Socket.IO uses its own connection-level authentication
+    # We wrap the error handler to allow Socket.IO requests through
+    original_error_handler = csrf._error_response
+    def custom_csrf_error(reason):
+        if request.path.startswith('/socket.io'):
+            return None  # Allow request to proceed
+        return original_error_handler(reason)
+    csrf._error_response = custom_csrf_error
 
     # gzip (optional)
     try:
