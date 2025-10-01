@@ -175,6 +175,14 @@ def login():
                 db.session.commit()
                 logging.info(f"Login successful for user: {user.username}")
                 
+                # Rotate session to prevent session fixation attacks
+                try:
+                    from middleware.session_security import rotate_session
+                    rotate_session()
+                    logging.debug(f"Session rotated for user {user.username}")
+                except Exception as e:
+                    logging.warning(f"Session rotation failed: {e}")
+                
                 # Redirect to next page or dashboard
                 next_page = request.args.get('next')
                 if next_page and next_page.startswith('/'):
@@ -194,6 +202,13 @@ def login():
 @login_required
 def logout():
     """User logout handler."""
+    # Invalidate session completely
+    try:
+        from middleware.session_security import invalidate_session
+        invalidate_session()
+    except Exception as e:
+        logging.warning(f"Session invalidation failed: {e}")
+    
     logout_user()
     flash('You have been logged out successfully', 'info')
     return redirect(url_for('auth.login'))
