@@ -1,0 +1,895 @@
+{% extends "base.html" %}
+
+{% block title %}Live Recording Studio - {{ super() }}{% endblock %}
+
+{% block head %}
+    <!-- Live transcription page uses mina-live.css for styling -->
+    <!-- Premium Live CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/premium-live.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/premium-live-enhanced.css') }}">
+    <style>
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="recording-studio live-page">
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             ZONE 1: COMMAND DECK - Hero Recording Control & Status Intelligence
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <section class="live-command-deck" role="region" aria-label="Recording controls">
+            <!-- Brand Header with Gradient -->
+            <header class="live-studio-header" role="banner">
+                <h1 class="live-brand-title">
+                    <i class="fas fa-microphone-alt"></i>
+                    Mina
+                </h1>
+                <p class="live-subtitle">Professional Live Transcription Studio</p>
+            </header>
+
+            <!-- Hero Recording Orb -->
+            <div class="live-recording-controls">
+                <div class="live-record-deck">
+                    <button class="live-record-btn" id="recordBtn" onclick="app.toggleRecording()" 
+                            aria-label="Start/Stop Recording" role="button">
+                        <div class="record-pulse-ring"></div>
+                        <div class="record-waveform-halo"></div>
+                        <div class="record-orb-inner">
+                            <i class="fas fa-microphone" id="recordIcon"></i>
+                        </div>
+                        <div class="record-progress-ring">
+                            <svg class="progress-ring-svg" width="180" height="180">
+                                <circle class="progress-ring-circle" cx="90" cy="90" r="85" 
+                                        stroke-width="3" fill="none" />
+                            </svg>
+                        </div>
+                    </button>
+                    <span class="record-label" id="recordText">Start Recording</span>
+                </div>
+            </div>
+
+            <!-- Status Intelligence Rail -->
+            <div class="live-status-bar">
+                <div class="live-status-compact">
+                    <div class="live-status-badge" id="connectionStatus" data-tooltip="Connection Status">
+                        <i class="fas fa-signal status-icon"></i>
+                        <span class="status-dot"></span>
+                        <span class="status-text">Connection</span>
+                    </div>
+                    <div class="live-status-badge" id="audioStatus" data-tooltip="Audio Level">
+                        <i class="fas fa-volume-up status-icon"></i>
+                        <span class="status-dot"></span>
+                        <span class="status-text">Audio</span>
+                    </div>
+                    <div class="live-status-badge" id="transcriptionStatus" data-tooltip="Transcription Status">
+                        <i class="fas fa-closed-captioning status-icon"></i>
+                        <span class="status-dot"></span>
+                        <span class="status-text">Transcription</span>
+                    </div>
+                    <div class="live-status-badge" id="timerBadge" data-tooltip="Session Duration">
+                        <i class="fas fa-clock status-icon"></i>
+                        <span class="status-text" id="sessionTimer">00:00</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             ZONE 2: INTELLIGENCE CANVAS - Visualizer & Transcript Stream
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <section class="live-intelligence-canvas" role="region" aria-label="Live transcription">
+            <!-- Integrated Visualizer & Transcript -->
+            <div class="live-canvas-grid">
+                <!-- Audio Visualizer Card -->
+                <div class="live-visualizer-card">
+                    <div class="visualizer-header">
+                        <h3 class="visualizer-title">
+                            <i class="fas fa-waveform-lines"></i>
+                            Live Audio
+                        </h3>
+                        <div class="visualizer-quality">
+                            <span class="quality-dot"></span>
+                            <span class="quality-text">Excellent</span>
+                        </div>
+                    </div>
+                    <div class="live-audio-visualizer">
+                        <div class="live-audio-bars" id="audioBars">
+                            <!-- Audio bars will be generated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Transcript Feed -->
+                <div class="live-transcript-container">
+                    <div class="live-transcript-header">
+                        <h2 class="live-transcript-title">
+                            <i class="fas fa-stream"></i>
+                            Live Transcript
+                        </h2>
+                        <div class="live-transcript-actions">
+                            <button class="live-transcript-btn" onclick="app.clearTranscript()" 
+                                    aria-label="Clear transcript" title="Clear">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                            <button class="live-transcript-btn" onclick="app.exportTranscript()" 
+                                    aria-label="Export transcript" title="Export">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="live-transcript-btn" onclick="app.copyTranscript()" 
+                                    aria-label="Copy transcript" title="Copy">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="live-transcript-content" id="transcriptContent">
+                        <div class="transcript-placeholder">
+                            <i class="fas fa-microphone-alt transcript-placeholder-icon"></i>
+                            <p class="transcript-placeholder-text">Tap the record button above to start capturing your voice in real-time with AI-powered transcription</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             ZONE 3: CONTROL SPINE - Metrics Dashboard & Settings
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <section class="live-control-spine" role="region" aria-label="Session metrics and settings">
+            <!-- Metrics Dashboard -->
+            <div class="live-metrics-panel">
+                <div class="live-metric-card">
+                    <div class="metric-icon">
+                        <i class="fas fa-gauge-high"></i>
+                    </div>
+                    <div class="live-metric-value" id="wordsPerMinute">0</div>
+                    <div class="live-metric-label">Words/Min</div>
+                    <div class="live-metric-trend up">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>0%</span>
+                    </div>
+                </div>
+                <div class="live-metric-card">
+                    <div class="metric-icon">
+                        <i class="fas fa-message-lines"></i>
+                    </div>
+                    <div class="live-metric-value" id="totalWords">0</div>
+                    <div class="live-metric-label">Total Words</div>
+                </div>
+                <div class="live-metric-card">
+                    <div class="metric-icon">
+                        <i class="fas fa-bullseye-arrow"></i>
+                    </div>
+                    <div class="live-metric-value" id="accuracy">0%</div>
+                    <div class="live-metric-label">Accuracy</div>
+                    <div class="live-metric-trend up">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>95%</span>
+                    </div>
+                </div>
+                <div class="live-metric-card">
+                    <div class="metric-icon">
+                        <i class="fas fa-stopwatch"></i>
+                    </div>
+                    <div class="live-metric-value" id="sessionDuration">0:00</div>
+                    <div class="live-metric-label">Duration</div>
+                </div>
+            </div>
+
+            <!-- Settings Panel -->
+            <div class="live-settings-panel">
+            <div class="live-settings-header">
+                <h3 class="live-settings-title">Settings</h3>
+                <button class="live-settings-toggle" onclick="app.toggleSettings()">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+            <div class="live-settings-grid" id="settingsGrid">
+                <div class="live-setting-group">
+                    <label class="live-setting-label">Language</label>
+                    <select class="live-setting-control" id="languageSelect">
+                        <option value="en-US">English (US)</option>
+                        <option value="en-GB">English (UK)</option>
+                        <option value="es-ES">Spanish</option>
+                        <option value="fr-FR">French</option>
+                        <option value="de-DE">German</option>
+                    </select>
+                </div>
+                <div class="live-setting-group">
+                    <label class="live-setting-label">Auto-scroll</label>
+                    <input type="checkbox" class="live-setting-control" id="autoScroll" checked>
+                </div>
+                <div class="live-setting-group">
+                    <label class="live-setting-label">Speaker Detection</label>
+                    <input type="checkbox" class="live-setting-control" id="speakerDetection" checked>
+                </div>
+                <div class="live-setting-group">
+                    <label class="live-setting-label">Punctuation</label>
+                    <input type="checkbox" class="live-setting-control" id="punctuation" checked>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Actions -->
+    <div class="live-floating-actions">
+        <button class="live-floating-btn primary" onclick="app.saveSession()" aria-label="Save session">
+            <i class="fas fa-save"></i>
+        </button>
+        <button class="live-floating-btn" onclick="app.shareSession()" aria-label="Share session">
+            <i class="fas fa-share-alt"></i>
+        </button>
+        <button class="live-floating-btn danger" onclick="app.stopSession()" aria-label="Stop session">
+            <i class="fas fa-stop"></i>
+        </button>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <!-- Socket.IO Client Library -->
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js" 
+            integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+" 
+            crossorigin="anonymous"></script>
+    
+    <script>
+        // Live Transcription App
+        class LiveTranscriptionApp {
+            constructor() {
+                this.isRecording = false;
+                this.socket = null;
+                this.mediaRecorder = null;
+                this.audioContext = null;
+                this.analyser = null;
+                this.audioStream = null;
+                this.sessionStartTime = null;
+                this.transcriptSegments = [];
+                this.settings = {
+                    language: 'en-US',
+                    autoScroll: true,
+                    speakerDetection: true,
+                    punctuation: true
+                };
+                
+                this.init();
+            }
+            
+            init() {
+                this.initializeSocketIO();
+                this.setupEventListeners();
+                this.initializeAudioVisualization();
+                this.initializeSettingsPanel();
+                this.createToastContainer();
+                this.updateStatus('ready');
+                console.log('Live Transcription App initialized');
+            }
+            
+            createToastContainer() {
+                if (!document.getElementById('toastContainer')) {
+                    const container = document.createElement('div');
+                    container.id = 'toastContainer';
+                    container.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;';
+                    document.body.appendChild(container);
+                }
+            }
+            
+            showToast(message, type = 'error') {
+                const container = document.getElementById('toastContainer');
+                const toast = document.createElement('div');
+                const colors = {
+                    error: '#ef4444',
+                    warning: '#f59e0b',
+                    success: '#10b981',
+                    info: '#3b82f6'
+                };
+                
+                toast.style.cssText = `
+                    background: ${colors[type] || colors.error};
+                    color: white;
+                    padding: 16px 20px;
+                    border-radius: 12px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+                    max-width: 350px;
+                    animation: slideIn 0.3s ease-out;
+                    font-size: 14px;
+                    line-height: 1.5;
+                `;
+                toast.textContent = message;
+                
+                container.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(() => toast.remove(), 300);
+                }, 5000);
+            }
+            
+            initializeSettingsPanel() {
+                const panel = document.getElementById('settingsGrid');
+                if (panel) {
+                    panel.style.display = '';
+                    panel.setAttribute('role', 'region');
+                    panel.setAttribute('aria-hidden', 'true');
+                }
+                
+                const btn = document.querySelector('.live-settings-toggle');
+                if (btn) {
+                    btn.setAttribute('aria-expanded', 'false');
+                    btn.setAttribute('aria-controls', 'settingsGrid');
+                }
+            }
+            
+            initializeSocketIO() {
+                if (typeof io !== 'undefined') {
+                    this.socket = io('/live-transcription');
+                    
+                    this.socket.on('connect', () => {
+                        console.log('Connected to live transcription service');
+                        this.updateConnectionStatus('connected');
+                    });
+                    
+                    this.socket.on('disconnect', () => {
+                        console.log('Disconnected from live transcription service');
+                        this.updateConnectionStatus('disconnected');
+                    });
+                    
+                    this.socket.on('transcription_segment', (data) => {
+                        this.handleTranscriptionSegment(data);
+                    });
+                    
+                    this.socket.on('transcription_final', (data) => {
+                        this.handleFinalTranscription(data);
+                    });
+                } else {
+                    console.warn('Socket.IO not available, live features disabled');
+                }
+            }
+            
+            setupEventListeners() {
+                // Settings
+                document.getElementById('languageSelect').addEventListener('change', (e) => {
+                    this.settings.language = e.target.value;
+                });
+                
+                document.getElementById('autoScroll').addEventListener('change', (e) => {
+                    this.settings.autoScroll = e.target.checked;
+                });
+                
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        switch(e.key) {
+                            case 'r':
+                                e.preventDefault();
+                                this.toggleRecording();
+                                break;
+                            case 's':
+                                e.preventDefault();
+                                this.saveSession();
+                                break;
+                            case 'c':
+                                e.preventDefault();
+                                this.copyTranscript();
+                                break;
+                        }
+                    }
+                    
+                    if (e.key === 'Escape' && this.isRecording) {
+                        this.stopRecording();
+                    }
+                });
+            }
+            
+            initializeAudioVisualization() {
+                const barsContainer = document.getElementById('audioBars');
+                barsContainer.innerHTML = '';
+                
+                for (let i = 0; i < 20; i++) {
+                    const bar = document.createElement('div');
+                    bar.className = 'live-audio-bar';
+                    bar.style.height = '4px';
+                    barsContainer.appendChild(bar);
+                }
+            }
+            
+            async toggleRecording() {
+                if (this.isRecording) {
+                    this.stopRecording();
+                } else {
+                    await this.startRecording();
+                }
+            }
+            
+            async startRecording() {
+                try {
+                    this.audioStream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        } 
+                    });
+                    
+                    this.setupAudioProcessing();
+                    this.setupMediaRecorder();
+                    
+                    this.mediaRecorder.start(100);
+                    this.isRecording = true;
+                    this.sessionStartTime = Date.now();
+                    
+                    this.updateRecordingUI(true);
+                    this.updateStatus('recording');
+                    this.startSessionTimer();
+                    
+                    if (this.socket) {
+                        this.socket.emit('start_session', {
+                            language: this.settings.language,
+                            speaker_detection: this.settings.speakerDetection,
+                            punctuation: this.settings.punctuation
+                        });
+                    }
+                    
+                    this.showToast('Recording started successfully!', 'success');
+                    console.log('Recording started');
+                } catch (error) {
+                    console.error('Error starting recording:', error);
+                    this.updateStatus('error');
+                    
+                    let message = 'Unable to start recording. ';
+                    
+                    if (error.name === 'NotAllowedError') {
+                        message += 'Please allow microphone access in your browser settings.';
+                    } else if (error.name === 'NotFoundError') {
+                        message += 'No microphone found. Please connect a microphone and try again.';
+                    } else if (error.name === 'NotReadableError') {
+                        message += 'Microphone is in use by another application. Please close other apps and try again.';
+                    } else if (error.name === 'NotSupportedError' || error.message.includes('browser does not support')) {
+                        message += error.message;
+                    } else if (error.name === 'SecurityError') {
+                        message += 'Recording requires a secure connection (HTTPS). Please access this page via HTTPS.';
+                    } else {
+                        message += error.message || 'Please check your browser settings and try again.';
+                    }
+                    
+                    this.showToast(message, 'error');
+                }
+            }
+            
+            stopRecording() {
+                if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                    this.mediaRecorder.stop();
+                }
+                
+                if (this.audioStream) {
+                    this.audioStream.getTracks().forEach(track => track.stop());
+                }
+                
+                this.isRecording = false;
+                this.updateRecordingUI(false);
+                this.updateStatus('ready');
+                
+                if (this.socket) {
+                    this.socket.emit('end_session');
+                }
+                
+                console.log('Recording stopped');
+            }
+            
+            setupAudioProcessing() {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.analyser = this.audioContext.createAnalyser();
+                this.analyser.fftSize = 256;
+                
+                const source = this.audioContext.createMediaStreamSource(this.audioStream);
+                source.connect(this.analyser);
+                
+                this.visualizeAudio();
+            }
+            
+            getSupportedMimeType() {
+                const types = [
+                    'audio/webm;codecs=opus',
+                    'audio/webm',
+                    'audio/mp4',
+                    'audio/ogg;codecs=opus',
+                    ''
+                ];
+                
+                for (const type of types) {
+                    if (type === '' || MediaRecorder.isTypeSupported(type)) {
+                        console.log('Using audio format:', type || 'browser default');
+                        return type;
+                    }
+                }
+                
+                throw new Error('No supported audio format found');
+            }
+            
+            setupMediaRecorder() {
+                try {
+                    const mimeType = this.getSupportedMimeType();
+                    const options = mimeType ? { mimeType } : {};
+                    
+                    this.mediaRecorder = new MediaRecorder(this.audioStream, options);
+                    
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0 && this.socket) {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                this.socket.emit('audio_data', {
+                                    data: reader.result,
+                                    timestamp: Date.now()
+                                });
+                            };
+                            reader.readAsArrayBuffer(event.data);
+                        }
+                    };
+                } catch (error) {
+                    console.error('MediaRecorder setup error:', error);
+                    throw new Error('Your browser does not support audio recording. Please try a different browser.');
+                }
+            }
+            
+            visualizeAudio() {
+                if (!this.isRecording) return;
+                
+                const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                this.analyser.getByteFrequencyData(dataArray);
+                
+                // Check if there's significant audio activity
+                const avgVolume = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+                this.updateAudioStatus(avgVolume > 15);
+                
+                const bars = document.querySelectorAll('.live-audio-bar');
+                bars.forEach((bar, index) => {
+                    const value = dataArray[index * 2] || 0;
+                    const height = Math.max(4, (value / 255) * 60);
+                    bar.style.height = height + 'px';
+                    
+                    if (value > 100) {
+                        bar.classList.add('active');
+                        setTimeout(() => bar.classList.remove('active'), 100);
+                    }
+                });
+                
+                requestAnimationFrame(() => this.visualizeAudio());
+            }
+            
+            handleTranscriptionSegment(data) {
+                const transcriptContent = document.getElementById('transcriptContent');
+                let segmentElement = document.querySelector(`[data-segment-id="${data.segment_id}"]`);
+                
+                if (!segmentElement) {
+                    segmentElement = this.createSegmentElement(data);
+                    transcriptContent.appendChild(segmentElement);
+                } else {
+                    this.updateSegmentElement(segmentElement, data);
+                }
+                
+                if (this.settings.autoScroll) {
+                    segmentElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }
+                
+                this.updateMetrics();
+            }
+            
+            handleFinalTranscription(data) {
+                const segmentElement = document.querySelector(`[data-segment-id="${data.segment_id}"]`);
+                if (segmentElement) {
+                    segmentElement.classList.remove('streaming');
+                    segmentElement.classList.add('final');
+                    this.updateSegmentElement(segmentElement, data);
+                }
+                
+                this.transcriptSegments.push(data);
+            }
+            
+            createSegmentElement(data) {
+                const segment = document.createElement('div');
+                segment.className = 'live-transcript-segment streaming';
+                segment.setAttribute('data-segment-id', data.segment_id);
+                
+                segment.innerHTML = `
+                    <div class="live-segment-header">
+                        <span class="live-segment-speaker">${data.speaker || 'Speaker'}</span>
+                        <span class="live-segment-timestamp">${this.formatTimestamp(data.timestamp)}</span>
+                    </div>
+                    <p class="live-segment-text">${data.text}</p>
+                    <div class="live-segment-confidence">
+                        <span>Confidence:</span>
+                        <div class="live-confidence-bar">
+                            <div class="live-confidence-fill" style="width: ${data.confidence * 100}%"></div>
+                        </div>
+                        <span>${Math.round(data.confidence * 100)}%</span>
+                    </div>
+                `;
+                
+                return segment;
+            }
+            
+            updateSegmentElement(element, data) {
+                const textElement = element.querySelector('.live-segment-text');
+                const confidenceBar = element.querySelector('.live-confidence-fill');
+                const confidenceText = element.querySelector('.live-segment-confidence span:last-child');
+                
+                textElement.textContent = data.text;
+                confidenceBar.style.width = `${data.confidence * 100}%`;
+                confidenceText.textContent = `${Math.round(data.confidence * 100)}%`;
+            }
+            
+            updateRecordingUI(recording) {
+                const recordBtn = document.getElementById('recordBtn');
+                const recordIcon = document.getElementById('recordIcon');
+                const recordText = document.getElementById('recordText');
+                
+                if (recording) {
+                    recordBtn.classList.add('recording');
+                    recordIcon.className = 'fas fa-stop';
+                    recordText.textContent = 'Stop Recording';
+                } else {
+                    recordBtn.classList.remove('recording');
+                    recordIcon.className = 'fas fa-microphone';
+                    recordText.textContent = 'Start Recording';
+                }
+            }
+            
+            updateStatus(status) {
+                const statusElement = document.getElementById('transcriptionStatus');
+                
+                statusElement.classList.remove('active', 'recording', 'processing');
+                
+                switch(status) {
+                    case 'recording':
+                    case 'connected':
+                        statusElement.classList.add('active');
+                        break;
+                    case 'processing':
+                        statusElement.classList.add('active', 'processing');
+                        break;
+                }
+            }
+            
+            updateConnectionStatus(status) {
+                const connectionElement = document.getElementById('connectionStatus');
+                
+                if (status === 'connected') {
+                    connectionElement.classList.add('active');
+                } else {
+                    connectionElement.classList.remove('active');
+                }
+            }
+            
+            updateAudioStatus(isActive) {
+                const audioElement = document.getElementById('audioStatus');
+                
+                if (isActive) {
+                    audioElement.classList.add('active');
+                } else {
+                    audioElement.classList.remove('active');
+                }
+            }
+            
+            startSessionTimer() {
+                const timer = document.getElementById('sessionTimer');
+                const updateTimer = () => {
+                    if (!this.isRecording) return;
+                    
+                    const elapsed = Date.now() - this.sessionStartTime;
+                    const minutes = Math.floor(elapsed / 60000);
+                    const seconds = Math.floor((elapsed % 60000) / 1000);
+                    timer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    
+                    setTimeout(updateTimer, 1000);
+                };
+                updateTimer();
+            }
+            
+            updateMetrics() {
+                const wordsPerMinute = document.getElementById('wordsPerMinute');
+                const totalWords = document.getElementById('totalWords');
+                const accuracy = document.getElementById('accuracy');
+                const duration = document.getElementById('sessionDuration');
+                
+                if (this.transcriptSegments.length > 0) {
+                    const totalWordCount = this.transcriptSegments.reduce((acc, segment) => {
+                        return acc + (segment.text ? segment.text.split(' ').length : 0);
+                    }, 0);
+                    
+                    const avgConfidence = this.transcriptSegments.reduce((acc, segment) => {
+                        return acc + (segment.confidence || 0);
+                    }, 0) / this.transcriptSegments.length;
+                    
+                    totalWords.textContent = totalWordCount;
+                    accuracy.textContent = `${Math.round(avgConfidence * 100)}%`;
+                    
+                    if (this.sessionStartTime) {
+                        const elapsedMinutes = (Date.now() - this.sessionStartTime) / 60000;
+                        const wpm = Math.round(totalWordCount / Math.max(elapsedMinutes, 0.1));
+                        wordsPerMinute.textContent = wpm;
+                    }
+                }
+            }
+            
+            formatTimestamp(timestamp) {
+                const date = new Date(timestamp);
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                const seconds = date.getSeconds().toString().padStart(2, '0');
+                return `${minutes}:${seconds}`;
+            }
+            
+            // Utility methods
+            toggleSettings() {
+                const panel = document.getElementById('settingsGrid');
+                const btn = document.querySelector('.live-settings-toggle');
+                
+                if (!panel || !btn) return;
+                
+                const isOpen = panel.classList.contains('is-open');
+                const shouldOpen = !isOpen;
+                
+                // Update ARIA attributes
+                btn.setAttribute('aria-expanded', String(shouldOpen));
+                panel.setAttribute('aria-hidden', String(!shouldOpen));
+                btn.classList.toggle('is-active', shouldOpen);
+                
+                // Check for reduced motion preference
+                const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                
+                if (prefersReducedMotion) {
+                    // Instant toggle for reduced motion
+                    panel.classList.toggle('is-open', shouldOpen);
+                    if (shouldOpen) {
+                        const firstInput = panel.querySelector('input, select, button');
+                        if (firstInput) firstInput.focus();
+                    }
+                    return;
+                }
+                
+                if (shouldOpen) {
+                    // Opening animation
+                    panel.style.overflow = 'hidden';
+                    panel.style.height = '0px';
+                    panel.style.opacity = '0';
+                    panel.classList.add('is-opening');
+                    
+                    requestAnimationFrame(() => {
+                        const targetHeight = panel.scrollHeight;
+                        panel.style.transition = 'height 320ms cubic-bezier(.22,1,.36,1), opacity 240ms ease, transform 320ms cubic-bezier(.22,1,.36,1)';
+                        panel.style.height = targetHeight + 'px';
+                        panel.style.opacity = '1';
+                    });
+                    
+                    const handleOpenEnd = () => {
+                        panel.removeEventListener('transitionend', handleOpenEnd);
+                        panel.classList.remove('is-opening');
+                        panel.classList.add('is-open');
+                        panel.style.height = '';
+                        panel.style.transition = '';
+                        panel.style.overflow = '';
+                        
+                        // Move focus to first interactive element
+                        const firstInput = panel.querySelector('input, select, button');
+                        if (firstInput) firstInput.focus();
+                    };
+                    
+                    panel.addEventListener('transitionend', handleOpenEnd, { once: true });
+                } else {
+                    // Closing animation
+                    const currentHeight = panel.scrollHeight;
+                    panel.style.height = currentHeight + 'px';
+                    panel.style.overflow = 'hidden';
+                    
+                    requestAnimationFrame(() => {
+                        panel.style.transition = 'height 260ms cubic-bezier(.55,0,.55,.2), opacity 200ms ease, transform 260ms cubic-bezier(.55,0,.55,.2)';
+                        panel.style.height = '0px';
+                        panel.style.opacity = '0';
+                    });
+                    
+                    const handleCloseEnd = () => {
+                        panel.removeEventListener('transitionend', handleCloseEnd);
+                        panel.classList.remove('is-open');
+                        panel.style.height = '';
+                        panel.style.transition = '';
+                        panel.style.overflow = '';
+                        panel.style.opacity = '';
+                        
+                        // Return focus to button
+                        btn.focus();
+                    };
+                    
+                    panel.addEventListener('transitionend', handleCloseEnd, { once: true });
+                }
+            }
+            
+            clearTranscript() {
+                if (confirm('Clear all transcript content?')) {
+                    document.getElementById('transcriptContent').innerHTML = '';
+                    this.transcriptSegments = [];
+                }
+            }
+            
+            exportTranscript() {
+                const transcript = this.transcriptSegments
+                    .map(segment => `[${this.formatTimestamp(segment.timestamp)}] ${segment.speaker || 'Speaker'}: ${segment.text}`)
+                    .join('\n');
+                
+                const blob = new Blob([transcript], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `transcript-${new Date().toISOString().slice(0, 19)}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+            
+            copyTranscript() {
+                const transcript = this.transcriptSegments
+                    .map(segment => segment.text)
+                    .join(' ');
+                
+                navigator.clipboard.writeText(transcript).then(() => {
+                    console.log('Transcript copied to clipboard');
+                }).catch(err => {
+                    console.error('Failed to copy transcript:', err);
+                });
+            }
+            
+            saveSession() {
+                const sessionData = {
+                    timestamp: this.sessionStartTime,
+                    segments: this.transcriptSegments,
+                    settings: this.settings
+                };
+                
+                localStorage.setItem('mina-live-session', JSON.stringify(sessionData));
+                console.log('Session saved');
+            }
+            
+            shareSession() {
+                if (navigator.share && this.transcriptSegments.length > 0) {
+                    const transcript = this.transcriptSegments.map(s => s.text).join(' ');
+                    navigator.share({
+                        title: 'Mina Live Transcript',
+                        text: transcript
+                    });
+                } else {
+                    this.copyTranscript();
+                }
+            }
+            
+            stopSession() {
+                if (this.isRecording) {
+                    this.stopRecording();
+                }
+                // Additional cleanup if needed
+            }
+        }
+        
+        // Initialize app
+        const app = new LiveTranscriptionApp();
+        window.app = app; // Make accessible globally
+        
+        // Initialize feather icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    </script>
+{% endblock %}
