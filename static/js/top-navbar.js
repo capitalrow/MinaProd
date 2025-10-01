@@ -18,10 +18,15 @@ class TopNavigation {
     
     initializeEventListeners() {
         // Mobile menu toggle
+        console.log('🔍 Initializing mobile menu toggle:', this.mobileMenuToggle);
         if (this.mobileMenuToggle) {
-            this.mobileMenuToggle.addEventListener('click', () => {
+            console.log('✅ Mobile toggle button found, adding click listener');
+            this.mobileMenuToggle.addEventListener('click', (e) => {
+                console.log('🎯 Mobile toggle clicked!', e);
                 this.toggleMobileMenu();
             });
+        } else {
+            console.error('❌ Mobile toggle button NOT found! ID: mobileMenuToggle');
         }
         
         // Mobile overlay click
@@ -90,6 +95,7 @@ class TopNavigation {
     
     toggleMobileMenu() {
         const isExpanded = this.mobileMenuToggle.getAttribute('aria-expanded') === 'true';
+        console.log('🔄 Toggle mobile menu. Current state:', isExpanded ? 'open' : 'closed');
         
         if (isExpanded) {
             this.closeMobileMenu();
@@ -99,27 +105,15 @@ class TopNavigation {
     }
     
     openMobileMenu() {
+        console.log('📂 Opening mobile menu. UserMenu element:', this.userMenu);
         if (this.userMenu) {
             this.userMenu.classList.add('show', 'mobile-menu-active');
             this.mobileOverlay.classList.add('show');
             this.mobileMenuToggle.setAttribute('aria-expanded', 'true');
             document.body.style.overflow = 'hidden';
-            
-            // FORCE white text on all menu items (diagnostic fix)
-            const menuItems = this.userMenu.querySelectorAll('.navbar-user-menu-item, .navbar-menu-section-title, .navbar-user-name-large, .navbar-user-status, span, div, a');
-            menuItems.forEach(item => {
-                if (item.classList.contains('navbar-menu-section-title')) {
-                    item.style.setProperty('color', 'rgba(139, 92, 246, 0.8)', 'important');
-                } else if (!item.querySelector('i')) {
-                    item.style.setProperty('color', 'rgba(255, 255, 255, 0.9)', 'important');
-                }
-            });
-            
-            // Force purple icons
-            const icons = this.userMenu.querySelectorAll('i, .fas, .far');
-            icons.forEach(icon => {
-                icon.style.setProperty('color', 'rgba(139, 92, 246, 0.9)', 'important');
-            });
+            console.log('✅ Mobile menu opened. Classes:', this.userMenu.className);
+        } else {
+            console.error('❌ Cannot open menu - userMenu element not found!');
         }
     }
     
@@ -231,7 +225,9 @@ class TopNavigation {
 
 // Initialize navigation when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Initializing TopNavigation...');
     window.topNav = new TopNavigation();
+    console.log('✅ TopNavigation initialized:', window.topNav);
     
     // Example: Update badge counts (can be called from other scripts)
     // window.topNav.updateBadge('meetings-badge', 5);
