@@ -52,7 +52,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-transcript.css') }}">
     
     <!-- Defer non-critical JavaScript -->
-    <script>
+    <script nonce="{{ g.csp_nonce }}">
       // Optimized font loading
       if ('fonts' in document) {
         document.fonts.ready.then(() => {
@@ -429,7 +429,7 @@
             referrerpolicy="no-referrer"></script>
     
     <!-- Application JavaScript -->
-    <script>
+    <script nonce="{{ g.csp_nonce }}">
         // Global settings management
         document.getElementById('saveSettings')?.addEventListener('click', function() {
             const settings = {
