@@ -171,8 +171,43 @@ def _sentry_before_send(event, hint):
     return event
 
 # ---------- Create the SocketIO singleton with eventlet for production WebSocket support
+# SECURITY: Restrict CORS origins with custom validator
+def _validate_socketio_origin(origin):
+    """
+    Validate Socket.IO origin against allowed patterns.
+    
+    Socket.IO doesn't support wildcard patterns in cors_allowed_origins,
+    so we use a callable validator to check origins against patterns.
+    """
+    if not origin:
+        return False
+    
+    # Check environment variable for explicit allowed origins
+    env_origins = os.getenv('SOCKETIO_ALLOWED_ORIGINS', '').split(',')
+    if env_origins and env_origins != ['']:
+        return origin in [o.strip() for o in env_origins]
+    
+    # Development: Allow localhost
+    if origin.startswith('http://localhost:') or origin.startswith('https://localhost:'):
+        return True
+    
+    # Production: Allow all Replit domains
+    # Primary workspace domains
+    if origin.endswith('.repl.co'):
+        return True
+    
+    # Deployment domains
+    if origin.endswith('.replit.dev') or origin.endswith('.replit.app'):
+        return True
+    
+    # Base Replit domains
+    if origin in ['https://replit.dev', 'https://replit.app', 'https://repl.co']:
+        return True
+    
+    return False
+
 socketio = SocketIO(
-    cors_allowed_origins="*",  # Allow all origins for development and dynamic Replit URLs
+    cors_allowed_origins=_validate_socketio_origin,  # Custom validator for pattern matching
     async_mode="eventlet",  # Changed from threading to eventlet for proper WebSocket support
     ping_timeout=60,
     ping_interval=25,
@@ -636,19 +671,78 @@ def create_app() -> Flask:
     def health():
         return {"ok": True, "uptime": True}, 200
 
-    # unified error shape
-    @app.errorhandler(413)  # RequestEntityTooLarge
-    def too_large(e):
-        return jsonify(error="payload_too_large", detail="Upload exceeded limit"), 413
+    # Security-hardened error handlers - prevent information leakage
+    @app.errorhandler(400)
+    def bad_request(e):
+        return jsonify({
+            'error': 'bad_request',
+            'message': 'The request could not be understood',
+            'request_id': g.get('request_id')
+        }), 400
+
+    @app.errorhandler(401)
+    def unauthorized(e):
+        return jsonify({
+            'error': 'unauthorized',
+            'message': 'Authentication required',
+            'request_id': g.get('request_id')
+        }), 401
+
+    @app.errorhandler(403)
+    def forbidden(e):
+        return jsonify({
+            'error': 'forbidden',
+            'message': 'You do not have permission to access this resource',
+            'request_id': g.get('request_id')
+        }), 403
 
     @app.errorhandler(404)
     def not_found(e):
-        return jsonify(error="not_found"), 404
+        return jsonify({
+            'error': 'not_found',
+            'message': 'The requested resource was not found',
+            'request_id': g.get('request_id')
+        }), 404
+
+    @app.errorhandler(413)
+    def payload_too_large(e):
+        return jsonify({
+            'error': 'payload_too_large',
+            'message': 'Request payload too large',
+            'request_id': g.get('request_id')
+        }), 413
+
+    @app.errorhandler(429)
+    def rate_limit_exceeded(e):
+        return jsonify({
+            'error': 'rate_limit_exceeded',
+            'message': 'Too many requests. Please try again later.',
+            'request_id': g.get('request_id')
+        }), 429
 
     @app.errorhandler(500)
-    def server_error(e):
-        app.logger.exception("Unhandled error")
-        return jsonify(error="server_error"), 500
+    def internal_server_error(e):
+        # Log full error internally with stack trace
+        app.logger.error(f"Internal server error: {str(e)}", exc_info=True)
+        
+        # Return generic message to client (no stack trace)
+        return jsonify({
+            'error': 'internal_server_error',
+            'message': 'An internal error occurred. Please try again later.',
+            'request_id': g.get('request_id')
+        }), 500
+
+    @app.errorhandler(Exception)
+    def handle_unexpected_error(e):
+        # Log unexpected errors with full context
+        app.logger.error(f"Unexpected error: {type(e).__name__}: {str(e)}", exc_info=True)
+        
+        # Return generic error (never expose exception details)
+        return jsonify({
+            'error': 'server_error',
+            'message': 'An unexpected error occurred',
+            'request_id': g.get('request_id')
+        }), 500
 
     # hook Socket.IO to app
     socketio.init_app(app)
