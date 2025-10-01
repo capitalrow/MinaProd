@@ -433,11 +433,11 @@
         <div>
             <!-- Recording Controls -->
             <div class="controls-card">
-                <button class="record-button" id="recordBtn" aria-label="Start/Stop Recording">
-                    <i data-feather="mic" class="record-icon" id="recordIcon"></i>
+                <button class="record-button" id="recordBtn" aria-label="Start recording" aria-pressed="false">
+                    <i data-feather="mic" class="record-icon" id="recordIcon" aria-hidden="true"></i>
                 </button>
-                <div class="record-status" id="recordStatus">Ready to Record</div>
-                <div class="record-timer" id="recordTimer">00:00</div>
+                <div class="record-status" id="recordStatus" role="status" aria-live="polite">Ready to Record</div>
+                <div class="record-timer" id="recordTimer" role="timer" aria-live="off">00:00</div>
             </div>
             
             <!-- Audio Visualizer -->
@@ -473,7 +473,7 @@
                         </button>
                     </div>
                 </div>
-                <div class="transcript-content" id="transcriptContent">
+                <div class="transcript-content" id="transcriptContent" role="log" aria-live="polite" aria-atomic="false" aria-relevant="additions">
                     <div class="empty-state">
                         <div class="empty-icon">
                             <i data-feather="mic"></i>
@@ -641,6 +641,10 @@ class LiveTranscriptionApp {
             this.socket.on('disconnect', () => {
                 console.log('Disconnected');
                 this.updateStatus('connectionStatus', 'Disconnected', 'error');
+                // Stop recording if active to prevent stuck ARIA state
+                if (this.isRecording) {
+                    this.stopRecording();
+                }
             });
             
             this.socket.on('transcription_segment', (data) => {
@@ -689,12 +693,22 @@ class LiveTranscriptionApp {
                 }
             };
             
+            // Handle recorder stop to ensure ARIA state updates
+            this.mediaRecorder.onstop = () => {
+                if (this.isRecording) {
+                    this.stopRecording();
+                }
+            };
+            
             this.mediaRecorder.start(100); // Send data every 100ms
             this.isRecording = true;
             this.startTime = Date.now();
             
             // Update UI
-            document.getElementById('recordBtn').classList.add('recording');
+            const recordBtn = document.getElementById('recordBtn');
+            recordBtn.classList.add('recording');
+            recordBtn.setAttribute('aria-pressed', 'true');
+            recordBtn.setAttribute('aria-label', 'Stop recording');
             document.getElementById('recordStatus').textContent = 'Recording...';
             this.updateStatus('audioStatus', 'Recording', 'error');
             
@@ -704,11 +718,21 @@ class LiveTranscriptionApp {
         } catch (error) {
             console.error('Error starting recording:', error);
             alert('Could not access microphone. Please check permissions.');
+            
+            // Reset ARIA state on error to prevent stuck state
+            const recordBtn = document.getElementById('recordBtn');
+            recordBtn.classList.remove('recording');
+            recordBtn.setAttribute('aria-pressed', 'false');
+            recordBtn.setAttribute('aria-label', 'Start recording');
+            this.isRecording = false;
         }
     }
     
     stopRecording() {
-        if (this.mediaRecorder) {
+        // Set flag false BEFORE calling stop() to prevent onstop recursion
+        this.isRecording = false;
+        
+        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
             this.mediaRecorder.stop();
         }
         if (this.audioStream) {
@@ -718,10 +742,11 @@ class LiveTranscriptionApp {
             this.audioContext.close();
         }
         
-        this.isRecording = false;
-        
         // Update UI
-        document.getElementById('recordBtn').classList.remove('recording');
+        const recordBtn = document.getElementById('recordBtn');
+        recordBtn.classList.remove('recording');
+        recordBtn.setAttribute('aria-pressed', 'false');
+        recordBtn.setAttribute('aria-label', 'Start recording');
         document.getElementById('recordStatus').textContent = 'Recording Stopped';
         this.updateStatus('audioStatus', 'Ready', 'success');
     }

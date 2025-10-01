@@ -81,6 +81,9 @@
     {% block head %}{% endblock %}
 </head>
 <body>
+    <!-- Skip Navigation Link for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
     <!-- Crown+ Premium Navigation Bar -->
     <nav class="crown-navbar" role="navigation" aria-label="Main navigation">
         <div class="crown-navbar-container">
@@ -288,9 +291,6 @@
     
     <!-- Enhanced Loading States System -->
     <script src="{{ url_for('static', filename='js/loading-states.js') }}" defer></script>
-    <!-- Skip Link for Accessibility -->
-    <a href="#main-content" class="skip-link">Skip to main content</a>
-    
     
     <!-- Industry Standard: Status/Alert Bar (Below Navigation) -->
     <div id="global-status-bar" class="status-bar d-none" role="alert" aria-live="polite">
@@ -366,14 +366,14 @@
     </footer>
 
     <!-- Settings Modal -->
-    <div class="modal fade" id="settingsModal" tabindex="-1">
-        <div class="modal-dialog">
+    <div class="modal fade" id="settingsModal" tabindex="-1" role="dialog" aria-labelledby="settingsModalTitle" aria-modal="true">
+        <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-cog me-2"></i>Settings
+                    <h5 class="modal-title" id="settingsModalTitle">
+                        <i class="fas fa-cog me-2" aria-hidden="true"></i>Settings
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close settings dialog"></button>
                 </div>
                 <div class="modal-body">
                     <form id="settingsForm">

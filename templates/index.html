@@ -121,12 +121,12 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Title</th>
-                                <th>Status</th>
-                                <th>Duration</th>
-                                <th>Segments</th>
-                                <th>Created</th>
-                                <th>Actions</th>
+                                <th scope="col">Title</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Duration</th>
+                                <th scope="col">Segments</th>
+                                <th scope="col">Created</th>
+                                <th scope="col">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -161,13 +161,15 @@
                                 <td>
                                     <div class="btn-group btn-group-sm">
                                         <a href="{{ url_for('sessions.get_session_detail', session_identifier=session.session_id) }}" 
-                                           class="btn btn-outline-primary btn-sm">
-                                            <i class="fas fa-eye"></i>
+                                           class="btn btn-outline-primary btn-sm"
+                                           aria-label="View details for {{ session.title }}">
+                                            <i class="fas fa-eye" aria-hidden="true"></i>
                                         </a>
                                         {% if session.status == 'completed' %}
                                             <a href="{{ url_for('transcription.export_session', session_id=session.session_id, format='txt') }}" 
-                                               class="btn btn-outline-success btn-sm">
-                                                <i class="fas fa-download"></i>
+                                               class="btn btn-outline-success btn-sm"
+                                               aria-label="Download {{ session.title }} transcript">
+                                                <i class="fas fa-download" aria-hidden="true"></i>
                                             </a>
                                         {% endif %}
                                     </div>
@@ -194,15 +196,15 @@
 {% endblock %}
 
 <!-- Upload Modal -->
-<div class="modal fade" id="uploadModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalTitle" aria-modal="true">
+    <div class="modal-dialog" role="document">
         <div class="modal-content" style="background: var(--glass-bg); backdrop-filter: var(--glass-backdrop-strong); border: 1px solid var(--glass-border);">
             <div class="modal-header" style="border-bottom: 1px solid var(--glass-border);">
-                <h5 class="modal-title">
-                    <i class="fas fa-upload me-2"></i>
+                <h5 class="modal-title" id="uploadModalTitle">
+                    <i class="fas fa-upload me-2" aria-hidden="true"></i>
                     Upload Audio File
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close upload dialog"></button>
             </div>
             <div class="modal-body">
                 <form id="uploadForm" enctype="multipart/form-data">
