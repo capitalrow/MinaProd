@@ -15,6 +15,7 @@ from flask_limiter.util import get_remote_address
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
 # ---------- Config (fallback if config.Config not present)
 try:
@@ -110,6 +111,7 @@ def create_app() -> Flask:
             dsn=sentry_dsn,
             integrations=[
                 FlaskIntegration(),
+                SqlalchemyIntegration(),
                 LoggingIntegration(
                     level=logging.INFO,  # Capture info and above as breadcrumbs
                     event_level=logging.ERROR  # Send errors as events
@@ -485,6 +487,14 @@ def create_app() -> Flask:
         app.logger.info("Production Monitoring Dashboard registered")
     except Exception as e:
         app.logger.error(f"Failed to register Production Monitoring Dashboard: {e}")
+    
+    # Operations routes (Sentry testing, performance monitoring)
+    try:
+        from routes.ops import ops_bp
+        app.register_blueprint(ops_bp)
+        app.logger.info("Ops routes registered (Sentry testing, performance monitoring)")
+    except Exception as e:
+        app.logger.error(f"Failed to register ops routes: {e}")
     
     # Missing API endpoints - temporarily disabled due to circular import
     # Quick fix for analytics and meetings endpoints
