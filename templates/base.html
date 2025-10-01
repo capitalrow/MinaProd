@@ -74,6 +74,41 @@
             referrerpolicy="no-referrer"
             defer></script>
     
+    <!-- CRITICAL FIX: Mobile menu text visibility (loads last to override all CSS) -->
+    <style>
+        @media (max-width: 768px) {
+            .navbar-user-menu.mobile-menu-active,
+            .navbar-user-menu.mobile-menu-active *,
+            .navbar-user-menu.mobile-menu-active a,
+            .navbar-user-menu.mobile-menu-active span,
+            .navbar-user-menu.mobile-menu-active div,
+            .navbar-user-menu.mobile-menu-active .navbar-user-menu-item,
+            .navbar-user-menu.mobile-menu-active .navbar-submenu-item {
+                color: rgba(255, 255, 255, 0.9) !important;
+            }
+            
+            .navbar-user-menu.mobile-menu-active i,
+            .navbar-user-menu.mobile-menu-active .fas,
+            .navbar-user-menu.mobile-menu-active .far {
+                color: rgba(139, 92, 246, 0.9) !important;
+            }
+            
+            .navbar-user-menu.mobile-menu-active .navbar-menu-section-title {
+                color: rgba(139, 92, 246, 0.8) !important;
+                font-weight: 600 !important;
+            }
+            
+            .navbar-user-menu.mobile-menu-active .navbar-user-name-large {
+                color: rgba(255, 255, 255, 0.95) !important;
+                font-weight: 600 !important;
+            }
+            
+            .navbar-user-menu.mobile-menu-active .navbar-user-status {
+                color: rgba(255, 255, 255, 0.7) !important;
+            }
+        }
+    </style>
+    
     {% block head %}{% endblock %}
 </head>
 <body>
