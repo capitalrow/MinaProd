@@ -2,198 +2,729 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Create Account - Mina</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-premium-system.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-auth.css') }}">
+    
+    <!-- Crown+ Design System -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-design-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-components.css') }}">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons" defer></script>
+    
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    
+    <style>
+        /* Auth Page Layout */
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: var(--bg-primary);
+            font-family: var(--font-family-sans);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        /* Animated Gradient Background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(
+                circle at 30% 40%, 
+                rgba(102, 126, 234, 0.15) 0%, 
+                transparent 50%
+            ),
+            radial-gradient(
+                circle at 70% 60%, 
+                rgba(118, 75, 162, 0.15) 0%, 
+                transparent 50%
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        @media (prefers-reduced-motion: no-preference) {
+            body::before {
+                animation: gradientFloat 20s ease-in-out infinite;
+            }
+        }
+        
+        @keyframes gradientFloat {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(30px, -30px) scale(1.1);
+            }
+            66% {
+                transform: translate(-20px, 20px) scale(0.9);
+            }
+        }
+        
+        /* Main Auth Container */
+        .auth-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 520px;
+            margin: var(--space-8) var(--space-6);
+            padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
+        }
+        
+        @media (prefers-reduced-motion: no-preference) {
+            .auth-container {
+                animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Premium Glass Auth Card */
+        .auth-card {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-3xl);
+            padding: var(--space-10);
+            box-shadow: var(--shadow-2xl);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .auth-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-brand);
+            opacity: 0.8;
+        }
+        
+        /* Auth Header */
+        .auth-header {
+            text-align: center;
+            margin-bottom: var(--space-8);
+        }
+        
+        .auth-logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 72px;
+            height: 72px;
+            background: var(--gradient-brand);
+            border-radius: var(--radius-2xl);
+            margin-bottom: var(--space-5);
+            box-shadow: var(--shadow-xl), var(--shadow-brand-glow);
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-bold);
+            color: white;
+            font-family: var(--font-family-display);
+            letter-spacing: -0.02em;
+        }
+        
+        .auth-title {
+            font-size: var(--text-3xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--text-primary);
+            margin: 0 0 var(--space-2) 0;
+            font-family: var(--font-family-display);
+            letter-spacing: var(--tracking-tight);
+            line-height: var(--leading-tight);
+        }
+        
+        .auth-subtitle {
+            font-size: var(--font-size-base);
+            color: var(--text-secondary);
+            margin: 0;
+            line-height: var(--line-height-relaxed);
+            letter-spacing: var(--tracking-normal);
+        }
+        
+        /* Form Styling */
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-5);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-4);
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2);
+        }
+        
+        .form-label {
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+            color: var(--text-primary);
+            letter-spacing: var(--tracking-wide);
+            text-transform: uppercase;
+        }
+        
+        .form-label-required::after {
+            content: '*';
+            color: var(--color-error-400);
+            margin-left: var(--space-1);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: var(--space-4);
+            font-size: var(--font-size-base);
+            font-family: var(--font-family-sans);
+            color: var(--text-primary);
+            background: var(--surface-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl);
+            transition: all var(--duration-fast) var(--ease-out);
+            box-sizing: border-box;
+        }
+        
+        .form-input::placeholder {
+            color: var(--text-tertiary);
+        }
+        
+        .form-input:hover {
+            border-color: var(--border-elevated);
+            background: var(--surface-elevated);
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--color-brand-500);
+            box-shadow: var(--focus-ring);
+            background: var(--surface-elevated);
+        }
+        
+        .form-input.error {
+            border-color: var(--color-error-500);
+        }
+        
+        .form-input.success {
+            border-color: var(--color-success-500);
+        }
+        
+        /* Password Input with Toggle */
+        .password-wrapper {
+            position: relative;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: var(--space-4);
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            padding: var(--space-2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color var(--duration-fast) var(--ease-out);
+        }
+        
+        .password-toggle:hover {
+            color: var(--text-primary);
+        }
+        
+        /* Password Strength Meter */
+        .strength-meter {
+            margin-top: var(--space-3);
+        }
+        
+        .strength-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-2);
+        }
+        
+        .strength-label {
+            font-size: var(--font-size-xs);
+            color: var(--text-tertiary);
+            font-weight: var(--font-weight-medium);
+        }
+        
+        .strength-text {
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-semibold);
+        }
+        
+        .strength-bar {
+            height: 4px;
+            background: var(--border-primary);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+        }
+        
+        .strength-fill {
+            height: 100%;
+            transition: width var(--duration-fast) var(--ease-out);
+            border-radius: var(--radius-full);
+        }
+        
+        .strength-fill.weak {
+            width: 25%;
+            background: var(--color-error-500);
+        }
+        
+        .strength-fill.fair {
+            width: 50%;
+            background: var(--color-warning-500);
+        }
+        
+        .strength-fill.good {
+            width: 75%;
+            background: var(--color-accent-500);
+        }
+        
+        .strength-fill.strong {
+            width: 100%;
+            background: var(--color-success-500);
+        }
+        
+        /* Error Message */
+        .error-message {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: var(--font-size-xs);
+            color: var(--color-error-400);
+            margin-top: var(--space-2);
+        }
+        
+        .error-message i {
+            width: 14px;
+            height: 14px;
+        }
+        
+        /* Auth Button - Full Width */
+        .btn-auth {
+            width: 100%;
+            min-height: 56px;
+            padding: var(--space-4) var(--space-6);
+            background: var(--gradient-brand);
+            color: white;
+            border: none;
+            border-radius: var(--radius-xl);
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-semibold);
+            font-family: var(--font-family-sans);
+            letter-spacing: var(--tracking-wide);
+            cursor: pointer;
+            transition: all var(--duration-fast) var(--ease-out);
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            margin-top: var(--space-4);
+        }
+        
+        @media (prefers-reduced-motion: no-preference) {
+            .btn-auth:hover {
+                transform: translateY(-2px);
+                box-shadow: var(--shadow-xl), var(--shadow-brand-glow);
+            }
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            .btn-auth:hover {
+                box-shadow: var(--shadow-xl), var(--shadow-brand-glow);
+            }
+        }
+        
+        .btn-auth:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-auth:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .btn-auth.loading .btn-text {
+            opacity: 0;
+        }
+        
+        .btn-spinner {
+            display: none;
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+        }
+        
+        @media (prefers-reduced-motion: no-preference) {
+            .btn-spinner {
+                animation: spin 0.8s linear infinite;
+            }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .btn-auth.loading .btn-spinner {
+            display: block;
+        }
+        
+        /* Alert Messages */
+        .alert {
+            padding: var(--space-4);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--space-6);
+            font-size: var(--font-size-sm);
+            line-height: var(--line-height-normal);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--color-error-400);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .alert-success {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--color-success-400);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--color-accent-400);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Footer */
+        .auth-footer {
+            text-align: center;
+            margin-top: var(--space-8);
+            padding-top: var(--space-6);
+            border-top: 1px solid var(--border-secondary);
+        }
+        
+        .auth-footer-text {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            margin: 0;
+        }
+        
+        .auth-link {
+            color: var(--color-brand-400);
+            text-decoration: none;
+            font-weight: var(--font-weight-semibold);
+            transition: color var(--duration-fast) var(--ease-out);
+        }
+        
+        .auth-link:hover {
+            color: var(--color-brand-300);
+            text-decoration: underline;
+        }
+        
+        /* Back to Home Link */
+        .back-link {
+            position: absolute;
+            top: var(--space-6);
+            left: var(--space-6);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-4);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            transition: all var(--duration-fast) var(--ease-out);
+            z-index: 10;
+        }
+        
+        .back-link:hover {
+            color: var(--text-primary);
+            background: var(--glass-bg-strong);
+            border-color: var(--glass-border-strong);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 640px) {
+            .auth-container {
+                margin: var(--space-6) var(--space-4);
+            }
+            
+            .auth-card {
+                padding: var(--space-8);
+            }
+            
+            .auth-logo {
+                width: 64px;
+                height: 64px;
+                font-size: var(--font-size-xl);
+            }
+            
+            .auth-title {
+                font-size: var(--text-2xl);
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .back-link {
+                top: var(--space-4);
+                left: var(--space-4);
+            }
+        }
+        
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* High Contrast Mode */
+        @media (prefers-contrast: high) {
+            .auth-card {
+                border: 2px solid var(--border-primary);
+            }
+            
+            .form-input:focus {
+                border-width: 2px;
+            }
+        }
+    </style>
 </head>
 <body>
+    <!-- Back to Home -->
+    <a href="/" class="back-link">
+        <i data-feather="arrow-left"></i>
+        <span>Back to Home</span>
+    </a>
+    
     <div class="auth-container">
-        <div class="auth-form-card">
+        <div class="auth-card">
             <div class="auth-header">
                 <div class="auth-logo">M</div>
                 <h1 class="auth-title">Create Account</h1>
                 <p class="auth-subtitle">Join Mina to transform your meetings into actionable moments</p>
-                <p class="auth-description">Experience professional transcription with advanced AI capabilities</p>
             </div>
             
             <!-- Flash Messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                        <div class="alert alert-{{ category }}">
+                            <i data-feather="{% if category == 'error' %}alert-circle{% elif category == 'success' %}check-circle{% else %}info{% endif %}"></i>
+                            {{ message }}
+                        </div>
                     {% endfor %}
                 {% endif %}
             {% endwith %}
             
             <form method="POST" action="{{ url_for('auth.register') }}" id="registerForm" class="auth-form">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-6);">
-                    <div class="auth-form-group">
-                        <label for="first_name" class="auth-form-label">First Name</label>
-                        <div class="auth-input-group">
-                            <input 
-                                type="text" 
-                                id="first_name" 
-                                name="first_name" 
-                                class="auth-form-input" 
-                                value="{{ request.form.get('first_name', '') }}"
-                                placeholder="John"
-                            >
-                            <i class="auth-input-icon fas fa-user"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="auth-form-group">
-                        <label for="last_name" class="auth-form-label">Last Name</label>
-                        <div class="auth-input-group">
-                            <input 
-                                type="text" 
-                                id="last_name" 
-                                name="last_name" 
-                                class="auth-form-input" 
-                                value="{{ request.form.get('last_name', '') }}"
-                                placeholder="Doe"
-                            >
-                            <i class="auth-input-icon fas fa-user"></i>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="auth-form-group">
-                    <label for="email" class="auth-form-label">Email Address *</label>
-                    <div class="auth-input-group">
-                        <input 
-                            type="email" 
-                            id="email" 
-                            name="email" 
-                            class="auth-form-input" 
-                            required 
-                            autocomplete="email"
-                            value="{{ request.form.get('email', '') }}"
-                            placeholder="john@example.com"
-                        >
-                        <i class="auth-input-icon fas fa-envelope"></i>
-                    </div>
-                </div>
-                
-                <div class="auth-form-group">
-                    <label for="username" class="auth-form-label">Username *</label>
-                    <div class="auth-input-group">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="first_name" class="form-label">First Name</label>
                         <input 
                             type="text" 
-                            id="username" 
-                            name="username" 
-                            class="auth-form-input" 
-                            required 
-                            autocomplete="username"
-                            value="{{ request.form.get('username', '') }}"
-                            placeholder="johndoe"
-                            minlength="3"
+                            id="first_name" 
+                            name="first_name" 
+                            class="form-input" 
+                            value="{{ request.form.get('first_name', '') }}"
+                            placeholder="John"
+                            autocomplete="given-name"
                         >
-                        <i class="auth-input-icon fas fa-at"></i>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="last_name" class="form-label">Last Name</label>
+                        <input 
+                            type="text" 
+                            id="last_name" 
+                            name="last_name" 
+                            class="form-input" 
+                            value="{{ request.form.get('last_name', '') }}"
+                            placeholder="Doe"
+                            autocomplete="family-name"
+                        >
                     </div>
                 </div>
                 
-                <div class="auth-form-group">
-                    <label for="password" class="auth-form-label">Password *</label>
-                    <div class="auth-input-group">
+                <div class="form-group">
+                    <label for="email" class="form-label form-label-required">Email Address</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        class="form-input" 
+                        required 
+                        autocomplete="email"
+                        value="{{ request.form.get('email', '') }}"
+                        placeholder="john@example.com"
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="username" class="form-label form-label-required">Username</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        class="form-input" 
+                        required 
+                        autocomplete="username"
+                        value="{{ request.form.get('username', '') }}"
+                        placeholder="johndoe"
+                        minlength="3"
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label form-label-required">Password</label>
+                    <div class="password-wrapper">
                         <input 
                             type="password" 
                             id="password" 
                             name="password" 
-                            class="auth-form-input" 
+                            class="form-input" 
                             required 
                             autocomplete="new-password"
                             placeholder="Create a secure password"
                             minlength="8"
                         >
-                        <i class="auth-input-icon fas fa-lock"></i>
-                        <button type="button" class="auth-password-toggle" onclick="togglePassword('password')">
-                            <i class="fas fa-eye" id="password-eye"></i>
+                        <button type="button" class="password-toggle" onclick="togglePassword('password')" aria-label="Toggle password visibility">
+                            <i data-feather="eye" id="password-eye"></i>
                         </button>
                     </div>
-                    <div class="auth-strength-meter" id="passwordStrength" style="display: none;">
-                        <div class="auth-strength-label">
-                            <span>Password Strength</span>
-                            <span id="strengthText">Weak</span>
+                    <div class="strength-meter" id="strengthMeter" style="display: none;">
+                        <div class="strength-header">
+                            <span class="strength-label">Password Strength</span>
+                            <span class="strength-text" id="strengthText">Weak</span>
                         </div>
-                        <div class="auth-strength-bar">
-                            <div class="auth-strength-fill weak" id="strengthFill"></div>
+                        <div class="strength-bar">
+                            <div class="strength-fill weak" id="strengthFill"></div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="auth-form-group">
-                    <label for="confirm_password" class="auth-form-label">Confirm Password *</label>
-                    <div class="auth-input-group">
+                <div class="form-group">
+                    <label for="confirm_password" class="form-label form-label-required">Confirm Password</label>
+                    <div class="password-wrapper">
                         <input 
                             type="password" 
                             id="confirm_password" 
                             name="confirm_password" 
-                            class="auth-form-input" 
+                            class="form-input" 
                             required 
                             autocomplete="new-password"
                             placeholder="Confirm your password"
                             minlength="8"
                         >
-                        <i class="auth-input-icon fas fa-lock"></i>
-                        <button type="button" class="auth-password-toggle" onclick="togglePassword('confirm_password')">
-                            <i class="fas fa-eye" id="confirm_password-eye"></i>
+                        <button type="button" class="password-toggle" onclick="togglePassword('confirm_password')" aria-label="Toggle password visibility">
+                            <i data-feather="eye" id="confirm_password-eye"></i>
                         </button>
                     </div>
-                    <div class="auth-form-error" id="confirmPasswordError" style="display: none;">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Passwords do not match
+                    <div class="error-message" id="confirmError" style="display: none;">
+                        <i data-feather="alert-circle"></i>
+                        <span>Passwords do not match</span>
                     </div>
                 </div>
                 
-                <button type="submit" class="auth-btn" id="registerButton">
-                    <div class="auth-btn-content">
-                        <span class="auth-btn-text">Create Account</span>
-                        <div class="auth-btn-spinner">
-                            <i class="fas fa-spinner fa-spin"></i>
-                        </div>
-                    </div>
+                <button type="submit" class="btn-auth" id="registerButton">
+                    <span class="btn-text">Create Account</span>
+                    <div class="btn-spinner"></div>
                 </button>
             </form>
             
             <div class="auth-footer">
                 <p class="auth-footer-text">
                     Already have an account? 
-                    <a href="{{ url_for('auth.login') }}" class="auth-footer-link">Sign in here</a>
+                    <a href="{{ url_for('auth.login') }}" class="auth-link">Sign in here</a>
                 </p>
             </div>
         </div>
     </div>
 
     <script>
+        // Initialize Feather Icons
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        });
+        
         // Password toggle functionality
         function togglePassword(fieldId) {
             const field = document.getElementById(fieldId);
-            const eye = document.getElementById(fieldId + '-eye');
+            const icon = document.getElementById(fieldId + '-eye');
             
             if (field.type === 'password') {
                 field.type = 'text';
-                eye.className = 'fas fa-eye-slash';
+                icon.setAttribute('data-feather', 'eye-off');
             } else {
                 field.type = 'password';
-                eye.className = 'fas fa-eye';
+                icon.setAttribute('data-feather', 'eye');
+            }
+            
+            if (typeof feather !== 'undefined') {
+                feather.replace();
             }
         }
         
-        // Password strength meter
+        // Password strength checker
         function checkPasswordStrength(password) {
-            const strengthMeter = document.getElementById('passwordStrength');
-            const strengthFill = document.getElementById('strengthFill');
-            const strengthText = document.getElementById('strengthText');
+            const meter = document.getElementById('strengthMeter');
+            const fill = document.getElementById('strengthFill');
+            const text = document.getElementById('strengthText');
             
             if (!password) {
-                strengthMeter.style.display = 'none';
+                meter.style.display = 'none';
                 return;
             }
             
-            strengthMeter.style.display = 'block';
+            meter.style.display = 'block';
             
             let score = 0;
             if (password.length >= 8) score++;
@@ -202,27 +733,31 @@
             if (/[0-9]/.test(password)) score++;
             if (/[^A-Za-z0-9]/.test(password)) score++;
             
-            strengthFill.className = 'auth-strength-fill ';
+            fill.className = 'strength-fill ';
             
             if (score <= 2) {
-                strengthFill.classList.add('weak');
-                strengthText.textContent = 'Weak';
+                fill.classList.add('weak');
+                text.textContent = 'Weak';
+                text.style.color = 'var(--color-error-500)';
             } else if (score === 3) {
-                strengthFill.classList.add('fair');
-                strengthText.textContent = 'Fair';
+                fill.classList.add('fair');
+                text.textContent = 'Fair';
+                text.style.color = 'var(--color-warning-500)';
             } else if (score === 4) {
-                strengthFill.classList.add('good');
-                strengthText.textContent = 'Good';
+                fill.classList.add('good');
+                text.textContent = 'Good';
+                text.style.color = 'var(--color-accent-500)';
             } else {
-                strengthFill.classList.add('strong');
-                strengthText.textContent = 'Strong';
+                fill.classList.add('strong');
+                text.textContent = 'Strong';
+                text.style.color = 'var(--color-success-500)';
             }
         }
         
         // Real-time password validation
         const password = document.getElementById('password');
         const confirmPassword = document.getElementById('confirm_password');
-        const confirmPasswordError = document.getElementById('confirmPasswordError');
+        const confirmError = document.getElementById('confirmError');
         
         password.addEventListener('input', function() {
             checkPasswordStrength(this.value);
@@ -234,10 +769,18 @@
         function validatePasswordMatch() {
             if (confirmPassword.value && password.value !== confirmPassword.value) {
                 confirmPassword.classList.add('error');
-                confirmPasswordError.style.display = 'flex';
-            } else {
+                confirmPassword.classList.remove('success');
+                confirmError.style.display = 'flex';
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+            } else if (confirmPassword.value && password.value === confirmPassword.value) {
                 confirmPassword.classList.remove('error');
-                confirmPasswordError.style.display = 'none';
+                confirmPassword.classList.add('success');
+                confirmError.style.display = 'none';
+            } else {
+                confirmPassword.classList.remove('error', 'success');
+                confirmError.style.display = 'none';
             }
         }
         
@@ -248,6 +791,7 @@
             if (password.value !== confirmPassword.value) {
                 e.preventDefault();
                 validatePasswordMatch();
+                confirmPassword.focus();
                 return false;
             }
             
@@ -267,7 +811,7 @@
             }
         });
 
-        // Enhanced error handling
+        // Reset button state on error
         {% if get_flashed_messages() %}
             document.addEventListener('DOMContentLoaded', function() {
                 const button = document.getElementById('registerButton');
