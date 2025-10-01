@@ -8,8 +8,8 @@ to support role-based access control and team collaboration features.
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey, JSON, Enum
 from sqlalchemy.orm import relationship
-from app import db
 import enum
+from . import db
 
 
 class OrganizationStatus(enum.Enum):

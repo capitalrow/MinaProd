@@ -2,9 +2,9 @@
 Streaming-specific database models for real-time transcription
 """
 
-from app import db
 from datetime import datetime
 from sqlalchemy import JSON
+from . import db
 
 
 class TranscriptionSession(db.Model):
