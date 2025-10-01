@@ -1,0 +1,661 @@
+/* Crown+ Landing Page - Premium Stripe/Linear-level Polish */
+
+/* ============================================
+   ROOT & GRADIENT FOUNDATION (Mobile-Safe)
+   ============================================ */
+.lp {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  background: hsl(264, 69%, 24%);
+}
+
+/* Multi-layer gradient backgrounds (fixed positioning for mobile) */
+.lp::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  right: -50%;
+  bottom: -50%;
+  background: radial-gradient(ellipse at 30% 20%, hsla(262, 83%, 58%, 0.3) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 60%, hsla(193, 76%, 56%, 0.2) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 80%, hsla(263, 70%, 50%, 0.25) 0%, transparent 60%);
+  filter: blur(80px);
+  z-index: 0;
+  pointer-events: none;
+  will-change: transform;
+  animation: gradient-float 20s ease-in-out infinite;
+}
+
+@keyframes gradient-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-20px, -30px) scale(1.05); }
+  66% { transform: translate(20px, 20px) scale(0.95); }
+}
+
+.lp::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg, 
+    transparent 0%, 
+    hsla(264, 69%, 24%, 0.3) 40%,
+    hsla(264, 69%, 24%, 0.8) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Content wrapper - above gradients */
+.lp-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* ============================================
+   PREMIUM GLASS MORPHISM (Safari-compatible)
+   ============================================ */
+.lp-glass {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(24px) saturate(120%) contrast(105%);
+  -webkit-backdrop-filter: blur(24px) saturate(120%) contrast(105%);
+  position: relative;
+}
+
+/* Gradient border technique */
+.lp-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, 
+    rgba(255,255,255,0.3) 0%, 
+    rgba(255,255,255,0.1) 50%, 
+    rgba(255,255,255,0.05) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Inner light edge */
+.lp-glass::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255,255,255,0.3), 
+    transparent);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* ============================================
+   3D PREMIUM CARDS
+   ============================================ */
+.lp-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8);
+  backdrop-filter: blur(24px) saturate(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(120%);
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  
+  /* Multi-shadow stack for depth */
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.1),
+    0 4px 8px rgba(0, 0, 0, 0.15),
+    0 12px 24px rgba(0, 0, 0, 0.2),
+    0 0 80px rgba(99, 102, 241, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.lp-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, 
+    rgba(255,255,255,0.25) 0%, 
+    rgba(255,255,255,0.08) 50%, 
+    rgba(255,255,255,0.04) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.lp-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    0 8px 16px rgba(0, 0, 0, 0.2),
+    0 20px 40px rgba(0, 0, 0, 0.25),
+    0 0 120px rgba(99, 102, 241, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* 3D Step cards with perspective */
+.lp-step-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8);
+  backdrop-filter: blur(24px) saturate(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(120%);
+  position: relative;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    0 8px 16px rgba(0, 0, 0, 0.15),
+    0 16px 32px rgba(0, 0, 0, 0.2),
+    0 0 80px rgba(99, 102, 241, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.lp-step-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, 
+    rgba(255,255,255,0.2) 0%, 
+    rgba(255,255,255,0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.lp-step-card:hover {
+  transform: translateY(-12px) rotateX(5deg) scale(1.03);
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.15),
+    0 16px 32px rgba(0, 0, 0, 0.2),
+    0 32px 64px rgba(0, 0, 0, 0.25),
+    0 0 140px rgba(99, 102, 241, 0.3),
+    inset 0 2px 0 rgba(255, 255, 255, 0.2);
+}
+
+.lp-step-card:hover::before {
+  opacity: 1;
+}
+
+/* Step number with glow */
+.lp-step-number {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, var(--blue-500) 0%, var(--cyan-400) 100%);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-bold);
+  font-size: var(--text-2xl);
+  margin-bottom: var(--space-5);
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  
+  box-shadow: 
+    0 4px 16px rgba(99, 102, 241, 0.4),
+    0 8px 32px rgba(99, 102, 241, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.lp-step-number::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: inherit;
+  filter: blur(8px);
+  opacity: 0.5;
+  z-index: -1;
+}
+
+.lp-step-card:hover .lp-step-number {
+  transform: scale(1.15) rotate(8deg);
+  box-shadow: 
+    0 8px 24px rgba(99, 102, 241, 0.5),
+    0 16px 48px rgba(99, 102, 241, 0.4),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
+.lp-nav {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: all 0.3s ease;
+  
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.lp-nav.scrolled {
+  background: rgba(255, 255, 255, 0.08);
+  border-bottom-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.15),
+    0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.lp-nav-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lp-logo {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.8) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.lp-logo:hover {
+  transform: scale(1.05);
+  filter: brightness(1.2);
+}
+
+.lp-nav-links {
+  display: flex;
+  gap: var(--space-8);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lp-nav-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: var(--font-medium);
+  font-size: var(--text-base);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.lp-nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--blue-500), var(--cyan-400));
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.lp-nav-links a:hover {
+  color: var(--text-primary);
+}
+
+.lp-nav-links a:hover::after {
+  transform: scaleX(1);
+}
+
+/* ============================================
+   HERO SECTION
+   ============================================ */
+.lp-hero {
+  padding: var(--space-24) 0;
+  position: relative;
+}
+
+.lp-hero-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-5);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-20);
+  align-items: center;
+}
+
+.lp-hero h1 {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: var(--font-extrabold);
+  line-height: 1.1;
+  margin-bottom: var(--space-6);
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+
+.lp-gradient-text {
+  background: linear-gradient(135deg, var(--blue-400) 0%, var(--cyan-400) 50%, var(--purple-400) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.lp-hero p {
+  font-size: var(--text-xl);
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: var(--space-8);
+  max-width: 600px;
+}
+
+.lp-hero-buttons {
+  display: flex;
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+  flex-wrap: wrap;
+}
+
+/* ============================================
+   PREMIUM BUTTONS
+   ============================================ */
+.lp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-xl);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-base);
+  text-decoration: none;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+  border: none;
+  cursor: pointer;
+}
+
+.lp-btn-primary {
+  background: linear-gradient(135deg, var(--blue-500) 0%, var(--cyan-400) 100%);
+  color: var(--text-primary);
+  box-shadow: 
+    0 4px 16px rgba(99, 102, 241, 0.4),
+    0 8px 32px rgba(99, 102, 241, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.lp-btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.lp-btn-primary:hover::before {
+  left: 100%;
+}
+
+.lp-btn-primary:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 
+    0 8px 24px rgba(99, 102, 241, 0.5),
+    0 16px 48px rgba(99, 102, 241, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.lp-btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.lp-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    0 8px 32px rgba(99, 102, 241, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.lp-btn-lg {
+  padding: var(--space-5) var(--space-8);
+  font-size: var(--text-lg);
+}
+
+/* ============================================
+   SECTIONS
+   ============================================ */
+.lp-section {
+  padding: var(--space-24) 0;
+  position: relative;
+}
+
+.lp-section-alt {
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lp-section-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-5);
+}
+
+.lp-section h2 {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: var(--font-extrabold);
+  text-align: center;
+  margin-bottom: var(--space-16);
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.85) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.lp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-8);
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.lp-footer {
+  padding: var(--space-16) 0;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.lp-footer p {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.lp-footer a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.3s ease;
+  font-size: var(--text-sm);
+}
+
+.lp-footer a:hover {
+  color: var(--blue-400);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+.lp-fade-in-up {
+  opacity: 0;
+  transform: translateY(40px);
+  animation: fadeInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lp-fade-in-up.delay-1 { animation-delay: 0.1s; }
+.lp-fade-in-up.delay-2 { animation-delay: 0.2s; }
+.lp-fade-in-up.delay-3 { animation-delay: 0.3s; }
+.lp-fade-in-up.delay-4 { animation-delay: 0.4s; }
+
+.lp-scale-in {
+  opacity: 0;
+  transform: scale(0.85);
+  animation: scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes scaleIn {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Scroll reveal */
+.lp-reveal {
+  opacity: 0;
+  transform: translateY(60px);
+  transition: all 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.lp-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger grid */
+.lp-stagger > * {
+  opacity: 0;
+  transform: translateY(40px) scale(0.95);
+  transition: all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.lp-stagger.animate > *:nth-child(1) { transition-delay: 0.1s; }
+.lp-stagger.animate > *:nth-child(2) { transition-delay: 0.2s; }
+.lp-stagger.animate > *:nth-child(3) { transition-delay: 0.3s; }
+.lp-stagger.animate > *:nth-child(4) { transition-delay: 0.4s; }
+.lp-stagger.animate > *:nth-child(5) { transition-delay: 0.5s; }
+.lp-stagger.animate > *:nth-child(6) { transition-delay: 0.6s; }
+
+.lp-stagger.animate > * {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .lp-hero-content {
+    grid-template-columns: 1fr;
+    gap: var(--space-12);
+  }
+  
+  .lp-hero h1 {
+    font-size: 2.5rem;
+  }
+  
+  .lp-nav-links {
+    display: none;
+  }
+  
+  .lp-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .lp-hero-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .lp-btn {
+    width: 100%;
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .lp::before {
+    animation: none;
+  }
+  
+  .lp-gradient-text {
+    animation: none;
+  }
+}
+
+/* ============================================
+   HIGH CONTRAST MODE
+   ============================================ */
+@media (prefers-contrast: high) {
+  .lp-card,
+  .lp-step-card,
+  .lp-glass {
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  
+  .lp-btn-primary {
+    outline: 2px solid var(--blue-400);
+  }
+}
