@@ -16,6 +16,9 @@
 {% endblock %}
 
 {% block content %}
+<!-- Skip to Content - Accessibility Excellence -->
+<a href="#main-content" class="lp-skip-link">Skip to main content</a>
+
 <!-- Scroll Progress Bar -->
 <div class="lp-scroll-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Page scroll progress">
   <div class="lp-scroll-progress-bar" id="lpScrollProgressBar"></div>
@@ -69,8 +72,18 @@
     </div>
   </div>
 
+  <!-- Noscript Fallbacks - Progressive Enhancement -->
+  <noscript>
+    <style>
+      .lp-nav-links { display: flex !important; }
+      .lp-nav-toggle { display: none !important; }
+      .lp-faq-answer { display: block !important; }
+      .lp-fade-in-up, .lp-scale-in, .lp-reveal { opacity: 1 !important; transform: none !important; }
+    </style>
+  </noscript>
+
   <!-- Hero Section -->
-  <section class="lp-hero" aria-labelledby="hero-heading">
+  <section class="lp-hero" id="main-content" aria-labelledby="hero-heading">
     <div class="lp-hero-content">
       <div>
         <h1 id="hero-heading" class="lp-fade-in-up">
@@ -384,6 +397,14 @@
     </div>
   </section>
 
+  <!-- Mobile Sticky CTA (shows after 40% scroll) -->
+  <div class="lp-mobile-cta" id="lpMobileCTA">
+    <a href="/app" class="lp-btn lp-btn-primary">
+      <i data-feather="mic" aria-hidden="true"></i>
+      Try Mina Free
+    </a>
+  </div>
+
   <!-- Footer -->
   <footer class="lp-footer">
     <div class="lp-section-container">
@@ -447,6 +468,7 @@
       this.setupSmoothScrolling();
       this.setupNavScroll();
       this.setupMobileNav();
+      this.setupMobileStickyCTA();
       this.setupFAQ();
       this.setupWaitlistForms();
       this.setupFocusTrap();
@@ -539,13 +561,79 @@
       const nav = document.getElementById('lpNav');
       if (!nav) return;
       
-      window.addEventListener('scroll', () => {
-        if (window.pageYOffset > 50) {
+      let lastScrollY = 0;
+      let ticking = false;
+      
+      const updateNav = () => {
+        const scrollY = window.pageYOffset;
+        
+        // Elevate after 50px
+        if (scrollY > 50) {
           nav.classList.add('scrolled');
         } else {
           nav.classList.remove('scrolled');
         }
+        
+        // Hide on scroll down, show on scroll up (after 200px)
+        if (scrollY > 200) {
+          if (scrollY > lastScrollY && scrollY > 300) {
+            nav.classList.add('hidden');
+          } else if (scrollY < lastScrollY) {
+            nav.classList.remove('hidden');
+          }
+        }
+        
+        lastScrollY = scrollY;
+        ticking = false;
+      };
+      
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          window.requestAnimationFrame(updateNav);
+          ticking = true;
+        }
       }, { passive: true });
+    }
+    
+    // Mobile Sticky CTA - Show after 40% scroll
+    setupMobileStickyCTA() {
+      const mobileCTA = document.getElementById('lpMobileCTA');
+      if (!mobileCTA) return;
+      
+      // Only show on mobile screens
+      const isMobile = () => window.innerWidth <= 768;
+      
+      let ticking = false;
+      const updateCTA = () => {
+        if (!isMobile()) {
+          mobileCTA.classList.remove('visible');
+          ticking = false;
+          return;
+        }
+        
+        const scrollPercent = (window.pageYOffset / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+        
+        if (scrollPercent > 40) {
+          mobileCTA.classList.add('visible');
+        } else {
+          mobileCTA.classList.remove('visible');
+        }
+        
+        ticking = false;
+      };
+      
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          window.requestAnimationFrame(updateCTA);
+          ticking = true;
+        }
+      }, { passive: true });
+      
+      // Check on resize
+      window.addEventListener('resize', updateCTA, { passive: true });
+      
+      // Initial check
+      updateCTA();
     }
     
     // Mobile Navigation with Focus Trap
