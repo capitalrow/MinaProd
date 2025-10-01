@@ -104,6 +104,22 @@ class TopNavigation {
             this.mobileOverlay.classList.add('show');
             this.mobileMenuToggle.setAttribute('aria-expanded', 'true');
             document.body.style.overflow = 'hidden';
+            
+            // FORCE white text on all menu items (diagnostic fix)
+            const menuItems = this.userMenu.querySelectorAll('.navbar-user-menu-item, .navbar-menu-section-title, .navbar-user-name-large, .navbar-user-status, span, div, a');
+            menuItems.forEach(item => {
+                if (item.classList.contains('navbar-menu-section-title')) {
+                    item.style.setProperty('color', 'rgba(139, 92, 246, 0.8)', 'important');
+                } else if (!item.querySelector('i')) {
+                    item.style.setProperty('color', 'rgba(255, 255, 255, 0.9)', 'important');
+                }
+            });
+            
+            // Force purple icons
+            const icons = this.userMenu.querySelectorAll('i, .fas, .far');
+            icons.forEach(icon => {
+                icon.style.setProperty('color', 'rgba(139, 92, 246, 0.9)', 'important');
+            });
         }
     }
     
