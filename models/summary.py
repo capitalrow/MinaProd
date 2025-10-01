@@ -12,7 +12,7 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, JSON, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
 
-from app import db
+from . import db
 
 
 class SummaryLevel(enum.Enum):
