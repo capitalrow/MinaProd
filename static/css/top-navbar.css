@@ -932,6 +932,43 @@ body:has(.live-page) {
     }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   NUCLEAR FIX: Force white text in mobile menu (overrides ALL conflicting CSS)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    /* Force white text on ALL elements inside mobile menu */
+    .navbar-user-menu.mobile-menu-active,
+    .navbar-user-menu.mobile-menu-active *,
+    .navbar-user-menu.mobile-menu-active a,
+    .navbar-user-menu.mobile-menu-active span,
+    .navbar-user-menu.mobile-menu-active div,
+    .navbar-user-menu.mobile-menu-active .navbar-user-menu-item,
+    .navbar-user-menu.mobile-menu-active .navbar-menu-section-title,
+    .navbar-user-menu.mobile-menu-active .navbar-user-name-large,
+    .navbar-user-menu.mobile-menu-active .navbar-user-status,
+    .navbar-user-menu.mobile-menu-active .navbar-submenu-item {
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+    
+    /* Force white icons */
+    .navbar-user-menu.mobile-menu-active i,
+    .navbar-user-menu.mobile-menu-active .fas,
+    .navbar-user-menu.mobile-menu-active .far {
+        color: rgba(139, 92, 246, 0.9) !important;
+    }
+    
+    /* Section titles purple */
+    .navbar-user-menu.mobile-menu-active .navbar-menu-section-title {
+        color: rgba(139, 92, 246, 0.8) !important;
+    }
+    
+    /* User status text */
+    .navbar-user-menu.mobile-menu-active .navbar-user-status {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+}
+
 /* Print Styles */
 @media print {
     .top-navbar {
