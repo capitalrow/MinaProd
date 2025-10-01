@@ -7,6 +7,7 @@ from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from models import db, Analytics, Meeting, Task, Participant, User
 from services.analytics_service import analytics_service
+from middleware.cache_decorator import cache_response
 from datetime import datetime, timedelta, date
 from sqlalchemy import func, desc, and_
 from typing import Dict, List
@@ -17,6 +18,7 @@ api_analytics_bp = Blueprint('api_analytics', __name__, url_prefix='/api/analyti
 
 
 @api_analytics_bp.route('/overview', methods=['GET'])
+@cache_response(ttl=1800, prefix='analytics')  # 30 min cache
 @login_required
 def get_analytics_overview():
     """Get analytics overview for current workspace."""
@@ -40,6 +42,7 @@ def get_analytics_overview():
 
 
 @api_analytics_bp.route('/meetings/<int:meeting_id>', methods=['GET'])
+@cache_response(ttl=3600, prefix='analytics')  # 1 hour cache
 @login_required
 def get_meeting_analytics(meeting_id):
     """Get detailed analytics for a specific meeting."""
@@ -73,6 +76,7 @@ def get_meeting_analytics(meeting_id):
 
 
 @api_analytics_bp.route('/dashboard', methods=['GET'])
+@cache_response(ttl=600, prefix='analytics')  # 10 min cache
 @login_required
 def get_dashboard_analytics():
     """Get analytics data for dashboard widgets."""
@@ -144,6 +148,7 @@ def get_dashboard_analytics():
 
 
 @api_analytics_bp.route('/engagement', methods=['GET'])
+@cache_response(ttl=1800, prefix='analytics')  # 30 min cache
 @login_required
 def get_engagement_analytics():
     """Get participant engagement analytics."""
