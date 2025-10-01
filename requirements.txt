@@ -36,3 +36,5 @@ pytest-playwright
 safety
 alembic
 flask-limiter
+detect-secrets
+pre-commit

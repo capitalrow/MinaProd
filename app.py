@@ -72,7 +72,7 @@ def create_app() -> Flask:
     if not app.secret_key:
         # Only allow fallback in development
         if os.getenv("REPLIT_DEV_ENV") or os.getenv("REPLIT_RUNTIME_TYPE") == "interactivedev":
-            app.secret_key = "dev-session-secret-only-for-testing-change-in-production"
+            app.secret_key = "dev-session-secret-only-for-testing-change-in-production"  # pragma: allowlist secret
             app.logger.warning("SESSION_SECRET not set, using development key")
         else:
             raise ValueError("SESSION_SECRET environment variable must be set for production")
