@@ -39,3 +39,4 @@ flask-limiter
 detect-secrets
 pre-commit
 sentry-sdk[flask]
+apscheduler
