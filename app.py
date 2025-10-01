@@ -189,29 +189,19 @@ def create_app() -> Flask:
     def assign_request_id():
         g.request_id = request.headers.get("X-Request-Id") or str(uuid.uuid4())
 
-    # stricter CSP (keeps your allowances; adds jsdelivr for CSS libs)
+    # Content Security Policy with nonce-based inline script protection
+    try:
+        from middleware.csp import csp_middleware  # type: ignore
+        csp_middleware(app)
+        app.logger.info("✅ CSP middleware enabled with nonce-based inline script protection")
+    except Exception as e:
+        app.logger.warning(f"⚠️ CSP middleware failed to load: {e}")
+    
+    # HSTS (Strict Transport Security) - only for production HTTPS
     @app.after_request
-    def add_security_headers(resp):
-        resp.headers["X-Content-Type-Options"] = "nosniff"
-        resp.headers["X-Frame-Options"] = "SAMEORIGIN"
-        resp.headers["X-XSS-Protection"] = "1; mode=block"
-        resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
-        resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        resp.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-        resp.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
-        resp.headers["Cross-Origin-Opener-Policy"] = "same-origin"
-        resp.headers["Content-Security-Policy"] = (
-            "default-src 'self' *.replit.dev *.replit.app; "
-            "connect-src 'self' https: wss: ws: wss://*.replit.dev wss://*.replit.app ws://localhost:5000; "
-            "script-src 'self' 'unsafe-inline' https://cdn.socket.io https://cdnjs.cloudflare.com https://cdn.replit.com https://unpkg.com https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.replit.com; "
-            "font-src 'self' https://cdnjs.cloudflare.com data:; "
-            "img-src 'self' blob: data:; "
-            "media-src 'self' blob:; "
-            "worker-src 'self' blob:; "
-            "frame-ancestors 'self' *.replit.dev *.replit.app; "
-            "base-uri 'self';"
-        )
+    def add_hsts_header(resp):
+        if app.config.get('ENV') == 'production':
+            resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
         return resp
 
     # ensure metrics directories
