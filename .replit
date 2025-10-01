@@ -2,7 +2,7 @@ modules = ["python-3.11", "postgresql-16", "python3", "nodejs-20"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["cargo", "ffmpeg", "ffmpeg-full", "freetype", "gitFull", "glibcLocales", "iana-etc", "jq", "libiconv", "libxcrypt", "openssl", "pkg-config", "playwright-driver", "postgresql", "rustc", "xsimd"]
+packages = ["cargo", "ffmpeg", "ffmpeg-full", "freetype", "gitFull", "glibcLocales", "iana-etc", "jq", "libiconv", "libxcrypt", "openssl", "pkg-config", "playwright-driver", "postgresql", "rustc", "xsimd", "gnupg"]
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -78,6 +78,10 @@ externalPort = 8081
 [[ports]]
 localPort = 43641
 externalPort = 6800
+
+[[ports]]
+localPort = 44609
+externalPort = 8099
 
 [[ports]]
 localPort = 45629
