@@ -13,6 +13,8 @@ from typing import Dict, Any
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import login_required, current_user
 
+from models import db
+from models.user import User
 from services.calendar_service import calendar_service, CalendarProvider, CalendarEventCreate
 
 logger = logging.getLogger(__name__)
@@ -97,9 +99,6 @@ def get_providers_status():
 
         # This would be async in a real implementation
         # For now, return mock status based on user preferences
-        from models.user import User
-        from app import db
-        
         user = db.session.get(User, current_user.id)
         preferences = json.loads(user.preferences or '{}')
         integrations = preferences.get('integrations', {})
@@ -164,9 +163,6 @@ def authenticate_provider(provider: str):
         
         # For demo purposes, mark as authenticated
         # In real implementation, this would use the calendar service
-        from models.user import User
-        from app import db
-        
         user = db.session.get(User, current_user.id)
         preferences = json.loads(user.preferences or '{}')
         
@@ -225,9 +221,6 @@ def disconnect_provider(provider: str):
             }), 400
         
         # Remove authentication from user preferences
-        from models.user import User
-        from app import db
-        
         user = db.session.get(User, current_user.id)
         preferences = json.loads(user.preferences or '{}')
         
@@ -292,9 +285,6 @@ def get_calendar_events():
         mock_events = []
         
         # Check which providers are authenticated
-        from models.user import User
-        from app import db
-        
         user = db.session.get(User, current_user.id)
         preferences = json.loads(user.preferences or '{}')
         integrations = preferences.get('integrations', {})
