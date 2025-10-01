@@ -29,21 +29,101 @@ except Exception:
         CORS_ALLOWLIST: str = os.getenv("CORS_ALLOWLIST", "*")
         MAX_CONTENT_LENGTH: int = int(os.getenv("MAX_CONTENT_LENGTH", str(32 * 1024 * 1024)))  # 32 MB
 
-# ---------- Logging
+# ---------- Structured Logging
 class _JsonFormatter(logging.Formatter):
+    """
+    Production-ready JSON log formatter with structured fields.
+    
+    Includes: timestamp, level, logger name, message, request context,
+    user context, trace IDs, and custom fields.
+    """
     def format(self, record: logging.LogRecord) -> str:
+        import socket
+        import threading
+        from datetime import datetime, timezone
+        
+        # Base payload with standard fields
         payload = {
+            "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
             "level": record.levelname,
-            "name": record.name,
-            "msg": record.getMessage(),
+            "logger": record.name,
+            "message": record.getMessage(),
+            "module": record.module,
+            "function": record.funcName,
+            "line": record.lineno,
         }
-        # include request id when available
-        rid = getattr(g, "request_id", None)
-        if rid:
-            payload["request_id"] = rid
-        return json.dumps(payload, ensure_ascii=False)
+        
+        # Add process and thread information
+        payload["process_id"] = record.process
+        payload["process_name"] = record.processName
+        payload["thread_id"] = record.thread
+        payload["thread_name"] = record.threadName
+        
+        # Add hostname
+        try:
+            payload["hostname"] = socket.gethostname()
+        except Exception:
+            payload["hostname"] = "unknown"
+        
+        # Include request context if available (request_id, trace_id, user_id)
+        try:
+            from flask import has_request_context, request, g
+            from flask_login import current_user
+            
+            if has_request_context():
+                # Request ID (correlation ID)
+                request_id = getattr(g, "request_id", None)
+                if request_id:
+                    payload["request_id"] = request_id
+                
+                # HTTP context
+                payload["http"] = {
+                    "method": request.method,
+                    "path": request.path,
+                    "ip": request.remote_addr,
+                    "user_agent": request.headers.get("User-Agent", "unknown")[:200],  # Truncate
+                }
+                
+                # User context (if authenticated)
+                try:
+                    if current_user and current_user.is_authenticated:
+                        payload["user"] = {
+                            "id": str(current_user.id),
+                            "username": current_user.username
+                        }
+                except Exception:
+                    pass  # User context not available
+        except Exception:
+            pass  # Flask context not available (e.g., background task)
+        
+        # Add exception info if present
+        if record.exc_info:
+            payload["exception"] = {
+                "type": record.exc_info[0].__name__ if record.exc_info[0] else None,
+                "message": str(record.exc_info[1]) if record.exc_info[1] else None,
+                "traceback": self.formatException(record.exc_info) if record.exc_info else None
+            }
+        
+        # Add custom extra fields from LogRecord
+        # Logger can add custom fields like: logger.info("msg", extra={"custom_field": "value"})
+        for key, value in record.__dict__.items():
+            if key not in {
+                "name", "msg", "args", "created", "filename", "funcName", "levelname",
+                "levelno", "lineno", "module", "msecs", "message", "pathname", "process",
+                "processName", "relativeCreated", "thread", "threadName", "exc_info",
+                "exc_text", "stack_info", "getMessage", "asctime"
+            }:
+                payload[key] = value
+        
+        return json.dumps(payload, ensure_ascii=False, default=str)
 
 def _configure_logging(json_logs: bool = False) -> None:
+    """
+    Configure logging with optional JSON formatting.
+    
+    This sets up a single handler on the root logger and ensures
+    Flask/Werkzeug loggers propagate to it (avoiding duplicates).
+    """
     root = logging.getLogger()
     root.handlers[:] = []  # reset
     handler = logging.StreamHandler()
@@ -53,6 +133,13 @@ def _configure_logging(json_logs: bool = False) -> None:
     )
     root.addHandler(handler)
     root.setLevel(logging.INFO)
+    
+    # Prevent duplicate logs by ensuring Flask/Werkzeug loggers propagate to root
+    # instead of having their own handlers
+    for logger_name in ['flask.app', 'werkzeug', 'socketio', 'engineio']:
+        logger = logging.getLogger(logger_name)
+        logger.handlers.clear()
+        logger.propagate = True
 
 def _sentry_before_send(event, hint):
     """
@@ -142,6 +229,12 @@ def create_app() -> Flask:
 
     # logging
     _configure_logging(json_logs=getattr(Config, "JSON_LOGS", False))
+    
+    # Clear Flask's default handlers to prevent duplicate logs
+    # Flask adds its own handler during initialization, but we want only our configured handler
+    app.logger.handlers.clear()
+    app.logger.propagate = True
+    
     app.logger.info("Booting Mina…")
 
     # reverse proxy (Replit)
