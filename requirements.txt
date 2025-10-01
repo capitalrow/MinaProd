@@ -28,3 +28,9 @@ faker
 flask-migrate
 pytest-cov
 pytest-mock
+bandit[toml]
+pytest-asyncio
+pytest-flask
+pytest-html
+pytest-playwright
+safety
