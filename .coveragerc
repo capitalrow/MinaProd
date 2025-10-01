@@ -1,0 +1,36 @@
+[run]
+source = .
+omit =
+    */tests/*
+    */test_*.py
+    */__pycache__/*
+    */venv/*
+    */.pythonlibs/*
+    */node_modules/*
+    */migrations/*
+    */static/*
+    */templates/*
+    */attached_assets/*
+    */data/*
+    */docs/*
+    */scripts/*
+    */tools/*
+    setup.py
+    conftest.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod
+    @abc.abstractmethod
+
+precision = 2
+show_missing = True
+
+[html]
+directory = tests/results/coverage

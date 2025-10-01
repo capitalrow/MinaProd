@@ -79,10 +79,11 @@ async def page(context: BrowserContext):
     yield page
 
 @pytest.fixture(scope="function")
-async def mobile_context(browser: Browser):
+async def mobile_context(browser: Browser, playwright):
     """Create mobile browser context."""
+    iphone_13 = playwright.devices['iPhone 13']
     context = await browser.new_context(
-        **playwright.devices['iPhone 13'],
+        **iphone_13,
         permissions=['microphone']
     )
     yield context
