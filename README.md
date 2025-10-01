@@ -87,3 +87,45 @@ make run
    # Includes health checks and WebSocket smoke tests
    ```
 
+## 🧪 Testing
+
+Mina follows comprehensive testing standards with 80% minimum coverage requirement.
+
+### Quick Commands
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=. --cov-report=html
+
+# Run specific test types
+pytest tests/unit/          # Unit tests
+pytest tests/integration/   # Integration tests
+pytest tests/e2e/ -m e2e    # E2E tests
+pytest tests/accessibility/ -m e2e  # Accessibility tests
+```
+
+### Test Types
+
+- **Unit Tests**: Individual function and class testing
+- **Integration Tests**: Service layer and database testing  
+- **E2E Tests**: Full user workflow testing with Playwright
+- **Accessibility Tests**: WCAG 2.1 AA compliance with axe-core
+
+### Documentation
+
+- 📚 [Testing Guide](docs/testing-guide.md) - Comprehensive testing documentation
+- ⚡ [Testing Quick Start](docs/testing-quickstart.md) - Quick reference guide
+- ✅ [PR Checklist](docs/pull-request-checklist.md) - Pre-submission checklist (use before submitting PRs)
+
+### CI/CD
+
+All tests run automatically in GitHub Actions:
+- ✅ Unit & Integration tests
+- ✅ E2E tests (Chromium, Firefox, WebKit)
+- ✅ Accessibility compliance
+- ✅ Code quality (Ruff, Black)
+- ✅ Security scanning (Bandit)
+
