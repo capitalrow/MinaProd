@@ -1,1072 +1,691 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mina — AI Meeting Assistant & Live Transcription</title>
-  <meta name="description" content="Mina captures meetings in real time, turns speech into structured notes and actions, and drafts ready‑to‑send emails and follow‑ups.">
-  <link rel="canonical" href="/">
-  <meta name="theme-color" content="#6366F1">
+{% extends "base.html" %}
+
+{% block title %}Mina — AI Meeting Assistant & Live Transcription{% endblock %}
+
+{% block head_extra %}
+<meta name="description" content="Mina captures meetings in real time, turns speech into structured notes and actions, and drafts ready‑to‑send emails and follow‑ups.">
+<link rel="canonical" href="/">
+<meta name="theme-color" content="#6366F1">
+
+<!-- Open Graph / Twitter -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mina — AI Meeting Assistant & Live Transcription">
+<meta property="og:description" content="Capture, understand, and act — real-time transcription with action drafting and sharing.">
+<meta property="og:image" content="/static/brand/og.png">
+<meta property="og:url" content="/">
+<meta name="twitter:card" content="summary_large_image">
+
+<style>
+  /* Landing Page Specific Styles */
+  .landing-page {
+    background: radial-gradient(ellipse at top, hsl(262, 83%, 58%) 0%, hsl(263, 70%, 50%) 25%, hsl(263, 69%, 42%) 50%, hsl(264, 67%, 35%) 75%, hsl(264, 69%, 24%) 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: var(--text-primary);
+  }
   
-  <!-- Open Graph / Twitter -->
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Mina — AI Meeting Assistant & Live Transcription">
-  <meta property="og:description" content="Capture, understand, and act — real-time transcription with action drafting and sharing.">
-  <meta property="og:image" content="/static/brand/og.png">
-  <meta property="og:url" content="/">
-  <meta name="twitter:card" content="summary_large_image">
-
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  /* Landing Navigation */
+  .landing-nav {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop-strong);
+    border-bottom: 1px solid var(--glass-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s var(--ease-out-cubic);
+  }
   
-  <!-- Premium Design System -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-premium-system.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-landing.css') }}">
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  .landing-nav:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-bottom-color: rgba(255, 255, 255, 0.22);
+  }
   
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: radial-gradient(ellipse at top, hsl(262, 83%, 58%) 0%, hsl(263, 70%, 50%) 25%, hsl(263, 69%, 42%) 50%, hsl(264, 67%, 35%) 75%, hsl(264, 69%, 24%) 100%);
-      background-attachment: fixed;
-      color: #ffffff;
-      line-height: 1.6;
-      min-height: 100vh;
-      font-feature-settings: 'rlig' 1, 'calt' 1;
-      text-rendering: optimizeLegibility;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-
-    /* Header */
-    .header {
-      background: var(--glass-bg);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border-bottom: 1px solid var(--glass-border);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      transition: all 0.3s var(--ease-out-cubic);
-      box-shadow: var(--shadow-sm);
-    }
-    
-    .header:hover {
-      background: rgba(255, 255, 255, 0.09);
-      border-bottom-color: rgba(255, 255, 255, 0.22);
-    }
-
-    .nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 0;
-    }
-
-    .logo {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #ffffff;
-      text-decoration: none;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 2rem;
-      list-style: none;
-    }
-
-    .nav-links a {
-      color: #e2e8f0;
-      text-decoration: none;
-      font-weight: 500;
-      transition: color 0.3s ease;
-    }
-
-    .nav-links a:hover {
-      color: #3b82f6;
-    }
-
-    .cta-button {
-      background: linear-gradient(135deg, var(--blue-500) 0%, var(--cyan-400) 100%);
-      color: #ffffff;
-      padding: 0.75rem 1.5rem;
-      border-radius: 12px;
-      text-decoration: none;
-      font-weight: 600;
-      transition: all 0.4s var(--spring);
-      box-shadow: 
-        0 4px 15px rgba(59, 130, 246, 0.4),
-        0 2px 4px rgba(59, 130, 246, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .cta-button::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-      transition: left 0.5s ease;
-    }
-    
-    .cta-button:hover::before {
-      left: 100%;
-    }
-
-    .cta-button:hover {
-      transform: translateY(-3px) scale(1.02);
-      box-shadow: 
-        0 12px 40px rgba(59, 130, 246, 0.5),
-        0 8px 16px rgba(59, 130, 246, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    }
-    
-    .cta-button:active {
-      transform: translateY(-1px) scale(1.01);
-      transition: all 0.1s ease;
-    }
-
-
-    .hero-left p {
-      font-size: clamp(1.125rem, 2.5vw, 1.25rem);
-      color: rgba(226, 232, 240, 0.9);
-      margin-bottom: 2rem;
-      line-height: 1.65;
-      font-weight: 400;
-      letter-spacing: -0.01em;
-    }
-
-    .hero-buttons {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .btn-secondary {
-      background: var(--glass-bg);
-      color: #ffffff;
-      padding: 0.75rem 1.5rem;
-      border-radius: 12px;
-      text-decoration: none;
-      font-weight: 500;
-      border: 1px solid var(--glass-border);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      transition: all 0.4s var(--spring);
-      box-shadow: var(--shadow-md);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .btn-secondary::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      padding: 1px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1));
-      border-radius: inherit;
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      mask-composite: exclude;
-      -webkit-mask-composite: xor;
-    }
-
-    .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.25);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
-    }
-
-    .waitlist-form {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .waitlist-form input {
-      flex: 1;
-      padding: 0.75rem 1rem;
-      border-radius: 12px;
-      border: 1px solid var(--glass-border);
-      background: var(--glass-bg);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      color: #ffffff;
-      font-size: 1rem;
-      transition: all 0.3s var(--ease-out-cubic);
-      box-shadow: var(--shadow-sm);
-    }
-    
-    .waitlist-form input:focus {
-      outline: none;
-      border-color: var(--blue-500);
-      box-shadow: 
-        var(--shadow-md),
-        0 0 0 3px rgba(59, 130, 246, 0.1);
-      background: rgba(255, 255, 255, 0.09);
-    }
-
-    .waitlist-form input::placeholder {
-      color: rgba(255, 255, 255, 0.6);
-    }
-
-    .waitlist-form button {
-      background: linear-gradient(135deg, var(--blue-500) 0%, var(--cyan-400) 100%);
-      color: #ffffff;
-      padding: 0.75rem 1.5rem;
-      border-radius: 12px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.4s var(--spring);
-      box-shadow: 
-        0 4px 15px rgba(59, 130, 246, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    }
-    
-    .waitlist-form button:hover {
-      transform: translateY(-2px);
-      box-shadow: 
-        0 8px 25px rgba(59, 130, 246, 0.5),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    }
-
-    .disclaimer {
-      font-size: 0.875rem;
-      color: rgba(255, 255, 255, 0.6);
-    }
-
-    /* Step Cards */
-    .step-cards {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-
-    .step-card {
-      background: var(--glass-bg);
-      border: 1px solid var(--glass-border);
-      border-radius: 20px;
-      padding: 2rem;
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      transition: all 0.4s var(--spring);
-      box-shadow: var(--glass-shadow);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .step-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      padding: 1px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 100%);
-      border-radius: inherit;
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      mask-composite: exclude;
-      -webkit-mask-composite: xor;
-    }
-    
-    .step-card::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    }
-
-    .step-card:hover {
-      transform: translateY(-5px) scale(1.02);
-      box-shadow: 
-        0 20px 40px rgba(31, 38, 135, 0.4),
-        0 8px 16px rgba(31, 38, 135, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.25);
-      background: rgba(255, 255, 255, 0.09);
-    }
-
-    .step-number {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--blue-500) 0%, var(--cyan-400) 100%);
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 1.1rem;
-      margin-bottom: 1.25rem;
-      box-shadow: 
-        0 4px 15px rgba(59, 130, 246, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-      transition: all 0.3s var(--ease-out-cubic);
-    }
-    
-    .step-card:hover .step-number {
-      transform: scale(1.1) rotate(5deg);
-      box-shadow: 
-        0 6px 20px rgba(59, 130, 246, 0.5),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    }
-
-    .step-card h3 {
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
-
-    .step-card p {
-      color: #e2e8f0;
-      line-height: 1.5;
-    }
-
-    /* Features Section */
-    .features {
-      padding: 5rem 0;
-    }
-
-    .features h2 {
-      font-size: clamp(2rem, 5vw, 2.75rem);
-      font-weight: 800;
-      text-align: center;
-      margin-bottom: 3.5rem;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.8) 100%);
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 1.75rem;
-    }
-
-    .feature-card {
-      background: var(--glass-bg);
-      border: 1px solid var(--glass-border);
-      border-radius: 20px;
-      padding: 2.25rem;
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      transition: all 0.4s var(--spring);
-      box-shadow: var(--glass-shadow);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .feature-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      padding: 1px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 100%);
-      border-radius: inherit;
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      mask-composite: exclude;
-      -webkit-mask-composite: xor;
-    }
-
-    .feature-card:hover {
-      transform: translateY(-8px) scale(1.02);
-      box-shadow: 
-        0 25px 50px rgba(31, 38, 135, 0.4),
-        0 12px 24px rgba(31, 38, 135, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.25);
-      background: rgba(255, 255, 255, 0.09);
-    }
-
-    .feature-card h3 {
-      font-size: clamp(1.125rem, 2vw, 1.375rem);
-      font-weight: 650;
-      margin-bottom: 1rem;
-      color: #ffffff;
-      letter-spacing: -0.01em;
-    }
-
-    .feature-card p {
-      color: rgba(226, 232, 240, 0.85);
-      line-height: 1.65;
-      font-size: clamp(0.95rem, 1.5vw, 1rem);
-      font-weight: 400;
-    }
-
-    /* How it Works */
-    .how-it-works {
-      padding: 5rem 0;
-      background: rgba(255, 255, 255, 0.03);
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .how-it-works h2 {
-      font-size: clamp(2rem, 5vw, 2.75rem);
-      font-weight: 800;
-      text-align: center;
-      margin-bottom: 3.5rem;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.8) 100%);
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .how-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.75rem;
-    }
-
-    .how-card {
-      background: var(--glass-bg);
-      border: 1px solid var(--glass-border);
-      border-radius: 18px;
-      padding: 2.25rem;
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      transition: all 0.4s var(--spring);
-      box-shadow: var(--shadow-lg);
-      position: relative;
-    }
-    
-    .how-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      padding: 1px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
-      border-radius: inherit;
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      mask-composite: exclude;
-      -webkit-mask-composite: xor;
-    }
-    
-    .how-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 
-        0 20px 40px rgba(31, 38, 135, 0.3),
-        0 8px 16px rgba(31, 38, 135, 0.1);
-      border-color: rgba(255, 255, 255, 0.22);
-    }
-
-    .how-card h3 {
-      font-size: clamp(1.125rem, 2vw, 1.375rem);
-      font-weight: 650;
-      margin-bottom: 1rem;
-      color: #ffffff;
-      letter-spacing: -0.01em;
-    }
-
-    .how-card p {
-      color: rgba(226, 232, 240, 0.85);
-      line-height: 1.65;
-      font-size: clamp(0.95rem, 1.5vw, 1rem);
-      font-weight: 400;
-    }
-
-    /* Testimonials */
-    .testimonials {
-      padding: 4rem 0;
-      overflow: hidden;
-      position: relative;
-    }
-    
-    .testimonials::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 100px;
-      background: linear-gradient(90deg, var(--purple-800), transparent);
-      z-index: 2;
-      pointer-events: none;
-    }
-    
-    .testimonials::after {
-      content: '';
-      position: absolute;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      width: 100px;
-      background: linear-gradient(270deg, var(--purple-800), transparent);
-      z-index: 2;
-      pointer-events: none;
-    }
-
-    .testimonial-track {
-      display: flex;
-      gap: 1.75rem;
-      animation: smooth-scroll 25s linear infinite;
-      will-change: transform;
-    }
-    
-    .testimonial-track:hover {
-      animation-play-state: paused;
-    }
-
-    .testimonial {
-      min-width: 380px;
-      background: var(--glass-bg);
-      border: 1px solid var(--glass-border);
-      border-radius: 16px;
-      padding: 2rem;
-      color: #ffffff;
-      font-style: italic;
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      box-shadow: var(--shadow-lg);
-      transition: all 0.3s var(--ease-out-cubic);
-      position: relative;
-    }
-    
-    .testimonial::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      padding: 1px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
-      border-radius: inherit;
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      mask-composite: exclude;
-      -webkit-mask-composite: xor;
-    }
-    
-    .testimonial:hover {
-      transform: translateY(-4px);
-      box-shadow: 
-        0 20px 40px rgba(31, 38, 135, 0.3),
-        0 8px 16px rgba(31, 38, 135, 0.1);
-    }
-
-    @keyframes smooth-scroll {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(calc(-100% - 1.75rem)); }
-    }
-    
-    /* Advanced Animation Framework */
-    .fade-in-up {
-      opacity: 0;
-      transform: translateY(30px);
-      animation: fadeInUp 0.6s var(--ease-out-cubic) forwards;
-    }
-    
-    .fade-in-up.delay-1 { animation-delay: 0.1s; }
-    .fade-in-up.delay-2 { animation-delay: 0.2s; }
-    .fade-in-up.delay-3 { animation-delay: 0.3s; }
-    .fade-in-up.delay-4 { animation-delay: 0.4s; }
-    .fade-in-up.delay-5 { animation-delay: 0.5s; }
-    .fade-in-up.delay-6 { animation-delay: 0.6s; }
-    
-    @keyframes fadeInUp {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    .scale-in {
-      opacity: 0;
-      transform: scale(0.8) translateY(20px);
-      animation: scaleIn 0.5s var(--spring) forwards;
-    }
-    
-    @keyframes scaleIn {
-      to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-      }
-    }
-    
-    .slide-in-left {
-      opacity: 0;
-      transform: translateX(-50px);
-      animation: slideInLeft 0.6s var(--ease-out-cubic) forwards;
-    }
-    
-    @keyframes slideInLeft {
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-    
-    .slide-in-right {
-      opacity: 0;
-      transform: translateX(50px);
-      animation: slideInRight 0.6s var(--ease-out-cubic) forwards;
-    }
-    
-    @keyframes slideInRight {
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-    
-    /* Parallax Effects */
-    .parallax-bg {
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .parallax-bg::before {
-      content: '';
-      position: absolute;
-      top: -20%;
-      left: -20%;
-      right: -20%;
-      bottom: -20%;
-      background: radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
-                  radial-gradient(circle at 80% 30%, rgba(34, 211, 238, 0.1) 0%, transparent 50%);
-      animation: float 20s ease-in-out infinite;
-      z-index: -1;
-    }
-    
-    @keyframes float {
-      0%, 100% { transform: translateY(0px) rotate(0deg); }
-      33% { transform: translateY(-20px) rotate(1deg); }
-      66% { transform: translateY(10px) rotate(-1deg); }
-    }
-    
-    /* Scroll-triggered animations */
-    .scroll-reveal {
-      opacity: 0;
-      transform: translateY(50px);
-      transition: all 0.8s var(--ease-out-cubic);
-    }
-    
-    .scroll-reveal.revealed {
+  .landing-nav-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--space-4) var(--space-5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .landing-logo {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+  
+  .landing-logo:hover {
+    color: var(--blue-400);
+  }
+  
+  .landing-nav-links {
+    display: flex;
+    gap: var(--space-8);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .landing-nav-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: var(--font-medium);
+    transition: color 0.3s ease;
+  }
+  
+  .landing-nav-links a:hover {
+    color: var(--blue-400);
+  }
+  
+  /* Hero Section */
+  .hero {
+    padding: var(--space-20) 0;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    left: -20%;
+    right: -20%;
+    bottom: -20%;
+    background: radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 30%, rgba(34, 211, 238, 0.1) 0%, transparent 50%);
+    animation: float 20s ease-in-out infinite;
+    z-index: -1;
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    33% { transform: translateY(-20px) rotate(1deg); }
+    66% { transform: translateY(10px) rotate(-1deg); }
+  }
+  
+  .hero-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-5);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-16);
+    align-items: center;
+  }
+  
+  .hero-left h1 {
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: var(--font-extrabold);
+    line-height: 1.1;
+    margin-bottom: var(--space-6);
+    letter-spacing: -0.02em;
+  }
+  
+  .gradient-text {
+    background: linear-gradient(135deg, var(--blue-400) 0%, var(--cyan-400) 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .hero-left p {
+    font-size: var(--text-xl);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-8);
+    line-height: 1.65;
+  }
+  
+  .hero-buttons {
+    display: flex;
+    gap: var(--space-4);
+    margin-bottom: var(--space-8);
+  }
+  
+  .waitlist-form {
+    display: flex;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+  
+  .waitlist-form input {
+    flex: 1;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop-strong);
+    color: var(--text-primary);
+    font-size: var(--text-base);
+    transition: all 0.3s var(--ease-out-cubic);
+  }
+  
+  .waitlist-form input:focus {
+    outline: none;
+    border-color: var(--blue-500);
+    box-shadow: var(--shadow-md), 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background: rgba(255, 255, 255, 0.09);
+  }
+  
+  .waitlist-form input::placeholder {
+    color: var(--text-muted);
+  }
+  
+  .disclaimer {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  
+  /* Step Cards */
+  .step-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+  
+  .step-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-8);
+    backdrop-filter: var(--glass-backdrop-strong);
+    transition: all 0.4s var(--spring);
+    box-shadow: var(--glass-shadow);
+    position: relative;
+  }
+  
+  .step-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: var(--shadow-2xl);
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.09);
+  }
+  
+  .step-number {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, var(--blue-500) 0%, var(--cyan-400) 100%);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-bold);
+    font-size: var(--text-xl);
+    margin-bottom: var(--space-5);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    transition: all 0.3s var(--ease-out-cubic);
+  }
+  
+  .step-card:hover .step-number {
+    transform: scale(1.1) rotate(5deg);
+  }
+  
+  .step-card h3 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    margin-bottom: var(--space-2);
+  }
+  
+  .step-card p {
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  
+  /* Features Section */
+  .features {
+    padding: var(--space-20) 0;
+  }
+  
+  .features h2 {
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    font-weight: var(--font-extrabold);
+    text-align: center;
+    margin-bottom: var(--space-14);
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.8) 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .features-grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-5);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--space-7);
+  }
+  
+  /* Section Container */
+  .section-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-5);
+  }
+  
+  /* How it Works */
+  .how-it-works {
+    padding: var(--space-20) 0;
+    background: rgba(255, 255, 255, 0.03);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-7);
+  }
+  
+  /* Testimonials */
+  .testimonials {
+    padding: var(--space-16) 0;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .testimonials::before,
+  .testimonials::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100px;
+    z-index: 2;
+    pointer-events: none;
+  }
+  
+  .testimonials::before {
+    left: 0;
+    background: linear-gradient(90deg, hsl(264, 69%, 24%), transparent);
+  }
+  
+  .testimonials::after {
+    right: 0;
+    background: linear-gradient(270deg, hsl(264, 69%, 24%), transparent);
+  }
+  
+  .testimonial-track {
+    display: flex;
+    gap: var(--space-7);
+    animation: scroll-testimonials 25s linear infinite;
+  }
+  
+  .testimonial-track:hover {
+    animation-play-state: paused;
+  }
+  
+  @keyframes scroll-testimonials {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(calc(-100% - var(--space-7))); }
+  }
+  
+  .testimonial {
+    min-width: 380px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-8);
+    color: var(--text-primary);
+    font-style: italic;
+    backdrop-filter: var(--glass-backdrop-strong);
+    box-shadow: var(--shadow-lg);
+    transition: all 0.3s var(--ease-out-cubic);
+  }
+  
+  .testimonial:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-2xl);
+  }
+  
+  /* Pricing */
+  .pricing {
+    padding: var(--space-20) 0;
+  }
+  
+  .pricing-subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-14);
+    font-size: var(--text-lg);
+  }
+  
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-7);
+    align-items: start;
+  }
+  
+  .pricing-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-10);
+    backdrop-filter: var(--glass-backdrop-strong);
+    text-align: center;
+    transition: all 0.4s var(--spring);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .pricing-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-2xl);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  
+  .pricing-card.featured {
+    border-color: var(--blue-500);
+    transform: scale(1.05);
+    background: rgba(59, 130, 246, 0.1);
+  }
+  
+  .pricing-card h3 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--space-4);
+  }
+  
+  .price {
+    font-size: var(--text-5xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--space-6);
+  }
+  
+  .price-period {
+    font-size: var(--text-lg);
+    font-weight: var(--font-normal);
+    color: var(--text-secondary);
+  }
+  
+  .feature-list {
+    list-style: none;
+    padding: 0;
+    margin-bottom: var(--space-8);
+  }
+  
+  .feature-list li {
+    padding: var(--space-2) 0;
+    color: var(--text-secondary);
+  }
+  
+  /* FAQ */
+  .faq {
+    padding: var(--space-20) 0;
+  }
+  
+  .faq-grid {
+    display: grid;
+    gap: var(--space-4);
+  }
+  
+  .faq-item {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    backdrop-filter: var(--glass-backdrop-strong);
+    transition: all 0.3s var(--ease-out-cubic);
+    cursor: pointer;
+  }
+  
+  .faq-item:hover {
+    background: rgba(255, 255, 255, 0.09);
+    transform: translateY(-2px);
+  }
+  
+  .faq-question {
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    user-select: none;
+  }
+  
+  .faq-answer {
+    color: var(--text-secondary);
+    margin-top: var(--space-3);
+    line-height: 1.6;
+    display: none;
+  }
+  
+  /* Final CTA */
+  .final-cta {
+    padding: var(--space-20) 0;
+    text-align: center;
+  }
+  
+  .final-cta h2 {
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    font-weight: var(--font-extrabold);
+    margin-bottom: var(--space-4);
+  }
+  
+  .final-cta p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-8);
+    font-size: var(--text-lg);
+  }
+  
+  .final-form {
+    display: flex;
+    gap: var(--space-4);
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  
+  .final-form input {
+    flex: 1;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop-strong);
+    color: var(--text-primary);
+    font-size: var(--text-base);
+  }
+  
+  .final-form input:focus {
+    outline: none;
+    border-color: var(--blue-500);
+    box-shadow: var(--shadow-md), 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  /* Footer */
+  .landing-footer {
+    padding: var(--space-12) 0;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .landing-footer p {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+  }
+  
+  .landing-footer a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+  
+  .landing-footer a:hover {
+    color: var(--blue-400);
+  }
+  
+  /* Animations */
+  .scroll-reveal {
+    opacity: 0;
+    transform: translateY(50px);
+    transition: all 0.8s var(--ease-out-cubic);
+  }
+  
+  .scroll-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .stagger-grid > * {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+    transition: all 0.6s var(--spring);
+  }
+  
+  .stagger-grid.animate > *:nth-child(1) { transition-delay: 0.1s; }
+  .stagger-grid.animate > *:nth-child(2) { transition-delay: 0.2s; }
+  .stagger-grid.animate > *:nth-child(3) { transition-delay: 0.3s; }
+  .stagger-grid.animate > *:nth-child(4) { transition-delay: 0.4s; }
+  .stagger-grid.animate > *:nth-child(5) { transition-delay: 0.5s; }
+  .stagger-grid.animate > *:nth-child(6) { transition-delay: 0.6s; }
+  
+  .stagger-grid.animate > * {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  
+  .slide-in-left {
+    opacity: 0;
+    transform: translateX(-50px);
+    animation: slideInLeft 0.6s var(--ease-out-cubic) forwards;
+  }
+  
+  @keyframes slideInLeft {
+    to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateX(0);
     }
-    
-    /* Staggered grid animations */
-    .stagger-grid > * {
-      opacity: 0;
-      transform: translateY(30px) scale(0.95);
-      transition: all 0.6s var(--spring);
-    }
-    
-    .stagger-grid.animate > *:nth-child(1) { transition-delay: 0.1s; }
-    .stagger-grid.animate > *:nth-child(2) { transition-delay: 0.2s; }
-    .stagger-grid.animate > *:nth-child(3) { transition-delay: 0.3s; }
-    .stagger-grid.animate > *:nth-child(4) { transition-delay: 0.4s; }
-    .stagger-grid.animate > *:nth-child(5) { transition-delay: 0.5s; }
-    .stagger-grid.animate > *:nth-child(6) { transition-delay: 0.6s; }
-    
-    .stagger-grid.animate > * {
+  }
+  
+  .slide-in-right {
+    opacity: 0;
+    transform: translateX(50px);
+    animation: slideInRight 0.6s var(--ease-out-cubic) forwards;
+  }
+  
+  @keyframes slideInRight {
+    to {
       opacity: 1;
-      transform: translateY(0) scale(1);
+      transform: translateX(0);
+    }
+  }
+  
+  .delay-1 { animation-delay: 0.1s; }
+  .delay-2 { animation-delay: 0.2s; }
+  .delay-3 { animation-delay: 0.3s; }
+  .delay-4 { animation-delay: 0.4s; }
+  
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .hero-content {
+      grid-template-columns: 1fr;
+      gap: var(--space-12);
     }
     
-    /* Micro-interactions */
-    .interactive {
-      transition: all 0.3s var(--ease-out-cubic);
-    }
-    
-    .interactive:hover {
-      transform: translateY(-2px);
-    }
-    
-    .interactive:active {
-      transform: translateY(0);
-      transition: all 0.1s ease;
-    }
-
-    /* Pricing */
-    .pricing {
-      padding: 5rem 0;
-    }
-
-    .pricing h2 {
-      font-size: clamp(2rem, 5vw, 2.75rem);
-      font-weight: 800;
-      text-align: center;
-      margin-bottom: 1rem;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.8) 100%);
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .pricing-subtitle {
-      text-align: center;
-      color: rgba(226, 232, 240, 0.8);
-      margin-bottom: 3.5rem;
-      font-size: clamp(1rem, 2vw, 1.125rem);
-      font-weight: 400;
-    }
-
-    .pricing-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.75rem;
-      align-items: start;
-    }
-
-    .pricing-card {
-      background: var(--glass-bg);
-      border: 1px solid var(--glass-border);
-      border-radius: 20px;
-      padding: 2.5rem;
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      text-align: center;
-      position: relative;
-      transition: all 0.4s var(--spring);
-      box-shadow: var(--shadow-lg);
-      overflow: hidden;
-    }
-    
-    .pricing-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      padding: 1px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 100%);
-      border-radius: inherit;
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      mask-composite: exclude;
-      -webkit-mask-composite: xor;
-    }
-    
-    .pricing-card:hover {
-      transform: translateY(-8px) scale(1.02);
-      box-shadow: 
-        0 25px 50px rgba(31, 38, 135, 0.4),
-        0 12px 24px rgba(31, 38, 135, 0.2);
-      border-color: rgba(255, 255, 255, 0.25);
-    }
-
-    .pricing-card.featured {
-      border-color: var(--blue-500);
-      transform: scale(1.05);
-      background: rgba(59, 130, 246, 0.1);
-      box-shadow: 
-        0 20px 40px rgba(59, 130, 246, 0.3),
-        0 8px 16px rgba(59, 130, 246, 0.2);
-    }
-    
-    .pricing-card.featured::before {
-      background: linear-gradient(135deg, rgba(59, 130, 246, 0.4) 0%, rgba(34, 211, 238, 0.2) 100%);
-    }
-    
-    .pricing-card.featured:hover {
-      transform: translateY(-10px) scale(1.07);
-      box-shadow: 
-        0 30px 60px rgba(59, 130, 246, 0.4),
-        0 15px 30px rgba(59, 130, 246, 0.3);
-    }
-
-    .pricing-card h3 {
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-    }
-
-    .price {
+    .hero-left h1 {
       font-size: 2.5rem;
-      font-weight: 800;
-      margin-bottom: 0.5rem;
-    }
-
-    .price-period {
-      color: #e2e8f0;
-      font-size: 1rem;
-    }
-
-    .feature-list {
-      list-style: none;
-      margin: 1.5rem 0;
-    }
-
-    .feature-list li {
-      padding: 0.5rem 0;
-      color: #e2e8f0;
-    }
-
-    .feature-list li:before {
-      content: "•";
-      color: #3b82f6;
-      margin-right: 0.5rem;
-    }
-
-    .pricing-button {
-      width: 100%;
-      background: linear-gradient(135deg, var(--blue-500) 0%, var(--cyan-400) 100%);
-      color: #ffffff;
-      padding: 0.875rem 1rem;
-      border-radius: 12px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.4s var(--spring);
-      box-shadow: 
-        0 4px 15px rgba(59, 130, 246, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-      position: relative;
-      overflow: hidden;
     }
     
-    .pricing-button::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-      transition: left 0.5s ease;
+    .landing-nav-links {
+      display: none;
     }
     
-    .pricing-button:hover::before {
-      left: 100%;
-    }
-    
-    .pricing-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 
-        0 8px 25px rgba(59, 130, 246, 0.5),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    }
-      display: inline-block;
-      transition: all 0.3s ease;
-    }
-
-    .pricing-button.secondary {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    /* FAQ */
-    .faq {
-      padding: 4rem 0;
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .faq h2 {
-      font-size: 2.5rem;
-      font-weight: 800;
-      text-align: center;
-      margin-bottom: 3rem;
-    }
-
+    .features-grid,
+    .how-grid,
+    .pricing-grid,
     .faq-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
+      grid-template-columns: 1fr;
     }
-
-    .faq-item {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 12px;
-      overflow: hidden;
-    }
-
-    .faq-question {
-      padding: 1.5rem;
-      font-weight: 600;
-      cursor: pointer;
-      user-select: none;
-      transition: background-color 0.3s ease;
-    }
-
-    .faq-question:hover {
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .faq-answer {
-      padding: 0 1.5rem 1.5rem;
-      color: #e2e8f0;
-      line-height: 1.6;
-    }
-
-    /* Final CTA */
-    .final-cta {
-      padding: 4rem 0;
-      text-align: center;
-    }
-
-    .final-cta h2 {
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin-bottom: 1rem;
-    }
-
-    .final-cta p {
-      color: #e2e8f0;
-      margin-bottom: 2rem;
-    }
-
+    
+    .waitlist-form,
     .final-form {
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      max-width: 500px;
-      margin: 0 auto;
+      flex-direction: column;
     }
-
-    .final-form input {
-      flex: 1;
-      padding: 0.75rem 1rem;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background: rgba(255, 255, 255, 0.1);
-      color: #ffffff;
+    
+    .hero-buttons {
+      flex-direction: column;
     }
-
-    .final-form button {
-      background: linear-gradient(135deg, #3b82f6, #22d3ee);
-      color: #ffffff;
-      padding: 0.75rem 1.5rem;
-      border-radius: 12px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
+    
+    .testimonial {
+      min-width: 300px;
     }
-
-    /* Footer */
-    .footer {
-      padding: 2rem 0;
-      text-align: center;
-      color: #e2e8f0;
-      font-size: 0.875rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Reduced Motion Support */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
     }
-
-    /* Mobile Responsive */
-    @media (max-width: 768px) {
-      .nav-links {
-        display: none;
-      }
-
-      .hero-content {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-      }
-
-      .hero-left h1 {
-        font-size: 2.5rem;
-      }
-
-      .features-grid,
-      .how-grid,
-      .pricing-grid,
-      .faq-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .waitlist-form,
-      .final-form {
-        flex-direction: column;
-      }
-
-      .hero-buttons {
-        flex-direction: column;
-      }
+    
+    .testimonial-track {
+      animation: none;
     }
-
-    /* Animations */
-    .fade-in {
-      opacity: 0;
-      transform: translateY(20px);
-      animation: fadeIn 0.6s ease forwards;
+    
+    .hero::before {
+      animation: none;
     }
+  }
+</style>
+{% endblock %}
 
-    @keyframes fadeIn {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-  </style>
-</head>
-
-<body>
-  <!-- Header -->
-  <header style="background: var(--glass-bg); backdrop-filter: var(--glass-backdrop-strong); border-bottom: 1px solid var(--glass-border); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm);">
-    <nav style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; max-width: 1200px; margin: 0 auto; padding-left: 20px; padding-right: 20px;">
-      <a href="/" style="font-size: 1.5rem; font-weight: 700; color: #ffffff; text-decoration: none;">Mina</a>
-      <ul style="display: flex; gap: 2rem; list-style: none; margin: 0; padding: 0;">
-        <li><a href="#features" style="color: #e2e8f0; text-decoration: none; font-weight: 500; transition: color 0.3s ease;">Features</a></li>
-        <li><a href="#how" style="color: #e2e8f0; text-decoration: none; font-weight: 500; transition: color 0.3s ease;">How it works</a></li>
-        <li><a href="#pricing" style="color: #e2e8f0; text-decoration: none; font-weight: 500; transition: color 0.3s ease;">Pricing</a></li>
-        <li><a href="#faq" style="color: #e2e8f0; text-decoration: none; font-weight: 500; transition: color 0.3s ease;">FAQ</a></li>
+{% block content %}
+<div class="landing-page">
+  <!-- Landing Navigation -->
+  <nav class="landing-nav">
+    <div class="landing-nav-content">
+      <a href="/" class="landing-logo">Mina</a>
+      <ul class="landing-nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#faq">FAQ</a></li>
       </ul>
-      <a href="/app" class="landing-hero-btn primary">Open the App</a>
-    </nav>
-  </header>
+      <a href="/app" class="crown-btn crown-btn-primary">Open the App</a>
+    </div>
+  </nav>
 
   <!-- Hero Section -->
-  <section class="hero parallax-bg">
-    <div class="container">
-      <div class="hero-content">
-        <div class="hero-left">
-          <h1 class="slide-in-left">
-            Meetings that 
-            <span class="gradient-text">write<br>themselves</span>.
-          </h1>
-          <p class="slide-in-left delay-1">
-            Live transcription that turns into notes, action items, and ready‑to‑send emails. 
-            Mina captures what matters and drafts the follow‑ups for you.
-          </p>
-          <div class="hero-buttons slide-in-left delay-2">
-            <a href="/app" class="cta-button interactive">Try Mina free</a>
-            <a href="#features" class="btn-secondary interactive">See how it works</a>
-          </div>
-          <form class="waitlist-form slide-in-left delay-3" id="waitlist">
-            <input type="email" name="email" placeholder="you@company.com" required>
-            <button type="submit" class="interactive">Join waitlist</button>
-          </form>
-          <p class="disclaimer slide-in-left delay-4">No spam. We'll only email important updates.</p>
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-left">
+        <h1 class="slide-in-left">
+          Meetings that 
+          <span class="gradient-text">write<br>themselves</span>.
+        </h1>
+        <p class="slide-in-left delay-1">
+          Live transcription that turns into notes, action items, and ready‑to‑send emails. 
+          Mina captures what matters and drafts the follow‑ups for you.
+        </p>
+        <div class="hero-buttons slide-in-left delay-2">
+          <a href="/app" class="crown-btn crown-btn-primary crown-btn-lg">Try Mina free</a>
+          <a href="#features" class="crown-btn crown-btn-secondary crown-btn-lg">See how it works</a>
         </div>
-        
-        <div class="step-cards stagger-grid slide-in-right">
-          <div class="step-card interactive">
-            <div class="step-number">1</div>
-            <h3>Dictate.</h3>
-            <p>Speak freely—Mina captures in real time.</p>
-          </div>
-          <div class="step-card interactive">
-            <div class="step-number">2</div>
-            <h3>Understand.</h3>
-            <p>We extract tasks, decisions, and owners.</p>
-          </div>
-          <div class="step-card interactive">
-            <div class="step-number">3</div>
-            <h3>Act.</h3>
-            <p>Draft emails and shareable notes for one‑tap send.</p>
-          </div>
+        <form class="waitlist-form slide-in-left delay-3" id="waitlist">
+          <input type="email" name="email" placeholder="you@company.com" required>
+          <button type="submit" class="crown-btn crown-btn-primary">Join waitlist</button>
+        </form>
+        <p class="disclaimer slide-in-left delay-4">No spam. We'll only email important updates.</p>
+      </div>
+      
+      <div class="step-cards stagger-grid slide-in-right">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h3>Dictate.</h3>
+          <p>Speak freely—Mina captures in real time.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h3>Understand.</h3>
+          <p>We extract tasks, decisions, and owners.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <h3>Act.</h3>
+          <p>Draft emails and shareable notes for one‑tap send.</p>
         </div>
       </div>
     </div>
@@ -1074,30 +693,30 @@
 
   <!-- Features Section -->
   <section class="features" id="features">
-    <div class="container">
+    <div class="section-container">
       <h2 class="scroll-reveal">Why teams choose Mina</h2>
       <div class="features-grid stagger-grid">
-        <div class="feature-card interactive">
+        <div class="crown-card">
           <h3>Live transcription</h3>
           <p>Low‑latency interim text with final refinement. Meetings, interviews, and dictation.</p>
         </div>
-        <div class="feature-card interactive">
+        <div class="crown-card">
           <h3>Actions & emails</h3>
           <p>Turns decisions into drafts—ready to send via your connected email.</p>
         </div>
-        <div class="feature-card interactive">
+        <div class="crown-card">
           <h3>Organized library</h3>
           <p>Sessions auto‑saved with topics, speakers, and highlights you can search.</p>
         </div>
-        <div class="feature-card interactive">
+        <div class="crown-card">
           <h3>Secure by default</h3>
           <p>Scoped access, encryption at rest, and export controls per session.</p>
         </div>
-        <div class="feature-card interactive">
+        <div class="crown-card">
           <h3>Works everywhere</h3>
           <p>Web, mobile browsers, and desktop. No installs required.</p>
         </div>
-        <div class="feature-card interactive">
+        <div class="crown-card">
           <h3>Team‑ready</h3>
           <p>Share sessions, @mention teammates, and track action history.</p>
         </div>
@@ -1107,22 +726,22 @@
 
   <!-- How it Works -->
   <section class="how-it-works" id="how">
-    <div class="container">
+    <div class="section-container">
       <h2 class="scroll-reveal">How Mina works</h2>
       <div class="how-grid stagger-grid">
-        <div class="how-card interactive">
+        <div class="crown-card">
           <h3>1) Capture</h3>
           <p>Start a live session or upload audio. Mina streams interim text in ~250ms cadence.</p>
         </div>
-        <div class="how-card interactive">
+        <div class="crown-card">
           <h3>2) Understand</h3>
           <p>Detects tasks, owners, dates, and decisions from context—no rigid commands.</p>
         </div>
-        <div class="how-card interactive">
+        <div class="crown-card">
           <h3>3) Draft</h3>
           <p>Action cards propose emails, notes, and shares. You edit and approve.</p>
         </div>
-        <div class="how-card interactive">
+        <div class="crown-card">
           <h3>4) Send & share</h3>
           <p>Send via your connected email. Share a secure link with teammates.</p>
         </div>
@@ -1144,11 +763,11 @@
 
   <!-- Pricing -->
   <section class="pricing" id="pricing">
-    <div class="container">
+    <div class="section-container">
       <h2 class="scroll-reveal">Simple pricing</h2>
       <p class="pricing-subtitle scroll-reveal">Start free. Upgrade as you grow.</p>
       <div class="pricing-grid stagger-grid">
-        <div class="pricing-card interactive">
+        <div class="pricing-card">
           <h3>Free</h3>
           <div class="price">£0<span class="price-period">/mo</span></div>
           <ul class="feature-list">
@@ -1156,19 +775,19 @@
             <li>Live transcription</li>
             <li>Basic exports</li>
           </ul>
-          <a href="/app" class="pricing-button interactive">Get started</a>
+          <a href="/app" class="crown-btn crown-btn-primary crown-btn-block">Get started</a>
         </div>
-        <div class="pricing-card featured interactive">
+        <div class="pricing-card featured">
           <h3>Pro</h3>
-          <div class="price">£15<span class="pricing-period">/mo</span></div>
+          <div class="price">£15<span class="price-period">/mo</span></div>
           <ul class="feature-list">
             <li>Unlimited sessions</li>
             <li>Action drafting</li>
             <li>Team sharing</li>
           </ul>
-          <a href="/app" class="pricing-button interactive">Upgrade</a>
+          <a href="/app" class="crown-btn crown-btn-primary crown-btn-block">Upgrade</a>
         </div>
-        <div class="pricing-card interactive">
+        <div class="pricing-card">
           <h3>Team</h3>
           <div class="price">Custom</div>
           <ul class="feature-list">
@@ -1176,7 +795,7 @@
             <li>Admin controls</li>
             <li>Priority support</li>
           </ul>
-          <a href="#contact" class="pricing-button interactive">Contact sales</a>
+          <a href="#contact" class="crown-btn crown-btn-secondary crown-btn-block">Contact sales</a>
         </div>
       </div>
     </div>
@@ -1184,22 +803,22 @@
 
   <!-- FAQ -->
   <section class="faq" id="faq">
-    <div class="container">
+    <div class="section-container">
       <h2 class="scroll-reveal">Frequently asked</h2>
       <div class="faq-grid stagger-grid">
-        <div class="faq-item interactive">
+        <div class="faq-item">
           <div class="faq-question">▸ How is Mina different?</div>
           <div class="faq-answer">Mina doesn't stop at transcription—your follow‑ups are drafted as you speak.</div>
         </div>
-        <div class="faq-item interactive">
+        <div class="faq-item">
           <div class="faq-question">▸ Is my data private?</div>
           <div class="faq-answer">Yes. Scopes per session, encryption at rest, and exports whenever you want.</div>
         </div>
-        <div class="faq-item interactive">
+        <div class="faq-item">
           <div class="faq-question">▸ Do you support teams?</div>
           <div class="faq-answer">Yes—shared sessions, mentions, and admin controls are built‑in.</div>
         </div>
-        <div class="faq-item interactive">
+        <div class="faq-item">
           <div class="faq-question">▸ Which languages are supported?</div>
           <div class="faq-answer">English at launch; more languages on the roadmap.</div>
         </div>
@@ -1209,227 +828,178 @@
 
   <!-- Final CTA -->
   <section class="final-cta">
-    <div class="container">
+    <div class="section-container">
       <h2 class="scroll-reveal">Join the waitlist</h2>
       <p class="scroll-reveal">Be the first to experience Mina. Enter your email to get early access.</p>
       <form class="final-form scroll-reveal" id="waitlist2">
         <input type="email" name="email" placeholder="you@example.com" required>
-        <button type="submit" class="interactive">Join</button>
+        <button type="submit" class="crown-btn crown-btn-primary">Join</button>
       </form>
     </div>
   </section>
 
   <!-- Footer -->
-  <footer class="footer">
-    <div class="container">
+  <footer class="landing-footer">
+    <div class="section-container">
       <p>© 2025 Mina. All rights reserved.</p>
       <p>
-        <a href="/privacy" style="color: #e2e8f0;">Privacy</a> • 
-        <a href="/terms" style="color: #e2e8f0;">Terms</a> • 
-        <a href="#top" style="color: #e2e8f0;">Back to top</a>
+        <a href="/privacy">Privacy</a> • 
+        <a href="/terms">Terms</a> • 
+        <a href="#top">Back to top</a>
       </p>
     </div>
   </footer>
+</div>
+{% endblock %}
 
-  <script>
-    // Advanced Animation System
-    class AnimationController {
-      constructor() {
-        this.init();
-      }
-      
-      init() {
-        this.setupScrollReveal();
-        this.setupStaggeredAnimations();
-        this.setupParallaxEffects();
-        this.setupSmoothScrolling();
-        this.setupHeroAnimations();
-      }
-      
-      setupScrollReveal() {
-        const observerOptions = {
-          threshold: 0.1,
-          rootMargin: '0px 0px -100px 0px'
-        };
-        
-        const observer = new IntersectionObserver((entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('revealed');
-              // Don't unobserve for repeat animations on scroll
-            }
-          });
-        }, observerOptions);
-        
-        // Observe scroll-reveal elements
-        document.querySelectorAll('.scroll-reveal').forEach((el) => {
-          observer.observe(el);
-        });
-      }
-      
-      setupStaggeredAnimations() {
-        const staggerObserver = new IntersectionObserver((entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('animate');
-            }
-          });
-        }, {
-          threshold: 0.1,
-          rootMargin: '0px 0px -50px 0px'
-        });
-        
-        document.querySelectorAll('.stagger-grid').forEach((grid) => {
-          staggerObserver.observe(grid);
-        });
-      }
-      
-      setupParallaxEffects() {
-        let ticking = false;
-        
-        const updateParallax = () => {
-          const scrolled = window.pageYOffset;
-          const parallaxElements = document.querySelectorAll('.parallax-bg');
-          
-          parallaxElements.forEach((element) => {
-            const rate = scrolled * -0.5;
-            element.style.transform = `translateY(${rate}px)`;
-          });
-          
-          ticking = false;
-        };
-        
-        const requestParallaxUpdate = () => {
-          if (!ticking) {
-            requestAnimationFrame(updateParallax);
-            ticking = true;
-          }
-        };
-        
-        window.addEventListener('scroll', requestParallaxUpdate, { passive: true });
-      }
-      
-      setupSmoothScrolling() {
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-          anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-              const headerOffset = 80;
-              const elementPosition = target.getBoundingClientRect().top;
-              const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-              
-              window.scrollTo({
-                top: offsetPosition,
-                behavior: 'smooth'
-              });
-            }
-          });
-        });
-      }
-      
-      setupHeroAnimations() {
-        // Trigger step-cards animation after hero animations
-        setTimeout(() => {
-          const stepCards = document.querySelector('.step-cards.stagger-grid');
-          if (stepCards) {
-            stepCards.classList.add('animate');
-          }
-        }, 800);
-      }
+{% block scripts %}
+<script>
+  // Animation Controller
+  class LandingAnimations {
+    constructor() {
+      this.init();
     }
     
-    // Initialize when DOM is loaded
-    document.addEventListener('DOMContentLoaded', () => {
-      new AnimationController();
-    });
-
-    // FAQ Toggle
-    document.querySelectorAll('.faq-question').forEach((question) => {
-      question.addEventListener('click', () => {
-        const answer = question.nextElementSibling;
-        const isOpen = answer.style.display === 'block';
-        
-        // Close all other answers
-        document.querySelectorAll('.faq-answer').forEach((a) => {
-          a.style.display = 'none';
+    init() {
+      this.setupScrollReveal();
+      this.setupStaggeredAnimations();
+      this.setupSmoothScrolling();
+      this.setupHeroAnimations();
+      this.setupFAQ();
+      this.setupWaitlistForms();
+    }
+    
+    setupScrollReveal() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
         });
-        document.querySelectorAll('.faq-question').forEach((q) => {
-          q.textContent = q.textContent.replace('▾', '▸');
-        });
-        
-        // Toggle current answer
-        if (!isOpen) {
-          answer.style.display = 'block';
-          question.textContent = question.textContent.replace('▸', '▾');
-        }
+      }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -100px 0px'
       });
-    });
-
-    // Form submissions
-    document.getElementById('waitlist').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const email = formData.get('email');
       
-      try {
-        const response = await fetch('/api/waitlist', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email }),
+      document.querySelectorAll('.scroll-reveal').forEach((el) => {
+        observer.observe(el);
+      });
+    }
+    
+    setupStaggeredAnimations() {
+      const staggerObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate');
+          }
         });
-        
-        if (response.ok) {
-          alert('Thanks for joining! We\'ll be in touch soon.');
-          e.target.reset();
-        } else {
-          alert('Something went wrong. Please try again.');
-        }
-      } catch (error) {
-        alert('Something went wrong. Please try again.');
-      }
-    });
-
-    document.getElementById('waitlist2').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const email = formData.get('email');
+      }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      });
       
-      try {
-        const response = await fetch('/api/waitlist', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email }),
+      document.querySelectorAll('.stagger-grid').forEach((grid) => {
+        staggerObserver.observe(grid);
+      });
+    }
+    
+    setupSmoothScrolling() {
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            const headerOffset = 80;
+            const elementPosition = target.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+            
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: 'smooth'
+            });
+          }
         });
-        
-        if (response.ok) {
-          alert('Thanks for joining! We\'ll be in touch soon.');
-          e.target.reset();
-        } else {
-          alert('Something went wrong. Please try again.');
+      });
+    }
+    
+    setupHeroAnimations() {
+      setTimeout(() => {
+        const stepCards = document.querySelector('.step-cards.stagger-grid');
+        if (stepCards) {
+          stepCards.classList.add('animate');
         }
-      } catch (error) {
-        alert('Something went wrong. Please try again.');
-      }
-    });
-
-    // Smooth scrolling for navigation links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-          target.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
+      }, 800);
+    }
+    
+    setupFAQ() {
+      document.querySelectorAll('.faq-question').forEach((question) => {
+        question.addEventListener('click', () => {
+          const answer = question.nextElementSibling;
+          const isOpen = answer.style.display === 'block';
+          
+          // Close all other answers
+          document.querySelectorAll('.faq-answer').forEach((a) => {
+            a.style.display = 'none';
           });
-        }
+          document.querySelectorAll('.faq-question').forEach((q) => {
+            q.textContent = q.textContent.replace('▾', '▸');
+          });
+          
+          // Toggle current answer
+          if (!isOpen) {
+            answer.style.display = 'block';
+            question.textContent = question.textContent.replace('▸', '▾');
+          }
+        });
       });
-    });
-  </script>
-</body>
-</html>
+    }
+    
+    setupWaitlistForms() {
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const email = formData.get('email');
+        
+        try {
+          const response = await fetch('/api/waitlist', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+          });
+          
+          if (response.ok) {
+            if (window.CrownToast) {
+              CrownToast.show('Thanks for joining! We\'ll be in touch soon.', 'success');
+            } else {
+              alert('Thanks for joining! We\'ll be in touch soon.');
+            }
+            e.target.reset();
+          } else {
+            if (window.CrownToast) {
+              CrownToast.show('Something went wrong. Please try again.', 'error');
+            } else {
+              alert('Something went wrong. Please try again.');
+            }
+          }
+        } catch (error) {
+          if (window.CrownToast) {
+            CrownToast.show('Something went wrong. Please try again.', 'error');
+          } else {
+            alert('Something went wrong. Please try again.');
+          }
+        }
+      };
+      
+      document.getElementById('waitlist')?.addEventListener('submit', handleSubmit);
+      document.getElementById('waitlist2')?.addEventListener('submit', handleSubmit);
+    }
+  }
+  
+  // Initialize when DOM is loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    new LandingAnimations();
+  });
+</script>
+{% endblock %}
