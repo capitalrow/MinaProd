@@ -1,0 +1,554 @@
+{% extends "base.html" %}
+
+{% block title %}Profile & Account - {{ super() }}{% endblock %}
+
+{% block head %}
+<!-- Crown+ Design System -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/crown-design-system.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/crown-base.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/crown-components.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="crown-container">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="crown-breadcrumb">
+        <ol>
+            <li><a href="{{ url_for('dashboard.index') }}"><i data-feather="home"></i> Home</a></li>
+            <li><a href="{{ url_for('settings.settings_dashboard') }}">Settings</a></li>
+            <li aria-current="page">Profile & Account</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="crown-page-header">
+        <div>
+            <h1 class="crown-page-title">
+                <i data-feather="user" class="crown-icon"></i>
+                Profile & Account
+            </h1>
+            <p class="crown-page-subtitle">Manage your personal information and account settings</p>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="crown-grid" style="--cols: 3; --gap: var(--spacing-6);">
+        
+        <!-- Left Column: Profile Card -->
+        <div style="grid-column: span 2;">
+            
+            <!-- Personal Information Section -->
+            <div class="crown-card" style="margin-bottom: var(--spacing-6);">
+                <div class="crown-card-header">
+                    <h2 class="crown-card-title">
+                        <i data-feather="user" class="crown-icon"></i>
+                        Personal Information
+                    </h2>
+                    <p class="crown-card-description">Update your personal details and profile information</p>
+                </div>
+
+                <form id="profileForm" class="crown-form">
+                    <div class="crown-form-row">
+                        <div class="crown-form-group">
+                            <label for="firstName" class="crown-label">First Name</label>
+                            <input type="text" id="firstName" name="first_name" 
+                                   class="crown-input" 
+                                   value="{{ current_user.first_name or '' }}"
+                                   placeholder="Enter your first name">
+                        </div>
+
+                        <div class="crown-form-group">
+                            <label for="lastName" class="crown-label">Last Name</label>
+                            <input type="text" id="lastName" name="last_name" 
+                                   class="crown-input" 
+                                   value="{{ current_user.last_name or '' }}"
+                                   placeholder="Enter your last name">
+                        </div>
+                    </div>
+
+                    <div class="crown-form-group">
+                        <label for="username" class="crown-label">Username</label>
+                        <input type="text" id="username" name="username" 
+                               class="crown-input" 
+                               value="{{ current_user.username }}"
+                               placeholder="Your username">
+                        <span class="crown-help-text">This is how other users will see you</span>
+                    </div>
+
+                    <div class="crown-form-group">
+                        <label for="email" class="crown-label">Email Address</label>
+                        <input type="email" id="email" name="email" 
+                               class="crown-input" 
+                               value="{{ current_user.email }}"
+                               placeholder="your.email@example.com">
+                        <span class="crown-help-text">We'll send important updates to this address</span>
+                    </div>
+
+                    <div class="crown-form-actions">
+                        <button type="submit" class="crown-button crown-button-primary">
+                            <i data-feather="save" class="crown-icon"></i>
+                            Save Changes
+                        </button>
+                        <button type="reset" class="crown-button crown-button-secondary">
+                            <i data-feather="x" class="crown-icon"></i>
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Password Change Section -->
+            <div class="crown-card" style="margin-bottom: var(--spacing-6);">
+                <div class="crown-card-header">
+                    <h2 class="crown-card-title">
+                        <i data-feather="lock" class="crown-icon"></i>
+                        Change Password
+                    </h2>
+                    <p class="crown-card-description">Update your password to keep your account secure</p>
+                </div>
+
+                <form id="passwordForm" class="crown-form">
+                    <div class="crown-form-group">
+                        <label for="currentPassword" class="crown-label">Current Password</label>
+                        <input type="password" id="currentPassword" name="current_password" 
+                               class="crown-input" 
+                               placeholder="Enter your current password"
+                               autocomplete="current-password">
+                    </div>
+
+                    <div class="crown-form-group">
+                        <label for="newPassword" class="crown-label">New Password</label>
+                        <input type="password" id="newPassword" name="new_password" 
+                               class="crown-input" 
+                               placeholder="Enter your new password"
+                               autocomplete="new-password">
+                        <span class="crown-help-text">Must be at least 8 characters with letters and numbers</span>
+                    </div>
+
+                    <div class="crown-form-group">
+                        <label for="confirmPassword" class="crown-label">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" name="confirm_password" 
+                               class="crown-input" 
+                               placeholder="Confirm your new password"
+                               autocomplete="new-password">
+                    </div>
+
+                    <div class="crown-form-actions">
+                        <button type="submit" class="crown-button crown-button-primary">
+                            <i data-feather="shield" class="crown-icon"></i>
+                            Update Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Account Preferences Section -->
+            <div class="crown-card">
+                <div class="crown-card-header">
+                    <h2 class="crown-card-title">
+                        <i data-feather="settings" class="crown-icon"></i>
+                        Account Preferences
+                    </h2>
+                    <p class="crown-card-description">Customize your account settings and regional preferences</p>
+                </div>
+
+                <form id="preferencesForm" class="crown-form">
+                    <div class="crown-form-row">
+                        <div class="crown-form-group">
+                            <label for="timezone" class="crown-label">Timezone</label>
+                            <select id="timezone" name="timezone" class="crown-select">
+                                <option value="auto">Auto-detect</option>
+                                <option value="America/New_York">Eastern Time (ET)</option>
+                                <option value="America/Chicago">Central Time (CT)</option>
+                                <option value="America/Denver">Mountain Time (MT)</option>
+                                <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                                <option value="Europe/London">London (GMT)</option>
+                                <option value="Europe/Paris">Paris (CET)</option>
+                                <option value="Asia/Tokyo">Tokyo (JST)</option>
+                            </select>
+                        </div>
+
+                        <div class="crown-form-group">
+                            <label for="language" class="crown-label">Language</label>
+                            <select id="language" name="language" class="crown-select">
+                                <option value="en">English</option>
+                                <option value="es">Español</option>
+                                <option value="fr">Français</option>
+                                <option value="de">Deutsch</option>
+                                <option value="zh">中文</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="crown-form-row">
+                        <div class="crown-form-group">
+                            <label for="dateFormat" class="crown-label">Date Format</label>
+                            <select id="dateFormat" name="date_format" class="crown-select">
+                                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                            </select>
+                        </div>
+
+                        <div class="crown-form-group">
+                            <label for="timeFormat" class="crown-label">Time Format</label>
+                            <select id="timeFormat" name="time_format" class="crown-select">
+                                <option value="12h">12-hour (AM/PM)</option>
+                                <option value="24h">24-hour</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="crown-form-actions">
+                        <button type="submit" class="crown-button crown-button-primary">
+                            <i data-feather="save" class="crown-icon"></i>
+                            Save Preferences
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Sidebar -->
+        <div>
+            
+            <!-- Profile Avatar Card -->
+            <div class="crown-card" style="margin-bottom: var(--spacing-6);">
+                <div class="crown-card-header">
+                    <h3 class="crown-card-title">Profile Picture</h3>
+                </div>
+                
+                <div style="text-align: center; padding: var(--spacing-4);">
+                    <div class="crown-avatar crown-avatar-xl" style="margin: 0 auto var(--spacing-4);">
+                        {% if current_user.avatar_url %}
+                            <img src="{{ current_user.avatar_url }}" alt="{{ current_user.username }}">
+                        {% else %}
+                            <span>{{ current_user.username[0].upper() if current_user.username else 'U' }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <button type="button" class="crown-button crown-button-secondary crown-button-sm" onclick="document.getElementById('avatarUpload').click()">
+                        <i data-feather="upload" class="crown-icon"></i>
+                        Upload Photo
+                    </button>
+                    <input type="file" id="avatarUpload" accept="image/*" style="display: none;">
+                    
+                    <p class="crown-help-text" style="margin-top: var(--spacing-3);">
+                        JPG, PNG or GIF. Max 2MB.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Account Stats Card -->
+            <div class="crown-card" style="margin-bottom: var(--spacing-6);">
+                <div class="crown-card-header">
+                    <h3 class="crown-card-title">Account Stats</h3>
+                </div>
+                
+                <div class="crown-stats-list">
+                    <div class="crown-stat-item">
+                        <span class="crown-stat-label">Member Since</span>
+                        <span class="crown-stat-value">
+                            {{ current_user.created_at.strftime('%B %Y') if current_user.created_at else 'N/A' }}
+                        </span>
+                    </div>
+                    <div class="crown-stat-item">
+                        <span class="crown-stat-label">Account Type</span>
+                        <span class="crown-stat-value">
+                            <span class="crown-badge crown-badge-primary">
+                                {{ current_user.role.title() if current_user.role else 'User' }}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="crown-stat-item">
+                        <span class="crown-stat-label">Total Meetings</span>
+                        <span class="crown-stat-value">{{ current_user.sessions.count() if current_user.sessions else 0 }}</span>
+                    </div>
+                    <div class="crown-stat-item">
+                        <span class="crown-stat-label">Workspace</span>
+                        <span class="crown-stat-value">{{ current_user.workspace.name if current_user.workspace else 'Personal' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connected Accounts Card -->
+            <div class="crown-card">
+                <div class="crown-card-header">
+                    <h3 class="crown-card-title">
+                        <i data-feather="link" class="crown-icon"></i>
+                        Connected Accounts
+                    </h3>
+                </div>
+                
+                <div class="crown-list">
+                    <div class="crown-list-item">
+                        <div class="crown-list-item-content">
+                            <i data-feather="chrome" class="crown-icon"></i>
+                            <div>
+                                <div class="crown-list-item-title">Google</div>
+                                <div class="crown-list-item-description">Not connected</div>
+                            </div>
+                        </div>
+                        <button class="crown-button crown-button-secondary crown-button-sm">
+                            Connect
+                        </button>
+                    </div>
+
+                    <div class="crown-list-item">
+                        <div class="crown-list-item-content">
+                            <i data-feather="github" class="crown-icon"></i>
+                            <div>
+                                <div class="crown-list-item-title">GitHub</div>
+                                <div class="crown-list-item-description">Not connected</div>
+                            </div>
+                        </div>
+                        <button class="crown-button crown-button-secondary crown-button-sm">
+                            Connect
+                        </button>
+                    </div>
+
+                    <div class="crown-list-item">
+                        <div class="crown-list-item-content">
+                            <i data-feather="mail" class="crown-icon"></i>
+                            <div>
+                                <div class="crown-list-item-title">Microsoft</div>
+                                <div class="crown-list-item-description">Not connected</div>
+                            </div>
+                        </div>
+                        <button class="crown-button crown-button-secondary crown-button-sm">
+                            Connect
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="crown-card crown-card-danger" style="margin-top: var(--spacing-6);">
+        <div class="crown-card-header">
+            <h2 class="crown-card-title">
+                <i data-feather="alert-triangle" class="crown-icon"></i>
+                Danger Zone
+            </h2>
+            <p class="crown-card-description">Irreversible and destructive actions</p>
+        </div>
+        
+        <div class="crown-list">
+            <div class="crown-list-item">
+                <div class="crown-list-item-content">
+                    <div>
+                        <div class="crown-list-item-title">Delete Account</div>
+                        <div class="crown-list-item-description">
+                            Permanently delete your account and all associated data. This action cannot be undone.
+                        </div>
+                    </div>
+                </div>
+                <button class="crown-button crown-button-danger" onclick="confirmDeleteAccount()">
+                    Delete Account
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="crown-toast-container"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Toast Notification System
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `crown-toast crown-toast-${type}`;
+    toast.innerHTML = `
+        <i data-feather="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="crown-icon"></i>
+        <span>${message}</span>
+        <button class="crown-toast-close" onclick="this.parentElement.remove()">
+            <i data-feather="x"></i>
+        </button>
+    `;
+    
+    container.appendChild(toast);
+    feather.replace();
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => toast.remove(), 5000);
+}
+
+// Profile Form Submission
+document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    try {
+        const response = await fetch('{{ url_for("auth.edit_profile") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Profile updated successfully!', 'success');
+        } else {
+            showToast(result.error || 'Failed to update profile', 'error');
+        }
+    } catch (error) {
+        showToast('An error occurred. Please try again.', 'error');
+    }
+});
+
+// Password Form Submission
+document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const newPassword = formData.get('new_password');
+    const confirmPassword = formData.get('confirm_password');
+    
+    // Client-side validation
+    if (newPassword !== confirmPassword) {
+        showToast('Passwords do not match', 'error');
+        return;
+    }
+    
+    if (newPassword.length < 8) {
+        showToast('Password must be at least 8 characters', 'error');
+        return;
+    }
+    
+    const data = Object.fromEntries(formData);
+    
+    try {
+        const response = await fetch('/auth/change-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Password changed successfully!', 'success');
+            e.target.reset();
+        } else {
+            showToast(result.error || 'Failed to change password', 'error');
+        }
+    } catch (error) {
+        showToast('An error occurred. Please try again.', 'error');
+    }
+});
+
+// Preferences Form Submission
+document.getElementById('preferencesForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    try {
+        const response = await fetch('/settings/api/preferences', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                category: 'general',
+                settings: data
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Preferences saved successfully!', 'success');
+        } else {
+            showToast(result.error || 'Failed to save preferences', 'error');
+        }
+    } catch (error) {
+        showToast('An error occurred. Please try again.', 'error');
+    }
+});
+
+// Avatar Upload Handler
+document.getElementById('avatarUpload').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    
+    if (!file) return;
+    
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('File size must be less than 2MB', 'error');
+        return;
+    }
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        showToast('Please upload an image file', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    try {
+        const response = await fetch('/auth/upload-avatar', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Profile picture updated!', 'success');
+            // Reload page to show new avatar
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(result.error || 'Failed to upload avatar', 'error');
+        }
+    } catch (error) {
+        showToast('An error occurred. Please try again.', 'error');
+    }
+});
+
+// Confirm Delete Account
+function confirmDeleteAccount() {
+    const confirmed = confirm(
+        'Are you absolutely sure you want to delete your account?\n\n' +
+        'This will permanently delete:\n' +
+        '• Your profile and account data\n' +
+        '• All your meetings and transcripts\n' +
+        '• Your workspace and team data\n\n' +
+        'This action CANNOT be undone!'
+    );
+    
+    if (confirmed) {
+        const doubleConfirm = prompt('Type "DELETE" to confirm account deletion:');
+        
+        if (doubleConfirm === 'DELETE') {
+            // Call delete account endpoint
+            showToast('Account deletion initiated...', 'error');
+            // TODO: Implement actual deletion endpoint
+        }
+    }
+}
+
+// Initialize Feather Icons
+if (typeof feather !== 'undefined') {
+    feather.replace();
+}
+</script>
+{% endblock %}

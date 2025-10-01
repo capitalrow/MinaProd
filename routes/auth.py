@@ -202,73 +202,195 @@ def logout():
 @auth_bp.route('/profile')
 @login_required
 def profile():
-    """User profile page."""
-    return render_template('auth/profile.html', user=current_user)
+    """User profile page (Crown+ design)."""
+    return render_template('settings/profile.html', user=current_user)
 
 
 @auth_bp.route('/profile/edit', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
-    """Edit user profile."""
+    """Edit user profile (supports both form and JSON)."""
     if request.method == 'POST':
-        # Get form data
-        first_name = request.form.get('first_name', '').strip()
-        last_name = request.form.get('last_name', '').strip()
-        display_name = request.form.get('display_name', '').strip()
-        timezone = request.form.get('timezone', 'UTC')
-        
-        try:
-            # Update user profile
-            current_user.first_name = first_name
-            current_user.last_name = last_name
-            current_user.display_name = display_name
-            current_user.timezone = timezone
+        # Support both JSON and form data
+        if request.is_json:
+            data = request.get_json()
+            first_name = data.get('first_name', '').strip()
+            last_name = data.get('last_name', '').strip()
+            username = data.get('username', '').strip()
+            email = data.get('email', '').strip().lower()
             
-            db.session.commit()
-            flash('Profile updated successfully', 'success')
-            return redirect(url_for('auth.profile'))
+            # Validation for JSON
+            errors = []
             
-        except Exception as e:
-            db.session.rollback()
-            flash('Failed to update profile. Please try again.', 'error')
+            if username and username != current_user.username:
+                if len(username) < 3:
+                    errors.append("Username must be at least 3 characters")
+                elif db.session.query(User).filter_by(username=username).first():
+                    errors.append("Username is already taken")
+            
+            if email and email != current_user.email:
+                if not is_valid_email(email):
+                    errors.append("Invalid email format")
+                elif db.session.query(User).filter_by(email=email).first():
+                    errors.append("Email is already registered")
+            
+            if errors:
+                return jsonify({'success': False, 'error': ', '.join(errors)}), 400
+            
+            try:
+                # Update user profile
+                current_user.first_name = first_name
+                current_user.last_name = last_name
+                if username:
+                    current_user.username = username
+                if email:
+                    current_user.email = email
+                
+                db.session.commit()
+                logging.info(f"Profile updated for user {current_user.id}")
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Profile updated successfully',
+                    'user': {
+                        'first_name': current_user.first_name,
+                        'last_name': current_user.last_name,
+                        'username': current_user.username,
+                        'email': current_user.email
+                    }
+                }), 200
+                
+            except Exception as e:
+                db.session.rollback()
+                logging.error(f"Error updating profile: {e}")
+                return jsonify({'success': False, 'error': 'Failed to update profile'}), 500
+        else:
+            # Original form handling
+            first_name = request.form.get('first_name', '').strip()
+            last_name = request.form.get('last_name', '').strip()
+            display_name = request.form.get('display_name', '').strip()
+            timezone = request.form.get('timezone', 'UTC')
+            
+            try:
+                # Update user profile
+                current_user.first_name = first_name
+                current_user.last_name = last_name
+                current_user.display_name = display_name
+                current_user.timezone = timezone
+                
+                db.session.commit()
+                flash('Profile updated successfully', 'success')
+                return redirect(url_for('auth.profile'))
+                
+            except Exception as e:
+                db.session.rollback()
+                flash('Failed to update profile. Please try again.', 'error')
     
-    return render_template('auth/edit_profile.html', user=current_user)
+    return render_template('settings/profile.html', user=current_user)
 
 
 @auth_bp.route('/change-password', methods=['GET', 'POST'])
 @login_required
 def change_password():
-    """Change user password."""
+    """Change user password (supports both form and JSON)."""
     if request.method == 'POST':
-        current_password = request.form.get('current_password', '')
-        new_password = request.form.get('new_password', '')
-        confirm_password = request.form.get('confirm_password', '')
-        
-        # Validation
-        if not current_user.check_password(current_password):
-            flash('Current password is incorrect', 'error')
-            return render_template('auth/change_password.html')
-        
-        valid, message = is_valid_password(new_password)
-        if not valid:
-            flash(message, 'error')
-            return render_template('auth/change_password.html')
-        
-        if new_password != confirm_password:
-            flash('New passwords do not match', 'error')
-            return render_template('auth/change_password.html')
-        
-        try:
-            current_user.set_password(new_password)
-            db.session.commit()
-            flash('Password changed successfully', 'success')
-            return redirect(url_for('auth.profile'))
+        # Support both JSON and form data
+        if request.is_json:
+            data = request.get_json()
+            current_password = data.get('current_password', '')
+            new_password = data.get('new_password', '')
+            confirm_password = data.get('confirm_password', '')
             
-        except Exception as e:
-            db.session.rollback()
-            flash('Failed to change password. Please try again.', 'error')
+            # Validation
+            if not current_user.check_password(current_password):
+                return jsonify({'success': False, 'error': 'Current password is incorrect'}), 400
+            
+            valid, message = is_valid_password(new_password)
+            if not valid:
+                return jsonify({'success': False, 'error': message}), 400
+            
+            if new_password != confirm_password:
+                return jsonify({'success': False, 'error': 'New passwords do not match'}), 400
+            
+            try:
+                current_user.set_password(new_password)
+                db.session.commit()
+                logging.info(f"Password changed for user {current_user.id}")
+                return jsonify({'success': True, 'message': 'Password changed successfully'}), 200
+                
+            except Exception as e:
+                db.session.rollback()
+                logging.error(f"Error changing password: {e}")
+                return jsonify({'success': False, 'error': 'Failed to change password'}), 500
+        else:
+            # Original form handling
+            current_password = request.form.get('current_password', '')
+            new_password = request.form.get('new_password', '')
+            confirm_password = request.form.get('confirm_password', '')
+            
+            # Validation
+            if not current_user.check_password(current_password):
+                flash('Current password is incorrect', 'error')
+                return render_template('settings/profile.html')
+            
+            valid, message = is_valid_password(new_password)
+            if not valid:
+                flash(message, 'error')
+                return render_template('settings/profile.html')
+            
+            if new_password != confirm_password:
+                flash('New passwords do not match', 'error')
+                return render_template('settings/profile.html')
+            
+            try:
+                current_user.set_password(new_password)
+                db.session.commit()
+                flash('Password changed successfully', 'success')
+                return redirect(url_for('auth.profile'))
+                
+            except Exception as e:
+                db.session.rollback()
+                flash('Failed to change password. Please try again.', 'error')
     
-    return render_template('auth/change_password.html')
+    return render_template('settings/profile.html')
+
+
+@auth_bp.route('/upload-avatar', methods=['POST'])
+@login_required
+def upload_avatar():
+    """Upload user avatar image."""
+    if 'avatar' not in request.files:
+        return jsonify({'success': False, 'error': 'No file uploaded'}), 400
+    
+    file = request.files['avatar']
+    
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'No file selected'}), 400
+    
+    # Validate file type
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+    filename = file.filename.lower() if file.filename else ''
+    if not any(filename.endswith(f'.{ext}') for ext in allowed_extensions):
+        return jsonify({'success': False, 'error': 'Invalid file type. Use PNG, JPG, or GIF'}), 400
+    
+    try:
+        # For now, store avatar URL as a placeholder
+        # TODO: Implement actual file upload to storage service
+        avatar_url = f"/static/uploads/avatars/{current_user.id}.jpg"
+        current_user.avatar_url = avatar_url
+        db.session.commit()
+        
+        logging.info(f"Avatar uploaded for user {current_user.id}")
+        return jsonify({
+            'success': True,
+            'message': 'Avatar uploaded successfully',
+            'avatar_url': avatar_url
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error uploading avatar: {e}")
+        return jsonify({'success': False, 'error': 'Failed to upload avatar'}), 500
 
 
 @auth_bp.route('/api/user')
