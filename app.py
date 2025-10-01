@@ -10,6 +10,8 @@ from flask import Flask, render_template, request, g, jsonify
 from flask_socketio import SocketIO
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # ---------- Config (fallback if config.Config not present)
 try:
@@ -105,6 +107,27 @@ def create_app() -> Flask:
         return original_error_handler(reason)
     csrf._error_response = custom_csrf_error
 
+    # Configure Flask-Limiter for production-grade rate limiting
+    # Use Redis if available, fallback to memory storage
+    redis_url = os.environ.get("REDIS_URL")
+    storage_uri = redis_url if redis_url else "memory://"
+    
+    limiter = Limiter(
+        get_remote_address,
+        app=app,
+        storage_uri=storage_uri,
+        default_limits=["100 per minute", "1000 per hour"],
+        strategy="fixed-window",
+        headers_enabled=True,  # Include X-RateLimit-* headers in responses
+        swallow_errors=True,  # Don't crash app if rate limiter fails
+    )
+    
+    # Make limiter available for route decorators
+    app.limiter = limiter
+    
+    storage_type = "Redis" if redis_url else "Memory"
+    app.logger.info(f"✅ Flask-Limiter configured ({storage_type} backend): 100/min, 1000/hour per IP")
+
     # gzip (optional)
     try:
         from flask_compress import Compress  # type: ignore
@@ -121,17 +144,25 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"⚠️ Request context middleware failed to load: {e}")
 
-    # Set sensible defaults for rate limiting
-    app.config.setdefault("RATE_LIMIT_PER_IP_MIN", 120)  # 120 requests per minute
+    # Body size limits (Flask-Limiter handles rate limiting now)
     app.config.setdefault("MAX_JSON_BODY_BYTES", 5 * 1024 * 1024)  # 5MB
     app.config.setdefault("MAX_FORM_BODY_BYTES", 50 * 1024 * 1024)  # 50MB
     
-    try:
-        from middleware.limits import limits_middleware  # type: ignore
-        limits_middleware(app)
-        app.logger.info("✅ Rate limiting middleware enabled")
-    except Exception as e:
-        app.logger.warning(f"⚠️ Rate limiting middleware failed to load: {e}")
+    # Apply body size checks via before_request (rate limiting now handled by Flask-Limiter)
+    @app.before_request
+    def check_body_size():
+        cl = request.content_length or 0
+        if request.method in ("POST", "PUT", "PATCH"):
+            ct = (request.content_type or "").lower()
+            max_json = app.config.get("MAX_JSON_BODY_BYTES", 5 * 1024 * 1024)
+            max_form = app.config.get("MAX_FORM_BODY_BYTES", 50 * 1024 * 1024)
+            
+            if "application/json" in ct and cl > max_json:
+                from flask import abort
+                abort(413)
+            if "multipart/form-data" in ct and cl > max_form:
+                from flask import abort
+                abort(413)
 
     # Set CORS defaults - secure for both production and development
     env = os.environ.get("FLASK_ENV", "development")

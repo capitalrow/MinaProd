@@ -35,3 +35,4 @@ pytest-html
 pytest-playwright
 safety
 alembic
+flask-limiter
