@@ -1,910 +1,250 @@
-<testsuites id="" name="" tests="215" failures="0" skipped="215" errors="0" time="0.8888370000000002">
-<testsuite name="01-live-transcription.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="chromium" tests="8" failures="0" skipped="8" time="0" errors="0">
-<testcase name="Live Transcription - Core User Journey › should load live transcription page successfully" classname="01-live-transcription.spec.js" time="0">
+<testsuites id="" name="" tests="60" failures="0" skipped="60" errors="0" time="0.24112799999999993">
+<testsuite name="06-axe-core-automated.spec.js" timestamp="2025-10-01T19:43:49.537Z" hostname="chromium" tests="12" failures="0" skipped="12" time="0" errors="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Home page should have no critical accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Live Transcription - Core User Journey › should handle record button interaction" classname="01-live-transcription.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Login page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Live Transcription - Core User Journey › should initialize microphone and audio recording" classname="01-live-transcription.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Register page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Live Transcription - Core User Journey › should display transcription content" classname="01-live-transcription.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Live transcription page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Live Transcription - Core User Journey › should handle session lifecycle correctly" classname="01-live-transcription.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Dashboard should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Live Transcription - Core User Journey › should maintain UI responsiveness during recording" classname="01-live-transcription.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Settings page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Live Transcription - Core User Journey › should handle browser refresh during recording" classname="01-live-transcription.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test specific WCAG 2.1 Level A rules" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Live Transcription - Core User Journey › should capture performance metrics" classname="01-live-transcription.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test keyboard navigation rules" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-</testsuite>
-<testsuite name="02-api-integration.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="chromium" tests="9" failures="0" skipped="9" time="0" errors="0">
-<testcase name="API Integration Tests › should validate health endpoints" classname="02-api-integration.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test color contrast rules" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="API Integration Tests › should handle session CRUD operations" classname="02-api-integration.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test form labels and accessibility" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="API Integration Tests › should handle transcription API endpoint" classname="02-api-integration.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test ARIA attributes and roles" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="API Integration Tests › should handle session segments API" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle export functionality" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should validate API error handling" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle concurrent API requests" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should validate API response times" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle authentication and authorization" classname="02-api-integration.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Comprehensive accessibility audit across multiple pages" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
 </testsuite>
-<testsuite name="03-edge-cases.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="chromium" tests="10" failures="0" skipped="10" time="0" errors="0">
-<testcase name="Edge Cases and Negative Testing › should handle microphone permission denial" classname="03-edge-cases.spec.js" time="0">
+<testsuite name="06-axe-core-automated.spec.js" timestamp="2025-10-01T19:43:49.537Z" hostname="firefox" tests="12" failures="0" skipped="12" time="0" errors="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Home page should have no critical accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Edge Cases and Negative Testing › should handle network connectivity issues" classname="03-edge-cases.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Login page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Edge Cases and Negative Testing › should handle invalid session data" classname="03-edge-cases.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Register page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Edge Cases and Negative Testing › should handle malformed audio data" classname="03-edge-cases.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Live transcription page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Edge Cases and Negative Testing › should handle rapid button clicking" classname="03-edge-cases.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Dashboard should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Edge Cases and Negative Testing › should handle browser refresh during active session" classname="03-edge-cases.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Settings page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Edge Cases and Negative Testing › should handle extremely long recording sessions" classname="03-edge-cases.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test specific WCAG 2.1 Level A rules" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Edge Cases and Negative Testing › should handle concurrent user sessions" classname="03-edge-cases.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test keyboard navigation rules" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Edge Cases and Negative Testing › should handle invalid API tokens and authentication" classname="03-edge-cases.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test color contrast rules" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Edge Cases and Negative Testing › should handle resource exhaustion scenarios" classname="03-edge-cases.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test form labels and accessibility" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-</testsuite>
-<testsuite name="04-performance.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="chromium" tests="7" failures="0" skipped="7" time="0" errors="0">
-<testcase name="Performance and Load Testing › should measure page load performance" classname="04-performance.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test ARIA attributes and roles" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Performance and Load Testing › should handle multiple concurrent transcription sessions" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should measure transcription latency" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should monitor memory usage during recording" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should test application under CPU stress" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should measure WebSocket performance" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should test rapid session creation and cleanup" classname="04-performance.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Comprehensive accessibility audit across multiple pages" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
 </testsuite>
-<testsuite name="05-accessibility.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="chromium" tests="9" failures="0" skipped="9" time="0" errors="0">
-<testcase name="Accessibility Compliance Tests › should support keyboard navigation" classname="05-accessibility.spec.js" time="0">
+<testsuite name="06-axe-core-automated.spec.js" timestamp="2025-10-01T19:43:49.537Z" hostname="webkit" tests="12" failures="0" skipped="12" time="0" errors="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Home page should have no critical accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Accessibility Compliance Tests › should have proper ARIA labels and roles" classname="05-accessibility.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Login page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Accessibility Compliance Tests › should support screen reader announcements" classname="05-accessibility.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Register page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Accessibility Compliance Tests › should have sufficient color contrast" classname="05-accessibility.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Live transcription page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Accessibility Compliance Tests › should support high contrast mode" classname="05-accessibility.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Dashboard should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Accessibility Compliance Tests › should support focus indicators" classname="05-accessibility.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Settings page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Accessibility Compliance Tests › should have proper heading structure" classname="05-accessibility.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test specific WCAG 2.1 Level A rules" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Accessibility Compliance Tests › should support alternative text for images" classname="05-accessibility.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test keyboard navigation rules" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Accessibility Compliance Tests › should support reduced motion preferences" classname="05-accessibility.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test color contrast rules" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-</testsuite>
-<testsuite name="01-live-transcription.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="firefox" tests="8" failures="0" skipped="8" time="0" errors="0">
-<testcase name="Live Transcription - Core User Journey › should load live transcription page successfully" classname="01-live-transcription.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test form labels and accessibility" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Live Transcription - Core User Journey › should handle record button interaction" classname="01-live-transcription.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test ARIA attributes and roles" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Live Transcription - Core User Journey › should initialize microphone and audio recording" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should display transcription content" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should handle session lifecycle correctly" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should maintain UI responsiveness during recording" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should handle browser refresh during recording" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should capture performance metrics" classname="01-live-transcription.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Comprehensive accessibility audit across multiple pages" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
 </testsuite>
-<testsuite name="02-api-integration.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="firefox" tests="9" failures="0" skipped="9" time="0" errors="0">
-<testcase name="API Integration Tests › should validate health endpoints" classname="02-api-integration.spec.js" time="0">
+<testsuite name="06-axe-core-automated.spec.js" timestamp="2025-10-01T19:43:49.537Z" hostname="Mobile Chrome" tests="12" failures="0" skipped="12" time="0" errors="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Home page should have no critical accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="API Integration Tests › should handle session CRUD operations" classname="02-api-integration.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Login page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="API Integration Tests › should handle transcription API endpoint" classname="02-api-integration.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Register page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="API Integration Tests › should handle session segments API" classname="02-api-integration.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Live transcription page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="API Integration Tests › should handle export functionality" classname="02-api-integration.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Dashboard should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="API Integration Tests › should validate API error handling" classname="02-api-integration.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Settings page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="API Integration Tests › should handle concurrent API requests" classname="02-api-integration.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test specific WCAG 2.1 Level A rules" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="API Integration Tests › should validate API response times" classname="02-api-integration.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test keyboard navigation rules" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="API Integration Tests › should handle authentication and authorization" classname="02-api-integration.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test color contrast rules" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-</testsuite>
-<testsuite name="03-edge-cases.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="firefox" tests="10" failures="0" skipped="10" time="0" errors="0">
-<testcase name="Edge Cases and Negative Testing › should handle microphone permission denial" classname="03-edge-cases.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test form labels and accessibility" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Edge Cases and Negative Testing › should handle network connectivity issues" classname="03-edge-cases.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test ARIA attributes and roles" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Edge Cases and Negative Testing › should handle invalid session data" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle malformed audio data" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle rapid button clicking" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle browser refresh during active session" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle extremely long recording sessions" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle concurrent user sessions" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle invalid API tokens and authentication" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle resource exhaustion scenarios" classname="03-edge-cases.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Comprehensive accessibility audit across multiple pages" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
 </testsuite>
-<testsuite name="04-performance.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="firefox" tests="7" failures="0" skipped="7" time="0" errors="0">
-<testcase name="Performance and Load Testing › should measure page load performance" classname="04-performance.spec.js" time="0">
+<testsuite name="06-axe-core-automated.spec.js" timestamp="2025-10-01T19:43:49.537Z" hostname="Mobile Safari" tests="12" failures="0" skipped="12" time="0" errors="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Home page should have no critical accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Performance and Load Testing › should handle multiple concurrent transcription sessions" classname="04-performance.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Login page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Performance and Load Testing › should measure transcription latency" classname="04-performance.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Register page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Performance and Load Testing › should monitor memory usage during recording" classname="04-performance.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Live transcription page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Performance and Load Testing › should test application under CPU stress" classname="04-performance.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Dashboard should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Performance and Load Testing › should measure WebSocket performance" classname="04-performance.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Settings page should have no accessibility violations" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Performance and Load Testing › should test rapid session creation and cleanup" classname="04-performance.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test specific WCAG 2.1 Level A rules" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-</testsuite>
-<testsuite name="05-accessibility.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="firefox" tests="9" failures="0" skipped="9" time="0" errors="0">
-<testcase name="Accessibility Compliance Tests › should support keyboard navigation" classname="05-accessibility.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test keyboard navigation rules" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Accessibility Compliance Tests › should have proper ARIA labels and roles" classname="05-accessibility.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test color contrast rules" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Accessibility Compliance Tests › should support screen reader announcements" classname="05-accessibility.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test form labels and accessibility" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Accessibility Compliance Tests › should have sufficient color contrast" classname="05-accessibility.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Test ARIA attributes and roles" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>
-<testcase name="Accessibility Compliance Tests › should support high contrast mode" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support focus indicators" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should have proper heading structure" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support alternative text for images" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support reduced motion preferences" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="01-live-transcription.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="webkit" tests="8" failures="0" skipped="8" time="0" errors="0">
-<testcase name="Live Transcription - Core User Journey › should load live transcription page successfully" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should handle record button interaction" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should initialize microphone and audio recording" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should display transcription content" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should handle session lifecycle correctly" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should maintain UI responsiveness during recording" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should handle browser refresh during recording" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should capture performance metrics" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="02-api-integration.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="webkit" tests="9" failures="0" skipped="9" time="0" errors="0">
-<testcase name="API Integration Tests › should validate health endpoints" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle session CRUD operations" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle transcription API endpoint" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle session segments API" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle export functionality" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should validate API error handling" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle concurrent API requests" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should validate API response times" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle authentication and authorization" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="03-edge-cases.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="webkit" tests="10" failures="0" skipped="10" time="0" errors="0">
-<testcase name="Edge Cases and Negative Testing › should handle microphone permission denial" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle network connectivity issues" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle invalid session data" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle malformed audio data" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle rapid button clicking" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle browser refresh during active session" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle extremely long recording sessions" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle concurrent user sessions" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle invalid API tokens and authentication" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle resource exhaustion scenarios" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="04-performance.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="webkit" tests="7" failures="0" skipped="7" time="0" errors="0">
-<testcase name="Performance and Load Testing › should measure page load performance" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should handle multiple concurrent transcription sessions" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should measure transcription latency" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should monitor memory usage during recording" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should test application under CPU stress" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should measure WebSocket performance" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should test rapid session creation and cleanup" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="05-accessibility.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="webkit" tests="9" failures="0" skipped="9" time="0" errors="0">
-<testcase name="Accessibility Compliance Tests › should support keyboard navigation" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should have proper ARIA labels and roles" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support screen reader announcements" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should have sufficient color contrast" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support high contrast mode" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support focus indicators" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should have proper heading structure" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support alternative text for images" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support reduced motion preferences" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="01-live-transcription.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="Mobile Chrome" tests="8" failures="0" skipped="8" time="0" errors="0">
-<testcase name="Live Transcription - Core User Journey › should load live transcription page successfully" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should handle record button interaction" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should initialize microphone and audio recording" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should display transcription content" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should handle session lifecycle correctly" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should maintain UI responsiveness during recording" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should handle browser refresh during recording" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should capture performance metrics" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="02-api-integration.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="Mobile Chrome" tests="9" failures="0" skipped="9" time="0" errors="0">
-<testcase name="API Integration Tests › should validate health endpoints" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle session CRUD operations" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle transcription API endpoint" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle session segments API" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle export functionality" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should validate API error handling" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle concurrent API requests" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should validate API response times" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle authentication and authorization" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="03-edge-cases.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="Mobile Chrome" tests="10" failures="0" skipped="10" time="0" errors="0">
-<testcase name="Edge Cases and Negative Testing › should handle microphone permission denial" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle network connectivity issues" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle invalid session data" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle malformed audio data" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle rapid button clicking" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle browser refresh during active session" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle extremely long recording sessions" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle concurrent user sessions" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle invalid API tokens and authentication" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle resource exhaustion scenarios" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="04-performance.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="Mobile Chrome" tests="7" failures="0" skipped="7" time="0" errors="0">
-<testcase name="Performance and Load Testing › should measure page load performance" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should handle multiple concurrent transcription sessions" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should measure transcription latency" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should monitor memory usage during recording" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should test application under CPU stress" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should measure WebSocket performance" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should test rapid session creation and cleanup" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="05-accessibility.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="Mobile Chrome" tests="9" failures="0" skipped="9" time="0" errors="0">
-<testcase name="Accessibility Compliance Tests › should support keyboard navigation" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should have proper ARIA labels and roles" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support screen reader announcements" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should have sufficient color contrast" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support high contrast mode" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support focus indicators" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should have proper heading structure" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support alternative text for images" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support reduced motion preferences" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="01-live-transcription.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="Mobile Safari" tests="8" failures="0" skipped="8" time="0" errors="0">
-<testcase name="Live Transcription - Core User Journey › should load live transcription page successfully" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should handle record button interaction" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should initialize microphone and audio recording" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should display transcription content" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should handle session lifecycle correctly" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should maintain UI responsiveness during recording" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should handle browser refresh during recording" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Live Transcription - Core User Journey › should capture performance metrics" classname="01-live-transcription.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="02-api-integration.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="Mobile Safari" tests="9" failures="0" skipped="9" time="0" errors="0">
-<testcase name="API Integration Tests › should validate health endpoints" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle session CRUD operations" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle transcription API endpoint" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle session segments API" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle export functionality" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should validate API error handling" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle concurrent API requests" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should validate API response times" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="API Integration Tests › should handle authentication and authorization" classname="02-api-integration.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="03-edge-cases.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="Mobile Safari" tests="10" failures="0" skipped="10" time="0" errors="0">
-<testcase name="Edge Cases and Negative Testing › should handle microphone permission denial" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle network connectivity issues" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle invalid session data" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle malformed audio data" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle rapid button clicking" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle browser refresh during active session" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle extremely long recording sessions" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle concurrent user sessions" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle invalid API tokens and authentication" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Edge Cases and Negative Testing › should handle resource exhaustion scenarios" classname="03-edge-cases.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="04-performance.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="Mobile Safari" tests="7" failures="0" skipped="7" time="0" errors="0">
-<testcase name="Performance and Load Testing › should measure page load performance" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should handle multiple concurrent transcription sessions" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should measure transcription latency" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should monitor memory usage during recording" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should test application under CPU stress" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should measure WebSocket performance" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Performance and Load Testing › should test rapid session creation and cleanup" classname="04-performance.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="05-accessibility.spec.js" timestamp="2025-09-03T19:42:27.794Z" hostname="Mobile Safari" tests="9" failures="0" skipped="9" time="0" errors="0">
-<testcase name="Accessibility Compliance Tests › should support keyboard navigation" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should have proper ARIA labels and roles" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support screen reader announcements" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should have sufficient color contrast" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support high contrast mode" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support focus indicators" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should have proper heading structure" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support alternative text for images" classname="05-accessibility.spec.js" time="0">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Accessibility Compliance Tests › should support reduced motion preferences" classname="05-accessibility.spec.js" time="0">
+<testcase name="Axe-Core Automated Accessibility Tests › Comprehensive accessibility audit across multiple pages" classname="06-axe-core-automated.spec.js" time="0">
 <skipped>
 </skipped>
 </testcase>

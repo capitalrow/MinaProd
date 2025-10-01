@@ -630,6 +630,11 @@ def create_app() -> Flask:
     @app.get("/healthz")
     def healthz():
         return {"ok": True, "uptime": True}, 200
+    
+    # alias /health for CI/testing compatibility
+    @app.get("/health")
+    def health():
+        return {"ok": True, "uptime": True}, 200
 
     # unified error shape
     @app.errorhandler(413)  # RequestEntityTooLarge
