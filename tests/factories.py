@@ -122,6 +122,23 @@ class WorkspaceFactory(factory.Factory):
     created_at = LazyAttribute(lambda _: fake.date_time_this_year())
     is_active = True
 
+class ParticipantFactory(factory.Factory):
+    """Factory for creating meeting participants."""
+    
+    class Meta:
+        model = dict
+    
+    id = factory.Sequence(lambda n: n + 1)
+    meeting_id = factory.Sequence(lambda n: n + 1)
+    user_id = factory.Sequence(lambda n: n + 1)
+    name = LazyAttribute(lambda _: fake.name())
+    email = LazyAttribute(lambda obj: f'{obj.name.lower().replace(" ", ".")}@example.com')
+    role = factory.LazyAttribute(lambda _: random.choice(['organizer', 'presenter', 'attendee']))
+    status = factory.LazyAttribute(lambda _: random.choice(['invited', 'accepted', 'declined', 'attended']))
+    joined_at = LazyAttribute(lambda _: fake.date_time_this_month())
+    left_at = None
+    duration_minutes = LazyAttribute(lambda _: random.randint(5, 120))
+
 # Batch creation helpers
 def create_user_batch(count=10):
     """Create multiple users."""
@@ -134,6 +151,10 @@ def create_session_batch(count=10, user_id=1):
 def create_segment_batch(count=20, session_id='session_1'):
     """Create multiple segments for a session."""
     return [SegmentFactory(session_id=session_id) for _ in range(count)]
+
+def create_participant_batch(count=5, meeting_id=1):
+    """Create multiple participants for a meeting."""
+    return [ParticipantFactory(meeting_id=meeting_id) for _ in range(count)]
 
 def create_complete_meeting_data():
     """Create a complete meeting with all related data."""

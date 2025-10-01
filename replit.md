@@ -52,6 +52,22 @@ A "Hybrid Approach" balances user-visible progress with production infrastructur
 
 ## Recent Changes
 
+### Phase 0: Foundation & Quality Infrastructure (October 2025) - IN PROGRESS
+**Status**: 4 of 45 tasks complete
+
+**Completed Testing Infrastructure (Tasks 0.1, 0.2, 0.6, 0.7):**
+- ✅ **pytest Setup** (T0.1): pytest-cov, pytest-mock installed; pytest.ini configured with 80% coverage threshold, test markers (unit/integration/e2e), HTML/XML reports; .coveragerc scoped to application code
+- ✅ **Playwright E2E** (T0.2): Playwright 1.55.0 configured with async fixtures, mobile testing (iPhone 13), video recording (always enabled), improved screenshot-on-failure (async with error handling)
+- ✅ **Test Data Factories** (T0.6): 8 factories implemented (User, Session, Segment, Meeting, Summary, Task, Workspace, Participant) with batch creation helpers; all 9 factory tests passing
+- ✅ **Integration Tests** (T0.7): tests/conftest.py with Flask app fixture and test database; tests/integration/test_api_sessions.py with API endpoint tests; 4/4 passing
+
+**Infrastructure Created:**
+- tests/conftest.py: Root test configuration with Flask app, client, db_session fixtures
+- tests/factories.py: Comprehensive test data factories using factory_boy and faker
+- tests/unit/: Unit tests for factories and app basics
+- tests/integration/: Integration tests for API endpoints
+- .coveragerc: Coverage configuration excluding test/static/template files
+
 ### Phase 1: Management & Settings Pages (October 2025) - COMPLETED
 **Status**: 7 of 8 tasks complete (1 deferred to Phase 6)
 

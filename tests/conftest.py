@@ -18,18 +18,22 @@ os.environ['SESSION_SECRET'] = 'test-secret-key-for-testing-only'
 @pytest.fixture(scope='session')
 def app():
     """Create and configure a test Flask application."""
-    from app import app, db
+    # Set test DATABASE_URL before creating app
+    os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
     
-    app.config.update({
+    from app import create_app
+    from models import db
+    
+    # create_app() will initialize db automatically when DATABASE_URL is set
+    test_app = create_app()
+    test_app.config.update({
         'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
         'WTF_CSRF_ENABLED': False,
-        'SECRET_KEY': 'test-secret-key'
     })
     
-    with app.app_context():
+    with test_app.app_context():
         db.create_all()
-        yield app
+        yield test_app
         db.drop_all()
 
 @pytest.fixture(scope='function')
@@ -45,7 +49,7 @@ def runner(app):
 @pytest.fixture(scope='function')
 def db_session(app):
     """Create a database session for testing."""
-    from app import db
+    from models import db
     
     with app.app_context():
         yield db.session
