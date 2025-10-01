@@ -36,3 +36,19 @@ def live_enhanced():
 def live_comprehensive():
     """Legacy route - redirects to main live interface"""
     return redirect(url_for("pages.live"))
+
+# Legal Pages
+@pages_bp.route("/privacy")
+def privacy():
+    """Privacy Policy page"""
+    return render_template("legal/privacy.html")
+
+@pages_bp.route("/terms")
+def terms():
+    """Terms of Service page"""
+    return render_template("legal/terms.html")
+
+@pages_bp.route("/cookies")
+def cookies():
+    """Cookie Policy page"""
+    return render_template("legal/cookies.html")
