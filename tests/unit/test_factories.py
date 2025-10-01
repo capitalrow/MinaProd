@@ -5,7 +5,7 @@ import pytest
 from tests.factories import (
     UserFactory, SessionFactory, SegmentFactory,
     MeetingFactory, SummaryFactory, TaskFactory,
-    WorkspaceFactory, create_complete_meeting_data
+    WorkspaceFactory, ParticipantFactory, create_complete_meeting_data
 )
 
 @pytest.mark.unit
@@ -75,6 +75,16 @@ def test_workspace_factory():
     assert 'name' in workspace
     assert 'slug' in workspace
     assert workspace['plan'] in ['free', 'pro', 'enterprise']
+
+@pytest.mark.unit
+def test_participant_factory():
+    """Test ParticipantFactory creates valid participant data."""
+    participant = ParticipantFactory()
+    assert 'id' in participant
+    assert 'name' in participant
+    assert 'email' in participant
+    assert participant['role'] in ['organizer', 'presenter', 'attendee']
+    assert participant['status'] in ['invited', 'accepted', 'declined', 'attended']
 
 @pytest.mark.unit
 def test_complete_meeting_data():

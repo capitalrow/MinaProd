@@ -59,7 +59,7 @@ async def context(browser: Browser):
     context = await browser.new_context(
         viewport={'width': 1920, 'height': 1080},
         permissions=['microphone'],
-        record_video_dir=str(VIDEOS_DIR) if not HEADLESS else None
+        record_video_dir=str(VIDEOS_DIR)  # Always record videos for debugging
     )
     yield context
     await context.close()
@@ -147,13 +147,16 @@ async def live_page(page: Page):
     yield page
 
 @pytest.fixture(scope="function")
-def screenshot_on_failure(request, page: Page):
+async def screenshot_on_failure(request, page: Page):
     """Take screenshot on test failure."""
     yield
-    if request.node.rep_call.failed:
+    if hasattr(request.node, 'rep_call') and request.node.rep_call.failed:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         screenshot_path = SCREENSHOTS_DIR / f'failure_{request.node.name}_{timestamp}.png'
-        asyncio.create_task(page.screenshot(path=screenshot_path, full_page=True))
+        try:
+            await page.screenshot(path=str(screenshot_path), full_page=True)
+        except Exception as e:
+            print(f"Failed to capture screenshot: {e}")
 
 @pytest.fixture(scope="session")
 def test_session_data():
