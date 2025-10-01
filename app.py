@@ -197,6 +197,15 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"⚠️ CSP middleware failed to load: {e}")
     
+    # Session security configuration and middleware
+    try:
+        from middleware.session_security import configure_session_security, session_security_middleware  # type: ignore
+        configure_session_security(app)
+        session_security_middleware(app)
+        app.logger.info("✅ Session security hardening enabled: timeouts, rotation, fixation prevention")
+    except Exception as e:
+        app.logger.warning(f"⚠️ Session security middleware failed to load: {e}")
+    
     # HSTS (Strict Transport Security) - only for production HTTPS
     @app.after_request
     def add_hsts_header(resp):
