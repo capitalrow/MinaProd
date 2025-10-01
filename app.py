@@ -12,6 +12,9 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
 
 # ---------- Config (fallback if config.Config not present)
 try:
@@ -50,6 +53,35 @@ def _configure_logging(json_logs: bool = False) -> None:
     root.addHandler(handler)
     root.setLevel(logging.INFO)
 
+def _sentry_before_send(event, hint):
+    """
+    Filter function to sanitize events before sending to Sentry.
+    
+    This allows us to:
+    - Filter out sensitive data
+    - Ignore specific error types
+    - Add custom context
+    """
+    # Don't send HTTP 404 errors (too noisy)
+    if 'exc_info' in hint:
+        exc_type, exc_value, tb = hint['exc_info']
+        if isinstance(exc_value, Exception):
+            # Filter out common non-critical exceptions
+            exc_name = exc_value.__class__.__name__
+            if exc_name in ['NotFound', 'Unauthorized', 'Forbidden']:
+                return None
+    
+    # Sanitize sensitive data from request body
+    if 'request' in event and 'data' in event['request']:
+        sensitive_keys = ['password', 'token', 'api_key', 'secret', 'authorization']
+        data = event['request']['data']
+        if isinstance(data, dict):
+            for key in sensitive_keys:
+                if key in data:
+                    data[key] = '[REDACTED]'
+    
+    return event
+
 # ---------- Create the SocketIO singleton with eventlet for production WebSocket support
 socketio = SocketIO(
     cors_allowed_origins="*",  # Allow all origins for development and dynamic Replit URLs
@@ -67,6 +99,34 @@ socketio = SocketIO(
 def create_app() -> Flask:
     app = Flask(__name__, static_folder="static", template_folder="templates")
     app.config.from_object(Config)
+    
+    # Initialize Sentry error tracking
+    sentry_dsn = os.environ.get("SENTRY_DSN")
+    if sentry_dsn:
+        sentry_environment = os.environ.get("SENTRY_ENVIRONMENT", "development")
+        sentry_release = os.environ.get("SENTRY_RELEASE", "mina@unknown")
+        
+        sentry_sdk.init(
+            dsn=sentry_dsn,
+            integrations=[
+                FlaskIntegration(),
+                LoggingIntegration(
+                    level=logging.INFO,  # Capture info and above as breadcrumbs
+                    event_level=logging.ERROR  # Send errors as events
+                ),
+            ],
+            environment=sentry_environment,
+            release=sentry_release,
+            traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.1")),  # 10% of transactions
+            profiles_sample_rate=float(os.environ.get("SENTRY_PROFILES_SAMPLE_RATE", "0.1")),  # 10% profiling
+            send_default_pii=False,  # Don't send personally identifiable information
+            attach_stacktrace=True,
+            before_send=_sentry_before_send,  # Custom filter function
+        )
+        app.logger.info(f"✅ Sentry initialized: env={sentry_environment}, release={sentry_release}")
+    else:
+        app.logger.warning("⚠️ SENTRY_DSN not set - error tracking disabled")
+    
     # Enforce SESSION_SECRET is set - fail fast in production
     app.secret_key = os.environ.get("SESSION_SECRET") or getattr(Config, "SECRET_KEY")
     if not app.secret_key:
