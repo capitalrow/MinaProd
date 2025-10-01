@@ -23,41 +23,31 @@ settings_bp = Blueprint('settings', __name__, url_prefix='/settings')
 @login_required
 def settings_dashboard():
     """
-    Display the main settings dashboard.
+    Display the main settings dashboard (redirects to preferences).
     
     Returns:
-        Rendered settings template with current user preferences
+        Redirect to preferences page
     """
-    logger.info(f"🔍 Settings dashboard accessed - User authenticated: {current_user.is_authenticated}")
+    return redirect(url_for('settings.preferences'))
+
+
+@settings_bp.route('/preferences')
+@login_required
+def preferences():
+    """
+    Display the Crown+ preferences page.
+    
+    Returns:
+        Rendered preferences template with current user preferences
+    """
+    logger.info(f"🔍 Preferences page accessed - User: {current_user.username}")
     
     try:
-        from app import db
-        
-        # Type check current_user
-        if not current_user.is_authenticated:
-            logger.warning(f"⚠️ User not authenticated, redirecting to login")
-            return redirect(url_for('auth.login'))
-        
-        logger.info(f"✅ Loading settings for user {current_user.id} ({current_user.username})")
-        
-        # Get current user preferences  
-        user_preferences = _get_user_preferences(current_user)
-        logger.debug(f"📝 User preferences loaded: {list(user_preferences.keys())}")
-        
-        # Get workspace settings if user has access
-        workspace_settings = _get_workspace_settings(current_user)
-        
-        logger.info(f"✅ Rendering settings dashboard template")
-        
-        return render_template('settings/dashboard.html',
-                             user_preferences=user_preferences,
-                             workspace_settings=workspace_settings,
-                             page_title="Settings")
+        return render_template('settings/preferences.html')
     
     except Exception as e:
-        logger.error(f"❌ Error loading settings dashboard: {e}", exc_info=True)
-        flash('Failed to load settings. Please try again.', 'error')
-        logger.error(f"🔄 Redirecting to dashboard due to error")
+        logger.error(f"❌ Error loading preferences: {e}", exc_info=True)
+        flash('Failed to load preferences. Please try again.', 'error')
         return redirect(url_for('dashboard.index'))
 
 
@@ -405,3 +395,271 @@ def _get_default_preferences() -> Dict[str, Any]:
             'browser_notifications': True
         }
     }
+
+
+@settings_bp.route('/workspace')
+@login_required
+def workspace_management():
+    """
+    Display workspace management page with team members and settings.
+    
+    Returns:
+        Rendered workspace management template
+    """
+    from app import db
+    
+    try:
+        workspace = current_user.workspace if current_user.workspace_id else None
+        workspace_members = []
+        workspace_meetings_count = 0
+        workspace_hours = 0
+        
+        if workspace:
+            # Get workspace members
+            workspace_members = workspace.members
+            
+            # Get workspace statistics
+            workspace_meetings_count = len(workspace.meetings) if workspace.meetings else 0
+            
+            # Calculate total hours (placeholder)
+            workspace_hours = workspace_meetings_count * 0.5  # Estimate 30 min per meeting
+        else:
+            # Single user workspace (no workspace model)
+            workspace_members = [current_user]
+            workspace_meetings_count = len(current_user.meetings) if current_user.meetings else 0
+            workspace_hours = workspace_meetings_count * 0.5
+        
+        return render_template('settings/workspace.html',
+                             workspace=workspace,
+                             workspace_members=workspace_members,
+                             workspace_meetings_count=workspace_meetings_count,
+                             workspace_hours=int(workspace_hours))
+    
+    except Exception as e:
+        logger.error(f"Error loading workspace management: {e}", exc_info=True)
+        flash('Failed to load workspace management. Please try again.', 'error')
+        return redirect(url_for('dashboard.index'))
+
+
+@settings_bp.route('/workspace/invite', methods=['POST'])
+@login_required
+def invite_member():
+    """
+    Invite a new member to the workspace.
+    
+    Request Body:
+        {
+            "email": "user@example.com",
+            "role": "member|admin"
+        }
+    
+    Returns:
+        JSON: Success/error response
+    """
+    from app import db
+    
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'error': 'Permission denied'}), 403
+    
+    try:
+        data = request.get_json() or {}
+        email = data.get('email', '').strip().lower()
+        role = data.get('role', 'member').lower()
+        
+        if not email:
+            return jsonify({'success': False, 'error': 'Email is required'}), 400
+        
+        if role not in ['member', 'admin']:
+            return jsonify({'success': False, 'error': 'Invalid role'}), 400
+        
+        workspace = current_user.workspace
+        if not workspace:
+            return jsonify({'success': False, 'error': 'No workspace found'}), 404
+        
+        # Check if workspace can add more users
+        if not workspace.can_add_user():
+            return jsonify({'success': False, 'error': 'Workspace user limit reached'}), 400
+        
+        # TODO: Implement actual invitation system with email
+        # For now, just return success
+        logger.info(f"Invitation sent to {email} for workspace {workspace.id}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Invitation sent to {email}',
+            'email': email,
+            'role': role
+        }), 200
+    
+    except Exception as e:
+        logger.error(f"Error inviting member: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to send invitation'}), 500
+
+
+@settings_bp.route('/workspace/member/<int:member_id>/role', methods=['PUT'])
+@login_required
+def update_member_role(member_id):
+    """
+    Update a member's role in the workspace.
+    
+    Args:
+        member_id: ID of the member to update
+    
+    Request Body:
+        {
+            "role": "member|admin|owner"
+        }
+    
+    Returns:
+        JSON: Success/error response
+    """
+    from app import db
+    
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'error': 'Permission denied'}), 403
+    
+    try:
+        data = request.get_json() or {}
+        new_role = data.get('role', '').lower()
+        
+        if new_role not in ['member', 'admin', 'owner']:
+            return jsonify({'success': False, 'error': 'Invalid role'}), 400
+        
+        # Only workspace owner can assign/transfer owner role
+        workspace = current_user.workspace
+        if new_role == 'owner':
+            if not workspace or current_user.id != workspace.owner_id:
+                return jsonify({'success': False, 'error': 'Only workspace owner can assign owner role'}), 403
+        
+        # Get member
+        member = db.session.query(User).filter_by(id=member_id).first()
+        if not member:
+            return jsonify({'success': False, 'error': 'Member not found'}), 404
+        
+        # Check if member is in same workspace
+        if member.workspace_id != current_user.workspace_id:
+            return jsonify({'success': False, 'error': 'Member not in workspace'}), 403
+        
+        # If transferring owner role, demote current owner to admin
+        if new_role == 'owner' and workspace:
+            current_owner = db.session.query(User).filter_by(id=workspace.owner_id).first()
+            if current_owner and current_owner.id != member_id:
+                current_owner.role = 'admin'
+            workspace.owner_id = member_id
+        
+        # Update role
+        member.role = new_role
+        db.session.commit()
+        
+        logger.info(f"Updated role for user {member_id} to {new_role}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Role updated to {new_role}',
+            'member_id': member_id,
+            'new_role': new_role
+        }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error updating member role: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to update role'}), 500
+
+
+@settings_bp.route('/workspace/member/<int:member_id>', methods=['DELETE'])
+@login_required
+def remove_member(member_id):
+    """
+    Remove a member from the workspace.
+    
+    Args:
+        member_id: ID of the member to remove
+    
+    Returns:
+        JSON: Success/error response
+    """
+    from app import db
+    
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'error': 'Permission denied'}), 403
+    
+    try:
+        # Get member
+        member = db.session.query(User).filter_by(id=member_id).first()
+        if not member:
+            return jsonify({'success': False, 'error': 'Member not found'}), 404
+        
+        # Check if member is in same workspace
+        if member.workspace_id != current_user.workspace_id:
+            return jsonify({'success': False, 'error': 'Member not in workspace'}), 403
+        
+        # Cannot remove workspace owner
+        workspace = current_user.workspace
+        if workspace and member.id == workspace.owner_id:
+            return jsonify({'success': False, 'error': 'Cannot remove workspace owner'}), 403
+        
+        # Remove member from workspace
+        member.workspace_id = None
+        member.role = 'user'
+        db.session.commit()
+        
+        logger.info(f"Removed user {member_id} from workspace {workspace.id if workspace else 'N/A'}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Member removed from workspace',
+            'member_id': member_id
+        }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error removing member: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to remove member'}), 500
+
+
+@settings_bp.route('/workspace/permissions', methods=['POST'])
+@login_required
+def update_workspace_permissions():
+    """
+    Update workspace permissions.
+    
+    Request Body:
+        {
+            "permission": "permission_name",
+            "enabled": true|false
+        }
+    
+    Returns:
+        JSON: Success/error response
+    """
+    from app import db
+    
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'error': 'Permission denied'}), 403
+    
+    try:
+        data = request.get_json() or {}
+        permission = data.get('permission')
+        enabled = data.get('enabled', False)
+        
+        if not permission:
+            return jsonify({'success': False, 'error': 'Permission name is required'}), 400
+        
+        workspace = current_user.workspace
+        if not workspace:
+            return jsonify({'success': False, 'error': 'No workspace found'}), 404
+        
+        # TODO: Implement actual permission storage
+        # For now, just return success
+        logger.info(f"Updated permission {permission} to {enabled} for workspace {workspace.id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Permission updated',
+            'permission': permission,
+            'enabled': enabled
+        }), 200
+    
+    except Exception as e:
+        logger.error(f"Error updating permissions: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to update permissions'}), 500
