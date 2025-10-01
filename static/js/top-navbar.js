@@ -6,7 +6,6 @@
 class TopNavigation {
     constructor() {
         this.mobileMenuToggle = document.getElementById('mobileMenuToggle');
-        this.navbarMenu = document.getElementById('navbarMenu');
         this.mobileOverlay = document.getElementById('navbarMobileOverlay');
         this.moreDropdownBtn = document.getElementById('moreDropdownBtn');
         this.moreDropdownMenu = document.getElementById('moreDropdownMenu');
@@ -100,17 +99,21 @@ class TopNavigation {
     }
     
     openMobileMenu() {
-        this.navbarMenu.classList.add('show');
-        this.mobileOverlay.classList.add('show');
-        this.mobileMenuToggle.setAttribute('aria-expanded', 'true');
-        document.body.style.overflow = 'hidden';
+        if (this.userMenu) {
+            this.userMenu.classList.add('show', 'mobile-menu-active');
+            this.mobileOverlay.classList.add('show');
+            this.mobileMenuToggle.setAttribute('aria-expanded', 'true');
+            document.body.style.overflow = 'hidden';
+        }
     }
     
     closeMobileMenu() {
-        this.navbarMenu.classList.remove('show');
-        this.mobileOverlay.classList.remove('show');
-        this.mobileMenuToggle.setAttribute('aria-expanded', 'false');
-        document.body.style.overflow = '';
+        if (this.userMenu) {
+            this.userMenu.classList.remove('show', 'mobile-menu-active');
+            this.mobileOverlay.classList.remove('show');
+            this.mobileMenuToggle.setAttribute('aria-expanded', 'false');
+            document.body.style.overflow = '';
+        }
     }
     
     toggleDropdown(button, menu) {
