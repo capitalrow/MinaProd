@@ -23,3 +23,8 @@ nltk
 scipy
 pydub
 jiwer
+factory-boy
+faker
+flask-migrate
+pytest-cov
+pytest-mock
