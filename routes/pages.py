@@ -52,3 +52,30 @@ def terms():
 def cookies():
     """Cookie Policy page"""
     return render_template("legal/cookies.html")
+
+# Onboarding
+@pages_bp.route("/onboarding")
+@login_required
+def onboarding():
+    """Onboarding wizard for new users"""
+    return render_template("onboarding/wizard.html")
+
+@pages_bp.route("/onboarding/complete", methods=["POST"])
+@login_required
+def onboarding_complete():
+    """Handle onboarding completion"""
+    from flask import request
+    
+    # Get form data
+    workspace_name = request.form.get('workspace_name', '')
+    workspace_role = request.form.get('workspace_role', '')
+    email_notifications = request.form.get('email_notifications') == 'on'
+    meeting_reminders = request.form.get('meeting_reminders') == 'on'
+    task_updates = request.form.get('task_updates') == 'on'
+    
+    # In production, save user preferences to database
+    # For now, just log and redirect
+    print(f"Onboarding completed: {workspace_name}, {workspace_role}")
+    print(f"Preferences: email={email_notifications}, reminders={meeting_reminders}, tasks={task_updates}")
+    
+    return redirect(url_for("dashboard.index"))
