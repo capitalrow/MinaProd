@@ -51,6 +51,182 @@ def preferences():
         return redirect(url_for('dashboard.index'))
 
 
+@settings_bp.route('/integrations')
+@login_required
+def integrations():
+    """
+    Display the Crown+ integrations page.
+    
+    Returns:
+        Rendered integrations template
+    """
+    logger.info(f"🔍 Integrations page accessed - User: {current_user.username}")
+    
+    try:
+        return render_template('settings/integrations.html')
+    
+    except Exception as e:
+        logger.error(f"❌ Error loading integrations: {e}", exc_info=True)
+        flash('Failed to load integrations. Please try again.', 'error')
+        return redirect(url_for('dashboard.index'))
+
+
+@settings_bp.route('/api/integrations/status', methods=['GET'])
+@login_required
+def get_integrations_status():
+    """
+    Get status of all integrations for the current user.
+    
+    Returns:
+        JSON: Integration statuses
+    """
+    try:
+        # Get user preferences to check integration status
+        preferences = _get_user_preferences(current_user)
+        integrations_prefs = preferences.get('integrations', {})
+        
+        # Return status for each integration
+        return jsonify({
+            'success': True,
+            'integrations': {
+                'google-calendar': integrations_prefs.get('google_calendar', False),
+                'outlook': integrations_prefs.get('outlook_calendar', False),
+                'slack': integrations_prefs.get('slack_notifications', False),
+                'notion': integrations_prefs.get('notion_sync', False),
+                'linear': integrations_prefs.get('linear_tasks', False),
+                'jira': integrations_prefs.get('jira_integration', False),
+                'github': integrations_prefs.get('github_integration', False),
+                'zapier': integrations_prefs.get('zapier_integration', False)
+            }
+        }), 200
+    
+    except Exception as e:
+        logger.error(f"Error getting integration status: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to get integration status'}), 500
+
+
+@settings_bp.route('/api/integrations/connect', methods=['POST'])
+@login_required
+def connect_integration():
+    """
+    Connect an integration (simulated for now).
+    
+    Request Body:
+        {
+            "integration": "integration-id"
+        }
+    
+    Returns:
+        JSON: Success/error response
+    """
+    from app import db
+    
+    try:
+        data = request.get_json() or {}
+        integration_id = data.get('integration')
+        
+        if not integration_id:
+            return jsonify({'success': False, 'error': 'Integration ID is required'}), 400
+        
+        # Map integration ID to preference key
+        integration_map = {
+            'google-calendar': 'google_calendar',
+            'outlook': 'outlook_calendar',
+            'slack': 'slack_notifications',
+            'notion': 'notion_sync',
+            'linear': 'linear_tasks',
+            'jira': 'jira_integration',
+            'github': 'github_integration',
+            'zapier': 'zapier_integration'
+        }
+        
+        pref_key = integration_map.get(integration_id)
+        if not pref_key:
+            return jsonify({'success': False, 'error': 'Invalid integration ID'}), 400
+        
+        # Update preferences to mark as connected
+        preferences = _get_user_preferences(current_user)
+        if 'integrations' not in preferences:
+            preferences['integrations'] = {}
+        
+        preferences['integrations'][pref_key] = True
+        current_user.preferences = json.dumps(preferences)
+        db.session.commit()
+        
+        logger.info(f"Connected integration {integration_id} for user {current_user.id}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'{integration_id} connected successfully',
+            'integration': integration_id
+        }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error connecting integration: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to connect integration'}), 500
+
+
+@settings_bp.route('/api/integrations/disconnect', methods=['POST'])
+@login_required
+def disconnect_integration():
+    """
+    Disconnect an integration.
+    
+    Request Body:
+        {
+            "integration": "integration-id"
+        }
+    
+    Returns:
+        JSON: Success/error response
+    """
+    from app import db
+    
+    try:
+        data = request.get_json() or {}
+        integration_id = data.get('integration')
+        
+        if not integration_id:
+            return jsonify({'success': False, 'error': 'Integration ID is required'}), 400
+        
+        # Map integration ID to preference key
+        integration_map = {
+            'google-calendar': 'google_calendar',
+            'outlook': 'outlook_calendar',
+            'slack': 'slack_notifications',
+            'notion': 'notion_sync',
+            'linear': 'linear_tasks',
+            'jira': 'jira_integration',
+            'github': 'github_integration',
+            'zapier': 'zapier_integration'
+        }
+        
+        pref_key = integration_map.get(integration_id)
+        if not pref_key:
+            return jsonify({'success': False, 'error': 'Invalid integration ID'}), 400
+        
+        # Update preferences to mark as disconnected
+        preferences = _get_user_preferences(current_user)
+        if 'integrations' in preferences and pref_key in preferences['integrations']:
+            preferences['integrations'][pref_key] = False
+            current_user.preferences = json.dumps(preferences)
+            db.session.commit()
+        
+        logger.info(f"Disconnected integration {integration_id} for user {current_user.id}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'{integration_id} disconnected',
+            'integration': integration_id
+        }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error disconnecting integration: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to disconnect integration'}), 500
+
+
 @settings_bp.route('/api/preferences', methods=['GET'])
 @login_required
 def get_preferences():

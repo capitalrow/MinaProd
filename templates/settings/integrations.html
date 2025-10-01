@@ -1,0 +1,746 @@
+{% extends "base.html" %}
+
+{% block title %}Integrations - {{ super() }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/crown-design-system.css') }}">
+<style>
+    .integrations-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .integration-card {
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    
+    .integration-card:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(139, 92, 246, 0.3);
+        transform: translateY(-2px);
+    }
+    
+    .integration-card.connected {
+        border-color: rgba(34, 197, 94, 0.3);
+        background: rgba(34, 197, 94, 0.03);
+    }
+    
+    .integration-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .integration-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+    
+    .integration-icon.google {
+        background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+    }
+    
+    .integration-icon.microsoft {
+        background: linear-gradient(135deg, #00a4ef 0%, #7fba00 100%);
+    }
+    
+    .integration-icon.slack {
+        background: linear-gradient(135deg, #611f69 0%, #e01e5a 100%);
+    }
+    
+    .integration-icon.notion {
+        background: linear-gradient(135deg, #000000 0%, #4a4a4a 100%);
+    }
+    
+    .integration-icon.linear {
+        background: linear-gradient(135deg, #5e6ad2 0%, #8b5cf6 100%);
+    }
+    
+    .integration-icon.github {
+        background: linear-gradient(135deg, #24292e 0%, #545d68 100%);
+    }
+    
+    .integration-icon.jira {
+        background: linear-gradient(135deg, #0052cc 0%, #2684ff 100%);
+    }
+    
+    .integration-icon.zapier {
+        background: linear-gradient(135deg, #ff4a00 0%, #ff6a33 100%);
+    }
+    
+    .integration-info {
+        flex: 1;
+    }
+    
+    .integration-name {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .integration-category {
+        font-size: 0.8125rem;
+        color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .integration-description {
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 1rem;
+    }
+    
+    .integration-status {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8125rem;
+        font-weight: 500;
+    }
+    
+    .status-badge.connected {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    
+    .status-badge.disconnected {
+        background: rgba(107, 114, 128, 0.15);
+        color: #9ca3af;
+        border: 1px solid rgba(107, 114, 128, 0.3);
+    }
+    
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+    }
+    
+    .status-dot.connected {
+        background: #22c55e;
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+    }
+    
+    .status-dot.disconnected {
+        background: #6b7280;
+    }
+    
+    .integration-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+    
+    .integration-features {
+        margin-bottom: 1rem;
+    }
+    
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0.5rem 0 0;
+    }
+    
+    .feature-list li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8125rem;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 0.375rem;
+    }
+    
+    .feature-list li i {
+        width: 14px;
+        height: 14px;
+        color: #8b5cf6;
+    }
+    
+    .category-header {
+        margin-top: 3rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .category-header:first-child {
+        margin-top: 0;
+    }
+    
+    .category-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .category-description {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.9375rem;
+    }
+    
+    @media (max-width: 768px) {
+        .integrations-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .integration-actions {
+            flex-direction: column;
+        }
+        
+        .integration-actions button {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Crown+ Breadcrumb -->
+    <nav class="crown-breadcrumb mb-4">
+        <a href="{{ url_for('dashboard.index') }}">
+            <i data-feather="home"></i>
+            Home
+        </a>
+        <i data-feather="chevron-right"></i>
+        <a href="{{ url_for('settings.preferences') }}">Settings</a>
+        <i data-feather="chevron-right"></i>
+        <span>Integrations</span>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="mb-4">
+        <h1 class="crown-page-title">
+            <i data-feather="grid"></i>
+            Integrations
+        </h1>
+        <p class="crown-page-subtitle">Connect Mina with your favorite tools and services</p>
+    </div>
+
+    <!-- Calendar Integrations -->
+    <div class="category-header">
+        <div class="category-title">
+            <i data-feather="calendar"></i>
+            Calendar
+        </div>
+        <p class="category-description">Sync your meetings with calendar services</p>
+    </div>
+
+    <div class="integrations-grid">
+        <!-- Google Calendar -->
+        <div class="integration-card" id="integration-google-calendar">
+            <div class="integration-header">
+                <div class="integration-icon google">
+                    📅
+                </div>
+                <div class="integration-info">
+                    <div class="integration-name">Google Calendar</div>
+                    <div class="integration-category">Calendar</div>
+                </div>
+            </div>
+            
+            <div class="integration-description">
+                Automatically sync meeting schedules, create calendar events, and send invites through Google Calendar.
+            </div>
+            
+            <div class="integration-features">
+                <ul class="feature-list">
+                    <li><i data-feather="check"></i> Two-way calendar sync</li>
+                    <li><i data-feather="check"></i> Automatic meeting creation</li>
+                    <li><i data-feather="check"></i> Event reminders</li>
+                </ul>
+            </div>
+            
+            <div class="integration-status">
+                <span class="status-badge disconnected">
+                    <span class="status-dot disconnected"></span>
+                    Disconnected
+                </span>
+            </div>
+            
+            <div class="integration-actions">
+                <button class="crown-btn primary" onclick="connectIntegration('google-calendar')">
+                    <i data-feather="link"></i>
+                    Connect
+                </button>
+            </div>
+        </div>
+
+        <!-- Microsoft Outlook -->
+        <div class="integration-card" id="integration-outlook">
+            <div class="integration-header">
+                <div class="integration-icon microsoft">
+                    📧
+                </div>
+                <div class="integration-info">
+                    <div class="integration-name">Microsoft Outlook</div>
+                    <div class="integration-category">Calendar</div>
+                </div>
+            </div>
+            
+            <div class="integration-description">
+                Integrate with Outlook Calendar and Teams to manage your meetings seamlessly.
+            </div>
+            
+            <div class="integration-features">
+                <ul class="feature-list">
+                    <li><i data-feather="check"></i> Outlook Calendar sync</li>
+                    <li><i data-feather="check"></i> Teams integration</li>
+                    <li><i data-feather="check"></i> Exchange support</li>
+                </ul>
+            </div>
+            
+            <div class="integration-status">
+                <span class="status-badge disconnected">
+                    <span class="status-dot disconnected"></span>
+                    Disconnected
+                </span>
+            </div>
+            
+            <div class="integration-actions">
+                <button class="crown-btn primary" onclick="connectIntegration('outlook')">
+                    <i data-feather="link"></i>
+                    Connect
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collaboration Integrations -->
+    <div class="category-header">
+        <div class="category-title">
+            <i data-feather="users"></i>
+            Collaboration
+        </div>
+        <p class="category-description">Share summaries and collaborate with your team</p>
+    </div>
+
+    <div class="integrations-grid">
+        <!-- Slack -->
+        <div class="integration-card" id="integration-slack">
+            <div class="integration-header">
+                <div class="integration-icon slack">
+                    💬
+                </div>
+                <div class="integration-info">
+                    <div class="integration-name">Slack</div>
+                    <div class="integration-category">Messaging</div>
+                </div>
+            </div>
+            
+            <div class="integration-description">
+                Post meeting summaries and action items directly to Slack channels.
+            </div>
+            
+            <div class="integration-features">
+                <ul class="feature-list">
+                    <li><i data-feather="check"></i> Auto-post summaries</li>
+                    <li><i data-feather="check"></i> Channel notifications</li>
+                    <li><i data-feather="check"></i> Direct messages</li>
+                </ul>
+            </div>
+            
+            <div class="integration-status">
+                <span class="status-badge disconnected">
+                    <span class="status-dot disconnected"></span>
+                    Disconnected
+                </span>
+            </div>
+            
+            <div class="integration-actions">
+                <button class="crown-btn primary" onclick="connectIntegration('slack')">
+                    <i data-feather="link"></i>
+                    Connect
+                </button>
+            </div>
+        </div>
+
+        <!-- Notion -->
+        <div class="integration-card" id="integration-notion">
+            <div class="integration-header">
+                <div class="integration-icon notion">
+                    📝
+                </div>
+                <div class="integration-info">
+                    <div class="integration-name">Notion</div>
+                    <div class="integration-category">Notes</div>
+                </div>
+            </div>
+            
+            <div class="integration-description">
+                Export meeting notes and transcripts directly to your Notion workspace.
+            </div>
+            
+            <div class="integration-features">
+                <ul class="feature-list">
+                    <li><i data-feather="check"></i> Export to database</li>
+                    <li><i data-feather="check"></i> Template support</li>
+                    <li><i data-feather="check"></i> Rich formatting</li>
+                </ul>
+            </div>
+            
+            <div class="integration-status">
+                <span class="status-badge disconnected">
+                    <span class="status-dot disconnected"></span>
+                    Disconnected
+                </span>
+            </div>
+            
+            <div class="integration-actions">
+                <button class="crown-btn primary" onclick="connectIntegration('notion')">
+                    <i data-feather="link"></i>
+                    Connect
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Management Integrations -->
+    <div class="category-header">
+        <div class="category-title">
+            <i data-feather="check-square"></i>
+            Task Management
+        </div>
+        <p class="category-description">Sync action items with your task management tools</p>
+    </div>
+
+    <div class="integrations-grid">
+        <!-- Linear -->
+        <div class="integration-card" id="integration-linear">
+            <div class="integration-header">
+                <div class="integration-icon linear">
+                    ⚡
+                </div>
+                <div class="integration-info">
+                    <div class="integration-name">Linear</div>
+                    <div class="integration-category">Project Management</div>
+                </div>
+            </div>
+            
+            <div class="integration-description">
+                Create Linear issues from meeting action items and sync task status.
+            </div>
+            
+            <div class="integration-features">
+                <ul class="feature-list">
+                    <li><i data-feather="check"></i> Auto-create issues</li>
+                    <li><i data-feather="check"></i> Status sync</li>
+                    <li><i data-feather="check"></i> Assignee mapping</li>
+                </ul>
+            </div>
+            
+            <div class="integration-status">
+                <span class="status-badge disconnected">
+                    <span class="status-dot disconnected"></span>
+                    Disconnected
+                </span>
+            </div>
+            
+            <div class="integration-actions">
+                <button class="crown-btn primary" onclick="connectIntegration('linear')">
+                    <i data-feather="link"></i>
+                    Connect
+                </button>
+            </div>
+        </div>
+
+        <!-- Jira -->
+        <div class="integration-card" id="integration-jira">
+            <div class="integration-header">
+                <div class="integration-icon jira">
+                    🎯
+                </div>
+                <div class="integration-info">
+                    <div class="integration-name">Jira</div>
+                    <div class="integration-category">Project Management</div>
+                </div>
+            </div>
+            
+            <div class="integration-description">
+                Create Jira tickets from action items and link them to meetings.
+            </div>
+            
+            <div class="integration-features">
+                <ul class="feature-list">
+                    <li><i data-feather="check"></i> Create tickets</li>
+                    <li><i data-feather="check"></i> Custom fields</li>
+                    <li><i data-feather="check"></i> Sprint planning</li>
+                </ul>
+            </div>
+            
+            <div class="integration-status">
+                <span class="status-badge disconnected">
+                    <span class="status-dot disconnected"></span>
+                    Disconnected
+                </span>
+            </div>
+            
+            <div class="integration-actions">
+                <button class="crown-btn primary" onclick="connectIntegration('jira')">
+                    <i data-feather="link"></i>
+                    Connect
+                </button>
+            </div>
+        </div>
+
+        <!-- GitHub -->
+        <div class="integration-card" id="integration-github">
+            <div class="integration-header">
+                <div class="integration-icon github">
+                    🐙
+                </div>
+                <div class="integration-info">
+                    <div class="integration-name">GitHub</div>
+                    <div class="integration-category">Development</div>
+                </div>
+            </div>
+            
+            <div class="integration-description">
+                Create GitHub issues and link pull requests to meeting discussions.
+            </div>
+            
+            <div class="integration-features">
+                <ul class="feature-list">
+                    <li><i data-feather="check"></i> Create issues</li>
+                    <li><i data-feather="check"></i> Link PRs</li>
+                    <li><i data-feather="check"></i> Repository access</li>
+                </ul>
+            </div>
+            
+            <div class="integration-status">
+                <span class="status-badge disconnected">
+                    <span class="status-dot disconnected"></span>
+                    Disconnected
+                </span>
+            </div>
+            
+            <div class="integration-actions">
+                <button class="crown-btn primary" onclick="connectIntegration('github')">
+                    <i data-feather="link"></i>
+                    Connect
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Automation Integrations -->
+    <div class="category-header">
+        <div class="category-title">
+            <i data-feather="zap"></i>
+            Automation
+        </div>
+        <p class="category-description">Connect with automation platforms for custom workflows</p>
+    </div>
+
+    <div class="integrations-grid">
+        <!-- Zapier -->
+        <div class="integration-card" id="integration-zapier">
+            <div class="integration-header">
+                <div class="integration-icon zapier">
+                    ⚙️
+                </div>
+                <div class="integration-info">
+                    <div class="integration-name">Zapier</div>
+                    <div class="integration-category">Automation</div>
+                </div>
+            </div>
+            
+            <div class="integration-description">
+                Connect Mina with 5,000+ apps through Zapier's automation platform.
+            </div>
+            
+            <div class="integration-features">
+                <ul class="feature-list">
+                    <li><i data-feather="check"></i> Custom workflows</li>
+                    <li><i data-feather="check"></i> Multi-step zaps</li>
+                    <li><i data-feather="check"></i> 5,000+ apps</li>
+                </ul>
+            </div>
+            
+            <div class="integration-status">
+                <span class="status-badge disconnected">
+                    <span class="status-dot disconnected"></span>
+                    Disconnected
+                </span>
+            </div>
+            
+            <div class="integration-actions">
+                <button class="crown-btn primary" onclick="connectIntegration('zapier')">
+                    <i data-feather="link"></i>
+                    Connect
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="crown-toast-container" id="toastContainer"></div>
+
+<script>
+// Initialize Feather icons
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+    
+    // Load integration statuses
+    loadIntegrationStatuses();
+});
+
+// Toast notification system
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `crown-toast ${type}`;
+    toast.innerHTML = `
+        <i data-feather="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i>
+        <span>${message}</span>
+    `;
+    container.appendChild(toast);
+    
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+    
+    setTimeout(() => toast.classList.add('show'), 100);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Load integration statuses
+async function loadIntegrationStatuses() {
+    try {
+        const response = await fetch('/settings/api/integrations/status');
+        const data = await response.json();
+        
+        if (data.success && data.integrations) {
+            updateIntegrationUI(data.integrations);
+        }
+    } catch (error) {
+        console.error('Failed to load integration statuses:', error);
+    }
+}
+
+// Update integration UI based on status
+function updateIntegrationUI(integrations) {
+    Object.keys(integrations).forEach(key => {
+        const isConnected = integrations[key];
+        const card = document.getElementById(`integration-${key}`);
+        
+        if (card && isConnected) {
+            card.classList.add('connected');
+            
+            // Update status badge
+            const statusBadge = card.querySelector('.status-badge');
+            statusBadge.classList.remove('disconnected');
+            statusBadge.classList.add('connected');
+            statusBadge.innerHTML = `
+                <span class="status-dot connected"></span>
+                Connected
+            `;
+            
+            // Update button
+            const button = card.querySelector('.crown-btn');
+            button.classList.remove('primary');
+            button.classList.add('secondary');
+            button.innerHTML = `
+                <i data-feather="x"></i>
+                Disconnect
+            `;
+            button.setAttribute('onclick', `disconnectIntegration('${key}')`);
+            
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        }
+    });
+}
+
+// Connect integration
+async function connectIntegration(integrationId) {
+    showToast('Opening OAuth connection...', 'success');
+    
+    // In a real implementation, this would open an OAuth flow
+    // For now, simulate connection
+    setTimeout(async () => {
+        try {
+            const response = await fetch('/settings/api/integrations/connect', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ integration: integrationId })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast(`${integrationId.replace('-', ' ')} connected successfully!`, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.error || 'Failed to connect integration', 'error');
+            }
+        } catch (error) {
+            showToast('Failed to connect integration', 'error');
+            console.error('Connection error:', error);
+        }
+    }, 1000);
+}
+
+// Disconnect integration
+async function disconnectIntegration(integrationId) {
+    if (!confirm(`Disconnect ${integrationId.replace('-', ' ')}? You'll need to reconnect to use this integration.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/settings/api/integrations/disconnect', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ integration: integrationId })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(`${integrationId.replace('-', ' ')} disconnected`, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.error || 'Failed to disconnect integration', 'error');
+        }
+    } catch (error) {
+        showToast('Failed to disconnect integration', 'error');
+        console.error('Disconnection error:', error);
+    }
+}
+</script>
+{% endblock %}
