@@ -773,6 +773,10 @@ body:has(.live-page) {
         margin: 0;
         padding: 1.5rem 0;
         
+        /* CRITICAL: Override desktop dropdown invisibility */
+        opacity: 1 !important;
+        visibility: visible !important;
+        
         /* Crown+ Glass Morphism */
         background: rgba(15, 20, 25, 0.95);
         backdrop-filter: blur(20px) saturate(180%);
@@ -782,7 +786,7 @@ body:has(.live-page) {
                     -2px 0 8px rgba(139, 92, 246, 0.1);
         
         /* Slide-in Animation */
-        transform: translateX(0);
+        transform: translateX(0) !important;
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 1001;
         
