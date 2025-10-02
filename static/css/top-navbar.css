@@ -256,11 +256,11 @@ body {
     transform: rotate(180deg);
 }
 
-/* User Dropdown Menu */
+/* User Dropdown Menu - Desktop Mode */
 .navbar-user-menu {
     position: absolute;
-    top: calc(100% + 0.5rem);
-    right: 0;
+    top: calc(var(--navbar-height) + 0.5rem);
+    right: 1.5rem;
     min-width: 240px;
     background: rgba(17, 24, 39, 0.98);
     backdrop-filter: blur(20px);
