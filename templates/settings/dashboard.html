@@ -3,792 +3,1377 @@
 {% block title %}Settings - {{ super() }}{% endblock %}
 
 {% block head %}
-<!-- Premium Settings Styling -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/mina-settings.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/mina-animations.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/mina-accessibility.css') }}">
-<!-- Premium Settings CSS -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/premium-settings.css') }}">
-
+<style>
+    /* Crown+ Settings Page - Premium Design */
+    .settings-page-wrapper {
+        min-height: 100vh;
+        background: var(--bg-primary);
+        padding: var(--space-6) var(--space-4);
+    }
+    
+    .settings-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    /* Page Header */
+    .settings-page-header {
+        margin-bottom: var(--space-8);
+    }
+    
+    .settings-title-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--space-6);
+        flex-wrap: wrap;
+        gap: var(--space-4);
+    }
+    
+    .settings-title-group h1 {
+        font-size: var(--text-3xl);
+        font-weight: var(--font-weight-bold);
+        color: var(--text-primary);
+        margin: 0 0 var(--space-2) 0;
+        font-family: var(--font-family-display);
+        letter-spacing: var(--tracking-tight);
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+    }
+    
+    .settings-subtitle {
+        color: var(--text-secondary);
+        font-size: var(--font-size-base);
+        margin: 0;
+    }
+    
+    .settings-actions {
+        display: flex;
+        gap: var(--space-2);
+    }
+    
+    /* Crown+ Tabs Navigation */
+    .crown-tabs-nav {
+        background: var(--glass-bg);
+        backdrop-filter: var(--glass-blur);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-2xl);
+        padding: var(--space-2);
+        display: flex;
+        gap: var(--space-1);
+        overflow-x: auto;
+        margin-bottom: var(--space-6);
+        box-shadow: var(--shadow-md);
+        scrollbar-width: none;
+    }
+    
+    .crown-tabs-nav::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .crown-tab {
+        flex: 1;
+        min-width: max-content;
+        padding: var(--space-3) var(--space-5);
+        border-radius: var(--radius-xl);
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        cursor: pointer;
+        transition: all var(--duration-fast) var(--ease-out);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+        white-space: nowrap;
+        text-decoration: none;
+    }
+    
+    .crown-tab:hover {
+        background: rgba(102, 126, 234, 0.1);
+        color: var(--text-primary);
+    }
+    
+    .crown-tab.active {
+        background: var(--gradient-brand);
+        color: white;
+        font-weight: var(--font-weight-semibold);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .crown-tab i {
+        width: 16px;
+        height: 16px;
+        stroke-width: 2.5px;
+    }
+    
+    /* Tab Content */
+    .settings-tab-content {
+        display: none;
+    }
+    
+    .settings-tab-content.active {
+        display: block;
+        animation: fadeInUp 0.4s var(--ease-out);
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Settings Section Header */
+    .settings-section-header {
+        margin-bottom: var(--space-6);
+    }
+    
+    .settings-section-title {
+        font-size: var(--text-2xl);
+        font-weight: var(--font-weight-bold);
+        color: var(--text-primary);
+        margin: 0 0 var(--space-2) 0;
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+    }
+    
+    .settings-section-description {
+        color: var(--text-secondary);
+        font-size: var(--font-size-base);
+        margin: 0;
+        line-height: var(--leading-relaxed);
+    }
+    
+    /* Settings Groups */
+    .settings-group {
+        background: var(--glass-bg);
+        backdrop-filter: var(--glass-blur);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-2xl);
+        padding: var(--space-6);
+        margin-bottom: var(--space-6);
+        box-shadow: var(--shadow-md);
+        transition: all var(--duration-normal) var(--ease-out);
+    }
+    
+    .settings-group:hover {
+        box-shadow: var(--shadow-lg);
+        border-color: var(--glass-border-strong);
+    }
+    
+    .settings-group-header {
+        margin-bottom: var(--space-5);
+        padding-bottom: var(--space-4);
+        border-bottom: 1px solid var(--border-secondary);
+    }
+    
+    .settings-group-title {
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-weight-semibold);
+        color: var(--text-primary);
+        margin: 0 0 var(--space-2) 0;
+    }
+    
+    .settings-group-description {
+        color: var(--text-tertiary);
+        font-size: var(--font-size-sm);
+        margin: 0;
+    }
+    
+    /* Setting Item */
+    .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-4);
+        border-radius: var(--radius-lg);
+        transition: background var(--duration-fast) var(--ease-out);
+        gap: var(--space-6);
+    }
+    
+    .setting-item:hover {
+        background: var(--surface-secondary);
+    }
+    
+    .setting-item:not(:last-child) {
+        border-bottom: 1px solid var(--border-tertiary);
+    }
+    
+    .setting-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .setting-label {
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-medium);
+        color: var(--text-primary);
+        margin-bottom: var(--space-1);
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+    
+    .setting-description {
+        font-size: var(--font-size-sm);
+        color: var(--text-tertiary);
+        line-height: var(--leading-relaxed);
+    }
+    
+    .setting-control {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        flex-shrink: 0;
+    }
+    
+    /* Crown+ Form Controls */
+    .crown-select,
+    .crown-input {
+        padding: var(--space-3) var(--space-4);
+        background: var(--surface-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-lg);
+        color: var(--text-primary);
+        font-size: var(--font-size-sm);
+        font-family: var(--font-family-sans);
+        transition: all var(--duration-fast) var(--ease-out);
+        min-width: 120px;
+    }
+    
+    .crown-select:hover,
+    .crown-input:hover {
+        border-color: var(--border-elevated);
+        background: var(--surface-elevated);
+    }
+    
+    .crown-select:focus,
+    .crown-input:focus {
+        outline: none;
+        border-color: var(--color-brand-500);
+        box-shadow: var(--focus-ring);
+        background: var(--surface-elevated);
+    }
+    
+    /* Crown+ Toggle Switch */
+    .crown-switch {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 26px;
+    }
+    
+    .crown-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .crown-switch-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--surface-tertiary);
+        border: 1px solid var(--border-primary);
+        transition: all var(--duration-fast) var(--ease-out);
+        border-radius: 13px;
+    }
+    
+    .crown-switch-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background: var(--bg-primary);
+        transition: all var(--duration-fast) var(--ease-out);
+        border-radius: 50%;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .crown-switch input:checked + .crown-switch-slider {
+        background: var(--gradient-brand);
+        border-color: transparent;
+    }
+    
+    .crown-switch input:checked + .crown-switch-slider:before {
+        transform: translateX(22px);
+    }
+    
+    .crown-switch-slider:hover {
+        box-shadow: var(--shadow-md);
+    }
+    
+    /* Range Input */
+    .crown-range {
+        -webkit-appearance: none;
+        width: 150px;
+        height: 6px;
+        border-radius: var(--radius-full);
+        background: var(--surface-tertiary);
+        outline: none;
+        transition: background var(--duration-fast) var(--ease-out);
+    }
+    
+    .crown-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--gradient-brand);
+        cursor: pointer;
+        box-shadow: var(--shadow-md);
+        transition: all var(--duration-fast) var(--ease-out);
+    }
+    
+    .crown-range::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--gradient-brand);
+        cursor: pointer;
+        box-shadow: var(--shadow-md);
+        border: none;
+        transition: all var(--duration-fast) var(--ease-out);
+    }
+    
+    .crown-range::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+        box-shadow: var(--shadow-lg), var(--shadow-brand-glow);
+    }
+    
+    .crown-range::-moz-range-thumb:hover {
+        transform: scale(1.2);
+        box-shadow: var(--shadow-lg), var(--shadow-brand-glow);
+    }
+    
+    .range-value {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 48px;
+        padding: var(--space-2) var(--space-3);
+        background: var(--surface-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-md);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--text-primary);
+    }
+    
+    /* Status Indicators */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        padding: var(--space-1) var(--space-3);
+        border-radius: var(--radius-full);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-medium);
+    }
+    
+    .status-badge.connected {
+        background: rgba(34, 197, 94, 0.1);
+        color: var(--color-success-400);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    
+    .status-badge.disconnected {
+        background: rgba(107, 114, 128, 0.1);
+        color: var(--text-tertiary);
+        border: 1px solid rgba(107, 114, 128, 0.3);
+    }
+    
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+    }
+    
+    .status-badge.connected .status-dot {
+        background: var(--color-success-500);
+    }
+    
+    .status-badge.disconnected .status-dot {
+        background: var(--text-tertiary);
+    }
+    
+    /* Crown+ Buttons */
+    .crown-btn {
+        padding: var(--space-2) var(--space-4);
+        border-radius: var(--radius-lg);
+        border: none;
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        cursor: pointer;
+        transition: all var(--duration-fast) var(--ease-out);
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        white-space: nowrap;
+    }
+    
+    .crown-btn-primary {
+        background: var(--gradient-brand);
+        color: white;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .crown-btn-primary:hover {
+        box-shadow: var(--shadow-lg), var(--shadow-brand-glow);
+        transform: translateY(-1px);
+    }
+    
+    .crown-btn-secondary {
+        background: var(--surface-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-primary);
+    }
+    
+    .crown-btn-secondary:hover {
+        background: var(--surface-elevated);
+        border-color: var(--border-elevated);
+    }
+    
+    .crown-btn-danger {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--color-error-400);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .crown-btn-danger:hover {
+        background: rgba(239, 68, 68, 0.2);
+        border-color: rgba(239, 68, 68, 0.5);
+    }
+    
+    .crown-btn i {
+        width: 16px;
+        height: 16px;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .settings-title-section {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .setting-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--space-3);
+        }
+        
+        .setting-control {
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .settings-page-wrapper {
+            padding: var(--space-4) var(--space-3);
+        }
+        
+        .crown-tabs-nav {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+        
+        .settings-group {
+            padding: var(--space-4);
+        }
+    }
+    
+    /* Accessibility */
+    @media (prefers-reduced-motion: reduce) {
+        * {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+    
+    @media (prefers-contrast: high) {
+        .settings-group {
+            border: 2px solid var(--border-primary);
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="settings-container settings-page">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h2 mb-0">
-            <i class="fas fa-cog me-2"></i>
-            Settings & Preferences
-        </h1>
-        <div>
-            <button class="btn btn-outline-primary me-2" onclick="exportSettings()">
-                <i class="fas fa-download me-1"></i>
-                Export
-            </button>
-            <button class="btn btn-outline-danger" onclick="resetAllSettings()">
-                <i class="fas fa-undo me-1"></i>
-                Reset All
-            </button>
+<div class="settings-page-wrapper">
+    <div class="settings-container">
+        <!-- Page Header -->
+        <div class="settings-page-header">
+            <div class="settings-title-section">
+                <div class="settings-title-group">
+                    <h1>
+                        <i data-feather="settings"></i>
+                        Settings & Preferences
+                    </h1>
+                    <p class="settings-subtitle">Configure Mina to match your workflow and preferences</p>
+                </div>
+                <div class="settings-actions">
+                    <button class="crown-btn crown-btn-secondary" onclick="exportSettings()">
+                        <i data-feather="download"></i>
+                        Export
+                    </button>
+                    <button class="crown-btn crown-btn-danger" onclick="resetAllSettings()">
+                        <i data-feather="rotate-ccw"></i>
+                        Reset All
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Crown+ Tabs Navigation -->
+            <nav class="crown-tabs-nav" role="tablist">
+                <button class="crown-tab active" data-tab="transcription" role="tab" aria-selected="true">
+                    <i data-feather="mic"></i>
+                    <span>Transcription</span>
+                </button>
+                <button class="crown-tab" data-tab="summary" role="tab">
+                    <i data-feather="file-text"></i>
+                    <span>Summary</span>
+                </button>
+                <button class="crown-tab" data-tab="tasks" role="tab">
+                    <i data-feather="check-square"></i>
+                    <span>Tasks</span>
+                </button>
+                <button class="crown-tab" data-tab="audio" role="tab">
+                    <i data-feather="volume-2"></i>
+                    <span>Audio</span>
+                </button>
+                <button class="crown-tab" data-tab="privacy" role="tab">
+                    <i data-feather="shield"></i>
+                    <span>Privacy</span>
+                </button>
+                <button class="crown-tab" data-tab="integrations" role="tab">
+                    <i data-feather="share-2"></i>
+                    <span>Integrations</span>
+                </button>
+                <button class="crown-tab" data-tab="ui" role="tab">
+                    <i data-feather="layout"></i>
+                    <span>Interface</span>
+                </button>
+                <button class="crown-tab" data-tab="general" role="tab">
+                    <i data-feather="sliders"></i>
+                    <span>General</span>
+                </button>
+            </nav>
         </div>
-    </div>
-    
-    <!-- Settings Navigation -->
-    <div class="settings-nav">
-        <ul class="nav nav-pills justify-content-center" role="tablist">
-            <li class="nav-item">
-                <a class="nav-link active" href="#transcription" data-bs-toggle="pill">
-                    <i class="fas fa-microphone me-2"></i>
-                    Transcription
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#summary" data-bs-toggle="pill">
-                    <i class="fas fa-file-alt me-2"></i>
-                    Summary
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#tasks" data-bs-toggle="pill">
-                    <i class="fas fa-tasks me-2"></i>
-                    Tasks
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#audio" data-bs-toggle="pill">
-                    <i class="fas fa-volume-up me-2"></i>
-                    Audio
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#privacy" data-bs-toggle="pill">
-                    <i class="fas fa-shield-alt me-2"></i>
-                    Privacy
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#integrations" data-bs-toggle="pill">
-                    <i class="fas fa-plug me-2"></i>
+        
+        <!-- Transcription Settings -->
+        <div class="settings-tab-content active" id="transcription-tab" role="tabpanel">
+            <div class="settings-section-header">
+                <h2 class="settings-section-title">
+                    <i data-feather="mic"></i>
+                    Transcription Settings
+                </h2>
+                <p class="settings-section-description">Configure how meetings are transcribed and processed in real-time</p>
+            </div>
+            
+            <div class="settings-group">
+                <div class="settings-group-header">
+                    <h3 class="settings-group-title">Language & Recognition</h3>
+                    <p class="settings-group-description">Settings for speech recognition and language processing</p>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Primary Language</div>
+                        <div class="setting-description">Default language for transcription</div>
+                    </div>
+                    <div class="setting-control">
+                        <select class="crown-select" data-setting="transcription.language">
+                            <option value="auto">Auto-detect</option>
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="it">Italian</option>
+                            <option value="pt">Portuguese</option>
+                            <option value="zh">Chinese</option>
+                            <option value="ja">Japanese</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Transcription Quality</div>
+                        <div class="setting-description">Higher quality provides better accuracy but uses more resources</div>
+                    </div>
+                    <div class="setting-control">
+                        <select class="crown-select" data-setting="transcription.quality">
+                            <option value="low">Fast</option>
+                            <option value="medium">Balanced</option>
+                            <option value="high">High Quality</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Confidence Threshold</div>
+                        <div class="setting-description">Minimum confidence level for displaying transcribed text</div>
+                    </div>
+                    <div class="setting-control">
+                        <input type="range" class="crown-range" min="0.5" max="1.0" step="0.1" value="0.8" data-setting="transcription.confidence_threshold">
+                        <span class="range-value confidence-value">0.8</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-group">
+                <div class="settings-group-header">
+                    <h3 class="settings-group-title">Speaker & Processing</h3>
+                    <p class="settings-group-description">Configure speaker identification and text processing features</p>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Speaker Detection</div>
+                        <div class="setting-description">Automatically identify and label different speakers</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked data-setting="transcription.speaker_detection">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Auto Punctuation</div>
+                        <div class="setting-description">Automatically add punctuation to transcribed text</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked data-setting="transcription.punctuation">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Profanity Filter</div>
+                        <div class="setting-description">Filter inappropriate language from transcriptions</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" data-setting="transcription.profanity_filter">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Real-time Display</div>
+                        <div class="setting-description">Show transcription results as they are processed</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked data-setting="transcription.real_time_display">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Auto Save</div>
+                        <div class="setting-description">Automatically save transcription progress</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked data-setting="transcription.auto_save">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary Settings -->
+        <div class="settings-tab-content" id="summary-tab" role="tabpanel">
+            <div class="settings-section-header">
+                <h2 class="settings-section-title">
+                    <i data-feather="file-text"></i>
+                    Summary Settings
+                </h2>
+                <p class="settings-section-description">Configure how meeting summaries are generated and delivered</p>
+            </div>
+            
+            <div class="settings-group">
+                <div class="settings-group-header">
+                    <h3 class="settings-group-title">Generation Preferences</h3>
+                    <p class="settings-group-description">Default settings for summary generation</p>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Default Summary Level</div>
+                        <div class="setting-description">Choose the default detail level for generated summaries</div>
+                    </div>
+                    <div class="setting-control">
+                        <select class="crown-select" data-setting="summary.default_level">
+                            <option value="brief">Brief</option>
+                            <option value="standard" selected>Standard</option>
+                            <option value="detailed">Detailed</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Default Summary Style</div>
+                        <div class="setting-description">Choose the default style for generated summaries</div>
+                    </div>
+                    <div class="setting-control">
+                        <select class="crown-select" data-setting="summary.default_style">
+                            <option value="executive">Executive</option>
+                            <option value="action" selected>Action-Oriented</option>
+                            <option value="technical">Technical</option>
+                            <option value="narrative">Narrative</option>
+                            <option value="bullet">Bullet Points</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Auto Generate</div>
+                        <div class="setting-description">Automatically generate summaries when meetings end</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked data-setting="summary.auto_generate">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Auto Generate Delay</div>
+                        <div class="setting-description">Seconds to wait before auto-generating summary</div>
+                    </div>
+                    <div class="setting-control">
+                        <input type="number" class="crown-input" min="0" max="300" value="30" style="width: 100px;" data-setting="summary.auto_generate_delay">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-group">
+                <div class="settings-group-header">
+                    <h3 class="settings-group-title">Content Inclusion</h3>
+                    <p class="settings-group-description">What to include in generated summaries</p>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Include Action Items</div>
+                        <div class="setting-description">Extract and highlight action items in summaries</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked data-setting="summary.include_actions">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Include Decisions</div>
+                        <div class="setting-description">Capture decisions made during meetings</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked data-setting="summary.include_decisions">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Include Risks</div>
+                        <div class="setting-description">Identify and highlight potential risks discussed</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" data-setting="summary.include_risks">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Email Summary</div>
+                        <div class="setting-description">Send summary via email after generation</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" data-setting="summary.email_summary">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tasks Settings -->
+        <div class="settings-tab-content" id="tasks-tab" role="tabpanel">
+            <div class="settings-section-header">
+                <h2 class="settings-section-title">
+                    <i data-feather="check-square"></i>
+                    Task Management
+                </h2>
+                <p class="settings-section-description">Configure how tasks and action items are handled</p>
+            </div>
+            
+            <div class="settings-group">
+                <div class="settings-group-header">
+                    <h3 class="settings-group-title">Task Defaults</h3>
+                    <p class="settings-group-description">Set default values for newly created tasks</p>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Default Priority</div>
+                        <div class="setting-description">Initial priority for new tasks</div>
+                    </div>
+                    <div class="setting-control">
+                        <select class="crown-select" data-setting="tasks.default_priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Auto-assign Tasks</div>
+                        <div class="setting-description">Automatically assign tasks to the creator</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked data-setting="tasks.auto_assign">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Due Date Suggestions</div>
+                        <div class="setting-description">Suggest due dates based on task priority</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked data-setting="tasks.due_date_suggestions">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Notification Reminders</div>
+                        <div class="setting-description">Send reminders for upcoming task deadlines</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked data-setting="tasks.notification_reminders">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Audio Settings -->
+        <div class="settings-tab-content" id="audio-tab" role="tabpanel">
+            <div class="settings-section-header">
+                <h2 class="settings-section-title">
+                    <i data-feather="volume-2"></i>
+                    Audio & Recording
+                </h2>
+                <p class="settings-section-description">Configure audio processing and recording quality settings</p>
+            </div>
+            
+            <div class="settings-group">
+                <div class="settings-group-header">
+                    <h3 class="settings-group-title">Audio Quality</h3>
+                    <p class="settings-group-description">Optimize audio capture and processing</p>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Recording Quality</div>
+                        <div class="setting-description">Higher quality produces better results but uses more bandwidth</div>
+                    </div>
+                    <div class="setting-control">
+                        <select class="crown-select" data-setting="audio.quality">
+                            <option value="standard">Standard</option>
+                            <option value="high" selected>High</option>
+                            <option value="ultra">Ultra</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Noise Reduction</div>
+                        <div class="setting-description">Filter background noise during recording</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked data-setting="audio.noise_reduction">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Echo Cancellation</div>
+                        <div class="setting-description">Remove echo and feedback from recordings</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked data-setting="audio.echo_cancellation">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Auto Gain Control</div>
+                        <div class="setting-description">Automatically adjust volume levels</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked data-setting="audio.auto_gain_control">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Privacy Settings -->
+        <div class="settings-tab-content" id="privacy-tab" role="tabpanel">
+            <div class="settings-section-header">
+                <h2 class="settings-section-title">
+                    <i data-feather="shield"></i>
+                    Privacy & Security
+                </h2>
+                <p class="settings-section-description">Control your data privacy and security preferences</p>
+            </div>
+            
+            <div class="settings-group">
+                <div class="settings-group-header">
+                    <h3 class="settings-group-title">Data Retention</h3>
+                    <p class="settings-group-description">Control how long your data is stored</p>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Auto-delete Recordings</div>
+                        <div class="setting-description">Automatically delete audio recordings after set duration</div>
+                    </div>
+                    <div class="setting-control">
+                        <select class="crown-select" data-setting="privacy.auto_delete">
+                            <option value="never">Never</option>
+                            <option value="30">30 days</option>
+                            <option value="60">60 days</option>
+                            <option value="90" selected>90 days</option>
+                            <option value="180">180 days</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Data Encryption</div>
+                        <div class="setting-description">Encrypt all stored meeting data</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked disabled data-setting="privacy.encryption">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Integrations Settings -->
+        <div class="settings-tab-content" id="integrations-tab" role="tabpanel">
+            <div class="settings-section-header">
+                <h2 class="settings-section-title">
+                    <i data-feather="share-2"></i>
                     Integrations
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#ui" data-bs-toggle="pill">
-                    <i class="fas fa-palette me-2"></i>
-                    Interface
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#general" data-bs-toggle="pill">
-                    <i class="fas fa-cogs me-2"></i>
-                    General
-                </a>
-            </li>
-        </ul>
-    </div>
-    
-    <!-- Transcription Settings -->
-    <div class="settings-section active" id="transcription">
-        <h2><i class="fas fa-microphone me-2"></i>Transcription Settings</h2>
-        <p>Configure how meetings are transcribed and processed in real-time.</p>
-        
-        <div class="settings-group">
-            <h3>Language & Recognition</h3>
-            <p>Settings for speech recognition and language processing</p>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Primary Language</div>
-                    <div class="setting-description">Default language for transcription</div>
-                </div>
-                <div class="setting-control">
-                    <select class="form-select" style="width: 200px;" data-setting="transcription.language">
-                        <option value="auto">Auto-detect</option>
-                        <option value="en">English</option>
-                        <option value="es">Spanish</option>
-                        <option value="fr">French</option>
-                        <option value="de">German</option>
-                        <option value="it">Italian</option>
-                        <option value="pt">Portuguese</option>
-                        <option value="zh">Chinese</option>
-                        <option value="ja">Japanese</option>
-                    </select>
-                </div>
+                </h2>
+                <p class="settings-section-description">Connect with your favorite tools and services</p>
             </div>
             
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Transcription Quality</div>
-                    <div class="setting-description">Higher quality provides better accuracy but uses more resources</div>
+            <div class="settings-group">
+                <div class="settings-group-header">
+                    <h3 class="settings-group-title">Calendar Integration</h3>
+                    <p class="settings-group-description">Sync meetings with your calendar</p>
                 </div>
-                <div class="setting-control">
-                    <select class="form-select" style="width: 150px;" data-setting="transcription.quality">
-                        <option value="low">Fast</option>
-                        <option value="medium">Balanced</option>
-                        <option value="high">High Quality</option>
-                    </select>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">
+                            Google Calendar
+                            <span class="status-badge disconnected">
+                                <span class="status-dot"></span>
+                                Disconnected
+                            </span>
+                        </div>
+                        <div class="setting-description">Sync meetings with Google Calendar</div>
+                    </div>
+                    <div class="setting-control">
+                        <button class="crown-btn crown-btn-primary" onclick="connectIntegration('google_calendar')">
+                            <i data-feather="link"></i>
+                            Connect
+                        </button>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Confidence Threshold</div>
-                    <div class="setting-description">Minimum confidence level for displaying transcribed text</div>
-                </div>
-                <div class="setting-control">
-                    <input type="range" class="form-range" min="0.5" max="1.0" step="0.1" 
-                           style="width: 150px;" data-setting="transcription.confidence_threshold">
-                    <span class="confidence-value">0.8</span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="settings-group">
-            <h3>Speaker & Processing</h3>
-            <p>Configure speaker identification and text processing features</p>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Speaker Detection</div>
-                    <div class="setting-description">Automatically identify and label different speakers</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="transcription.speaker_detection">
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">
+                            Outlook Calendar
+                            <span class="status-badge disconnected">
+                                <span class="status-dot"></span>
+                                Disconnected
+                            </span>
+                        </div>
+                        <div class="setting-description">Sync meetings with Outlook Calendar</div>
+                    </div>
+                    <div class="setting-control">
+                        <button class="crown-btn crown-btn-primary" onclick="connectIntegration('outlook_calendar')">
+                            <i data-feather="link"></i>
+                            Connect
+                        </button>
                     </div>
                 </div>
             </div>
             
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Auto Punctuation</div>
-                    <div class="setting-description">Automatically add punctuation to transcribed text</div>
+            <div class="settings-group">
+                <div class="settings-group-header">
+                    <h3 class="settings-group-title">Collaboration Tools</h3>
+                    <p class="settings-group-description">Connect with team collaboration platforms</p>
                 </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="transcription.punctuation">
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">
+                            Slack
+                            <span class="status-badge disconnected">
+                                <span class="status-dot"></span>
+                                Disconnected
+                            </span>
+                        </div>
+                        <div class="setting-description">Send notifications and summaries to Slack</div>
+                    </div>
+                    <div class="setting-control">
+                        <button class="crown-btn crown-btn-primary" onclick="connectIntegration('slack')">
+                            <i data-feather="link"></i>
+                            Connect
+                        </button>
                     </div>
                 </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Profanity Filter</div>
-                    <div class="setting-description">Filter inappropriate language from transcriptions</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="transcription.profanity_filter">
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">
+                            Microsoft Teams
+                            <span class="status-badge disconnected">
+                                <span class="status-dot"></span>
+                                Disconnected
+                            </span>
+                        </div>
+                        <div class="setting-description">Integrate with Microsoft Teams</div>
                     </div>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Real-time Display</div>
-                    <div class="setting-description">Show transcription results as they are processed</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="transcription.real_time_display">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Auto Save</div>
-                    <div class="setting-description">Automatically save transcription progress</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="transcription.auto_save">
+                    <div class="setting-control">
+                        <button class="crown-btn crown-btn-primary" onclick="connectIntegration('teams')">
+                            <i data-feather="link"></i>
+                            Connect
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Summary Settings -->
-    <div class="settings-section" id="summary">
-        <h2><i class="fas fa-file-alt me-2"></i>Summary Settings</h2>
-        <p>Configure how meeting summaries are generated and delivered.</p>
         
-        <div class="settings-group">
-            <h3>Generation Preferences</h3>
-            <p>Default settings for summary generation</p>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Default Summary Level</div>
-                    <div class="setting-description">Choose the default detail level for generated summaries</div>
-                </div>
-                <div class="setting-control">
-                    <select class="form-select" style="width: 150px;" data-setting="summary.default_level">
-                        <option value="brief">Brief</option>
-                        <option value="standard">Standard</option>
-                        <option value="detailed">Detailed</option>
-                    </select>
-                </div>
+        <!-- UI Settings -->
+        <div class="settings-tab-content" id="ui-tab" role="tabpanel">
+            <div class="settings-section-header">
+                <h2 class="settings-section-title">
+                    <i data-feather="layout"></i>
+                    User Interface
+                </h2>
+                <p class="settings-section-description">Customize the appearance and behavior of the interface</p>
             </div>
             
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Default Summary Style</div>
-                    <div class="setting-description">Choose the default style for generated summaries</div>
+            <div class="settings-group">
+                <div class="settings-group-header">
+                    <h3 class="settings-group-title">Appearance</h3>
+                    <p class="settings-group-description">Personalize the look and feel</p>
                 </div>
-                <div class="setting-control">
-                    <select class="form-select" style="width: 150px;" data-setting="summary.default_style">
-                        <option value="executive">Executive</option>
-                        <option value="action">Action-Oriented</option>
-                        <option value="technical">Technical</option>
-                        <option value="narrative">Narrative</option>
-                        <option value="bullet">Bullet Points</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Auto Generate</div>
-                    <div class="setting-description">Automatically generate summaries when meetings end</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="summary.auto_generate">
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Theme</div>
+                        <div class="setting-description">Choose your preferred visual theme</div>
+                    </div>
+                    <div class="setting-control">
+                        <select class="crown-select" data-setting="ui.theme">
+                            <option value="dark" selected>Dark</option>
+                            <option value="light">Light</option>
+                            <option value="auto">Auto (System)</option>
+                        </select>
                     </div>
                 </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Auto Generate Delay</div>
-                    <div class="setting-description">Seconds to wait before auto-generating summary</div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Animations</div>
+                        <div class="setting-description">Enable smooth animations and transitions</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked data-setting="ui.animations">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
                 </div>
-                <div class="setting-control">
-                    <input type="number" class="form-control" style="width: 100px;" min="0" max="300" 
-                           data-setting="summary.auto_generate_delay">
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Compact Mode</div>
+                        <div class="setting-description">Show more content with reduced spacing</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" data-setting="ui.compact_mode">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div class="settings-group">
-            <h3>Content Inclusion</h3>
-            <p>What to include in generated summaries</p>
+        <!-- General Settings -->
+        <div class="settings-tab-content" id="general-tab" role="tabpanel">
+            <div class="settings-section-header">
+                <h2 class="settings-section-title">
+                    <i data-feather="sliders"></i>
+                    General Settings
+                </h2>
+                <p class="settings-section-description">General application preferences and configuration</p>
+            </div>
             
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Include Action Items</div>
-                    <div class="setting-description">Extract and highlight action items in summaries</div>
+            <div class="settings-group">
+                <div class="settings-group-header">
+                    <h3 class="settings-group-title">Notifications</h3>
+                    <p class="settings-group-description">Control how you receive notifications</p>
                 </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="summary.include_actions">
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Email Notifications</div>
+                        <div class="setting-description">Receive updates via email</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" checked data-setting="general.email_notifications">
+                            <span class="crown-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Browser Notifications</div>
+                        <div class="setting-description">Show browser push notifications</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="crown-switch">
+                            <input type="checkbox" data-setting="general.browser_notifications">
+                            <span class="crown-switch-slider"></span>
+                        </label>
                     </div>
                 </div>
             </div>
             
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Include Decisions</div>
-                    <div class="setting-description">Capture decisions made during meetings</div>
+            <div class="settings-group">
+                <div class="settings-group-header">
+                    <h3 class="settings-group-title">Regional</h3>
+                    <p class="settings-group-description">Time and date formatting preferences</p>
                 </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="summary.include_decisions">
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Time Zone</div>
+                        <div class="setting-description">Your local time zone for scheduling</div>
+                    </div>
+                    <div class="setting-control">
+                        <select class="crown-select" data-setting="general.timezone">
+                            <option value="auto" selected>Auto-detect</option>
+                            <option value="America/New_York">Eastern Time (ET)</option>
+                            <option value="America/Chicago">Central Time (CT)</option>
+                            <option value="America/Denver">Mountain Time (MT)</option>
+                            <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                            <option value="Europe/London">London (GMT)</option>
+                            <option value="Europe/Paris">Paris (CET)</option>
+                            <option value="Asia/Tokyo">Tokyo (JST)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-label">Date Format</div>
+                        <div class="setting-description">How dates are displayed</div>
+                    </div>
+                    <div class="setting-control">
+                        <select class="crown-select" data-setting="general.date_format">
+                            <option value="MM/DD/YYYY" selected>MM/DD/YYYY</option>
+                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                        </select>
                     </div>
                 </div>
             </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Include Risks</div>
-                    <div class="setting-description">Identify and highlight potential risks discussed</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="summary.include_risks">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Email Summary</div>
-                    <div class="setting-description">Send summary via email after generation</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="summary.email_summary">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Tasks Settings -->
-    <div class="settings-section" id="tasks">
-        <h2><i class="fas fa-tasks me-2"></i>Task Management</h2>
-        <p>Configure how tasks and action items are handled.</p>
-        
-        <div class="settings-group">
-            <h3>Task Defaults</h3>
-            <p>Set default values for newly created tasks</p>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Default Priority</div>
-                    <div class="setting-description">Initial priority for new tasks</div>
-                </div>
-                <div class="setting-control">
-                    <select class="form-select" style="width: 150px;" data-setting="tasks.default_priority">
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="urgent">Urgent</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Auto-assign Tasks</div>
-                    <div class="setting-description">Automatically assign tasks to the creator</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="tasks.auto_assign">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Due Date Suggestions</div>
-                    <div class="setting-description">Suggest due dates based on task priority</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="tasks.due_date_suggestions">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Notification Reminders</div>
-                    <div class="setting-description">Send reminders for upcoming task deadlines</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="tasks.notification_reminders">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Audio Settings -->
-    <div class="settings-section" id="audio">
-        <h2><i class="fas fa-volume-up me-2"></i>Audio & Recording</h2>
-        <p>Configure audio processing and recording quality settings.</p>
-        
-        <div class="settings-group">
-            <h3>Audio Quality</h3>
-            <p>Optimize audio capture and processing</p>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Recording Quality</div>
-                    <div class="setting-description">Higher quality produces better results but uses more bandwidth</div>
-                </div>
-                <div class="setting-control">
-                    <select class="form-select" style="width: 150px;" data-setting="audio.quality">
-                        <option value="standard">Standard</option>
-                        <option value="high">High</option>
-                        <option value="ultra">Ultra</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Noise Reduction</div>
-                    <div class="setting-description">Filter background noise during recording</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="audio.noise_reduction">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Echo Cancellation</div>
-                    <div class="setting-description">Remove echo and feedback from recordings</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="audio.echo_cancellation">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Auto Gain Control</div>
-                    <div class="setting-description">Automatically adjust volume levels</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="audio.auto_gain_control">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Integrations Settings -->
-    <div class="settings-section" id="integrations">
-        <h2><i class="fas fa-plug me-2"></i>Integrations</h2>
-        <p>Connect with your favorite tools and services.</p>
-        
-        <div class="settings-group">
-            <h3>Calendar Integration</h3>
-            <p>Sync meetings with your calendar</p>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Google Calendar <span class="status-indicator status-disconnected">Disconnected</span></div>
-                    <div class="setting-description">Sync meetings with Google Calendar</div>
-                </div>
-                <div class="setting-control">
-                    <button class="btn btn-sm btn-outline-primary" onclick="connectIntegration('google_calendar')">Connect</button>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Outlook Calendar <span class="status-indicator status-disconnected">Disconnected</span></div>
-                    <div class="setting-description">Sync meetings with Outlook Calendar</div>
-                </div>
-                <div class="setting-control">
-                    <button class="btn btn-sm btn-outline-primary" onclick="connectIntegration('outlook_calendar')">Connect</button>
-                </div>
-            </div>
-        </div>
-        
-        <div class="settings-group">
-            <h3>Collaboration Tools</h3>
-            <p>Connect with team collaboration platforms</p>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Slack <span class="status-indicator status-disconnected">Disconnected</span></div>
-                    <div class="setting-description">Send notifications and summaries to Slack</div>
-                </div>
-                <div class="setting-control">
-                    <button class="btn btn-sm btn-outline-primary" onclick="connectIntegration('slack')">Connect</button>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Microsoft Teams <span class="status-indicator status-disconnected">Disconnected</span></div>
-                    <div class="setting-description">Integrate with Microsoft Teams</div>
-                </div>
-                <div class="setting-control">
-                    <button class="btn btn-sm btn-outline-primary" onclick="connectIntegration('teams')">Connect</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- UI Settings -->
-    <div class="settings-section" id="ui">
-        <h2><i class="fas fa-palette me-2"></i>User Interface</h2>
-        <p>Customize the appearance and behavior of the interface.</p>
-        
-        <div class="settings-group">
-            <h3>Appearance</h3>
-            <p>Personalize the look and feel</p>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Theme</div>
-                    <div class="setting-description">Choose your preferred color theme</div>
-                </div>
-                <div class="setting-control">
-                    <select class="form-select" style="width: 150px;" data-setting="ui.theme">
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
-                        <option value="auto">Auto (System)</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Animations</div>
-                    <div class="setting-description">Enable smooth transitions and animations</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="ui.animations">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Compact Mode</div>
-                    <div class="setting-description">Reduce spacing for more content on screen</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="ui.compact_mode">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- General Settings -->
-    <div class="settings-section" id="general">
-        <h2><i class="fas fa-cogs me-2"></i>General Settings</h2>
-        <p>Configure general application preferences.</p>
-        
-        <div class="settings-group">
-            <h3>Regional Settings</h3>
-            <p>Set your timezone and format preferences</p>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Timezone</div>
-                    <div class="setting-description">Your local timezone for meetings and notifications</div>
-                </div>
-                <div class="setting-control">
-                    <select class="form-select" style="width: 200px;" data-setting="general.timezone">
-                        <option value="auto">Auto-detect</option>
-                        <option value="America/New_York">Eastern Time (US)</option>
-                        <option value="America/Chicago">Central Time (US)</option>
-                        <option value="America/Los_Angeles">Pacific Time (US)</option>
-                        <option value="Europe/London">London</option>
-                        <option value="Europe/Paris">Paris</option>
-                        <option value="Asia/Tokyo">Tokyo</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Date Format</div>
-                    <div class="setting-description">How dates are displayed</div>
-                </div>
-                <div class="setting-control">
-                    <select class="form-select" style="width: 150px;" data-setting="general.date_format">
-                        <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                        <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                        <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Time Format</div>
-                    <div class="setting-description">12-hour or 24-hour clock</div>
-                </div>
-                <div class="setting-control">
-                    <select class="form-select" style="width: 150px;" data-setting="general.time_format">
-                        <option value="12h">12-hour</option>
-                        <option value="24h">24-hour</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-        
-        <div class="settings-group">
-            <h3>Notifications</h3>
-            <p>Manage how you receive updates</p>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Email Notifications</div>
-                    <div class="setting-description">Receive updates via email</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="general.email_notifications">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Browser Notifications</div>
-                    <div class="setting-description">Show desktop notifications</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="general.browser_notifications">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Privacy Settings -->
-    <div class="settings-section" id="privacy">
-        <h2><i class="fas fa-shield-alt me-2"></i>Privacy & Security</h2>
-        <p>Manage your data privacy and security preferences.</p>
-        
-        <div class="settings-group">
-            <h3>Data Management</h3>
-            <p>Control how your data is stored and used</p>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Data Retention</div>
-                    <div class="setting-description">How long to keep your meeting data</div>
-                </div>
-                <div class="setting-control">
-                    <select class="form-select" style="width: 150px;" data-setting="privacy.data_retention_days">
-                        <option value="30">30 days</option>
-                        <option value="90">90 days</option>
-                        <option value="180">6 months</option>
-                        <option value="365">1 year</option>
-                        <option value="0">Never delete</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Recording Consent</div>
-                    <div class="setting-description">Require explicit consent before recording meetings</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="privacy.recording_consent">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Encrypt Storage</div>
-                    <div class="setting-description">Encrypt stored meeting data and transcriptions</div>
-                </div>
-                <div class="setting-control">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" data-setting="privacy.encrypt_storage">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Actions -->
-    <div class="settings-actions">
-        <h3>Import & Export</h3>
-        <p class="mb-3">Manage your settings data</p>
-        <div class="d-flex justify-content-center gap-3">
-            <button class="btn btn-outline-primary" onclick="exportSettings()">
-                <i class="fas fa-download me-2"></i>
-                Export Settings
-            </button>
-            <button class="btn btn-outline-primary" onclick="importSettings()">
-                <i class="fas fa-upload me-2"></i>
-                Import Settings
-            </button>
         </div>
     </div>
 </div>
 
-<!-- Toast for notifications -->
-<div class="toast-container position-fixed top-0 end-0 p-3">
+<!-- Toast Notification -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
     <div id="settingsToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="toast-header">
-            <i class="fas fa-cog me-2"></i>
             <strong class="me-auto">Settings</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
-        <div class="toast-body">
-            <!-- Message will be inserted here -->
-        </div>
+        <div class="toast-body"></div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
+// Crown+ Settings Manager
 class SettingsManager {
     constructor() {
-        this.preferences = {{ user_preferences | tojson | safe }};
+        this.preferences = {};
         this.init();
     }
     
-    init() {
-        this.setupNavigation();
-        this.loadPreferences();
-        this.attachEventListeners();
+    async init() {
+        await this.loadPreferences();
+        this.setupTabNavigation();
+        this.setupInputHandlers();
+        this.initializeFeatherIcons();
     }
     
-    setupNavigation() {
-        // Handle tab navigation
-        const navLinks = document.querySelectorAll('.nav-pills .nav-link');
-        const sections = document.querySelectorAll('.settings-section');
-        
-        navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
+    initializeFeatherIcons() {
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }
+    
+    setupTabNavigation() {
+        const tabs = document.querySelectorAll('.crown-tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
                 e.preventDefault();
+                const targetTab = tab.dataset.tab;
                 
-                // Update active nav
-                navLinks.forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                tab.setAttribute('aria-selected', 'true');
                 
-                // Show corresponding section
-                const targetId = link.getAttribute('href').substring(1);
-                sections.forEach(section => {
-                    section.classList.remove('active');
-                    if (section.id === targetId) {
-                        section.classList.add('active');
-                    }
+                // Update active content
+                document.querySelectorAll('.settings-tab-content').forEach(content => {
+                    content.classList.remove('active');
                 });
-            });
-        });
-    }
-    
-    loadPreferences() {
-        // Load preferences into form controls
-        Object.keys(this.preferences).forEach(category => {
-            Object.keys(this.preferences[category]).forEach(key => {
-                const setting = `${category}.${key}`;
-                const value = this.preferences[category][key];
-                const element = document.querySelector(`[data-setting="${setting}"]`);
+                document.getElementById(`${targetTab}-tab`).classList.add('active');
                 
-                if (element) {
-                    if (element.type === 'checkbox') {
-                        element.checked = value;
-                    } else if (element.type === 'range') {
-                        element.value = value;
-                        const valueDisplay = element.parentNode.querySelector('.confidence-value');
-                        if (valueDisplay) valueDisplay.textContent = value;
-                    } else {
-                        element.value = value;
-                    }
-                }
+                // Re-initialize Feather icons
+                this.initializeFeatherIcons();
             });
         });
     }
     
-    attachEventListeners() {
-        // Attach change listeners to all setting controls
-        document.querySelectorAll('[data-setting]').forEach(element => {
-            const eventType = element.type === 'range' ? 'input' : 'change';
+    async loadPreferences() {
+        try {
+            const response = await fetch('/settings/api/preferences');
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    this.preferences = result.data || {};
+                    this.applyPreferences();
+                }
+            }
+        } catch (error) {
+            console.error('Error loading preferences:', error);
+        }
+    }
+    
+    applyPreferences() {
+        // Apply loaded preferences to form inputs
+        document.querySelectorAll('[data-setting]').forEach(input => {
+            const setting = input.dataset.setting;
+            const [category, key] = setting.split('.');
             
-            element.addEventListener(eventType, (e) => {
-                const setting = e.target.getAttribute('data-setting');
+            if (this.preferences[category] && this.preferences[category][key] !== undefined) {
+                const value = this.preferences[category][key];
+                
+                if (input.type === 'checkbox') {
+                    input.checked = value;
+                } else if (input.type === 'range') {
+                    input.value = value;
+                    const valueDisplay = input.parentNode.querySelector('.range-value');
+                    if (valueDisplay) valueDisplay.textContent = value;
+                } else {
+                    input.value = value;
+                }
+            }
+        });
+    }
+    
+    setupInputHandlers() {
+        document.querySelectorAll('[data-setting]').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const setting = e.target.dataset.setting;
                 const [category, key] = setting.split('.');
                 let value = e.target.value;
                 
@@ -801,7 +1386,7 @@ class SettingsManager {
                 
                 // Update range display
                 if (e.target.type === 'range') {
-                    const valueDisplay = e.target.parentNode.querySelector('.confidence-value');
+                    const valueDisplay = e.target.parentNode.querySelector('.range-value');
                     if (valueDisplay) valueDisplay.textContent = value;
                 }
                 
@@ -831,27 +1416,25 @@ class SettingsManager {
                 })
             });
             
-            const result = await response.json();
-            
-            if (result.success) {
-                this.showToast('Settings updated successfully', 'success');
-            } else {
-                throw new Error(result.error || 'Failed to update settings');
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    this.showToast('Settings saved', 'success');
+                } else {
+                    throw new Error(result.error || 'Failed to update settings');
+                }
             }
         } catch (error) {
             console.error('Error updating setting:', error);
-            this.showToast('Failed to update settings', 'error');
+            this.showToast('Failed to save settings', 'error');
         }
     }
     
     showToast(message, type = 'info') {
         const toast = document.getElementById('settingsToast');
         const toastBody = toast.querySelector('.toast-body');
-        const toastHeader = toast.querySelector('.toast-header strong');
         
         toastBody.textContent = message;
-        
-        // Update toast styling based on type
         toast.className = `toast ${type === 'error' ? 'text-bg-danger' : 'text-bg-success'}`;
         
         const bsToast = new bootstrap.Toast(toast);
@@ -859,57 +1442,30 @@ class SettingsManager {
     }
 }
 
-// Global functions for export/import/reset
+// Global functions
 async function exportSettings() {
     try {
         const response = await fetch('/settings/api/export');
-        const result = await response.json();
-        
-        if (result.success) {
-            const dataStr = JSON.stringify(result.data, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(dataBlob);
-            link.download = `mina-settings-${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-        } else {
-            throw new Error(result.error);
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+                const dataStr = JSON.stringify(result.data, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `mina-settings-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                
+                settingsManager.showToast('Settings exported successfully', 'success');
+            } else {
+                throw new Error(result.error);
+            }
         }
     } catch (error) {
         console.error('Export failed:', error);
         settingsManager.showToast('Failed to export settings', 'error');
     }
-}
-
-function importSettings() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        try {
-            const text = await file.text();
-            const data = JSON.parse(text);
-            
-            // Validate and import settings
-            if (data.preferences) {
-                // TODO: Implement import logic
-                settingsManager.showToast('Settings imported successfully', 'success');
-                location.reload();
-            } else {
-                throw new Error('Invalid settings file format');
-            }
-        } catch (error) {
-            console.error('Import failed:', error);
-            settingsManager.showToast('Failed to import settings', 'error');
-        }
-    };
-    
-    input.click();
 }
 
 async function resetAllSettings() {
@@ -925,18 +1481,23 @@ async function resetAllSettings() {
             }
         });
         
-        const result = await response.json();
-        
-        if (result.success) {
-            settingsManager.showToast('All settings reset to defaults', 'success');
-            setTimeout(() => location.reload(), 1500);
-        } else {
-            throw new Error(result.error);
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+                settingsManager.showToast('All settings reset to defaults', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                throw new Error(result.error);
+            }
         }
     } catch (error) {
         console.error('Reset failed:', error);
         settingsManager.showToast('Failed to reset settings', 'error');
     }
+}
+
+function connectIntegration(service) {
+    alert(`Integration with ${service} will be available soon!`);
 }
 
 // Initialize settings manager when page loads
