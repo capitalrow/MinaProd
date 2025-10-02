@@ -9,6 +9,13 @@ from models import db, Meeting, Task, Analytics, Session, Marker
 from sqlalchemy import desc, func, and_
 from datetime import datetime, timedelta, date
 
+try:
+    from services.uptime_monitoring import uptime_monitor
+    from services.performance_monitoring import performance_monitor
+    monitoring_available = True
+except ImportError:
+    monitoring_available = False
+
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
@@ -395,3 +402,22 @@ def api_stats():
             'completion_rate': round((completed_tasks / total_tasks * 100), 1) if total_tasks > 0 else 0
         }
     })
+
+
+@dashboard_bp.route('/ops/metrics')
+def ops_metrics():
+    """Operational metrics dashboard endpoint."""
+    if not monitoring_available:
+        return jsonify({'error': 'Monitoring services not available'}), 503
+    
+    try:
+        health = uptime_monitor.get_health_status()
+        perf_stats = performance_monitor.get_stats()
+        
+        return jsonify({
+            'health': health,
+            'performance': perf_stats,
+            'timestamp': health['timestamp']
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

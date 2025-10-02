@@ -1,0 +1,437 @@
+openapi: 3.0.3
+info:
+  title: Mina API
+  description: Meeting Insights & Action Platform API
+  version: 1.0.0
+  contact:
+    name: Mina API Support
+    
+servers:
+  - url: http://localhost:5000
+    description: Development server
+  - url: https://mina.replit.app
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Meetings
+    description: Meeting management endpoints
+  - name: Tasks
+    description: Task management endpoints
+  - name: Sessions
+    description: Real-time transcription sessions
+  - name: Analytics
+    description: Meeting analytics and insights
+  - name: Health
+    description: Health check and monitoring endpoints
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Basic health check
+      description: Returns application health status
+      responses:
+        '200':
+          description: Application is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, unhealthy]
+                  uptime_seconds:
+                    type: number
+        '503':
+          description: Application is unhealthy
+          
+  /health/detailed:
+    get:
+      tags:
+        - Health
+      summary: Detailed health check
+      description: Returns detailed component health status
+      responses:
+        '200':
+          description: Detailed health information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedHealth'
+                
+  /api/sessions:
+    post:
+      tags:
+        - Sessions
+      summary: Create new transcription session
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  type: string
+                  default: en
+                  description: Language code for transcription
+                vad_enabled:
+                  type: boolean
+                  default: true
+                  description: Enable voice activity detection
+      responses:
+        '201':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+          
+  /api/sessions/{session_id}:
+    get:
+      tags:
+        - Sessions
+      summary: Get session details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '404':
+          $ref: '#/components/responses/NotFound'
+          
+  /api/meetings:
+    get:
+      tags:
+        - Meetings
+      summary: List meetings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, scheduled, live, completed, cancelled]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: List of meetings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meetings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Meeting'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                    
+    post:
+      tags:
+        - Meetings
+      summary: Create new meeting
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                scheduled_start:
+                  type: string
+                  format: date-time
+                scheduled_end:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Meeting created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meeting'
+                
+  /api/meetings/{meeting_id}:
+    get:
+      tags:
+        - Meetings
+      summary: Get meeting details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: meeting_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Meeting details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meeting'
+                
+  /api/tasks:
+    get:
+      tags:
+        - Tasks
+      summary: List tasks
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [todo, in_progress, completed, cancelled]
+        - name: assigned_to_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+                  
+    post:
+      tags:
+        - Tasks
+      summary: Create new task
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - meeting_id
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                meeting_id:
+                  type: integer
+                assigned_to_id:
+                  type: integer
+                priority:
+                  type: string
+                  enum: [low, medium, high, critical]
+                due_date:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      
+  schemas:
+    Session:
+      type: object
+      properties:
+        id:
+          type: integer
+        external_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, recording, processing, completed, error]
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+        language:
+          type: string
+        vad_enabled:
+          type: boolean
+          
+    Meeting:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [draft, scheduled, live, completed, cancelled]
+        organizer_id:
+          type: integer
+        workspace_id:
+          type: integer
+        session_id:
+          type: string
+        scheduled_start:
+          type: string
+          format: date-time
+        scheduled_end:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+          
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [todo, in_progress, completed, cancelled]
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        meeting_id:
+          type: integer
+        assigned_to_id:
+          type: integer
+        created_by_id:
+          type: integer
+        due_date:
+          type: string
+          format: date
+        completed_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+          
+    DetailedHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        uptime_seconds:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+        services:
+          type: object
+          properties:
+            database:
+              type: object
+              properties:
+                status:
+                  type: string
+                connected:
+                  type: boolean
+            redis:
+              type: object
+              properties:
+                status:
+                  type: string
+                connected:
+                  type: boolean
+        system:
+          type: object
+          properties:
+            cpu_percent:
+              type: number
+            memory_percent:
+              type: number
+            disk_percent:
+              type: number
+              
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        pages:
+          type: integer
+          
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Authentication required
+                
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Resource not found
