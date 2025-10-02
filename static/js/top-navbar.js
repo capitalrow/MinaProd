@@ -43,7 +43,12 @@ class TopNavigation {
         if (this.userMenuBtn) {
             this.userMenuBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.toggleDropdown(this.userMenuBtn, this.userMenu);
+                // On mobile, use slide-in menu behavior
+                if (window.innerWidth <= 768) {
+                    this.toggleMobileMenu();
+                } else {
+                    this.toggleDropdown(this.userMenuBtn, this.userMenu);
+                }
             });
         }
         
@@ -89,7 +94,10 @@ class TopNavigation {
     }
     
     toggleMobileMenu() {
-        const isExpanded = this.mobileMenuToggle.getAttribute('aria-expanded') === 'true';
+        // Check either button for expanded state
+        const isMobileToggleExpanded = this.mobileMenuToggle && this.mobileMenuToggle.getAttribute('aria-expanded') === 'true';
+        const isUserBtnExpanded = this.userMenuBtn && this.userMenuBtn.getAttribute('aria-expanded') === 'true';
+        const isExpanded = isMobileToggleExpanded || isUserBtnExpanded;
         
         if (isExpanded) {
             this.closeMobileMenu();
@@ -101,8 +109,16 @@ class TopNavigation {
     openMobileMenu() {
         if (this.userMenu) {
             this.userMenu.classList.add('show', 'mobile-menu-active');
-            this.mobileOverlay.classList.add('show');
-            this.mobileMenuToggle.setAttribute('aria-expanded', 'true');
+            if (this.mobileOverlay) {
+                this.mobileOverlay.classList.add('show');
+            }
+            // Update both buttons' aria-expanded state
+            if (this.mobileMenuToggle) {
+                this.mobileMenuToggle.setAttribute('aria-expanded', 'true');
+            }
+            if (this.userMenuBtn) {
+                this.userMenuBtn.setAttribute('aria-expanded', 'true');
+            }
             document.body.style.overflow = 'hidden';
         }
     }
@@ -110,8 +126,16 @@ class TopNavigation {
     closeMobileMenu() {
         if (this.userMenu) {
             this.userMenu.classList.remove('show', 'mobile-menu-active');
-            this.mobileOverlay.classList.remove('show');
-            this.mobileMenuToggle.setAttribute('aria-expanded', 'false');
+            if (this.mobileOverlay) {
+                this.mobileOverlay.classList.remove('show');
+            }
+            // Update both buttons' aria-expanded state
+            if (this.mobileMenuToggle) {
+                this.mobileMenuToggle.setAttribute('aria-expanded', 'false');
+            }
+            if (this.userMenuBtn) {
+                this.userMenuBtn.setAttribute('aria-expanded', 'false');
+            }
             document.body.style.overflow = '';
         }
     }
@@ -132,13 +156,17 @@ class TopNavigation {
         // Close more dropdown
         if (this.moreDropdownMenu) {
             this.moreDropdownMenu.classList.remove('show');
-            this.moreDropdownBtn.setAttribute('aria-expanded', 'false');
+            if (this.moreDropdownBtn) {
+                this.moreDropdownBtn.setAttribute('aria-expanded', 'false');
+            }
         }
         
-        // Close user menu
-        if (this.userMenu) {
+        // Close user menu (only on desktop - don't close mobile menu)
+        if (this.userMenu && window.innerWidth > 768) {
             this.userMenu.classList.remove('show');
-            this.userMenuBtn.setAttribute('aria-expanded', 'false');
+            if (this.userMenuBtn) {
+                this.userMenuBtn.setAttribute('aria-expanded', 'false');
+            }
         }
     }
     
