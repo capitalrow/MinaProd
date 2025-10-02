@@ -1,0 +1,28 @@
+{
+  "timestamp": "2025-10-02T01:48:18.464Z",
+  "test_type": "websocket_transcription_load",
+  "duration_seconds": 510.13894729,
+  "metrics": {
+    "connections_total": 119088,
+    "connection_success_rate": 0.9645955337399461,
+    "messages_total": 0,
+    "message_error_rate": 0,
+    "connection_latency": {
+      "p50": 0,
+      "p95": 316,
+      "p99": 0
+    },
+    "message_latency": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0
+    }
+  },
+  "slo_compliance": {
+    "connection_p50_met": true,
+    "connection_p95_met": true,
+    "connection_p99_met": true,
+    "success_rate_met": true
+  },
+  "pass": true
+}
