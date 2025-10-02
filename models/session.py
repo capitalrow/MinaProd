@@ -7,7 +7,7 @@ import uuid
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, DateTime, Text, JSON, Boolean, Float, func
+from sqlalchemy import String, Integer, DateTime, Text, JSON, Boolean, Float, func, Index
 from .base import Base
 
 # Forward reference for type checking
@@ -58,6 +58,12 @@ class Session(Base):
     )
     session_metrics: Mapped[Optional["SessionMetric"]] = relationship(
         back_populates="session", cascade="all, delete-orphan", uselist=False
+    )
+    
+    # Database indexes for query optimization
+    __table_args__ = (
+        # Composite index for active/recent sessions queries
+        Index('ix_sessions_status_started', 'status', 'started_at'),
     )
     
     def __repr__(self):

@@ -6,7 +6,7 @@ SQLAlchemy 2.0-safe model for transcription segments with durable storage.
 from typing import Optional
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, BigInteger, DateTime, Text, ForeignKey, Float, Boolean, func
+from sqlalchemy import String, Integer, BigInteger, DateTime, Text, ForeignKey, Float, Boolean, func, Index
 from .base import Base
 
 # Forward reference for type checking
@@ -31,6 +31,12 @@ class Segment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     session: Mapped["Session"] = relationship(back_populates="segments")
+    
+    # Database indexes for query optimization
+    __table_args__ = (
+        # Index for filtering final segments
+        Index('ix_segments_kind', 'kind'),
+    )
     
     def __repr__(self):
         return f'<Segment {self.id}: "{self.text[:50]}...">' 

@@ -6,7 +6,7 @@ SQLAlchemy 2.0-safe model for meeting participants with speaker diarization and 
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, DateTime, Float, ForeignKey, func, JSON, Boolean
+from sqlalchemy import String, Integer, DateTime, Float, ForeignKey, func, JSON, Boolean, Index
 from .base import Base
 
 # Forward reference for type checking
@@ -63,6 +63,14 @@ class Participant(Base):
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Database indexes for query optimization
+    __table_args__ = (
+        # Composite index for participant lookup (meeting + user)
+        Index('ix_participants_meeting_user', 'meeting_id', 'user_id'),
+        # Standalone index for user participation history queries
+        Index('ix_participants_user', 'user_id'),
+    )
 
     def __repr__(self):
         return f'<Participant {self.name} in Meeting {self.meeting_id}>'

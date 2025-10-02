@@ -6,7 +6,7 @@ SQLAlchemy 2.0-safe model for comprehensive meeting analytics and AI-powered ins
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, DateTime, Float, Text, Boolean, ForeignKey, func, JSON
+from sqlalchemy import String, Integer, DateTime, Float, Text, Boolean, ForeignKey, func, JSON, Index
 from .base import Base
 
 # Forward reference for type checking
@@ -97,6 +97,12 @@ class Analytics(Base):
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Database indexes for query optimization
+    __table_args__ = (
+        # Composite index for recent analytics queries (status + created)
+        Index('ix_analytics_status_created', 'analysis_status', 'created_at'),
+    )
 
     def __repr__(self):
         return f'<Analytics for Meeting {self.meeting_id}>'
