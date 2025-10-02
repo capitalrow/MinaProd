@@ -152,14 +152,30 @@
 
             <!-- Right Side Actions -->
             <div class="navbar-actions">
-                <!-- Comprehensive Navigation Menu -->
+                <!-- Hamburger Button Only (Menu rendered outside navbar) -->
                 <div class="navbar-user">
                     <button class="navbar-user-btn" id="userMenuBtn" aria-expanded="false" aria-haspopup="true" aria-label="Navigation menu" aria-controls="userMenu">
                         <i class="fas fa-bars"></i>
                         <span class="navbar-user-name">Menu</span>
                         <i class="fas fa-chevron-down" aria-hidden="true"></i>
                     </button>
-                    <div class="navbar-user-menu navbar-comprehensive-menu" id="userMenu">
+                </div>
+
+                <!-- Mobile Menu Toggle -->
+                <button class="navbar-mobile-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="navbar-mobile-overlay" id="navbarMobileOverlay"></div>
+    
+    <!-- Comprehensive Navigation Menu (Outside navbar to escape clipping) -->
+    <div class="navbar-user-menu navbar-comprehensive-menu" id="userMenu">
                         <!-- User Info Section -->
                         <div class="navbar-user-info">
                             <div class="navbar-user-avatar-large">U</div>
@@ -264,20 +280,6 @@
                             <span>Sign Out</span>
                         </a>
                     </div>
-                </div>
-
-                <!-- Mobile Menu Toggle -->
-                <button class="navbar-mobile-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu" aria-expanded="false">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Mobile Menu Overlay -->
-    <div class="navbar-mobile-overlay" id="navbarMobileOverlay"></div>
     
     <!-- Crown+ Interactive Components -->
     <script src="{{ url_for('static', filename='js/crown-interactive.js') }}" defer></script>
