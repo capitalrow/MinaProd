@@ -1,0 +1,251 @@
+/**
+ * MINA MOBILE-FIRST UTILITIES
+ * 
+ * Progressive enhancement utilities following mobile-first methodology.
+ * All styles start with mobile defaults and progressively enhance for larger screens.
+ * 
+ * Breakpoints (from mina-tokens.css):
+ * - xs: 320px  (Small phones - iPhone SE, Galaxy S)
+ * - sm: 375px  (Standard phones - iPhone 12/13/14, Pixel)
+ * - mobile-lg: 428px  (Large phones - iPhone 14 Pro Max)
+ * - md: 768px  (Tablets - iPad, Android tablets)
+ * - lg: 1024px (Desktop/Laptop)
+ * - xl: 1280px (Large Desktop)
+ * 
+ * Usage: Apply mobile styles first, then use @media (min-width) for larger screens.
+ */
+
+/* ============================================
+   DISPLAY UTILITIES - Mobile First
+   ============================================ */
+
+/* Hide on mobile, show on tablet+ */
+.hide-mobile {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .hide-mobile {
+    display: block;
+  }
+}
+
+/* Show on mobile, hide on tablet+ */
+.show-mobile {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .show-mobile {
+    display: none;
+  }
+}
+
+/* Hide on tablet, show on desktop+ */
+.hide-tablet {
+  display: block;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .hide-tablet {
+    display: none;
+  }
+}
+
+/* ============================================
+   LAYOUT UTILITIES - Mobile First
+   ============================================ */
+
+/* Full width on mobile, constrained on tablet+ */
+.container-mobile {
+  width: 100%;
+  padding-left: var(--base-padding);
+  padding-right: var(--base-padding);
+}
+
+@media (min-width: 768px) {
+  .container-mobile {
+    max-width: var(--container-3xl); /* 768px */
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-mobile {
+    max-width: var(--container-5xl); /* 1024px */
+  }
+}
+
+/* Stack on mobile, row on tablet+ */
+.stack-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .stack-mobile {
+    flex-direction: row;
+    gap: var(--space-6);
+  }
+}
+
+/* ============================================
+   TYPOGRAPHY UTILITIES - Mobile First
+   ============================================ */
+
+/* Responsive heading sizes */
+.heading-mobile-lg {
+  font-size: var(--font-size-2xl); /* 1.5rem mobile */
+  line-height: var(--line-height-tight);
+}
+
+@media (min-width: 768px) {
+  .heading-mobile-lg {
+    font-size: var(--font-size-3xl); /* 1.875rem tablet+ */
+  }
+}
+
+@media (min-width: 1024px) {
+  .heading-mobile-lg {
+    font-size: var(--font-size-4xl); /* 2.25rem desktop+ */
+  }
+}
+
+/* Responsive body text */
+.text-mobile {
+  font-size: var(--font-size-sm); /* 0.875rem mobile */
+  line-height: var(--line-height-relaxed);
+}
+
+@media (min-width: 768px) {
+  .text-mobile {
+    font-size: var(--font-size-base); /* 1rem tablet+ */
+  }
+}
+
+/* ============================================
+   SPACING UTILITIES - Mobile First
+   ============================================ */
+
+/* Responsive padding */
+.padding-mobile {
+  padding: var(--space-4); /* 1rem mobile */
+}
+
+@media (min-width: 768px) {
+  .padding-mobile {
+    padding: var(--space-6); /* 1.5rem tablet+ */
+  }
+}
+
+@media (min-width: 1024px) {
+  .padding-mobile {
+    padding: var(--space-8); /* 2rem desktop+ */
+  }
+}
+
+/* Responsive margin */
+.margin-mobile {
+  margin: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .margin-mobile {
+    margin: var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .margin-mobile {
+    margin: var(--space-8);
+  }
+}
+
+/* ============================================
+   TOUCH TARGET UTILITIES - Mobile Optimized
+   ============================================ */
+
+/* Minimum 44px touch targets (WCAG AA) */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) var(--space-4);
+}
+
+/* Large touch targets for primary actions */
+.touch-target-lg {
+  min-height: 56px;
+  min-width: 56px;
+  padding: var(--space-3) var(--space-6);
+}
+
+/* ============================================
+   GRID UTILITIES - Mobile First
+   ============================================ */
+
+/* Single column on mobile, 2 columns on tablet+ */
+.grid-mobile-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .grid-mobile-2 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-6);
+  }
+}
+
+/* Single column on mobile, 3 columns on desktop+ */
+.grid-mobile-3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .grid-mobile-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-mobile-3 {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-6);
+  }
+}
+
+/* ============================================
+   SAFE AREA UTILITIES - For Notched Devices
+   ============================================ */
+
+/* Safe area padding for devices with notches */
+.safe-area-top {
+  padding-top: max(var(--space-4), env(safe-area-inset-top));
+}
+
+.safe-area-bottom {
+  padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+}
+
+.safe-area-left {
+  padding-left: max(var(--base-padding), env(safe-area-inset-left));
+}
+
+.safe-area-right {
+  padding-right: max(var(--base-padding), env(safe-area-inset-right));
+}
+
+.safe-area-all {
+  padding-top: max(var(--space-4), env(safe-area-inset-top));
+  padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+  padding-left: max(var(--base-padding), env(safe-area-inset-left));
+  padding-right: max(var(--base-padding), env(safe-area-inset-right));
+}

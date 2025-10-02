@@ -364,14 +364,25 @@
   --glass-backdrop: var(--glass-blur-sm);
   
   /* ============================================
-     BREAKPOINTS (for reference in JS)
+     MOBILE-FIRST BREAKPOINTS - Matching Otter.ai Reference
+     Task A3 requirement: 320px, 375px, 768px, 1024px
      ============================================ */
   
-  --breakpoint-sm: 640px;
-  --breakpoint-md: 768px;
-  --breakpoint-lg: 1024px;
-  --breakpoint-xl: 1280px;
-  --breakpoint-2xl: 1536px;
+  /* Mobile Breakpoints (matching reference screenshots) */
+  --breakpoint-xs: 320px;   /* Small phones (iPhone SE, Galaxy S) */
+  --breakpoint-sm: 375px;   /* Standard phones (iPhone 12/13/14, Pixel) */
+  --breakpoint-mobile-lg: 428px;  /* NEW: Large phones (iPhone 14 Pro Max) */
+  --breakpoint-md: 768px;   /* Tablets (iPad, Android tablets) - DO NOT CHANGE */
+  --breakpoint-lg: 1024px;  /* Desktop/Laptop */
+  --breakpoint-xl: 1280px;  /* Large Desktop */
+  --breakpoint-2xl: 1536px; /* Extra Large Desktop */
+  
+  /* Semantic aliases for clarity */
+  --bp-phone-sm: var(--breakpoint-xs);
+  --bp-phone: var(--breakpoint-sm);
+  --bp-phone-lg: var(--breakpoint-mobile-lg);
+  --bp-tablet: var(--breakpoint-md);
+  --bp-desktop: var(--breakpoint-lg);
   
   /* ============================================
      GRADIENTS
@@ -402,23 +413,31 @@
 }
 
 /* ============================================
-   RESPONSIVE SPACING ADJUSTMENTS
+   MOBILE-FIRST RESPONSIVE SPACING
+   Progressive Enhancement - Start mobile, scale up
    ============================================ */
 
-@media (max-width: 640px) {
+:root {
+  /* Mobile-first defaults (320px+) */
+  --base-padding: var(--space-4);  /* 16px on mobile */
+  --base-margin: var(--space-4);
+  --section-padding: var(--space-6);
+}
+
+/* Tablet and up (768px+) */
+@media (min-width: 768px) {
   :root {
-    --base-padding: var(--space-4);  /* 16px on mobile */
+    --base-padding: var(--space-6);  /* 24px on tablet+ */
+    --base-margin: var(--space-6);
+    --section-padding: var(--space-8);
   }
 }
 
-@media (min-width: 641px) and (max-width: 1024px) {
+/* Desktop and up (1024px+) */
+@media (min-width: 1024px) {
   :root {
-    --base-padding: var(--space-6);  /* 24px on tablet */
-  }
-}
-
-@media (min-width: 1025px) {
-  :root {
-    --base-padding: var(--space-8);  /* 32px on desktop */
+    --base-padding: var(--space-8);  /* 32px on desktop+ */
+    --base-margin: var(--space-8);
+    --section-padding: var(--space-12);
   }
 }
