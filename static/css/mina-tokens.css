@@ -47,6 +47,11 @@
   --color-accent-800: #065f46;
   --color-accent-900: #064e3b;
   
+  /* Crown+ Accent Aliases */
+  --color-accent-vibrant: var(--color-accent-500);
+  --color-accent-muted: var(--color-accent-600);
+  --accent-primary: var(--color-accent-500);
+  
   /* Error Colors */
   --color-error-50: #fef2f2;
   --color-error-100: #fee2e2;
@@ -70,6 +75,16 @@
   --color-warning-700: #b45309;
   --color-warning-800: #92400e;
   --color-warning-900: #78350f;
+  
+  /* Status Colors (Crown+ Aliases) */
+  --status-success: var(--color-accent-500);
+  --status-success-bg: rgba(16, 185, 129, 0.1);
+  --status-error: var(--color-error-500);
+  --status-error-bg: rgba(239, 68, 68, 0.1);
+  --status-warning: var(--color-warning-500);
+  --status-warning-bg: rgba(245, 158, 11, 0.1);
+  --status-info: var(--color-primary-500);
+  --status-info-bg: rgba(14, 165, 233, 0.1);
   
   /* Neutral/Grayscale (Dark Theme) */
   --color-neutral-50: #f9fafb;
@@ -98,11 +113,18 @@
   --text-tertiary: #6e7681;
   --text-link: var(--color-primary-400);
   --text-link-hover: var(--color-primary-300);
+  --text-accent: var(--color-primary-400);
+  --text-muted: var(--text-tertiary);
   
   /* Border Colors */
   --border-primary: rgba(255, 255, 255, 0.1);
   --border-secondary: rgba(255, 255, 255, 0.05);
   --border-focus: var(--color-primary-500);
+  
+  /* Crown+ Border Aliases */
+  --border-subtle: var(--border-primary);
+  --border-interactive: var(--color-primary-400);
+  --border-color: var(--border-primary);
   
   /* ============================================
      SPACING SCALE
@@ -115,13 +137,67 @@
   --space-4: 1rem;       /* 16px */
   --space-5: 1.25rem;    /* 20px */
   --space-6: 1.5rem;     /* 24px */
+  --space-7: 1.75rem;    /* 28px */
   --space-8: 2rem;       /* 32px */
+  --space-9: 2.25rem;    /* 36px */
   --space-10: 2.5rem;    /* 40px */
+  --space-11: 2.75rem;   /* 44px */
   --space-12: 3rem;      /* 48px */
+  --space-13: 3.25rem;   /* 52px */
+  --space-14: 3.5rem;    /* 56px */
+  --space-15: 3.75rem;   /* 60px */
   --space-16: 4rem;      /* 64px */
+  --space-17: 4.25rem;   /* 68px */
+  --space-18: 4.5rem;    /* 72px */
+  --space-19: 4.75rem;   /* 76px */
   --space-20: 5rem;      /* 80px */
+  --space-21: 5.25rem;   /* 84px */
+  --space-22: 5.5rem;    /* 88px */
+  --space-23: 5.75rem;   /* 92px */
   --space-24: 6rem;      /* 96px */
+  --space-25: 6.25rem;   /* 100px */
+  --space-26: 6.5rem;    /* 104px */
+  --space-27: 6.75rem;   /* 108px */
+  --space-28: 7rem;      /* 112px */
+  --space-29: 7.25rem;   /* 116px */
+  --space-30: 7.5rem;    /* 120px */
+  --space-31: 7.75rem;   /* 124px */
   --space-32: 8rem;      /* 128px */
+  
+  /* Crown+ Aliases (complete 0-32 coverage for compatibility) */
+  --spacing-0: var(--space-0);
+  --spacing-1: var(--space-1);
+  --spacing-2: var(--space-2);
+  --spacing-3: var(--space-3);
+  --spacing-4: var(--space-4);
+  --spacing-5: var(--space-5);
+  --spacing-6: var(--space-6);
+  --spacing-7: var(--space-7);
+  --spacing-8: var(--space-8);
+  --spacing-9: var(--space-9);
+  --spacing-10: var(--space-10);
+  --spacing-11: var(--space-11);
+  --spacing-12: var(--space-12);
+  --spacing-13: var(--space-13);
+  --spacing-14: var(--space-14);
+  --spacing-15: var(--space-15);
+  --spacing-16: var(--space-16);
+  --spacing-17: var(--space-17);
+  --spacing-18: var(--space-18);
+  --spacing-19: var(--space-19);
+  --spacing-20: var(--space-20);
+  --spacing-21: var(--space-21);
+  --spacing-22: var(--space-22);
+  --spacing-23: var(--space-23);
+  --spacing-24: var(--space-24);
+  --spacing-25: var(--space-25);
+  --spacing-26: var(--space-26);
+  --spacing-27: var(--space-27);
+  --spacing-28: var(--space-28);
+  --spacing-29: var(--space-29);
+  --spacing-30: var(--space-30);
+  --spacing-31: var(--space-31);
+  --spacing-32: var(--space-32);
   
   /* ============================================
      TYPOGRAPHY SCALE
@@ -144,11 +220,27 @@
   --text-6xl: 3rem;      /* 48px */
   --text-7xl: 4rem;      /* 64px */
   
+  /* Crown+ Font Size Aliases */
+  --font-size-xs: var(--text-xs);
+  --font-size-sm: var(--text-sm);
+  --font-size-base: var(--text-base);
+  --font-size-lg: var(--text-lg);
+  --font-size-xl: var(--text-xl);
+  --font-size-2xl: var(--text-2xl);
+  --font-size-3xl: var(--text-3xl);
+  
   /* Font Weights */
   --font-normal: 400;
   --font-medium: 500;
   --font-semibold: 600;
   --font-bold: 700;
+  
+  /* Crown+ Font Weight Aliases */
+  --font-weight-normal: var(--font-normal);
+  --font-weight-medium: var(--font-medium);
+  --font-weight-semibold: var(--font-semibold);
+  --font-weight-bold: var(--font-bold);
+  --font-weight-extrabold: 800;
   
   /* Line Heights */
   --leading-none: 1;
@@ -173,6 +265,7 @@
   /* Glass Shadows */
   --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   --shadow-glass-hover: 0 12px 48px 0 rgba(0, 0, 0, 0.5);
+  --glass-shadow: var(--shadow-glass);
   
   /* Glow Effects */
   --glow-primary: 0 0 20px rgba(14, 165, 233, 0.3);
@@ -223,6 +316,14 @@
                        background-color var(--duration-200) var(--ease-in-out),
                        border-color var(--duration-200) var(--ease-in-out);
   
+  /* Crown+ Transition Aliases */
+  --transition-normal: var(--transition-base);
+  --duration-normal: var(--duration-300);
+  --duration-fast: var(--duration-150);
+  --duration-slow: var(--duration-500);
+  --ease-out-cubic: var(--ease-out);
+  --spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
   /* ============================================
      Z-INDEX SCALE
      ============================================ */
@@ -253,9 +354,14 @@
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-bg-hover: rgba(255, 255, 255, 0.08);
   --glass-bg-active: rgba(255, 255, 255, 0.12);
+  --glass-bg-light: rgba(255, 255, 255, 0.07);
   
   --glass-border: 1px solid rgba(255, 255, 255, 0.1);
   --glass-border-hover: 1px solid rgba(255, 255, 255, 0.15);
+  
+  /* Crown+ Backdrop Aliases */
+  --glass-backdrop-strong: var(--glass-blur);
+  --glass-backdrop: var(--glass-blur-sm);
   
   /* ============================================
      BREAKPOINTS (for reference in JS)
