@@ -6,7 +6,7 @@ SQLAlchemy 2.0-safe model extending Session with rich metadata, participants, an
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, DateTime, Text, JSON, Boolean, ForeignKey, func
+from sqlalchemy import String, Integer, DateTime, Text, JSON, Boolean, ForeignKey, func, Index
 from .base import Base
 
 # Forward reference for type checking
@@ -84,6 +84,17 @@ class Meeting(Base):
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Database indexes for query optimization
+    __table_args__ = (
+        # Composite index for workspace meetings list (workspace + status + sort)
+        Index('ix_meetings_workspace_status_created', 'workspace_id', 'status', 'created_at'),
+        # Composite index for calendar queries (workspace + date range)
+        Index('ix_meetings_workspace_scheduled', 'workspace_id', 'scheduled_start'),
+        # Single column indexes for filtering
+        Index('ix_meetings_organizer', 'organizer_id'),
+        Index('ix_meetings_session', 'session_id'),
+    )
 
     def __repr__(self):
         return f'<Meeting {self.id}: {self.title}>'

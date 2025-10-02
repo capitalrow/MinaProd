@@ -6,7 +6,7 @@ SQLAlchemy 2.0-safe model for action items extracted from meetings with full tas
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, DateTime, Date, Text, Boolean, ForeignKey, func, JSON, Float
+from sqlalchemy import String, Integer, DateTime, Date, Text, Boolean, ForeignKey, func, JSON, Float, Index
 from .base import Base
 
 # Forward reference for type checking
@@ -73,6 +73,17 @@ class Task(Base):
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Database indexes for query optimization
+    __table_args__ = (
+        # Composite index for user task list (assigned + status + due date)
+        Index('ix_tasks_assigned_status_due', 'assigned_to_id', 'status', 'due_date'),
+        # Composite index for meeting tasks (meeting + status)
+        Index('ix_tasks_meeting_status', 'meeting_id', 'status'),
+        # Single column indexes for filtering
+        Index('ix_tasks_created_by', 'created_by_id'),
+        Index('ix_tasks_depends_on', 'depends_on_task_id'),
+    )
 
     def __repr__(self):
         return f'<Task {self.id}: {self.title}>'
