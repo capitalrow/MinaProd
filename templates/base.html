@@ -29,7 +29,15 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer">
     
-    <!-- Legacy Design System - Load first so Crown+ can override -->
+    <!-- ═══ MINA DESIGN SYSTEM - Foundation (Load FIRST as single source of truth) ═══ -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-glass-components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-animations.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-icons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-spacing.css') }}">
+    
+    <!-- Legacy Design System - Load after foundation -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/top-navbar.css') }}">
