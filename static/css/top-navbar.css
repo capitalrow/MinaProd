@@ -464,64 +464,14 @@ body:has(.live-page) {
         padding: 0 1rem;
     }
     
+    /* CRITICAL: Hide desktop main menu on mobile */
     .navbar-menu {
-        position: fixed;
-        top: var(--navbar-height);
-        left: 0;
-        right: 0;
-        bottom: 0;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0;
-        background: rgba(17, 24, 39, 0.98);
-        backdrop-filter: blur(20px);
-        padding: 1rem;
-        overflow-y: auto;
-        transform: translateX(-100%);
-        opacity: 0;
-        visibility: hidden;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, visibility 0.3s ease;
-        z-index: 1001;
-        max-width: none;
+        display: none !important;
     }
     
-    .navbar-menu.show {
-        transform: translateX(0);
-        opacity: 1;
-        visibility: visible;
-    }
-    
-    .navbar-item {
-        padding: 1rem;
-        border-radius: 12px;
-    }
-    
-    .navbar-item span {
-        display: inline;
-    }
-    
-    .navbar-item i {
-        font-size: 1.25rem;
-    }
-    
+    /* CRITICAL: Hide "More" dropdown on mobile - it's redundant */
     .navbar-dropdown {
-        width: 100%;
-    }
-    
-    .navbar-dropdown-menu {
-        position: static;
-        opacity: 1;
-        visibility: visible;
-        transform: none;
-        background: rgba(0, 0, 0, 0.3);
-        border: none;
-        box-shadow: none;
-        margin-top: 0.5rem;
-        display: none;
-    }
-    
-    .navbar-dropdown-menu.show {
-        display: block;
+        display: none !important;
     }
     
     .navbar-mobile-toggle {
@@ -530,6 +480,24 @@ body:has(.live-page) {
     
     .navbar-actions {
         gap: 0.5rem;
+    }
+    
+    /* CRITICAL: Hide menu text labels on mobile, show only hamburger icon */
+    .navbar-user-btn .navbar-user-name,
+    .navbar-user-btn .fa-chevron-down {
+        display: none !important;
+    }
+    
+    /* Make hamburger button more prominent */
+    .navbar-user-btn {
+        padding: 0.5rem;
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
+    }
+    
+    .navbar-user-btn .fa-bars {
+        font-size: 1.25rem;
     }
 }
 
