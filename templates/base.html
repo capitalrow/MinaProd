@@ -29,35 +29,40 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer">
     
-    <!-- ═══ MINA DESIGN SYSTEM - Foundation (Load FIRST as single source of truth) ═══ -->
+    <!-- ═══ MINA DESIGN SYSTEM - Foundation Layer (Single Source of Truth) ═══ -->
+    <!-- 1. Core Design Tokens - Must load FIRST -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-typography.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-glass-components.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-animations.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-icons.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-spacing.css') }}">
     
-    <!-- Legacy Design System - Load after foundation -->
+    <!-- 2. Legacy Compatibility Shim - Will be removed after template migration -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/top-navbar.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/clean.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-live.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-home.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-auth.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-landing.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-meeting.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-sessions.css') }}">
+    
+    <!-- 3. Mina Foundation Components -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-typography.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-spacing.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-animations.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-glass-components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-icons.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton-loaders.css') }}">
     
-    <!-- ═══ CROWN+ DESIGN SYSTEM - Premium Foundation (Loads last to override legacy) ═══ -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-design-system.css') }}">
+    <!-- ═══ CROWN+ COMPONENT SYSTEM - References Mina Tokens ═══ -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-components.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-navigation.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-transcript.css') }}">
+    
+    <!-- ═══ PAGE-SPECIFIC STYLES - To be consolidated into bundles ═══ -->
+    <!-- Core Application Pages -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/top-navbar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-live.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-meeting.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-sessions.css') }}">
+    
+    <!-- Marketing & Auth Pages -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-home.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-auth.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-landing.css') }}">
     
     <!-- Defer non-critical JavaScript -->
     <script nonce="{{ g.csp_nonce }}">
