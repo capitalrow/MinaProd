@@ -773,6 +773,29 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.error(f"❌ Failed to start resource cleanup service: {e}")
     
+    # Start background task manager for reliable job processing
+    try:
+        from services.background_tasks import background_task_manager
+        
+        # Start worker pool and retry scheduler
+        background_task_manager.start()
+        app.logger.info("✅ Background task manager started with 2 workers and retry scheduler")
+    except Exception as e:
+        app.logger.error(f"❌ Failed to start background task manager: {e}")
+    
+    # Initialize Redis connection manager with failover support
+    try:
+        from services.redis_failover import init_redis_manager
+        
+        redis_url = os.getenv('REDIS_URL')
+        if redis_url:
+            redis_manager = init_redis_manager(redis_url)
+            app.logger.info("✅ Redis connection manager initialized with failover support")
+        else:
+            app.logger.info("ℹ️  No REDIS_URL configured - using in-memory fallback for caching")
+    except Exception as e:
+        app.logger.error(f"❌ Failed to initialize Redis manager: {e}")
+    
     app.logger.info("Mina app ready")
     return app
 
