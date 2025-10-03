@@ -21,7 +21,9 @@ class SessionService:
     
     @staticmethod
     def create_session(title: Optional[str] = None, external_id: Optional[str] = None, 
-                      locale: Optional[str] = None, device_info: Optional[dict] = None) -> int:
+                      locale: Optional[str] = None, device_info: Optional[dict] = None,
+                      user_id: Optional[int] = None, workspace_id: Optional[int] = None,
+                      meeting_id: Optional[int] = None) -> int:
         """
         Create a new session.
         
@@ -30,6 +32,9 @@ class SessionService:
             external_id: External session identifier (for WS), auto-generated if None
             locale: Language/locale code
             device_info: Device information dictionary
+            user_id: User who owns this session (nullable for anonymous)
+            workspace_id: Workspace this session belongs to (nullable for anonymous)
+            meeting_id: Meeting this session is linked to (nullable)
             
         Returns:
             Session database ID
@@ -47,7 +52,10 @@ class SessionService:
             started_at=datetime.utcnow(),
             locale=locale,
             device_info=device_info,
-            meta={}
+            meta={},
+            user_id=user_id,
+            workspace_id=workspace_id,
+            meeting_id=meeting_id
         )
         
         db.session.add(session)

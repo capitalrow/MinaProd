@@ -249,11 +249,13 @@ def start_meeting(meeting_id):
         if not meeting.session:
             session = Session(
                 title=f"Session for {meeting.title}",
-                status='active'
+                status='active',
+                user_id=current_user.id,
+                workspace_id=current_user.workspace_id,
+                meeting_id=meeting.id  # Link session to meeting
             )
             db.session.add(session)
-            db.session.flush()  # Get session ID
-            meeting.session_id = session.id
+            db.session.flush()  # Ensure session is saved
         
         db.session.commit()
         
@@ -261,7 +263,7 @@ def start_meeting(meeting_id):
             'success': True,
             'message': 'Meeting started successfully',
             'meeting': meeting.to_dict(),
-            'session_id': meeting.session_id
+            'session_id': meeting.session.id if meeting.session else None
         })
         
     except Exception as e:
