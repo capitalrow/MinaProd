@@ -43,10 +43,10 @@
     </a>
     
     {# AI Chat Tab #}
-    <a href="{{ url_for('ai_copilot.chat') }}" 
-       class="mina-bottom-nav-item {% if request.endpoint == 'ai_copilot.chat' %}active{% endif %}"
+    <a href="{{ url_for('copilot.chat_with_copilot') }}" 
+       class="mina-bottom-nav-item {% if request.endpoint == 'copilot.chat_with_copilot' %}active{% endif %}"
        aria-label="AI Chat"
-       aria-current="{% if request.endpoint == 'ai_copilot.chat' %}page{% endif %}">
+       aria-current="{% if request.endpoint == 'copilot.chat_with_copilot' %}page{% endif %}">
       <span class="mina-bottom-nav-icon" aria-hidden="true">
         <i data-feather="message-square"></i>
       </span>
@@ -58,10 +58,10 @@
     </a>
     
     {# Account Tab (Settings/Profile) #}
-    <a href="{{ url_for('settings.profile') }}" 
-       class="mina-bottom-nav-item {% if request.endpoint in ['settings.profile', 'settings.preferences', 'settings.billing'] %}active{% endif %}"
+    <a href="{{ url_for('auth.profile') }}" 
+       class="mina-bottom-nav-item {% if request.endpoint in ['auth.profile', 'settings.preferences', 'settings.workspace_management'] %}active{% endif %}"
        aria-label="Account"
-       aria-current="{% if request.endpoint in ['settings.profile', 'settings.preferences', 'settings.billing'] %}page{% endif %}">
+       aria-current="{% if request.endpoint in ['auth.profile', 'settings.preferences', 'settings.workspace_management'] %}page{% endif %}">
       <span class="mina-bottom-nav-icon" aria-hidden="true">
         <i data-feather="user"></i>
       </span>
