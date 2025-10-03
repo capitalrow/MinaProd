@@ -67,6 +67,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-navigation.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/crown-transcript.css') }}">
     
+    <!-- ═══ MINA MOBILE COMPONENTS ═══ -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-bottom-nav.css') }}">
+    
     <!-- ═══ PAGE-SPECIFIC STYLES - To be consolidated into bundles ═══ -->
     <!-- Core Application Pages -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
@@ -517,5 +520,8 @@
     </script>
     
     {% block scripts %}{% endblock %}
+    
+    <!-- Mobile Bottom Navigation (hidden on desktop) -->
+    {% include 'components/bottom_nav.html' %}
 </body>
 </html>

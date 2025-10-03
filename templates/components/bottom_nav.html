@@ -1,0 +1,126 @@
+{# MINA BOTTOM NAVIGATION COMPONENT #}
+{# Mobile-first navigation matching Otter.ai reference screenshot 1 #}
+{# 5 tabs: Home, Channel, Record, AI Chat, Account #}
+
+<nav class="mina-bottom-nav" role="navigation" aria-label="Mobile bottom navigation">
+  <div class="mina-bottom-nav-container">
+    
+    {# Home Tab #}
+    <a href="{{ url_for('dashboard.index') }}" 
+       class="mina-bottom-nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}"
+       aria-label="Home"
+       aria-current="{% if request.endpoint == 'dashboard.index' %}page{% endif %}">
+      <span class="mina-bottom-nav-icon" aria-hidden="true">
+        <i data-feather="home"></i>
+      </span>
+      <span class="mina-bottom-nav-label">Home</span>
+    </a>
+    
+    {# Channel Tab (Conversations/Meetings) #}
+    <a href="{{ url_for('dashboard.meetings') }}" 
+       class="mina-bottom-nav-item {% if request.endpoint == 'dashboard.meetings' %}active{% endif %}"
+       aria-label="Conversations"
+       aria-current="{% if request.endpoint == 'dashboard.meetings' %}page{% endif %}">
+      <span class="mina-bottom-nav-icon" aria-hidden="true">
+        <i data-feather="message-circle"></i>
+      </span>
+      <span class="mina-bottom-nav-label">Channel</span>
+      {# Optional: Notification badge #}
+      {% if unread_count and unread_count > 0 %}
+        <span class="badge-count" aria-label="{{ unread_count }} unread messages">{{ unread_count if unread_count < 10 else '9+' }}</span>
+      {% endif %}
+    </a>
+    
+    {# Record Tab (Center - Prominent) #}
+    <a href="{{ url_for('pages.live') }}" 
+       class="mina-bottom-nav-item record-btn {% if request.endpoint == 'pages.live' %}active{% endif %}"
+       aria-label="Start recording"
+       aria-current="{% if request.endpoint == 'pages.live' %}page{% endif %}">
+      <span class="mina-bottom-nav-icon" aria-hidden="true">
+        <i data-feather="mic"></i>
+      </span>
+      <span class="mina-bottom-nav-label">Record</span>
+    </a>
+    
+    {# AI Chat Tab #}
+    <a href="{{ url_for('ai_copilot.chat') }}" 
+       class="mina-bottom-nav-item {% if request.endpoint == 'ai_copilot.chat' %}active{% endif %}"
+       aria-label="AI Chat"
+       aria-current="{% if request.endpoint == 'ai_copilot.chat' %}page{% endif %}">
+      <span class="mina-bottom-nav-icon" aria-hidden="true">
+        <i data-feather="message-square"></i>
+      </span>
+      <span class="mina-bottom-nav-label">AI Chat</span>
+      {# Optional: AI activity indicator #}
+      {% if ai_chat_active %}
+        <span class="badge-dot" aria-label="AI chat active"></span>
+      {% endif %}
+    </a>
+    
+    {# Account Tab (Settings/Profile) #}
+    <a href="{{ url_for('settings.profile') }}" 
+       class="mina-bottom-nav-item {% if request.endpoint in ['settings.profile', 'settings.preferences', 'settings.billing'] %}active{% endif %}"
+       aria-label="Account"
+       aria-current="{% if request.endpoint in ['settings.profile', 'settings.preferences', 'settings.billing'] %}page{% endif %}">
+      <span class="mina-bottom-nav-icon" aria-hidden="true">
+        <i data-feather="user"></i>
+      </span>
+      <span class="mina-bottom-nav-label">Account</span>
+    </a>
+    
+  </div>
+</nav>
+
+{# JavaScript for Feather Icons initialization #}
+<script nonce="{{ g.csp_nonce }}">
+  // Initialize Feather icons in bottom nav when DOM is ready
+  if (typeof feather !== 'undefined') {
+    feather.replace({ 'stroke-width': 2, 'width': 24, 'height': 24 });
+  } else {
+    // Wait for feather to load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof feather !== 'undefined') {
+        feather.replace({ 'stroke-width': 2, 'width': 24, 'height': 24 });
+      }
+    });
+  }
+  
+  // Optional: Hide bottom nav on scroll down, show on scroll up
+  (function() {
+    let lastScrollTop = 0;
+    let scrollTimeout;
+    const bottomNav = document.querySelector('.mina-bottom-nav');
+    
+    if (!bottomNav) return;
+    
+    window.addEventListener('scroll', function() {
+      clearTimeout(scrollTimeout);
+      
+      scrollTimeout = setTimeout(function() {
+        let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        // Only hide if scrolling down and past threshold
+        if (scrollTop > lastScrollTop && scrollTop > 100) {
+          bottomNav.classList.add('hide');
+          bottomNav.classList.remove('show');
+        } else {
+          bottomNav.classList.remove('hide');
+          bottomNav.classList.add('show');
+        }
+        
+        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+      }, 100); // Debounce scroll events
+    }, { passive: true });
+  })();
+  
+  // Add touch feedback for better UX
+  document.querySelectorAll('.mina-bottom-nav-item').forEach(function(item) {
+    item.addEventListener('touchstart', function() {
+      this.style.opacity = '0.7';
+    }, { passive: true });
+    
+    item.addEventListener('touchend', function() {
+      this.style.opacity = '1';
+    }, { passive: true });
+  });
+</script>
