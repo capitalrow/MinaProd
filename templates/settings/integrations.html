@@ -2,32 +2,28 @@
 
 {% block title %}Integrations - Mina{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="container" style="padding-top: var(--space-8); padding-bottom: var(--space-8); max-width: 1200px;">
-    <div class="mb-8">
-        <h1 class="text-4xl font-bold mb-2">Settings</h1>
-        <p class="text-secondary">Manage your account and preferences</p>
+<div class="container settings-container">
+    <div class="settings-header">
+        <h1 class="settings-title">Settings</h1>
+        <p class="settings-subtitle">Manage your account and preferences</p>
     </div>
 
-    <div class="mb-6" style="border-bottom: 1px solid var(--color-border);">
-        <nav style="display: flex; gap: var(--space-6);">
-            <a href="{{ url_for('settings.preferences') }}" class="tab-link" style="padding: var(--space-3) 0; color: var(--color-text-secondary); transition: color 0.2s;">
-                Preferences
-            </a>
-            <a href="{{ url_for('settings.integrations') }}" class="tab-link active" style="padding: var(--space-3) 0; border-bottom: 2px solid var(--color-primary); font-medium; color: var(--color-primary);">
-                Integrations
-            </a>
-            <a href="{{ url_for('settings.profile') }}" class="tab-link" style="padding: var(--space-3) 0; color: var(--color-text-secondary); transition: color 0.2s;">
-                Profile
-            </a>
-            <a href="{{ url_for('settings.workspace_management') }}" class="tab-link" style="padding: var(--space-3) 0; color: var(--color-text-secondary); transition: color 0.2s;">
-                Workspace
-            </a>
+    <div class="settings-tabs">
+        <nav class="settings-tabs-nav">
+            <a href="{{ url_for('settings.preferences') }}" class="tab-link">Preferences</a>
+            <a href="{{ url_for('settings.integrations') }}" class="tab-link active">Integrations</a>
+            <a href="{{ url_for('settings.profile') }}" class="tab-link">Profile</a>
+            <a href="{{ url_for('settings.workspace_management') }}" class="tab-link">Workspace</a>
         </nav>
     </div>
 
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: var(--space-6);">
-        <div class="card">
+        <div class="integration-card">
             <div class="flex justify-between items-start mb-4">
                 <div class="flex items-center gap-3">
                     <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #5865F2 0%, #404EED 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
@@ -45,7 +41,7 @@
             <p class="text-sm text-secondary">Send meeting summaries and action items to Slack channels</p>
         </div>
 
-        <div class="card">
+        <div class="integration-card">
             <div class="flex justify-between items-start mb-4">
                 <div class="flex items-center gap-3">
                     <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #EA4335 0%, #FBBC04 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
@@ -63,7 +59,7 @@
             <p class="text-sm text-secondary">Sync meetings with your Google Calendar automatically</p>
         </div>
 
-        <div class="card">
+        <div class="integration-card">
             <div class="flex justify-between items-start mb-4">
                 <div class="flex items-center gap-3">
                     <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #0052CC 0%, #2684FF 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
@@ -81,7 +77,7 @@
             <p class="text-sm text-secondary">Create Jira tickets from meeting action items</p>
         </div>
 
-        <div class="card">
+        <div class="integration-card">
             <div class="flex justify-between items-start mb-4">
                 <div class="flex items-center gap-3">
                     <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #00B87C 0%, #00D084 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
@@ -99,7 +95,7 @@
             <p class="text-sm text-secondary">Export meeting notes to Notion pages</p>
         </div>
 
-        <div class="card">
+        <div class="integration-card">
             <div class="flex justify-between items-start mb-4">
                 <div class="flex items-center gap-3">
                     <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #2D8CFF 0%, #0B5CFF 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
@@ -117,7 +113,7 @@
             <p class="text-sm text-secondary">Automatically record and transcribe Zoom meetings</p>
         </div>
 
-        <div class="card">
+        <div class="integration-card">
             <div class="flex justify-between items-start mb-4">
                 <div class="flex items-center gap-3">
                     <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #5558AF 0%, #464EB8 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
@@ -135,7 +131,7 @@
             <p class="text-sm text-secondary">Integrate with Microsoft Teams meetings and channels</p>
         </div>
 
-        <div class="card">
+        <div class="integration-card">
             <div class="flex justify-between items-start mb-4">
                 <div class="flex items-center gap-3">
                     <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #0061FF 0%, #0050D5 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
@@ -153,7 +149,7 @@
             <p class="text-sm text-secondary">Auto-save recordings and transcripts to Dropbox</p>
         </div>
 
-        <div class="card">
+        <div class="integration-card">
             <div class="flex justify-between items-start mb-4">
                 <div class="flex items-center gap-3">
                     <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #F06A6A 0%, #E83E8C 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
@@ -171,7 +167,7 @@
             <p class="text-sm text-secondary">Create Asana tasks from meeting action items</p>
         </div>
 
-        <div class="card">
+        <div class="integration-card">
             <div class="flex justify-between items-start mb-4">
                 <div class="flex items-center gap-3">
                     <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #5E6AD2 0%, #4B56C2 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
@@ -189,7 +185,7 @@
             <p class="text-sm text-secondary">Convert action items into Linear issues automatically</p>
         </div>
 
-        <div class="card">
+        <div class="integration-card">
             <div class="flex justify-between items-start mb-4">
                 <div class="flex items-center gap-3">
                     <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #24292e 0%, #181B1F 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
@@ -207,7 +203,7 @@
             <p class="text-sm text-secondary">Create GitHub issues from engineering meeting decisions</p>
         </div>
 
-        <div class="card">
+        <div class="integration-card">
             <div class="flex justify-between items-start mb-4">
                 <div class="flex items-center gap-3">
                     <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
@@ -225,7 +221,7 @@
             <p class="text-sm text-secondary">Connect Mina to 5,000+ apps with custom workflows</p>
         </div>
 
-        <div class="card">
+        <div class="integration-card">
             <div class="flex justify-between items-start mb-4">
                 <div class="flex items-center gap-3">
                     <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #6772e5 0%, #555abf 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
