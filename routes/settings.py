@@ -603,33 +603,44 @@ def workspace_management():
         Rendered workspace management template
     """
     from app import db
+    from models import Meeting
     
     try:
-        workspace = current_user.workspace if current_user.workspace_id else None
+        workspace = None
         workspace_members = []
         workspace_meetings_count = 0
         workspace_hours = 0
         
-        if workspace:
-            # Get workspace members
-            workspace_members = workspace.members
-            
-            # Get workspace statistics
-            workspace_meetings_count = len(workspace.meetings) if workspace.meetings else 0
-            
-            # Calculate total hours (placeholder)
-            workspace_hours = workspace_meetings_count * 0.5  # Estimate 30 min per meeting
-        else:
-            # Single user workspace (no workspace model)
+        # Try to get workspace if user has one
+        if current_user.workspace_id:
+            try:
+                workspace = current_user.workspace
+                if workspace and hasattr(workspace, 'members'):
+                    workspace_members = list(workspace.members) if workspace.members else []
+                    
+                # Count meetings for workspace
+                workspace_meetings_count = db.session.query(Meeting).filter_by(
+                    workspace_id=current_user.workspace_id
+                ).count()
+            except Exception as e:
+                logger.warning(f"Could not load workspace: {e}")
+        
+        # If no workspace or failed to load, show single user view
+        if not workspace:
             workspace_members = [current_user]
-            workspace_meetings_count = len(current_user.meetings) if current_user.meetings else 0
-            workspace_hours = workspace_meetings_count * 0.5
+            # Count meetings for current user
+            workspace_meetings_count = db.session.query(Meeting).join(Meeting.organizer).filter(
+                Meeting.organizer.has(id=current_user.id)
+            ).count()
+        
+        # Calculate total hours (placeholder: 30 min per meeting)
+        workspace_hours = int(workspace_meetings_count * 0.5)
         
         return render_template('settings/workspace.html',
                              workspace=workspace,
                              workspace_members=workspace_members,
                              workspace_meetings_count=workspace_meetings_count,
-                             workspace_hours=int(workspace_hours))
+                             workspace_hours=workspace_hours)
     
     except Exception as e:
         logger.error(f"Error loading workspace management: {e}", exc_info=True)
