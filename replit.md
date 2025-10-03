@@ -7,6 +7,41 @@ Mina is an enterprise-grade SaaS platform designed to transform meetings into ac
 ## Recent Development Progress (October 2025)
 
 **Phase 1: Design System - ✅ COMPLETE (32/32 tasks - 100%)**
+**Phase 2: Transcript Experience - 🔄 IN PROGRESS (22/31 tasks - 71%)**
+
+### Phase 2 Group 3: AI Intelligence - ✅ COMPLETE (12/12 tasks - 100%)
+
+**Completed (T2.11-T2.22):**
+- Auto-summarization with GPT-4 Turbo
+- Key points extraction (5-10 points with importance ranking)
+- Action items extraction (who, what, when, priority)
+- Questions extraction (answered/unanswered status)
+- Decisions extraction (with rationale and impact)
+- Sentiment analysis (positive/neutral/negative with score)
+- Topic detection and filtering
+- Language detection support
+- Custom AI prompts with 5 templates
+- Cost optimization (8K token limit, efficient prompting)
+- Quality feedback system (thumbs up/down)
+- Confidence indicators (visual 3-dot system)
+
+**Files Created:**
+- `services/ai_insights_service.py` (420 lines) - AI analysis service
+- `routes/api_ai_insights.py` (360 lines) - REST API endpoints
+- `static/css/ai-insights.css` (750+ lines) - Crown+ styled components
+- `static/js/ai-insights.js` (630+ lines) - Interactive AI insights manager
+- Integrated into `templates/dashboard/meeting_detail.html` with 8-tab interface
+
+**Technical Implementation:**
+- GPT-4 Turbo Preview model
+- Structured JSON responses
+- Token truncation at 8K characters
+- Synchronous OpenAI client
+- Glassmorphism design throughout
+- Mobile-responsive layouts
+- Fixed interaction bugs (currentTarget vs target)
+
+**Phase 1: Design System - ✅ COMPLETE (32/32 tasks - 100%)**
 
 Enhanced pages now following Crown+ design system with glassmorphism effects, smooth animations, and consistent design token usage:
 

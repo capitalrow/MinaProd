@@ -1,0 +1,881 @@
+/*
+================================================================================
+AI INSIGHTS PANEL STYLES
+Crown+ Design System - Phase 2: Transcript Experience Enhancement
+Implements T2.11-T2.22: AI-powered insights display with glassmorphism
+================================================================================
+*/
+
+/* ============================================
+   AI Insights Container
+   ============================================ */
+
+.ai-insights-panel {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--glass-border);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.ai-insights-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.ai-insights-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    background: var(--gradient-purple-cyan);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.ai-insights-title i {
+    font-size: 1.5rem;
+    background: var(--gradient-purple-cyan);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.ai-insights-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.ai-insights-actions button {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-md);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.ai-insights-actions button:hover {
+    background: var(--glass-hover);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.ai-insights-actions button i {
+    margin-right: var(--spacing-xs);
+}
+
+/* ============================================
+   Loading & Error States
+   ============================================ */
+
+.ai-insights-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xxl);
+    gap: var(--spacing-md);
+}
+
+.ai-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--glass-border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.ai-insights-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-lg);
+    text-align: center;
+    color: #ef4444;
+}
+
+/* ============================================
+   AI Insights Tabs
+   ============================================ */
+
+.ai-insights-tabs {
+    display: flex;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-lg);
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.ai-insights-tab {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-pill);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.ai-insights-tab:hover {
+    background: var(--glass-hover);
+    color: var(--text-primary);
+}
+
+.ai-insights-tab.active {
+    background: var(--gradient-purple-cyan);
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.ai-insights-tab .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    margin-left: var(--spacing-xs);
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-pill);
+    font-size: 0.75rem;
+}
+
+/* ============================================
+   Summary Section (T2.11)
+   ============================================ */
+
+.ai-summary-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    animation: fadeIn 0.5s ease-out;
+}
+
+.ai-summary-text {
+    font-size: var(--font-size-base);
+    line-height: 1.7;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+}
+
+.ai-summary-text p {
+    margin-bottom: var(--spacing-md);
+}
+
+.ai-summary-text p:last-child {
+    margin-bottom: 0;
+}
+
+.ai-summary-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--glass-border);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.ai-summary-meta i {
+    margin-right: var(--spacing-xs);
+}
+
+/* ============================================
+   Key Points Section (T2.12)
+   ============================================ */
+
+.ai-key-points-list {
+    display: grid;
+    gap: var(--spacing-md);
+}
+
+.ai-key-point {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    animation: fadeIn 0.5s ease-out;
+    animation-fill-mode: both;
+}
+
+.ai-key-point:nth-child(1) { animation-delay: 0.05s; }
+.ai-key-point:nth-child(2) { animation-delay: 0.1s; }
+.ai-key-point:nth-child(3) { animation-delay: 0.15s; }
+.ai-key-point:nth-child(4) { animation-delay: 0.2s; }
+.ai-key-point:nth-child(5) { animation-delay: 0.25s; }
+
+.ai-key-point:hover {
+    background: var(--glass-hover);
+    border-color: var(--primary);
+    transform: translateX(4px);
+}
+
+.ai-key-point-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+}
+
+.ai-key-point-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-purple-cyan);
+    border-radius: 50%;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.ai-key-point-importance {
+    padding: 2px 8px;
+    border-radius: var(--border-radius-pill);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ai-key-point-importance.high {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.ai-key-point-importance.medium {
+    background: rgba(251, 191, 36, 0.2);
+    color: #f59e0b;
+}
+
+.ai-key-point-importance.low {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.ai-key-point-text {
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+/* ============================================
+   Action Items Section (T2.13)
+   ============================================ */
+
+.ai-action-items-list {
+    display: grid;
+    gap: var(--spacing-md);
+}
+
+.ai-action-item {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-left: 4px solid;
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    transition: all 0.3s ease;
+    animation: fadeIn 0.5s ease-out;
+    animation-fill-mode: both;
+}
+
+.ai-action-item.high { border-left-color: #ef4444; }
+.ai-action-item.medium { border-left-color: #f59e0b; }
+.ai-action-item.low { border-left-color: #22c55e; }
+
+.ai-action-item:hover {
+    background: var(--glass-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.ai-action-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+}
+
+.ai-action-item-task {
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.ai-action-item-priority {
+    padding: 4px 10px;
+    border-radius: var(--border-radius-pill);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.ai-action-item-priority.high {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.ai-action-item-priority.medium {
+    background: rgba(251, 191, 36, 0.2);
+    color: #f59e0b;
+}
+
+.ai-action-item-priority.low {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.ai-action-item-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.ai-action-item-meta i {
+    margin-right: 4px;
+    color: var(--primary);
+}
+
+.ai-action-item-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--glass-border);
+}
+
+.ai-action-item-btn {
+    padding: 4px 12px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-md);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ai-action-item-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+/* ============================================
+   Questions Section (T2.14)
+   ============================================ */
+
+.ai-questions-list {
+    display: grid;
+    gap: var(--spacing-md);
+}
+
+.ai-question {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    animation: fadeIn 0.5s ease-out;
+}
+
+.ai-question-status {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.ai-question-badge {
+    padding: 4px 10px;
+    border-radius: var(--border-radius-pill);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.ai-question-badge.answered {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.ai-question-badge.unanswered {
+    background: rgba(251, 191, 36, 0.2);
+    color: #f59e0b;
+}
+
+.ai-question-text {
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.ai-question-answer {
+    padding: var(--spacing-sm);
+    background: rgba(34, 197, 94, 0.05);
+    border-left: 3px solid #22c55e;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* ============================================
+   Decisions Section (T2.15)
+   ============================================ */
+
+.ai-decisions-list {
+    display: grid;
+    gap: var(--spacing-md);
+}
+
+.ai-decision {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-left: 4px solid var(--primary);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    transition: all 0.3s ease;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.ai-decision:hover {
+    background: var(--glass-hover);
+    transform: translateY(-2px);
+}
+
+.ai-decision-text {
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.ai-decision-rationale {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: 1.6;
+    padding: var(--spacing-sm);
+    background: var(--glass-bg);
+    border-radius: var(--border-radius-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.ai-decision-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   Sentiment Analysis (T2.16)
+   ============================================ */
+
+.ai-sentiment-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+}
+
+.ai-sentiment-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-lg);
+}
+
+.ai-sentiment-score {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.ai-sentiment-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 2rem;
+}
+
+.ai-sentiment-icon.positive {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.ai-sentiment-icon.neutral {
+    background: rgba(156, 163, 175, 0.2);
+    color: #9ca3af;
+}
+
+.ai-sentiment-icon.negative {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.ai-sentiment-label {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.ai-sentiment-score-value {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.ai-sentiment-meter {
+    height: 8px;
+    background: var(--glass-border);
+    border-radius: var(--border-radius-pill);
+    overflow: hidden;
+    margin-bottom: var(--spacing-md);
+}
+
+.ai-sentiment-meter-fill {
+    height: 100%;
+    border-radius: var(--border-radius-pill);
+    transition: width 1s ease;
+}
+
+.ai-sentiment-meter-fill.positive {
+    background: linear-gradient(90deg, #22c55e, #10b981);
+}
+
+.ai-sentiment-meter-fill.neutral {
+    background: linear-gradient(90deg, #9ca3af, #6b7280);
+}
+
+.ai-sentiment-meter-fill.negative {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.ai-sentiment-explanation {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* ============================================
+   Topics Section (T2.17)
+   ============================================ */
+
+.ai-topics-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.ai-topic-tag {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-pill);
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    animation: fadeIn 0.5s ease-out;
+    animation-fill-mode: both;
+}
+
+.ai-topic-tag:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.ai-topic-tag.active {
+    background: var(--gradient-purple-cyan);
+    border-color: transparent;
+    color: white;
+}
+
+/* ============================================
+   Quality Scoring & Feedback (T2.21)
+   ============================================ */
+
+.ai-quality-feedback {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-md);
+    margin-top: var(--spacing-lg);
+}
+
+.ai-quality-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.ai-quality-buttons {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.ai-quality-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.2rem;
+}
+
+.ai-quality-btn:hover {
+    transform: scale(1.1);
+}
+
+.ai-quality-btn.thumbs-up:hover,
+.ai-quality-btn.thumbs-up.active {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: #22c55e;
+    color: #22c55e;
+}
+
+.ai-quality-btn.thumbs-down:hover,
+.ai-quality-btn.thumbs-down.active {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+/* ============================================
+   Confidence Indicators (T2.22)
+   ============================================ */
+
+.ai-confidence-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-pill);
+    font-size: 0.7rem;
+    cursor: help;
+}
+
+.ai-confidence-dots {
+    display: flex;
+    gap: 2px;
+}
+
+.ai-confidence-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--glass-border);
+}
+
+.ai-confidence-indicator.high .ai-confidence-dot {
+    background: #22c55e;
+}
+
+.ai-confidence-indicator.medium .ai-confidence-dot:nth-child(-n+2) {
+    background: #f59e0b;
+}
+
+.ai-confidence-indicator.low .ai-confidence-dot:first-child {
+    background: #ef4444;
+}
+
+/* ============================================
+   Custom Prompt Section (T2.19)
+   ============================================ */
+
+.ai-custom-prompt-form {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+}
+
+.ai-custom-prompt-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: var(--spacing-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-md);
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+    font-family: inherit;
+    resize: vertical;
+    margin-bottom: var(--spacing-md);
+}
+
+.ai-custom-prompt-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.ai-custom-prompt-templates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-md);
+}
+
+.ai-prompt-template-btn {
+    padding: 6px 12px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-pill);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ai-prompt-template-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.ai-custom-prompt-submit {
+    padding: var(--spacing-sm) var(--spacing-xl);
+    background: var(--gradient-purple-cyan);
+    border: none;
+    border-radius: var(--border-radius-md);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.ai-custom-prompt-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
+
+.ai-custom-prompt-result {
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-md);
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* ============================================
+   Empty States
+   ============================================ */
+
+.ai-insights-empty {
+    text-align: center;
+    padding: var(--spacing-xxl);
+}
+
+.ai-insights-empty i {
+    font-size: 3rem;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-md);
+}
+
+.ai-insights-empty h3 {
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.ai-insights-empty p {
+    font-size: var(--font-size-sm);
+    color: var(--text-tertiary);
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+@media (max-width: 768px) {
+    .ai-insights-panel {
+        padding: var(--spacing-md);
+    }
+    
+    .ai-insights-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+    
+    .ai-insights-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+    }
+    
+    .ai-sentiment-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .ai-action-item-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
