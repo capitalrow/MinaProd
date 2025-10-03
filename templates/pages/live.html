@@ -1,0 +1,548 @@
+{% extends "base.html" %}
+
+{% block title %}Live Recording - Mina{% endblock %}
+{% block meta_description %}Record and transcribe your meeting in real-time with AI-powered insights.{% endblock %}
+
+{% block extra_css %}
+<style>
+.live-container {
+    min-height: calc(100vh - var(--header-height));
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-6) 0;
+}
+
+.live-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+    flex: 1;
+}
+
+@media (min-width: 1024px) {
+    .live-grid {
+        grid-template-columns: 1fr 400px;
+    }
+}
+
+.live-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.recorder-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-8);
+    text-align: center;
+}
+
+.recorder-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface-light);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--space-6);
+}
+
+.recorder-status.recording {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--color-error);
+}
+
+.recorder-status.paused {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--color-warning);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: currentColor;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.waveform-container {
+    height: 120px;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-xl);
+    margin: var(--space-6) 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.waveform {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 100%;
+    padding: var(--space-4);
+}
+
+.waveform-bar {
+    width: 4px;
+    background: var(--gradient-primary);
+    border-radius: 2px;
+    transition: height var(--transition-fast);
+}
+
+.recording-time {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: var(--space-4) 0;
+}
+
+.recording-controls {
+    display: flex;
+    gap: var(--space-4);
+    justify-content: center;
+    align-items: center;
+    margin-top: var(--space-6);
+}
+
+.record-button {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    border: 4px solid var(--color-surface);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.record-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0.2);
+}
+
+.record-button.recording {
+    background: var(--color-error);
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);
+}
+
+.control-button {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--color-text-primary);
+    transition: all var(--transition-base);
+}
+
+.control-button:hover:not(:disabled) {
+    background-color: var(--color-surface-light);
+    transform: scale(1.05);
+}
+
+.control-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.transcript-card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-6);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.transcript-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.transcript-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+}
+
+.transcript-content {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 500px;
+}
+
+.transcript-segment {
+    margin-bottom: var(--space-4);
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    transition: background-color var(--transition-base);
+}
+
+.transcript-segment:hover {
+    background-color: var(--color-surface-light);
+}
+
+.transcript-speaker {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-1);
+}
+
+.transcript-text {
+    color: var(--color-text-primary);
+    line-height: var(--line-height-relaxed);
+}
+
+.transcript-timestamp {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    margin-top: var(--space-1);
+}
+
+.transcript-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    color: var(--color-text-tertiary);
+    text-align: center;
+}
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.session-info-card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.info-value {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+.quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.action-button {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.action-button:hover {
+    background-color: var(--color-surface-light);
+    border-color: var(--color-primary);
+}
+
+.action-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--color-primary);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="live-container">
+    <div class="container">
+        <div class="live-grid">
+            <div class="live-main">
+                <div class="recorder-card">
+                    <div class="recorder-status" id="recorder-status">
+                        <span class="status-dot"></span>
+                        <span>Ready to record</span>
+                    </div>
+
+                    <div class="waveform-container">
+                        <div class="waveform" id="waveform">
+                            <!-- Waveform bars will be generated by JS -->
+                        </div>
+                    </div>
+
+                    <div class="recording-time" id="recording-time">00:00:00</div>
+
+                    <div class="recording-controls">
+                        <button class="control-button" id="pause-button" disabled aria-label="Pause recording">
+                            <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                            </svg>
+                        </button>
+
+                        <button class="record-button" id="record-button" aria-label="Start recording">
+                            <svg width="32" height="32" fill="white" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="8"/>
+                            </svg>
+                        </button>
+
+                        <button class="control-button" id="stop-button" disabled aria-label="Stop recording">
+                            <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                <rect x="6" y="6" width="12" height="12" rx="2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="transcript-card">
+                    <div class="transcript-header">
+                        <h2 class="transcript-title">Live Transcript</h2>
+                        <button class="btn btn-sm btn-ghost" id="export-button" disabled>
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                            Export
+                        </button>
+                    </div>
+
+                    <div class="transcript-content" id="transcript-content">
+                        <div class="transcript-empty">
+                            <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-bottom: var(--space-4);">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                            </svg>
+                            <p>Start recording to see live transcription</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="session-info-card">
+                    <h3 class="text-lg font-semibold mb-4">Session Info</h3>
+                    <div class="info-row">
+                        <span class="info-label">Session ID</span>
+                        <span class="info-value" id="session-id">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Audio Quality</span>
+                        <span class="info-value" id="audio-quality">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Words Spoken</span>
+                        <span class="info-value" id="word-count">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Speakers</span>
+                        <span class="info-value" id="speaker-count">0</span>
+                    </div>
+                </div>
+
+                <div class="session-info-card">
+                    <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
+                    <div class="quick-actions">
+                        <button class="action-button" id="add-marker-button" disabled>
+                            <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                            </svg>
+                            <span>Add Bookmark</span>
+                        </button>
+                        <button class="action-button" id="take-note-button" disabled>
+                            <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            <span>Quick Note</span>
+                        </button>
+                        <button class="action-button" id="share-button" disabled>
+                            <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                            </svg>
+                            <span>Share Session</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+// Initialize waveform bars
+const waveform = document.getElementById('waveform');
+for (let i = 0; i < 50; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'waveform-bar';
+    bar.style.height = '10px';
+    waveform.appendChild(bar);
+}
+
+// Recording state
+let isRecording = false;
+let isPaused = false;
+let startTime = null;
+let timerInterval = null;
+let socket = null;
+
+// Elements
+const recordButton = document.getElementById('record-button');
+const pauseButton = document.getElementById('pause-button');
+const stopButton = document.getElementById('stop-button');
+const recorderStatus = document.getElementById('recorder-status');
+const recordingTime = document.getElementById('recording-time');
+const transcriptContent = document.getElementById('transcript-content');
+
+// Update timer
+function updateTimer() {
+    if (!startTime) return;
+    const elapsed = Date.now() - startTime;
+    const hours = Math.floor(elapsed / 3600000);
+    const minutes = Math.floor((elapsed % 3600000) / 60000);
+    const seconds = Math.floor((elapsed % 60000) / 1000);
+    recordingTime.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Animate waveform
+function animateWaveform() {
+    if (!isRecording || isPaused) return;
+    const bars = waveform.querySelectorAll('.waveform-bar');
+    bars.forEach(bar => {
+        const height = Math.random() * 100 + 10;
+        bar.style.height = height + 'px';
+    });
+    requestAnimationFrame(animateWaveform);
+}
+
+// Record button click
+recordButton.addEventListener('click', async () => {
+    if (!isRecording) {
+        // Start recording
+        isRecording = true;
+        startTime = Date.now();
+        timerInterval = setInterval(updateTimer, 1000);
+        
+        recordButton.classList.add('recording');
+        pauseButton.disabled = false;
+        stopButton.disabled = false;
+        recorderStatus.classList.add('recording');
+        recorderStatus.querySelector('span:last-child').textContent = 'Recording...';
+        
+        // Initialize Socket.IO
+        socket = io();
+        
+        // Clear transcript
+        transcriptContent.innerHTML = '';
+        
+        animateWaveform();
+        
+        // Request microphone access and start recording
+        // This will be connected to the actual recording logic
+        console.log('Recording started');
+    }
+});
+
+// Pause button click
+pauseButton.addEventListener('click', () => {
+    isPaused = !isPaused;
+    if (isPaused) {
+        clearInterval(timerInterval);
+        recorderStatus.classList.remove('recording');
+        recorderStatus.classList.add('paused');
+        recorderStatus.querySelector('span:last-child').textContent = 'Paused';
+    } else {
+        timerInterval = setInterval(updateTimer, 1000);
+        recorderStatus.classList.remove('paused');
+        recorderStatus.classList.add('recording');
+        recorderStatus.querySelector('span:last-child').textContent = 'Recording...';
+        animateWaveform();
+    }
+});
+
+// Stop button click
+stopButton.addEventListener('click', () => {
+    isRecording = false;
+    isPaused = false;
+    clearInterval(timerInterval);
+    
+    recordButton.classList.remove('recording');
+    pauseButton.disabled = true;
+    stopButton.disabled = true;
+    recorderStatus.classList.remove('recording', 'paused');
+    recorderStatus.querySelector('span:last-child').textContent = 'Ready to record';
+    
+    // Stop waveform animation
+    const bars = waveform.querySelectorAll('.waveform-bar');
+    bars.forEach(bar => bar.style.height = '10px');
+    
+    if (socket) {
+        socket.disconnect();
+    }
+    
+    console.log('Recording stopped');
+});
+
+// Socket.IO events (when connected to backend)
+if (socket) {
+    socket.on('transcript_segment', (data) => {
+        const segment = document.createElement('div');
+        segment.className = 'transcript-segment fade-in';
+        segment.innerHTML = `
+            <div class="transcript-speaker">${data.speaker || 'Speaker'}</div>
+            <div class="transcript-text">${data.text}</div>
+            <div class="transcript-timestamp">${new Date().toLocaleTimeString()}</div>
+        `;
+        transcriptContent.appendChild(segment);
+        transcriptContent.scrollTop = transcriptContent.scrollHeight;
+    });
+}
+</script>
+{% endblock %}

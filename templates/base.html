@@ -16,11 +16,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
+    <a href="#main-content" class="sr-only">Skip to main content</a>
+    
     {% if show_navbar|default(true) %}
     <nav class="navbar" role="navigation" aria-label="Main navigation">
         <div class="container">
             <div class="navbar-content">
-                <a href="{{ url_for('index') }}" class="navbar-brand" aria-label="Mina Home">
+                <a href="{{ url_for('pages.index') }}" class="navbar-brand" aria-label="Mina Home">
                     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
                         <rect width="32" height="32" rx="8" fill="url(#logo-gradient)"/>
                         <path d="M8 12L16 8L24 12V20L16 24L8 20V12Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -36,9 +38,9 @@
                 
                 <div class="navbar-menu">
                     {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('dashboard_index') }}" class="navbar-link">Dashboard</a>
-                    <a href="{{ url_for('live_recording') }}" class="navbar-link">Record</a>
-                    <a href="{{ url_for('meetings_list') }}" class="navbar-link">Meetings</a>
+                    <a href="{{ url_for('dashboard.index') }}" class="navbar-link">Dashboard</a>
+                    <a href="{{ url_for('pages.live') }}" class="navbar-link">Record</a>
+                    <a href="{{ url_for('dashboard.meetings') }}" class="navbar-link">Meetings</a>
                     
                     <div class="navbar-actions">
                         <button class="btn-icon" id="theme-toggle" aria-label="Toggle theme">
@@ -59,16 +61,16 @@
                                 {% endif %}
                             </button>
                             <div class="dropdown-menu" id="user-menu" role="menu" aria-labelledby="user-menu-button">
-                                <a href="{{ url_for('profile') }}" class="dropdown-item" role="menuitem">Profile</a>
-                                <a href="{{ url_for('settings') }}" class="dropdown-item" role="menuitem">Settings</a>
+                                <a href="{{ url_for('settings.preferences') }}" class="dropdown-item" role="menuitem">Preferences</a>
+                                <a href="{{ url_for('settings.settings_dashboard') }}" class="dropdown-item" role="menuitem">Settings</a>
                                 <div class="divider"></div>
-                                <a href="{{ url_for('logout') }}" class="dropdown-item" role="menuitem">Sign Out</a>
+                                <a href="{{ url_for('auth.logout') }}" class="dropdown-item" role="menuitem">Sign Out</a>
                             </div>
                         </div>
                     </div>
                     {% else %}
-                    <a href="{{ url_for('login') }}" class="btn btn-ghost">Sign In</a>
-                    <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-ghost">Sign In</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Get Started</a>
                     {% endif %}
                 </div>
                 
@@ -129,9 +131,9 @@
                 </div>
                 <div class="footer-section">
                     <h4 class="footer-heading">Legal</h4>
-                    <a href="{{ url_for('privacy') }}" class="footer-link">Privacy</a>
-                    <a href="{{ url_for('terms') }}" class="footer-link">Terms</a>
-                    <a href="{{ url_for('cookies') }}" class="footer-link">Cookies</a>
+                    <a href="{{ url_for('pages.privacy') }}" class="footer-link">Privacy</a>
+                    <a href="{{ url_for('pages.terms') }}" class="footer-link">Terms</a>
+                    <a href="{{ url_for('pages.cookies') }}" class="footer-link">Cookies</a>
                 </div>
             </div>
             <div class="footer-bottom">
