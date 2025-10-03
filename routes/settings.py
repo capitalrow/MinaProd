@@ -602,8 +602,7 @@ def workspace_management():
     Returns:
         Rendered workspace management template
     """
-    from app import db
-    from models import Meeting
+    from models import db, Meeting
     
     try:
         workspace = None
