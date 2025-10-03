@@ -24,10 +24,33 @@ dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 @login_required
 def index():
     """Main dashboard page with overview of meetings, tasks, and analytics."""
-    # Get recent meetings
-    recent_meetings = db.session.query(Meeting).filter_by(
-        workspace_id=current_user.workspace_id
-    ).order_by(desc(Meeting.created_at)).limit(5).all()
+    # Check if user has a workspace, if not create one
+    if not current_user.workspace_id:
+        from models import Workspace
+        try:
+            workspace_name = f"{current_user.first_name}'s Workspace" if current_user.first_name else f"{current_user.username}'s Workspace"
+            workspace = Workspace(
+                name=workspace_name,
+                slug=Workspace.generate_slug(workspace_name),
+                owner_id=current_user.id
+            )
+            db.session.add(workspace)
+            db.session.flush()
+            current_user.workspace_id = workspace.id
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            import logging
+            logging.error(f"Failed to create workspace for user {current_user.id}: {e}")
+            # Continue with None workspace - show empty dashboard
+    
+    # Get recent meetings (handle None workspace)
+    if current_user.workspace_id:
+        recent_meetings = db.session.query(Meeting).filter_by(
+            workspace_id=current_user.workspace_id
+        ).order_by(desc(Meeting.created_at)).limit(5).all()
+    else:
+        recent_meetings = []
     
     # Get user's tasks
     user_tasks = db.session.query(Task).filter_by(
@@ -35,36 +58,47 @@ def index():
     ).filter(Task.status.in_(['todo', 'in_progress'])).limit(10).all()
     
     # Get workspace statistics
-    total_meetings = db.session.query(Meeting).filter_by(workspace_id=current_user.workspace_id).count()
-    total_tasks = db.session.query(Task).join(Meeting).filter(
-        Meeting.workspace_id == current_user.workspace_id
-    ).count()
-    completed_tasks = db.session.query(Task).join(Meeting).filter(
-        Meeting.workspace_id == current_user.workspace_id,
-        Task.status == 'completed'
-    ).count()
+    if current_user.workspace_id:
+        total_meetings = db.session.query(Meeting).filter_by(workspace_id=current_user.workspace_id).count()
+        total_tasks = db.session.query(Task).join(Meeting).filter(
+            Meeting.workspace_id == current_user.workspace_id
+        ).count()
+        completed_tasks = db.session.query(Task).join(Meeting).filter(
+            Meeting.workspace_id == current_user.workspace_id,
+            Task.status == 'completed'
+        ).count()
+    else:
+        total_meetings = 0
+        total_tasks = 0
+        completed_tasks = 0
     
     # Calculate task completion rate
     task_completion_rate = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
     
     # Get this week's meetings
     week_start = datetime.now() - timedelta(days=datetime.now().weekday())
-    this_week_meetings = db.session.query(Meeting).filter_by(
-        workspace_id=current_user.workspace_id
-    ).filter(Meeting.created_at >= week_start).count()
+    if current_user.workspace_id:
+        this_week_meetings = db.session.query(Meeting).filter_by(
+            workspace_id=current_user.workspace_id
+        ).filter(Meeting.created_at >= week_start).count()
+    else:
+        this_week_meetings = 0
     
     # Get today's meetings (meetings created today or scheduled for today)
     today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     today_end = today_start + timedelta(days=1)
     
-    todays_meetings = db.session.query(Meeting).filter_by(
-        workspace_id=current_user.workspace_id
-    ).filter(
-        and_(
-            Meeting.created_at >= today_start,
-            Meeting.created_at < today_end
-        )
-    ).order_by(desc(Meeting.created_at)).all()
+    if current_user.workspace_id:
+        todays_meetings = db.session.query(Meeting).filter_by(
+            workspace_id=current_user.workspace_id
+        ).filter(
+            and_(
+                Meeting.created_at >= today_start,
+                Meeting.created_at < today_end
+            )
+        ).order_by(desc(Meeting.created_at)).all()
+    else:
+        todays_meetings = []
     
     # Get follow-up items from recent meetings (last 7 days)
     recent_cutoff = datetime.now() - timedelta(days=7)
