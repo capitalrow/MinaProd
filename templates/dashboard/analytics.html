@@ -92,6 +92,18 @@
     animation-fill-mode: both;
 }
 
+/* Chart Frame Container for Controlled Sizing */
+.chart-frame {
+    position: relative;
+    width: 100%;
+    height: clamp(220px, 35vh, 360px);
+}
+
+.chart-frame canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
 .analytics-tab {
     padding: var(--space-3) var(--space-4);
     background: transparent;
@@ -176,6 +188,23 @@
     .analytics-header .flex:last-child {
         width: 100%;
         flex-direction: row;
+    }
+    
+    /* Constrain chart heights on mobile */
+    .chart-card {
+        padding: var(--space-4);
+    }
+    
+    .chart-frame {
+        height: clamp(200px, 50vw, 280px);
+        max-height: 320px;
+    }
+    
+    /* Tighter constraints for radar/doughnut charts */
+    .chart-frame.chart-radar,
+    .chart-frame.chart-doughnut {
+        max-height: 280px;
+        aspect-ratio: 1 / 1;
     }
 }
 
@@ -277,19 +306,25 @@
         <div class="charts-primary-grid">
             <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-4">Meeting Activity Trend</h2>
-                <canvas id="meetingActivityChart" height="280"></canvas>
+                <div class="chart-frame">
+                    <canvas id="meetingActivityChart"></canvas>
+                </div>
             </div>
 
             <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-4">Task Status</h2>
-                <canvas id="taskStatusChart" height="280"></canvas>
+                <div class="chart-frame chart-doughnut">
+                    <canvas id="taskStatusChart"></canvas>
+                </div>
             </div>
         </div>
 
         <div class="charts-equal-grid">
             <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-4">Speaker Distribution</h2>
-                <canvas id="speakerChart" height="220"></canvas>
+                <div class="chart-frame">
+                    <canvas id="speakerChart"></canvas>
+                </div>
             </div>
 
             <div class="chart-card">
@@ -332,12 +367,16 @@
         <div class="charts-equal-grid">
             <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-4">Participation Rate</h2>
-                <canvas id="participationChart" height="280"></canvas>
+                <div class="chart-frame chart-radar">
+                    <canvas id="participationChart"></canvas>
+                </div>
             </div>
 
             <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-4">Meeting Sentiment</h2>
-                <canvas id="sentimentChart" height="280"></canvas>
+                <div class="chart-frame">
+                    <canvas id="sentimentChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -347,7 +386,9 @@
         <div class="charts-single">
             <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-4">Task Completion Over Time</h2>
-                <canvas id="productivityChart" height="280"></canvas>
+                <div class="chart-frame">
+                    <canvas id="productivityChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -470,7 +511,8 @@ if (meetingActivityCtx) {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 1.8,
             plugins: {
                 legend: { display: false }
             },
@@ -496,7 +538,8 @@ if (taskStatusCtx) {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 1,
             plugins: {
                 legend: { position: 'bottom' }
             }
@@ -520,7 +563,8 @@ if (speakerCtx) {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 1.6,
             plugins: {
                 legend: { display: false }
             },
@@ -548,7 +592,8 @@ if (participationCtx) {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 1,
             scales: {
                 r: { beginAtZero: true, max: 100 }
             }
@@ -584,7 +629,8 @@ if (sentimentCtx) {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 1.6,
             plugins: {
                 legend: { position: 'bottom' }
             },
@@ -619,7 +665,8 @@ if (productivityCtx) {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 2.2,
             plugins: {
                 legend: { position: 'bottom' }
             },
