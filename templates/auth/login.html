@@ -116,14 +116,22 @@
 </div>
 
 <style>
+/* Crown+ Auth Page Enhancement */
 .auth-container {
     min-height: calc(100vh - var(--header-height));
     display: flex;
     align-items: center;
     padding: var(--space-8) 0;
     background: 
-        radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+        radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 60%),
+        radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.15) 0%, transparent 60%),
+        radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.1) 0%, transparent 70%);
+    animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
 }
 
 .auth-wrapper {
@@ -131,6 +139,7 @@
     grid-template-columns: 1fr;
     gap: var(--space-12);
     align-items: center;
+    animation: fadeInUp 0.6s ease-out;
 }
 
 @media (min-width: 1024px) {
@@ -143,6 +152,18 @@
     max-width: 480px;
     width: 100%;
     margin: 0 auto;
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-8);
+    box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.3);
+    transition: all var(--transition-base);
+}
+
+.auth-card:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 25px 70px -15px rgba(99, 102, 241, 0.2);
 }
 
 .auth-header {
@@ -248,25 +269,88 @@
 
 .feature-icon {
     flex-shrink: 0;
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--gradient-primary);
     border-radius: var(--radius-xl);
     color: white;
+    box-shadow: 0 8px 20px -6px rgba(99, 102, 241, 0.4);
+    transition: all var(--transition-base);
+}
+
+.feature-item:hover .feature-icon {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 12px 28px -8px rgba(99, 102, 241, 0.5);
 }
 
 .feature-title {
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
     margin-bottom: var(--space-2);
+    transition: color var(--transition-base);
+}
+
+.feature-item:hover .feature-title {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .feature-text {
     color: var(--color-text-secondary);
     font-size: var(--font-size-sm);
+    line-height: 1.6;
+}
+
+/* Enhanced Button Styles */
+.btn-primary {
+    background: var(--gradient-primary);
+    position: relative;
+    overflow: hidden;
+    border: none;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-primary:hover::before {
+    left: 100%;
+}
+
+.btn-secondary {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all var(--transition-base);
+}
+
+.btn-secondary:hover {
+    border-color: var(--color-primary);
+    background: rgba(99, 102, 241, 0.1);
+    transform: translateY(-1px);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 </style>
 {% endblock %}
