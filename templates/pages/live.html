@@ -466,13 +466,20 @@ socket.on('disconnect', () => {
     console.log('Socket.IO disconnected');
 });
 
-socket.on('transcript', (data) => {
+socket.on('transcription_result', (data) => {
+    if (transcriptContent.querySelector('.transcript-empty')) {
+        transcriptContent.innerHTML = '';
+    }
+    
     const segment = document.createElement('div');
     segment.className = 'transcript-segment fade-in';
+    const speakerName = data.speaker_name || data.speaker_id || 'Speaker';
+    const timestamp = new Date(data.timestamp || Date.now()).toLocaleTimeString();
+    
     segment.innerHTML = `
-        <div class="transcript-speaker">${data.speaker || 'Speaker'}</div>
+        <div class="transcript-speaker">${speakerName}</div>
         <div class="transcript-text">${data.text}</div>
-        <div class="transcript-timestamp">${new Date().toLocaleTimeString()}</div>
+        <div class="transcript-timestamp">${timestamp}${data.is_final ? ' (final)' : ''}</div>
     `;
     transcriptContent.appendChild(segment);
     transcriptContent.scrollTop = transcriptContent.scrollHeight;
@@ -481,8 +488,8 @@ socket.on('transcript', (data) => {
     wordCountEl.textContent = wordCount;
 });
 
-socket.on('transcript_final', (data) => {
-    console.log('Final transcript:', data);
+socket.on('final_transcript', (data) => {
+    console.log('Final transcript:', data.text);
 });
 
 // Update timer
@@ -541,18 +548,23 @@ recordButton.addEventListener('click', async () => {
                 if (!e.data.size) return;
                 chunks.push(e.data);
                 
-                // Send audio chunk to server via Socket.IO
+                // Send audio chunk to server via Socket.IO in the format backend expects
                 e.data.arrayBuffer().then((buf) => {
+                    const audioArray = Array.from(new Uint8Array(buf));
                     socket.emit('audio_chunk', {
-                        sessionId: sessionId,
-                        audio: buf,
-                        mimeType: mimeType
+                        session_id: String(sessionId),
+                        audio_data: audioArray,
+                        settings: {
+                            mimeType: mimeType
+                        }
                     });
                 });
             };
             
             mediaRecorder.onstart = () => {
                 console.log('MediaRecorder started');
+                // Emit join_session to initialize backend session
+                socket.emit('join_session', { session_id: String(sessionId) });
             };
             
             mediaRecorder.onstop = () => {
@@ -560,10 +572,13 @@ recordButton.addEventListener('click', async () => {
                 const fullBlob = new Blob(chunks, { type: mimeType });
                 chunks = [];
                 
+                // Call finalize_session to get final transcription
                 fullBlob.arrayBuffer().then((buf) => {
-                    socket.emit('audio_end', {
-                        sessionId: sessionId,
-                        audio: buf
+                    socket.emit('finalize_session', {
+                        session_id: String(sessionId),
+                        settings: {
+                            mimeType: mimeType
+                        }
                     });
                 });
             };
