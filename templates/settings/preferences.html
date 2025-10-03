@@ -73,6 +73,7 @@
 
     <div class="card" style="margin-bottom: var(--space-6);">
         <h2 class="text-xl font-semibold mb-4">Transcription Controls</h2>
+        <form method="POST" action="{{ url_for('settings.update_preferences') }}">
         <div style="display: flex; flex-direction: column; gap: var(--space-4);">
             <div>
                 <label class="block text-sm font-medium mb-2">Default Language</label>
@@ -120,10 +121,15 @@
                 </div>
             </label>
         </div>
+        <div style="margin-top: var(--space-6);">
+            <button type="submit" class="btn btn-primary">Save Transcription Settings</button>
+        </div>
+        </form>
     </div>
 
     <div class="card" style="margin-bottom: var(--space-6);">
         <h2 class="text-xl font-semibold mb-4">Privacy & Compliance</h2>
+        <form method="POST" action="{{ url_for('settings.update_preferences') }}">
         <div style="display: flex; flex-direction: column; gap: var(--space-4);">
             <div>
                 <label class="block text-sm font-medium mb-2">Data Retention Period</label>
@@ -163,10 +169,15 @@
                 </select>
             </div>
         </div>
+        <div style="margin-top: var(--space-6);">
+            <button type="submit" class="btn btn-primary">Save Privacy Settings</button>
+        </div>
+        </form>
     </div>
 
     <div class="card" style="margin-bottom: var(--space-6);">
         <h2 class="text-xl font-semibold mb-4">AI Insights Configuration</h2>
+        <form method="POST" action="{{ url_for('settings.update_preferences') }}">
         <div style="display: flex; flex-direction: column; gap: var(--space-4);">
             <div>
                 <label class="block text-sm font-medium mb-2">Auto-generate Summaries</label>
@@ -211,10 +222,15 @@
                 </div>
             </label>
         </div>
+        <div style="margin-top: var(--space-6);">
+            <button type="submit" class="btn btn-primary">Save AI Settings</button>
+        </div>
+        </form>
     </div>
 
     <div class="card">
         <h2 class="text-xl font-semibold mb-4">Audio & Recording</h2>
+        <form method="POST" action="{{ url_for('settings.update_preferences') }}">
         <div style="display: flex; flex-direction: column; gap: var(--space-4);">
             <div>
                 <label class="block text-sm font-medium mb-2">Audio Quality</label>
@@ -250,6 +266,10 @@
                 </div>
             </label>
         </div>
+        <div style="margin-top: var(--space-6);">
+            <button type="submit" class="btn btn-primary">Save Audio Settings</button>
+        </div>
+        </form>
     </div>
     </div>
 </div>
