@@ -2,14 +2,123 @@
 
 {% block title %}Analytics - Mina{% endblock %}
 
+{% block extra_css %}
+<style>
+.analytics-container {
+    min-height: calc(100vh - var(--header-height));
+    padding: var(--space-8) 0;
+    max-width: 1400px;
+}
+
+.analytics-header {
+    margin-bottom: var(--space-6);
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.analytics-title {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--space-2);
+}
+
+.analytics-subtitle {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-lg);
+}
+
+.kpi-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    transition: all var(--transition-base);
+    animation: fadeInUp 0.6s ease-out;
+    animation-fill-mode: both;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card:nth-child(1) { animation-delay: 0.1s; }
+.kpi-card:nth-child(2) { animation-delay: 0.2s; }
+.kpi-card:nth-child(3) { animation-delay: 0.3s; }
+.kpi-card:nth-child(4) { animation-delay: 0.4s; }
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--color-primary);
+}
+
+.chart-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    animation: fadeInUp 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.analytics-tab {
+    padding: var(--space-3) var(--space-4);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.analytics-tab:hover {
+    color: var(--color-text-primary);
+    background: var(--color-surface-hover);
+}
+
+.analytics-tab.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+}
+
+.analytics-tab-content {
+    display: none;
+}
+
+.analytics-tab-content.active {
+    display: block;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .analytics-title {
+        font-size: var(--font-size-3xl);
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container" style="padding-top: var(--space-6); padding-bottom: var(--space-8); max-width: 1400px;">
+<div class="container analytics-container">
     <!-- Header with Filters -->
-    <div class="mb-6">
+    <div class="analytics-header">
         <div class="flex justify-between items-start mb-4">
             <div>
-                <h1 class="text-3xl font-bold mb-1">Analytics</h1>
-                <p class="text-secondary">Insights from your meetings and productivity</p>
+                <h1 class="analytics-title">Analytics</h1>
+                <p class="analytics-subtitle">Insights from your meetings and productivity</p>
             </div>
             <div class="flex gap-3">
                 <select class="p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm">
@@ -30,7 +139,7 @@
 
     <!-- KPI Cards -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-6);">
-        <div class="card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);">
+        <div class="kpi-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);">
             <div class="flex justify-between items-start mb-2">
                 <p class="text-tertiary text-sm font-medium">Total Meetings</p>
                 <span class="px-2 py-1 rounded-full text-xs font-medium" style="background: rgba(34, 197, 94, 0.1); color: var(--color-success);">
@@ -41,7 +150,7 @@
             <p class="text-sm text-secondary">↑ 3 more than last month</p>
         </div>
         
-        <div class="card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, transparent 100%);">
+        <div class="kpi-card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, transparent 100%);">
             <div class="flex justify-between items-start mb-2">
                 <p class="text-tertiary text-sm font-medium">Action Items</p>
                 <span class="px-2 py-1 rounded-full text-xs font-medium" style="background: rgba(34, 197, 94, 0.1); color: var(--color-success);">
@@ -52,7 +161,7 @@
             <p class="text-sm text-secondary">85% completion rate</p>
         </div>
         
-        <div class="card" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, transparent 100%);">
+        <div class="kpi-card" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, transparent 100%);">
             <div class="flex justify-between items-start mb-2">
                 <p class="text-tertiary text-sm font-medium">Hours Saved</p>
                 <span class="px-2 py-1 rounded-full text-xs font-medium" style="background: rgba(34, 197, 94, 0.1); color: var(--color-success);">
@@ -63,7 +172,7 @@
             <p class="text-sm text-secondary">This week vs last week</p>
         </div>
         
-        <div class="card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, transparent 100%);">
+        <div class="kpi-card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, transparent 100%);">
             <div class="flex justify-between items-start mb-2">
                 <p class="text-tertiary text-sm font-medium">Avg Meeting Length</p>
                 <span class="px-2 py-1 rounded-full text-xs font-medium" style="background: rgba(249, 115, 22, 0.1); color: var(--color-warning);">
@@ -88,24 +197,24 @@
     <!-- Overview Tab -->
     <div id="tab-overview" class="analytics-tab-content active">
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-6); margin-bottom: var(--space-6);">
-            <div class="card">
+            <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-4">Meeting Activity Trend</h2>
                 <canvas id="meetingActivityChart" height="280"></canvas>
             </div>
 
-            <div class="card">
+            <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-4">Task Status</h2>
                 <canvas id="taskStatusChart" height="280"></canvas>
             </div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6);">
-            <div class="card">
+            <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-4">Speaker Distribution</h2>
                 <canvas id="speakerChart" height="220"></canvas>
             </div>
 
-            <div class="card">
+            <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-4">Top Topics</h2>
                 <div style="display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-2) 0;">
                     <div>
@@ -143,12 +252,12 @@
     <!-- Engagement Tab -->
     <div id="tab-engagement" class="analytics-tab-content">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6);">
-            <div class="card">
+            <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-4">Participation Rate</h2>
                 <canvas id="participationChart" height="280"></canvas>
             </div>
 
-            <div class="card">
+            <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-4">Meeting Sentiment</h2>
                 <canvas id="sentimentChart" height="280"></canvas>
             </div>
@@ -157,7 +266,7 @@
 
     <!-- Productivity Tab -->
     <div id="tab-productivity" class="analytics-tab-content">
-        <div class="card">
+        <div class="chart-card">
             <h2 class="text-lg font-semibold mb-4">Task Completion Over Time</h2>
             <canvas id="productivityChart" height="280"></canvas>
         </div>
@@ -166,7 +275,7 @@
     <!-- Insights Tab -->
     <div id="tab-insights" class="analytics-tab-content">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6);">
-            <div class="card">
+            <div class="chart-card">
                 <h3 class="font-semibold mb-4">Key Insights</h3>
                 <div style="display: flex; flex-direction: column; gap: var(--space-3);">
                     <div class="p-3 rounded-lg" style="background: rgba(34, 197, 94, 0.1); border-left: 3px solid var(--color-success);">
@@ -184,7 +293,7 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="chart-card">
                 <h3 class="font-semibold mb-4">Recommendations</h3>
                 <div style="display: flex; flex-direction: column; gap: var(--space-3);">
                     <div class="flex gap-3 items-start">
@@ -225,37 +334,6 @@
         </div>
     </div>
 </div>
-
-<style>
-.analytics-tab {
-    padding: var(--space-3) var(--space-4);
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid transparent;
-    color: var(--color-text-secondary);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.analytics-tab:hover {
-    color: var(--color-text-primary);
-    background: var(--color-surface-hover);
-}
-
-.analytics-tab.active {
-    color: var(--color-primary);
-    border-bottom-color: var(--color-primary);
-}
-
-.analytics-tab-content {
-    display: none;
-}
-
-.analytics-tab-content.active {
-    display: block;
-}
-</style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
