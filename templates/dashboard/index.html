@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Mina{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: var(--space-8); padding-bottom: var(--space-8);">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-4xl font-bold mb-2">Welcome back, {{ current_user.username }}!</h1>
+            <p class="text-secondary">Here's what's happening with your meetings</p>
+        </div>
+        <a href="{{ url_for('pages.live') }}" class="btn btn-primary">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+            </svg>
+            Start Recording
+        </a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-6); margin-bottom: var(--space-8);">
+        <div class="card">
+            <div class="flex items-center gap-4">
+                <div style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: var(--gradient-primary); border-radius: var(--radius-xl);">
+                    <svg width="28" height="28" fill="white" viewBox="0 0 24 24">
+                        <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-tertiary text-sm">Total Meetings</p>
+                    <p class="text-3xl font-bold">{{ total_meetings|default(0) }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="flex items-center gap-4">
+                <div style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%); border-radius: var(--radius-xl);">
+                    <svg width="28" height="28" fill="none" stroke="white" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-tertiary text-sm">Action Items</p>
+                    <p class="text-3xl font-bold">{{ total_tasks|default(0) }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="flex items-center gap-4">
+                <div style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); border-radius: var(--radius-xl);">
+                    <svg width="28" height="28" fill="none" stroke="white" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-tertiary text-sm">Hours Saved</p>
+                    <p class="text-3xl font-bold">{{ hours_saved|default(0) }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-6);">
+        <div>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold">Recent Meetings</h2>
+                <a href="{{ url_for('dashboard.meetings') }}" class="text-primary text-sm font-medium">View all →</a>
+            </div>
+
+            {% if recent_meetings and recent_meetings|length > 0 %}
+            <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+                {% for meeting in recent_meetings %}
+                <div class="card transition cursor-pointer" onclick="window.location='{{ url_for('dashboard.meeting_detail', meeting_id=meeting.id) }}'">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold mb-2">{{ meeting.title or 'Untitled Meeting' }}</h3>
+                            <p class="text-secondary text-sm mb-3">{{ meeting.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                            {% if meeting.summary %}
+                            <p class="text-tertiary text-sm">{{ meeting.summary[:150] }}{% if meeting.summary|length > 150 %}...{% endif %}</p>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center gap-3">
+                            {% if meeting.duration %}
+                            <span class="badge badge-primary">{{ (meeting.duration / 60)|round|int }} min</span>
+                            {% endif %}
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="card text-center" style="padding: var(--space-12);">
+                <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin: 0 auto var(--space-4);">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <h3 class="text-xl font-semibold mb-2">No meetings yet</h3>
+                <p class="text-tertiary mb-6">Start recording your first meeting to see it here</p>
+                <a href="{{ url_for('pages.live') }}" class="btn btn-primary">Start Recording</a>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if user_tasks and user_tasks|length > 0 %}
+        <div>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold">Your Tasks</h2>
+                <a href="{{ url_for('dashboard.tasks') }}" class="text-primary text-sm font-medium">View all →</a>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+                {% for task in user_tasks[:5] %}
+                <div class="card">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" class="checkbox" {% if task.status == 'completed' %}checked{% endif %}>
+                        <div class="flex-1">
+                            <p class="font-medium {% if task.status == 'completed' %}text-tertiary{% endif %}">{{ task.description }}</p>
+                            {% if task.meeting %}
+                            <p class="text-tertiary text-xs mt-1">From: {{ task.meeting.title or 'Untitled Meeting' }}</p>
+                            {% endif %}
+                        </div>
+                        {% if task.priority %}
+                        <span class="badge badge-{% if task.priority == 'high' %}error{% elif task.priority == 'medium' %}warning{% else %}primary{% endif %}">
+                            {{ task.priority }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

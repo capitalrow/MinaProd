@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Cookie Policy - Mina{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: var(--space-16); padding-bottom: var(--space-16); max-width: 800px;">
+    <h1 class="text-4xl font-bold mb-4">Cookie Policy</h1>
+    <p class="text-secondary mb-12">Last updated: {{ current_date|default('October 3, 2025') }}</p>
+
+    <div class="card" style="padding: var(--space-8);">
+        <section style="margin-bottom: var(--space-8);">
+            <h2 class="text-2xl font-semibold mb-4">What Are Cookies</h2>
+            <p class="text-secondary">Cookies are small text files that are stored on your device when you visit our website. They help us provide you with a better experience.</p>
+        </section>
+
+        <section style="margin-bottom: var(--space-8);">
+            <h2 class="text-2xl font-semibold mb-4">How We Use Cookies</h2>
+            <p class="text-secondary mb-4">We use cookies for the following purposes:</p>
+            <ul style="list-style: disc; margin-left: var(--space-6); color: var(--color-text-secondary);">
+                <li><strong>Essential Cookies:</strong> Required for the website to function properly</li>
+                <li><strong>Preference Cookies:</strong> Remember your settings and preferences</li>
+                <li><strong>Analytics Cookies:</strong> Help us understand how visitors use our website</li>
+                <li><strong>Marketing Cookies:</strong> Track your activity to show relevant ads</li>
+            </ul>
+        </section>
+
+        <section style="margin-bottom: var(--space-8);">
+            <h2 class="text-2xl font-semibold mb-4">Managing Cookies</h2>
+            <p class="text-secondary">You can control and/or delete cookies as you wish. You can delete all cookies that are already on your computer and you can set most browsers to prevent them from being placed.</p>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-semibold mb-4">Contact Us</h2>
+            <p class="text-secondary">If you have any questions about our use of cookies, please contact us at privacy@mina.com</p>
+        </section>
+    </div>
+</div>
+{% endblock %}
