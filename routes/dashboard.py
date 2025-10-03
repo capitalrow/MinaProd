@@ -168,21 +168,16 @@ def index():
 @login_required
 def meetings():
     """Meetings overview page."""
-    # Check if user has workspace, if not show empty state
-    if not current_user.workspace_id:
-        return render_template('dashboard/meetings.html',
-                             meetings=[],
-                             status_filter='all',
-                             search_query='',
-                             empty_state=True)
-    
     # Filter and pagination
     page = request.args.get('page', 1, type=int)
     status_filter = request.args.get('status', 'all')
     search_query = request.args.get('search', '')
     
-    # Build query
-    query = db.select(Meeting).filter_by(workspace_id=current_user.workspace_id)
+    # Build query - use impossible condition if no workspace
+    if current_user.workspace_id:
+        query = db.select(Meeting).filter_by(workspace_id=current_user.workspace_id)
+    else:
+        query = db.select(Meeting).where(Meeting.id == -1)
     
     # Apply filters
     if status_filter != 'all':
@@ -195,13 +190,15 @@ def meetings():
     query = query.order_by(desc(Meeting.created_at))
     
     # Paginate results
-    meetings = db.paginate(query, page=page, per_page=20, error_out=False)
+    meetings_paginated = db.paginate(query, page=page, per_page=20, error_out=False)
     
     return render_template('dashboard/meetings.html',
-                         meetings=meetings,
+                         meetings=meetings_paginated.items,
+                         has_more=meetings_paginated.has_next,
+                         page=page,
+                         total=meetings_paginated.total,
                          status_filter=status_filter,
-                         search_query=search_query,
-                         empty_state=False)
+                         search_query=search_query)
 
 
 @dashboard_bp.route('/meeting/<int:meeting_id>')
