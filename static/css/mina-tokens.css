@@ -47,10 +47,23 @@
   --color-accent-800: #065f46;
   --color-accent-900: #064e3b;
   
+  /* Indigo Scale - Primary Brand (Otter.ai-Inspired) */
+  --color-indigo-50: #EEF2FF;
+  --color-indigo-100: #E0E7FF;
+  --color-indigo-200: #C7D2FE;
+  --color-indigo-300: #A5B4FC;
+  --color-indigo-400: #818CF8;
+  --color-indigo-500: #6366F1;  /* Primary brand color - Otter.ai match */
+  --color-indigo-600: #4F46E5;
+  --color-indigo-700: #4338CA;
+  --color-indigo-800: #3730A3;
+  --color-indigo-900: #312E81;
+  
   /* Crown+ Accent Aliases */
   --color-accent-vibrant: var(--color-accent-500);
   --color-accent-muted: var(--color-accent-600);
-  --accent-primary: var(--color-accent-500);
+  --accent-primary: var(--color-indigo-500);  /* Primary accent now uses indigo */
+  --accent-secondary: var(--color-accent-500); /* Keep green for success states */
   
   /* Error Colors */
   --color-error-50: #fef2f2;
@@ -99,21 +112,26 @@
   --color-neutral-900: #111827;
   --color-neutral-950: #030712;
   
-  /* Dark Theme Backgrounds */
-  --bg-primary: #0a0e17;
-  --bg-secondary: #0f1419;
-  --bg-tertiary: #161b22;
-  --bg-elevated: #1c2128;
+  /* Dark Theme Backgrounds - Matching Otter.ai Reference */
+  --bg-primary: #0F1419;      /* Deep navy - main background (Otter.ai match) */
+  --bg-secondary: #161B22;    /* Slightly lighter navy - cards, elevated surfaces */
+  --bg-tertiary: #1C2128;     /* Tertiary surfaces - modals, dropdowns */
+  --bg-elevated: #21262D;     /* Most elevated - tooltips, popovers */
   --bg-glass: rgba(255, 255, 255, 0.05);
   --bg-glass-hover: rgba(255, 255, 255, 0.08);
   
-  /* Text Colors */
-  --text-primary: #f0f6fc;
-  --text-secondary: #8b949e;
-  --text-tertiary: #6e7681;
-  --text-link: var(--color-primary-400);
-  --text-link-hover: var(--color-primary-300);
-  --text-accent: var(--color-primary-400);
+  /* Otter.ai-Inspired Accent Indigo */
+  --color-indigo-400: #818CF8;  /* Lighter indigo for hover states */
+  --color-indigo-500: #6366F1;  /* Primary indigo accent (Otter.ai match) */
+  --color-indigo-600: #4F46E5;  /* Darker indigo for active states */
+  
+  /* Text Colors - Matching Otter.ai Reference */
+  --text-primary: #F0F6FC;    /* White/light text for high contrast */
+  --text-secondary: #8B94A5;  /* Muted gray text (Otter.ai match) */
+  --text-tertiary: #6E7681;   /* Even more muted - labels, placeholders */
+  --text-link: var(--color-indigo-500);
+  --text-link-hover: var(--color-indigo-400);
+  --text-accent: var(--color-indigo-500);
   --text-muted: var(--text-tertiary);
   
   /* Border Colors */

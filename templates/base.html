@@ -6,9 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes, maximum-scale=5.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
-    <!-- Mobile Theme Colors -->
+    <!-- Mobile Theme Colors - Otter.ai Match -->
     <meta name="theme-color" content="#0F1419" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+    <meta name="msapplication-TileColor" content="#6366F1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
@@ -41,13 +42,16 @@
     <!-- 1. Core Design Tokens - Must load FIRST -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-tokens.css') }}">
     
-    <!-- 2. Viewport & Safe Areas - Critical for mobile-first (notched devices) -->
+    <!-- 2. Dark Theme - Otter.ai color palette -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-dark-theme.css') }}">
+    
+    <!-- 3. Viewport & Safe Areas - Critical for mobile-first (notched devices) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-viewport.css') }}">
     
-    <!-- 3. Legacy Compatibility Shim - Will be removed after template migration -->
+    <!-- 4. Legacy Compatibility Shim - Will be removed after template migration -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
     
-    <!-- 4. Mina Foundation Components -->
+    <!-- 5. Mina Foundation Components -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-typography.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-spacing.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-animations.css') }}">
