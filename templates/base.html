@@ -61,7 +61,6 @@
                                 {% endif %}
                             </button>
                             <div class="dropdown-menu" id="user-menu" role="menu" aria-labelledby="user-menu-button">
-                                <a href="{{ url_for('settings.preferences') }}" class="dropdown-item" role="menuitem">Preferences</a>
                                 <a href="{{ url_for('settings.settings_dashboard') }}" class="dropdown-item" role="menuitem">Settings</a>
                                 <div class="divider"></div>
                                 <a href="{{ url_for('auth.logout') }}" class="dropdown-item" role="menuitem">Sign Out</a>
