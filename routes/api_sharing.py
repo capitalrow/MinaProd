@@ -10,6 +10,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import select, func
 from models import db, Session, SharedLink
 from services.share_service import ShareService
+from services.email_service import email_service
 
 sharing_bp = Blueprint('sharing', __name__)
 
@@ -149,16 +150,31 @@ def deactivate_share_link(session_id: int, token: str):
 def share_via_email(session_id: int):
     """
     Share session via email (T2.27).
-    Sends transcript summary and optional PDF attachment.
+    Sends transcript summary and link to full transcript.
+    
+    Request body:
+    {
+        "emails": ["user@example.com", ...],  // List of recipient emails
+        "message": "Check out this meeting",  // Optional personal message
+        "include_summary": true  // Optional, default true
+    }
     """
     try:
-        data = request.get_json() or {}
-        recipient = data.get('email')
-        include_pdf = data.get('include_pdf', False)
-        message = data.get('message', '')
+        # Check if email service is configured
+        if not email_service.is_available():
+            return jsonify({
+                'success': False,
+                'error': 'Email service not configured. Please set up SendGrid integration.',
+                'needs_setup': True
+            }), 400
         
-        if not recipient:
-            return jsonify({'success': False, 'error': 'Email address required'}), 400
+        data = request.get_json() or {}
+        emails = data.get('emails', [])
+        custom_message = data.get('message', '')
+        
+        # Validate emails
+        if not emails or not isinstance(emails, list):
+            return jsonify({'success': False, 'error': 'At least one email address required'}), 400
         
         # Verify session exists
         session = db.session.get(Session, session_id)
@@ -170,14 +186,33 @@ def share_via_email(session_id: int):
         token = share_service.create_share_link(session_id, days=7)
         share_url = f"{request.host_url.rstrip('/')}/share/{token}"
         
-        # TODO: Integrate with SendGrid/Resend email service
-        # For now, return the share URL
-        return jsonify({
-            'success': True,
-            'message': 'Email sharing feature coming soon',
-            'share_url': share_url,
-            'recipient': recipient
-        })
+        # Get summary if available (from AI insights or session metadata)
+        summary = None
+        if hasattr(session, 'summary'):
+            summary = session.summary
+        
+        # Send email
+        result = email_service.send_transcript_email(
+            to_emails=emails,
+            session_title=session.title or 'Untitled Meeting',
+            session_date=session.created_at,
+            summary=summary,
+            share_link=share_url,
+            sender_name=current_user.username if current_user else None,
+            custom_message=custom_message if custom_message else None
+        )
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'message': result['message'],
+                'recipients': len(emails)
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'Email sending failed')
+            }), 500
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

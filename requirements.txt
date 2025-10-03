@@ -41,3 +41,4 @@ pre-commit
 sentry-sdk[flask]
 apscheduler
 flask-swagger-ui
+sendgrid

@@ -148,17 +148,21 @@ class ShareManager {
     }
 
     async sendEmailShare() {
-        const email = document.getElementById('shareEmail').value.trim();
-        const includePdf = document.getElementById('includePdf').checked;
+        const emailInput = document.getElementById('shareEmail').value.trim();
         const message = document.getElementById('shareMessage').value.trim();
 
-        if (!email) {
-            this.showToast('Please enter an email address', 'error');
+        if (!emailInput) {
+            this.showToast('Please enter at least one email address', 'error');
             return;
         }
 
-        if (!this.isValidEmail(email)) {
-            this.showToast('Please enter a valid email address', 'error');
+        // Parse comma-separated emails
+        const emails = emailInput.split(',').map(e => e.trim()).filter(e => e);
+        
+        // Validate all emails
+        const invalidEmails = emails.filter(email => !this.isValidEmail(email));
+        if (invalidEmails.length > 0) {
+            this.showToast(`Invalid email address(es): ${invalidEmails.join(', ')}`, 'error');
             return;
         }
 
@@ -169,8 +173,7 @@ class ShareManager {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    email: email,
-                    include_pdf: includePdf,
+                    emails: emails,
                     message: message
                 })
             });
@@ -181,6 +184,9 @@ class ShareManager {
                 this.showToast(data.message || 'Email sent successfully!', 'success');
                 document.getElementById('shareEmail').value = '';
                 document.getElementById('shareMessage').value = '';
+            } else if (data.needs_setup) {
+                // Email service not configured
+                this.showToast('Email service not set up. Please configure SendGrid integration.', 'warning');
             } else {
                 this.showToast(data.error || 'Failed to send email', 'error');
             }
