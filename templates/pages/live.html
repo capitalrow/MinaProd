@@ -432,6 +432,10 @@ let isPaused = false;
 let startTime = null;
 let timerInterval = null;
 let socket = null;
+let mediaRecorder = null;
+let stream = null;
+let chunks = [];
+let sessionId = Date.now();
 
 // Elements
 const recordButton = document.getElementById('record-button');
@@ -440,6 +444,46 @@ const stopButton = document.getElementById('stop-button');
 const recorderStatus = document.getElementById('recorder-status');
 const recordingTime = document.getElementById('recording-time');
 const transcriptContent = document.getElementById('transcript-content');
+const sessionIdEl = document.getElementById('session-id');
+const audioQualityEl = document.getElementById('audio-quality');
+const wordCountEl = document.getElementById('word-count');
+
+// Initialize Socket.IO connection
+socket = io({
+    path: '/socket.io',
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000
+});
+
+socket.on('connect', () => {
+    console.log('Socket.IO connected');
+    sessionIdEl.textContent = sessionId;
+});
+
+socket.on('disconnect', () => {
+    console.log('Socket.IO disconnected');
+});
+
+socket.on('transcript', (data) => {
+    const segment = document.createElement('div');
+    segment.className = 'transcript-segment fade-in';
+    segment.innerHTML = `
+        <div class="transcript-speaker">${data.speaker || 'Speaker'}</div>
+        <div class="transcript-text">${data.text}</div>
+        <div class="transcript-timestamp">${new Date().toLocaleTimeString()}</div>
+    `;
+    transcriptContent.appendChild(segment);
+    transcriptContent.scrollTop = transcriptContent.scrollHeight;
+    
+    const wordCount = transcriptContent.textContent.split(/\s+/).filter(w => w.length > 0).length;
+    wordCountEl.textContent = wordCount;
+});
+
+socket.on('transcript_final', (data) => {
+    console.log('Final transcript:', data);
+});
 
 // Update timer
 function updateTimer() {
@@ -465,40 +509,104 @@ function animateWaveform() {
 // Record button click
 recordButton.addEventListener('click', async () => {
     if (!isRecording) {
-        // Start recording
-        isRecording = true;
-        startTime = Date.now();
-        timerInterval = setInterval(updateTimer, 1000);
-        
-        recordButton.classList.add('recording');
-        pauseButton.disabled = false;
-        stopButton.disabled = false;
-        recorderStatus.classList.add('recording');
-        recorderStatus.querySelector('span:last-child').textContent = 'Recording...';
-        
-        // Initialize Socket.IO
-        socket = io();
-        
-        // Clear transcript
-        transcriptContent.innerHTML = '';
-        
-        animateWaveform();
-        
-        // Request microphone access and start recording
-        // This will be connected to the actual recording logic
-        console.log('Recording started');
+        try {
+            // Request microphone access
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    sampleRate: 16000
+                } 
+            });
+            
+            // Determine best MIME type
+            let mimeType = 'audio/webm;codecs=opus';
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                if (MediaRecorder.isTypeSupported('audio/webm')) {
+                    mimeType = 'audio/webm';
+                } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                    mimeType = 'audio/mp4';
+                } else {
+                    mimeType = '';
+                }
+            }
+            
+            console.log('Using MIME type:', mimeType || 'browser default');
+            audioQualityEl.textContent = 'High (16kHz)';
+            
+            // Create MediaRecorder
+            mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+            
+            mediaRecorder.ondataavailable = (e) => {
+                if (!e.data.size) return;
+                chunks.push(e.data);
+                
+                // Send audio chunk to server via Socket.IO
+                e.data.arrayBuffer().then((buf) => {
+                    socket.emit('audio_chunk', {
+                        sessionId: sessionId,
+                        audio: buf,
+                        mimeType: mimeType
+                    });
+                });
+            };
+            
+            mediaRecorder.onstart = () => {
+                console.log('MediaRecorder started');
+            };
+            
+            mediaRecorder.onstop = () => {
+                console.log('MediaRecorder stopped');
+                const fullBlob = new Blob(chunks, { type: mimeType });
+                chunks = [];
+                
+                fullBlob.arrayBuffer().then((buf) => {
+                    socket.emit('audio_end', {
+                        sessionId: sessionId,
+                        audio: buf
+                    });
+                });
+            };
+            
+            // Start recording with 1 second chunks
+            mediaRecorder.start(1000);
+            
+            // Update UI
+            isRecording = true;
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            recordButton.classList.add('recording');
+            pauseButton.disabled = false;
+            stopButton.disabled = false;
+            recorderStatus.classList.add('recording');
+            recorderStatus.querySelector('span:last-child').textContent = 'Recording...';
+            
+            // Clear transcript
+            transcriptContent.innerHTML = '';
+            
+            animateWaveform();
+            
+        } catch (error) {
+            console.error('Error accessing microphone:', error);
+            alert('Could not access microphone. Please grant permission and try again.');
+        }
     }
 });
 
 // Pause button click
 pauseButton.addEventListener('click', () => {
+    if (!mediaRecorder) return;
+    
     isPaused = !isPaused;
     if (isPaused) {
+        mediaRecorder.pause();
         clearInterval(timerInterval);
         recorderStatus.classList.remove('recording');
         recorderStatus.classList.add('paused');
         recorderStatus.querySelector('span:last-child').textContent = 'Paused';
     } else {
+        mediaRecorder.resume();
         timerInterval = setInterval(updateTimer, 1000);
         recorderStatus.classList.remove('paused');
         recorderStatus.classList.add('recording');
@@ -513,6 +621,14 @@ stopButton.addEventListener('click', () => {
     isPaused = false;
     clearInterval(timerInterval);
     
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+    }
+    
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+    
     recordButton.classList.remove('recording');
     pauseButton.disabled = true;
     stopButton.disabled = true;
@@ -523,26 +639,7 @@ stopButton.addEventListener('click', () => {
     const bars = waveform.querySelectorAll('.waveform-bar');
     bars.forEach(bar => bar.style.height = '10px');
     
-    if (socket) {
-        socket.disconnect();
-    }
-    
     console.log('Recording stopped');
 });
-
-// Socket.IO events (when connected to backend)
-if (socket) {
-    socket.on('transcript_segment', (data) => {
-        const segment = document.createElement('div');
-        segment.className = 'transcript-segment fade-in';
-        segment.innerHTML = `
-            <div class="transcript-speaker">${data.speaker || 'Speaker'}</div>
-            <div class="transcript-text">${data.text}</div>
-            <div class="transcript-timestamp">${new Date().toLocaleTimeString()}</div>
-        `;
-        transcriptContent.appendChild(segment);
-        transcriptContent.scrollTop = transcriptContent.scrollHeight;
-    });
-}
 </script>
 {% endblock %}
