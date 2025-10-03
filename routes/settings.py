@@ -573,6 +573,26 @@ def _get_default_preferences() -> Dict[str, Any]:
     }
 
 
+@settings_bp.route('/profile')
+@login_required
+def profile():
+    """
+    Display user profile settings page.
+    
+    Returns:
+        Rendered profile template
+    """
+    logger.info(f"🔍 Profile page accessed - User: {current_user.username}")
+    
+    try:
+        return render_template('settings/profile.html', user=current_user)
+    
+    except Exception as e:
+        logger.error(f"❌ Error loading profile: {e}", exc_info=True)
+        flash('Failed to load profile. Please try again.', 'error')
+        return redirect(url_for('dashboard.index'))
+
+
 @settings_bp.route('/workspace')
 @login_required
 def workspace_management():
