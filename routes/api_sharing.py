@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, render_template, abort, url_for
 from flask_login import login_required, current_user
 from sqlalchemy import select, func
-from models import db, Session, SharedLink
+from models import db, Session, SharedLink, TeamShare, ShareAnalytic, User
 from services.share_service import ShareService
 from services.email_service import email_service
 from services.slack_service import slack_service
@@ -73,6 +73,7 @@ def view_shared_session(token: str):
     """
     View a shared session via token (T2.23).
     Public route - no login required.
+    Records analytics (T2.25).
     """
     try:
         share_service = ShareService()
@@ -82,6 +83,20 @@ def view_shared_session(token: str):
         
         if not session:
             return render_template('share/expired.html'), 403
+        
+        # Record analytics (T2.25)
+        stmt = select(SharedLink).where(SharedLink.token == token)
+        shared_link = db.session.scalars(stmt).first()
+        
+        if shared_link:
+            analytic = ShareAnalytic(
+                shared_link_id=shared_link.id,
+                visitor_ip=request.remote_addr,
+                visitor_user_agent=request.headers.get('User-Agent', '')[:500],
+                referrer=request.headers.get('Referer', '')[:500]
+            )
+            db.session.add(analytic)
+            db.session.commit()
         
         # Get session segments for transcript
         segments = session.segments or []
@@ -284,6 +299,128 @@ def share_to_slack(session_id: int):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@sharing_bp.route('/api/sessions/<int:session_id>/team', methods=['POST'])
+@login_required
+def share_with_team(session_id: int):
+    """
+    Share session with team members (T2.24).
+    
+    Request body:
+    {
+        "user_email": "colleague@example.com",
+        "role": "viewer"  // viewer, editor, or admin
+    }
+    """
+    try:
+        data = request.get_json() or {}
+        user_email = data.get('user_email')
+        role = data.get('role', 'viewer')
+        
+        # Validate inputs
+        if not user_email:
+            return jsonify({'success': False, 'error': 'User email required'}), 400
+        
+        if role not in ['viewer', 'editor', 'admin']:
+            return jsonify({'success': False, 'error': 'Invalid role'}), 400
+        
+        # Verify session exists
+        session = db.session.get(Session, session_id)
+        if not session:
+            return jsonify({'success': False, 'error': 'Session not found'}), 404
+        
+        # Find user by email
+        stmt = select(User).where(User.email == user_email)
+        user = db.session.scalars(stmt).first()
+        
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        # Check if already shared
+        stmt = select(TeamShare).where(
+            TeamShare.session_id == session_id,
+            TeamShare.user_id == user.id
+        )
+        existing_share = db.session.scalars(stmt).first()
+        
+        if existing_share:
+            # Update role
+            existing_share.role = role
+            existing_share.updated_at = datetime.utcnow()
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Updated {user.username}\'s role to {role}',
+                'share': existing_share.to_dict()
+            })
+        else:
+            # Create new team share
+            team_share = TeamShare(
+                session_id=session_id,
+                user_id=user.id,
+                shared_by_id=current_user.id,
+                role=role
+            )
+            db.session.add(team_share)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Shared with {user.username} as {role}',
+                'share': team_share.to_dict()
+            }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@sharing_bp.route('/api/sessions/<int:session_id>/team', methods=['GET'])
+@login_required
+def get_team_shares(session_id: int):
+    """Get all team members with access to session (T2.24)."""
+    try:
+        # Verify session exists
+        session = db.session.get(Session, session_id)
+        if not session:
+            return jsonify({'success': False, 'error': 'Session not found'}), 404
+        
+        # Get all team shares for this session
+        stmt = select(TeamShare).where(TeamShare.session_id == session_id)
+        team_shares = db.session.scalars(stmt).all()
+        
+        return jsonify({
+            'success': True,
+            'team_shares': [share.to_dict() for share in team_shares]
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@sharing_bp.route('/api/sessions/<int:session_id>/team/<int:share_id>', methods=['DELETE'])
+@login_required  
+def remove_team_access(session_id: int, share_id: int):
+    """Remove team member's access to session (T2.24)."""
+    try:
+        team_share = db.session.get(TeamShare, share_id)
+        
+        if not team_share or team_share.session_id != session_id:
+            return jsonify({'success': False, 'error': 'Team share not found'}), 404
+        
+        db.session.delete(team_share)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Team member access removed'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @sharing_bp.route('/api/share/<string:token>/analytics', methods=['GET'])
 def get_share_analytics(token: str):
     """
@@ -298,17 +435,44 @@ def get_share_analytics(token: str):
         if not shared_link:
             return jsonify({'success': False, 'error': 'Share link not found'}), 404
         
-        # TODO: Implement analytics tracking
-        # For now, return basic info
+        # Get analytics data
+        total_views = db.session.query(func.count(ShareAnalytic.id)).filter(
+            ShareAnalytic.shared_link_id == shared_link.id
+        ).scalar() or 0
+        
+        # Get unique visitors (count distinct IPs)
+        unique_visitors = db.session.query(func.count(func.distinct(ShareAnalytic.visitor_ip))).filter(
+            ShareAnalytic.shared_link_id == shared_link.id
+        ).scalar() or 0
+        
+        # Get last viewed timestamp
+        last_view = db.session.query(func.max(ShareAnalytic.viewed_at)).filter(
+            ShareAnalytic.shared_link_id == shared_link.id
+        ).scalar()
+        
+        # Get recent views (last 10)
+        recent_views_stmt = select(ShareAnalytic).where(
+            ShareAnalytic.shared_link_id == shared_link.id
+        ).order_by(ShareAnalytic.viewed_at.desc()).limit(10)
+        recent_views = db.session.scalars(recent_views_stmt).all()
+        
         return jsonify({
             'success': True,
             'analytics': {
                 'created_at': shared_link.created_at.isoformat(),
                 'expires_at': shared_link.expires_at.isoformat() if shared_link.expires_at else None,
                 'is_active': shared_link.is_active,
-                'views': 0,  # To be implemented
-                'unique_visitors': 0,  # To be implemented
-                'last_viewed': None  # To be implemented
+                'total_views': total_views,
+                'unique_visitors': unique_visitors,
+                'last_viewed': last_view.isoformat() if last_view else None,
+                'recent_views': [
+                    {
+                        'viewed_at': view.viewed_at.isoformat(),
+                        'visitor_country': view.visitor_country,
+                        'referrer': view.referrer
+                    }
+                    for view in recent_views
+                ]
             }
         })
         
