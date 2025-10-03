@@ -1,0 +1,228 @@
+/**
+ * Sharing Component Styles - Phase 2 Group 4 (T2.23-T2.27)
+ * Crown+ glassmorphism design for sharing functionality
+ */
+
+/* Share Modal Tabs */
+.share-tabs {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.share-tab {
+    padding: var(--space-3) var(--space-4);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.share-tab:hover {
+    color: var(--color-primary);
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.share-tab.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+}
+
+.share-tab i {
+    font-size: var(--font-size-base);
+}
+
+/* Share Content Sections */
+.share-content {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Active Shares List */
+.active-share-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3);
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-2);
+    transition: all var(--transition-base);
+}
+
+.active-share-item:hover {
+    background: rgba(139, 92, 246, 0.1);
+    transform: translateX(2px);
+}
+
+/* Form Controls in Share Modal */
+.share-modal-content .form-control {
+    padding: var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+    transition: all var(--transition-base);
+}
+
+.share-modal-content .form-control:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.share-modal-content .form-control::placeholder {
+    color: var(--color-text-tertiary);
+}
+
+.share-modal-content select.form-control {
+    cursor: pointer;
+}
+
+/* Share URL Container */
+#shareUrlContainer {
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+}
+
+#shareUrl {
+    background: var(--color-background);
+    border: 1px solid var(--glass-border);
+    font-family: monospace;
+    font-size: var(--font-size-sm);
+}
+
+/* Embed Code Textarea */
+#embedCode {
+    background: var(--color-background);
+    border: 1px solid var(--glass-border);
+    font-family: 'Courier New', monospace;
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+    resize: vertical;
+}
+
+/* Share Button Styles */
+.share-modal-content .btn {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-base);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.share-modal-content .btn-primary {
+    background: var(--gradient-primary);
+    border: none;
+    color: white;
+}
+
+.share-modal-content .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(139, 92, 246, 0.3);
+}
+
+.share-modal-content .btn-secondary {
+    background: var(--color-surface);
+    border: 1px solid var(--glass-border);
+    color: var(--color-text-primary);
+}
+
+.share-modal-content .btn-secondary:hover {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: var(--color-primary);
+}
+
+.share-modal-content .btn-danger {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+.share-modal-content .btn-danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+}
+
+.share-modal-content .btn-sm {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-xs);
+}
+
+/* Checkbox Styling */
+.share-modal-content input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--glass-border);
+    background: var(--color-surface);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.share-modal-content input[type="checkbox"]:checked {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+/* Labels */
+.share-modal-content label {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .share-modal-content {
+        max-width: 95%;
+        padding: var(--space-6);
+    }
+    
+    .share-tabs {
+        gap: var(--space-1);
+    }
+    
+    .share-tab {
+        padding: var(--space-2) var(--space-3);
+        font-size: var(--font-size-xs);
+    }
+    
+    .share-tab i {
+        font-size: var(--font-size-sm);
+    }
+    
+    .active-share-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+    
+    .active-share-item > div:last-child {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
