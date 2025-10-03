@@ -263,6 +263,32 @@ def get_topics(meeting_id):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
+@api_ai_insights_bp.route('/<int:meeting_id>/ai/language', methods=['GET'])
+@login_required
+def detect_language(meeting_id):
+    """T2.18: Detect language of meeting transcript."""
+    meeting = db.session.query(Meeting).filter_by(
+        id=meeting_id,
+        workspace_id=current_user.workspace_id
+    ).first()
+    
+    if not meeting:
+        return jsonify({'success': False, 'message': 'Meeting not found'}), 404
+    
+    if not AI_AVAILABLE or not ai_insights_service:
+        return jsonify({'success': False, 'message': 'AI not available'}), 503
+    
+    transcript = get_meeting_transcript(meeting)
+    if not transcript:
+        return jsonify({'success': False, 'message': 'No transcript'}), 404
+    
+    try:
+        language_info = ai_insights_service.detect_language(transcript)
+        return jsonify({'success': True, 'language': language_info})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @api_ai_insights_bp.route('/<int:meeting_id>/ai/custom-prompt', methods=['POST'])
 @login_required
 def execute_custom_prompt(meeting_id):
