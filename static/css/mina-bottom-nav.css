@@ -1,0 +1,405 @@
+/**
+ * MINA BOTTOM NAVIGATION - Mobile-First Design
+ * Matches Otter.ai reference screenshot 1 with 5 tabs
+ * 
+ * Features:
+ * - Fixed bottom positioning with safe area support
+ * - 5 navigation items: Home, Channel, Record, AI Chat, Account
+ * - Feather icons with labels
+ * - Active state highlighting with indigo accent
+ * - Smooth transitions and animations
+ * - Touch-friendly 48px targets
+ * - Glass morphism effect
+ */
+
+/* ============================================
+   BOTTOM NAV CONTAINER
+   ============================================ */
+
+.mina-bottom-nav {
+  /* Fixed positioning at bottom */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  
+  /* Height + safe area for home indicator */
+  height: auto;
+  min-height: 56px;
+  padding-bottom: var(--safe-area-bottom, 0px);
+  
+  /* Dark glass background matching Otter.ai */
+  background: rgba(15, 20, 25, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  
+  /* Subtle top border */
+  border-top: 1px solid var(--border-primary);
+  
+  /* Box shadow for depth */
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+  
+  /* Will change for performance */
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* ============================================
+   NAV ITEMS CONTAINER
+   ============================================ */
+
+.mina-bottom-nav-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+  height: 56px;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px);
+}
+
+/* ============================================
+   INDIVIDUAL NAV ITEMS
+   ============================================ */
+
+.mina-bottom-nav-item {
+  /* Flexible sizing - equal width for all 5 items */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  
+  /* Touch target */
+  min-width: 48px;
+  min-height: 48px;
+  padding: 6px 4px;
+  
+  /* Remove link styling */
+  text-decoration: none;
+  color: var(--text-tertiary);
+  
+  /* Smooth transitions */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Touch optimization */
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  
+  /* Cursor */
+  cursor: pointer;
+  
+  /* Position for active indicator */
+  position: relative;
+}
+
+/* Hover state (desktop) */
+@media (hover: hover) {
+  .mina-bottom-nav-item:hover {
+    color: var(--text-secondary);
+    transform: translateY(-2px);
+  }
+}
+
+/* Active state */
+.mina-bottom-nav-item.active {
+  color: var(--color-indigo-500);
+}
+
+.mina-bottom-nav-item.active .mina-bottom-nav-icon {
+  color: var(--color-indigo-500);
+  transform: scale(1.1);
+}
+
+/* Touch feedback */
+.mina-bottom-nav-item:active {
+  transform: scale(0.95);
+  transition-duration: 0.1s;
+}
+
+/* ============================================
+   ACTIVE INDICATOR
+   ============================================ */
+
+.mina-bottom-nav-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 3px;
+  background: var(--color-indigo-500);
+  border-radius: 0 0 3px 3px;
+  opacity: 0;
+  transition: opacity 0.3s ease, width 0.3s ease;
+}
+
+.mina-bottom-nav-item.active::before {
+  opacity: 1;
+  width: 40px;
+}
+
+/* ============================================
+   ICON STYLING
+   ============================================ */
+
+.mina-bottom-nav-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mina-bottom-nav-icon svg,
+.mina-bottom-nav-icon i {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2px;
+}
+
+/* ============================================
+   LABEL STYLING
+   ============================================ */
+
+.mina-bottom-nav-label {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: inherit;
+  transition: all 0.3s ease;
+}
+
+.mina-bottom-nav-item.active .mina-bottom-nav-label {
+  font-weight: 600;
+}
+
+/* ============================================
+   RECORD BUTTON (CENTER - SPECIAL STYLING)
+   ============================================ */
+
+.mina-bottom-nav-item.record-btn {
+  /* Make record button more prominent */
+  position: relative;
+}
+
+.mina-bottom-nav-item.record-btn .mina-bottom-nav-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--color-indigo-500) 0%, var(--color-indigo-600) 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.mina-bottom-nav-item.record-btn .mina-bottom-nav-icon svg,
+.mina-bottom-nav-item.record-btn .mina-bottom-nav-icon i {
+  width: 18px;
+  height: 18px;
+  color: white;
+}
+
+.mina-bottom-nav-item.record-btn.active .mina-bottom-nav-icon {
+  background: linear-gradient(135deg, var(--color-error-500) 0%, var(--color-error-600) 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* ============================================
+   BADGE NOTIFICATION DOT
+   ============================================ */
+
+.mina-bottom-nav-item .badge-dot {
+  position: absolute;
+  top: 8px;
+  right: calc(50% - 16px);
+  width: 6px;
+  height: 6px;
+  background: var(--color-error-500);
+  border-radius: 50%;
+  border: 1.5px solid var(--bg-primary);
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.2);
+  }
+}
+
+/* Badge with number */
+.mina-bottom-nav-item .badge-count {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 20px);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--color-error-500);
+  color: white;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+  border: 1.5px solid var(--bg-primary);
+}
+
+/* ============================================
+   CONTENT OFFSET (for pages with bottom nav)
+   ============================================ */
+
+.with-bottom-nav {
+  padding-bottom: calc(56px + var(--safe-area-bottom, 0px) + 16px);
+}
+
+/* ============================================
+   HIDE ON SCROLL (optional enhancement)
+   ============================================ */
+
+.mina-bottom-nav.hide {
+  transform: translateY(100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.mina-bottom-nav.show {
+  transform: translateY(0);
+  transition: transform 0.3s ease-in-out;
+}
+
+/* ============================================
+   TABLET & DESKTOP ADJUSTMENTS
+   ============================================ */
+
+@media (min-width: 768px) {
+  /* Hide bottom nav on tablet+ (show sidebar instead) */
+  .mina-bottom-nav {
+    display: none;
+  }
+  
+  .with-bottom-nav {
+    padding-bottom: 0;
+  }
+}
+
+/* Force show on tablet if needed (opt-in class) */
+@media (min-width: 768px) {
+  .mina-bottom-nav.force-show-tablet {
+    display: block;
+  }
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.mina-bottom-nav-item.loading .mina-bottom-nav-icon {
+  animation: loading-spin 1s linear infinite;
+}
+
+@keyframes loading-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   DISABLED STATE
+   ============================================ */
+
+.mina-bottom-nav-item.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+.mina-bottom-nav-item:focus-visible {
+  outline: 2px solid var(--color-indigo-500);
+  outline-offset: -2px;
+  background: rgba(99, 102, 241, 0.1);
+}
+
+/* Screen reader only text */
+.mina-bottom-nav-item .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ============================================
+   LANDSCAPE MODE (mobile)
+   ============================================ */
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .mina-bottom-nav {
+    padding-left: var(--safe-area-left, 0px);
+    padding-right: var(--safe-area-right, 0px);
+  }
+  
+  .mina-bottom-nav-label {
+    display: none; /* Hide labels in landscape to save space */
+  }
+  
+  .mina-bottom-nav-container {
+    height: 48px;
+  }
+}
+
+/* ============================================
+   DARK MODE ENHANCEMENTS
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  .mina-bottom-nav {
+    background: rgba(15, 20, 25, 0.98);
+    backdrop-filter: blur(24px) saturate(200%);
+  }
+}
+
+/* ============================================
+   PRINT (hide bottom nav)
+   ============================================ */
+
+@media print {
+  .mina-bottom-nav {
+    display: none !important;
+  }
+}
