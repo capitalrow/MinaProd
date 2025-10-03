@@ -416,7 +416,7 @@
 </div>
 
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-<script>
+<script nonce="{{ g.csp_nonce }}">
 // Initialize waveform bars
 const waveform = document.getElementById('waveform');
 for (let i = 0; i < 50; i++) {
