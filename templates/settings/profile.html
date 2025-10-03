@@ -2,34 +2,30 @@
 
 {% block title %}Profile - Mina{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="container" style="padding-top: var(--space-8); padding-bottom: var(--space-8); max-width: 1200px;">
-    <div class="mb-8">
-        <h1 class="text-4xl font-bold mb-2">Settings</h1>
-        <p class="text-secondary">Manage your account and preferences</p>
+<div class="container settings-container">
+    <div class="settings-header">
+        <h1 class="settings-title">Settings</h1>
+        <p class="settings-subtitle">Manage your account and preferences</p>
     </div>
 
-    <div class="mb-6" style="border-bottom: 1px solid var(--color-border);">
-        <nav style="display: flex; gap: var(--space-6);">
-            <a href="{{ url_for('settings.preferences') }}" class="tab-link" style="padding: var(--space-3) 0; color: var(--color-text-secondary); transition: color 0.2s;">
-                Preferences
-            </a>
-            <a href="{{ url_for('settings.integrations') }}" class="tab-link" style="padding: var(--space-3) 0; color: var(--color-text-secondary); transition: color 0.2s;">
-                Integrations
-            </a>
-            <a href="{{ url_for('settings.profile') }}" class="tab-link active" style="padding: var(--space-3) 0; border-bottom: 2px solid var(--color-primary); font-medium; color: var(--color-primary);">
-                Profile
-            </a>
-            <a href="{{ url_for('settings.workspace_management') }}" class="tab-link" style="padding: var(--space-3) 0; color: var(--color-text-secondary); transition: color 0.2s;">
-                Workspace
-            </a>
+    <div class="settings-tabs">
+        <nav class="settings-tabs-nav">
+            <a href="{{ url_for('settings.preferences') }}" class="tab-link">Preferences</a>
+            <a href="{{ url_for('settings.integrations') }}" class="tab-link">Integrations</a>
+            <a href="{{ url_for('settings.profile') }}" class="tab-link active">Profile</a>
+            <a href="{{ url_for('settings.workspace_management') }}" class="tab-link">Workspace</a>
         </nav>
     </div>
 
-    <div style="max-width: 800px;">
+    <div class="settings-content" style="max-width: 800px;">
 
-    <div class="card" style="margin-bottom: var(--space-6);">
-        <h2 class="text-xl font-semibold mb-4">Personal Information</h2>
+    <div class="settings-card">
+        <h2 class="settings-card-title">Personal Information</h2>
         <form method="POST">
             <div style="display: flex; flex-direction: column; gap: var(--space-4);">
                 <div>
@@ -78,8 +74,8 @@
         </form>
     </div>
 
-    <div class="card" style="margin-bottom: var(--space-6);">
-        <h2 class="text-xl font-semibold mb-4">Regional Settings</h2>
+    <div class="settings-card">
+        <h2 class="settings-card-title">Regional Settings</h2>
         <form method="POST">
             <div style="display: flex; flex-direction: column; gap: var(--space-4);">
                 <div>
@@ -136,8 +132,8 @@
         </form>
     </div>
 
-    <div class="card" style="margin-bottom: var(--space-6);">
-        <h2 class="text-xl font-semibold mb-4">Security</h2>
+    <div class="settings-card">
+        <h2 class="settings-card-title">Security</h2>
         <div style="display: flex; flex-direction: column; gap: var(--space-5);">
             <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: var(--space-4); border-bottom: 1px solid var(--color-border);">
                 <div>
@@ -165,8 +161,8 @@
         </div>
     </div>
 
-    <div class="card" style="margin-bottom: var(--space-6);">
-        <h2 class="text-xl font-semibold mb-4">Change Password</h2>
+    <div class="settings-card">
+        <h2 class="settings-card-title">Change Password</h2>
         <form method="POST" action="{{ url_for('auth.change_password') }}">
             <div style="display: flex; flex-direction: column; gap: var(--space-4);">
                 <div>
@@ -190,8 +186,8 @@
         </form>
     </div>
 
-    <div class="card" style="border-color: var(--color-error);">
-        <h2 class="text-xl font-semibold mb-4" style="color: var(--color-error);">Danger Zone</h2>
+    <div class="settings-card" style="border-color: var(--color-error);">
+        <h2 class="settings-card-title" style="color: var(--color-error); -webkit-text-fill-color: var(--color-error); background: none;">Danger Zone</h2>
         <div style="display: flex; flex-direction: column; gap: var(--space-5);">
             <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: var(--space-4); border-bottom: 1px solid var(--color-border);">
                 <div>
