@@ -2,34 +2,30 @@
 
 {% block title %}Workspace - Mina{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="container" style="padding-top: var(--space-8); padding-bottom: var(--space-8); max-width: 1200px;">
-    <div class="mb-8">
-        <h1 class="text-4xl font-bold mb-2">Settings</h1>
-        <p class="text-secondary">Manage your account and preferences</p>
+<div class="container settings-container">
+    <div class="settings-header">
+        <h1 class="settings-title">Settings</h1>
+        <p class="settings-subtitle">Manage your account and preferences</p>
     </div>
 
-    <div class="mb-6" style="border-bottom: 1px solid var(--color-border);">
-        <nav style="display: flex; gap: var(--space-6);">
-            <a href="{{ url_for('settings.preferences') }}" class="tab-link" style="padding: var(--space-3) 0; color: var(--color-text-secondary); transition: color 0.2s;">
-                Preferences
-            </a>
-            <a href="{{ url_for('settings.integrations') }}" class="tab-link" style="padding: var(--space-3) 0; color: var(--color-text-secondary); transition: color 0.2s;">
-                Integrations
-            </a>
-            <a href="{{ url_for('settings.profile') }}" class="tab-link" style="padding: var(--space-3) 0; color: var(--color-text-secondary); transition: color 0.2s;">
-                Profile
-            </a>
-            <a href="{{ url_for('settings.workspace_management') }}" class="tab-link active" style="padding: var(--space-3) 0; border-bottom: 2px solid var(--color-primary); font-medium; color: var(--color-primary);">
-                Workspace
-            </a>
+    <div class="settings-tabs">
+        <nav class="settings-tabs-nav">
+            <a href="{{ url_for('settings.preferences') }}" class="tab-link">Preferences</a>
+            <a href="{{ url_for('settings.integrations') }}" class="tab-link">Integrations</a>
+            <a href="{{ url_for('settings.profile') }}" class="tab-link">Profile</a>
+            <a href="{{ url_for('settings.workspace_management') }}" class="tab-link active">Workspace</a>
         </nav>
     </div>
 
     <div style="max-width: 1000px;">
 
-    <div class="card" style="margin-bottom: var(--space-6);">
-        <h2 class="text-xl font-semibold mb-4">Workspace Details</h2>
+    <div class="settings-card">
+        <h2 class="settings-card-title">Workspace Details</h2>
         <form>
             <div style="display: flex; flex-direction: column; gap: var(--space-4);">
                 <div>
@@ -60,9 +56,9 @@
         </form>
     </div>
 
-    <div class="card" style="margin-bottom: var(--space-6);">
+    <div class="settings-card">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold">Team Members</h2>
+            <h2 class="settings-card-title" style="margin-bottom: 0;">Team Members</h2>
             <button class="btn btn-primary btn-sm">Invite Member</button>
         </div>
         
@@ -94,8 +90,8 @@
         </div>
     </div>
 
-    <div class="card" style="margin-bottom: var(--space-6);">
-        <h2 class="text-xl font-semibold mb-4">Roles & Permissions</h2>
+    <div class="settings-card">
+        <h2 class="settings-card-title">Roles & Permissions</h2>
         <div style="display: flex; flex-direction: column; gap: var(--space-4);">
             <div style="padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg);">
                 <h3 class="font-semibold mb-2">Owner</h3>
@@ -141,8 +137,8 @@
         </div>
     </div>
 
-    <div class="card" style="margin-bottom: var(--space-6);">
-        <h2 class="text-xl font-semibold mb-4">Usage & Analytics</h2>
+    <div class="settings-card">
+        <h2 class="settings-card-title">Usage & Analytics</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-6);">
             <div style="padding: var(--space-4); background: linear-gradient(135deg, var(--color-primary) 0%, #9333ea 100%); border-radius: var(--radius-lg); color: white;">
                 <p class="text-sm opacity-90 mb-1">Total Meetings</p>
@@ -191,8 +187,8 @@
         </div>
     </div>
 
-    <div class="card" style="margin-bottom: var(--space-6);">
-        <h2 class="text-xl font-semibold mb-4">Billing & Subscription</h2>
+    <div class="settings-card">
+        <h2 class="settings-card-title">Billing & Subscription</h2>
         <div style="padding: var(--space-4); background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%); border: 1px solid var(--color-primary); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
             <div class="flex justify-between items-start mb-3">
                 <div>
