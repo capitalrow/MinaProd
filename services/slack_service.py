@@ -67,7 +67,7 @@ class SlackService:
                 sender_name=sender_name
             )
             
-            payload = {
+            payload: Dict = {
                 "blocks": blocks
             }
             
@@ -75,9 +75,10 @@ class SlackService:
             if channel_override:
                 payload["channel"] = channel_override
             
-            # Post to Slack
+            # Post to Slack (webhook_url is guaranteed to exist here)
+            webhook_url = self.webhook_url or ""  # Type safety
             response = requests.post(
-                self.webhook_url,
+                webhook_url,
                 json=payload,
                 headers={'Content-Type': 'application/json'},
                 timeout=10
