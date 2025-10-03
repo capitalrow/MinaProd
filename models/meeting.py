@@ -93,7 +93,6 @@ class Meeting(Base):
         Index('ix_meetings_workspace_scheduled', 'workspace_id', 'scheduled_start'),
         # Single column indexes for filtering
         Index('ix_meetings_organizer', 'organizer_id'),
-        Index('ix_meetings_session', 'session_id'),
     )
 
     def __repr__(self):
