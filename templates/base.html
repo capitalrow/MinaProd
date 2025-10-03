@@ -2,8 +2,16 @@
 <html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Mobile-First Viewport: viewport-fit=cover for notched devices (iPhone X+, Dynamic Island) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes, maximum-scale=5.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <!-- Mobile Theme Colors -->
+    <meta name="theme-color" content="#0F1419" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <title>{% block title %}Mina - Meeting Insights & Action{% endblock %}</title>
     
     <!-- Favicon -->
@@ -33,10 +41,13 @@
     <!-- 1. Core Design Tokens - Must load FIRST -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-tokens.css') }}">
     
-    <!-- 2. Legacy Compatibility Shim - Will be removed after template migration -->
+    <!-- 2. Viewport & Safe Areas - Critical for mobile-first (notched devices) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-viewport.css') }}">
+    
+    <!-- 3. Legacy Compatibility Shim - Will be removed after template migration -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-tokens.css') }}">
     
-    <!-- 3. Mina Foundation Components -->
+    <!-- 4. Mina Foundation Components -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-typography.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-spacing.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mina-animations.css') }}">
