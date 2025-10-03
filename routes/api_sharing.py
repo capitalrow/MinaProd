@@ -11,6 +11,7 @@ from sqlalchemy import select, func
 from models import db, Session, SharedLink
 from services.share_service import ShareService
 from services.email_service import email_service
+from services.slack_service import slack_service
 
 sharing_bp = Blueprint('sharing', __name__)
 
@@ -212,6 +213,71 @@ def share_via_email(session_id: int):
             return jsonify({
                 'success': False,
                 'error': result.get('error', 'Email sending failed')
+            }), 500
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@sharing_bp.route('/api/sessions/<int:session_id>/share/slack', methods=['POST'])
+@login_required
+def share_to_slack(session_id: int):
+    """
+    Share session to Slack channel (T2.28).
+    Posts summary to configured Slack channel using webhook.
+    
+    Request body:
+    {
+        "channel": "#general",  // Optional channel override
+        "include_summary": true  // Optional, default true
+    }
+    """
+    try:
+        # Check if Slack service is configured
+        if not slack_service.is_available():
+            return jsonify({
+                'success': False,
+                'error': 'Slack not configured. Please set SLACK_WEBHOOK_URL.',
+                'needs_setup': True
+            }), 400
+        
+        data = request.get_json() or {}
+        channel_override = data.get('channel')
+        
+        # Verify session exists
+        session = db.session.get(Session, session_id)
+        if not session:
+            return jsonify({'success': False, 'error': 'Session not found'}), 404
+        
+        # Create temporary share link (7 days)
+        share_service = ShareService()
+        token = share_service.create_share_link(session_id, days=7)
+        share_url = f"{request.host_url.rstrip('/')}/share/{token}"
+        
+        # Get summary if available
+        summary = None
+        if hasattr(session, 'summary'):
+            summary = session.summary
+        
+        # Post to Slack
+        result = slack_service.post_transcript_summary(
+            session_title=session.title or 'Untitled Meeting',
+            session_date=session.created_at,
+            summary=summary,
+            share_link=share_url,
+            sender_name=current_user.username if current_user else None,
+            channel_override=channel_override
+        )
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'message': result['message']
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'Slack posting failed')
             }), 500
         
     except Exception as e:
