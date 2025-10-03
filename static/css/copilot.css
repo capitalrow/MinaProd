@@ -1,10 +1,20 @@
 /* Copilot/Chat Crown+ Enhancement */
 
-/* Workspace Layout */
+/* Workspace Layout - Properly Constrained */
 .copilot-workspace {
     --chat-bg: var(--color-background);
     --message-user-bg: var(--color-primary);
     --message-assistant-bg: var(--glass-bg);
+    
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    gap: 0;
+    width: clamp(960px, 90vw, 1440px);
+    max-width: 100%;
+    height: calc(100vh - 64px);
+    min-height: 600px;
+    margin: 0 auto;
+    padding: 0;
 }
 
 /* Sidebars with Glassmorphism */
@@ -13,14 +23,27 @@
     background: var(--glass-bg);
     backdrop-filter: var(--backdrop-blur);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
 }
 
 .copilot-sidebar {
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
     animation: slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .copilot-insights {
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
     animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Main Chat Area */
+.copilot-main {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-background);
+    overflow: hidden;
 }
 
 /* Header with Gradient */
@@ -28,6 +51,7 @@
     background: var(--glass-bg);
     backdrop-filter: var(--backdrop-blur);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: var(--space-6);
 }
 
 .copilot-title {
@@ -35,6 +59,17 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+}
+
+/* Chat Messages Container - Properly Constrained */
+.chat-messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-8) var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    max-height: calc(100vh - 300px);
 }
 
 /* Quick Action Buttons */
@@ -95,12 +130,12 @@
     box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
 }
 
-/* Chat Messages with Glassmorphism */
+/* Chat Messages with Glassmorphism - Properly Constrained */
 .message-assistant,
 .message-user {
     display: flex;
     gap: var(--space-3);
-    max-width: 80%;
+    max-width: min(640px, 85%);
     animation: messageSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -309,15 +344,81 @@
     }
 }
 
-/* Mobile Responsive */
-@media (max-width: 768px) {
-    .copilot-sidebar,
+/* Responsive Breakpoints */
+
+/* Tablets and smaller desktops (≤1280px) - Reduce sidebar widths */
+@media (max-width: 1280px) {
+    .copilot-workspace {
+        grid-template-columns: 240px 1fr 280px;
+        width: 100%;
+    }
+}
+
+/* Tablets (≤1024px) - Collapse right sidebar to drawer */
+@media (max-width: 1024px) {
+    .copilot-workspace {
+        grid-template-columns: 220px 1fr;
+    }
+    
     .copilot-insights {
         display: none;
     }
     
     .message-assistant,
     .message-user {
-        max-width: 95%;
+        max-width: min(600px, 90%);
+    }
+}
+
+/* Mobile (≤768px) - Stack layout */
+@media (max-width: 768px) {
+    .copilot-workspace {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-height: calc(100vh - 64px);
+    }
+    
+    .copilot-sidebar,
+    .copilot-insights {
+        display: none;
+    }
+    
+    .chat-messages-container {
+        padding: var(--space-4);
+        gap: var(--space-4);
+        max-height: none;
+    }
+    
+    .message-assistant,
+    .message-user {
+        max-width: 100%;
+    }
+    
+    .chat-input-container {
+        padding: var(--space-3);
+    }
+}
+
+/* Small mobile (≤480px) - Compact view */
+@media (max-width: 480px) {
+    .copilot-header {
+        padding: var(--space-4);
+    }
+    
+    .copilot-title {
+        font-size: 1.25rem;
+    }
+    
+    .message-avatar {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .message-content {
+        padding: var(--space-3);
+    }
+    
+    #chat-input {
+        font-size: 0.9375rem;
     }
 }

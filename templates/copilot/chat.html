@@ -7,9 +7,9 @@
 {% endblock %}
 
 {% block content %}
-<div class="copilot-workspace" style="height: calc(100vh - 64px); display: flex; gap: 0; padding: 0; max-width: 100%;">
+<div class="copilot-workspace">
     <!-- Left Sidebar: Context & Quick Actions -->
-    <aside class="copilot-sidebar" style="width: 280px; border-right: 1px solid var(--color-border); display: flex; flex-direction: column; background: var(--color-surface);">
+    <aside class="copilot-sidebar">
         <div style="padding: var(--space-6); border-bottom: 1px solid var(--color-border);">
             <h2 class="font-semibold mb-4">Context</h2>
             <select class="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm">
@@ -70,13 +70,13 @@
     </aside>
 
     <!-- Center: Chat Interface -->
-    <main class="copilot-main" style="flex: 1; display: flex; flex-direction: column; background: var(--color-background);">
-        <div class="copilot-header" style="padding: var(--space-6);">
+    <main class="copilot-main">
+        <div class="copilot-header">
             <h1 class="copilot-title text-2xl font-bold mb-1">AI Copilot</h1>
             <p class="text-sm text-secondary">Ask questions about your meetings, tasks, and insights</p>
         </div>
 
-        <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4);">
+        <div id="chat-messages" class="chat-messages-container">
             <!-- Welcome Message -->
             <div class="message-assistant">
                 <div class="message-avatar">
@@ -125,7 +125,7 @@
     </main>
 
     <!-- Right Sidebar: Insights & Actions -->
-    <aside class="copilot-insights" style="width: 320px; border-left: 1px solid var(--color-border); background: var(--color-surface); display: flex; flex-direction: column; overflow-y: auto;">
+    <aside class="copilot-insights">
         <div style="padding: var(--space-6); border-bottom: 1px solid var(--color-border);">
             <h2 class="font-semibold mb-4">Smart Insights</h2>
             <div class="insight-card" style="background: rgba(99, 102, 241, 0.1); border-left: 3px solid var(--color-primary); padding: var(--space-3); border-radius: var(--radius-md);">
