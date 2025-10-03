@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from .task import Task
     from .marker import Marker
     from .comment import Comment
+    from .session import Session
 
 
 class User(UserMixin, Base):
@@ -57,6 +58,7 @@ class User(UserMixin, Base):
     preferences: Mapped[Optional[str]] = mapped_column(Text)  # JSON string for user preferences
     
     # Relationships
+    sessions: Mapped[list["Session"]] = relationship(back_populates="user", foreign_keys="Session.user_id")
     meetings: Mapped[list["Meeting"]] = relationship(back_populates="organizer")
     assigned_tasks: Mapped[list["Task"]] = relationship(back_populates="assigned_to", foreign_keys="Task.assigned_to_id")
     markers: Mapped[list["Marker"]] = relationship(back_populates="user")
