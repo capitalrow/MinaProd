@@ -510,15 +510,11 @@
                         <p style="color: var(--color-text-secondary); margin-bottom: var(--space-4);">Send this meeting via email:</p>
                         
                         <div style="margin-bottom: var(--space-4);">
-                            <label style="display: block; font-weight: var(--font-weight-medium); margin-bottom: var(--space-2); color: var(--color-text-primary);">Recipient Email:</label>
-                            <input type="email" id="shareEmail" placeholder="colleague@example.com" class="form-control" style="width: 100%;">
-                        </div>
-                        
-                        <div style="margin-bottom: var(--space-4);">
-                            <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer;">
-                                <input type="checkbox" id="includePdf" checked>
-                                <span>Include PDF attachment</span>
-                            </label>
+                            <label style="display: block; font-weight: var(--font-weight-medium); margin-bottom: var(--space-2); color: var(--color-text-primary);">Recipient Email(s):</label>
+                            <input type="text" id="shareEmail" placeholder="colleague@example.com, team@example.com" class="form-control" style="width: 100%;">
+                            <small style="color: var(--color-text-tertiary); display: block; margin-top: var(--space-2); font-size: var(--font-size-xs);">
+                                <i class="fas fa-info-circle"></i> Separate multiple emails with commas
+                            </small>
                         </div>
                         
                         <div style="margin-bottom: var(--space-4);">
