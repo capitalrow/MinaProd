@@ -63,15 +63,21 @@ def on_join_session(data):
     try:
         session = db.session.query(Session).filter_by(external_id=session_id).first()
         if not session:
+            # Extract optional ownership info from client (if authenticated)
+            user_id = (data or {}).get("user_id")  # Client can pass user_id if authenticated
+            workspace_id = (data or {}).get("workspace_id")  # Client can pass workspace_id
+            
             session = Session(
                 external_id=session_id,
                 title="Live Transcription Session",
                 status="active",
-                started_at=datetime.utcnow()
+                started_at=datetime.utcnow(),
+                user_id=user_id,
+                workspace_id=workspace_id
             )
             db.session.add(session)
             db.session.commit()
-            logger.info(f"[ws] Created new session in DB: {session_id}")
+            logger.info(f"[ws] Created new session in DB: {session_id} (user_id={user_id}, workspace_id={workspace_id})")
         else:
             logger.info(f"[ws] Using existing session: {session_id}")
     except Exception as e:
