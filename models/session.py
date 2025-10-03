@@ -7,7 +7,7 @@ import uuid
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, DateTime, Text, JSON, Boolean, Float, func, Index
+from sqlalchemy import String, Integer, DateTime, Text, JSON, Boolean, Float, ForeignKey, func, Index
 from .base import Base
 
 # Forward reference for type checking
@@ -15,6 +15,9 @@ if TYPE_CHECKING:
     from .segment import Segment
     from .shared_link import SharedLink  
     from .metrics import ChunkMetric, SessionMetric
+    from .user import User
+    from .workspace import Workspace
+    from .meeting import Meeting
 
 class Session(Base):
     """
@@ -33,10 +36,20 @@ class Session(Base):
     device_info: Mapped[Optional[dict]] = mapped_column(JSON)
     meta: Mapped[Optional[dict]] = mapped_column(JSON)
     
+    # Ownership fields - nullable to support legacy anonymous sessions
+    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey('users.id'), nullable=True, index=True)
+    workspace_id: Mapped[Optional[int]] = mapped_column(ForeignKey('workspaces.id'), nullable=True, index=True)
+    meeting_id: Mapped[Optional[int]] = mapped_column(ForeignKey('meetings.id'), nullable=True, index=True)
+    
     # Statistics fields required by TranscriptionService
     total_segments: Mapped[Optional[int]] = mapped_column(Integer, default=0, nullable=True)
     average_confidence: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
     total_duration: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
+    
+    # Ownership relationships
+    user: Mapped[Optional["User"]] = relationship(back_populates="sessions", foreign_keys=[user_id])
+    workspace: Mapped[Optional["Workspace"]] = relationship(back_populates="sessions", foreign_keys=[workspace_id])
+    meeting: Mapped[Optional["Meeting"]] = relationship(back_populates="session", foreign_keys=[meeting_id])
     
     segments: Mapped[list["Segment"]] = relationship(
         back_populates="session", cascade="all, delete-orphan"
