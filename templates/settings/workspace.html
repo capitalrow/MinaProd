@@ -39,12 +39,28 @@
                 <div>
                     <label class="block text-sm font-medium mb-2">Workspace URL</label>
                     <input type="text" value="my-workspace.mina.app" class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+                    <p class="text-xs text-secondary mt-1">Your team's unique workspace identifier</p>
                 </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Industry</label>
+                    <select class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+                        <option>Technology</option>
+                        <option>Finance</option>
+                        <option>Healthcare</option>
+                        <option>Education</option>
+                        <option>Consulting</option>
+                        <option>Marketing</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin-top: var(--space-6);">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
             </div>
         </form>
     </div>
 
-    <div class="card">
+    <div class="card" style="margin-bottom: var(--space-6);">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold">Team Members</h2>
             <button class="btn btn-primary btn-sm">Invite Member</button>
@@ -65,6 +81,7 @@
                     <option {% if member.role == 'owner' %}selected{% endif %}>Owner</option>
                     <option {% if member.role == 'admin' %}selected{% endif %}>Admin</option>
                     <option {% if member.role == 'member' %}selected{% endif %}>Member</option>
+                    <option {% if member.role == 'viewer' %}selected{% endif %}>Viewer</option>
                 </select>
             </div>
             {% endfor %}
@@ -74,6 +91,157 @@
                 <button class="btn btn-primary btn-sm mt-4">Invite your first member</button>
             </div>
             {% endif %}
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: var(--space-6);">
+        <h2 class="text-xl font-semibold mb-4">Roles & Permissions</h2>
+        <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+            <div style="padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg);">
+                <h3 class="font-semibold mb-2">Owner</h3>
+                <p class="text-sm text-secondary mb-2">Full access to all workspace features and settings</p>
+                <ul class="text-sm text-secondary" style="list-style: disc; margin-left: var(--space-5);">
+                    <li>Manage billing and subscription</li>
+                    <li>Add/remove team members</li>
+                    <li>Configure workspace settings</li>
+                    <li>Access all meetings and recordings</li>
+                </ul>
+            </div>
+
+            <div style="padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg);">
+                <h3 class="font-semibold mb-2">Admin</h3>
+                <p class="text-sm text-secondary mb-2">Manage team and meetings, but cannot modify billing</p>
+                <ul class="text-sm text-secondary" style="list-style: disc; margin-left: var(--space-5);">
+                    <li>Add/remove team members</li>
+                    <li>Configure workspace settings</li>
+                    <li>Access all meetings and recordings</li>
+                    <li>Manage integrations</li>
+                </ul>
+            </div>
+
+            <div style="padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg);">
+                <h3 class="font-semibold mb-2">Member</h3>
+                <p class="text-sm text-secondary mb-2">Create and manage own meetings</p>
+                <ul class="text-sm text-secondary" style="list-style: disc; margin-left: var(--space-5);">
+                    <li>Create and record meetings</li>
+                    <li>Access own meetings and shared meetings</li>
+                    <li>Generate transcripts and summaries</li>
+                </ul>
+            </div>
+
+            <div style="padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg);">
+                <h3 class="font-semibold mb-2">Viewer</h3>
+                <p class="text-sm text-secondary mb-2">View-only access to shared meetings</p>
+                <ul class="text-sm text-secondary" style="list-style: disc; margin-left: var(--space-5);">
+                    <li>View shared meetings and transcripts</li>
+                    <li>Download shared recordings</li>
+                    <li>Cannot create or edit meetings</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: var(--space-6);">
+        <h2 class="text-xl font-semibold mb-4">Usage & Analytics</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-6);">
+            <div style="padding: var(--space-4); background: linear-gradient(135deg, var(--color-primary) 0%, #9333ea 100%); border-radius: var(--radius-lg); color: white;">
+                <p class="text-sm opacity-90 mb-1">Total Meetings</p>
+                <p class="text-3xl font-bold">247</p>
+                <p class="text-xs opacity-75 mt-1">+12 this month</p>
+            </div>
+
+            <div style="padding: var(--space-4); background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: var(--radius-lg); color: white;">
+                <p class="text-sm opacity-90 mb-1">Hours Recorded</p>
+                <p class="text-3xl font-bold">486</p>
+                <p class="text-xs opacity-75 mt-1">+38 this month</p>
+            </div>
+
+            <div style="padding: var(--space-4); background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: var(--radius-lg); color: white;">
+                <p class="text-sm opacity-90 mb-1">Team Members</p>
+                <p class="text-3xl font-bold">{{ workspace_members|length if workspace_members else 1 }}</p>
+                <p class="text-xs opacity-75 mt-1">Active users</p>
+            </div>
+
+            <div style="padding: var(--space-4); background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: var(--radius-lg); color: white;">
+                <p class="text-sm opacity-90 mb-1">Storage Used</p>
+                <p class="text-3xl font-bold">24GB</p>
+                <p class="text-xs opacity-75 mt-1">of 100GB</p>
+            </div>
+        </div>
+
+        <div style="padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg);">
+            <h3 class="font-semibold mb-3">Recent Activity</h3>
+            <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+                <div class="flex items-center gap-3 text-sm">
+                    <span class="text-secondary">Oct 3, 2025</span>
+                    <span>•</span>
+                    <span>Product Strategy Meeting recorded (1h 24m)</span>
+                </div>
+                <div class="flex items-center gap-3 text-sm">
+                    <span class="text-secondary">Oct 2, 2025</span>
+                    <span>•</span>
+                    <span>Engineering Sync transcript generated</span>
+                </div>
+                <div class="flex items-center gap-3 text-sm">
+                    <span class="text-secondary">Oct 1, 2025</span>
+                    <span>•</span>
+                    <span>New member invited: jane.doe@company.com</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: var(--space-6);">
+        <h2 class="text-xl font-semibold mb-4">Billing & Subscription</h2>
+        <div style="padding: var(--space-4); background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%); border: 1px solid var(--color-primary); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
+            <div class="flex justify-between items-start mb-3">
+                <div>
+                    <h3 class="font-semibold text-lg">Professional Plan</h3>
+                    <p class="text-sm text-secondary">Unlimited recordings, advanced AI features</p>
+                </div>
+                <button class="btn btn-sm btn-ghost">Manage Plan</button>
+            </div>
+            <div class="flex items-baseline gap-2">
+                <span class="text-3xl font-bold">$49</span>
+                <span class="text-secondary">/month</span>
+                <span class="text-sm" style="color: var(--color-success); background: rgba(16, 185, 129, 0.1); padding: 2px 8px; border-radius: 4px;">Active</span>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+            <div class="flex justify-between items-center">
+                <span class="text-sm">Next billing date</span>
+                <span class="text-sm font-medium">November 3, 2025</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-sm">Payment method</span>
+                <span class="text-sm font-medium">•••• 4242</span>
+            </div>
+            <div style="padding-top: var(--space-3); border-top: 1px solid var(--color-border);">
+                <button class="btn btn-ghost btn-sm">Update Payment Method</button>
+                <button class="btn btn-ghost btn-sm ml-2">View Billing History</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="border-color: var(--color-error);">
+        <h2 class="text-xl font-semibold mb-4" style="color: var(--color-error);">Danger Zone</h2>
+        <div style="display: flex; flex-direction: column; gap: var(--space-5);">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: var(--space-4); border-bottom: 1px solid var(--color-border);">
+                <div>
+                    <p class="font-medium">Transfer Ownership</p>
+                    <p class="text-sm text-secondary">Transfer workspace ownership to another admin</p>
+                </div>
+                <button class="btn btn-sm btn-ghost">Transfer</button>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <p class="font-medium" style="color: var(--color-error);">Delete Workspace</p>
+                    <p class="text-sm text-secondary">Permanently delete this workspace and all associated data</p>
+                </div>
+                <button class="btn btn-sm" style="background: var(--color-error); color: white;">Delete Workspace</button>
+            </div>
         </div>
     </div>
     </div>
