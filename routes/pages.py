@@ -23,7 +23,7 @@ def app():
 @login_required
 def live():
     """Production live recording interface with all features consolidated"""
-    return render_template("live.html")
+    return render_template("pages/live.html")
 
 @pages_bp.route("/live-enhanced")
 @login_required

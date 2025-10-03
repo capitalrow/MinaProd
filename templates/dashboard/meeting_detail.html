@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}{{ meeting.title|default('Meeting') }} - Mina{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: var(--space-8); padding-bottom: var(--space-8);">
+    <div class="mb-6">
+        <a href="{{ url_for('dashboard.meetings') }}" class="text-primary text-sm font-medium mb-4 inline-block">← Back to Meetings</a>
+        <h1 class="text-4xl font-bold mb-2">{{ meeting.title|default('Meeting Details') }}</h1>
+        <p class="text-secondary">{{ meeting.date|default('No date') }} • {{ meeting.duration|default('0 min') }} minutes</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 300px; gap: var(--space-6); margin-bottom: var(--space-8);">
+        <div>
+            <div class="card" style="margin-bottom: var(--space-6);">
+                <h2 class="text-xl font-semibold mb-4">Transcript</h2>
+                <div class="prose max-w-none">
+                    {{ meeting.transcript|default('No transcript available')|safe }}
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="text-xl font-semibold mb-4">Summary</h2>
+                <div class="prose max-w-none">
+                    {{ meeting.summary|default('No summary available')|safe }}
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="card" style="margin-bottom: var(--space-4);">
+                <h3 class="font-semibold mb-3">Action Items</h3>
+                {% if meeting.tasks and meeting.tasks|length > 0 %}
+                <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+                    {% for task in meeting.tasks %}
+                    <label class="flex items-start gap-2 cursor-pointer">
+                        <input type="checkbox" {% if task.completed %}checked{% endif %} class="form-checkbox mt-1">
+                        <span class="text-sm">{{ task.description }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-secondary">No action items</p>
+                {% endif %}
+            </div>
+
+            <div class="card">
+                <h3 class="font-semibold mb-3">Participants</h3>
+                {% if meeting.participants and meeting.participants|length > 0 %}
+                <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+                    {% for participant in meeting.participants %}
+                    <div class="flex items-center gap-2">
+                        <div class="avatar avatar-sm">{{ participant.name[0]|upper }}</div>
+                        <span class="text-sm">{{ participant.name }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-secondary">No participants</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

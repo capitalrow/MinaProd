@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks - Mina{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: var(--space-8); padding-bottom: var(--space-8);">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-4xl font-bold mb-2">Action Items</h1>
+            <p class="text-secondary">Track and manage tasks from your meetings</p>
+        </div>
+        <button class="btn btn-primary">New Task</button>
+    </div>
+
+    <div class="mb-6">
+        <div class="flex gap-3">
+            <button class="btn btn-sm btn-primary">All Tasks</button>
+            <button class="btn btn-sm btn-ghost">Pending</button>
+            <button class="btn btn-sm btn-ghost">Completed</button>
+        </div>
+    </div>
+
+    {% if tasks and tasks|length > 0 %}
+    <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+        {% for task in tasks %}
+        <div class="card">
+            <div class="flex items-start gap-4">
+                <input type="checkbox" {% if task.completed %}checked{% endif %} class="form-checkbox mt-1">
+                <div class="flex-1">
+                    <h3 class="font-semibold mb-1">{{ task.description }}</h3>
+                    <p class="text-sm text-secondary mb-2">From: {{ task.meeting_title|default('Unknown meeting') }}</p>
+                    <div class="flex gap-2">
+                        <span class="badge">{{ task.priority|default('medium') }}</span>
+                        <span class="badge badge-ghost">{{ task.due_date|default('No due date') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card text-center py-12">
+        <svg class="mx-auto mb-4" width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        <h3 class="text-xl font-semibold mb-2">No tasks yet</h3>
+        <p class="text-secondary mb-4">Tasks from your meetings will appear here</p>
+        <button class="btn btn-primary">Create your first task</button>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
