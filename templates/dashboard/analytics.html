@@ -97,14 +97,22 @@
     position: relative;
     width: 100%;
     aspect-ratio: 16 / 9;
-    max-height: 360px;
 }
 
 .chart-frame.chart-doughnut,
 .chart-frame.chart-radar {
     aspect-ratio: 1 / 1;
-    max-width: 360px;
+    max-width: 420px;
+    min-width: 280px;
     margin: 0 auto;
+}
+
+.chart-frame.chart-radar {
+    transition: all var(--transition-base);
+}
+
+.chart-frame.chart-radar:hover {
+    transform: scale(1.02);
 }
 
 .chart-frame canvas {
@@ -203,15 +211,11 @@
         padding: var(--space-4);
     }
     
-    .chart-frame {
-        max-height: 280px;
-    }
-    
-    /* Tighter constraints for circular charts on mobile */
+    /* Responsive circular charts on mobile */
     .chart-frame.chart-radar,
     .chart-frame.chart-doughnut {
-        max-width: 280px;
-        max-height: 280px;
+        max-width: 340px;
+        min-width: 260px;
     }
 }
 
@@ -222,17 +226,11 @@
         font-size: 0.875rem;
     }
     
-    /* Further constrain circular charts */
+    /* Optimize circular charts for small screens */
     .chart-frame.chart-radar,
     .chart-frame.chart-doughnut {
-        max-width: 240px;
-        max-height: 240px;
-    }
-    
-    /* Adjust aspect ratio for better mobile fit */
-    .chart-frame {
-        aspect-ratio: 2 / 1;
-        max-height: 220px;
+        max-width: 280px;
+        min-width: 240px;
     }
 }
 </style>
@@ -606,8 +604,16 @@ if (participationCtx) {
                 label: 'Your Team',
                 data: [85, 72, 68, 90, 78],
                 borderColor: primaryColor,
-                backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                pointBackgroundColor: primaryColor
+                backgroundColor: 'rgba(99, 102, 241, 0.25)',
+                pointBackgroundColor: primaryColor,
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                borderWidth: 2.5,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: primaryColor,
+                pointHoverBorderColor: '#fff',
+                pointHoverBorderWidth: 3
             }]
         },
         options: {
@@ -615,7 +621,42 @@ if (participationCtx) {
             maintainAspectRatio: true,
             aspectRatio: 1,
             scales: {
-                r: { beginAtZero: true, max: 100 }
+                r: { 
+                    beginAtZero: true, 
+                    max: 100,
+                    ticks: {
+                        stepSize: 20,
+                        backdropColor: 'transparent'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.15)',
+                        lineWidth: 1
+                    },
+                    angleLines: {
+                        color: 'rgba(255, 255, 255, 0.15)',
+                        lineWidth: 1
+                    },
+                    pointLabels: {
+                        font: {
+                            size: 13,
+                            weight: '500'
+                        },
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        padding: 8
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
             }
         }
     });
