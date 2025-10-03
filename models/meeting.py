@@ -176,7 +176,7 @@ class Meeting(Base):
             'is_recurring': self.is_recurring,
             'organizer_id': self.organizer_id,
             'workspace_id': self.workspace_id,
-            'session_id': self.session_id,
+            'session_id': self.session.id if self.session else None,
             'duration_minutes': self.duration_minutes,
             'participant_count': self.participant_count,
             'task_count': self.task_count,

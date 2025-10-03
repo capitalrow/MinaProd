@@ -353,10 +353,8 @@ def get_cost_estimate(meeting_id):
 
 def get_meeting_transcript(meeting: Meeting) -> str:
     """Get full transcript text for a meeting."""
-    if not meeting.session_id:
-        return ""
-    
-    session = db.session.query(Session).filter_by(external_id=meeting.session_id).first()
+    # Access session via relationship (Session.meeting_id points to Meeting)
+    session = meeting.session
     if not session:
         return ""
     
