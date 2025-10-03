@@ -9,9 +9,7 @@ from typing import Optional
 from sqlalchemy.orm import Session as DBSession
 from sqlalchemy import select
 
-from models.session import Session
-from models.shared_link import SharedLink
-from app import db
+from models import db, Session, SharedLink
 
 
 class ShareService:

@@ -597,6 +597,13 @@ def create_app() -> Flask:
         app.logger.info("AI Insights API routes registered")
     except Exception as e:
         app.logger.warning(f"Failed to register AI Insights API routes: {e}")
+    
+    try:
+        from routes.api_sharing import sharing_bp
+        app.register_blueprint(sharing_bp)
+        app.logger.info("Sharing API routes registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register Sharing API routes: {e}")
 
     # Settings routes
     try:
