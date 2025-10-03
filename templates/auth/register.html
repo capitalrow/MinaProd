@@ -14,7 +14,7 @@
                 </div>
 
                 <form method="POST" action="{{ url_for('auth.register') }}" class="auth-form" novalidate>
-                    {{ form.hidden_tag() if form }}
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     
                     <div class="form-group">
                         <label for="username" class="form-label">Full name</label>
