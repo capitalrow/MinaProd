@@ -1,0 +1,97 @@
+/* Crown+ Light Theme */
+
+[data-theme="light"] {
+    /* Base Colors */
+    --color-bg: #ffffff;
+    --color-surface: #f8f9fa;
+    --color-surface-light: #ffffff;
+    --color-surface-lighter: #ffffff;
+    
+    /* Text Colors */
+    --color-text: #1a1a1a;
+    --color-text-secondary: #6b7280;
+    --color-text-tertiary: #9ca3af;
+    
+    /* Border */
+    --color-border: rgba(0, 0, 0, 0.1);
+    
+    /* Glassmorphism */
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(0, 0, 0, 0.1);
+    --backdrop-blur: blur(20px);
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+    --shadow-xl: 0 12px 36px rgba(0, 0, 0, 0.15);
+    --shadow-2xl: 0 20px 60px rgba(0, 0, 0, 0.2);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    
+    /* Gradients remain the same - they work on both themes */
+    
+    /* Accent adjustments for light mode */
+    --color-primary-light: #6366f1;
+    --color-secondary-light: #8b5cf6;
+}
+
+/* Light theme specific adjustments */
+[data-theme="light"] body {
+    background: 
+        radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
+        var(--color-bg);
+}
+
+[data-theme="light"] .sidebar {
+    background: rgba(255, 255, 255, 0.95);
+    border-right-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .card,
+[data-theme="light"] .card-glass {
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .modal {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="light"] .modal-overlay {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+[data-theme="light"] .form-input,
+[data-theme="light"] .form-textarea,
+[data-theme="light"] .form-select,
+[data-theme="light"] .input {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .btn-secondary {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.15);
+    color: var(--color-text);
+}
+
+[data-theme="light"] .table-container {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="light"] .empty-state-icon,
+[data-theme="light"] .error-state-icon {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.05) 25%,
+        rgba(0, 0, 0, 0.1) 50%,
+        rgba(0, 0, 0, 0.05) 75%
+    );
+}
