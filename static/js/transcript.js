@@ -95,7 +95,18 @@ class TranscriptManager {
             return;
         }
         
-        const searchRegex = new RegExp(query, 'gi');
+        // SECURITY: Escape regex special characters to prevent crashes
+        const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const escapedQuery = escapeRegex(query);
+        
+        let searchRegex;
+        try {
+            searchRegex = new RegExp(escapedQuery, 'gi');
+        } catch (error) {
+            console.error('Invalid search pattern:', error);
+            this.showToast('error', 'Invalid Search', 'Please try a different search term');
+            return;
+        }
         
         this.segments.forEach(segment => {
             const text = segment.text;

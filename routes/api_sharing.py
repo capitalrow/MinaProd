@@ -8,12 +8,60 @@ from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, render_template, abort, url_for
 from flask_login import login_required, current_user
 from sqlalchemy import select, func
-from models import db, Session, SharedLink, TeamShare, ShareAnalytic, User
+from models import db, Session, Meeting, SharedLink, TeamShare, ShareAnalytic, User
 from services.share_service import ShareService
 from services.email_service import email_service
 from services.slack_service import slack_service
 
 sharing_bp = Blueprint('sharing', __name__)
+
+
+def check_meeting_access(session_id: int, required_role: str = 'viewer'):
+    """
+    Helper function to verify user has access to a meeting.
+    Returns (meeting, error_response) tuple.
+    If meeting is None, error_response contains the error to return.
+    """
+    # Verify session exists
+    session = db.session.get(Session, session_id)
+    if not session:
+        return None, (jsonify({'success': False, 'error': 'Session not found'}), 404)
+    
+    # Find the meeting that owns this session
+    meeting_stmt = select(Meeting).where(Meeting.session_id == session_id)
+    meeting = db.session.scalars(meeting_stmt).first()
+    
+    if not meeting:
+        return None, (jsonify({'success': False, 'error': 'Meeting not found for this session'}), 404)
+    
+    # Check if user has permission
+    # User must be either the organizer or have appropriate team role
+    is_organizer = meeting.organizer_id == current_user.id
+    
+    if is_organizer:
+        return meeting, None
+    
+    # Check team permissions based on required role
+    if required_role == 'viewer':
+        # Any team member can view
+        team_share_stmt = select(TeamShare).where(
+            TeamShare.meeting_id == meeting.id,
+            TeamShare.user_id == current_user.id
+        )
+    else:
+        # Editor/admin roles required
+        team_share_stmt = select(TeamShare).where(
+            TeamShare.meeting_id == meeting.id,
+            TeamShare.user_id == current_user.id,
+            TeamShare.role.in_(['editor', 'admin'])
+        )
+    
+    has_team_permission = db.session.scalars(team_share_stmt).first() is not None
+    
+    if not has_team_permission:
+        return None, (jsonify({'success': False, 'error': 'You do not have permission to access this meeting'}), 403)
+    
+    return meeting, None
 
 
 @sharing_bp.route('/api/sessions/<int:session_id>/share', methods=['POST'])
@@ -31,10 +79,10 @@ def create_share_link(session_id: int):
     }
     """
     try:
-        # Verify session exists and user has access
-        session = db.session.get(Session, session_id)
-        if not session:
-            return jsonify({'success': False, 'error': 'Session not found'}), 404
+        # SECURITY: Verify user has editor/admin access
+        meeting, error = check_meeting_access(session_id, required_role='editor')
+        if error:
+            return error
         
         # Parse request data
         data = request.get_json() or {}
@@ -115,10 +163,10 @@ def view_shared_session(token: str):
 def list_share_links(session_id: int):
     """List all active share links for a session (T2.23)."""
     try:
-        # Verify session exists
-        session = db.session.get(Session, session_id)
-        if not session:
-            return jsonify({'success': False, 'error': 'Session not found'}), 404
+        # SECURITY: Verify user has viewer access
+        meeting, error = check_meeting_access(session_id, required_role='viewer')
+        if error:
+            return error
         
         share_service = ShareService()
         links = share_service.get_active_share_links(session_id)
@@ -149,6 +197,11 @@ def list_share_links(session_id: int):
 def deactivate_share_link(session_id: int, token: str):
     """Deactivate a specific share link (T2.23)."""
     try:
+        # SECURITY: Verify user has editor/admin access
+        meeting, error = check_meeting_access(session_id, required_role='editor')
+        if error:
+            return error
+        
         share_service = ShareService()
         success = share_service.deactivate_share_link(session_id, token)
         
