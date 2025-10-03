@@ -2,137 +2,436 @@
 
 {% block title %}Dashboard - Mina{% endblock %}
 
+{% block extra_css %}
+<style>
+.dashboard-container {
+    min-height: calc(100vh - var(--header-height));
+    padding: var(--space-8) 0;
+}
+
+.dashboard-header {
+    margin-bottom: var(--space-8);
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.welcome-title {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--space-2);
+}
+
+.welcome-subtitle {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-lg);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+    margin-bottom: var(--space-8);
+}
+
+.stat-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-6);
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--color-primary);
+}
+
+.stat-card:hover::before {
+    opacity: 1;
+}
+
+.stat-icon {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-xl);
+    margin-bottom: var(--space-4);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-icon::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: inherit;
+    opacity: 0.1;
+    filter: blur(20px);
+}
+
+.stat-content {
+    position: relative;
+}
+
+.stat-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-tertiary);
+    font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-2);
+}
+
+.stat-value {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    line-height: 1;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-6);
+    animation: fadeInUp 0.6s ease-out 0.4s;
+    animation-fill-mode: both;
+}
+
+.section-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.section-link {
+    color: var(--color-primary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    transition: gap var(--transition-base);
+}
+
+.section-link:hover {
+    gap: var(--space-2);
+}
+
+.meetings-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.meeting-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    transition: all var(--transition-base);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.meeting-card:nth-child(1) { animation-delay: 0.5s; }
+.meeting-card:nth-child(2) { animation-delay: 0.6s; }
+.meeting-card:nth-child(3) { animation-delay: 0.7s; }
+
+.meeting-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+}
+
+.meeting-card:hover {
+    transform: translateX(8px);
+    border-color: var(--color-primary);
+}
+
+.meeting-card:hover::before {
+    opacity: 1;
+}
+
+.meeting-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.meeting-date {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-3);
+}
+
+.meeting-summary {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-tertiary);
+    line-height: var(--line-height-relaxed);
+}
+
+.empty-state {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-12);
+    text-align: center;
+    animation: fadeInUp 0.6s ease-out 0.5s;
+    animation-fill-mode: both;
+}
+
+.empty-state-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--space-6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--glass-bg);
+    border-radius: var(--radius-full);
+    border: 2px solid var(--glass-border);
+}
+
+.empty-state-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.empty-state-description {
+    font-size: var(--font-size-base);
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--space-6);
+}
+
+.tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+}
+
+.task-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    transition: all var(--transition-base);
+    animation: fadeInUp 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.task-card:nth-child(1) { animation-delay: 0.5s; }
+.task-card:nth-child(2) { animation-delay: 0.6s; }
+.task-card:nth-child(3) { animation-delay: 0.7s; }
+.task-card:nth-child(4) { animation-delay: 0.8s; }
+.task-card:nth-child(5) { animation-delay: 0.9s; }
+
+.task-card:hover {
+    border-color: var(--color-primary);
+    transform: translateX(4px);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .welcome-title {
+        font-size: var(--font-size-3xl);
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container" style="padding-top: var(--space-8); padding-bottom: var(--space-8);">
-    <div class="flex justify-between items-center mb-8">
-        <div>
-            <h1 class="text-4xl font-bold mb-2">Welcome back, {{ current_user.username }}!</h1>
-            <p class="text-secondary">Here's what's happening with your meetings</p>
+<div class="container dashboard-container">
+    <div class="dashboard-header">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="welcome-title">Welcome back, {{ current_user.username }}!</h1>
+                <p class="welcome-subtitle">Here's what's happening with your meetings</p>
+            </div>
+            <a href="{{ url_for('pages.live') }}" class="btn btn-primary">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                </svg>
+                Start Recording
+            </a>
         </div>
-        <a href="{{ url_for('pages.live') }}" class="btn btn-primary">
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--gradient-primary);">
+                <svg width="32" height="32" fill="white" viewBox="0 0 24 24">
+                    <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <p class="stat-label">Total Meetings</p>
+                <p class="stat-value">{{ total_meetings|default(0) }}</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);">
+                <svg width="32" height="32" fill="none" stroke="white" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <p class="stat-label">Action Items</p>
+                <p class="stat-value">{{ total_tasks|default(0) }}</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);">
+                <svg width="32" height="32" fill="none" stroke="white" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <p class="stat-label">Hours Saved</p>
+                <p class="stat-value">{{ hours_saved|default(0) }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <h2 class="section-title">Recent Meetings</h2>
+        <a href="{{ url_for('dashboard.meetings') }}" class="section-link">
+            View all
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
-            Start Recording
         </a>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-6); margin-bottom: var(--space-8);">
-        <div class="card">
-            <div class="flex items-center gap-4">
-                <div style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: var(--gradient-primary); border-radius: var(--radius-xl);">
-                    <svg width="28" height="28" fill="white" viewBox="0 0 24 24">
-                        <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
+    {% if recent_meetings and recent_meetings|length > 0 %}
+    <div class="meetings-list">
+        {% for meeting in recent_meetings %}
+        <div class="meeting-card" onclick="window.location='{{ url_for('dashboard.meeting_detail', meeting_id=meeting.id) }}'">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <h3 class="meeting-title">{{ meeting.title or 'Untitled Meeting' }}</h3>
+                    <p class="meeting-date">{{ meeting.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                    {% if meeting.summary %}
+                    <p class="meeting-summary">{{ meeting.summary[:150] }}{% if meeting.summary|length > 150 %}...{% endif %}</p>
+                    {% endif %}
                 </div>
-                <div>
-                    <p class="text-tertiary text-sm">Total Meetings</p>
-                    <p class="text-3xl font-bold">{{ total_meetings|default(0) }}</p>
+                <div class="flex items-center gap-3">
+                    {% if meeting.duration %}
+                    <span class="badge badge-primary">{{ (meeting.duration / 60)|round|int }} min</span>
+                    {% endif %}
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.5;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
                 </div>
             </div>
         </div>
-
-        <div class="card">
-            <div class="flex items-center gap-4">
-                <div style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%); border-radius: var(--radius-xl);">
-                    <svg width="28" height="28" fill="none" stroke="white" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-tertiary text-sm">Action Items</p>
-                    <p class="text-3xl font-bold">{{ total_tasks|default(0) }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="flex items-center gap-4">
-                <div style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); border-radius: var(--radius-xl);">
-                    <svg width="28" height="28" fill="none" stroke="white" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-tertiary text-sm">Hours Saved</p>
-                    <p class="text-3xl font-bold">{{ hours_saved|default(0) }}</p>
-                </div>
-            </div>
-        </div>
+        {% endfor %}
     </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+        </div>
+        <h3 class="empty-state-title">No meetings yet</h3>
+        <p class="empty-state-description">Start recording your first meeting to see it here</p>
+        <a href="{{ url_for('pages.live') }}" class="btn btn-primary">Start Recording</a>
+    </div>
+    {% endif %}
 
-    <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-6);">
-        <div>
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-semibold">Recent Meetings</h2>
-                <a href="{{ url_for('dashboard.meetings') }}" class="text-primary text-sm font-medium">View all →</a>
-            </div>
-
-            {% if recent_meetings and recent_meetings|length > 0 %}
-            <div style="display: flex; flex-direction: column; gap: var(--space-4);">
-                {% for meeting in recent_meetings %}
-                <div class="card transition cursor-pointer" onclick="window.location='{{ url_for('dashboard.meeting_detail', meeting_id=meeting.id) }}'">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <h3 class="text-lg font-semibold mb-2">{{ meeting.title or 'Untitled Meeting' }}</h3>
-                            <p class="text-secondary text-sm mb-3">{{ meeting.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
-                            {% if meeting.summary %}
-                            <p class="text-tertiary text-sm">{{ meeting.summary[:150] }}{% if meeting.summary|length > 150 %}...{% endif %}</p>
-                            {% endif %}
-                        </div>
-                        <div class="flex items-center gap-3">
-                            {% if meeting.duration %}
-                            <span class="badge badge-primary">{{ (meeting.duration / 60)|round|int }} min</span>
-                            {% endif %}
-                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="card text-center" style="padding: var(--space-12);">
-                <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin: 0 auto var(--space-4);">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+    {% if user_tasks and user_tasks|length > 0 %}
+    <div style="margin-top: var(--space-8);">
+        <div class="section-header" style="animation-delay: 0.8s;">
+            <h2 class="section-title">Your Tasks</h2>
+            <a href="{{ url_for('dashboard.tasks') }}" class="section-link">
+                View all
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                 </svg>
-                <h3 class="text-xl font-semibold mb-2">No meetings yet</h3>
-                <p class="text-tertiary mb-6">Start recording your first meeting to see it here</p>
-                <a href="{{ url_for('pages.live') }}" class="btn btn-primary">Start Recording</a>
-            </div>
-            {% endif %}
+            </a>
         </div>
 
-        {% if user_tasks and user_tasks|length > 0 %}
-        <div>
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-semibold">Your Tasks</h2>
-                <a href="{{ url_for('dashboard.tasks') }}" class="text-primary text-sm font-medium">View all →</a>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: var(--space-3);">
-                {% for task in user_tasks[:5] %}
-                <div class="card">
-                    <div class="flex items-center gap-3">
-                        <input type="checkbox" class="checkbox" {% if task.status == 'completed' %}checked{% endif %}>
-                        <div class="flex-1">
-                            <p class="font-medium {% if task.status == 'completed' %}text-tertiary{% endif %}">{{ task.description }}</p>
-                            {% if task.meeting %}
-                            <p class="text-tertiary text-xs mt-1">From: {{ task.meeting.title or 'Untitled Meeting' }}</p>
-                            {% endif %}
-                        </div>
-                        {% if task.priority %}
-                        <span class="badge badge-{% if task.priority == 'high' %}error{% elif task.priority == 'medium' %}warning{% else %}primary{% endif %}">
-                            {{ task.priority }}
-                        </span>
+        <div class="tasks-list">
+            {% for task in user_tasks[:5] %}
+            <div class="task-card">
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" class="checkbox" {% if task.status == 'completed' %}checked{% endif %}>
+                    <div class="flex-1">
+                        <p class="font-medium {% if task.status == 'completed' %}text-tertiary{% endif %}">{{ task.description }}</p>
+                        {% if task.meeting %}
+                        <p class="text-tertiary text-xs mt-1">From: {{ task.meeting.title or 'Untitled Meeting' }}</p>
                         {% endif %}
                     </div>
+                    {% if task.priority %}
+                    <span class="badge badge-{% if task.priority == 'high' %}error{% elif task.priority == 'medium' %}warning{% else %}primary{% endif %}">
+                        {{ task.priority }}
+                    </span>
+                    {% endif %}
                 </div>
-                {% endfor %}
             </div>
+            {% endfor %}
         </div>
-        {% endif %}
     </div>
+    {% endif %}
 </div>
 {% endblock %}
