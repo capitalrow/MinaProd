@@ -15,6 +15,8 @@ try:
     monitoring_available = True
 except ImportError:
     monitoring_available = False
+    uptime_monitor = None
+    performance_monitor = None
 
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')

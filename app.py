@@ -583,6 +583,13 @@ def create_app() -> Flask:
         app.logger.info("API Generate Insights route registered")
     except Exception as e:
         app.logger.warning(f"Failed to register API Generate Insights route: {e}")
+    
+    try:
+        from routes.api_transcript import api_transcript_bp
+        app.register_blueprint(api_transcript_bp)
+        app.logger.info("Transcript API routes registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register transcript API routes: {e}")
 
     # Settings routes
     try:
