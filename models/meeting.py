@@ -56,9 +56,9 @@ class Meeting(Base):
     workspace_id: Mapped[int] = mapped_column(ForeignKey("workspaces.id"), nullable=False)
     workspace: Mapped["Workspace"] = relationship(back_populates="meetings")
     
-    # Link to transcription session
-    session_id: Mapped[Optional[int]] = mapped_column(ForeignKey("sessions.id"), nullable=True)
-    session: Mapped[Optional["Session"]] = relationship()
+    # Link to transcription session (one-to-one relationship)
+    # Note: Session has meeting_id FK, so this is the back reference
+    session: Mapped[Optional["Session"]] = relationship(back_populates="meeting")
     
     # Meeting participants
     participants: Mapped[list["Participant"]] = relationship(back_populates="meeting", cascade="all, delete-orphan")

@@ -13,6 +13,7 @@ from .base import Base
 if TYPE_CHECKING:
     from .user import User
     from .meeting import Meeting
+    from .session import Session
 
 
 class Workspace(Base):
@@ -49,6 +50,7 @@ class Workspace(Base):
     
     # Relationships
     members: Mapped[list["User"]] = relationship(back_populates="workspace", foreign_keys="User.workspace_id")
+    sessions: Mapped[list["Session"]] = relationship(back_populates="workspace", foreign_keys="Session.workspace_id")
     meetings: Mapped[list["Meeting"]] = relationship(back_populates="workspace")
 
     def __repr__(self):
