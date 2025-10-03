@@ -4,6 +4,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/transcript.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ai-insights.css') }}">
 <style>
 .meeting-detail-container {
     min-height: calc(100vh - var(--header-height));
@@ -426,6 +427,76 @@
                 </div>
             </div>
 
+            <!-- AI Insights Panel -->
+            <div class="ai-insights-panel" data-meeting-id="{{ meeting.id }}">
+                <div class="ai-insights-header">
+                    <div class="ai-insights-title">
+                        <i class="fas fa-brain"></i>
+                        <span>AI Insights</span>
+                    </div>
+                    <div class="ai-insights-actions">
+                        <button data-action="refresh-insights">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <button data-action="cost-estimate">
+                            <i class="fas fa-coins"></i> Cost
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabs Navigation -->
+                <div class="ai-insights-tabs">
+                    <button class="ai-insights-tab active" data-tab="summary">
+                        <i class="fas fa-file-alt"></i> Summary
+                    </button>
+                    <button class="ai-insights-tab" data-tab="key-points">
+                        <i class="fas fa-list-ul"></i> Key Points
+                    </button>
+                    <button class="ai-insights-tab" data-tab="action-items">
+                        <i class="fas fa-tasks"></i> Actions
+                    </button>
+                    <button class="ai-insights-tab" data-tab="questions">
+                        <i class="fas fa-question-circle"></i> Questions
+                    </button>
+                    <button class="ai-insights-tab" data-tab="decisions">
+                        <i class="fas fa-gavel"></i> Decisions
+                    </button>
+                    <button class="ai-insights-tab" data-tab="sentiment">
+                        <i class="fas fa-smile"></i> Sentiment
+                    </button>
+                    <button class="ai-insights-tab" data-tab="topics">
+                        <i class="fas fa-tags"></i> Topics
+                    </button>
+                    <button class="ai-insights-tab" data-tab="custom">
+                        <i class="fas fa-magic"></i> Custom
+                    </button>
+                </div>
+
+                <!-- Tab Contents -->
+                <div class="ai-insights-content" data-tab="summary" style="display: block;"></div>
+                <div class="ai-insights-content" data-tab="key-points" style="display: none;"></div>
+                <div class="ai-insights-content" data-tab="action-items" style="display: none;"></div>
+                <div class="ai-insights-content" data-tab="questions" style="display: none;"></div>
+                <div class="ai-insights-content" data-tab="decisions" style="display: none;"></div>
+                <div class="ai-insights-content" data-tab="sentiment" style="display: none;"></div>
+                <div class="ai-insights-content" data-tab="topics" style="display: none;"></div>
+                <div class="ai-insights-content" data-tab="custom" style="display: none;">
+                    <form class="ai-custom-prompt-form">
+                        <textarea class="ai-custom-prompt-textarea" placeholder="Enter your custom analysis prompt..."></textarea>
+                        <div class="ai-custom-prompt-templates">
+                            <button type="button" class="ai-prompt-template-btn" data-template="risks">🔍 Identify Risks</button>
+                            <button type="button" class="ai-prompt-template-btn" data-template="followup">📅 Follow-up Actions</button>
+                            <button type="button" class="ai-prompt-template-btn" data-template="stakeholders">👥 Stakeholders</button>
+                            <button type="button" class="ai-prompt-template-btn" data-template="timeline">⏱️ Timeline</button>
+                            <button type="button" class="ai-prompt-template-btn" data-template="budget">💰 Budget Discussion</button>
+                        </div>
+                        <button type="submit" class="ai-custom-prompt-submit">
+                            <i class="fas fa-sparkles"></i> Analyze
+                        </button>
+                    </form>
+                </div>
+            </div>
+
             {% if meeting.summary %}
             <div class="summary-card">
                 <h2 class="section-title" style="margin-bottom: var(--space-4);">Summary</h2>
@@ -517,4 +588,5 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/transcript.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ai-insights.js') }}"></script>
 {% endblock %}
