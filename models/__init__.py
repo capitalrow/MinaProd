@@ -12,6 +12,8 @@ db = SQLAlchemy(model_class=Base)
 from .session import Session
 from .segment import Segment
 from .shared_link import SharedLink
+from .team_share import TeamShare
+from .share_analytics import ShareAnalytic
 from .metrics import ChunkMetric, SessionMetric
 
 # Import new comprehensive models for Mina productivity platform
@@ -32,7 +34,7 @@ except ImportError:
     Summary = None
 
 __all__ = [
-    'db', 'Base', 'Session', 'Segment', 'Summary', 'SharedLink', 
+    'db', 'Base', 'Session', 'Segment', 'Summary', 'SharedLink', 'TeamShare', 'ShareAnalytic',
     'ChunkMetric', 'SessionMetric', 'User', 'Workspace', 'Meeting', 
     'Participant', 'Task', 'CalendarEvent', 'Analytics', 'Marker'
 ]
