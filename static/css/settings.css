@@ -1,0 +1,250 @@
+/* Settings Pages - Crown+ Design System */
+
+.settings-container {
+    padding: var(--space-8) 0;
+    max-width: 1200px;
+    min-height: calc(100vh - var(--header-height));
+}
+
+.settings-header {
+    margin-bottom: var(--space-6);
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.settings-title {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--space-2);
+}
+
+.settings-subtitle {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-lg);
+}
+
+.settings-tabs {
+    margin-bottom: var(--space-6);
+    border-bottom: 1px solid var(--glass-border);
+    animation: fadeIn 0.6s ease-out 0.1s;
+    animation-fill-mode: both;
+}
+
+.settings-tabs-nav {
+    display: flex;
+    gap: var(--space-6);
+    flex-wrap: wrap;
+}
+
+.settings-tabs .tab-link {
+    padding: var(--space-3) 0;
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+    transition: all var(--transition-base);
+    border-bottom: 2px solid transparent;
+    position: relative;
+}
+
+.settings-tabs .tab-link:hover {
+    color: var(--color-text-primary);
+}
+
+.settings-tabs .tab-link.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+}
+
+.settings-content {
+    max-width: 900px;
+}
+
+.settings-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
+    animation: fadeInUp 0.6s ease-out;
+    animation-fill-mode: both;
+    transition: all var(--transition-base);
+}
+
+.settings-card:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
+.settings-card-title {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--space-4);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.form-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    cursor: pointer;
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-base);
+}
+
+.form-checkbox-label:hover {
+    background: var(--color-surface-hover);
+}
+
+.form-checkbox {
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--color-border);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    flex-shrink: 0;
+}
+
+.form-checkbox:checked {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.form-checkbox:hover {
+    border-color: var(--color-primary);
+}
+
+.form-select,
+.form-input {
+    width: 100%;
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-base);
+    transition: all var(--transition-base);
+}
+
+.form-select:focus,
+.form-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-select:hover,
+.form-input:hover {
+    border-color: var(--color-primary);
+}
+
+.form-label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--space-2);
+    color: var(--color-text-primary);
+}
+
+.form-help {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    margin-top: var(--space-1);
+}
+
+.checkbox-content {
+    flex: 1;
+}
+
+.checkbox-title {
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--space-1);
+}
+
+.checkbox-description {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.integration-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-5);
+    transition: all var(--transition-base);
+    animation: fadeInUp 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.integration-card:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+    transform: translateY(-2px);
+}
+
+.integration-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Stagger animations for cards */
+.settings-card:nth-child(1), .integration-card:nth-child(1) { animation-delay: 0.2s; }
+.settings-card:nth-child(2), .integration-card:nth-child(2) { animation-delay: 0.25s; }
+.settings-card:nth-child(3), .integration-card:nth-child(3) { animation-delay: 0.3s; }
+.settings-card:nth-child(4), .integration-card:nth-child(4) { animation-delay: 0.35s; }
+.settings-card:nth-child(5), .integration-card:nth-child(5) { animation-delay: 0.4s; }
+.settings-card:nth-child(6), .integration-card:nth-child(6) { animation-delay: 0.45s; }
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .settings-title {
+        font-size: var(--font-size-3xl);
+    }
+    
+    .settings-tabs-nav {
+        gap: var(--space-4);
+    }
+    
+    .form-checkbox-label {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
