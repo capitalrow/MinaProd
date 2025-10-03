@@ -227,6 +227,29 @@
     margin-top: var(--space-1);
 }
 
+/* Interim transcript styling */
+.transcript-segment.interim {
+    background-color: rgba(124, 58, 237, 0.05);
+    border-left: 2px solid var(--color-primary);
+}
+
+.transcript-segment.interim .transcript-text {
+    opacity: 0.8;
+    font-style: italic;
+}
+
+.interim-indicator {
+    display: inline-block;
+    color: var(--color-primary);
+    animation: blink 1.5s infinite;
+    margin-left: var(--space-1);
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
 .transcript-empty {
     display: flex;
     flex-direction: column;
@@ -466,22 +489,74 @@ socket.on('disconnect', () => {
     console.log('Socket.IO disconnected');
 });
 
+// Track interim segment
+let currentInterimSegment = null;
+let lastSpeaker = null;
+
 socket.on('transcription_result', (data) => {
     if (transcriptContent.querySelector('.transcript-empty')) {
         transcriptContent.innerHTML = '';
     }
     
-    const segment = document.createElement('div');
-    segment.className = 'transcript-segment fade-in';
-    const speakerName = data.speaker_name || data.speaker_id || 'Speaker';
+    const speakerName = data.speaker_name || data.speaker_id || 'Speaker 1';
     const timestamp = new Date(data.timestamp || Date.now()).toLocaleTimeString();
     
-    segment.innerHTML = `
-        <div class="transcript-speaker">${speakerName}</div>
-        <div class="transcript-text">${data.text}</div>
-        <div class="transcript-timestamp">${timestamp}${data.is_final ? ' (final)' : ''}</div>
-    `;
-    transcriptContent.appendChild(segment);
+    // If this is a final transcript
+    if (data.is_final) {
+        // Remove any interim segment
+        if (currentInterimSegment) {
+            currentInterimSegment.remove();
+            currentInterimSegment = null;
+        }
+        
+        // Check if we can merge with the last segment (same speaker)
+        const lastSegment = transcriptContent.querySelector('.transcript-segment:last-child');
+        const lastSegmentSpeaker = lastSegment?.querySelector('.transcript-speaker')?.textContent;
+        
+        if (lastSegment && !lastSegment.classList.contains('interim') && lastSegmentSpeaker === speakerName) {
+            // Merge with existing segment
+            const textEl = lastSegment.querySelector('.transcript-text');
+            textEl.textContent += ' ' + data.text;
+            lastSegment.querySelector('.transcript-timestamp').textContent = timestamp;
+        } else {
+            // Create new final segment
+            const segment = document.createElement('div');
+            segment.className = 'transcript-segment fade-in';
+            segment.innerHTML = `
+                <div class="transcript-speaker">${speakerName}</div>
+                <div class="transcript-text">${data.text}</div>
+                <div class="transcript-timestamp">${timestamp}</div>
+            `;
+            transcriptContent.appendChild(segment);
+        }
+        
+        lastSpeaker = speakerName;
+    } else {
+        // This is an interim result - update or create interim segment
+        if (!currentInterimSegment || lastSpeaker !== speakerName) {
+            // Remove old interim if exists
+            if (currentInterimSegment) {
+                currentInterimSegment.remove();
+            }
+            
+            // Create new interim segment
+            currentInterimSegment = document.createElement('div');
+            currentInterimSegment.className = 'transcript-segment interim';
+            currentInterimSegment.innerHTML = `
+                <div class="transcript-speaker">${speakerName}</div>
+                <div class="transcript-text">${data.text}</div>
+                <div class="transcript-timestamp">${timestamp} <span class="interim-indicator">●</span></div>
+            `;
+            transcriptContent.appendChild(currentInterimSegment);
+            lastSpeaker = speakerName;
+        } else {
+            // Update existing interim segment
+            const textEl = currentInterimSegment.querySelector('.transcript-text');
+            textEl.textContent = data.text;
+            currentInterimSegment.querySelector('.transcript-timestamp').innerHTML = `${timestamp} <span class="interim-indicator">●</span>`;
+        }
+    }
+    
     transcriptContent.scrollTop = transcriptContent.scrollHeight;
     
     const wordCount = transcriptContent.textContent.split(/\s+/).filter(w => w.length > 0).length;
@@ -489,7 +564,13 @@ socket.on('transcription_result', (data) => {
 });
 
 socket.on('final_transcript', (data) => {
-    console.log('Final transcript:', data.text);
+    console.log('Final transcript received:', data.text);
+    
+    // Remove any lingering interim segment
+    if (currentInterimSegment) {
+        currentInterimSegment.remove();
+        currentInterimSegment = null;
+    }
 });
 
 // Update timer
