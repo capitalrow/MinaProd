@@ -13,6 +13,7 @@ from .base import Base
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .session import Session
+    from .comment import Comment
 
 class Segment(Base):
     """
@@ -31,6 +32,7 @@ class Segment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     session: Mapped["Session"] = relationship(back_populates="segments")
+    comments: Mapped[list["Comment"]] = relationship(back_populates="segment", cascade="all, delete-orphan")
     
     # Database indexes for query optimization
     __table_args__ = (

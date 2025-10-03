@@ -6,7 +6,7 @@ Part of Phase 2: Transcript Experience Enhancement (T2.3, T2.5, T2.6)
 
 from flask import Blueprint, request, jsonify, send_file
 from flask_login import login_required, current_user
-from models import db, Meeting, Session, Segment
+from models import db, Meeting, Session, Segment, Comment
 from datetime import datetime
 from io import BytesIO
 import json
@@ -550,23 +550,17 @@ def get_segment_comments(meeting_id, segment_id):
     if not segment:
         return jsonify({'success': False, 'message': 'Segment not found'}), 404
     
-    # For now, return mock comments
-    # In production, you'd query a comments table
-    # This would require a database migration to add a comments table
-    comments = []
+    # Query comments from database (only top-level comments, includes replies)
+    comments = db.session.query(Comment).filter_by(
+        segment_id=segment_id,
+        parent_id=None  # Only get top-level comments
+    ).order_by(Comment.created_at.asc()).all()
     
-    # Example structure for when comments table exists:
-    # comments = db.session.query(Comment).filter_by(segment_id=segment_id).order_by(Comment.created_at.asc()).all()
-    # comments_data = [{
-    #     'id': c.id,
-    #     'text': c.text,
-    #     'author_name': c.author.username,
-    #     'created_at': c.created_at.isoformat()
-    # } for c in comments]
+    comments_data = [comment.to_dict(include_replies=True) for comment in comments]
     
     return jsonify({
         'success': True,
-        'comments': comments
+        'comments': comments_data
     })
 
 
@@ -592,30 +586,33 @@ def add_segment_comment(meeting_id, segment_id):
     # Get comment text from request
     data = request.get_json()
     text = data.get('text', '').strip()
+    parent_id = data.get('parent_id')  # For threaded replies
     
     if not text:
         return jsonify({'success': False, 'message': 'Comment text is required'}), 400
     
-    # For now, return success without persisting
-    # In production, you'd create a Comment model and save to database
-    # This would require a database migration to add a comments table
+    # Validate parent_id if provided (for reply threading)
+    if parent_id:
+        parent_comment = db.session.query(Comment).filter_by(id=parent_id).first()
+        if not parent_comment or parent_comment.segment_id != segment_id:
+            return jsonify({'success': False, 'message': 'Invalid parent comment'}), 400
     
-    # Example structure for when comments table exists:
-    # comment = Comment(
-    #     segment_id=segment_id,
-    #     user_id=current_user.id,
-    #     text=text,
-    #     created_at=datetime.utcnow()
-    # )
-    # db.session.add(comment)
-    # db.session.commit()
-    
-    return jsonify({
-        'success': True,
-        'message': 'Comment added successfully',
-        'comment': {
-            'text': text,
-            'author_name': current_user.username,
-            'created_at': datetime.utcnow().isoformat()
-        }
-    })
+    # Create and save comment to database
+    try:
+        comment = Comment(
+            segment_id=segment_id,
+            user_id=current_user.id,
+            text=text,
+            parent_id=parent_id
+        )
+        db.session.add(comment)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Comment added successfully',
+            'comment': comment.to_dict(include_replies=False)
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
