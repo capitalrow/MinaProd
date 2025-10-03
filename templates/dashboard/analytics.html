@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Mina{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: var(--space-8); padding-bottom: var(--space-8);">
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold mb-2">Analytics</h1>
+        <p class="text-secondary">Insights from your meetings</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-6); margin-bottom: var(--space-8);">
+        <div class="card">
+            <p class="text-tertiary text-sm mb-1">Total Meetings</p>
+            <p class="text-3xl font-bold mb-1">{{ total_meetings|default(0) }}</p>
+            <p class="text-sm text-success">+12% this month</p>
+        </div>
+        
+        <div class="card">
+            <p class="text-tertiary text-sm mb-1">Action Items</p>
+            <p class="text-3xl font-bold mb-1">{{ total_tasks|default(0) }}</p>
+            <p class="text-sm text-success">85% completion rate</p>
+        </div>
+        
+        <div class="card">
+            <p class="text-tertiary text-sm mb-1">Hours Saved</p>
+            <p class="text-3xl font-bold mb-1">{{ hours_saved|default(0) }}</p>
+            <p class="text-sm text-success">+8h this week</p>
+        </div>
+        
+        <div class="card">
+            <p class="text-tertiary text-sm mb-1">Avg Meeting Length</p>
+            <p class="text-3xl font-bold mb-1">{{ avg_duration|default(45) }}m</p>
+            <p class="text-sm text-secondary">Across all meetings</p>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-6);">
+        <div class="card">
+            <h2 class="text-xl font-semibold mb-4">Meeting Activity</h2>
+            <div class="text-center py-12 text-secondary">
+                <p>Chart visualization coming soon</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="text-xl font-semibold mb-4">Top Topics</h2>
+            <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>Product Strategy</span>
+                        <span>45%</span>
+                    </div>
+                    <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-primary" style="width: 45%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>Engineering</span>
+                        <span>30%</span>
+                    </div>
+                    <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-primary" style="width: 30%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>Design Review</span>
+                        <span>25%</span>
+                    </div>
+                    <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-primary" style="width: 25%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

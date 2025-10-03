@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Workspace - Mina{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: var(--space-8); padding-bottom: var(--space-8); max-width: 1000px;">
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold mb-2">Workspace Settings</h1>
+        <p class="text-secondary">Manage your team and workspace</p>
+    </div>
+
+    <div class="card" style="margin-bottom: var(--space-6);">
+        <h2 class="text-xl font-semibold mb-4">Workspace Details</h2>
+        <form>
+            <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Workspace Name</label>
+                    <input type="text" value="My Workspace" class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Workspace URL</label>
+                    <input type="text" value="my-workspace.mina.app" class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold">Team Members</h2>
+            <button class="btn btn-primary btn-sm">Invite Member</button>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+            {% if workspace_members %}
+            {% for member in workspace_members %}
+            <div class="flex justify-between items-center p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                <div class="flex items-center gap-3">
+                    <div class="avatar">{{ member.email[0]|upper }}</div>
+                    <div>
+                        <p class="font-medium">{{ member.email }}</p>
+                        <p class="text-sm text-secondary">{{ member.role|capitalize }}</p>
+                    </div>
+                </div>
+                <select class="p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm">
+                    <option {% if member.role == 'owner' %}selected{% endif %}>Owner</option>
+                    <option {% if member.role == 'admin' %}selected{% endif %}>Admin</option>
+                    <option {% if member.role == 'member' %}selected{% endif %}>Member</option>
+                </select>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center py-8">
+                <p class="text-secondary">No team members yet</p>
+                <button class="btn btn-primary btn-sm mt-4">Invite your first member</button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

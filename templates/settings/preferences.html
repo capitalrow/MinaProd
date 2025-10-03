@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Preferences - Mina{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: var(--space-8); padding-bottom: var(--space-8); max-width: 900px;">
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold mb-2">Preferences</h1>
+        <p class="text-secondary">Customize your Mina experience</p>
+    </div>
+
+    <div class="card" style="margin-bottom: var(--space-6);">
+        <h2 class="text-xl font-semibold mb-4">Notification Settings</h2>
+        <form method="POST" action="{{ url_for('settings.update_preferences') }}">
+            <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" name="email_notifications" checked class="form-checkbox">
+                    <div>
+                        <p class="font-medium">Email Notifications</p>
+                        <p class="text-sm text-secondary">Receive email updates about your meetings</p>
+                    </div>
+                </label>
+                
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" name="meeting_reminders" checked class="form-checkbox">
+                    <div>
+                        <p class="font-medium">Meeting Reminders</p>
+                        <p class="text-sm text-secondary">Get reminders before scheduled meetings</p>
+                    </div>
+                </label>
+                
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" name="task_updates" checked class="form-checkbox">
+                    <div>
+                        <p class="font-medium">Task Updates</p>
+                        <p class="text-sm text-secondary">Notifications when tasks are updated</p>
+                    </div>
+                </label>
+            </div>
+            
+            <div style="margin-top: var(--space-6);">
+                <button type="submit" class="btn btn-primary">Save Preferences</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2 class="text-xl font-semibold mb-4">Audio & Recording</h2>
+        <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+            <div>
+                <label class="block text-sm font-medium mb-2">Audio Quality</label>
+                <select class="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+                    <option>High Quality (48kHz)</option>
+                    <option selected>Standard (44.1kHz)</option>
+                    <option>Low Bandwidth (22kHz)</option>
+                </select>
+            </div>
+            
+            <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" checked class="form-checkbox">
+                <div>
+                    <p class="font-medium">Auto-save recordings</p>
+                    <p class="text-sm text-secondary">Automatically save recordings to cloud storage</p>
+                </div>
+            </label>
+        </div>
+    </div>
+</div>
+{% endblock %}
