@@ -229,6 +229,11 @@ def share_via_email(session_id: int):
     }
     """
     try:
+        # SECURITY: Verify user has editor/admin access
+        meeting, error = check_meeting_access(session_id, required_role='editor')
+        if error:
+            return error
+        
         # Check if email service is configured
         if not email_service.is_available():
             return jsonify({
@@ -245,7 +250,7 @@ def share_via_email(session_id: int):
         if not emails or not isinstance(emails, list):
             return jsonify({'success': False, 'error': 'At least one email address required'}), 400
         
-        # Verify session exists
+        # Get session for email data
         session = db.session.get(Session, session_id)
         if not session:
             return jsonify({'success': False, 'error': 'Session not found'}), 404
@@ -301,6 +306,11 @@ def share_to_slack(session_id: int):
     }
     """
     try:
+        # SECURITY: Verify user has editor/admin access
+        meeting, error = check_meeting_access(session_id, required_role='editor')
+        if error:
+            return error
+        
         # Check if Slack service is configured
         if not slack_service.is_available():
             return jsonify({
@@ -312,7 +322,7 @@ def share_to_slack(session_id: int):
         data = request.get_json() or {}
         channel_override = data.get('channel')
         
-        # Verify session exists
+        # Get session for Slack data
         session = db.session.get(Session, session_id)
         if not session:
             return jsonify({'success': False, 'error': 'Session not found'}), 404
@@ -365,6 +375,11 @@ def share_with_team(session_id: int):
     }
     """
     try:
+        # SECURITY: Verify user has editor/admin access
+        meeting, error = check_meeting_access(session_id, required_role='editor')
+        if error:
+            return error
+        
         data = request.get_json() or {}
         user_email = data.get('user_email')
         role = data.get('role', 'viewer')
@@ -375,11 +390,6 @@ def share_with_team(session_id: int):
         
         if role not in ['viewer', 'editor', 'admin']:
             return jsonify({'success': False, 'error': 'Invalid role'}), 400
-        
-        # Verify session exists
-        session = db.session.get(Session, session_id)
-        if not session:
-            return jsonify({'success': False, 'error': 'Session not found'}), 404
         
         # Find user by email
         stmt = select(User).where(User.email == user_email)
@@ -433,10 +443,10 @@ def share_with_team(session_id: int):
 def get_team_shares(session_id: int):
     """Get all team members with access to session (T2.24)."""
     try:
-        # Verify session exists
-        session = db.session.get(Session, session_id)
-        if not session:
-            return jsonify({'success': False, 'error': 'Session not found'}), 404
+        # SECURITY: Verify user has viewer access
+        meeting, error = check_meeting_access(session_id, required_role='viewer')
+        if error:
+            return error
         
         # Get all team shares for this session
         stmt = select(TeamShare).where(TeamShare.session_id == session_id)
@@ -456,6 +466,11 @@ def get_team_shares(session_id: int):
 def remove_team_access(session_id: int, share_id: int):
     """Remove team member's access to session (T2.24)."""
     try:
+        # SECURITY: Verify user has editor/admin access
+        meeting, error = check_meeting_access(session_id, required_role='editor')
+        if error:
+            return error
+        
         team_share = db.session.get(TeamShare, share_id)
         
         if not team_share or team_share.session_id != session_id:
@@ -479,6 +494,7 @@ def get_share_analytics(token: str):
     """
     Get analytics for a shared link (T2.25).
     Track views, unique visitors, etc.
+    Public endpoint - token authorizes access.
     """
     try:
         # Find shared link
@@ -487,6 +503,10 @@ def get_share_analytics(token: str):
         
         if not shared_link:
             return jsonify({'success': False, 'error': 'Share link not found'}), 404
+        
+        # Validate token is active and not expired
+        if shared_link.is_expired or not shared_link.is_active:
+            return jsonify({'success': False, 'error': 'Share link is no longer active'}), 403
         
         # Get analytics data
         total_views = db.session.query(func.count(ShareAnalytic.id)).filter(
