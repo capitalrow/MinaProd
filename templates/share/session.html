@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}{{ session.title or 'Shared Meeting' }} - Mina{% endblock %}
+{% block meta_description %}View this shared meeting transcript and insights from Mina.{% endblock %}
+
+{% block content %}
+<div class="share-page">
+    <div class="share-header">
+        <div class="container">
+            <div class="share-header-content fade-in">
+                <div class="share-badge">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                    </svg>
+                    Shared Meeting
+                </div>
+                <h1 class="share-title">{{ session.title or 'Untitled Meeting' }}</h1>
+                <div class="share-meta">
+                    <span class="meta-item">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        {{ session.created_at.strftime('%B %d, %Y') if session.created_at else 'Date unknown' }}
+                    </span>
+                    <span class="meta-item">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {{ session.duration_minutes or '0' }} min
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="share-content">
+            {% if summary %}
+            <section class="share-section fade-in" style="animation-delay: 0.1s;">
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Summary
+                        </h2>
+                    </div>
+                    <p class="summary-text">{{ summary.content }}</p>
+                </div>
+            </section>
+            {% endif %}
+
+            {% if segments %}
+            <section class="share-section fade-in" style="animation-delay: 0.2s;">
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                            </svg>
+                            Transcript
+                        </h2>
+                    </div>
+                    <div class="transcript">
+                        {% for segment in segments %}
+                        <div class="transcript-item">
+                            <div class="speaker-info">
+                                <div class="speaker-avatar">{{ segment.speaker_name[0] if segment.speaker_name else 'S' }}</div>
+                                <span class="speaker-name">{{ segment.speaker_name or 'Speaker' }}</span>
+                                <span class="timestamp">{{ segment.timestamp_str or '' }}</span>
+                            </div>
+                            <p class="transcript-text">{{ segment.text }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+
+            <section class="share-footer fade-in" style="animation-delay: 0.3s;">
+                <div class="footer-card">
+                    <div class="footer-content">
+                        <div class="footer-branding">
+                            <h3 class="footer-title">Powered by Mina</h3>
+                            <p class="footer-text">Transform your meetings into actionable moments with AI-powered transcription and insights.</p>
+                        </div>
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
+                            Try Mina Free
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Crown+ Share Page Enhancement */
+.share-page {
+    min-height: calc(100vh - var(--header-height));
+    padding-bottom: var(--space-16);
+    background: 
+        radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+}
+
+/* Header */
+.share-header {
+    padding: var(--space-12) 0 var(--space-8);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-12);
+}
+
+.share-header-content {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.share-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-primary);
+    margin-bottom: var(--space-6);
+}
+
+.share-title {
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
+    font-weight: var(--font-weight-bold);
+    margin-bottom: var(--space-4);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.share-meta {
+    display: flex;
+    gap: var(--space-6);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+/* Content */
+.share-content {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.share-section {
+    margin-bottom: var(--space-8);
+}
+
+.section-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-8);
+    transition: all var(--transition-base);
+}
+
+.section-card:hover {
+    border-color: rgba(99, 102, 241, 0.2);
+    box-shadow: 0 8px 24px -8px rgba(99, 102, 241, 0.1);
+}
+
+.section-header {
+    margin-bottom: var(--space-6);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+}
+
+.section-title svg {
+    color: var(--color-primary);
+}
+
+.summary-text {
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+    font-size: var(--font-size-base);
+}
+
+/* Transcript */
+.transcript {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.transcript-item {
+    border-left: 2px solid var(--color-border);
+    padding-left: var(--space-4);
+    transition: border-color var(--transition-base);
+}
+
+.transcript-item:hover {
+    border-color: var(--color-primary);
+}
+
+.speaker-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-2);
+}
+
+.speaker-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--gradient-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-sm);
+}
+
+.speaker-name {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+}
+
+.timestamp {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+}
+
+.transcript-text {
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+/* Footer */
+.share-footer {
+    margin-top: var(--space-12);
+}
+
+.footer-card {
+    background: var(--gradient-primary);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-10);
+    color: white;
+}
+
+.footer-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-8);
+    flex-wrap: wrap;
+}
+
+.footer-branding {
+    flex: 1;
+    min-width: 280px;
+}
+
+.footer-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    margin-bottom: var(--space-2);
+}
+
+.footer-text {
+    opacity: 0.9;
+    line-height: 1.6;
+}
+
+.footer-card .btn-primary {
+    background: white;
+    color: var(--color-primary);
+    border: none;
+}
+
+.footer-card .btn-primary:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .share-meta {
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+    
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .section-card {
+        padding: var(--space-6);
+    }
+}
+</style>
+{% endblock %}
