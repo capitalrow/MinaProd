@@ -96,7 +96,15 @@
 .chart-frame {
     position: relative;
     width: 100%;
-    height: clamp(220px, 35vh, 360px);
+    aspect-ratio: 16 / 9;
+    max-height: 360px;
+}
+
+.chart-frame.chart-doughnut,
+.chart-frame.chart-radar {
+    aspect-ratio: 1 / 1;
+    max-width: 360px;
+    margin: 0 auto;
 }
 
 .chart-frame canvas {
@@ -190,21 +198,20 @@
         flex-direction: row;
     }
     
-    /* Constrain chart heights on mobile */
+    /* Constrain chart sizes on mobile */
     .chart-card {
         padding: var(--space-4);
     }
     
     .chart-frame {
-        height: clamp(200px, 50vw, 280px);
-        max-height: 320px;
+        max-height: 280px;
     }
     
-    /* Tighter constraints for radar/doughnut charts */
+    /* Tighter constraints for circular charts on mobile */
     .chart-frame.chart-radar,
     .chart-frame.chart-doughnut {
+        max-width: 280px;
         max-height: 280px;
-        aspect-ratio: 1 / 1;
     }
 }
 
@@ -213,6 +220,19 @@
     .analytics-tab {
         padding: var(--space-2) var(--space-3);
         font-size: 0.875rem;
+    }
+    
+    /* Further constrain circular charts */
+    .chart-frame.chart-radar,
+    .chart-frame.chart-doughnut {
+        max-width: 240px;
+        max-height: 240px;
+    }
+    
+    /* Adjust aspect ratio for better mobile fit */
+    .chart-frame {
+        aspect-ratio: 2 / 1;
+        max-height: 220px;
     }
 }
 </style>
