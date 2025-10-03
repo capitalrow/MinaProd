@@ -335,7 +335,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce }}">
 // Tab switching - runs immediately, doesn't need Chart.js
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.analytics-tab').forEach(tab => {
@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script>
+<script nonce="{{ g.csp_nonce }}">
 // Chart.js initialization - waits for Chart.js to load
 window.addEventListener('load', function() {
     if (typeof Chart === 'undefined') {
