@@ -168,13 +168,21 @@ def index():
 @login_required
 def meetings():
     """Meetings overview page."""
+    # Check if user has workspace, if not show empty state
+    if not current_user.workspace_id:
+        return render_template('dashboard/meetings.html',
+                             meetings=[],
+                             status_filter='all',
+                             search_query='',
+                             empty_state=True)
+    
     # Filter and pagination
     page = request.args.get('page', 1, type=int)
     status_filter = request.args.get('status', 'all')
     search_query = request.args.get('search', '')
     
-    # Base query
-    query = db.session.query(Meeting).filter_by(workspace_id=current_user.workspace_id)
+    # Build query
+    query = db.select(Meeting).filter_by(workspace_id=current_user.workspace_id)
     
     # Apply filters
     if status_filter != 'all':
@@ -183,19 +191,17 @@ def meetings():
     if search_query:
         query = query.filter(Meeting.title.contains(search_query))
     
+    # Order by created_at descending
+    query = query.order_by(desc(Meeting.created_at))
+    
     # Paginate results
-    meetings = db.paginate(
-        db.select(Meeting).filter_by(workspace_id=current_user.workspace_id).order_by(desc(Meeting.created_at)) if status_filter == 'all' else
-        db.select(Meeting).filter_by(workspace_id=current_user.workspace_id, status=status_filter).order_by(desc(Meeting.created_at)) if not search_query else
-        db.select(Meeting).filter_by(workspace_id=current_user.workspace_id, status=status_filter).filter(Meeting.title.contains(search_query)).order_by(desc(Meeting.created_at)) if status_filter != 'all' else
-        db.select(Meeting).filter_by(workspace_id=current_user.workspace_id).filter(Meeting.title.contains(search_query)).order_by(desc(Meeting.created_at)),
-        page=page, per_page=20, error_out=False
-    )
+    meetings = db.paginate(query, page=page, per_page=20, error_out=False)
     
     return render_template('dashboard/meetings.html',
                          meetings=meetings,
                          status_filter=status_filter,
-                         search_query=search_query)
+                         search_query=search_query,
+                         empty_state=False)
 
 
 @dashboard_bp.route('/meeting/<int:meeting_id>')
