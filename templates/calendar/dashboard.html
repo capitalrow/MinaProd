@@ -2,62 +2,410 @@
 
 {% block title %}Calendar - Mina{% endblock %}
 
+{% block extra_css %}
+<style>
+.calendar-container {
+    min-height: calc(100vh - var(--header-height));
+    padding: var(--space-8) 0;
+    max-width: 1400px;
+}
+
+.calendar-header {
+    margin-bottom: var(--space-6);
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.calendar-title {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--space-2);
+}
+
+.calendar-subtitle {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-lg);
+}
+
+.calendar-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    animation: fadeInUp 0.6s ease-out 0.1s;
+    animation-fill-mode: both;
+}
+
+.calendar-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-6);
+}
+
+.calendar-month {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-semibold);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--space-2);
+}
+
+.calendar-day-header {
+    text-align: center;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-tertiary);
+    padding: var(--space-2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    padding: var(--space-2);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendar-day:hover {
+    background: var(--color-surface-hover);
+    border-color: var(--color-primary);
+    transform: scale(1.05);
+}
+
+.calendar-day.today {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+    border-color: var(--color-primary);
+}
+
+.calendar-day.has-event::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    width: 6px;
+    height: 6px;
+    background: var(--color-primary);
+    border-radius: 50%;
+}
+
+.calendar-day-number {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+.calendar-day.other-month {
+    opacity: 0.3;
+}
+
+.events-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    margin-top: var(--space-6);
+    animation: fadeInUp 0.6s ease-out 0.2s;
+    animation-fill-mode: both;
+}
+
+.events-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--space-4);
+}
+
+.event-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-base);
+    animation: fadeInUp 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.event-item:hover {
+    transform: translateX(4px);
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.event-indicator {
+    width: 4px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+}
+
+.event-indicator.primary {
+    background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-accent) 100%);
+}
+
+.event-indicator.success {
+    background: linear-gradient(180deg, rgb(34, 197, 94) 0%, rgb(22, 163, 74) 100%);
+}
+
+.event-indicator.warning {
+    background: linear-gradient(180deg, rgb(249, 115, 22) 0%, rgb(234, 88, 12) 100%);
+}
+
+.event-content {
+    flex: 1;
+}
+
+.event-title {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--space-1);
+}
+
+.event-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.event-meta-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--space-12) var(--space-6);
+    color: var(--color-text-tertiary);
+}
+
+.empty-state-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto var(--space-4);
+}
+
+/* Stagger animations for events */
+.event-item:nth-child(1) { animation-delay: 0.3s; }
+.event-item:nth-child(2) { animation-delay: 0.35s; }
+.event-item:nth-child(3) { animation-delay: 0.4s; }
+.event-item:nth-child(4) { animation-delay: 0.45s; }
+.event-item:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .calendar-title {
+        font-size: var(--font-size-3xl);
+    }
+    
+    .calendar-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: var(--space-4);
+    }
+    
+    .calendar-day {
+        padding: var(--space-1);
+    }
+    
+    .calendar-day-number {
+        font-size: var(--font-size-xs);
+    }
+    
+    .event-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .event-indicator {
+        width: 100%;
+        height: 4px;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container" style="padding-top: var(--space-8); padding-bottom: var(--space-8);">
-    <div class="flex justify-between items-center mb-8">
+<div class="container calendar-container">
+    <!-- Header -->
+    <div class="calendar-header flex justify-between items-center">
         <div>
-            <h1 class="text-4xl font-bold mb-2">Calendar</h1>
-            <p class="text-secondary">Schedule and manage your meetings</p>
+            <h1 class="calendar-title">Calendar</h1>
+            <p class="calendar-subtitle">Schedule and manage your meetings</p>
         </div>
-        <button class="btn btn-primary">New Event</button>
+        <button class="btn btn-primary">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            New Event
+        </button>
     </div>
 
-    <div class="card">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-semibold">{{ current_month|default('October 2025') }}</h2>
+    <!-- Calendar View -->
+    <div class="calendar-card">
+        <div class="calendar-nav">
+            <h2 class="calendar-month">{{ current_month|default('October 2025') }}</h2>
             <div class="flex gap-2">
-                <button class="btn btn-sm btn-ghost">← Prev</button>
-                <button class="btn btn-sm btn-ghost">Today</button>
-                <button class="btn btn-sm btn-ghost">Next →</button>
+                <button class="btn btn-sm btn-ghost">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    Prev
+                </button>
+                <button class="btn btn-sm btn-primary">Today</button>
+                <button class="btn btn-sm btn-ghost">
+                    Next
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
             </div>
         </div>
 
-        <div class="grid grid-cols-7 gap-2 mb-4">
-            <div class="text-center text-sm font-medium text-secondary">Sun</div>
-            <div class="text-center text-sm font-medium text-secondary">Mon</div>
-            <div class="text-center text-sm font-medium text-secondary">Tue</div>
-            <div class="text-center text-sm font-medium text-secondary">Wed</div>
-            <div class="text-center text-sm font-medium text-secondary">Thu</div>
-            <div class="text-center text-sm font-medium text-secondary">Fri</div>
-            <div class="text-center text-sm font-medium text-secondary">Sat</div>
+        <!-- Day Headers -->
+        <div class="calendar-grid mb-2">
+            <div class="calendar-day-header">Sun</div>
+            <div class="calendar-day-header">Mon</div>
+            <div class="calendar-day-header">Tue</div>
+            <div class="calendar-day-header">Wed</div>
+            <div class="calendar-day-header">Thu</div>
+            <div class="calendar-day-header">Fri</div>
+            <div class="calendar-day-header">Sat</div>
         </div>
 
-        <div class="grid grid-cols-7 gap-2">
+        <!-- Calendar Days -->
+        <div class="calendar-grid">
             {% for day in range(1, 32) %}
-            <div class="aspect-square p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition">
-                <p class="text-sm font-medium">{{ day }}</p>
+            <div class="calendar-day{% if day == 3 %} today{% endif %}{% if day in [5, 12, 18, 25] %} has-event{% endif %}">
+                <span class="calendar-day-number">{{ day }}</span>
             </div>
             {% endfor %}
         </div>
     </div>
 
-    <div class="card mt-6">
-        <h2 class="text-xl font-semibold mb-4">Upcoming Events</h2>
+    <!-- Upcoming Events -->
+    <div class="events-card">
+        <h2 class="events-title">Upcoming Events</h2>
         {% if events %}
         <div style="display: flex; flex-direction: column; gap: var(--space-3);">
             {% for event in events %}
-            <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-                <div class="w-1 h-12 bg-primary rounded-full"></div>
-                <div class="flex-1">
-                    <h3 class="font-semibold">{{ event.title }}</h3>
-                    <p class="text-sm text-secondary">{{ event.date }} • {{ event.time }}</p>
+            <div class="event-item">
+                <div class="event-indicator {{ event.color|default('primary') }}"></div>
+                <div class="event-content">
+                    <h3 class="event-title">{{ event.title }}</h3>
+                    <div class="event-meta">
+                        <span class="event-meta-item">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            {{ event.date }}
+                        </span>
+                        <span class="event-meta-item">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            {{ event.time }}
+                        </span>
+                        {% if event.location %}
+                        <span class="event-meta-item">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            {{ event.location }}
+                        </span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
-        <p class="text-secondary text-center py-8">No upcoming events</p>
+        <div class="empty-state">
+            <svg class="empty-state-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <h3 class="text-xl font-semibold mb-2">No upcoming events</h3>
+            <p class="text-secondary mb-6">Your scheduled meetings will appear here</p>
+            <button class="btn btn-primary">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Schedule a meeting
+            </button>
+        </div>
         {% endif %}
     </div>
 </div>
+
+<script nonce="{{ g.csp_nonce }}">
+// Calendar navigation
+const prevBtn = document.querySelector('.calendar-nav .btn-ghost:first-of-type');
+const nextBtn = document.querySelector('.calendar-nav .btn-ghost:last-of-type');
+const todayBtn = document.querySelector('.calendar-nav .btn-primary');
+
+if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+        console.log('Previous month clicked');
+        // Here you would typically update the calendar view
+    });
+}
+
+if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+        console.log('Next month clicked');
+        // Here you would typically update the calendar view
+    });
+}
+
+if (todayBtn) {
+    todayBtn.addEventListener('click', () => {
+        console.log('Today clicked');
+        // Here you would typically navigate to current month/date
+    });
+}
+
+// Calendar day click
+document.querySelectorAll('.calendar-day').forEach(day => {
+    day.addEventListener('click', function() {
+        const dayNumber = this.querySelector('.calendar-day-number').textContent;
+        console.log('Day clicked:', dayNumber);
+        // Here you would typically show events for that day or create a new event
+    });
+});
+</script>
 {% endblock %}
