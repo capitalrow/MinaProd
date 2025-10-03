@@ -149,6 +149,38 @@
     display: block;
 }
 
+/* Date Range Select Styling */
+.date-range-select {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-2) var(--space-3);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    min-width: 140px;
+}
+
+.date-range-select:hover {
+    border-color: var(--color-primary);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.date-range-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.date-range-select option {
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    padding: var(--space-2);
+}
+
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -206,6 +238,11 @@
         flex-direction: row;
     }
     
+    .date-range-select {
+        flex: 1;
+        min-width: 120px;
+    }
+    
     /* Constrain chart sizes on mobile */
     .chart-card {
         padding: var(--space-4);
@@ -246,7 +283,7 @@
                 <p class="analytics-subtitle">Insights from your meetings and productivity</p>
             </div>
             <div class="flex gap-3">
-                <select class="p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm">
+                <select class="date-range-select">
                     <option value="7">Last 7 days</option>
                     <option value="30" selected>Last 30 days</option>
                     <option value="90">Last 90 days</option>
