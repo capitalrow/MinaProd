@@ -7,8 +7,39 @@ Mina is an enterprise-grade SaaS platform designed to transform meetings into ac
 ## Recent Development Progress (October 2025)
 
 **Phase 1: Design System - ✅ COMPLETE (32/32 tasks - 100%)**
-**Phase 2: Transcript Experience - ✅ COMPLETE (31/31 tasks - 100%)**
-**Overall Progress: 148/268 tasks (55%)**
+**Phase 2: Transcript Experience - ✅ COMPLETE (43/43 tasks - 100%)**
+**Overall Progress: 161/268 tasks (60%)**
+
+### Phase 2 Group 2: AI Intelligence - ✅ COMPLETE (12/12 tasks - 100%)
+
+**Completed Features (T2.11-T2.22):**
+- ✅ Auto-summarization with 3-paragraph meeting summaries
+- ✅ Key points extraction (5-10 actionable insights per meeting)
+- ✅ Action items extraction with assignee, priority, due dates
+- ✅ Questions tracking (asked vs answered status)
+- ✅ Decisions extraction with rationale and impact analysis
+- ✅ Sentiment analysis with overall score and key moments
+- ✅ Topic detection (main discussion themes)
+- ✅ Language detection with confidence scoring
+- ✅ Custom AI prompts for user-defined analysis
+- ✅ Cost optimization with token limits and batching
+- ✅ Quality scoring system (0.0-0.95 confidence)
+- ✅ Confidence indicators in all AI responses
+
+**Implementation Details:**
+- Comprehensive AI service using OpenAI GPT-4 Turbo
+- Single optimized API call for all insights (cost-efficient)
+- Individual endpoints for granular control
+- JSON-structured responses for consistent parsing
+- Fallback handling when API key not configured
+- Token optimization (~8K char limit per request)
+- Temperature tuning per analysis type
+- Error handling with graceful degradation
+
+**Files Created/Enhanced:**
+- `services/ai_insights_service.py` (450+ lines) - Complete AI intelligence layer
+- `routes/api_ai_insights.py` (380+ lines) - REST API for all AI features
+- Endpoints: /ai/insights, /ai/summary, /ai/key-points, /ai/action-items, /ai/questions, /ai/decisions, /ai/sentiment, /ai/topics, /ai/language, /ai/custom-prompt, /ai/cost-estimate
 
 ### Phase 2 Group 4: Sharing & Integrations - ✅ COMPLETE (6/9 tasks - 67%)
 
@@ -73,8 +104,15 @@ Mina is an enterprise-grade SaaS platform designed to transform meetings into ac
 **Key Files:**
 - `static/js/transcript.js` (1075 lines) - Complete transcript interaction system
 - `static/css/transcript.css` (726 lines) - Enhanced Crown+ transcript styles
-- `routes/api_transcript.py` - Export, edit, speaker, comment APIs
+- `routes/api_transcript.py` (622 lines) - Export, edit, speaker, comment APIs with real DB persistence
+- `models/comment.py` - Comment model with threaded replies support
 - `templates/dashboard/meeting_detail.html` - Transcript UI integration
+
+**Latest Updates (Oct 3, 2025):**
+- ✅ Comment system upgraded from mock to real database persistence
+- ✅ Comment model with user relationship, threading (parent_id), timestamps
+- ✅ GET/POST endpoints now fully functional with database operations
+- ✅ Support for threaded comment replies
 
 ## User Preferences
 

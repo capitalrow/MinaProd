@@ -339,8 +339,36 @@ Be concise, accurate, and actionable. Use null for missing information."""
             logger.error(f"Failed to detect topics: {e}")
             return []
     
+    def detect_language(self, transcript: str) -> Dict[str, Any]:
+        """T2.18: Detect language of meeting transcript."""
+        if not self.is_available():
+            return {"language": "unknown", "confidence": 0.0, "code": "und"}
+        
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4-turbo-preview",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Identify the primary language of the provided text."
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Detect language:\n\n{transcript[:2000]}\n\nReturn as JSON: {{\"language\": \"English\", \"code\": \"en\", \"confidence\": 0.95, \"multilingual\": false, \"other_languages\": []}}"
+                    }
+                ],
+                temperature=0.1,
+                max_tokens=100,
+                response_format={"type": "json_object"}
+            )
+            
+            return json.loads(response.choices[0].message.content)
+        except Exception as e:
+            logger.error(f"Failed to detect language: {e}")
+            return {"language": "unknown", "confidence": 0.0, "code": "und", "error": str(e)}
+    
     # ============================================
-    # Advanced Features (T2.18-T2.22)
+    # Advanced Features (T2.19-T2.22)
     # ============================================
     
     def execute_custom_prompt(self, transcript: str, custom_prompt: str) -> Dict[str, Any]:
