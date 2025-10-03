@@ -25,6 +25,7 @@ from .task import Task
 from .calendar_event import CalendarEvent
 from .analytics import Analytics
 from .marker import Marker
+from .comment import Comment
 
 # Import Summary last to avoid circular imports
 try:
@@ -36,5 +37,5 @@ except ImportError:
 __all__ = [
     'db', 'Base', 'Session', 'Segment', 'Summary', 'SharedLink', 'TeamShare', 'ShareAnalytic',
     'ChunkMetric', 'SessionMetric', 'User', 'Workspace', 'Meeting', 
-    'Participant', 'Task', 'CalendarEvent', 'Analytics', 'Marker'
+    'Participant', 'Task', 'CalendarEvent', 'Analytics', 'Marker', 'Comment'
 ]
