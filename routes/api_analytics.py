@@ -476,12 +476,14 @@ def get_communication_analytics():
                     'talk_time': 0,
                     'word_count': 0,
                     'question_count': 0,
+                    'segment_count': 0,
                     'meeting_count': 0
                 }
             
             participant_stats[name]['talk_time'] += participant.talk_time_seconds or 0
             participant_stats[name]['word_count'] += participant.word_count or 0
             participant_stats[name]['question_count'] += participant.question_count or 0
+            participant_stats[name]['segment_count'] += participant.segment_count or 0
             participant_stats[name]['meeting_count'] += 1
         
         # Sort by total talk time
@@ -515,6 +517,7 @@ def get_communication_analytics():
                         'talk_time_minutes': round(stats['talk_time'] / 60, 1),
                         'word_count': stats['word_count'],
                         'question_count': stats['question_count'],
+                        'segment_count': stats['segment_count'],
                         'meeting_count': stats['meeting_count']
                     } for name, stats in top_speakers
                 ],
