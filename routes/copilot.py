@@ -49,7 +49,8 @@ def chat_with_copilot():
     Request Body:
         {
             "message": "What did we decide about the Q3 budget?",
-            "context": "meeting_id_optional"
+            "context": "meeting_id_optional",
+            "session_id": "optional_session_id"
         }
     
     Returns:
@@ -59,6 +60,7 @@ def chat_with_copilot():
         data = request.get_json() or {}
         message = data.get('message', '').strip()
         context = data.get('context')
+        session_id = data.get('session_id')  # For conversation continuity
         
         if not message:
             return jsonify({
@@ -67,7 +69,7 @@ def chat_with_copilot():
             }), 400
         
         # Process the message with AI
-        response = _process_copilot_message(message, context, current_user.id)
+        response = _process_copilot_message(message, context, current_user.id, session_id)
         
         return jsonify({
             'success': True,
@@ -160,23 +162,29 @@ def get_quick_queries():
         }), 500
 
 
-def _process_copilot_message(message: str, context: Optional[str], user_id: int) -> Dict[str, Any]:
+def _process_copilot_message(message: str, context: Optional[str], user_id: int, session_id: Optional[str] = None) -> Dict[str, Any]:
     """
-    Process a message using AI and meeting context.
+    Process a message using AI and meeting context with conversation history.
     
     Args:
         message: User's natural language query
         context: Optional meeting ID for context
         user_id: ID of the current user
+        session_id: Optional session ID for conversation continuity
     
     Returns:
         Dict containing AI response, citations, and action buttons
     """
     try:
         from services.openai_client_manager import get_openai_client
-        from models import Meeting, Task, Segment, db as models_db
+        from models import Meeting, Task, Segment, CopilotConversation, db as models_db
         
-        # Get current user to access workspace_id
+        # Generate session_id if not provided
+        if not session_id:
+            import uuid
+            session_id = str(uuid.uuid4())
+        
+        # Get current user to access workspace_id and preferences
         from models import User
         user = models_db.session.get(User, user_id)
         if not user or not user.workspace_id:
@@ -184,8 +192,24 @@ def _process_copilot_message(message: str, context: Optional[str], user_id: int)
                 'text': "Unable to access your workspace. Please try logging in again.",
                 'citations': [],
                 'suggested_actions': [],
+                'session_id': session_id,
                 'timestamp': datetime.now().isoformat()
             }
+        
+        # Load user preferences if available
+        user_preferences = {}
+        if user.preferences:
+            try:
+                user_preferences = json.loads(user.preferences)
+            except:
+                pass
+        
+        # Load recent conversation history for context continuity (last 10 messages in this session)
+        conversation_history = models_db.session.query(CopilotConversation)\
+            .filter_by(user_id=user_id, session_id=session_id)\
+            .order_by(CopilotConversation.created_at.desc())\
+            .limit(10).all()
+        conversation_history.reverse()  # Oldest first for chronological order
         
         # Get relevant meetings and tasks for context
         recent_meetings = models_db.session.query(Meeting)\
@@ -257,19 +281,22 @@ def _process_copilot_message(message: str, context: Optional[str], user_id: int)
                 task_data['meeting_id'] = task.meeting_id
             task_context.append(task_data)
         
-        # Prepare AI prompt
+        # Prepare AI prompt with user preferences awareness
         system_prompt = """You are Mina's AI Copilot. You help users understand their meetings, manage tasks, and find information. 
 
 You have access to:
 - Recent meeting transcripts and summaries
 - Task lists and status
 - Meeting decisions and action items
+- Conversation history for context continuity
+- User preferences and work patterns
 
 Always:
 - Provide specific, actionable responses
 - Include citations to meetings or tasks when possible
 - Suggest relevant actions users can take
 - Be concise but helpful
+- Remember context from earlier in the conversation
 
 Available actions you can suggest:
 - create_task: Create a new task
@@ -278,6 +305,19 @@ Available actions you can suggest:
 - add_to_calendar: Add item to calendar
 - export: Export to Slack/Notion/etc
 """
+        
+        # Add user preferences to system prompt if available
+        if user_preferences:
+            pref_lines = []
+            if user_preferences.get('timezone'):
+                pref_lines.append(f"- User timezone: {user_preferences['timezone']}")
+            if user_preferences.get('work_hours'):
+                pref_lines.append(f"- Work hours: {user_preferences['work_hours']}")
+            if user_preferences.get('communication_style'):
+                pref_lines.append(f"- Communication style: {user_preferences['communication_style']}")
+            
+            if pref_lines:
+                system_prompt += "\n\nUser Preferences:\n" + "\n".join(pref_lines)
         
         # Build context string with token management
         context_parts = []
@@ -308,22 +348,33 @@ Available actions you can suggest:
         
         user_prompt = "\n".join(context_parts) + "\n\nPlease provide a helpful, specific response based on this context. Include citations to meetings or tasks when relevant, and suggest actionable next steps."
         
-        # Call OpenAI
+        # Call OpenAI with conversation history
         client = get_openai_client()
         if not client:
             return {
                 'text': "AI service is not configured. Please check your API key settings.",
                 'citations': [],
                 'suggested_actions': [],
+                'session_id': session_id,
                 'timestamp': datetime.now().isoformat()
             }
+        
+        # Build messages array with conversation history
+        messages = [{"role": "system", "content": system_prompt}]
+        
+        # Add conversation history for context
+        for conv in conversation_history:
+            messages.append({
+                "role": conv.role,
+                "content": conv.message
+            })
+        
+        # Add current user message
+        messages.append({"role": "user", "content": user_prompt})
             
         response = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
+            messages=messages,
             max_tokens=800,  # Increased for better responses
             temperature=0.7,
             presence_penalty=0.1,  # Encourage diverse responses
@@ -336,10 +387,44 @@ Available actions you can suggest:
         actions = _extract_suggested_actions(ai_response, message)
         citations = _extract_citations(ai_response, meeting_context, task_context)
         
+        # Save conversation to database for future context
+        try:
+            # Save user message
+            user_conv = CopilotConversation(
+                user_id=user_id,
+                role='user',
+                message=message,
+                session_id=session_id,
+                context_filter=context,
+                prompt_tokens=response.usage.prompt_tokens if hasattr(response, 'usage') else None,
+                completion_tokens=0
+            )
+            models_db.session.add(user_conv)
+            
+            # Save assistant response
+            assistant_conv = CopilotConversation(
+                user_id=user_id,
+                role='assistant',
+                message=ai_response,
+                session_id=session_id,
+                context_filter=context,
+                prompt_tokens=0,
+                completion_tokens=response.usage.completion_tokens if hasattr(response, 'usage') else None
+            )
+            models_db.session.add(assistant_conv)
+            models_db.session.commit()
+            
+            logger.debug(f"Saved conversation for user {user_id}, session {session_id}")
+        except Exception as e:
+            logger.error(f"Failed to save conversation history: {e}")
+            # Don't fail the response if saving fails
+            models_db.session.rollback()
+        
         return {
             'text': ai_response,
             'citations': citations,
             'suggested_actions': actions,
+            'session_id': session_id,
             'timestamp': datetime.now().isoformat()
         }
         
@@ -351,6 +436,7 @@ Available actions you can suggest:
             'text': "I'm having trouble processing your request right now. Please try again.",
             'citations': [],
             'suggested_actions': [],
+            'session_id': session_id if 'session_id' in locals() else None,
             'timestamp': datetime.now().isoformat()
         }
 
