@@ -4,6 +4,76 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/copilot.css') }}">
+<!-- Highlight.js for code syntax highlighting -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<style>
+/* Code block styling */
+.message-content pre {
+    background: var(--color-bg-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    overflow-x: auto;
+    margin: var(--space-3) 0;
+    border: 1px solid var(--color-border);
+}
+
+.message-content code {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9em;
+}
+
+.message-content pre code {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+}
+
+.message-content code:not(pre code) {
+    background: var(--color-bg-subtle);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    color: var(--color-primary);
+}
+
+.code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--color-border);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    margin-bottom: -1px;
+}
+
+.code-language {
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.copy-code-btn {
+    padding: var(--space-1) var(--space-2);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: var(--text-xs);
+    transition: all 0.2s;
+}
+
+.copy-code-btn:hover {
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+.copy-code-btn.copied {
+    color: var(--color-success);
+    border-color: var(--color-success);
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -252,6 +322,85 @@ function addUserMessage(text) {
     scrollToBottom();
 }
 
+function processMarkdown(text) {
+    let processed = text;
+    
+    // Process code blocks with language tag
+    processed = processed.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+        const language = lang || 'plaintext';
+        const codeId = 'code-' + Math.random().toString(36).substr(2, 9);
+        let highlighted = code;
+        
+        // Apply syntax highlighting if highlight.js is available
+        if (typeof hljs !== 'undefined') {
+            try {
+                if (lang && hljs.getLanguage(lang)) {
+                    highlighted = hljs.highlight(code.trim(), { language: lang }).value;
+                } else {
+                    highlighted = hljs.highlightAuto(code.trim()).value;
+                }
+            } catch (e) {
+                highlighted = escapeHtml(code.trim());
+            }
+        } else {
+            highlighted = escapeHtml(code.trim());
+        }
+        
+        return `
+            <div class="code-block" style="margin: var(--space-3) 0;">
+                <div class="code-header">
+                    <span class="code-language">${language}</span>
+                    <button class="copy-code-btn" onclick="copyCode('${codeId}')">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <pre><code id="${codeId}" class="language-${language}">${highlighted}</code></pre>
+            </div>
+        `;
+    });
+    
+    // Process inline code
+    processed = processed.replace(/`([^`]+)`/g, '<code>$1</code>');
+    
+    // Process bold
+    processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    
+    // Process italic
+    processed = processed.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    
+    // Process bullet lists
+    processed = processed.replace(/^\- (.+)$/gm, '<li>$1</li>');
+    processed = processed.replace(/(<li>.*<\/li>)/s, '<ul style="margin-left: var(--space-5); list-style: disc;">$1</ul>');
+    
+    // Process numbered lists
+    processed = processed.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+    
+    // Process line breaks
+    processed = processed.replace(/\n\n/g, '</p><p>');
+    
+    return processed;
+}
+
+function copyCode(codeId) {
+    const codeElement = document.getElementById(codeId);
+    if (codeElement) {
+        const text = codeElement.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = event.target.closest('.copy-code-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('copied');
+            }, 2000);
+        });
+    }
+}
+
 function addAssistantMessage(response) {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message-assistant';
@@ -263,7 +412,7 @@ function addAssistantMessage(response) {
             </svg>
         </div>
         <div class="message-content">
-            <p>${escapeHtml(response.text)}</p>
+            <p>${processMarkdown(response.text)}</p>
     `;
     
     if (response.citations && response.citations.length > 0) {
@@ -371,4 +520,13 @@ chatInput.addEventListener('keydown', (e) => {
     }
 });
 </script>
+
+<!-- Highlight.js for syntax highlighting -->
+<script nonce="{{ g.csp_nonce }}" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script nonce="{{ g.csp_nonce }}" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script nonce="{{ g.csp_nonce }}" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+<script nonce="{{ g.csp_nonce }}" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/typescript.min.js"></script>
+<script nonce="{{ g.csp_nonce }}" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+<script nonce="{{ g.csp_nonce }}" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js"></script>
+<script nonce="{{ g.csp_nonce }}" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
 {% endblock %}

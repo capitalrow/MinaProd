@@ -373,6 +373,15 @@ Always:
 - Suggest relevant actions users can take
 - Be concise but helpful
 - Remember context from earlier in the conversation
+- Use markdown for formatting
+- When generating code, use proper markdown code blocks with language tags
+
+Code Generation:
+- When asked to generate code, API examples, scripts, or technical solutions, use markdown code blocks
+- Format: ```language\ncode here\n```
+- Supported languages: python, javascript, typescript, bash, sql, json, yaml, html, css, and more
+- Include helpful comments in the code
+- Provide context or explanations before/after code blocks
 
 Available actions you can suggest:
 - create_task: Create a new task
