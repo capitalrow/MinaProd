@@ -419,6 +419,60 @@
 
     <!-- Engagement Tab -->
     <div id="tab-engagement" class="analytics-tab-content">
+        <!-- Speaking Time Analysis (T2.33) -->
+        <div class="charts-primary-grid mb-6">
+            <div class="chart-card">
+                <h2 class="text-lg font-semibold mb-1">Speaking Time Distribution</h2>
+                <p class="text-sm text-secondary mb-4">Breakdown of talk time across participants</p>
+                <div class="chart-frame">
+                    <canvas id="speakingTimeBarChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h2 class="text-lg font-semibold mb-1">Speaking Balance</h2>
+                <p class="text-sm text-secondary mb-4">Percentage of total meeting time</p>
+                <div class="chart-frame chart-doughnut">
+                    <canvas id="speakingTimePieChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Speaking Time Breakdown -->
+        <div class="charts-single mb-6">
+            <div class="chart-card">
+                <h2 class="text-lg font-semibold mb-1">Participant Details</h2>
+                <p class="text-sm text-secondary mb-4">Individual speaking metrics and balance indicators</p>
+                <div id="speakingTimeDetails" class="flex flex-col gap-4">
+                    <!-- Will be populated by JavaScript -->
+                    <div class="text-center text-secondary py-8">
+                        <svg class="w-12 h-12 mx-auto mb-2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Loading speaking time data...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Participation Balance Metrics (T2.34) -->
+        <div class="charts-single mb-6">
+            <div class="chart-card">
+                <h2 class="text-lg font-semibold mb-1">Participation Balance Overview</h2>
+                <p class="text-sm text-secondary mb-4">Multi-dimensional engagement metrics across all participants</p>
+                <div id="participationBalanceMetrics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Will be populated by JavaScript -->
+                    <div class="text-center text-secondary py-8 col-span-full">
+                        <svg class="w-12 h-12 mx-auto mb-2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        Loading participation balance metrics...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Participation and Sentiment -->
         <div class="charts-equal-grid">
             <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-4">Participation Rate</h2>
