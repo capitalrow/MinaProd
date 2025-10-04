@@ -530,6 +530,149 @@ def get_communication_analytics():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
+@api_analytics_bp.route('/meetings/<int:meeting_id>/topic-trends', methods=['GET'])
+@cache_response(ttl=3600, prefix='analytics')
+@login_required
+def get_topic_trends(meeting_id):
+    """Get topic trend analysis with timeline visualization data."""
+    try:
+        import asyncio
+        
+        # Verify meeting belongs to user's workspace
+        meeting = db.session.query(Meeting).filter_by(
+            id=meeting_id,
+            workspace_id=current_user.workspace_id
+        ).first()
+        
+        if not meeting:
+            return jsonify({'success': False, 'message': 'Meeting not found'}), 404
+        
+        # Get topic trends using async service method
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            trends = loop.run_until_complete(
+                analytics_service.get_topic_trends(meeting)
+            )
+        finally:
+            loop.close()
+        
+        return jsonify({
+            'success': True,
+            'trends': trends
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@api_analytics_bp.route('/meetings/<int:meeting_id>/questions', methods=['GET'])
+@cache_response(ttl=3600, prefix='analytics')
+@login_required
+def get_question_analytics(meeting_id):
+    """Get question/answer tracking analytics for a meeting."""
+    try:
+        import asyncio
+        
+        # Verify meeting belongs to user's workspace
+        meeting = db.session.query(Meeting).filter_by(
+            id=meeting_id,
+            workspace_id=current_user.workspace_id
+        ).first()
+        
+        if not meeting:
+            return jsonify({'success': False, 'message': 'Meeting not found'}), 404
+        
+        # Get Q&A analytics using async service method
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            qa_data = loop.run_until_complete(
+                analytics_service.get_question_answer_analytics(meeting)
+            )
+        finally:
+            loop.close()
+        
+        return jsonify({
+            'success': True,
+            'qa_analytics': qa_data
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@api_analytics_bp.route('/meetings/<int:meeting_id>/action-items-completion', methods=['GET'])
+@cache_response(ttl=600, prefix='analytics')
+@login_required
+def get_action_items_completion(meeting_id):
+    """Get action items completion rate and status breakdown."""
+    try:
+        # Verify meeting belongs to user's workspace
+        meeting = db.session.query(Meeting).filter_by(
+            id=meeting_id,
+            workspace_id=current_user.workspace_id
+        ).first()
+        
+        if not meeting:
+            return jsonify({'success': False, 'message': 'Meeting not found'}), 404
+        
+        # Get all tasks for this meeting
+        tasks = db.session.query(Task).filter_by(meeting_id=meeting_id).all()
+        
+        if not tasks:
+            return jsonify({
+                'success': True,
+                'completion': {
+                    'total': 0,
+                    'completed': 0,
+                    'in_progress': 0,
+                    'todo': 0,
+                    'completion_rate': 0,
+                    'tasks': []
+                }
+            })
+        
+        # Calculate status breakdown
+        status_counts = {
+            'completed': 0,
+            'in_progress': 0,
+            'todo': 0
+        }
+        
+        task_list = []
+        for task in tasks:
+            status = task.status or 'todo'
+            status_counts[status] = status_counts.get(status, 0) + 1
+            
+            task_list.append({
+                'id': task.id,
+                'title': task.title,
+                'status': status,
+                'priority': task.priority,
+                'assignee': task.assignee,
+                'due_date': task.due_date.isoformat() if task.due_date else None,
+                'created_at': task.created_at.isoformat() if task.created_at else None
+            })
+        
+        completion_rate = (status_counts['completed'] / len(tasks)) * 100 if tasks else 0
+        
+        return jsonify({
+            'success': True,
+            'completion': {
+                'total': len(tasks),
+                'completed': status_counts['completed'],
+                'in_progress': status_counts['in_progress'],
+                'todo': status_counts['todo'],
+                'completion_rate': round(completion_rate, 1),
+                'tasks': task_list
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @api_analytics_bp.route('/export', methods=['GET'])
 @login_required
 def export_analytics():

@@ -594,6 +594,185 @@ class AnalyticsService:
         except Exception as e:
             print(f"Insight generation failed: {e}")
 
+    async def get_topic_trends(self, meeting: Meeting) -> Dict:
+        """
+        Analyze topic evolution throughout the meeting for timeline visualization.
+        Returns topics with timestamps showing when they were discussed.
+        """
+        if not meeting.session:
+            return {"topics": [], "timeline": []}
+        
+        segments = db.session.query(Segment).filter_by(
+            session_id=meeting.session.id,
+            is_final=True
+        ).order_by(Segment.created_at).all()
+        
+        if not segments:
+            return {"topics": [], "timeline": []}
+        
+        # Group segments into 5-minute windows for topic analysis
+        window_size = 5 * 60  # 5 minutes in seconds
+        time_windows = {}
+        
+        start_time = segments[0].created_at
+        for segment in segments:
+            time_diff = (segment.created_at - start_time).total_seconds()
+            window_index = int(time_diff // window_size)
+            
+            if window_index not in time_windows:
+                time_windows[window_index] = {
+                    'start_offset': window_index * window_size,
+                    'text': [],
+                    'segments': []
+                }
+            
+            time_windows[window_index]['text'].append(segment.text)
+            time_windows[window_index]['segments'].append(segment.id)
+        
+        # Extract topics for each time window
+        timeline = []
+        all_topics_set = set()
+        
+        for window_index in sorted(time_windows.keys()):
+            window_data = time_windows[window_index]
+            window_text = " ".join(window_data['text'])
+            
+            # Extract topics using AI or keyword analysis
+            if self.client and len(window_text) > 50:
+                topics = await self._extract_topics_for_window(window_text)
+            else:
+                topics = self._extract_keywords_simple(window_text)[:3]
+            
+            for topic in topics:
+                all_topics_set.add(topic)
+            
+            timeline.append({
+                'time_offset_minutes': window_data['start_offset'] / 60,
+                'topics': topics,
+                'segment_count': len(window_data['segments']),
+                'text_preview': window_text[:100] + '...' if len(window_text) > 100 else window_text
+            })
+        
+        # Create topic frequency summary
+        topic_summary = []
+        for topic in all_topics_set:
+            appearances = sum(1 for window in timeline if topic in window['topics'])
+            first_mention = next((w['time_offset_minutes'] for w in timeline if topic in w['topics']), 0)
+            
+            topic_summary.append({
+                'name': topic,
+                'frequency': appearances,
+                'first_mentioned_at': first_mention,
+                'coverage_percentage': round((appearances / len(timeline)) * 100, 1) if timeline else 0
+            })
+        
+        topic_summary.sort(key=lambda x: x['frequency'], reverse=True)
+        
+        return {
+            'topics': topic_summary,
+            'timeline': timeline,
+            'total_windows': len(timeline),
+            'window_size_minutes': window_size / 60
+        }
+
+    async def _extract_topics_for_window(self, text: str) -> List[str]:
+        """Extract 2-3 main topics for a specific time window."""
+        if not self.client or not text.strip():
+            return []
+        
+        try:
+            response = await self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Extract 2-3 main topics or themes from this meeting segment. Return as a JSON array of short topic names (2-4 words each)."
+                    },
+                    {"role": "user", "content": text[:1000]}
+                ],
+                temperature=0.2,
+                max_tokens=100
+            )
+            
+            topics = json.loads(response.choices[0].message.content)
+            return topics[:3] if isinstance(topics, list) else []
+        except Exception:
+            return self._extract_keywords_simple(text)[:3]
+
+    def _extract_keywords_simple(self, text: str) -> List[str]:
+        """Simple keyword extraction as fallback."""
+        words = text.lower().split()
+        word_freq = defaultdict(int)
+        
+        # Common stop words to ignore
+        stop_words = {'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'was', 'that', 'this'}
+        
+        for word in words:
+            word = word.strip('.,!?').lower()
+            if len(word) > 4 and word not in stop_words:
+                word_freq[word] += 1
+        
+        return sorted(word_freq.keys(), key=lambda x: word_freq[x], reverse=True)[:5]
+
+    async def get_question_answer_analytics(self, meeting: Meeting) -> Dict:
+        """
+        Track questions asked during the meeting and whether they were answered.
+        Returns Q&A analytics for visualization.
+        """
+        if not meeting.session:
+            return {"questions": [], "summary": {"total": 0, "answered": 0, "unanswered": 0}}
+        
+        segments = db.session.query(Segment).filter_by(
+            session_id=meeting.session.id,
+            is_final=True
+        ).order_by(Segment.created_at).all()
+        
+        if not segments:
+            return {"questions": [], "summary": {"total": 0, "answered": 0, "unanswered": 0}}
+        
+        # Extract questions (segments with '?')
+        questions = []
+        for i, segment in enumerate(segments):
+            if '?' in segment.text:
+                # Check if answered in next 3-5 segments
+                context_segments = segments[i+1:i+6]
+                answered = self._check_if_answered(segment.text, context_segments)
+                
+                questions.append({
+                    'question': segment.text,
+                    'asked_by': segment.speaker_label or 'Unknown',
+                    'timestamp_minutes': ((segment.created_at - segments[0].created_at).total_seconds() / 60),
+                    'answered': answered,
+                    'segment_id': segment.id
+                })
+        
+        answered_count = sum(1 for q in questions if q['answered'])
+        
+        return {
+            'questions': questions,
+            'summary': {
+                'total': len(questions),
+                'answered': answered_count,
+                'unanswered': len(questions) - answered_count,
+                'answer_rate': round((answered_count / len(questions)) * 100, 1) if questions else 0
+            }
+        }
+
+    def _check_if_answered(self, question: str, context_segments: List[Segment]) -> bool:
+        """Simple heuristic to check if a question was answered."""
+        if not context_segments:
+            return False
+        
+        # Look for affirmative words, explanations, or extended responses
+        answer_indicators = ['yes', 'no', 'because', 'think', 'would', 'should', 'the answer']
+        context_text = " ".join(seg.text.lower() for seg in context_segments)
+        
+        # If any indicator is present and response is substantial, likely answered
+        has_indicator = any(ind in context_text for ind in answer_indicators)
+        substantial_response = len(context_text.split()) > 10
+        
+        return has_indicator and substantial_response
+
     def get_workspace_analytics_summary(self, workspace_id: int, days: int = 30) -> Dict:
         """Get analytics summary for a workspace over specified days."""
         cutoff_date = datetime.now() - timedelta(days=days)

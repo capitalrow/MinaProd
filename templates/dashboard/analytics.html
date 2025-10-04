@@ -289,6 +289,12 @@
                     <option value="90">Last 90 days</option>
                     <option value="365">Last year</option>
                 </select>
+                <button class="btn btn-outline" id="customizeWidgetsBtn">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                    </svg>
+                    Customize
+                </button>
                 <button class="btn btn-outline">
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -301,7 +307,7 @@
 
     <!-- KPI Cards -->
     <div class="kpi-grid">
-        <div class="kpi-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);">
+        <div class="kpi-card" data-widget="kpi-meetings" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);">
             <div class="flex justify-between items-start mb-2">
                 <p class="text-tertiary text-sm font-medium">Total Meetings</p>
                 <span class="px-2 py-1 rounded-full text-xs font-medium" style="background: rgba(34, 197, 94, 0.1); color: var(--color-success);">
@@ -312,7 +318,7 @@
             <p class="text-sm text-secondary">↑ 3 more than last month</p>
         </div>
         
-        <div class="kpi-card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, transparent 100%);">
+        <div class="kpi-card" data-widget="kpi-tasks" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, transparent 100%);">
             <div class="flex justify-between items-start mb-2">
                 <p class="text-tertiary text-sm font-medium">Action Items</p>
                 <span class="px-2 py-1 rounded-full text-xs font-medium" style="background: rgba(34, 197, 94, 0.1); color: var(--color-success);">
@@ -323,7 +329,7 @@
             <p class="text-sm text-secondary">{{ task_completion_rate|default(0) }}% completion rate</p>
         </div>
         
-        <div class="kpi-card" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, transparent 100%);">
+        <div class="kpi-card" data-widget="kpi-hours" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, transparent 100%);">
             <div class="flex justify-between items-start mb-2">
                 <p class="text-tertiary text-sm font-medium">Hours Saved</p>
                 <span class="px-2 py-1 rounded-full text-xs font-medium" style="background: rgba(34, 197, 94, 0.1); color: var(--color-success);">
@@ -334,7 +340,7 @@
             <p class="text-sm text-secondary">This week vs last week</p>
         </div>
         
-        <div class="kpi-card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, transparent 100%);">
+        <div class="kpi-card" data-widget="kpi-duration" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, transparent 100%);">
             <div class="flex justify-between items-start mb-2">
                 <p class="text-tertiary text-sm font-medium">Avg Meeting Length</p>
                 <span class="px-2 py-1 rounded-full text-xs font-medium" style="background: rgba(249, 115, 22, 0.1); color: var(--color-warning);">
@@ -359,14 +365,14 @@
     <!-- Overview Tab -->
     <div id="tab-overview" class="analytics-tab-content active">
         <div class="charts-primary-grid">
-            <div class="chart-card">
+            <div class="chart-card" data-widget="chart-activity">
                 <h2 class="text-lg font-semibold mb-4">Meeting Activity Trend</h2>
                 <div class="chart-frame">
                     <canvas id="meetingActivityChart"></canvas>
                 </div>
             </div>
 
-            <div class="chart-card">
+            <div class="chart-card" data-widget="chart-task-status">
                 <h2 class="text-lg font-semibold mb-4">Task Status</h2>
                 <div class="chart-frame chart-doughnut">
                     <canvas id="taskStatusChart"></canvas>
@@ -375,14 +381,14 @@
         </div>
 
         <div class="charts-equal-grid">
-            <div class="chart-card">
+            <div class="chart-card" data-widget="chart-speaker">
                 <h2 class="text-lg font-semibold mb-4">Speaker Distribution</h2>
                 <div class="chart-frame">
                     <canvas id="speakerChart"></canvas>
                 </div>
             </div>
 
-            <div class="chart-card">
+            <div class="chart-card" data-widget="chart-topics">
                 <h2 class="text-lg font-semibold mb-4">Top Topics</h2>
                 <div style="display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-2) 0;">
                     <div>
@@ -420,7 +426,7 @@
     <!-- Engagement Tab -->
     <div id="tab-engagement" class="analytics-tab-content">
         <!-- Speaking Time Analysis (T2.33) -->
-        <div class="charts-primary-grid mb-6">
+        <div class="charts-primary-grid mb-6" data-widget="chart-speaking-time">
             <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-1">Speaking Time Distribution</h2>
                 <p class="text-sm text-secondary mb-4">Breakdown of talk time across participants</p>
@@ -456,7 +462,7 @@
         </div>
 
         <!-- Participation Balance Metrics (T2.34) -->
-        <div class="charts-single mb-6">
+        <div class="charts-single mb-6" data-widget="chart-participation">
             <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-1">Participation Balance Overview</h2>
                 <p class="text-sm text-secondary mb-4">Multi-dimensional engagement metrics across all participants</p>
@@ -473,7 +479,7 @@
         </div>
 
         <!-- Participation and Sentiment -->
-        <div class="charts-equal-grid">
+        <div class="charts-equal-grid" data-widget="chart-sentiment">
             <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-4">Participation Rate</h2>
                 <div class="chart-frame chart-radar">
@@ -492,6 +498,54 @@
 
     <!-- Productivity Tab -->
     <div id="tab-productivity" class="analytics-tab-content">
+        <!-- Action Items Completion (T2.38) -->
+        <div class="charts-single mb-6" data-widget="action-items">
+            <div class="chart-card">
+                <h2 class="text-lg font-semibold mb-1">Action Item Completion Rate</h2>
+                <p class="text-sm text-secondary mb-4">Track progress of meeting action items</p>
+                <div id="actionItemsCompletion">
+                    <div class="text-center text-secondary py-8">
+                        <svg class="w-12 h-12 mx-auto mb-2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                        Select a meeting to view action items
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Topic Trends Timeline (T2.36) -->
+        <div class="charts-single mb-6" data-widget="topic-trends">
+            <div class="chart-card">
+                <h2 class="text-lg font-semibold mb-1">Topic Evolution Timeline</h2>
+                <p class="text-sm text-secondary mb-4">How conversation topics developed throughout meetings</p>
+                <div id="topicTrendsTimeline">
+                    <div class="text-center text-secondary py-8">
+                        <svg class="w-12 h-12 mx-auto mb-2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                        </svg>
+                        Select a meeting to view topic trends
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q&A Tracking (T2.37) -->
+        <div class="charts-single mb-6" data-widget="qa-tracking">
+            <div class="chart-card">
+                <h2 class="text-lg font-semibold mb-1">Question & Answer Tracking</h2>
+                <p class="text-sm text-secondary mb-4">Questions asked during meetings and their resolution status</p>
+                <div id="qaTracking">
+                    <div class="text-center text-secondary py-8">
+                        <svg class="w-12 h-12 mx-auto mb-2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Select a meeting to view Q&A analytics
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="charts-single">
             <div class="chart-card">
                 <h2 class="text-lg font-semibold mb-4">Task Completion Over Time</h2>
@@ -561,6 +615,39 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Widget Customization Modal -->
+<div id="widgetCustomizationModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden border border-gray-200 dark:border-gray-700">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl font-bold">Customize Analytics Dashboard</h2>
+                <button id="closeCustomizeModal" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <p class="text-sm text-secondary mt-2">Show or hide widgets to personalize your analytics view</p>
+        </div>
+        <div class="p-6 overflow-y-auto max-h-[calc(80vh-180px)]">
+            <div id="widgetToggles" class="space-y-3">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+        <div class="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-between gap-3">
+            <button id="resetWidgetsBtn" class="btn btn-outline">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                Reset to Default
+            </button>
+            <button id="saveWidgetsBtn" class="btn btn-primary">
+                Save Preferences
+            </button>
         </div>
     </div>
 </div>
