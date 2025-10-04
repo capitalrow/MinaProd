@@ -176,14 +176,25 @@ def _process_copilot_message(message: str, context: Optional[str], user_id: int)
         from services.openai_client_manager import get_openai_client
         from models import Meeting, Task, Segment, db as models_db
         
+        # Get current user to access workspace_id
+        from models import User
+        user = models_db.session.get(User, user_id)
+        if not user:
+            return {
+                'text': "Unable to access your workspace. Please try logging in again.",
+                'citations': [],
+                'suggested_actions': [],
+                'timestamp': datetime.now().isoformat()
+            }
+        
         # Get relevant meetings and tasks for context
         recent_meetings = models_db.session.query(Meeting)\
-            .filter_by(user_id=user_id)\
+            .filter_by(workspace_id=user.workspace_id)\
             .order_by(Meeting.created_at.desc())\
             .limit(10).all()
         
         recent_tasks = models_db.session.query(Task)\
-            .filter_by(assigned_to=user_id)\
+            .filter_by(assigned_to_id=user_id)\
             .order_by(Task.created_at.desc())\
             .limit(20).all()
         
