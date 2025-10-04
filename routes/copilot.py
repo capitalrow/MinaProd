@@ -181,6 +181,51 @@ def get_quick_queries():
         }), 500
 
 
+@copilot_bp.route('/api/analyze-patterns', methods=['POST'])
+@login_required
+def analyze_patterns():
+    """
+    Analyze meeting patterns and provide data insights.
+    
+    Request Body:
+        {
+            "analysis_type": "topics|participants|decisions|trends|risks",
+            "time_range": "week|month|quarter|all",
+            "filters": {"optional": "filters"}
+        }
+    
+    Returns:
+        JSON: Analysis results with insights and visualizations
+    """
+    try:
+        data = request.get_json() or {}
+        analysis_type = data.get('analysis_type', 'trends')
+        time_range = data.get('time_range', 'month')
+        filters = data.get('filters', {})
+        
+        # Perform pattern analysis
+        insights = _analyze_meeting_patterns(
+            analysis_type=analysis_type,
+            time_range=time_range,
+            filters=filters,
+            user_id=current_user.id
+        )
+        
+        return jsonify({
+            'success': True,
+            'insights': insights
+        }), 200
+    
+    except Exception as e:
+        import traceback
+        logger.error(f"Error analyzing patterns: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to analyze meeting patterns'
+        }), 500
+
+
 @copilot_bp.route('/api/generate-draft', methods=['POST'])
 @login_required
 def generate_draft():
@@ -236,6 +281,301 @@ def generate_draft():
             'success': False,
             'error': 'Failed to generate draft'
         }), 500
+
+
+def _analyze_meeting_patterns(
+    analysis_type: str,
+    time_range: str,
+    filters: Dict[str, Any],
+    user_id: int
+) -> Dict[str, Any]:
+    """
+    Analyze patterns across meetings to provide data insights.
+    
+    Args:
+        analysis_type: Type of analysis (topics, participants, decisions, trends, risks)
+        time_range: Time window for analysis (week, month, quarter, all)
+        filters: Additional filters for analysis
+        user_id: Current user ID
+    
+    Returns:
+        Dict with analysis results and insights
+    """
+    try:
+        from models import Meeting, Summary, User, db as models_db
+        from datetime import timedelta
+        from collections import Counter
+        import json
+        
+        # Get user's workspace
+        user = models_db.session.get(User, user_id)
+        if not user or not user.workspace_id:
+            return {'error': 'Unable to access workspace'}
+        
+        # Calculate date range
+        now = datetime.now()
+        if time_range == 'week':
+            start_date = now - timedelta(days=7)
+        elif time_range == 'month':
+            start_date = now - timedelta(days=30)
+        elif time_range == 'quarter':
+            start_date = now - timedelta(days=90)
+        else:  # all
+            start_date = datetime(2020, 1, 1)  # Far back default
+        
+        # Get meetings in the time range
+        meetings = models_db.session.query(Meeting)\
+            .filter(Meeting.workspace_id == user.workspace_id)\
+            .filter(Meeting.created_at >= start_date)\
+            .order_by(Meeting.created_at.desc())\
+            .all()
+        
+        if not meetings:
+            return {
+                'type': analysis_type,
+                'time_range': time_range,
+                'message': 'No meetings found in the selected time range',
+                'count': 0
+            }
+        
+        # Perform analysis based on type
+        if analysis_type == 'topics':
+            return _analyze_topics(meetings, models_db)
+        elif analysis_type == 'participants':
+            return _analyze_participants(meetings, models_db)
+        elif analysis_type == 'decisions':
+            return _analyze_decisions(meetings, models_db)
+        elif analysis_type == 'risks':
+            return _analyze_risks(meetings, models_db)
+        else:  # trends
+            return _analyze_trends(meetings, models_db)
+    
+    except Exception as e:
+        logger.error(f"Error in pattern analysis: {e}")
+        return {'error': str(e)}
+
+
+def _analyze_topics(meetings, db):
+    """Analyze frequently discussed topics across meetings."""
+    from models import Summary
+    
+    topics_counter = Counter()
+    topic_meetings = {}
+    
+    for meeting in meetings:
+        if meeting.session:
+            summary = db.session.query(Summary)\
+                .filter_by(session_id=meeting.session.id)\
+                .first()
+            
+            if summary and summary.topics:
+                topics_list = summary.topics if isinstance(summary.topics, list) else []
+                for topic in topics_list:
+                    topic_name = topic.get('topic', topic) if isinstance(topic, dict) else str(topic)
+                    topics_counter[topic_name] += 1
+                    if topic_name not in topic_meetings:
+                        topic_meetings[topic_name] = []
+                    topic_meetings[topic_name].append({
+                        'meeting_id': meeting.id,
+                        'title': meeting.title,
+                        'date': meeting.created_at.isoformat()
+                    })
+    
+    top_topics = topics_counter.most_common(10)
+    
+    return {
+        'type': 'topics',
+        'total_meetings': len(meetings),
+        'total_topics': len(topics_counter),
+        'top_topics': [
+            {
+                'topic': topic,
+                'count': count,
+                'meetings': topic_meetings.get(topic, [])[:3]  # Top 3 meetings for each topic
+            }
+            for topic, count in top_topics
+        ],
+        'insight': f"The most discussed topic is '{top_topics[0][0]}' appearing in {top_topics[0][1]} meetings" if top_topics else "No topics identified"
+    }
+
+
+def _analyze_decisions(meetings, db):
+    """Analyze decision-making patterns across meetings."""
+    from models import Summary
+    
+    all_decisions = []
+    decision_categories = Counter()
+    
+    for meeting in meetings:
+        if meeting.session:
+            summary = db.session.query(Summary)\
+                .filter_by(session_id=meeting.session.id)\
+                .first()
+            
+            if summary and summary.decisions:
+                decisions_list = summary.decisions if isinstance(summary.decisions, list) else []
+                for decision in decisions_list:
+                    decision_text = decision.get('decision', decision) if isinstance(decision, dict) else str(decision)
+                    all_decisions.append({
+                        'decision': decision_text,
+                        'meeting': meeting.title,
+                        'date': meeting.created_at.isoformat()
+                    })
+                    
+                    # Simple categorization based on keywords
+                    decision_lower = decision_text.lower()
+                    if any(word in decision_lower for word in ['approve', 'accept', 'agree']):
+                        decision_categories['Approvals'] += 1
+                    elif any(word in decision_lower for word in ['reject', 'decline', 'disagree']):
+                        decision_categories['Rejections'] += 1
+                    elif any(word in decision_lower for word in ['delay', 'postpone', 'defer']):
+                        decision_categories['Deferrals'] += 1
+                    else:
+                        decision_categories['General'] += 1
+    
+    return {
+        'type': 'decisions',
+        'total_meetings': len(meetings),
+        'total_decisions': len(all_decisions),
+        'decisions_per_meeting': round(len(all_decisions) / len(meetings), 1) if meetings else 0,
+        'categories': dict(decision_categories),
+        'recent_decisions': all_decisions[:10],  # Most recent 10
+        'insight': f"Average of {round(len(all_decisions) / len(meetings), 1)} decisions per meeting" if meetings else "No decisions tracked"
+    }
+
+
+def _analyze_risks(meetings, db):
+    """Analyze risks and blockers mentioned across meetings."""
+    from models import Summary
+    
+    all_risks = []
+    risk_severity = Counter()
+    
+    for meeting in meetings:
+        if meeting.session:
+            summary = db.session.query(Summary)\
+                .filter_by(session_id=meeting.session.id)\
+                .first()
+            
+            if summary and summary.risks:
+                risks_list = summary.risks if isinstance(summary.risks, list) else []
+                for risk in risks_list:
+                    risk_text = risk.get('risk', risk) if isinstance(risk, dict) else str(risk)
+                    severity = risk.get('severity', 'medium') if isinstance(risk, dict) else 'medium'
+                    
+                    all_risks.append({
+                        'risk': risk_text,
+                        'severity': severity,
+                        'meeting': meeting.title,
+                        'date': meeting.created_at.isoformat()
+                    })
+                    risk_severity[severity] += 1
+    
+    return {
+        'type': 'risks',
+        'total_meetings': len(meetings),
+        'total_risks': len(all_risks),
+        'severity_breakdown': dict(risk_severity),
+        'high_priority_risks': [r for r in all_risks if r.get('severity') == 'high'][:5],
+        'all_risks': all_risks[:15],  # Top 15 most recent
+        'insight': f"Identified {len(all_risks)} risks, {risk_severity.get('high', 0)} are high priority" if all_risks else "No risks identified"
+    }
+
+
+def _analyze_trends(meetings, db):
+    """Analyze overall trends in meeting activity and outcomes."""
+    from models import Summary
+    from collections import defaultdict
+    
+    weekly_meetings = defaultdict(int)
+    action_items_count = 0
+    total_duration = 0
+    meetings_with_summaries = 0
+    
+    for meeting in meetings:
+        # Group by week
+        week_key = meeting.created_at.strftime('%Y-W%W')
+        weekly_meetings[week_key] += 1
+        
+        if meeting.session:
+            summary = db.session.query(Summary)\
+                .filter_by(session_id=meeting.session.id)\
+                .first()
+            
+            if summary:
+                meetings_with_summaries += 1
+                if summary.actions:
+                    actions_list = summary.actions if isinstance(summary.actions, list) else []
+                    action_items_count += len(actions_list)
+    
+    # Calculate trends
+    weeks = sorted(weekly_meetings.keys())
+    trend_data = [{'week': w, 'count': weekly_meetings[w]} for w in weeks[-8:]]  # Last 8 weeks
+    
+    avg_meetings_per_week = sum(weekly_meetings.values()) / len(weekly_meetings) if weekly_meetings else 0
+    avg_actions_per_meeting = action_items_count / meetings_with_summaries if meetings_with_summaries else 0
+    
+    return {
+        'type': 'trends',
+        'total_meetings': len(meetings),
+        'meetings_with_insights': meetings_with_summaries,
+        'weekly_trend': trend_data,
+        'avg_meetings_per_week': round(avg_meetings_per_week, 1),
+        'total_action_items': action_items_count,
+        'avg_actions_per_meeting': round(avg_actions_per_meeting, 1),
+        'insight': f"Averaging {round(avg_meetings_per_week, 1)} meetings per week with {round(avg_actions_per_meeting, 1)} action items per meeting"
+    }
+
+
+def _analyze_participants(meetings, db):
+    """Analyze participant involvement and contribution patterns."""
+    from models import Summary, Segment
+    
+    participant_stats = {}
+    
+    for meeting in meetings:
+        if meeting.session:
+            # Get segments to analyze speakers
+            segments = db.session.query(Segment)\
+                .filter_by(session_id=meeting.session.id)\
+                .all()
+            
+            for segment in segments:
+                speaker = segment.speaker or 'Unknown'
+                if speaker not in participant_stats:
+                    participant_stats[speaker] = {
+                        'name': speaker,
+                        'meetings': set(),
+                        'segments_count': 0,
+                        'total_words': 0
+                    }
+                
+                participant_stats[speaker]['meetings'].add(meeting.id)
+                participant_stats[speaker]['segments_count'] += 1
+                if segment.text:
+                    participant_stats[speaker]['total_words'] += len(segment.text.split())
+    
+    # Convert sets to counts
+    for speaker in participant_stats:
+        participant_stats[speaker]['meetings'] = len(participant_stats[speaker]['meetings'])
+        participant_stats[speaker]['avg_words_per_segment'] = round(
+            participant_stats[speaker]['total_words'] / participant_stats[speaker]['segments_count'], 1
+        ) if participant_stats[speaker]['segments_count'] > 0 else 0
+    
+    # Sort by meeting count
+    top_participants = sorted(
+        participant_stats.values(),
+        key=lambda x: x['meetings'],
+        reverse=True
+    )[:10]
+    
+    return {
+        'type': 'participants',
+        'total_meetings': len(meetings),
+        'total_participants': len(participant_stats),
+        'top_participants': top_participants,
+        'insight': f"{len(participant_stats)} participants across {len(meetings)} meetings"
+    }
 
 
 def _process_copilot_message(message: str, context: Optional[str], user_id: int, session_id: Optional[str] = None) -> Dict[str, Any]:
