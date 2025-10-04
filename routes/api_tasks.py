@@ -7,7 +7,7 @@ from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from models import db, Task, Meeting, User, Session, Workspace
 from datetime import datetime, date, timedelta
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, and_, or_, select
 
 
 api_tasks_bp = Blueprint('api_tasks', __name__, url_prefix='/api/tasks')
@@ -28,30 +28,30 @@ def list_tasks():
         due_date_filter = request.args.get('due_date', None)  # today, overdue, this_week
         
         # Base query - tasks from meetings in user's workspace
-        query = db.session.query(Task).join(Meeting).filter(
+        stmt = select(Task).join(Meeting).where(
             Meeting.workspace_id == current_user.workspace_id
         )
         
         # Apply filters
         if status:
-            query = query.filter(Task.status == status)
+            stmt = stmt.where(Task.status == status)
         
         if priority:
-            query = query.filter(Task.priority == priority)
+            stmt = stmt.where(Task.priority == priority)
         
         if assigned_to:
             if assigned_to == 'me':
-                query = query.filter(Task.assigned_to_id == current_user.id)
+                stmt = stmt.where(Task.assigned_to_id == current_user.id)
             elif assigned_to == 'unassigned':
-                query = query.filter(Task.assigned_to_id.is_(None))
+                stmt = stmt.where(Task.assigned_to_id.is_(None))
             else:
-                query = query.filter(Task.assigned_to_id == int(assigned_to))
+                stmt = stmt.where(Task.assigned_to_id == int(assigned_to))
         
         if meeting_id:
-            query = query.filter(Task.meeting_id == meeting_id)
+            stmt = stmt.where(Task.meeting_id == meeting_id)
         
         if search:
-            query = query.filter(
+            stmt = stmt.where(
                 or_(
                     Task.title.contains(search),
                     Task.description.contains(search)
@@ -62,9 +62,9 @@ def list_tasks():
         if due_date_filter:
             today = date.today()
             if due_date_filter == 'today':
-                query = query.filter(Task.due_date == today)
+                stmt = stmt.where(Task.due_date == today)
             elif due_date_filter == 'overdue':
-                query = query.filter(
+                stmt = stmt.where(
                     and_(
                         Task.due_date < today,
                         Task.status.in_(['todo', 'in_progress'])
@@ -72,7 +72,7 @@ def list_tasks():
                 )
             elif due_date_filter == 'this_week':
                 week_end = today + timedelta(days=7-today.weekday())
-                query = query.filter(
+                stmt = stmt.where(
                     and_(
                         Task.due_date >= today,
                         Task.due_date <= week_end
@@ -80,14 +80,14 @@ def list_tasks():
                 )
         
         # Order by priority and due date
-        query = query.order_by(
+        stmt = stmt.order_by(
             Task.priority.desc(),
             Task.due_date.asc().nullslast(),
             Task.created_at.desc()
         )
         
         # Paginate
-        tasks = db.paginate(query, page=page, per_page=per_page, error_out=False)
+        tasks = db.paginate(stmt, page=page, per_page=per_page, error_out=False)
         
         return jsonify({
             'success': True,
