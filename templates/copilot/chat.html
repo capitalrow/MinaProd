@@ -190,6 +190,12 @@ const chatInput = document.getElementById('chat-input');
 const chatMessages = document.getElementById('chat-messages');
 const suggestedPrompts = document.getElementById('suggested-prompts');
 
+// Get CSRF token from meta tag
+function getCSRFToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute('content') : '';
+}
+
 // Auto-resize textarea
 chatInput.addEventListener('input', function() {
     this.style.height = 'auto';
@@ -210,7 +216,10 @@ async function sendMessage(message) {
     try {
         const response = await fetch('/copilot/api/chat', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
             body: JSON.stringify({ message })
         });
 
