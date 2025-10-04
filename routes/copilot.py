@@ -198,34 +198,64 @@ def _process_copilot_message(message: str, context: Optional[str], user_id: int)
             .order_by(Task.created_at.desc())\
             .limit(20).all()
         
-        # Build context for AI
+        # Build context for AI with insights
+        from models import Summary
         meeting_context = []
         for meeting in recent_meetings:
-            # Get segments through the session relationship
-            segments = []
-            if meeting.session:
-                segments = models_db.session.query(Segment)\
-                    .filter_by(session_id=meeting.session.id)\
-                    .order_by(Segment.created_at)\
-                    .all()
-            
-            transcript = " ".join([seg.text for seg in segments if seg.text])
-            meeting_context.append({
+            meeting_data = {
                 'id': meeting.id,
                 'title': meeting.title,
                 'date': meeting.created_at.isoformat(),
-                'transcript': transcript[:1000] + "..." if len(transcript) > 1000 else transcript
-            })
+                'status': meeting.status
+            }
+            
+            # Add AI insights if available from Summary
+            if meeting.session:
+                summary = models_db.session.query(Summary)\
+                    .filter_by(session_id=meeting.session.id)\
+                    .first()
+                
+                if summary:
+                    # Add summary text
+                    if summary.brief_summary:
+                        meeting_data['summary'] = summary.brief_summary
+                    elif summary.summary_md:
+                        meeting_data['summary'] = summary.summary_md[:300]  # Truncate if needed
+                    
+                    # Add actions (top 3)
+                    if summary.actions:
+                        meeting_data['actions'] = summary.actions[:3] if isinstance(summary.actions, list) else []
+                    
+                    # Add decisions (top 2)
+                    if summary.decisions:
+                        meeting_data['decisions'] = summary.decisions[:2] if isinstance(summary.decisions, list) else []
+                else:
+                    # Fallback to transcript snippet if no summary
+                    segments = models_db.session.query(Segment)\
+                        .filter_by(session_id=meeting.session.id)\
+                        .order_by(Segment.created_at)\
+                        .limit(10).all()  # Just first 10 segments for context
+                    
+                    transcript = " ".join([seg.text for seg in segments if seg.text])
+                    if transcript:
+                        meeting_data['transcript_snippet'] = transcript[:500] + "..." if len(transcript) > 500 else transcript
+            
+            meeting_context.append(meeting_data)
         
         task_context = []
         for task in recent_tasks:
-            task_context.append({
+            task_data = {
                 'id': task.id,
                 'title': task.title,
                 'status': task.status,
-                'due_date': task.due_date.isoformat() if task.due_date else None,
-                'meeting_id': task.meeting_id
-            })
+                'priority': task.priority if hasattr(task, 'priority') else 'medium',
+                'due_date': task.due_date.isoformat() if task.due_date else None
+            }
+            if task.description:
+                task_data['description'] = task.description[:200]  # Brief description
+            if task.meeting_id:
+                task_data['meeting_id'] = task.meeting_id
+            task_context.append(task_data)
         
         # Prepare AI prompt
         system_prompt = """You are Mina's AI Copilot. You help users understand their meetings, manage tasks, and find information. 
@@ -249,17 +279,34 @@ Available actions you can suggest:
 - export: Export to Slack/Notion/etc
 """
         
-        user_prompt = f"""
-Query: {message}
-
-Recent Meetings:
-{json.dumps(meeting_context, indent=2)}
-
-Recent Tasks: 
-{json.dumps(task_context, indent=2)}
-
-Please provide a helpful response with specific information and suggest any relevant actions.
-"""
+        # Build context string with token management
+        context_parts = []
+        context_parts.append(f"User Query: {message}\n")
+        
+        if meeting_context:
+            context_parts.append(f"\nRecent Meetings ({len(meeting_context)}):")
+            for m in meeting_context[:5]:  # Limit to 5 most recent
+                context_parts.append(f"- {m['title']} ({m['date']})")
+                if 'summary' in m:
+                    context_parts.append(f"  Summary: {m['summary'][:200]}")
+                if 'actions' in m and m['actions']:
+                    action_list = [str(a.get('task', a)) if isinstance(a, dict) else str(a) for a in m['actions'][:3]]
+                    context_parts.append(f"  Actions: {', '.join(action_list)}")
+                if 'decisions' in m and m['decisions']:
+                    decision_list = [str(d.get('decision', d)) if isinstance(d, dict) else str(d) for d in m['decisions'][:2]]
+                    context_parts.append(f"  Decisions: {', '.join(decision_list)}")
+                if 'transcript_snippet' in m:
+                    context_parts.append(f"  Context: {m['transcript_snippet'][:150]}...")
+        
+        if task_context:
+            context_parts.append(f"\n\nRecent Tasks ({len(task_context)}):")
+            for t in task_context[:10]:  # Limit to 10 most recent
+                due_status = f" (Due: {t['due_date']})" if t['due_date'] else ""
+                context_parts.append(f"- [{t['status']}] {t['title']}{due_status}")
+                if 'description' in t:
+                    context_parts.append(f"  {t['description'][:100]}")
+        
+        user_prompt = "\n".join(context_parts) + "\n\nPlease provide a helpful, specific response based on this context. Include citations to meetings or tasks when relevant, and suggest actionable next steps."
         
         # Call OpenAI
         client = get_openai_client()
@@ -277,8 +324,10 @@ Please provide a helpful response with specific information and suggest any rele
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            max_tokens=500,
-            temperature=0.7
+            max_tokens=800,  # Increased for better responses
+            temperature=0.7,
+            presence_penalty=0.1,  # Encourage diverse responses
+            frequency_penalty=0.1  # Reduce repetition
         )
         
         ai_response = response.choices[0].message.content or ""
