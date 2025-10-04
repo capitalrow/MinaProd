@@ -188,10 +188,13 @@ def _process_copilot_message(message: str, context: Optional[str], user_id: int)
         # Build context for AI
         meeting_context = []
         for meeting in recent_meetings:
-            segments = models_db.session.query(Segment)\
-                .filter_by(session_id=meeting.session_id)\
-                .order_by(Segment.timestamp)\
-                .all()
+            # Get segments through the session relationship
+            segments = []
+            if meeting.session:
+                segments = models_db.session.query(Segment)\
+                    .filter_by(session_id=meeting.session.id)\
+                    .order_by(Segment.created_at)\
+                    .all()
             
             transcript = " ".join([seg.text for seg in segments if seg.text])
             meeting_context.append({
@@ -247,8 +250,16 @@ Please provide a helpful response with specific information and suggest any rele
         
         # Call OpenAI
         client = get_openai_client()
+        if not client:
+            return {
+                'text': "AI service is not configured. Please check your API key settings.",
+                'citations': [],
+                'suggested_actions': [],
+                'timestamp': datetime.now().isoformat()
+            }
+            
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4-turbo-preview",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
@@ -257,7 +268,7 @@ Please provide a helpful response with specific information and suggest any rele
             temperature=0.7
         )
         
-        ai_response = response.choices[0].message.content
+        ai_response = response.choices[0].message.content or ""
         
         # Parse response for action suggestions
         actions = _extract_suggested_actions(ai_response, message)
