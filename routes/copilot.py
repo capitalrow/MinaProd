@@ -40,6 +40,25 @@ def copilot_dashboard():
         return redirect(url_for('dashboard.index'))
 
 
+@copilot_bp.route('/settings')
+@login_required
+def copilot_settings():
+    """
+    Display the Copilot settings and preferences page.
+    
+    Returns:
+        Rendered copilot settings page
+    """
+    try:
+        logger.debug(f"Loading Copilot settings for user {current_user.id}")
+        return render_template('copilot/settings.html',
+                             page_title="Copilot Settings")
+    except Exception as e:
+        logger.error(f"Error loading Copilot settings: {e}")
+        flash('Failed to load settings. Please try again.', 'error')
+        return redirect(url_for('copilot.copilot_dashboard'))
+
+
 @copilot_bp.route('/api/chat', methods=['POST'])
 @login_required
 def chat_with_copilot():

@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+
+{% block title %}Copilot Settings - Mina{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/copilot.css') }}">
+<style>
+.settings-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--space-8);
+}
+
+.settings-header {
+    margin-bottom: var(--space-8);
+}
+
+.settings-section {
+    background: var(--color-glass);
+    backdrop-filter: blur(20px);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
+    border: 1px solid var(--color-border);
+}
+
+.settings-section h2 {
+    font-size: var(--text-xl);
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+    color: var(--color-text);
+}
+
+.settings-section p {
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--space-6);
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+}
+
+.setting-info {
+    flex: 1;
+}
+
+.setting-info h3 {
+    font-size: var(--text-base);
+    font-weight: 500;
+    margin-bottom: var(--space-1);
+}
+
+.setting-info .description {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+}
+
+.setting-control {
+    margin-left: var(--space-4);
+}
+
+.setting-control select,
+.setting-control input {
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text);
+    min-width: 150px;
+}
+
+.toggle-switch {
+    position: relative;
+    width: 48px;
+    height: 24px;
+    background: var(--color-border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.toggle-switch.active {
+    background: var(--color-primary);
+}
+
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s;
+}
+
+.toggle-switch.active::after {
+    transform: translateX(24px);
+}
+
+.btn-save {
+    padding: var(--space-3) var(--space-6);
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-save:hover {
+    background: var(--color-primary-hover);
+    transform: translateY(-1px);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+}
+
+.stat-card {
+    background: var(--color-bg-subtle);
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    text-align: center;
+}
+
+.stat-value {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--color-primary);
+    margin-bottom: var(--space-1);
+}
+
+.stat-label {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="settings-header">
+        <div style="display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-2);">
+            <a href="{{ url_for('copilot.copilot_dashboard') }}" style="color: var(--color-text-secondary); text-decoration: none;">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <h1 class="text-3xl font-bold">Copilot Settings</h1>
+        </div>
+        <p class="text-secondary">Customize your AI assistant to work the way you prefer</p>
+    </div>
+
+    <!-- Response Preferences -->
+    <div class="settings-section">
+        <h2>Response Preferences</h2>
+        <p>Control how the Copilot responds to your queries</p>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <h3>Response Tone</h3>
+                <p class="description">Choose the communication style for responses</p>
+            </div>
+            <div class="setting-control">
+                <select id="response-tone">
+                    <option value="professional">Professional</option>
+                    <option value="casual">Casual</option>
+                    <option value="formal">Formal</option>
+                    <option value="friendly">Friendly</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <h3>Detail Level</h3>
+                <p class="description">How detailed should responses be</p>
+            </div>
+            <div class="setting-control">
+                <select id="detail-level">
+                    <option value="concise">Concise</option>
+                    <option value="balanced">Balanced</option>
+                    <option value="detailed">Detailed</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <h3>Follow-up Questions</h3>
+                <p class="description">Show suggested follow-up questions after responses</p>
+            </div>
+            <div class="setting-control">
+                <div class="toggle-switch active" id="toggle-follow-ups"></div>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <h3>Include Citations</h3>
+                <p class="description">Reference specific meetings and tasks in responses</p>
+            </div>
+            <div class="setting-control">
+                <div class="toggle-switch active" id="toggle-citations"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Settings -->
+    <div class="settings-section">
+        <h2>Context & Memory</h2>
+        <p>Control what information the Copilot uses for context</p>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <h3>Default Context</h3>
+                <p class="description">Default time range for meeting context</p>
+            </div>
+            <div class="setting-control">
+                <select id="default-context">
+                    <option value="all">All Meetings</option>
+                    <option value="recent">Recent (Last 10)</option>
+                    <option value="today">Today Only</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <h3>Conversation History</h3>
+                <p class="description">Number of previous messages to remember</p>
+            </div>
+            <div class="setting-control">
+                <select id="history-length">
+                    <option value="5">5 messages</option>
+                    <option value="10" selected>10 messages</option>
+                    <option value="20">20 messages</option>
+                    <option value="50">50 messages</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <h3>AI Insights</h3>
+                <p class="description">Include AI-generated summaries in context</p>
+            </div>
+            <div class="setting-control">
+                <div class="toggle-switch active" id="toggle-insights"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Management -->
+    <div class="settings-section">
+        <h2>Template Management</h2>
+        <p>Manage your custom prompt templates</p>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <h3>Custom Templates</h3>
+                <p class="description">Create and manage your own prompt templates</p>
+            </div>
+            <div class="setting-control">
+                <a href="#" class="btn btn-secondary" id="manage-templates">Manage Templates</a>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <h3>Default Template</h3>
+                <p class="description">Template to use when starting a new conversation</p>
+            </div>
+            <div class="setting-control">
+                <select id="default-template">
+                    <option value="">None</option>
+                    <option value="summarize">Summarize Meeting</option>
+                    <option value="tasks">Extract Action Items</option>
+                    <option value="weekly">Weekly Summary</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage Statistics -->
+    <div class="settings-section">
+        <h2>Usage Statistics</h2>
+        <p>Your Copilot usage at a glance</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="total-conversations">0</div>
+                <div class="stat-label">Conversations</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="total-messages">0</div>
+                <div class="stat-label">Messages</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="templates-used">0</div>
+                <div class="stat-label">Templates Used</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="drafts-generated">0</div>
+                <div class="stat-label">Drafts Generated</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Button -->
+    <div style="text-align: right; margin-top: var(--space-6);">
+        <button class="btn-save" id="save-settings">Save Changes</button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load saved settings from localStorage
+    loadSettings();
+    
+    // Toggle switches
+    document.querySelectorAll('.toggle-switch').forEach(toggle => {
+        toggle.addEventListener('click', function() {
+            this.classList.toggle('active');
+        });
+    });
+    
+    // Save settings
+    document.getElementById('save-settings').addEventListener('click', function() {
+        saveSettings();
+        showNotification('Settings saved successfully!');
+    });
+    
+    // Load usage statistics
+    loadStatistics();
+});
+
+function loadSettings() {
+    const settings = JSON.parse(localStorage.getItem('copilot_settings') || '{}');
+    
+    if (settings.tone) document.getElementById('response-tone').value = settings.tone;
+    if (settings.detailLevel) document.getElementById('detail-level').value = settings.detailLevel;
+    if (settings.defaultContext) document.getElementById('default-context').value = settings.defaultContext;
+    if (settings.historyLength) document.getElementById('history-length').value = settings.historyLength;
+    if (settings.defaultTemplate) document.getElementById('default-template').value = settings.defaultTemplate;
+    
+    // Toggle states
+    if (settings.followUps === false) document.getElementById('toggle-follow-ups').classList.remove('active');
+    if (settings.citations === false) document.getElementById('toggle-citations').classList.remove('active');
+    if (settings.insights === false) document.getElementById('toggle-insights').classList.remove('active');
+}
+
+function saveSettings() {
+    const settings = {
+        tone: document.getElementById('response-tone').value,
+        detailLevel: document.getElementById('detail-level').value,
+        defaultContext: document.getElementById('default-context').value,
+        historyLength: document.getElementById('history-length').value,
+        defaultTemplate: document.getElementById('default-template').value,
+        followUps: document.getElementById('toggle-follow-ups').classList.contains('active'),
+        citations: document.getElementById('toggle-citations').classList.contains('active'),
+        insights: document.getElementById('toggle-insights').classList.contains('active')
+    };
+    
+    localStorage.setItem('copilot_settings', JSON.stringify(settings));
+}
+
+function loadStatistics() {
+    // In a real implementation, these would come from an API
+    document.getElementById('total-conversations').textContent = '12';
+    document.getElementById('total-messages').textContent = '48';
+    document.getElementById('templates-used').textContent = '7';
+    document.getElementById('drafts-generated').textContent = '3';
+}
+
+function showNotification(message) {
+    // Simple notification - could be enhanced
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--color-success);
+        color: white;
+        padding: 16px 24px;
+        border-radius: 8px;
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+</script>
+{% endblock %}
