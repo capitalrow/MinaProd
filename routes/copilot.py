@@ -383,9 +383,10 @@ Available actions you can suggest:
         
         ai_response = response.choices[0].message.content or ""
         
-        # Parse response for action suggestions
+        # Parse response for action suggestions and follow-up questions
         actions = _extract_suggested_actions(ai_response, message)
         citations = _extract_citations(ai_response, meeting_context, task_context)
+        follow_up_questions = _generate_follow_up_questions(message, ai_response, meeting_context, task_context)
         
         # Save conversation to database for future context
         try:
@@ -424,6 +425,7 @@ Available actions you can suggest:
             'text': ai_response,
             'citations': citations,
             'suggested_actions': actions,
+            'follow_up_questions': follow_up_questions,
             'session_id': session_id,
             'timestamp': datetime.now().isoformat()
         }
@@ -436,6 +438,7 @@ Available actions you can suggest:
             'text': "I'm having trouble processing your request right now. Please try again.",
             'citations': [],
             'suggested_actions': [],
+            'follow_up_questions': [],
             'session_id': session_id if 'session_id' in locals() else None,
             'timestamp': datetime.now().isoformat()
         }
@@ -494,6 +497,93 @@ def _extract_citations(response: str, meetings: List[Dict], tasks: List[Dict]) -
             })
     
     return citations
+
+
+def _generate_follow_up_questions(original_query: str, ai_response: str, meetings: List[Dict], tasks: List[Dict]) -> List[str]:
+    """
+    Generate contextual follow-up questions based on the conversation.
+    
+    Args:
+        original_query: The user's original question
+        ai_response: The AI's response
+        meetings: List of meeting context
+        tasks: List of task context
+    
+    Returns:
+        List of 3-5 suggested follow-up questions
+    """
+    follow_ups = []
+    query_lower = original_query.lower()
+    response_lower = ai_response.lower()
+    
+    # Question generation based on query type
+    
+    # Meeting-related queries
+    if any(word in query_lower for word in ['meeting', 'discussed', 'decision', 'agenda']):
+        if 'decision' in response_lower or 'decided' in response_lower:
+            follow_ups.append("What were the alternatives considered?")
+        if len(meetings) > 0:
+            follow_ups.append("Who were the key participants in these discussions?")
+            follow_ups.append("Are there any follow-up meetings scheduled?")
+        if 'action' in response_lower or 'task' in response_lower:
+            follow_ups.append("What are the timelines for these action items?")
+    
+    # Task-related queries
+    elif any(word in query_lower for word in ['task', 'due', 'overdue', 'action']):
+        if 'overdue' in response_lower or 'late' in response_lower:
+            follow_ups.append("Which tasks are highest priority?")
+            follow_ups.append("Are there any blockers preventing completion?")
+        if len(tasks) > 0:
+            follow_ups.append("Show me tasks by priority")
+            follow_ups.append("What tasks are due this week?")
+        follow_ups.append("Can you create a summary of pending tasks?")
+    
+    # Summary/overview queries
+    elif any(word in query_lower for word in ['summary', 'overview', 'status', 'progress']):
+        follow_ups.append("What are the main risks or concerns?")
+        follow_ups.append("Are we on track with our goals?")
+        if len(meetings) > 1:
+            follow_ups.append("How does this compare to last week?")
+        follow_ups.append("What should I focus on next?")
+    
+    # Time-based queries
+    elif any(word in query_lower for word in ['today', 'week', 'yesterday', 'month']):
+        follow_ups.append("What's coming up tomorrow?")
+        follow_ups.append("Show me last week's highlights")
+        follow_ups.append("What are this month's key achievements?")
+    
+    # Risk/blocker queries
+    elif any(word in query_lower for word in ['risk', 'blocker', 'issue', 'problem']):
+        follow_ups.append("What mitigation strategies were discussed?")
+        follow_ups.append("Who is responsible for resolving these?")
+        follow_ups.append("Are there any dependencies?")
+    
+    # General fallback questions
+    else:
+        if meetings:
+            follow_ups.append("Tell me more about recent meetings")
+        if tasks:
+            follow_ups.append("What tasks need my attention?")
+        follow_ups.append("Summarize this week's progress")
+        follow_ups.append("What decisions were made recently?")
+    
+    # Limit to 5 questions and ensure no duplicates
+    follow_ups = list(dict.fromkeys(follow_ups))[:5]
+    
+    # If we have less than 3, add generic useful questions
+    if len(follow_ups) < 3:
+        generic_questions = [
+            "What are the key takeaways?",
+            "Who should I follow up with?",
+            "Are there any pending approvals?",
+            "Show me related action items",
+            "What's the status of ongoing projects?"
+        ]
+        for q in generic_questions:
+            if q not in follow_ups and len(follow_ups) < 5:
+                follow_ups.append(q)
+    
+    return follow_ups
 
 
 def _execute_copilot_action(action: str, parameters: Dict[str, Any], user_id: int) -> Dict[str, Any]:
