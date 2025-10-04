@@ -179,7 +179,7 @@ def _process_copilot_message(message: str, context: Optional[str], user_id: int)
         # Get current user to access workspace_id
         from models import User
         user = models_db.session.get(User, user_id)
-        if not user:
+        if not user or not user.workspace_id:
             return {
                 'text': "Unable to access your workspace. Please try logging in again.",
                 'citations': [],
@@ -377,7 +377,7 @@ def _execute_copilot_action(action: str, parameters: Dict[str, Any], user_id: in
             task = Task(
                 title=title,
                 description=description,
-                assigned_to=user_id,
+                assigned_to_id=user_id,
                 status='pending',
                 due_date=datetime.fromisoformat(due_date) if due_date else None
             )
@@ -391,7 +391,7 @@ def _execute_copilot_action(action: str, parameters: Dict[str, Any], user_id: in
             if not task_id:
                 return {'error': 'Task ID is required'}
             
-            task = models_db.session.query(Task).filter_by(id=task_id, assigned_to=user_id).first()
+            task = models_db.session.query(Task).filter_by(id=task_id, assigned_to_id=user_id).first()
             if not task:
                 return {'error': 'Task not found'}
             
@@ -406,7 +406,7 @@ def _execute_copilot_action(action: str, parameters: Dict[str, Any], user_id: in
             if not task_id:
                 return {'error': 'Task ID is required'}
             
-            task = models_db.session.query(Task).filter_by(id=task_id, assigned_to=user_id).first()
+            task = models_db.session.query(Task).filter_by(id=task_id, assigned_to_id=user_id).first()
             if not task:
                 return {'error': 'Task not found'}
             
