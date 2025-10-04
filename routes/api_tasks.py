@@ -233,10 +233,8 @@ def update_task(task_id):
                 # Update completion timestamp
                 if new_status == 'completed' and old_status != 'completed':
                     task.completed_at = datetime.now()
-                    task.completed_by_id = current_user.id
                 elif new_status != 'completed' and old_status == 'completed':
                     task.completed_at = None
-                    task.completed_by_id = None
         
         if 'due_date' in data:
             if data['due_date']:
@@ -326,10 +324,8 @@ def update_task_status(task_id):
         # Update completion fields
         if new_status == 'completed' and old_status != 'completed':
             task.completed_at = datetime.now()
-            task.completed_by_id = current_user.id
         elif new_status != 'completed' and old_status == 'completed':
             task.completed_at = None
-            task.completed_by_id = None
         
         task.updated_at = datetime.now()
         db.session.commit()
@@ -373,10 +369,8 @@ def bulk_update_tasks():
                 # Handle completion logic
                 if new_status == 'completed' and old_status != 'completed':
                     task.completed_at = datetime.now()
-                    task.completed_by_id = current_user.id
                 elif new_status != 'completed' and old_status == 'completed':
                     task.completed_at = None
-                    task.completed_by_id = None
             
             if 'priority' in updates:
                 task.priority = updates['priority']
@@ -592,6 +586,13 @@ def create_live_task():
             due_date = parse_natural_due_date(due_date_text)
         
         # Create the task
+        # Store context and assignee in extraction_context for live sessions
+        extraction_ctx = {}
+        if data.get('context'):
+            extraction_ctx['source_text'] = data.get('context', '')
+        if data.get('assignee'):
+            extraction_ctx['assignee_name'] = data.get('assignee', '').strip()
+        
         task = Task(
             title=data['title'].strip(),
             description=data.get('description', '').strip() or None,
@@ -602,8 +603,7 @@ def create_live_task():
             status='todo',
             created_by_id=None,  # No user authentication for live sessions
             extracted_by_ai=False,
-            context_source=data.get('context', ''),  # Store the highlighted text
-            assignee_name=data.get('assignee', '').strip() or None  # Store assignee name as text
+            extraction_context=extraction_ctx if extraction_ctx else None
         )
         
         db.session.add(task)
@@ -619,8 +619,7 @@ def create_live_task():
                 'priority': task.priority,
                 'status': task.status,
                 'due_date': task.due_date.isoformat() if task.due_date else None,
-                'assignee_name': task.assignee_name,
-                'context_source': task.context_source,
+                'extraction_context': task.extraction_context,
                 'created_at': task.created_at.isoformat()
             }
         })
