@@ -318,30 +318,92 @@ def tasks():
 @login_required
 def analytics():
     """Analytics and insights page."""
-    # Get recent analytics
-    recent_analytics = db.session.query(Analytics).join(Meeting).filter(
+    from sqlalchemy import select, cast, Date
+    from datetime import datetime, timedelta
+    from models import Participant
+    
+    if not current_user.workspace_id:
+        return render_template('dashboard/analytics.html',
+                             total_meetings=0,
+                             total_tasks=0,
+                             hours_saved=0,
+                             avg_duration=0,
+                             task_completion_rate=0,
+                             workspace_averages={'effectiveness': 0, 'engagement': 0, 'sentiment': 0})
+    
+    # Get date range (last 30 days by default)
+    days = 30
+    cutoff_date = datetime.now() - timedelta(days=days)
+    
+    # Total meetings in period
+    total_meetings = db.session.query(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id,
-        Analytics.analysis_status == 'completed'
-    ).order_by(desc(Analytics.created_at)).limit(10).all()
+        Meeting.created_at >= cutoff_date
+    ).count()
+    
+    # Total tasks
+    meeting_ids_query = select(Meeting.id).where(
+        Meeting.workspace_id == current_user.workspace_id,
+        Meeting.created_at >= cutoff_date
+    )
+    meeting_ids = [row[0] for row in db.session.execute(meeting_ids_query)]
+    
+    total_tasks = db.session.query(Task).filter(Task.meeting_id.in_(meeting_ids)).count() if meeting_ids else 0
+    completed_tasks = db.session.query(Task).filter(
+        Task.meeting_id.in_(meeting_ids),
+        Task.status == 'completed'
+    ).count() if meeting_ids else 0
+    
+    task_completion_rate = round((completed_tasks / total_tasks * 100), 1) if total_tasks > 0 else 0
+    
+    # Average meeting duration
+    avg_duration_query = db.session.query(func.avg(Analytics.total_duration_minutes)).join(Meeting).filter(
+        Meeting.workspace_id == current_user.workspace_id,
+        Meeting.created_at >= cutoff_date,
+        Analytics.total_duration_minutes.isnot(None)
+    ).scalar()
+    avg_duration = round(avg_duration_query) if avg_duration_query else 45
+    
+    # Hours saved (estimate based on meeting efficiency)
+    total_meeting_hours = db.session.query(func.sum(Analytics.total_duration_minutes)).join(Meeting).filter(
+        Meeting.workspace_id == current_user.workspace_id,
+        Meeting.created_at >= cutoff_date,
+        Analytics.total_duration_minutes.isnot(None)
+    ).scalar() or 0
+    
+    avg_efficiency = db.session.query(func.avg(Analytics.meeting_efficiency_score)).join(Meeting).filter(
+        Meeting.workspace_id == current_user.workspace_id,
+        Meeting.created_at >= cutoff_date,
+        Analytics.meeting_efficiency_score.isnot(None)
+    ).scalar() or 0.5
+    
+    hours_saved = round((total_meeting_hours / 60) * (avg_efficiency * 0.3))  # Estimate savings
     
     # Calculate workspace averages
     avg_effectiveness = db.session.query(func.avg(Analytics.meeting_effectiveness_score)).join(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id,
+        Meeting.created_at >= cutoff_date,
         Analytics.meeting_effectiveness_score.isnot(None)
     ).scalar() or 0
     
     avg_engagement = db.session.query(func.avg(Analytics.overall_engagement_score)).join(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id,
+        Meeting.created_at >= cutoff_date,
         Analytics.overall_engagement_score.isnot(None)
     ).scalar() or 0
     
     avg_sentiment = db.session.query(func.avg(Analytics.overall_sentiment_score)).join(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id,
+        Meeting.created_at >= cutoff_date,
         Analytics.overall_sentiment_score.isnot(None)
     ).scalar() or 0
     
     return render_template('dashboard/analytics.html',
-                         recent_analytics=recent_analytics,
+                         total_meetings=total_meetings,
+                         total_tasks=total_tasks,
+                         hours_saved=hours_saved,
+                         avg_duration=avg_duration,
+                         task_completion_rate=task_completion_rate,
                          workspace_averages={
                              'effectiveness': round(avg_effectiveness * 100, 1) if avg_effectiveness else 0,
                              'engagement': round(avg_engagement * 100, 1) if avg_engagement else 0,
