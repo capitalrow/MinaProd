@@ -69,7 +69,8 @@ def chat_with_copilot():
         {
             "message": "What did we decide about the Q3 budget?",
             "context": "meeting_id_optional",
-            "session_id": "optional_session_id"
+            "session_id": "optional_session_id",
+            "language": "en|es|fr|de|zh|ja|pt|ru|ar|hi"
         }
     
     Returns:
@@ -80,6 +81,7 @@ def chat_with_copilot():
         message = data.get('message', '').strip()
         context = data.get('context')
         session_id = data.get('session_id')  # For conversation continuity
+        language = data.get('language', 'en')  # Default to English
         
         if not message:
             return jsonify({
@@ -87,8 +89,8 @@ def chat_with_copilot():
                 'error': 'Message is required'
             }), 400
         
-        # Process the message with AI
-        response = _process_copilot_message(message, context, current_user.id, session_id)
+        # Process the message with AI including language preference
+        response = _process_copilot_message(message, context, current_user.id, session_id, language)
         
         return jsonify({
             'success': True,
@@ -578,7 +580,7 @@ def _analyze_participants(meetings, db):
     }
 
 
-def _process_copilot_message(message: str, context: Optional[str], user_id: int, session_id: Optional[str] = None) -> Dict[str, Any]:
+def _process_copilot_message(message: str, context: Optional[str], user_id: int, session_id: Optional[str] = None, language: str = 'en') -> Dict[str, Any]:
     """
     Process a message using AI and meeting context with conversation history.
     
@@ -587,6 +589,7 @@ def _process_copilot_message(message: str, context: Optional[str], user_id: int,
         context: Optional meeting ID for context
         user_id: ID of the current user
         session_id: Optional session ID for conversation continuity
+        language: Language code for response (en, es, fr, de, zh, ja, etc.)
     
     Returns:
         Dict containing AI response, citations, and action buttons
@@ -697,8 +700,28 @@ def _process_copilot_message(message: str, context: Optional[str], user_id: int,
                 task_data['meeting_id'] = task.meeting_id
             task_context.append(task_data)
         
+        # Language names mapping for natural instructions
+        language_names = {
+            'en': 'English',
+            'es': 'Spanish (Español)',
+            'fr': 'French (Français)',
+            'de': 'German (Deutsch)',
+            'zh': 'Chinese (中文)',
+            'ja': 'Japanese (日本語)',
+            'pt': 'Portuguese (Português)',
+            'ru': 'Russian (Русский)',
+            'ar': 'Arabic (العربية)',
+            'hi': 'Hindi (हिन्दी)',
+            'it': 'Italian (Italiano)',
+            'ko': 'Korean (한국어)',
+            'nl': 'Dutch (Nederlands)'
+        }
+        
+        language_name = language_names.get(language, 'English')
+        language_instruction = f"\n\n⚠️ IMPORTANT: Respond in {language_name}. All your responses, explanations, and suggestions MUST be in {language_name}." if language != 'en' else ""
+        
         # Prepare AI prompt with user preferences awareness
-        system_prompt = """You are Mina's AI Copilot. You help users understand their meetings, manage tasks, and find information. 
+        system_prompt = f"""You are Mina's AI Copilot. You help users understand their meetings, manage tasks, and find information.{language_instruction}
 
 You have access to:
 - Recent meeting transcripts and summaries
