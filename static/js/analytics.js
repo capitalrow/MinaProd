@@ -7,6 +7,7 @@ class AnalyticsDashboard {
     constructor() {
         this.selectedDateRange = 30; // Default: 30 days
         this.charts = {};
+        this.widgetPreferences = this.loadWidgetPreferences();
         this.init();
     }
 
@@ -17,11 +18,177 @@ class AnalyticsDashboard {
         // Set up export button
         this.setupExportButton();
         
+        // Set up widget customization
+        this.setupWidgetCustomization();
+        
         // Load initial data
         await this.loadDashboardData();
         
         // Set up tab switching
         this.setupTabs();
+        
+        // Apply widget preferences
+        this.applyWidgetPreferences();
+    }
+
+    loadWidgetPreferences() {
+        const saved = localStorage.getItem('mina_analytics_widgets');
+        return saved ? JSON.parse(saved) : {
+            'kpi-meetings': true,
+            'kpi-tasks': true,
+            'kpi-hours': true,
+            'kpi-duration': true,
+            'chart-activity': true,
+            'chart-task-status': true,
+            'chart-speaker': true,
+            'chart-topics': true,
+            'chart-speaking-time': true,
+            'chart-participation': true,
+            'chart-sentiment': true,
+            'topic-trends': true,
+            'qa-tracking': true,
+            'action-items': true
+        };
+    }
+
+    saveWidgetPreferences() {
+        localStorage.setItem('mina_analytics_widgets', JSON.stringify(this.widgetPreferences));
+    }
+
+    setupWidgetCustomization() {
+        const customizeBtn = document.getElementById('customizeWidgetsBtn');
+        const modal = document.getElementById('widgetCustomizationModal');
+        const closeBtn = document.getElementById('closeCustomizeModal');
+        const saveBtn = document.getElementById('saveWidgetsBtn');
+        const resetBtn = document.getElementById('resetWidgetsBtn');
+
+        if (customizeBtn) {
+            customizeBtn.addEventListener('click', () => this.showCustomizeModal());
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.hideCustomizeModal());
+        }
+
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.saveWidgetSettings());
+        }
+
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => this.resetWidgetSettings());
+        }
+
+        // Close modal on outside click
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    this.hideCustomizeModal();
+                }
+            });
+        }
+    }
+
+    showCustomizeModal() {
+        const modal = document.getElementById('widgetCustomizationModal');
+        const togglesContainer = document.getElementById('widgetToggles');
+        
+        if (!modal || !togglesContainer) return;
+
+        const widgets = [
+            { id: 'kpi-meetings', name: 'Total Meetings KPI', category: 'KPIs' },
+            { id: 'kpi-tasks', name: 'Action Items KPI', category: 'KPIs' },
+            { id: 'kpi-hours', name: 'Hours Saved KPI', category: 'KPIs' },
+            { id: 'kpi-duration', name: 'Avg Meeting Length KPI', category: 'KPIs' },
+            { id: 'chart-activity', name: 'Meeting Activity Chart', category: 'Charts' },
+            { id: 'chart-task-status', name: 'Task Status Chart', category: 'Charts' },
+            { id: 'chart-speaker', name: 'Speaker Distribution', category: 'Charts' },
+            { id: 'chart-topics', name: 'Top Topics', category: 'Charts' },
+            { id: 'chart-speaking-time', name: 'Speaking Time Analysis', category: 'Engagement' },
+            { id: 'chart-participation', name: 'Participation Balance', category: 'Engagement' },
+            { id: 'chart-sentiment', name: 'Sentiment Analysis', category: 'Engagement' },
+            { id: 'topic-trends', name: 'Topic Evolution Timeline', category: 'Productivity' },
+            { id: 'qa-tracking', name: 'Q&A Tracking', category: 'Productivity' },
+            { id: 'action-items', name: 'Action Items Completion', category: 'Productivity' }
+        ];
+
+        // Group widgets by category
+        const grouped = widgets.reduce((acc, widget) => {
+            if (!acc[widget.category]) acc[widget.category] = [];
+            acc[widget.category].push(widget);
+            return acc;
+        }, {});
+
+        togglesContainer.innerHTML = Object.keys(grouped).map(category => `
+            <div class="mb-4">
+                <h3 class="text-sm font-semibold text-tertiary uppercase tracking-wide mb-2">${category}</h3>
+                <div class="space-y-2">
+                    ${grouped[category].map(widget => `
+                        <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary cursor-pointer transition-colors">
+                            <input 
+                                type="checkbox" 
+                                data-widget-id="${widget.id}"
+                                ${this.widgetPreferences[widget.id] !== false ? 'checked' : ''}
+                                class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary focus:ring-2"
+                            >
+                            <div class="flex-1">
+                                <div class="font-medium text-sm">${widget.name}</div>
+                            </div>
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+
+        modal.classList.remove('hidden');
+    }
+
+    hideCustomizeModal() {
+        const modal = document.getElementById('widgetCustomizationModal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+
+    saveWidgetSettings() {
+        const checkboxes = document.querySelectorAll('#widgetToggles input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            const widgetId = checkbox.dataset.widgetId;
+            this.widgetPreferences[widgetId] = checkbox.checked;
+        });
+        
+        this.saveWidgetPreferences();
+        this.applyWidgetPreferences();
+        this.hideCustomizeModal();
+        this.showToast('Widget preferences saved', 'success');
+    }
+
+    resetWidgetSettings() {
+        // Reset all to true
+        Object.keys(this.widgetPreferences).forEach(key => {
+            this.widgetPreferences[key] = true;
+        });
+        
+        this.saveWidgetPreferences();
+        this.showCustomizeModal(); // Refresh the modal
+        this.showToast('Widget preferences reset to default', 'success');
+    }
+
+    applyWidgetPreferences() {
+        // This would require adding data-widget-id to each widget in the HTML
+        // For now, just console log (in production, you'd hide/show widgets)
+        console.log('Widget preferences applied:', this.widgetPreferences);
+        
+        // Example: Show/hide widgets based on preferences
+        Object.keys(this.widgetPreferences).forEach(widgetId => {
+            const elements = document.querySelectorAll(`[data-widget="${widgetId}"]`);
+            elements.forEach(el => {
+                if (this.widgetPreferences[widgetId]) {
+                    el.style.display = '';
+                } else {
+                    el.style.display = 'none';
+                }
+            });
+        });
     }
 
     setupDateRangeFilter() {
@@ -887,9 +1054,232 @@ class AnalyticsDashboard {
         `;
     }
 
-    async exportAnalytics() {
+    async loadTopicTrends(meetingId) {
         try {
-            const response = await fetch(`/api/analytics/export?days=${this.selectedDateRange}&format=json`);
+            const response = await fetch(`/api/analytics/meetings/${meetingId}/topic-trends`);
+            const data = await response.json();
+            
+            if (data.success && data.trends) {
+                this.renderTopicTrends(data.trends);
+            }
+        } catch (error) {
+            console.error('Failed to load topic trends:', error);
+        }
+    }
+
+    renderTopicTrends(trends) {
+        const container = document.getElementById('topicTrendsTimeline');
+        if (!container || !trends.timeline || trends.timeline.length === 0) return;
+
+        container.innerHTML = `
+            <div class="mb-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    ${trends.topics.slice(0, 4).map(topic => `
+                        <div class="p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
+                            <div class="text-lg font-bold text-primary">${topic.frequency}x</div>
+                            <div class="text-sm font-medium truncate">${topic.name}</div>
+                            <div class="text-xs text-tertiary">Coverage: ${topic.coverage_percentage}%</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <div class="space-y-3">
+                ${trends.timeline.map((window, idx) => `
+                    <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+                        <div class="flex items-start gap-3">
+                            <div class="flex-shrink-0 w-16 text-center">
+                                <div class="text-xs font-medium text-tertiary">@${Math.round(window.time_offset_minutes)}m</div>
+                                <div class="text-xs text-tertiary">${window.segment_count} msgs</div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex flex-wrap gap-2 mb-2">
+                                    ${window.topics.map(topic => `
+                                        <span class="px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                            ${topic}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                                <p class="text-sm text-secondary">${window.text_preview}</p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    async loadQuestionAnalytics(meetingId) {
+        try {
+            const response = await fetch(`/api/analytics/meetings/${meetingId}/questions`);
+            const data = await response.json();
+            
+            if (data.success && data.qa_analytics) {
+                this.renderQuestionAnalytics(data.qa_analytics);
+            }
+        } catch (error) {
+            console.error('Failed to load Q&A analytics:', error);
+        }
+    }
+
+    renderQuestionAnalytics(qaData) {
+        const container = document.getElementById('qaTracking');
+        if (!container) return;
+
+        const summary = qaData.summary;
+        
+        container.innerHTML = `
+            <!-- Q&A Summary Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                    <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">${summary.total}</div>
+                    <div class="text-sm font-medium">Total Questions</div>
+                </div>
+                <div class="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                    <div class="text-2xl font-bold text-green-600 dark:text-green-400">${summary.answered}</div>
+                    <div class="text-sm font-medium">Answered</div>
+                </div>
+                <div class="p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+                    <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">${summary.unanswered}</div>
+                    <div class="text-sm font-medium">Unanswered</div>
+                </div>
+                <div class="p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                    <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">${summary.answer_rate}%</div>
+                    <div class="text-sm font-medium">Answer Rate</div>
+                </div>
+            </div>
+
+            <!-- Question List -->
+            <div class="space-y-3">
+                ${qaData.questions.map(q => `
+                    <div class="p-4 rounded-lg border ${q.answered ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800' : 'bg-orange-50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-800'}">
+                        <div class="flex items-start gap-3">
+                            <div class="flex-shrink-0">
+                                ${q.answered 
+                                    ? '<svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>'
+                                    : '<svg class="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>'
+                                }
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-sm font-medium mb-1">${q.question}</div>
+                                <div class="flex items-center gap-3 text-xs text-tertiary">
+                                    <span>Asked by: ${q.asked_by}</span>
+                                    <span>@${Math.round(q.timestamp_minutes)}m</span>
+                                    <span class="px-2 py-0.5 rounded-full ${q.answered ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'}">
+                                        ${q.answered ? 'Answered' : 'Pending'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    async loadActionItemsCompletion(meetingId) {
+        try {
+            const response = await fetch(`/api/analytics/meetings/${meetingId}/action-items-completion`);
+            const data = await response.json();
+            
+            if (data.success && data.completion) {
+                this.renderActionItemsCompletion(data.completion);
+            }
+        } catch (error) {
+            console.error('Failed to load action items completion:', error);
+        }
+    }
+
+    renderActionItemsCompletion(completion) {
+        const container = document.getElementById('actionItemsCompletion');
+        if (!container) return;
+
+        const completionRate = completion.completion_rate || 0;
+        const progressColor = completionRate >= 75 ? 'bg-green-500' : completionRate >= 50 ? 'bg-blue-500' : 'bg-orange-500';
+
+        container.innerHTML = `
+            <!-- Completion Overview -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-semibold">Overall Completion</h3>
+                    <span class="text-2xl font-bold text-primary">${completionRate}%</span>
+                </div>
+                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div class="${progressColor} h-full transition-all duration-500" style="width: ${completionRate}%"></div>
+                </div>
+            </div>
+
+            <!-- Status Breakdown -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="p-4 rounded-lg bg-gray-100 dark:bg-gray-800">
+                    <div class="text-2xl font-bold">${completion.total}</div>
+                    <div class="text-sm text-secondary">Total Items</div>
+                </div>
+                <div class="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                    <div class="text-2xl font-bold text-green-600 dark:text-green-400">${completion.completed}</div>
+                    <div class="text-sm">Completed</div>
+                </div>
+                <div class="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                    <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">${completion.in_progress}</div>
+                    <div class="text-sm">In Progress</div>
+                </div>
+                <div class="p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+                    <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">${completion.todo}</div>
+                    <div class="text-sm">To Do</div>
+                </div>
+            </div>
+
+            <!-- Action Items List -->
+            ${completion.tasks && completion.tasks.length > 0 ? `
+                <div class="space-y-2">
+                    <h4 class="font-semibold mb-3">Action Items</h4>
+                    ${completion.tasks.map(task => {
+                        const statusColor = {
+                            'completed': 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+                            'in_progress': 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+                            'todo': 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
+                        }[task.status] || 'bg-gray-100 text-gray-700';
+
+                        const priorityColor = {
+                            'high': 'text-red-600',
+                            'medium': 'text-yellow-600',
+                            'low': 'text-gray-600'
+                        }[task.priority] || 'text-gray-600';
+
+                        return `
+                            <div class="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary transition-colors">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex-shrink-0 pt-1">
+                                        ${task.status === 'completed'
+                                            ? '<svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>'
+                                            : '<svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/></svg>'
+                                        }
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium mb-1 ${task.status === 'completed' ? 'line-through text-gray-500' : ''}">${task.title}</div>
+                                        <div class="flex flex-wrap items-center gap-2 text-xs">
+                                            <span class="px-2 py-0.5 rounded-full ${statusColor}">
+                                                ${task.status.replace('_', ' ')}
+                                            </span>
+                                            ${task.priority ? `<span class="${priorityColor} font-medium">${task.priority} priority</span>` : ''}
+                                            ${task.assignee ? `<span class="text-tertiary">Assigned: ${task.assignee}</span>` : ''}
+                                            ${task.due_date ? `<span class="text-tertiary">Due: ${new Date(task.due_date).toLocaleDateString()}</span>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            ` : '<p class="text-center text-secondary py-4">No action items found</p>'}
+        `;
+    }
+
+    async exportAnalytics() {
+        const format = 'json'; // Could add PDF later
+        
+        try {
+            const response = await fetch(`/api/analytics/export?days=${this.selectedDateRange}&format=${format}`);
             const data = await response.json();
             
             if (data.success) {
@@ -898,7 +1288,7 @@ class AnalyticsDashboard {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `analytics-${new Date().toISOString().split('T')[0]}.json`;
+                a.download = `mina-analytics-${new Date().toISOString().split('T')[0]}.json`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -906,6 +1296,8 @@ class AnalyticsDashboard {
                 
                 // Show success toast
                 this.showToast('Analytics exported successfully', 'success');
+            } else {
+                this.showToast(data.message || 'Export failed', 'error');
             }
         } catch (error) {
             console.error('Failed to export analytics:', error);
