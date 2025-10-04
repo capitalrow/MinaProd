@@ -169,6 +169,7 @@ class AnalyticsDashboard {
         });
         
         this.saveWidgetPreferences();
+        this.applyWidgetPreferences(); // Apply changes immediately
         this.showCustomizeModal(); // Refresh the modal
         this.showToast('Widget preferences reset to default', 'success');
     }
