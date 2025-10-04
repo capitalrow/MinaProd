@@ -75,7 +75,9 @@ def chat_with_copilot():
         }), 200
     
     except Exception as e:
+        import traceback
         logger.error(f"Error processing copilot message: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({
             'success': False,
             'error': 'Failed to process message'
@@ -282,7 +284,9 @@ Please provide a helpful response with specific information and suggest any rele
         }
         
     except Exception as e:
-        logger.error(f"Error processing copilot message: {e}")
+        import traceback
+        logger.error(f"Error in _process_copilot_message: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return {
             'text': "I'm having trouble processing your request right now. Please try again.",
             'citations': [],
