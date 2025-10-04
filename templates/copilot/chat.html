@@ -73,6 +73,48 @@
     color: var(--color-success);
     border-color: var(--color-success);
 }
+
+/* Voice input button */
+.voice-btn {
+    padding: var(--space-3);
+    background: var(--color-glass);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text);
+}
+
+.voice-btn:hover {
+    background: var(--color-bg);
+    border-color: var(--color-primary);
+}
+
+.voice-btn.listening {
+    background: var(--color-error);
+    border-color: var(--color-error);
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.voice-btn.processing {
+    background: var(--color-warning);
+    border-color: var(--color-warning);
+    color: white;
+}
+
+.voice-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 </style>
 {% endblock %}
 
@@ -176,6 +218,11 @@
             </div>
 
             <form id="chat-form" style="display: flex; gap: var(--space-2); align-items: end;">
+                <button type="button" id="voice-btn" class="voice-btn" title="Voice input">
+                    <svg id="mic-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                    </svg>
+                </button>
                 <div style="flex: 1; display: flex; flex-direction: column;">
                     <textarea 
                         id="chat-input" 
@@ -519,6 +566,136 @@ chatInput.addEventListener('keydown', (e) => {
         sendMessage(chatInput.value);
     }
 });
+
+// ============ Web Speech API for Voice Input ============
+const voiceBtn = document.getElementById('voice-btn');
+let recognition;
+let isListening = false;
+
+// Check if browser supports Web Speech API
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    
+    // Configure recognition
+    recognition.continuous = false;  // Stop after one phrase
+    recognition.interimResults = true;  // Show interim results
+    recognition.lang = 'en-US';  // Default language
+    
+    // When recognition starts
+    recognition.onstart = () => {
+        isListening = true;
+        voiceBtn.classList.add('listening');
+        voiceBtn.title = 'Listening... Click to stop';
+        chatInput.placeholder = '🎤 Listening...';
+    };
+    
+    // When recognition ends
+    recognition.onend = () => {
+        isListening = false;
+        voiceBtn.classList.remove('listening', 'processing');
+        voiceBtn.title = 'Voice input';
+        if (!chatInput.value) {
+            chatInput.placeholder = 'Ask about your meetings, decisions, or action items...';
+        }
+    };
+    
+    // Handle recognition results
+    recognition.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalTranscript += transcript;
+            } else {
+                interimTranscript += transcript;
+            }
+        }
+        
+        // Update textarea with results
+        if (finalTranscript) {
+            chatInput.value = finalTranscript.trim();
+            voiceBtn.classList.remove('listening');
+            voiceBtn.classList.add('processing');
+            
+            // Auto-resize textarea
+            chatInput.style.height = 'auto';
+            chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+            
+            // Auto-send after a short delay (optional)
+            setTimeout(() => {
+                if (chatInput.value.trim()) {
+                    sendMessage(chatInput.value);
+                }
+            }, 500);
+        } else if (interimTranscript) {
+            chatInput.value = interimTranscript;
+        }
+    };
+    
+    // Handle errors
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        isListening = false;
+        voiceBtn.classList.remove('listening', 'processing');
+        
+        let errorMessage = 'Voice input error';
+        switch(event.error) {
+            case 'no-speech':
+                errorMessage = 'No speech detected. Please try again.';
+                break;
+            case 'audio-capture':
+                errorMessage = 'Microphone not found. Please check your settings.';
+                break;
+            case 'not-allowed':
+                errorMessage = 'Microphone permission denied. Please allow microphone access.';
+                break;
+            case 'network':
+                errorMessage = 'Network error. Please check your connection.';
+                break;
+        }
+        
+        chatInput.placeholder = errorMessage;
+        setTimeout(() => {
+            if (!chatInput.value) {
+                chatInput.placeholder = 'Ask about your meetings, decisions, or action items...';
+            }
+        }, 3000);
+    };
+    
+    // Voice button click handler
+    voiceBtn.addEventListener('click', () => {
+        if (isListening) {
+            recognition.stop();
+        } else {
+            // Clear any previous value
+            chatInput.value = '';
+            
+            // Get user's language preference from localStorage if available
+            const settings = JSON.parse(localStorage.getItem('copilot_settings') || '{}');
+            const userLang = settings.language || 'en-US';
+            recognition.lang = userLang;
+            
+            try {
+                recognition.start();
+            } catch (e) {
+                console.error('Failed to start recognition:', e);
+                chatInput.placeholder = 'Voice input unavailable. Please type your message.';
+                setTimeout(() => {
+                    chatInput.placeholder = 'Ask about your meetings, decisions, or action items...';
+                }, 3000);
+            }
+        }
+    });
+} else {
+    // Browser doesn't support Web Speech API
+    voiceBtn.disabled = true;
+    voiceBtn.title = 'Voice input not supported in this browser';
+    voiceBtn.style.opacity = '0.5';
+    console.warn('Web Speech API not supported in this browser');
+}
 </script>
 
 <!-- Highlight.js for syntax highlighting -->
