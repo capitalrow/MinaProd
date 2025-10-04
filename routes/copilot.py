@@ -162,6 +162,63 @@ def get_quick_queries():
         }), 500
 
 
+@copilot_bp.route('/api/generate-draft', methods=['POST'])
+@login_required
+def generate_draft():
+    """
+    Generate drafts for emails, notes, or updates based on meeting context.
+    
+    Request Body:
+        {
+            "draft_type": "email|note|update",
+            "meeting_id": "optional_meeting_id",
+            "context": "additional context",
+            "recipients": ["optional list for emails"],
+            "tone": "formal|casual|professional"
+        }
+    
+    Returns:
+        JSON: Generated draft with subject/title and body
+    """
+    try:
+        data = request.get_json() or {}
+        draft_type = data.get('draft_type', 'email')
+        meeting_id = data.get('meeting_id')
+        context_info = data.get('context', '')
+        recipients = data.get('recipients', [])
+        tone = data.get('tone', 'professional')
+        
+        if draft_type not in ['email', 'note', 'update']:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid draft type. Must be email, note, or update.'
+            }), 400
+        
+        # Generate the draft
+        draft = _generate_draft_content(
+            draft_type=draft_type,
+            meeting_id=meeting_id,
+            context_info=context_info,
+            recipients=recipients,
+            tone=tone,
+            user_id=current_user.id
+        )
+        
+        return jsonify({
+            'success': True,
+            'draft': draft
+        }), 200
+    
+    except Exception as e:
+        import traceback
+        logger.error(f"Error generating draft: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to generate draft'
+        }), 500
+
+
 def _process_copilot_message(message: str, context: Optional[str], user_id: int, session_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Process a message using AI and meeting context with conversation history.
@@ -584,6 +641,193 @@ def _generate_follow_up_questions(original_query: str, ai_response: str, meeting
                 follow_ups.append(q)
     
     return follow_ups
+
+
+def _generate_draft_content(
+    draft_type: str,
+    meeting_id: Optional[int],
+    context_info: str,
+    recipients: List[str],
+    tone: str,
+    user_id: int
+) -> Dict[str, Any]:
+    """
+    Generate draft content using AI based on meeting context.
+    
+    Args:
+        draft_type: Type of draft (email, note, update)
+        meeting_id: Optional meeting ID for context
+        context_info: Additional context information
+        recipients: List of recipients (for emails)
+        tone: Tone of the draft (formal, casual, professional)
+        user_id: Current user ID
+    
+    Returns:
+        Dict with subject/title and body of the draft
+    """
+    try:
+        from services.openai_client_manager import get_openai_client
+        from models import Meeting, Summary, Segment, User, db as models_db
+        
+        # Get user info
+        user = models_db.session.get(User, user_id)
+        if not user:
+            return {
+                'subject': 'Error',
+                'body': 'Unable to access user information.'
+            }
+        
+        # Build context from meeting if provided
+        meeting_context = ""
+        if meeting_id:
+            meeting = models_db.session.get(Meeting, meeting_id)
+            if meeting and meeting.session:
+                # Get summary if available
+                summary = models_db.session.query(Summary)\
+                    .filter_by(session_id=meeting.session.id)\
+                    .first()
+                
+                if summary:
+                    meeting_context = f"""
+Meeting: {meeting.title}
+Date: {meeting.created_at.strftime('%B %d, %Y')}
+
+Summary: {summary.brief_summary or summary.summary_md[:500]}
+
+Key Decisions:
+{chr(10).join([f"- {d}" for d in (summary.decisions[:3] if summary.decisions else [])])}
+
+Action Items:
+{chr(10).join([f"- {a}" for a in (summary.actions[:5] if summary.actions else [])])}
+"""
+                else:
+                    # Fallback to transcript
+                    segments = models_db.session.query(Segment)\
+                        .filter_by(session_id=meeting.session.id)\
+                        .order_by(Segment.created_at)\
+                        .limit(20).all()
+                    
+                    transcript = " ".join([seg.text for seg in segments if seg.text])
+                    meeting_context = f"""
+Meeting: {meeting.title}
+Date: {meeting.created_at.strftime('%B %d, %Y')}
+
+Key Discussion Points:
+{transcript[:800]}...
+"""
+        
+        # Build prompts based on draft type
+        system_prompts = {
+            'email': f"""You are a professional email writer. Generate a well-structured {tone} follow-up email based on the meeting context. 
+Include:
+- Clear, professional subject line
+- Proper greeting
+- Summary of key points
+- Action items with owners
+- Next steps
+- Professional closing
+
+Tone: {tone}
+""",
+            'note': f"""You are a professional note-taker. Generate structured meeting notes that are clear and actionable.
+Include:
+- Meeting overview
+- Key discussion points
+- Decisions made
+- Action items
+- Next steps
+
+Format: Well-organized with bullet points and sections.
+Tone: {tone}
+""",
+            'update': f"""You are a professional communicator. Generate a concise status update for the team.
+Include:
+- Progress summary
+- Key achievements
+- Challenges or blockers
+- Next priorities
+
+Format: Brief and to-the-point.
+Tone: {tone}
+"""
+        }
+        
+        user_prompts = {
+            'email': f"""Generate a follow-up email based on this meeting:
+
+{meeting_context}
+
+Additional Context: {context_info}
+Recipients: {', '.join(recipients) if recipients else 'Team'}
+
+Provide a JSON response with "subject" and "body" fields.""",
+            
+            'note': f"""Generate structured meeting notes based on:
+
+{meeting_context}
+
+Additional Context: {context_info}
+
+Provide a JSON response with "title" and "body" fields.""",
+            
+            'update': f"""Generate a status update based on:
+
+{meeting_context}
+
+Additional Context: {context_info}
+
+Provide a JSON response with "title" and "body" fields."""
+        }
+        
+        # Call OpenAI
+        client = get_openai_client()
+        if not client:
+            return {
+                'subject': 'AI Service Unavailable',
+                'body': 'Please configure your OpenAI API key to generate drafts.'
+            }
+        
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompts[draft_type]},
+                {"role": "user", "content": user_prompts[draft_type]}
+            ],
+            max_tokens=1000,
+            temperature=0.7
+        )
+        
+        ai_response = response.choices[0].message.content or ""
+        
+        # Try to parse JSON response
+        try:
+            import json
+            draft_data = json.loads(ai_response)
+            return {
+                'subject': draft_data.get('subject') or draft_data.get('title', 'Draft'),
+                'body': draft_data.get('body', ai_response)
+            }
+        except:
+            # If not JSON, use the response as body
+            subject = f"{'Follow-up from' if draft_type == 'email' else 'Notes for'} Meeting"
+            if meeting_context:
+                meeting_lines = meeting_context.split('\n')
+                for line in meeting_lines:
+                    if line.startswith('Meeting:'):
+                        subject = f"{'Follow-up:' if draft_type == 'email' else 'Notes:'} {line.replace('Meeting:', '').strip()}"
+                        break
+            
+            return {
+                'subject': subject,
+                'body': ai_response
+            }
+    
+    except Exception as e:
+        logger.error(f"Error generating draft: {e}")
+        return {
+            'subject': 'Draft Generation Error',
+            'body': f'An error occurred while generating the draft: {str(e)}'
+        }
 
 
 def _execute_copilot_action(action: str, parameters: Dict[str, Any], user_id: int) -> Dict[str, Any]:
