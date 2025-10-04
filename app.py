@@ -625,6 +625,9 @@ def create_app() -> Flask:
     try:
         from routes.copilot import copilot_bp
         app.register_blueprint(copilot_bp)
+        
+        from routes.copilot_templates import copilot_templates_bp
+        app.register_blueprint(copilot_templates_bp)
         app.logger.info("AI Copilot routes registered")
     except Exception as e:
         app.logger.error(f"Failed to register AI Copilot routes: {e}")

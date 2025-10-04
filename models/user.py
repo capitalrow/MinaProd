@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from .marker import Marker
     from .comment import Comment
     from .session import Session
+    from .copilot_template import CopilotTemplate
 
 
 class User(UserMixin, Base):
@@ -63,6 +64,7 @@ class User(UserMixin, Base):
     assigned_tasks: Mapped[list["Task"]] = relationship(back_populates="assigned_to", foreign_keys="Task.assigned_to_id")
     markers: Mapped[list["Marker"]] = relationship(back_populates="user")
     comments: Mapped[list["Comment"]] = relationship(back_populates="user")
+    copilot_templates: Mapped[list["CopilotTemplate"]] = relationship(back_populates="user", foreign_keys="CopilotTemplate.user_id")
 
     def __repr__(self):
         return f'<User {self.username}: {self.email}>'
