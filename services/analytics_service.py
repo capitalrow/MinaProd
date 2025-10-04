@@ -343,28 +343,215 @@ class AnalyticsService:
         analytics.consensus_moments = consensus_moments
 
     async def _analyze_efficiency(self, analytics: Analytics, meeting: Meeting):
-        """Analyze meeting efficiency metrics."""
-        # Basic efficiency calculation
-        efficiency_score = 0.5  # Base score
+        """
+        Analyze meeting efficiency using comprehensive 6-dimensional weighted algorithm.
+        Produces both a raw composite score (0-1) and a display score (1-10).
         
-        # Boost for task creation
-        if analytics.action_items_created and analytics.action_items_created > 0:
-            efficiency_score += 0.2
+        Dimensions (with weights):
+        1. Productivity Output (25%) - Action items & decisions per hour
+        2. Time Efficiency (15%) - On-time performance
+        3. Participation Balance (15%) - Equitable speaking distribution
+        4. Engagement Quality (15%) - Active participation metrics
+        5. Preparation & Follow-through (15%) - Agenda completion & task resolution
+        6. Decision Effectiveness (15%) - Decision quality and consensus
+        """
+        sub_scores = {}
+        weights = {
+            'productivity': 0.25,
+            'time_efficiency': 0.15,
+            'participation_balance': 0.15,
+            'engagement_quality': 0.15,
+            'preparation': 0.15,
+            'decision_effectiveness': 0.15
+        }
         
-        # Boost for decision making
-        if analytics.decisions_made_count and analytics.decisions_made_count > 0:
-            efficiency_score += 0.2
+        # 1. Productivity Output (0-1)
+        sub_scores['productivity'] = self._calculate_productivity_score(analytics, meeting)
         
-        # Penalty for going over scheduled time
-        if analytics.actual_vs_scheduled_ratio and analytics.actual_vs_scheduled_ratio > 1.2:
-            efficiency_score -= 0.1
+        # 2. Time Efficiency (0-1)
+        sub_scores['time_efficiency'] = self._calculate_time_efficiency_score(analytics, meeting)
         
-        analytics.meeting_efficiency_score = min(1.0, max(0.0, efficiency_score))
+        # 3. Participation Balance (0-1)
+        sub_scores['participation_balance'] = self._calculate_participation_balance_score(analytics, meeting)
+        
+        # 4. Engagement Quality (0-1)
+        sub_scores['engagement_quality'] = self._calculate_engagement_quality_score(analytics, meeting)
+        
+        # 5. Preparation & Follow-through (0-1)
+        sub_scores['preparation'] = self._calculate_preparation_score(analytics, meeting)
+        
+        # 6. Decision Effectiveness (0-1)
+        sub_scores['decision_effectiveness'] = self._calculate_decision_effectiveness_score(analytics, meeting)
+        
+        # Calculate weighted composite score (0-1)
+        composite_score = sum(
+            sub_scores[dimension] * weights[dimension]
+            for dimension in sub_scores
+        )
+        
+        # Calculate confidence (based on how many metrics were available)
+        available_metrics = sum(1 for score in sub_scores.values() if score > 0)
+        confidence = available_metrics / len(sub_scores)
+        
+        # Store both raw composite (0-1) and display score (1-10)
+        analytics.meeting_efficiency_score = min(1.0, max(0.0, composite_score))
+        analytics.efficiency_score_display = round(1 + 9 * analytics.meeting_efficiency_score, 1)
+        analytics.efficiency_confidence = round(confidence, 2)
+        
+        # Store sub-scores for transparency
+        analytics.efficiency_breakdown = {
+            'productivity': round(sub_scores['productivity'], 2),
+            'time_efficiency': round(sub_scores['time_efficiency'], 2),
+            'participation_balance': round(sub_scores['participation_balance'], 2),
+            'engagement_quality': round(sub_scores['engagement_quality'], 2),
+            'preparation': round(sub_scores['preparation'], 2),
+            'decision_effectiveness': round(sub_scores['decision_effectiveness'], 2),
+            'confidence': round(confidence, 2)
+        }
         
         # Estimate time spent on agenda vs off-topic
         if analytics.agenda_completion_rate:
             analytics.time_spent_on_agenda = analytics.agenda_completion_rate * 100
             analytics.off_topic_time_percentage = max(0, 100 - analytics.time_spent_on_agenda)
+
+    def _calculate_productivity_score(self, analytics: Analytics, meeting: Meeting) -> float:
+        """Calculate productivity output score (0-1) based on deliverables per hour."""
+        if not analytics.total_duration_minutes or analytics.total_duration_minutes < 5:
+            return 0.5  # Neutral for very short meetings
+        
+        duration_hours = analytics.total_duration_minutes / 60
+        
+        # Calculate output rate
+        action_items_per_hour = (analytics.action_items_created or 0) / duration_hours
+        decisions_per_hour = (analytics.decisions_made_count or 0) / duration_hours
+        
+        # Benchmarks (based on typical productive meetings)
+        # Good meeting: 5-10 action items/hour, 2-4 decisions/hour
+        action_score = min(1.0, action_items_per_hour / 10)
+        decision_score = min(1.0, decisions_per_hour / 4)
+        
+        # Weighted combination (60% actions, 40% decisions)
+        return 0.6 * action_score + 0.4 * decision_score
+
+    def _calculate_time_efficiency_score(self, analytics: Analytics, meeting: Meeting) -> float:
+        """Calculate time efficiency score (0-1) based on schedule adherence."""
+        if not analytics.actual_vs_scheduled_ratio:
+            return 0.7  # Neutral default
+        
+        ratio = analytics.actual_vs_scheduled_ratio
+        
+        # Ideal: exactly on time (ratio = 1.0)
+        # Acceptable: ±10% (0.9-1.1)
+        # Poor: >20% over or under
+        if 0.95 <= ratio <= 1.05:
+            return 1.0  # Perfect timing
+        elif 0.9 <= ratio <= 1.1:
+            return 0.9  # Slightly off
+        elif 0.8 <= ratio <= 1.2:
+            return 0.7  # Moderately off
+        elif ratio < 0.8:
+            return 0.5  # Meeting ended too early (might indicate lack of engagement)
+        else:  # ratio > 1.2
+            return max(0.3, 1.0 - (ratio - 1.0) * 0.5)  # Penalty for going over
+
+    def _calculate_participation_balance_score(self, analytics: Analytics, meeting: Meeting) -> float:
+        """Calculate participation balance using Gini coefficient or dominant speaker analysis."""
+        if not analytics.talk_time_distribution:
+            return 0.7  # Neutral default
+        
+        # Calculate Gini coefficient for talk time distribution
+        values = sorted(analytics.talk_time_distribution.values())
+        n = len(values)
+        
+        if n < 2:
+            return 1.0  # Perfect balance (only one speaker)
+        
+        # Gini coefficient calculation
+        index_sum = sum((i + 1) * val for i, val in enumerate(values))
+        total = sum(values)
+        
+        if total == 0:
+            return 0.5
+        
+        gini = (2 * index_sum) / (n * total) - (n + 1) / n
+        
+        # Convert Gini (0 = perfect equality, 1 = perfect inequality) to score
+        # Lower Gini = better balance = higher score
+        balance_score = 1.0 - gini
+        
+        # Check for dominant speaker (>60% of time)
+        if max(values) / total > 0.6:
+            balance_score *= 0.7  # Penalty for domination
+        
+        return max(0.0, min(1.0, balance_score))
+
+    def _calculate_engagement_quality_score(self, analytics: Analytics, meeting: Meeting) -> float:
+        """Calculate engagement quality based on active participation metrics."""
+        if not analytics.overall_engagement_score:
+            return 0.6  # Neutral default
+        
+        base_engagement = analytics.overall_engagement_score
+        
+        # Boost for high unique speaker ratio
+        if analytics.participant_count and analytics.unique_speakers:
+            speaker_ratio = analytics.unique_speakers / analytics.participant_count
+            engagement_boost = speaker_ratio * 0.2  # Up to +0.2 bonus
+        else:
+            engagement_boost = 0
+        
+        # Boost for interaction (questions, ideas)
+        if analytics.questions_asked_count and analytics.questions_asked_count > 0:
+            question_boost = min(0.1, analytics.questions_asked_count / 20)
+        else:
+            question_boost = 0
+        
+        total_score = base_engagement + engagement_boost + question_boost
+        return min(1.0, max(0.0, total_score))
+
+    def _calculate_preparation_score(self, analytics: Analytics, meeting: Meeting) -> float:
+        """Calculate preparation & follow-through score."""
+        score = 0.5  # Base neutral score
+        
+        # Agenda completion (if available)
+        if analytics.agenda_completion_rate:
+            score = analytics.agenda_completion_rate
+        
+        # Penalty if there are many unresolved action items
+        if analytics.action_items_created and analytics.action_items_created > 0:
+            # Assume we'd track completion in real-time
+            # For now, give small boost for having actionable outcomes
+            score += 0.1
+        
+        return min(1.0, max(0.0, score))
+
+    def _calculate_decision_effectiveness_score(self, analytics: Analytics, meeting: Meeting) -> float:
+        """Calculate decision-making effectiveness."""
+        if not analytics.total_duration_minutes or analytics.total_duration_minutes < 5:
+            return 0.6  # Neutral for very short meetings
+        
+        decisions = analytics.decisions_made_count or 0
+        duration_hours = analytics.total_duration_minutes / 60
+        
+        # Decision density (decisions per hour)
+        decision_density = decisions / duration_hours
+        
+        # Good meetings: 2-5 decisions per hour
+        if 2 <= decision_density <= 5:
+            score = 1.0
+        elif 1 <= decision_density < 2:
+            score = 0.8
+        elif 5 < decision_density <= 8:
+            score = 0.9  # Many decisions, still good
+        elif decision_density > 8:
+            score = 0.7  # Too many decisions might indicate lack of focus
+        else:  # < 1 decision per hour
+            score = 0.5
+        
+        # Boost if sentiment is positive (indicates consensus)
+        if analytics.overall_sentiment_score and analytics.overall_sentiment_score > 0.6:
+            score += 0.1
+        
+        return min(1.0, max(0.0, score))
 
     async def _generate_insights(self, analytics: Analytics, meeting: Meeting):
         """Generate AI-powered insights and recommendations."""
