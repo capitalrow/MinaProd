@@ -5,7 +5,7 @@ REST API endpoints for task management, CRUD operations, and status updates.
 
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
-from models import db, Task, Meeting, User, Session
+from models import db, Task, Meeting, User, Session, Workspace
 from datetime import datetime, date, timedelta
 from sqlalchemy import func, and_, or_
 
@@ -548,6 +548,7 @@ def create_live_task():
         
         if not session:
             # Create a new session record for this live transcription
+            # Note: No user_id/workspace_id for anonymous live sessions
             session = Session(
                 external_id=session_external_id,
                 title=f"Live Transcription - {datetime.now().strftime('%Y-%m-%d %H:%M')}",
@@ -557,20 +558,32 @@ def create_live_task():
             db.session.add(session)
             db.session.flush()  # Get the session ID
         
-        # Create or find a meeting record for this session
-        meeting = db.session.query(Meeting).filter_by(session_id=session.id).first()
+        # Create or find a meeting record linked to this session
+        meeting = db.session.query(Meeting).filter(Meeting.session.has(id=session.id)).first()
         
         if not meeting:
-            # Create a meeting record linked to this session
+            # Get default workspace for anonymous sessions
+            default_workspace = db.session.query(Workspace).first()
+            workspace_id = default_workspace.id if default_workspace else 1
+            
+            # Get default user for anonymous sessions  
+            default_user = db.session.query(User).first()
+            user_id = default_user.id if default_user else None
+            
+            # Create a meeting record
             meeting = Meeting(
                 title=f"Live Meeting - {datetime.now().strftime('%Y-%m-%d %H:%M')}",
-                session_id=session.id,
                 status="in_progress",
-                workspace_id=1,  # Default workspace for live sessions
+                workspace_id=workspace_id,
+                organizer_id=user_id if user_id else 1,  # Required field
                 created_at=datetime.utcnow()
             )
             db.session.add(meeting)
             db.session.flush()  # Get the meeting ID
+            
+            # Link session to meeting (correct direction)
+            session.meeting_id = meeting.id
+            db.session.flush()
         
         # Parse due date from natural language if provided
         due_date = None
