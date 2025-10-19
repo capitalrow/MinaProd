@@ -19,6 +19,13 @@ from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from server.routes.metrics import metrics_bp
 from server.utils.logger import get_logger
 from server.routes.memory_api import memory_bp
+#from routes.export import export_bp
+#from routes.summary import summary_bp
+#from routes.flags import flags_bp
+#from routes.billing import billing_bp
+#from routes.integrations import integrations_bp
+#from routes.teams import teams_bp
+#from routes.comments import comments_bp
 from server.models.memory_store import MemoryStore
 import openai
 import numpy as np
@@ -647,7 +654,65 @@ def create_app() -> Flask:
         app.logger.info("✅ Memory API routes registered (/api/memory)")
     except Exception as e:
         app.logger.error(f"❌ Failed to register Memory API routes: {e}")
+
+    # Register Export API routes
+    try:
+        from routes.export import export_bp
+        app.register_blueprint(export_bp, url_prefix="/api")
+        csrf.exempt(export_bp)
+        app.logger.info("✅ Export API routes registered (/api/export)")
+    except Exception as e:
+        app.logger.error(f"❌ Failed to register Export API routes: {e}")
+
     
+    # --- Summary Routes ---
+    try:
+        from routes.summary import summary_bp
+        app.register_blueprint(summary_bp)
+        app.logger.info("Blueprint registered: summary_bp")
+    except Exception as e:
+        app.logger.warning(f"Failed to register summary_bp: {e}")
+        
+    # --- Flags Routes ---
+    try:
+        from routes.flags import flags_bp
+        app.register_blueprint(flags_bp)
+        app.logger.info("Blueprint registered: flags_bp")
+    except Exception as e:
+        app.logger.warning(f"Failed to register flags_bp: {e}")
+        
+    # --- Billing Routes ---
+    try:
+        from routes.billing import billing_bp
+        app.register_blueprint(billing_bp)
+        app.logger.info("Blueprint registered: billing_bp")
+    except Exception as e:
+        app.logger.warning(f"Failed to register billing_bp: {e}")
+        
+    # --- Integrations Routes ---
+    try:
+        from routes.integrations import integrations_bp
+        app.register_blueprint(integrations_bp)
+        app.logger.info("Blueprint registered: integrations_bp")
+    except Exception as e:
+        app.logger.warning(f"Failed to register integrations_bp: {e}")
+        
+    # --- Teams Routes ---
+    try:
+        from routes.teams import teams_bp
+        app.register_blueprint(teams_bp)
+        app.logger.info("Blueprint registered: teams_bp")
+    except Exception as e:
+        app.logger.warning(f"Failed to register teams_bp: {e}")
+        
+    # --- Comments Routes ---
+    try:
+        from routes.comments import comments_bp
+        app.register_blueprint(comments_bp)
+        app.logger.info("Blueprint registered: comments_bp")
+    except Exception as e:
+        app.logger.warning(f"Failed to register comments_bp: {e}")
+        
     # Production Monitoring Dashboard
     try:
         from monitoring_dashboard import monitoring_bp
@@ -660,6 +725,13 @@ def create_app() -> Flask:
     try:
         from routes.ops import ops_bp
         app.register_blueprint(ops_bp)
+        app.logger.info("Ops routes registered (Sentry testing, performance monitoring)")
+    except Exception as e:
+        app.logger.error(f"Failed to register ops routes: {e}")
+
+    try:
+        from routes.ui import ui_bp
+        app.register_blueprint(ui_bp)
         app.logger.info("Ops routes registered (Sentry testing, performance monitoring)")
     except Exception as e:
         app.logger.error(f"Failed to register ops routes: {e}")
@@ -683,7 +755,7 @@ def create_app() -> Flask:
     # other blueprints (guarded)
     _optional = [
         ("routes.final_upload", "final_bp", "/api"),
-        ("routes.export", "export_bp", "/api"),
+        #("routes.export", "export_bp", "/api"),
         ("routes.insights", "insights_bp", "/api"),
         ("routes.nudges", "nudges_bp", "/api"),
         ("routes.team_collaboration", "team_bp", "/api"),

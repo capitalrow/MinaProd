@@ -45,6 +45,30 @@ def search_memory():
     return jsonify({"query": query, "results": results}), 200
 
 
+# (Addition to server/routes/memory_api.py)
+@memory_bp.route("/memory/latest", methods=["GET"])
+def get_latest_memories():
+    """
+    Retrieve the most recent memory entries (for UI display of recent memories).
+    Query parameter 'limit' controls number of items (default 5).
+    """
+    try:
+        limit = request.args.get('limit', 5, type=int)
+        rows = memory.latest_memories(limit)
+        results = []
+        for r in rows:  # each row: (id, user_id, content_snippet, created_at)
+            results.append({
+                "id": r[0],
+                "user_id": r[1],
+                "content_snippet": r[2],
+                "created_at": r[3].isoformat() if r[3] else None
+            })
+        return jsonify({"success": True, "latest_memories": results}), 200
+    except Exception as e:
+        print("ERROR retrieving latest memories:", e)
+        return jsonify({"error": "internal_error", "message": str(e), "request_id": None}), 500
+        
+
 @memory_bp.route("/memory/debug", methods=["GET"])
 def debug_memory():
     """Return a few recent rows for quick inspection."""

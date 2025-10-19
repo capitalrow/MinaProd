@@ -8,6 +8,7 @@ This module provides the AI Copilot functionality described in the handbook:
 - Action buttons for common operations
 """
 
+import os
 import json
 import logging
 from typing import Dict, Any, List, Optional
@@ -16,11 +17,33 @@ from collections import Counter
 
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
+from openai import OpenAI
+from server.models.memory_store import MemoryStore
+
 
 logger = logging.getLogger(__name__)
 
 copilot_bp = Blueprint('copilot', __name__, url_prefix='/copilot')
 
+# Initialize OpenAI client for chat completions
+openai_api_key = os.getenv("OPENAI_API_KEY")
+openai_client = None
+if openai_api_key:
+    try:
+        openai_client = OpenAI(api_key=openai_api_key)
+        logger.info("OpenAI client initialized for Copilot")
+    except Exception as e:
+        logger.error(f"Failed to initialize OpenAI client: {e}")
+
+# Memory store for context retrieval (e.g., recent summaries, relevant info)
+memory = MemoryStore()
+
+# System prompt defining the Copilot's role and tone
+SYSTEM_PROMPT = (
+    "You are Mina Copilot, an AI assistant for meeting transcripts and knowledge management. "
+    "Answer user queries helpfully using the provided context from past meetings and summaries, if available. "
+    "Be concise and professional."
+)
 
 @copilot_bp.route('/')
 @login_required 
@@ -77,35 +100,59 @@ def chat_with_copilot():
     Returns:
         JSON: Copilot response with citations and action buttons
     """
+    # Parse request
     try:
-        data = request.get_json() or {}
-        message = data.get('message', '').strip()
-        context = data.get('context')
-        session_id = data.get('session_id')  # For conversation continuity
-        language = data.get('language', 'en')  # Default to English
-        
-        if not message:
-            return jsonify({
-                'success': False,
-                'error': 'Message is required'
-            }), 400
-        
-        # Process the message with AI including language preference
-        response = _process_copilot_message(message, context, current_user.id, session_id, language)
-        
-        return jsonify({
-            'success': True,
-            'response': response
-        }), 200
-    
+        data = request.get_json(force=True)
     except Exception as e:
-        import traceback
-        logger.error(f"Error processing copilot message: {e}")
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        return jsonify({
-            'success': False,
-            'error': 'Failed to process message'
-        }), 500
+        logger.error(f"Invalid JSON in Copilot chat request: {e}")
+        return jsonify({"success": False, "error": "Invalid JSON"}), 400
+    if not data or 'message' not in data:
+        return jsonify({"success": False, "error": "No message provided"}), 400
+    user_message = data['message']
+    session_id = data.get('session_id')
+    logger.info(f"Copilot chat request received. session_id={session_id}, message={user_message[:50]}...")
+
+    # Build the message list for OpenAI (system + optional context + user)
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    if session_id:
+        # Include latest summary of the session as context if available
+        try:
+            from services.analysis_service import AnalysisService
+            summary = AnalysisService.get_session_summary(session_id)
+        except Exception as e:
+            summary = None
+            logger.warning(f"No summary found for context (session {session_id}): {e}")
+        if summary and isinstance(summary, dict):
+            summary_text = summary.get('summary_md') or summary.get('brief_summary') or ""
+            if summary_text:
+                context_note = f"Context from meeting {session_id} summary: {summary_text}"
+                messages.append({"role": "system", "content": context_note})
+    messages.append({"role": "user", "content": user_message})
+
+    if openai_client is None:
+        logger.error("OpenAI client not initialized, cannot process chat")
+        return jsonify({"success": False, "error": "AI engine not available"}), 500
+    try:
+        # Use GPT-4 model to generate a response (streaming omitted for simplicity)
+        response = openai_client.chat_completions.create(
+            model="gpt-4",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=500
+        )
+        # Extract assistant reply text
+        ai_message = None
+        if hasattr(response, 'choices') and response.choices:
+            choice = response.choices[0]
+            ai_message = choice.message.get('content') if hasattr(choice, 'message') else None
+        if not ai_message:
+            # Fallback: use response content directly if structured differently
+            ai_message = response.get('content') if isinstance(response, dict) else str(response)
+        logger.debug(f"Copilot response (truncated): {ai_message[:100]}...")
+        return jsonify({"success": True, "response": ai_message}), 200
+    except Exception as e:
+        logger.error(f"Error during Copilot chat completion: {e}")
+        return jsonify({"success": False, "error": "Failed to generate AI response"}), 500
 
 
 @copilot_bp.route('/api/execute-action', methods=['POST'])
@@ -284,6 +331,16 @@ def generate_draft():
             'success': False,
             'error': 'Failed to generate draft'
         }), 500
+
+
+@copilot_bp.route('/api/clear', methods=['POST'])
+def clear_conversation():
+    """
+    Clear/reset the Copilot conversation context (no persistent server-side state in this implementation).
+    """
+    logger.info("Copilot conversation cleared by user request.")
+    # If conversation state were stored on the server, we would reset it here.
+    return jsonify({"success": True, "message": "Conversation context cleared"}), 200
 
 
 def _analyze_meeting_patterns(

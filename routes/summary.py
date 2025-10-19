@@ -7,9 +7,10 @@ actions, decisions, and risks extracted from session transcripts.
 
 import os
 import logging
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, abort
 # from flask_socketio import emit  # Disabled for native WebSocket testing
-
+from __future__ import annotations
+from dataclasses import asdict
 from services.analysis_service import AnalysisService
 from models.summary import SummaryLevel, SummaryStyle
 # from app import socketio  # Disabled for native WebSocket testing
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 # Create summary blueprint
 summary_bp = Blueprint('summary', __name__, url_prefix='/sessions')
+analysis = AnalysisService()
 memory = MemoryStore()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -336,6 +338,33 @@ def get_session_summaries(session_id: int):
         }), 500
 
 
+# (Addition to server/routes/summary.py)
+@summary_bp.route('/<int:session_id>/summary', methods=['PUT'])
+def update_summary(session_id: int):
+    """
+    Update the latest summary for a session (e.g., after user edits the summary text).
+    Expects JSON body with 'summary_md' (edited markdown text).
+    """
+    data = request.get_json(force=True)
+    if not data or 'summary_md' not in data:
+        return jsonify({'success': False, 'error': 'No summary content provided'}), 400
+    new_text = data['summary_md']
+    try:
+        from sqlalchemy import select
+        stmt = select(Summary).filter(Summary.session_id == session_id).order_by(Summary.created_at.desc())
+        summary_obj = db.session.execute(stmt).scalar_one_or_none()
+        if not summary_obj:
+            return jsonify({'success': False, 'error': f'No summary found for session {session_id}'}), 404
+        summary_obj.summary_md = new_text
+        db.session.commit()
+        logger.info(f"Summary for session {session_id} updated by user")
+        return jsonify({'success': True, 'summary': summary_obj.to_dict()}), 200
+    except Exception as e:
+        logger.error(f"Error updating summary for session {session_id}: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'Failed to update summary'}), 500
+
+
 @summary_bp.route('/summaries', methods=['GET'])
 def get_all_summaries():
     """
@@ -412,3 +441,76 @@ def get_all_summaries():
             'success': False,
             'error': 'Failed to retrieve summaries'
         }), 500
+
+
+# (Additions to server/routes/summary.py for tasks/decisions/risks)
+@summary_bp.route('/<int:session_id>/actions', methods=['GET'])
+def get_actions(session_id: int):
+    """Get extracted action items for the session."""
+    try:
+        from sqlalchemy import select
+        stmt = select(Summary).filter(Summary.session_id == session_id).order_by(Summary.created_at.desc())
+        summary_obj = db.session.execute(stmt).scalar_one_or_none()
+        if not summary_obj or summary_obj.actions is None:
+            return jsonify({'success': False, 'error': f'No action items found for session {session_id}'}), 404
+        return jsonify({'success': True, 'actions': summary_obj.actions}), 200
+    except Exception as e:
+        logger.error(f"Error retrieving actions for session {session_id}: {e}")
+        return jsonify({'success': False, 'error': 'Failed to retrieve actions'}), 500
+
+@summary_bp.route('/<int:session_id>/decisions', methods=['GET'])
+def get_decisions(session_id: int):
+    """Get extracted decisions for the session."""
+    try:
+        stmt = select(Summary).filter(Summary.session_id == session_id).order_by(Summary.created_at.desc())
+        summary_obj = db.session.execute(stmt).scalar_one_or_none()
+        if not summary_obj or summary_obj.decisions is None:
+            return jsonify({'success': False, 'error': f'No decisions found for session {session_id}'}), 404
+        return jsonify({'success': True, 'decisions': summary_obj.decisions}), 200
+    except Exception as e:
+        logger.error(f"Error retrieving decisions for session {session_id}: {e}")
+        return jsonify({'success': False, 'error': 'Failed to retrieve decisions'}), 500
+
+@summary_bp.route('/<int:session_id>/risks', methods=['GET'])
+def get_risks(session_id: int):
+    """Get extracted risks for the session."""
+    try:
+        stmt = select(Summary).filter(Summary.session_id == session_id).order_by(Summary.created_at.desc())
+        summary_obj = db.session.execute(stmt).scalar_one_or_none()
+        if not summary_obj or summary_obj.risks is None:
+            return jsonify({'success': False, 'error': f'No risks found for session {session_id}'}), 404
+        return jsonify({'success': True, 'risks': summary_obj.risks}), 200
+    except Exception as e:
+        logger.error(f"Error retrieving risks for session {session_id}: {e}")
+        return jsonify({'success': False, 'error': 'Failed to retrieve risks'}), 500
+
+@summary_bp.route('/<int:session_id>/actions/<int:index>', methods=['PUT'])
+def update_action_item(session_id: int, index: int):
+    """
+    Update an action item by index (e.g., mark as completed or edit text).
+    Expects JSON fields to update (like {"completed": true}).
+    """
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({'success': False, 'error': 'No data provided'}), 400
+    try:
+        stmt = select(Summary).filter(Summary.session_id == session_id).order_by(Summary.created_at.desc())
+        summary_obj = db.session.execute(stmt).scalar_one_or_none()
+        if not summary_obj or not summary_obj.actions or index >= len(summary_obj.actions):
+            return jsonify({'success': False, 'error': 'Action item not found'}), 404
+        action = summary_obj.actions[index]
+        # Update allowed fields
+        if 'text' in data: action['text'] = data['text']
+        if 'owner' in data: action['owner'] = data['owner']
+        if 'due' in data: action['due'] = data['due']
+        if 'completed' in data: action['completed'] = bool(data['completed'])
+        # Save changes
+        summary_obj.actions = summary_obj.actions  # reassign to flag JSON field as changed
+        db.session.commit()
+        logger.info(f"Action item {index} for session {session_id} updated: {data}")
+        return jsonify({'success': True, 'action': action}), 200
+    except Exception as e:
+        logger.error(f"Error updating action item for session {session_id}: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'Failed to update action item'}), 500
+        

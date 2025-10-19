@@ -8,7 +8,12 @@ from flask_login import login_required, current_user
 from models import db, Task, Meeting, User, Session, Workspace
 from datetime import datetime, date, timedelta
 from sqlalchemy import func, and_, or_, select
+# server/routes/api_tasks.py
+import logging
+from app import db
+from models.summary import Summary
 
+logger = logging.getLogger(__name__)
 
 api_tasks_bp = Blueprint('api_tasks', __name__, url_prefix='/api/tasks')
 
@@ -670,3 +675,71 @@ def parse_natural_due_date(due_date_text):
     except Exception:
         # If all parsing fails, default to one week from now
         return date.today() + timedelta(days=7)
+
+
+@api_tasks_bp.route('', methods=['GET'])
+def get_all_tasks():
+    """
+    List all action items across sessions.
+    Query params:
+      - session_id: (optional) filter by session
+      - completed: (optional) "true"/"false" to filter by completion status
+    """
+    session_filter = request.args.get('session_id', type=int)
+    completed_filter = request.args.get('completed')
+    try:
+        stmt = select(Summary).filter(Summary.actions != None)
+        if session_filter:
+            stmt = stmt.filter(Summary.session_id == session_filter)
+        summaries = db.session.execute(stmt).scalars().all()
+        tasks = []
+        for summary in summaries:
+            if not summary.actions: 
+                continue
+            for idx, task in enumerate(summary.actions):
+                # Apply completion filter if provided
+                if completed_filter is not None:
+                    want_completed = completed_filter.lower() in ['1', 'true', 'yes']
+                    if task.get('completed', False) != want_completed:
+                        continue
+                tasks.append({
+                    "session_id": summary.session_id,
+                    "task_index": idx,
+                    "text": task.get("text"),
+                    "owner": task.get("owner"),
+                    "due": task.get("due"),
+                    "completed": task.get("completed", False)
+                })
+        return jsonify({"success": True, "tasks": tasks}), 200
+    except Exception as e:
+        logger.error(f"Error retrieving tasks: {e}")
+        return jsonify({"success": False, "error": "Failed to retrieve tasks"}), 500
+
+@api_tasks_bp.route('/<int:session_id>/<int:task_index>', methods=['PUT'])
+def update_task(session_id, task_index):
+    """
+    Update a specific task identified by session ID and index.
+    Allows marking complete or editing fields (same JSON format as summary route).
+    """
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"success": False, "error": "No update data provided"}), 400
+    try:
+        stmt = select(Summary).filter(Summary.session_id == session_id).order_by(Summary.created_at.desc())
+        summary = db.session.execute(stmt).scalar_one_or_none()
+        if not summary or not summary.actions or task_index >= len(summary.actions):
+            return jsonify({"success": False, "error": "Task not found"}), 404
+        task = summary.actions[task_index]
+        if 'text' in data: task['text'] = data['text']
+        if 'owner' in data: task['owner'] = data['owner']
+        if 'due' in data: task['due'] = data['due']
+        if 'completed' in data: task['completed'] = bool(data['completed'])
+        summary.actions = summary.actions
+        db.session.commit()
+        logger.info(f"Task updated for session {session_id}, index {task_index}: {data}")
+        return jsonify({"success": True, "task": task}), 200
+    except Exception as e:
+        logger.error(f"Error updating task {task_index} in session {session_id}: {e}")
+        db.session.rollback()
+        return jsonify({"success": False, "error": "Failed to update task"}), 500
+        

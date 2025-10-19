@@ -1,0 +1,67 @@
+CREATE TABLE IF NOT EXISTS summary_docs (
+  id SERIAL PRIMARY KEY,
+  session_id INTEGER UNIQUE NOT NULL,
+  summary TEXT,
+  actions JSONB,
+  decisions JSONB,
+  risks JSONB,
+  language VARCHAR(8),
+  model VARCHAR(64),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS teams (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  owner_id VARCHAR(64) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS memberships (
+  id SERIAL PRIMARY KEY,
+  team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  user_id VARCHAR(64) NOT NULL,
+  role VARCHAR(24) DEFAULT 'member',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS comments (
+  id SERIAL PRIMARY KEY,
+  session_id INTEGER NOT NULL,
+  user_id VARCHAR(64) NOT NULL,
+  text TEXT NOT NULL,
+  timestamp_ms INTEGER,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS feature_flags (
+  id SERIAL PRIMARY KEY,
+  key VARCHAR(80) UNIQUE NOT NULL,
+  enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  note VARCHAR(255),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS integration_tokens (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(64) NOT NULL,
+  provider VARCHAR(24) NOT NULL,
+  access_token TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS customers (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(64) UNIQUE NOT NULL,
+  stripe_customer_id VARCHAR(64),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id SERIAL PRIMARY KEY,
+  customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  stripe_subscription_id VARCHAR(64) UNIQUE NOT NULL,
+  status VARCHAR(32) DEFAULT 'active',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
