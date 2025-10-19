@@ -33,3 +33,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Start command
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--worker-class", "eventlet", "--reload", "main:app"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
+  CMD curl -f http://localhost:5000/metrics || exit 1

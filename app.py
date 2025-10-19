@@ -16,6 +16,13 @@ import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+from server.routes.metrics import metrics_bp
+from server.utils.logger import get_logger
+from server.routes.memory_api import memory_bp
+from server.models.memory_store import MemoryStore
+import openai
+import numpy as np
+import psycopg2
 
 # ---------- Config (fallback if config.Config not present)
 try:
@@ -631,6 +638,15 @@ def create_app() -> Flask:
         app.logger.info("AI Copilot routes registered")
     except Exception as e:
         app.logger.error(f"Failed to register AI Copilot routes: {e}")
+
+    # Register Memory API routes
+    try:
+        from server.routes.memory_api import memory_bp
+        app.register_blueprint(memory_bp, url_prefix="/api")
+        csrf.exempt(memory_bp)
+        app.logger.info("✅ Memory API routes registered (/api/memory)")
+    except Exception as e:
+        app.logger.error(f"❌ Failed to register Memory API routes: {e}")
     
     # Production Monitoring Dashboard
     try:
@@ -639,7 +655,7 @@ def create_app() -> Flask:
         app.logger.info("Production Monitoring Dashboard registered")
     except Exception as e:
         app.logger.error(f"Failed to register Production Monitoring Dashboard: {e}")
-    
+        
     # Operations routes (Sentry testing, performance monitoring)
     try:
         from routes.ops import ops_bp
@@ -825,6 +841,61 @@ def create_app() -> Flask:
 
 # WSGI entrypoints
 app = create_app()
+
+@app.route("/api/memory/search", methods=["POST"])
+def search_memory():
+    try:
+        data = request.get_json()
+        query = data.get("query")
+        if not query:
+            return jsonify({"error": "Missing query"}), 400
+
+        # 1. Create embedding for the query
+        embed_response = openai.embeddings.create(
+            input=query,
+            model="text-embedding-3-large"
+        )
+        query_embedding = embed_response.data[0].embedding
+
+        # 2. Run similarity search
+        conn = get_pg_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT id, content,
+                   1 - (embedding <=> %s::vector) AS similarity
+            FROM memory_embeddings
+            ORDER BY similarity DESC
+            LIMIT 5;
+        """, (query_embedding,))
+
+        results = [
+            {"id": r[0], "content": r[1], "similarity": round(r[2], 4)}
+            for r in cur.fetchall()
+        ]
+
+        cur.close()
+        conn.close()
+
+        return jsonify({"results": results, "count": len(results)}), 200
+
+    except Exception as e:
+        print("❌ Error in search_memory:", e)
+        return jsonify({"error": str(e)}), 500
+        
+logger = get_logger()
+logger.info("🚀 Starting Mina backend...")
+
+app.register_blueprint(metrics_bp)
+
+@app.before_request
+def before_request():
+    logger.info(f"Incoming request: {request.method} {request.path}")
+
+@app.after_request
+def after_request(response):
+    logger.info(f"Completed: {request.path} [{response.status_code}]")
+    return response
 
 # graceful shutdown for local/threading runs
 def _shutdown(*_):

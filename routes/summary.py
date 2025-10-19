@@ -5,6 +5,7 @@ Provides endpoints for generating and retrieving meeting summaries,
 actions, decisions, and risks extracted from session transcripts.
 """
 
+import os
 import logging
 from flask import Blueprint, request, jsonify, current_app
 # from flask_socketio import emit  # Disabled for native WebSocket testing
@@ -12,12 +13,20 @@ from flask import Blueprint, request, jsonify, current_app
 from services.analysis_service import AnalysisService
 from models.summary import SummaryLevel, SummaryStyle
 # from app import socketio  # Disabled for native WebSocket testing
-
+from openai import OpenAI
+from server.models.memory_store import MemoryStore
 logger = logging.getLogger(__name__)
 
 # Create summary blueprint
 summary_bp = Blueprint('summary', __name__, url_prefix='/sessions')
+memory = MemoryStore()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+SYSTEM_PROMPT = (
+    "You are Mina, an intelligent meeting summarizer. "
+    "Summarize discussions clearly, list key decisions and action items, "
+    "and keep tone concise and executive."
+)
 
 @summary_bp.route('/<int:session_id>/summarise', methods=['POST'])
 def generate_summary(session_id: int):
