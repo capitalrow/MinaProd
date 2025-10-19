@@ -1,6 +1,10 @@
 # routes/export.py
+from __future__ import annotations
 import os, io, zipfile, logging
-from flask import Blueprint, jsonify, send_file, abort, request, Response 
+from dataclasses import dataclass
+from io import BytesIO
+from typing import Optional, List
+from flask import Blueprint, jsonify, send_file, abort, request, Response, make_response
 from flask_login import login_required, current_user
 from sqlalchemy import select
 from models.session import Session
@@ -17,6 +21,7 @@ from services.export_service import (
 logger = logging.getLogger(__name__)
 
 export_bp = Blueprint("export", __name__, url_prefix='/export')
+svc = ExportService()
 
 @export_bp.route("/export/ping", methods=["GET"])
 def export_ping():
@@ -422,3 +427,82 @@ def preview_export():
             'success': False,
             'error': f'Preview generation failed: {str(e)}'
         }), 500
+
+def _fmt(s: Optional[str]) -> ExportFormat:
+    try:
+        return ExportFormat((s or "txt").lower())
+    except Exception:
+        abort(400, description=f"Unsupported export format: {s}")
+
+def _tpl(s: Optional[str]) -> ExportTemplate:
+    try:
+        return ExportTemplate((s or "standard").lower())
+    except Exception:
+        abort(400, description=f"Unsupported export template: {s}")
+
+def _dl_headers(filename: str) -> dict:
+    return {"Content-Disposition": f'attachment; filename="{filename}"'}
+
+@export_bp.get("/sessions/<int:session_id>/transcript")
+def export_single(session_id: int):
+    fmt = _fmt(request.args.get("format"))
+    tpl = _tpl(request.args.get("template"))
+    redact = request.args.get("redact_pii", "0") == "1"
+
+    req = ExportRequest(
+        format=fmt,
+        template=tpl,
+        session_ids=[session_id],
+        include_transcript=True,
+        include_summary=True,
+        include_tasks=True,
+        include_analytics=False,
+    )
+
+    result: ExportResult = svc.export_single_session(req, redact=redact)
+    if not result.success or not result.file_content:
+        abort(500, description=result.error_message or "Export failed")
+
+    return send_file(
+        BytesIO(result.file_content),
+        as_attachment=True,
+        download_name=result.filename,
+        mimetype=svc.mimetype_for_format(fmt),
+        headers=_dl_headers(result.filename)
+    )
+
+@export_bp.post("/api/preview")
+def export_preview():
+    data = request.get_json(force=True)
+    ids = data.get("session_ids") or []
+    if not ids or not isinstance(ids, list):
+        abort(400, description="session_ids must be a non-empty list")
+    fmt = _fmt(data.get("format"))
+    tpl = _tpl(data.get("template"))
+    redact = bool(data.get("redact_pii", False))
+    req = ExportRequest(
+        format=fmt,
+        template=tpl,
+        session_ids=[int(i) for i in ids],
+        include_transcript=bool(data.get("include_transcript", True)),
+        include_summary=bool(data.get("include_summary", True)),
+        include_tasks=bool(data.get("include_tasks", True)),
+        include_analytics=bool(data.get("include_analytics", False)),
+        custom_title=data.get("custom_title"),
+        custom_header=data.get("custom_header"),
+        custom_footer=data.get("custom_footer"),
+    )
+    result = svc.export_multiple_sessions(req, redact=redact)
+    if not result.success or not result.file_content:
+        abort(500, description=result.error_message or "Preview export failed")
+    return make_response((result.file_content, 200, {"Content-Type": svc.mimetype_for_format(fmt)}))
+
+@export_bp.get("/api/templates")
+def export_templates():
+    return jsonify({"templates": [t.value for t in ExportTemplate], "default": ExportTemplate.standard.value})
+
+# legacy convenience
+@export_bp.get("/sessions/<int:session_id>/export.<string:format>")
+def export_legacy(session_id: int, format: str):
+    with export_bp.test_request_context(f"/export/sessions/{session_id}/transcript?format={format}"):
+        return export_single(session_id)

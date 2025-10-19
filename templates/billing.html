@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Billing – Mina{% endblock %}
+{% block extra_css %}
+<style>
+.billing-workspace{width:clamp(960px,90vw,1440px);margin:0 auto;padding:var(--space-8)var(--space-6);}
+.billing-title{font-size:var(--font-size-4xl);font-weight:var(--font-weight-bold);
+background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.billing-card{background:var(--glass-bg);backdrop-filter:var(--backdrop-blur);
+border:1px solid var(--glass-border);border-radius:var(--radius-xl);
+padding:var(--space-6);animation:fadeInUp .6s ease-out;}
+.form-row{display:flex;gap:var(--space-4);margin-bottom:var(--space-4);}
+.form-row input{flex:1;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="billing-workspace">
+  <h1 class="billing-title mb-6">Billing</h1>
+  <div class="billing-card">
+    <form id="billingForm">
+      <div class="form-row">
+        <input type="text" name="user_id" placeholder="user_id" class="input">
+        <input type="text" name="price_id" placeholder="price_id" class="input">
+      </div>
+      <div class="flex gap-3">
+        <button class="btn btn-primary" type="submit">Start Checkout</button>
+        <button class="btn btn-outline" id="openPortalBtn" type="button">Open Portal</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

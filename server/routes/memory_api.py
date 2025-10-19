@@ -54,7 +54,7 @@ def get_latest_memories():
     """
     try:
         limit = request.args.get('limit', 5, type=int)
-        rows = memory_store.latest_memories(limit)
+        rows = memory.latest_memories(limit)
         results = []
         for r in rows:  # each row: (id, user_id, content_snippet, created_at)
             results.append({

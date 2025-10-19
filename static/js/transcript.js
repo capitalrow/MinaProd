@@ -1083,3 +1083,42 @@ document.addEventListener('DOMContentLoaded', () => {
         window.transcriptManager = new TranscriptManager(meetingId);
     }
 });
+
+function searchTranscript(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const el = document.getElementById('transcript');
+  const text = (el.dataset.raw || el.textContent);
+  el.dataset.raw = text;
+  if(!q){ el.innerHTML = text; return; }
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`(${escaped})`,'gi');
+  el.innerHTML = text.replace(re, '<mark>$1</mark>');
+}
+
+function copyTranscript(){
+  const el = document.getElementById('transcript');
+  const txt = el.textContent;
+  navigator.clipboard.writeText(txt);
+}
+
+function exportTranscript(){
+  const fmt = document.getElementById('exportFmt').value;
+  const sid = window.MINA_SESSION_ID || 1;
+  const url = `/export/sessions/${sid}/transcript?format=${fmt}`;
+  window.open(url, "_blank");
+}
+
+async function regenSummary(){
+  const sid = window.MINA_SESSION_ID || 1;
+  const r = await fetch(`/sessions/${sid}/summarise`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({language:'en'})});
+  const j = await r.json();
+  document.getElementById('summary').textContent = j.summary || '(none)';
+  setList('actions', j.actions || []);
+  setList('decisions', j.decisions || []);
+  setList('risks', j.risks || []);
+}
+
+function setList(id, items){
+  const el = document.getElementById(id); el.innerHTML = '';
+  items.forEach(i => { const li=document.createElement('li'); li.textContent=i; el.appendChild(li); });
+}
