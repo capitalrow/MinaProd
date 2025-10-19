@@ -19,6 +19,7 @@ from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from server.routes.metrics import metrics_bp
 from server.utils.logger import get_logger
 from server.routes.memory_api import memory_bp
+from routes.export import export_bp
 from server.models.memory_store import MemoryStore
 import openai
 import numpy as np
@@ -647,6 +648,15 @@ def create_app() -> Flask:
         app.logger.info("✅ Memory API routes registered (/api/memory)")
     except Exception as e:
         app.logger.error(f"❌ Failed to register Memory API routes: {e}")
+
+    # Register Export API routes
+    try:
+        from routes.export import export_bp
+        app.register_blueprint(export_bp, url_prefix="/api")
+        csrf.exempt(export_bp)
+        app.logger.info("✅ Export API routes registered (/api/export)")
+    except Exception as e:
+        app.logger.error(f"❌ Failed to register Export API routes: {e}")
     
     # Production Monitoring Dashboard
     try:

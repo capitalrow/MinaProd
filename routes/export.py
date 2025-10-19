@@ -1,8 +1,10 @@
 # routes/export.py
 import os, io, zipfile, logging
-from flask import Blueprint, jsonify, send_file, abort, request
+from flask import Blueprint, jsonify, send_file, abort, request, Response 
 from flask_login import login_required, current_user
-
+from sqlalchemy import select
+from models.session import Session
+from models.segment import Segment
 from services.files import session_audio_path, session_transcript_path
 from services.export_service import (
     ExportService, 
@@ -14,7 +16,7 @@ from services.export_service import (
 
 logger = logging.getLogger(__name__)
 
-export_bp = Blueprint("export", __name__)
+export_bp = Blueprint("export", __name__, url_prefix='/export')
 
 @export_bp.route("/export/ping", methods=["GET"])
 def export_ping():
@@ -288,6 +290,71 @@ def get_export_templates():
             'success': False,
             'error': 'Failed to retrieve export templates'
         }), 500
+
+
+@export_bp.route('/<int:session_id>/<string:format>', methods=['GET'])
+def export_transcript(session_id, format):
+    """
+    Export the transcript (and summary) of a session in the requested format.
+    Supported formats: 'txt', 'json'. (PDF, docx return not supported for now.)
+    """
+    format = format.lower()
+    # Ensure session exists
+    session = db.session.get(Session, session_id)
+    if not session:
+        return jsonify({"success": False, "error": f"Session {session_id} not found"}), 404
+    # Fetch all final transcript segments for this session
+    try:
+        stmt = select(Segment).filter(
+            Segment.session_id == session_id,
+            Segment.kind == 'final'
+        ).order_by(Segment.start_ms)
+        segments = db.session.execute(stmt).scalars().all()
+    except Exception as e:
+        logger.error(f"Error querying segments for session {session_id}: {e}")
+        return jsonify({"success": False, "error": "Failed to retrieve transcript"}), 500
+
+    if format == 'json':
+        # Build JSON list of segments with speaker and timestamp
+        transcript_data = []
+        for seg in segments:
+            speaker = getattr(seg, 'speaker_name', None) or getattr(seg, 'speaker', None) or "Speaker"
+            # Convert milliseconds to H:M:S timestamp
+            if hasattr(seg, 'start_ms'):
+                seconds = seg.start_ms // 1000
+                timestamp = f"{seconds//3600:02d}:{(seconds%3600)//60:02d}:{seconds%60:02d}"
+            else:
+                timestamp = None
+            transcript_data.append({
+                "speaker": speaker,
+                "text": seg.text,
+                "timestamp": timestamp
+            })
+        return jsonify({"success": True, "session_id": session_id, "transcript": transcript_data}), 200
+
+    elif format == 'txt':
+        # Combine transcript into plain text with timestamps
+        lines = []
+        for seg in segments:
+            speaker = getattr(seg, 'speaker_name', None) or getattr(seg, 'speaker', None) or "Speaker"
+            if hasattr(seg, 'start_ms'):
+                seconds = seg.start_ms // 1000
+                timestamp = f"{seconds//3600:02d}:{(seconds%3600)//60:02d}:{seconds%60:02d}"
+            else:
+                timestamp = ""
+            line = f"[{timestamp}] {speaker}: {seg.text}" if timestamp else f"{speaker}: {seg.text}"
+            lines.append(line)
+        txt_content = "\n".join(lines)
+        filename = f"session_{session_id}_transcript.txt"
+        return Response(txt_content, mimetype="text/plain",
+                        headers={"Content-Disposition": f"attachment; filename={filename}"})
+
+    elif format in ('pdf', 'docx'):
+        # PDF/DOCX generation not implemented (could integrate library if allowed)
+        return jsonify({"success": False, "error": f"Export format '{format}' not supported yet"}), 501
+
+    else:
+        return jsonify({"success": False, "error": f"Unknown format '{format}'"}), 400
 
 
 @export_bp.route("/api/preview", methods=["POST"])
