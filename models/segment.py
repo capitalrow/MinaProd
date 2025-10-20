@@ -30,6 +30,10 @@ class Segment(Base):
     start_ms: Mapped[Optional[int]] = mapped_column(BigInteger().with_variant(BigInteger(), 'postgresql'))  # Support JS timestamps
     end_ms: Mapped[Optional[int]] = mapped_column(BigInteger().with_variant(BigInteger(), 'postgresql'))    # Support JS timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    
+    # 🔹 NEW: Interactive transcript attributes
+    is_highlighted: Mapped[bool] = mapped_column(Boolean, default=False)
+    highlight_color: Mapped[Optional[str]] = mapped_column(String(24), default="yellow")
 
     session: Mapped["Session"] = relationship(back_populates="segments")
     comments: Mapped[list["Comment"]] = relationship(back_populates="segment", cascade="all, delete-orphan")

@@ -616,3 +616,26 @@ def add_segment_comment(meeting_id, segment_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
+
+# --- Interactive Transcript Endpoints ---
+@api_transcript_bp.route("/api/segment/<int:segment_id>/highlight", methods=["POST"])
+@login_required
+def highlight_segment(segment_id):
+    data = request.get_json() or {}
+    seg = Segment.query.get_or_404(segment_id)
+    seg.is_highlighted = bool(data.get("highlighted", False))
+    seg.highlight_color = data.get("color", "yellow")
+    db.session.commit()
+    return jsonify({"status": "ok", "segment_id": segment_id, "highlighted": seg.is_highlighted})
+
+@api_transcript_bp.route("/api/segment/<int:segment_id>/comment", methods=["POST"])
+@login_required
+def add_comment(segment_id):
+    data = request.get_json() or {}
+    text = data.get("text", "").strip()
+    if not text:
+        return jsonify({"status": "error", "message": "Empty comment"}), 400
+    new_comment = Comment(segment_id=segment_id, user_id=current_user.id, text=text, created_at=datetime.utcnow())
+    db.session.add(new_comment)
+    db.session.commit()
+    return jsonify({"status": "ok", "comment": {"id": new_comment.id, "text": new_comment.text}})
