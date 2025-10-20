@@ -30,6 +30,9 @@ from server.models.memory_store import MemoryStore
 import openai
 import numpy as np
 import psycopg2
+from flask_migrate import Migrate
+from models import db, Segment, Comment 
+from datetime import datetime
 
 # ---------- Config (fallback if config.Config not present)
 try:
