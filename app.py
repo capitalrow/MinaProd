@@ -33,6 +33,7 @@ import psycopg2
 from flask_migrate import Migrate
 from models import db, Segment, Comment 
 from datetime import datetime
+from services import memory_persistence as mem
 
 # ---------- Config (fallback if config.Config not present)
 try:
@@ -979,7 +980,110 @@ def _shutdown(*_):
 signal.signal(signal.SIGTERM, _shutdown)
 signal.signal(signal.SIGINT, _shutdown)
 
+app = create_app()
+
+# Initialize Memory Persistence safely after Flask app context is ready
+with app.app_context():
+    try:
+        mem.init_db()
+        app.logger.info("✅ Memory persistence initialized successfully")
+    except Exception as e:
+        app.logger.error(f"❌ Failed to initialize memory persistence: {e}")
+
+# Register metrics blueprint (keep if not already registered)
+app.register_blueprint(metrics_bp)
+
+@app.route("/api/memory/search", methods=["POST"])
+def search_memory():
+    """
+    Perform semantic similarity search against stored memory embeddings.
+    """
+    try:
+        data = request.get_json(force=True)
+        query = data.get("query")
+        if not query:
+            return jsonify({"error": "Missing query"}), 400
+
+        # Generate embedding for the query using OpenAI’s embedding API
+        embed_response = openai.embeddings.create(
+            input=query,
+            model="text-embedding-3-large"
+        )
+        query_embedding = embed_response.data[0].embedding
+
+        # Use SQLAlchemy for vector similarity search
+        from sqlalchemy import text
+        results = db.session.execute(text("""
+            SELECT id, content,
+                   1 - (embedding <=> :query_embedding::vector) AS similarity
+            FROM memory_embeddings
+            ORDER BY similarity DESC
+            LIMIT 5;
+        """), {"query_embedding": query_embedding}).fetchall()
+
+        formatted = [
+            {"id": r.id, "content": r.content, "similarity": round(r.similarity, 4)}
+            for r in results
+        ]
+        return jsonify({"results": formatted, "count": len(formatted)}), 200
+
+    except Exception as e:
+        app.logger.error(f"❌ Error in /api/memory/search: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+# ============================================
+# Analytics API Endpoint
+# ============================================
+@app.route("/api/v1/analytics/<meeting_id>", methods=["GET"])
+def analytics_api():
+    """
+    Returns aggregated analytics data for the dashboard.
+    Pulls sentiment and impact scores from memory persistence.
+    """
+    try:
+        all_memories = mem.get_memory("M-123")  # placeholder meeting_id
+        sentiment_data = []
+        impact_data = []
+
+        for entry in all_memories:
+            date_str = entry["created_at"].split(" ")[0]
+            sentiment_val = (
+                1 if entry["sentiment"] == "positive"
+                else -1 if entry["sentiment"] == "negative"
+                else 0
+            )
+            sentiment_data.append({"date": date_str, "value": sentiment_val})
+            impact_data.append({"user": entry["user_id"], "score": entry["impact_score"]})
+
+        return jsonify({
+            "sentiment": sentiment_data,
+            "impact": impact_data
+        })
+
+    except Exception as e:
+        print(f"[ERROR] analytics_api failed: {e}")
+        return jsonify({
+            "sentiment": [],
+            "impact": [],
+            "error": str(e)
+        }), 500
+
+
+# Graceful shutdown handlers (keep as-is)
+def _shutdown(*_):
+    app.logger.info("Shutting down gracefully…")
+
+signal.signal(signal.SIGTERM, _shutdown)
+signal.signal(signal.SIGINT, _shutdown)
+
+if __name__ == "__main__":
+    app.logger.info(
+        "🚀 Mina running at http://0.0.0.0:5000 (Socket.IO path %s)",
+        app.config.get("SOCKETIO_PATH", "/socket.io")
+    )
+    socketio.run(app, host="0.0.0.0", port=5000, use_reloader=False, log_output=True)
+
 if __name__ == "__main__":
     app.logger.info("🚀 Mina at http://0.0.0.0:5000  (Socket.IO path %s)", app.config.get("SOCKETIO_PATH", "/socket.io"))
     socketio.run(app, host="0.0.0.0", port=5000, use_reloader=False, log_output=True)
-    
+

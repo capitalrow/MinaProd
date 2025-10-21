@@ -1318,6 +1318,13 @@ class AnalyticsDashboard {
             toast.remove();
         }, 3000);
     }
+
+    startAutoRefresh(interval = 60000) { // every 60s
+    setInterval(async () => {
+        console.log("🔄 Refreshing analytics...");
+        await this.loadDashboardData();
+    }, interval);
+    }
 }
 
 // Initialize when DOM is ready and Chart.js is loaded

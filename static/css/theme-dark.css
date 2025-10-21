@@ -1,0 +1,37 @@
+/* ============================================
+   Mina Dark Theme  —  built on mina-tokens.css
+   ============================================ */
+
+:root[data-theme='dark'] {
+  --bg-primary: hsl(220, 18%, 12%);
+  --bg-secondary: hsl(220, 18%, 18%);
+  --bg-glass: rgba(20, 22, 30, 0.6);
+
+  --text-primary: hsl(0, 0%, 96%);
+  --text-secondary: hsl(0, 0%, 75%);
+  --text-muted: hsl(0, 0%, 55%);
+
+  --accent: var(--gradient-primary);
+  --border-color: rgba(255,255,255,0.08);
+  --shadow-color: rgba(0,0,0,0.6);
+
+  /* Glassmorphism blur */
+  --glass-bg: rgba(25, 27, 36, 0.45);
+  --glass-border: rgba(255,255,255,0.08);
+  --backdrop-blur: blur(14px);
+
+  /* Interactive states */
+  --hover-bg: rgba(255, 255, 255, 0.05);
+  --active-bg: rgba(255, 255, 255, 0.1);
+
+  /* Transitions */
+  --transition-speed: 0.25s;
+}
+
+/* Optional media auto-switch fallback */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg-primary: hsl(220, 18%, 12%);
+    --text-primary: hsl(0, 0%, 96%);
+  }
+}
