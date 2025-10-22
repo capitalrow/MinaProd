@@ -96,7 +96,7 @@ module.exports = defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'python -m gunicorn --bind 0.0.0.0:5000 --reuse-port main:app',
+    command: 'python -m gunicorn -k eventlet --workers 1 --bind 0.0.0.0:5000 --reuse-port main:app',
     port: 5000,
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
