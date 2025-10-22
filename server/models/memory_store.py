@@ -20,8 +20,8 @@ class MemoryStore:
         # Initialize OpenAI client
         self.client = OpenAI(api_key=self.api_key)
 
-        # Create DB connection
-        self.conn = self._connect()
+        # Lazily create DB connections to avoid failures during import/startup
+        self.conn = None
 
         # Define model fallback order (auto-resilient)
         self.embedding_models = [
@@ -36,6 +36,11 @@ class MemoryStore:
 
     def _connect(self):
         """Create a new DB connection."""
+        if not self.db_url or not (
+            self.db_url.startswith("postgres://") or self.db_url.startswith("postgresql://")
+        ):
+            # Skip non-Postgres URLs (e.g., sqlite in unit tests)
+            raise RuntimeError("DATABASE_URL must be a Postgres URL to use MemoryStore")
         try:
             conn = psycopg2.connect(self.db_url)
             conn.autocommit = True
@@ -45,13 +50,21 @@ class MemoryStore:
             raise
 
     def _ensure_connection(self):
-        """Reconnect if DB connection drops."""
-        try:
-            cur = self.conn.cursor()
-            cur.execute("SELECT 1;")
-        except (Exception, psycopg2.InterfaceError):
-            print("🔁 Reconnecting to database...")
-            self.conn = self._connect()
+        """Ensure there is an active DB connection."""
+        if self.conn is None:
+            try:
+                self.conn = self._connect()
+            except Exception:
+                # Leave as None if connection cannot be established (e.g., tests)
+                self.conn = None
+                raise
+        else:
+            try:
+                cur = self.conn.cursor()
+                cur.execute("SELECT 1;")
+            except (Exception, psycopg2.InterfaceError):
+                print("🔁 Reconnecting to database...")
+                self.conn = self._connect()
 
     # -----------------------------------------
     # Embedding generation
@@ -83,6 +96,7 @@ class MemoryStore:
     def add_memory(self, session_id, user_id, content, source_type="transcript"):
         """Store a text snippet with embedding in DB."""
         try:
+            # Skip if no Postgres DB available
             self._ensure_connection()
             embedding = self._generate_embedding(content)
             if embedding is None:
@@ -108,6 +122,7 @@ class MemoryStore:
     def search_memory(self, query, top_k=5):
         """Semantic search by vector similarity."""
         try:
+            # Skip if no Postgres DB available
             self._ensure_connection()
             query_emb = self._generate_embedding(query)
             if query_emb is None:
