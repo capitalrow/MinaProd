@@ -39,7 +39,7 @@ class Session(Base):
     # Ownership fields - nullable to support legacy anonymous sessions
     user_id: Mapped[Optional[int]] = mapped_column(ForeignKey('users.id'), nullable=True, index=True)
     workspace_id: Mapped[Optional[int]] = mapped_column(ForeignKey('workspaces.id'), nullable=True, index=True)
-    meeting_id: Mapped[Optional[int]] = mapped_column(ForeignKey('meetings.id'), nullable=True, index=True)
+    meeting_id: Mapped[int | None] = mapped_column(ForeignKey("meetings.id"), nullable=True, index=True)
     
     # Statistics fields required by TranscriptionService
     total_segments: Mapped[Optional[int]] = mapped_column(Integer, default=0, nullable=True)
@@ -49,7 +49,7 @@ class Session(Base):
     # Ownership relationships
     user: Mapped[Optional["User"]] = relationship(back_populates="sessions", foreign_keys=[user_id])
     workspace: Mapped[Optional["Workspace"]] = relationship(back_populates="sessions", foreign_keys=[workspace_id])
-    meeting: Mapped[Optional["Meeting"]] = relationship(back_populates="session", foreign_keys=[meeting_id])
+    meeting: Mapped["Meeting | None"] = relationship(back_populates="session", lazy="joined")
     
     segments: Mapped[list["Segment"]] = relationship(
         back_populates="session", cascade="all, delete-orphan"

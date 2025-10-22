@@ -9,7 +9,6 @@ import base64
 import requests
 import threading
 from datetime import datetime
-
 from flask import session, request
 from flask_socketio import emit, disconnect, join_room, leave_room
 from flask_login import current_user
@@ -19,6 +18,10 @@ from app import socketio
 
 # Import advanced buffer management
 from services.session_buffer_manager import buffer_registry, BufferConfig
+# After existing imports
+import asyncio
+from jobs.analysis_dispatcher import AnalysisDispatcher
+
 
 logger = logging.getLogger(__name__)
 
@@ -293,29 +296,49 @@ def on_audio_data(data):
 
 @socketio.on('end_session', namespace='/transcription')
 def on_end_session(data=None):
-    """End the current transcription session"""
+    """End the current transcription session and trigger post-meeting analysis"""
     try:
-        # Find sessions for this client
         sessions_to_end = []
         for session_id, session_info in active_sessions.items():
             if session_info.get('client_sid') == request.sid:
                 sessions_to_end.append(session_id)
-        
+
         for session_id in sessions_to_end:
-            # Leave the room
+            # 🧹 Clean up WebSocket rooms and local buffers
             leave_room(session_id)
-            
-            # Clean up session
-            active_sessions.pop(session_id, None)
-            
+            session_info = active_sessions.pop(session_id, None)
             logger.info(f"[transcription] Ended session: {session_id}")
-            
+
+            # 🗂️ Optional: persist final transcript before triggering analysis
+            try:
+                buffer_manager = session_info.get("buffer_manager")
+                if buffer_manager:
+                    final_transcript = buffer_manager.flush_and_finalize(session_id=session_id)
+                    logger.info(f"[transcription] Final transcript stored for session {session_id} ({len(final_transcript)} chars)")
+                else:
+                    logger.warning(f"[transcription] No buffer manager found for session {session_id}")
+            except Exception as e:
+                logger.error(f"[transcription] Error finalizing transcript: {e}")
+
+            # 🚀 Kick off downstream analytics + summary generation asynchronously
+            try:
+                asyncio.create_task(
+                    AnalysisDispatcher.run_full_analysis(
+                        session_id=session_id,
+                        meeting_id=session_info.get("meeting_id", str(uuid.uuid4()))  # fallback if not tracked
+                    )
+                )
+                logger.info(f"[analysis] Dispatched background analytics job for session {session_id}")
+            except Exception as e:
+                logger.error(f"[analysis] Failed to dispatch analytics job: {e}")
+
+            # ✅ Notify the client that the session is done
             emit('session_ended', {
                 'session_id': session_id,
                 'status': 'completed',
-                'message': 'Transcription session ended'
+                'message': 'Transcription session ended. Analysis started in background.'
             })
-        
+
     except Exception as e:
         logger.error(f"[transcription] Error ending session: {e}")
         emit('error', {'message': f'Failed to end session: {str(e)}'})

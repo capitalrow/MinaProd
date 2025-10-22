@@ -165,6 +165,14 @@ def transcribe_chunk_streaming():
             processing_time = time.time() - start_time
             
             print(f"[LIVE-API] ✅ Chunk {chunk_id} transcribed successfully:")
+
+            from services.transcription_service import TranscriptionService
+            from app import socketio
+
+            transcription_service = TranscriptionService()
+            transcription_service._save_transcription_text(session_id, text, confidence)
+            socketio.emit('update_dashboard', {'session_id': session_id, 'text': text})
+
             print(f"[LIVE-API]    Text: '{text[:100]}{'...' if len(text) > 100 else ''}'")
             print(f"[LIVE-API]    Confidence: {confidence:.3f}")
             print(f"[LIVE-API]    Processing time: {processing_time:.3f}s")

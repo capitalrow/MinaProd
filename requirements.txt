@@ -48,3 +48,5 @@ loguru>=0.7.2
 flask-talisman
 reportlab
 python-docx
+psycopg2-binary
+celery

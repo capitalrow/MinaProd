@@ -1,7 +1,7 @@
 from __future__ import annotations
 from flask import Blueprint, request, jsonify, abort
 from models.core_models import Team, Membership
-from extensions import db
+from models import db
 
 teams_bp = Blueprint("teams", __name__, url_prefix="/teams")
 

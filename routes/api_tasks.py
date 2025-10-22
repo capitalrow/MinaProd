@@ -300,7 +300,6 @@ def delete_task(task_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
 
-
 @api_tasks_bp.route('/<int:task_id>/status', methods=['PUT'])
 @login_required
 def update_task_status(task_id):
@@ -344,7 +343,6 @@ def update_task_status(task_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
-
 
 @api_tasks_bp.route('/bulk-update', methods=['PUT'])
 @login_required
@@ -398,7 +396,6 @@ def bulk_update_tasks():
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
 
-
 @api_tasks_bp.route('/my-tasks', methods=['GET'])
 @login_required
 def get_my_tasks():
@@ -439,7 +436,6 @@ def get_my_tasks():
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
-
 
 @api_tasks_bp.route('/stats', methods=['GET'])
 @login_required
@@ -506,7 +502,6 @@ def get_task_stats():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
-
 @api_tasks_bp.route('/overdue', methods=['GET'])
 @login_required
 def get_overdue_tasks():
@@ -526,7 +521,6 @@ def get_overdue_tasks():
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
-
 
 @api_tasks_bp.route('/create', methods=['POST'])
 def create_live_task():
@@ -633,7 +627,6 @@ def create_live_task():
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
 
-
 def parse_natural_due_date(due_date_text):
     """Parse natural language due dates like 'tomorrow', 'next week', 'friday'."""
     try:
@@ -676,7 +669,6 @@ def parse_natural_due_date(due_date_text):
         # If all parsing fails, default to one week from now
         return date.today() + timedelta(days=7)
 
-
 @api_tasks_bp.route('', methods=['GET'])
 def get_all_tasks():
     """
@@ -716,7 +708,7 @@ def get_all_tasks():
         return jsonify({"success": False, "error": "Failed to retrieve tasks"}), 500
 
 @api_tasks_bp.route('/<int:session_id>/<int:task_index>', methods=['PUT'])
-def update_task(session_id, task_index):
+def update_summary_task(session_id, task_index):
     """
     Update a specific task identified by session ID and index.
     Allows marking complete or editing fields (same JSON format as summary route).

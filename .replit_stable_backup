@@ -6,8 +6,7 @@ packages = ["bc", "cargo", "ffmpeg", "ffmpeg-full", "freetype", "gitFull", "glib
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["gunicorn", "-k", "gevent", "--timeout", "120", "--bind", "0.0.0.0:5000", "main:app"]
-
+run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 
 [workflows]
 runButton = "Project"

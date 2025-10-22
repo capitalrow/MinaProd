@@ -439,19 +439,17 @@ def create_app() -> Flask:
         try:
             from models import db
             from flask_migrate import Migrate
-            
+
             db.init_app(app)
-            
-            # Initialize Flask-Migrate for database migrations
             migrate = Migrate(app, db)
-            
+
             # Create all tables that don't exist yet (development fallback)
-            # Flask-Migrate handles schema changes via migrations
             with app.app_context():
                 db.create_all()
-            app.logger.info("Database connected and initialized (migrations enabled)")
+
+            app.logger.info("✅ Database connected and initialized (migrations enabled)")
         except Exception as e:
-            app.logger.warning(f"Database initialization failed: {e}")
+            app.logger.warning(f"⚠️ Database initialization failed: {e}")
             app.logger.info("Continuing without database persistence")
         
         # Initialize Flask-Login

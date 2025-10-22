@@ -494,6 +494,57 @@ class TranscriptionService:
         logger.info(f"Ended transcription session (sync): {session_id}")
         return final_stats
 
+    def _save_transcription_text(self, session_id: str, text: str, confidence: float = 0.0) -> None:
+        """
+        Save transcription text into the database and update session statistics.
+        """
+        try:
+            from models.session import Session
+            from models.segment import Segment  # or Transcript, depending on your model naming
+            from datetime import datetime
+            from sqlalchemy import select
+            from app import db
+            import logging
+
+            logger = logging.getLogger(__name__)
+
+            # ✅ 1. Retrieve existing session or create one
+            stmt = select(Session).filter_by(external_id=session_id)
+            db_session = db.session.execute(stmt).scalar_one_or_none()
+            if not db_session:
+                db_session = Session(
+                    external_id=session_id,
+                    title="Transcription Session",
+                    status="active",
+                    created_at=datetime.utcnow(),
+                )
+                db.session.add(db_session)
+                db.session.commit()
+
+            # ✅ 2. Create new segment/transcript entry
+            segment = Segment(
+                session_id=db_session.id,
+                text=text,
+                confidence=confidence,
+                created_at=datetime.utcnow(),
+            )
+            db.session.add(segment)
+
+            # ✅ 3. Update session summary stats
+            db_session.total_segments = (db_session.total_segments or 0) + 1
+            db_session.average_confidence = (
+                (db_session.average_confidence or 0) + confidence
+            ) / db_session.total_segments
+            db_session.last_updated = datetime.utcnow()
+
+            # ✅ 4. Commit all changes
+            db.session.commit()
+            logger.info(f"[DB] ✅ Saved transcript for session {session_id}")
+
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"[DB] ❌ Failed to save transcript: {e}")
+
     async def start_session(self, session_id: Optional[str] = None, 
                            user_config: Optional[Dict[str, Any]] = None) -> str:
         """
