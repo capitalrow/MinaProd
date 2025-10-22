@@ -2,7 +2,7 @@ from __future__ import annotations
 from flask import Blueprint, request, jsonify, abort
 from services.stripe_service import stripe_svc
 from models.core_models import Customer, Subscription
-from extensions import db
+from models import db
 
 billing_bp = Blueprint("billing", __name__, url_prefix="/billing")
 

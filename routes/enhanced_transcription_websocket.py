@@ -21,6 +21,7 @@ from flask_socketio import emit, disconnect, join_room, leave_room
 from flask import request
 import flask_socketio
 from typing import Dict
+from jobs.analysis_dispatcher import AnalysisDispatcher
 
 # Import the socketio instance from the consolidated app
 from app import socketio
@@ -609,6 +610,68 @@ def on_enhanced_disconnect():
         enhanced_active_sessions.pop(session_id, None)
         
         logger.info(f"🧹 Enhanced session cleanup completed: {session_id}")
+
+@socketio.on('end_enhanced_session', namespace='/transcription')
+def on_end_enhanced_session(data=None):
+    """Gracefully end an enhanced transcription session and trigger post-processing analysis"""
+    try:
+        client_id = flask_socketio.request.sid
+        sessions_to_end = [
+            sid for sid, s in enhanced_active_sessions.items() if s.get('client_sid') == client_id
+        ]
+
+        if not sessions_to_end:
+            logger.warning(f"⚠️ No enhanced session found for client {client_id}")
+            emit('enhanced_error', {'message': 'No enhanced session found to end'})
+            return
+
+        for session_id in sessions_to_end:
+            session_info = enhanced_active_sessions.pop(session_id, None)
+            buffer_manager = session_info.get('buffer_manager')
+            logger.info(f"🧩 Ending enhanced session {session_id} for client {client_id}")
+
+            # 🗂️ Persist final transcript
+            final_transcript = None
+            try:
+                if buffer_manager:
+                    final_transcript = buffer_manager.flush_and_finalize(session_id=session_id)
+                    logger.info(f"📝 Final transcript stored for {session_id} ({len(final_transcript)} chars)")
+                else:
+                    logger.warning(f"⚠️ No buffer manager found for session {session_id}")
+            except Exception as e:
+                logger.error(f"❌ Error during final transcript flush for {session_id}: {e}")
+
+            # 🚀 Trigger downstream analysis asynchronously
+            try:
+                meeting_id = session_info.get("meeting_id", str(uuid.uuid4()))
+                asyncio.create_task(
+                    AnalysisDispatcher.run_full_analysis(
+                        session_id=session_id,
+                        meeting_id=meeting_id
+                    )
+                )
+                logger.info(f"🚀 Dispatched background analytics for {session_id} ({meeting_id})")
+            except Exception as e:
+                logger.error(f"❌ Failed to dispatch analysis for {session_id}: {e}")
+
+            # 🧹 Clean up buffer manager and release resources
+            try:
+                if buffer_manager:
+                    buffer_manager.end_session()
+                buffer_registry.release(session_id)
+            except Exception as e:
+                logger.warning(f"⚠️ Cleanup warning for session {session_id}: {e}")
+
+            # ✅ Emit completion event
+            emit('enhanced_session_ended', {
+                'session_id': session_id,
+                'status': 'completed',
+                'message': 'Enhanced transcription completed. Analysis started in background.'
+            })
+
+    except Exception as e:
+        logger.error(f"❌ Enhanced session end error: {e}")
+        emit('enhanced_error', {'message': f'Failed to end enhanced session: {str(e)}'})
 
 @socketio.on('get_enhanced_session_metrics', namespace='/transcription')
 def on_get_enhanced_session_metrics(data=None):

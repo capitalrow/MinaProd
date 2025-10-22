@@ -1,7 +1,8 @@
 from __future__ import annotations
 from flask import Blueprint, request, jsonify, abort
-from services.slack_service import slack_svc
+from services.slack_service import slack_service as slack_svc
 from services.notion_service import notion_svc
+from models import db
 
 integrations_bp = Blueprint("integrations", __name__, url_prefix="/integrations")
 

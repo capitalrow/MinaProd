@@ -2,7 +2,7 @@ from __future__ import annotations
 from flask import Blueprint, request, jsonify, abort
 from services.feature_flags import flags, require_flag_admin
 from models.core_models import FeatureFlag
-from extensions import db
+from models import db
 
 flags_bp = Blueprint("flags", __name__, url_prefix="/flags")
 

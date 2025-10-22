@@ -19,6 +19,7 @@ from models.segment import Segment
 from models.summary import Summary, SummaryLevel, SummaryStyle
 from server.models.memory_store import MemoryStore
 memory = MemoryStore()
+import inspect
 
 logger = logging.getLogger(__name__)
 
@@ -272,6 +273,34 @@ class AnalysisService:
             logger.info("Summary data stored back into MemoryStore successfully.")
         except Exception as e:
             logger.warning(f"Could not persist summary to MemoryStore: {e}")
+        # -------------------------------------------------------------
+            # -------------------------------------------------------------
+            # 🔄 Trigger analytics sync if relevant meeting exists
+            try:
+                from models.session import Session
+                from services.analytics_service import AnalyticsService
+                import asyncio, inspect
+
+                session_obj = db.session.get(Session, session_id)
+                meeting = getattr(session_obj, "meeting", None)
+
+                if meeting:
+                    analytics_service = AnalyticsService()
+                    analytics_fn = analytics_service.analyze_meeting
+
+                    # ✅ Handle async vs sync implementations safely
+                    if inspect.iscoroutinefunction(analytics_fn):
+                        asyncio.create_task(analytics_fn(meeting.id))
+                    else:
+                        asyncio.to_thread(analytics_fn, meeting.id)
+
+                    logger.info(f"Triggered analytics sync for meeting {meeting.id} (session {session_id})")
+                else:
+                    logger.info(f"No linked meeting found for session {session_id}, skipping analytics sync.")
+            except Exception as e:
+                logger.warning(f"Failed to trigger analytics after summary: {e}")
+            # -------------------------------------------------------------
+
         # -------------------------------------------------------------
 
         return summary.to_dict()

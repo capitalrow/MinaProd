@@ -85,37 +85,49 @@ class MemoryStore:
         try:
             self._ensure_connection()
             embedding = self._generate_embedding(content)
+            if embedding is None:
+                print("⚠️ Skipping memory insert — no embedding generated.")
+                return
+
+            # Convert NumPy array → Python list → Postgres vector string
+            embedding_list = embedding.tolist() if isinstance(embedding, np.ndarray) else list(embedding)
+            embedding_str = "[" + ",".join(map(str, embedding_list)) + "]"
 
             with self.conn.cursor() as cur:
-                # Convert NumPy array → Python list → Postgres vector string
-                embedding_list = embedding.tolist()
-                embedding_str = "[" + ",".join(map(str, embedding_list)) + "]"
-
                 cur.execute("""
                     INSERT INTO memory_embeddings (session_id, user_id, content, embedding, source_type)
                     VALUES (%s, %s, %s, %s::vector, %s)
                 """, (session_id, user_id, content, embedding_str, source_type))
             print(f"✅ Memory stored successfully for session {session_id}")
+
         except Exception as e:
             print(f"❌ ERROR in add_memory: {e}")
             raise
+
 
     def search_memory(self, query, top_k=5):
         """Semantic search by vector similarity."""
         try:
             self._ensure_connection()
             query_emb = self._generate_embedding(query)
+            if query_emb is None:
+                print("⚠️ No embedding generated for query.")
+                return []
+
+            # Convert to Postgres vector string
+            query_list = query_emb.tolist() if isinstance(query_emb, np.ndarray) else list(query_emb)
+            query_str = "[" + ",".join(map(str, query_list)) + "]"
 
             with self.conn.cursor() as cur:
                 cur.execute(
                     """
                     SELECT id, content, session_id, user_id, created_at,
-                           1 - (embedding <-> %s) AS similarity
+                           1 - (embedding <-> %s::vector) AS similarity
                     FROM memory_embeddings
-                    ORDER BY embedding <-> %s
+                    ORDER BY embedding <-> %s::vector
                     LIMIT %s;
                     """,
-                    (query_emb, query_emb, top_k)
+                    (query_str, query_str, top_k)
                 )
                 rows = cur.fetchall()
 

@@ -5,17 +5,19 @@ Provides endpoints for generating and retrieving meeting summaries,
 actions, decisions, and risks extracted from session transcripts.
 """
 
+from __future__ import annotations
 import os
 import logging
 from flask import Blueprint, request, jsonify, current_app, abort
 # from flask_socketio import emit  # Disabled for native WebSocket testing
-from __future__ import annotations
 from dataclasses import asdict
 from services.analysis_service import AnalysisService
 from models.summary import SummaryLevel, SummaryStyle
 # from app import socketio  # Disabled for native WebSocket testing
 from openai import OpenAI
 from server.models.memory_store import MemoryStore
+from models import db
+
 logger = logging.getLogger(__name__)
 
 # Create summary blueprint
