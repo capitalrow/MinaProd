@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main, develop ]
   workflow_dispatch:
+    inputs:
+      note:
+        description: "Optional note for manual run"
+        required: false
 
 jobs:
   accessibility-tests:
