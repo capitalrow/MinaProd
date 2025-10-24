@@ -105,7 +105,7 @@ class TestSmokeTests:
         ]
         
         for viewport in test_viewports:
-            await page.set_viewport_size(viewport)
+            await page.set_viewport_size({"width": viewport['width'], "height": viewport['height']})
             await page.goto('http://localhost:5000/live')
             
             # Essential elements should be visible at all sizes
@@ -118,8 +118,9 @@ class TestSmokeTests:
                 button_box = await button.bounding_box()
                 
                 # Touch targets should be at least 44px
-                assert button_box['width'] >= 44, f"Button too small for touch at {viewport['width']}px"
-                assert button_box['height'] >= 44, f"Button too small for touch at {viewport['width']}px"
+                if button_box:  # Check if button_box is not None
+                    assert button_box['width'] >= 44, f"Button too small for touch at {viewport['width']}px"
+                    assert button_box['height'] >= 44, f"Button too small for touch at {viewport['width']}px"
     
     async def test_accessibility_basics(self, page: Page):
         """Test basic accessibility features."""

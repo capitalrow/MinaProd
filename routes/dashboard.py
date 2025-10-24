@@ -508,7 +508,7 @@ def api_stats():
 @dashboard_bp.route('/ops/metrics')
 def ops_metrics():
     """Operational metrics dashboard endpoint."""
-    if not monitoring_available:
+    if not monitoring_available or uptime_monitor is None or performance_monitor is None:
         return jsonify({'error': 'Monitoring services not available'}), 503
     
     try:

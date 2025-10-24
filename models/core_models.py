@@ -6,6 +6,7 @@ from extensions import db
 
 class SummaryDoc(db.Model):
     __tablename__ = "summary_docs"
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.Integer, index=True, nullable=False, unique=True)
     summary = db.Column(db.Text)
@@ -19,6 +20,7 @@ class SummaryDoc(db.Model):
 
 class Team(db.Model):
     __tablename__ = "teams"
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     owner_id = db.Column(db.String(64), nullable=False)
@@ -26,6 +28,7 @@ class Team(db.Model):
 
 class Membership(db.Model):
     __tablename__ = "memberships"
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
     user_id = db.Column(db.String(64), nullable=False, index=True)
@@ -34,6 +37,7 @@ class Membership(db.Model):
 
 class Comment(db.Model):
     __tablename__ = "comments"
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.Integer, index=True, nullable=False)
     user_id = db.Column(db.String(64), nullable=False)
@@ -45,6 +49,7 @@ class Comment(db.Model):
 
 class FeatureFlag(db.Model):
     __tablename__ = "feature_flags"
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     key = db.Column(db.String(80), unique=True, nullable=False, index=True)
     enabled = db.Column(db.Boolean, default=False, nullable=False)
@@ -54,6 +59,7 @@ class FeatureFlag(db.Model):
 
 class IntegrationToken(db.Model):
     __tablename__ = "integration_tokens"
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.String(64), index=True, nullable=False)
     provider = db.Column(db.String(24), index=True, nullable=False)  # "slack" or "notion"
@@ -62,6 +68,7 @@ class IntegrationToken(db.Model):
 
 class Customer(db.Model):
     __tablename__ = "customers"
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.String(64), unique=True, nullable=False, index=True)
     stripe_customer_id = db.Column(db.String(64))
@@ -69,6 +76,7 @@ class Customer(db.Model):
 
 class Subscription(db.Model):
     __tablename__ = "subscriptions"
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=False)
     stripe_subscription_id = db.Column(db.String(64), unique=True, nullable=False)
