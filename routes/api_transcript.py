@@ -6,7 +6,7 @@ Part of Phase 2: Transcript Experience Enhancement (T2.3, T2.5, T2.6)
 
 from flask import Blueprint, request, jsonify, send_file
 from flask_login import login_required, current_user
-from models import db, Meeting, Session, Segment, Comment
+from models import db, Meeting, Session, Segment, SegmentComment
 from datetime import datetime
 from io import BytesIO
 import json
@@ -528,7 +528,7 @@ def update_segment_highlight(meeting_id, segment_id):
 
 
 # ============================================
-# Comment Endpoints (T2.8)
+# SegmentComment Endpoints (T2.8)
 # ============================================
 
 @api_transcript_bp.route('/<int:meeting_id>/segments/<int:segment_id>/comments', methods=['GET'])
@@ -551,10 +551,10 @@ def get_segment_comments(meeting_id, segment_id):
         return jsonify({'success': False, 'message': 'Segment not found'}), 404
     
     # Query comments from database (only top-level comments, includes replies)
-    comments = db.session.query(Comment).filter_by(
+    comments = db.session.query(SegmentComment).filter_by(
         segment_id=segment_id,
         parent_id=None  # Only get top-level comments
-    ).order_by(Comment.created_at.asc()).all()
+    ).order_by(SegmentComment.created_at.asc()).all()
     
     comments_data = [comment.to_dict(include_replies=True) for comment in comments]
     
@@ -589,17 +589,17 @@ def add_segment_comment(meeting_id, segment_id):
     parent_id = data.get('parent_id')  # For threaded replies
     
     if not text:
-        return jsonify({'success': False, 'message': 'Comment text is required'}), 400
+        return jsonify({'success': False, 'message': 'SegmentComment text is required'}), 400
     
     # Validate parent_id if provided (for reply threading)
     if parent_id:
-        parent_comment = db.session.query(Comment).filter_by(id=parent_id).first()
+        parent_comment = db.session.query(SegmentComment).filter_by(id=parent_id).first()
         if not parent_comment or parent_comment.segment_id != segment_id:
             return jsonify({'success': False, 'message': 'Invalid parent comment'}), 400
     
     # Create and save comment to database
     try:
-        comment = Comment(
+        comment = SegmentComment(
             segment_id=segment_id,
             user_id=current_user.id,
             text=text,
@@ -610,7 +610,7 @@ def add_segment_comment(meeting_id, segment_id):
         
         return jsonify({
             'success': True,
-            'message': 'Comment added successfully',
+            'message': 'SegmentComment added successfully',
             'comment': comment.to_dict(include_replies=False)
         }), 201
     except Exception as e:
@@ -635,7 +635,7 @@ def add_comment(segment_id):
     text = data.get("text", "").strip()
     if not text:
         return jsonify({"status": "error", "message": "Empty comment"}), 400
-    new_comment = Comment(segment_id=segment_id, user_id=current_user.id, text=text, created_at=datetime.utcnow())
+    new_comment = SegmentComment(segment_id=segment_id, user_id=current_user.id, text=text, created_at=datetime.utcnow())
     db.session.add(new_comment)
     db.session.commit()
     return jsonify({"status": "ok", "comment": {"id": new_comment.id, "text": new_comment.text}})
