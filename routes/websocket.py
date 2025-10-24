@@ -71,9 +71,9 @@ def on_join_session(data):
             
             if current_user and current_user.is_authenticated:
                 user_id = current_user.id
-                # Get user's default workspace (first workspace they belong to)
-                if hasattr(current_user, 'workspaces') and current_user.workspaces:
-                    workspace_id = current_user.workspaces[0].id
+                # Get user's workspace (User has one workspace via workspace_id FK)
+                if current_user.workspace_id:
+                    workspace_id = current_user.workspace_id
                     logger.info(f"[ws] Using authenticated user {user_id} with workspace {workspace_id}")
             
             # Only create Meeting record if user is authenticated with a workspace
