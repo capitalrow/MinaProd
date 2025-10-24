@@ -49,6 +49,7 @@ class TranscriptionStatePersister:
         self._flush_threads: Dict[str, threading.Thread] = {}
         self._active_sessions: Dict[str, bool] = {}
         self._locks: Dict[str, threading.Lock] = defaultdict(threading.Lock)
+        self._flask_app: Dict[str, Any] = {}  # Store Flask app per session
         
         logger.info(f"✅ TranscriptionStatePersister initialized (flush_interval={flush_interval_seconds}s, batch_size={batch_size})")
     
@@ -61,6 +62,10 @@ class TranscriptionStatePersister:
             db_session_id: Database session ID
             metadata: Optional metadata (user_id, workspace_id, etc.)
         """
+        # Capture Flask app object for background threads
+        from flask import current_app
+        flask_app = current_app._get_current_object()
+        
         with self._locks[session_id]:
             self._segment_buffers[session_id] = []
             self._session_metadata[session_id] = {
@@ -71,6 +76,7 @@ class TranscriptionStatePersister:
             }
             self._last_flush_time[session_id] = time.time()
             self._active_sessions[session_id] = True
+            self._flask_app[session_id] = flask_app  # Store app for thread context
             
             # Start background flush thread
             flush_thread = threading.Thread(
@@ -108,13 +114,14 @@ class TranscriptionStatePersister:
                 logger.info(f"🚀 Batch size ({buffer_size}) reached for session {session_id}, triggering immediate flush")
                 self.flush(session_id, force=True)
     
-    def flush(self, session_id: str, force: bool = False):
+    def flush(self, session_id: str, force: bool = False, from_timer: bool = False):
         """
         Flush buffered segments to database.
         
         Args:
             session_id: External session ID
             force: If True, flush regardless of batch size
+            from_timer: If True, this is a timer-triggered flush (always flush any segments)
         """
         if session_id not in self._active_sessions:
             return
@@ -122,11 +129,12 @@ class TranscriptionStatePersister:
         with self._locks[session_id]:
             pending = self._segment_buffers[session_id]
             
-            # Only commit if we have segments and (force or batch size met)
+            # Only commit if we have segments and (force or batch size met or timer)
             if not pending:
                 return
             
-            if not force and len(pending) < self.batch_size:
+            # Timer-triggered flushes always persist whatever is buffered (crash safety)
+            if not force and not from_timer and len(pending) < self.batch_size:
                 return
             
             db_session_id = self._session_metadata[session_id].get('db_session_id')
@@ -134,9 +142,15 @@ class TranscriptionStatePersister:
                 logger.error(f"❌ No db_session_id for session {session_id}, cannot flush")
                 return
             
+            # Get Flask app for this session
+            flask_app = self._flask_app.get(session_id)
+            if not flask_app:
+                logger.error(f"❌ No Flask app for session {session_id}, cannot flush")
+                return
+            
             try:
                 # Use Flask app context for thread safety
-                with current_app.app_context():
+                with flask_app.app_context():
                     # Add all pending segments
                     for segment_data in pending:
                         segment = Segment(
@@ -189,7 +203,7 @@ class TranscriptionStatePersister:
                 # Check if there's anything to flush
                 if session_id in self._segment_buffers and len(self._segment_buffers[session_id]) > 0:
                     logger.debug(f"⏰ Auto-flush triggered for session {session_id}")
-                    self.flush(session_id, force=False)  # Respects batch size unless force=True
+                    self.flush(session_id, force=False, from_timer=True)  # Timer flushes always persist buffered segments
                     
         except Exception as e:
             logger.error(f"❌ Background flush loop error for session {session_id}: {e}")
@@ -216,9 +230,10 @@ class TranscriptionStatePersister:
         
         # Update session status to completed
         db_session_id = self._session_metadata[session_id].get('db_session_id')
-        if db_session_id:
+        flask_app = self._flask_app.get(session_id)
+        if db_session_id and flask_app:
             try:
-                with current_app.app_context():
+                with flask_app.app_context():
                     session = db.session.query(Session).filter_by(id=db_session_id).first()
                     if session and session.status != 'completed':
                         session.status = 'completed'
@@ -235,6 +250,7 @@ class TranscriptionStatePersister:
             self._session_metadata.pop(session_id, None)
             self._last_flush_time.pop(session_id, None)
             self._flush_threads.pop(session_id, None)
+            self._flask_app.pop(session_id, None)
             self._locks.pop(session_id, None)
         
         logger.info(f"🧹 Cleaned up persistence state for session {session_id}")
