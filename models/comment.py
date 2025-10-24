@@ -54,6 +54,7 @@ class Comment(Base):
         Index('ix_comments_segment_created', 'segment_id', 'created_at'),
         Index('ix_comments_user', 'user_id'),
         Index('ix_comments_parent', 'parent_id'),
+        {'extend_existing': True}
     )
     
     def __repr__(self):

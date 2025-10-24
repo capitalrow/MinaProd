@@ -31,7 +31,8 @@ import openai
 import numpy as np
 import psycopg2
 from flask_migrate import Migrate
-from models import db, Segment, Comment 
+from models import db, Segment
+from models.core_models import SessionComment 
 from datetime import datetime
 from services import memory_persistence as mem
 

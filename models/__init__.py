@@ -25,7 +25,8 @@ from .task import Task
 from .calendar_event import CalendarEvent
 from .analytics import Analytics
 from .marker import Marker
-from .comment import Comment
+# Import segment Comment as SegmentComment to avoid conflict with SessionComment
+from .comment import Comment as SegmentComment
 from .copilot_template import CopilotTemplate
 from .copilot_conversation import CopilotConversation
 
@@ -39,6 +40,6 @@ except ImportError:
 __all__ = [
     'db', 'Base', 'Session', 'Segment', 'Summary', 'SharedLink', 'TeamShare', 'ShareAnalytic',
     'ChunkMetric', 'SessionMetric', 'User', 'Workspace', 'Meeting', 
-    'Participant', 'Task', 'CalendarEvent', 'Analytics', 'Marker', 'Comment', 'CopilotTemplate',
+    'Participant', 'Task', 'CalendarEvent', 'Analytics', 'Marker', 'SegmentComment', 'CopilotTemplate',
     'CopilotConversation'
 ]

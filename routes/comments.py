@@ -1,6 +1,6 @@
 from __future__ import annotations
 from flask import Blueprint, request, jsonify, abort
-from models.core_models import Comment
+from models.core_models import SessionComment as Comment
 from models import db
 
 comments_bp = Blueprint("comments", __name__, url_prefix="/comments")
