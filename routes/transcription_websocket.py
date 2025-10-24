@@ -27,6 +27,8 @@ from services.session_buffer_manager import buffer_registry, BufferConfig
 import asyncio
 from jobs.analysis_dispatcher import AnalysisDispatcher
 
+# Import unified persistence service (5-second auto-save)
+from services.transcription_persistence import get_persister
 
 logger = logging.getLogger(__name__)
 
@@ -40,77 +42,8 @@ buffer_config = BufferConfig(
     enable_quality_gating=True
 )
 
-# Background processing worker
-processing_workers = {}
-
-# 🔥 PRODUCTION FIX: Segment buffer for batch commits
-segment_buffers = {}  # session_id -> list of pending segments
-BATCH_COMMIT_SIZE = 5  # Commit every 5 segments to reduce DB load
-BATCH_COMMIT_INTERVAL = 10  # Or commit every 10 seconds
-
-def _safe_commit_segments(session_id: str, force=False):
-    """
-    Thread-safe batch commit of buffered segments.
-    Only commits when batch size reached or force=True.
-    Uses Flask app context for safety.
-    """
-    if session_id not in segment_buffers:
-        return
-    
-    pending = segment_buffers[session_id]
-    
-    # Only commit if we have enough segments or forced
-    if not force and len(pending) < BATCH_COMMIT_SIZE:
-        return
-    
-    if not pending:
-        return
-    
-    try:
-        # Use Flask app context for thread safety
-        from flask import current_app
-        with current_app.app_context():
-            # Add all pending segments
-            for segment_data in pending:
-                segment = Segment(**segment_data)
-                db.session.add(segment)
-            
-            db.session.commit()
-            logger.info(f"💾 [batch-commit] Saved {len(pending)} segments for session {session_id}")
-            
-            # Clear buffer after successful commit
-            segment_buffers[session_id] = []
-            
-    except Exception as e:
-        logger.error(f"❌ [batch-commit] Failed to commit segments: {e}")
-        db.session.rollback()
-        # Keep segments in buffer for retry
-        
-def _background_processor(session_id: str, buffer_manager):
-    """Background worker for processing buffered audio chunks and periodic batch commits"""
-    logger.info(f"🔧 Started background processor for session {session_id}")
-    
-    last_commit_time = time.time()
-    
-    try:
-        while session_id in active_sessions:
-            time.sleep(1)  # Poll every second
-            
-            # Check if it's time for a periodic batch commit
-            current_time = time.time()
-            if current_time - last_commit_time >= BATCH_COMMIT_INTERVAL:
-                _safe_commit_segments(session_id, force=False)  # Commit if threshold met
-                last_commit_time = current_time
-            
-            if session_id not in active_sessions:
-                break
-                
-    except Exception as e:
-        logger.error(f"Background processor error for session {session_id}: {e}")
-    finally:
-        # Final commit of any remaining segments
-        _safe_commit_segments(session_id, force=True)
-        logger.info(f"🔧 Background processor stopped for session {session_id}")
+# Get global persister instance (5-second auto-flush)
+persister = get_persister()
 
 @socketio.on('connect', namespace='/transcription')
 def on_connect(auth=None):
@@ -152,12 +85,8 @@ def on_disconnect():
         # Release from buffer registry  
         buffer_registry.release(session_id)
         
-        # Terminate processing thread if exists
-        if session_id in processing_workers:
-            worker = processing_workers[session_id]
-            logger.info(f"[transcription] Terminating processing thread for session: {session_id}")
-            # The thread will terminate when session is removed from active_sessions
-            processing_workers.pop(session_id, None)
+        # End persistence tracking (performs final flush)
+        persister.end_session(session_id)
         
         # Remove from active sessions
         active_sessions.pop(session_id, None)
@@ -256,17 +185,16 @@ def on_start_session(data):
             'session_start_ms': int(time.time() * 1000)  # Track absolute start time
         }
         
-        # 🔥 Initialize segment buffer for batch commits
-        segment_buffers[session_id] = []
-        
-        # Start background processing worker for this session
-        worker = threading.Thread(
-            target=_background_processor,
-            args=(session_id, buffer_manager),
-            daemon=True
+        # 🔥 Start unified persistence tracking (5-second auto-flush)
+        persister.start_session(
+            session_id=session_id,
+            db_session_id=db_session.id,
+            metadata={
+                'user_id': current_user.id if current_user.is_authenticated else None,
+                'workspace_id': workspace_id,
+                'meeting_id': meeting.id if meeting else None
+            }
         )
-        worker.start()
-        processing_workers[session_id] = worker
         
         # Join the session room
         join_room(session_id)
@@ -413,9 +341,8 @@ def on_audio_data(data):
                                 # Use processing_time from response if available, otherwise estimate
                                 processing_time = result.get('processing_time', result.get('processing_time_ms', 0))
                                 
-                                # Create segment data dict (don't create object yet for thread safety)
+                                # Create segment data dict
                                 segment_data = {
-                                    'session_id': db_session_id,
                                     'kind': "final" if is_final else "interim",
                                     'text': text,
                                     'avg_confidence': result.get('confidence', 0.9),
@@ -424,19 +351,13 @@ def on_audio_data(data):
                                     'created_at': datetime.utcnow()
                                 }
                                 
-                                # Add to buffer instead of immediate commit
-                                if session_id not in segment_buffers:
-                                    segment_buffers[session_id] = []
-                                segment_buffers[session_id].append(segment_data)
+                                # Enqueue segment for 5-second auto-flush
+                                persister.enqueue_segment(session_id, segment_data)
                                 
                                 # Update segment counter
                                 session_info['segment_counter'] = session_info.get('segment_counter', 0) + 1
                                 
-                                logger.info(f"📝 [transcription] Buffered segment #{session_info['segment_counter']} (kind: {segment_data['kind']}, buffer size: {len(segment_buffers[session_id])})")
-                                
-                                # Trigger batch commit if threshold reached
-                                if len(segment_buffers[session_id]) >= BATCH_COMMIT_SIZE:
-                                    _safe_commit_segments(session_id, force=True)
+                                logger.info(f"📝 [transcription] Enqueued segment #{session_info['segment_counter']} (kind: {segment_data['kind']})")
                             else:
                                 logger.warning(f"⚠️ [transcription] No db_session_id found, cannot save segment")
                         except Exception as buffer_error:
@@ -487,13 +408,8 @@ def on_end_session(data=None):
             session_info = active_sessions.pop(session_id, None)
             logger.info(f"[transcription] Ended session: {session_id}")
 
-            # 🔥 PRODUCTION FIX: Commit any remaining buffered segments first
-            logger.info(f"[transcription] Finalizing session {session_id}, committing remaining segments...")
-            _safe_commit_segments(session_id, force=True)
-            
-            # Clean up segment buffer
-            if session_id in segment_buffers:
-                del segment_buffers[session_id]
+            # End persistence tracking (performs final flush and marks session complete)
+            persister.end_session(session_id)
             
             # 🔥 MARK SESSION AND MEETING AS COMPLETED IN DATABASE
             try:
