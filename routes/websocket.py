@@ -64,25 +64,47 @@ def on_join_session(data):
     try:
         session = db.session.query(Session).filter_by(external_id=session_id).first()
         if not session:
-            # Extract optional ownership info from client (if authenticated)
-            user_id = (data or {}).get("user_id")  # Client can pass user_id if authenticated
-            workspace_id = (data or {}).get("workspace_id")  # Client can pass workspace_id
+            # Get authenticated user and their default workspace
+            user_id = None
+            workspace_id = None
             
+            if current_user and current_user.is_authenticated:
+                user_id = current_user.id
+                # Get user's default workspace (first workspace they belong to)
+                if hasattr(current_user, 'workspaces') and current_user.workspaces:
+                    workspace_id = current_user.workspaces[0].id
+                    logger.info(f"[ws] Using authenticated user {user_id} with workspace {workspace_id}")
+            
+            # Create Meeting record first
+            meeting = Meeting(
+                title=f"Live Recording - {datetime.utcnow().strftime('%b %d, %Y at %I:%M %p')}",
+                workspace_id=workspace_id,
+                organizer_id=user_id,
+                status="in_progress",
+                meeting_type="live_recording",
+                started_at=datetime.utcnow()
+            )
+            db.session.add(meeting)
+            db.session.flush()  # Get meeting.id before creating session
+            
+            # Create Session linked to Meeting
             session = Session(
                 external_id=session_id,
-                title="Live Transcription Session",
+                title=meeting.title,
                 status="active",
                 started_at=datetime.utcnow(),
                 user_id=user_id,
-                workspace_id=workspace_id
+                workspace_id=workspace_id,
+                meeting_id=meeting.id
             )
             db.session.add(session)
             db.session.commit()
-            logger.info(f"[ws] Created new session in DB: {session_id} (user_id={user_id}, workspace_id={workspace_id})")
+            logger.info(f"[ws] Created Meeting (id={meeting.id}) and Session (external_id={session_id}) for user_id={user_id}, workspace_id={workspace_id}")
         else:
             logger.info(f"[ws] Using existing session: {session_id}")
     except Exception as e:
-        logger.error(f"[ws] Database error creating session: {e}")
+        logger.error(f"[ws] Database error creating session/meeting: {e}")
+        db.session.rollback()
         # Continue with in-memory only
     
     # init/clear in-memory buffers
