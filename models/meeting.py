@@ -123,6 +123,11 @@ class Meeting(Base):
     def participant_count(self) -> int:
         """Get number of participants."""
         return len(self.participants) if self.participants else 0
+    
+    @property
+    def session_id(self) -> Optional[str]:
+        """Get session external_id for backward compatibility with templates."""
+        return self.session.external_id if self.session else None
 
     @property
     def task_count(self) -> int:
