@@ -621,6 +621,15 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"Failed to register Sharing API routes: {e}")
 
+    # --- Session Finalization API ---
+    try:
+        from routes.api_session_finalize import api_session_finalize_bp
+        app.register_blueprint(api_session_finalize_bp)  # bp already has url_prefix="/api/sessions"
+        csrf.exempt(api_session_finalize_bp)  # POST endpoint; avoid CSRF block from browser fetch
+        app.logger.info("Session Finalization API routes registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register Session Finalization API: {e}")
+
     # Settings routes
     try:
         from routes.settings import settings_bp
