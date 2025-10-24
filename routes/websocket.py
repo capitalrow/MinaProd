@@ -15,7 +15,8 @@ from flask_socketio import emit
 from app import socketio
 
 # Import database models for persistence
-from models import db, Session, Segment, Participant
+from models import db, Session, Segment, Participant, Meeting
+from flask_login import current_user
 
 from services.openai_whisper_client import transcribe_bytes
 from services.speaker_diarization import SpeakerDiarizationEngine, DiarizationConfig
