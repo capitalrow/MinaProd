@@ -141,5 +141,44 @@ class TestCriticalPaths:
         assert response.status_code in [200, 302, 401, 403]
 
 
+class TestUIPages:
+    """Test all critical UI pages are accessible."""
+    
+    def test_main_app_page(self):
+        """Test that main app page is accessible."""
+        response = requests.get(f'{BASE_URL}/app', timeout=5)
+        assert response.status_code in [200, 302, 401, 403]
+    
+    def test_live_transcription_page(self):
+        """Test that live transcription page is accessible."""
+        response = requests.get(f'{BASE_URL}/live', timeout=5)
+        assert response.status_code in [200, 302, 401, 403]
+    
+    def test_dashboard_home(self):
+        """Test that dashboard home is accessible."""
+        response = requests.get(f'{BASE_URL}/dashboard/', timeout=5)
+        assert response.status_code in [200, 302, 401, 403]
+    
+    def test_dashboard_tasks(self):
+        """Test that tasks page is accessible."""
+        response = requests.get(f'{BASE_URL}/dashboard/tasks', timeout=5)
+        assert response.status_code in [200, 302, 401, 403]
+    
+    def test_live_enhanced_page(self):
+        """Test that enhanced live transcription is accessible."""
+        response = requests.get(f'{BASE_URL}/live-enhanced', timeout=5)
+        assert response.status_code in [200, 302, 401, 403]
+    
+    def test_live_comprehensive_page(self):
+        """Test that comprehensive live transcription is accessible."""
+        response = requests.get(f'{BASE_URL}/live-comprehensive', timeout=5)
+        assert response.status_code in [200, 302, 401, 403]
+    
+    def test_onboarding_page(self):
+        """Test that onboarding page is accessible."""
+        response = requests.get(f'{BASE_URL}/onboarding', timeout=5)
+        assert response.status_code in [200, 302, 401, 403]
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
