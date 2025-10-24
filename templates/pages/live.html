@@ -324,6 +324,116 @@
     height: 20px;
     color: var(--color-primary);
 }
+
+/* AI Insights Styles */
+.ai-insights-status {
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    background: rgba(124, 58, 237, 0.1);
+    border-left: 3px solid var(--color-primary);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-4);
+}
+
+.ai-insights-status.processing {
+    background: rgba(59, 130, 246, 0.1);
+    border-left-color: #3b82f6;
+    animation: pulse 2s infinite;
+}
+
+.ai-insights-status.completed {
+    background: rgba(34, 197, 94, 0.1);
+    border-left-color: #22c55e;
+}
+
+.ai-insights-status.error {
+    background: rgba(239, 68, 68, 0.1);
+    border-left-color: #ef4444;
+}
+
+.ai-insights-content {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.insight-section {
+    margin-bottom: var(--space-4);
+}
+
+.insight-section-title {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.insight-summary {
+    padding: var(--space-3);
+    background: var(--color-surface-light);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-relaxed);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-3);
+}
+
+.insight-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.insight-item {
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-surface-light);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-2);
+    border-left: 2px solid var(--color-primary);
+}
+
+.insight-item-title {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.insight-item-desc {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+}
+
+.insight-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: 10px;
+    font-weight: var(--font-weight-medium);
+    margin-left: var(--space-2);
+}
+
+.insight-badge.high {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.insight-badge.medium {
+    background: rgba(251, 146, 60, 0.2);
+    color: #fb923c;
+}
+
+.insight-badge.low {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
 </style>
 {% endblock %}
 
@@ -432,6 +542,20 @@
                             <span>Share Session</span>
                         </button>
                     </div>
+                </div>
+
+                <!-- AI Insights Card -->
+                <div class="session-info-card" id="ai-insights-card" style="display: none;">
+                    <h3 class="text-lg font-semibold mb-4">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                        AI Insights
+                    </h3>
+                    <div id="ai-insights-status" class="ai-insights-status">
+                        Generating insights...
+                    </div>
+                    <div id="ai-insights-content" class="ai-insights-content"></div>
                 </div>
             </div>
         </div>
@@ -572,6 +696,154 @@ socket.on('final_transcript', (data) => {
         currentInterimSegment = null;
     }
 });
+
+// AI Insights WebSocket Event Handlers
+const aiInsightsCard = document.getElementById('ai-insights-card');
+const aiInsightsStatus = document.getElementById('ai-insights-status');
+const aiInsightsContent = document.getElementById('ai-insights-content');
+
+socket.on('ai_insights_status', (data) => {
+    console.log('AI insights status:', data);
+    
+    if (data.status === 'processing') {
+        aiInsightsCard.style.display = 'block';
+        aiInsightsStatus.className = 'ai-insights-status processing';
+        aiInsightsStatus.textContent = data.message || 'Generating AI insights...';
+        aiInsightsContent.innerHTML = '';
+    } else if (data.status === 'skipped') {
+        aiInsightsCard.style.display = 'block';
+        aiInsightsStatus.className = 'ai-insights-status';
+        aiInsightsStatus.textContent = data.reason || 'AI insights skipped';
+    }
+});
+
+socket.on('ai_insights_generated', (data) => {
+    console.log('AI insights generated:', data);
+    
+    aiInsightsCard.style.display = 'block';
+    aiInsightsStatus.className = 'ai-insights-status completed';
+    aiInsightsStatus.textContent = `✅ Generated in ${data.generation_time_seconds}s`;
+    
+    const insights = data.insights || {};
+    let html = '';
+    
+    // Summary section
+    if (insights.summary) {
+        html += `
+            <div class="insight-section">
+                <div class="insight-section-title">📝 Executive Summary</div>
+                <div class="insight-summary">${escapeHtml(insights.summary)}</div>
+            </div>
+        `;
+    }
+    
+    // Key Points section
+    if (insights.key_points && insights.key_points.length > 0) {
+        html += `
+            <div class="insight-section">
+                <div class="insight-section-title">💡 Key Points</div>
+                <ul class="insight-list">
+                    ${insights.key_points.map(point => `
+                        <li class="insight-item">
+                            <div class="insight-item-title">${escapeHtml(point.point || point)}</div>
+                            ${point.details ? `<div class="insight-item-desc">${escapeHtml(point.details)}</div>` : ''}
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+        `;
+    }
+    
+    // Action Items section
+    if (insights.action_items && insights.action_items.length > 0) {
+        html += `
+            <div class="insight-section">
+                <div class="insight-section-title">✅ Action Items</div>
+                <ul class="insight-list">
+                    ${insights.action_items.map(item => `
+                        <li class="insight-item">
+                            <div class="insight-item-title">
+                                ${escapeHtml(item.action || item)}
+                                ${item.priority ? `<span class="insight-badge ${item.priority.toLowerCase()}">${item.priority}</span>` : ''}
+                            </div>
+                            ${item.assignee ? `<div class="insight-item-desc">Assignee: ${escapeHtml(item.assignee)}</div>` : ''}
+                            ${item.due_date ? `<div class="insight-item-desc">Due: ${escapeHtml(item.due_date)}</div>` : ''}
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+        `;
+    }
+    
+    // Decisions section
+    if (insights.decisions && insights.decisions.length > 0) {
+        html += `
+            <div class="insight-section">
+                <div class="insight-section-title">🎯 Decisions Made</div>
+                <ul class="insight-list">
+                    ${insights.decisions.map(decision => `
+                        <li class="insight-item">
+                            <div class="insight-item-title">${escapeHtml(decision.decision || decision)}</div>
+                            ${decision.rationale ? `<div class="insight-item-desc">${escapeHtml(decision.rationale)}</div>` : ''}
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+        `;
+    }
+    
+    // Topics section
+    if (insights.topics && insights.topics.length > 0) {
+        html += `
+            <div class="insight-section">
+                <div class="insight-section-title">📚 Topics Discussed</div>
+                <div style="display: flex; flex-wrap: wrap; gap: var(--space-2);">
+                    ${insights.topics.map(topic => `
+                        <span class="insight-badge low">${escapeHtml(topic.topic || topic)}</span>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Sentiment section
+    if (insights.sentiment && insights.sentiment.overall) {
+        const sentimentColor = {
+            'positive': '#22c55e',
+            'neutral': '#3b82f6',
+            'negative': '#ef4444'
+        }[insights.sentiment.overall.toLowerCase()] || '#3b82f6';
+        
+        html += `
+            <div class="insight-section">
+                <div class="insight-section-title">😊 Sentiment</div>
+                <div class="insight-item" style="border-left-color: ${sentimentColor};">
+                    <div class="insight-item-title">${insights.sentiment.overall}</div>
+                    ${insights.sentiment.score ? `<div class="insight-item-desc">Score: ${insights.sentiment.score}</div>` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    aiInsightsContent.innerHTML = html;
+});
+
+socket.on('ai_insights_error', (data) => {
+    console.error('AI insights error:', data);
+    
+    aiInsightsCard.style.display = 'block';
+    aiInsightsStatus.className = 'ai-insights-status error';
+    aiInsightsStatus.textContent = `❌ ${data.error || 'Failed to generate insights'}`;
+    aiInsightsContent.innerHTML = '';
+});
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
 // Update timer
 function updateTimer() {
