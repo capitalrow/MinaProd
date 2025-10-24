@@ -12,6 +12,9 @@ Preferred communication style: Simple, everyday language.
 
 The application utilizes a layered architecture with Flask as the web framework and Socket.IO for real-time communication, following an application factory pattern. The frontend employs a "Crown+" design system with a dark theme, vanilla JavaScript, and Socket.IO client for a modern and accessible UI/UX.
 
+**Recent Fixes (October 2025):**
+- **Comment Model Registry Conflict (Resolved)**: Fixed SQLAlchemy duplicate model registration by separating SessionComment (session-level comments in "session_comments" table) from Comment/SegmentComment (segment-level threaded comments in "comments" table). Auto-created tables via db.create_all(). No data loss.
+
 **UI/UX Decisions:**
 - **Crown+ Design System**: Glassmorphism effects, smooth animations, consistent design tokens.
 - **Theming**: Dark theme, light mode support, system preference detection.
