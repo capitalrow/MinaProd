@@ -1,7 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
 from typing import Optional, List
-from sqlalchemy.dialects.postgresql import JSONB
 from extensions import db
 
 class SummaryDoc(db.Model):
@@ -10,9 +9,9 @@ class SummaryDoc(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.Integer, index=True, nullable=False, unique=True)
     summary = db.Column(db.Text)
-    actions = db.Column(JSONB)          # list[str]
-    decisions = db.Column(JSONB)        # list[str]
-    risks = db.Column(JSONB)            # list[str]
+    actions = db.Column(db.JSON)          # list[str] - JSON type works with both PostgreSQL and SQLite
+    decisions = db.Column(db.JSON)        # list[str]
+    risks = db.Column(db.JSON)            # list[str]
     language = db.Column(db.String(8))
     model = db.Column(db.String(64))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
