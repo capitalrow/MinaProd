@@ -67,9 +67,9 @@ class Organization(db.Model):
             'max_storage_gb': self.max_storage_gb,
             'plan_type': self.plan_type,
             'billing_email': self.billing_email,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'settings': self.settings or {}
+            'created_at': self.created_at.isoformat() if self.created_at is not None else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at is not None else None,
+            'settings': self.settings if self.settings is not None else {}
         }
 
 
@@ -126,9 +126,9 @@ class Team(db.Model):
             'max_members': self.max_members,
             'organization_id': self.organization_id,
             'created_by_user_id': self.created_by_user_id,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'settings': self.settings or {}
+            'created_at': self.created_at.isoformat() if self.created_at is not None else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at is not None else None,
+            'settings': self.settings if self.settings is not None else {}
         }
 
 
@@ -189,10 +189,10 @@ class OrganizationMembership(db.Model):
             'is_active': self.is_active,
             'invited_by_user_id': self.invited_by_user_id,
             'invitation_token': self.invitation_token,
-            'invitation_expires_at': self.invitation_expires_at.isoformat() if self.invitation_expires_at else None,
-            'joined_at': self.joined_at.isoformat() if self.joined_at else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'invitation_expires_at': self.invitation_expires_at.isoformat() if self.invitation_expires_at is not None else None,
+            'joined_at': self.joined_at.isoformat() if self.joined_at is not None else None,
+            'created_at': self.created_at.isoformat() if self.created_at is not None else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at is not None else None
         }
 
 
@@ -252,10 +252,10 @@ class TeamMembership(db.Model):
             'is_active': self.is_active,
             'invited_by_user_id': self.invited_by_user_id,
             'invitation_token': self.invitation_token,
-            'invitation_expires_at': self.invitation_expires_at.isoformat() if self.invitation_expires_at else None,
-            'joined_at': self.joined_at.isoformat() if self.joined_at else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'invitation_expires_at': self.invitation_expires_at.isoformat() if self.invitation_expires_at is not None else None,
+            'joined_at': self.joined_at.isoformat() if self.joined_at is not None else None,
+            'created_at': self.created_at.isoformat() if self.created_at is not None else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at is not None else None
         }
 
 
@@ -281,7 +281,7 @@ class Permission(db.Model):
             'name': self.name,
             'description': self.description,
             'category': self.category,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at is not None else None
         }
 
 
@@ -318,5 +318,5 @@ class RolePermission(db.Model):
             'granted': self.granted,
             'organization_id': self.organization_id,
             'team_id': self.team_id,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at is not None else None
         }
