@@ -84,7 +84,7 @@ class TestWebSocketPersistence:
         # Verify session was created in database
         with app.app_context():
             session = db.session.query(Session).filter_by(
-                external_session_id=session_id
+                external_id=session_id
             ).first()
             
             assert session is not None, "Session should be created in database"
@@ -108,7 +108,7 @@ class TestWebSocketPersistence:
         # Verify session was created
         with app.app_context():
             session = db.session.query(Session).filter_by(
-                external_session_id='test-session-002'
+                external_id='test-session-002'
             ).first()
             
             assert session is not None
@@ -140,7 +140,7 @@ class TestWebSocketPersistence:
         # Verify segments were persisted
         with app.app_context():
             session = db.session.query(Session).filter_by(
-                external_session_id='batch-test-session'
+                external_id='batch-test-session'
             ).first()
             
             assert session is not None
@@ -178,7 +178,7 @@ class TestWebSocketPersistence:
         # Verify segments were persisted by timer
         with app.app_context():
             session = db.session.query(Session).filter_by(
-                external_session_id='timer-test-session'
+                external_id='timer-test-session'
             ).first()
             
             if session:
@@ -218,7 +218,7 @@ class TestWebSocketPersistence:
         # Verify session is completed and segments are flushed
         with app.app_context():
             session = db.session.query(Session).filter_by(
-                external_session_id='end-test-session'
+                external_id='end-test-session'
             ).first()
             
             assert session is not None
@@ -259,7 +259,7 @@ class TestWebSocketPersistence:
         # Verify session metadata
         with app.app_context():
             session = db.session.query(Session).filter_by(
-                external_session_id='metadata-test-session'
+                external_id='metadata-test-session'
             ).first()
             
             if session:
@@ -294,7 +294,7 @@ class TestWebSocketPersistence:
         # Verify data was flushed before cleanup
         with app.app_context():
             session = db.session.query(Session).filter_by(
-                external_session_id='disconnect-test-session'
+                external_id='disconnect-test-session'
             ).first()
             
             if session:
@@ -332,11 +332,11 @@ class TestCrossPersistenceConsistency:
         # Verify both sessions exist independently
         with app.app_context():
             default_session = db.session.query(Session).filter_by(
-                external_session_id='default-ns-session'
+                external_id='default-ns-session'
             ).first()
             
             transcription_session = db.session.query(Session).filter_by(
-                external_session_id='transcription-ns-session'
+                external_id='transcription-ns-session'
             ).first()
             
             assert default_session is not None
