@@ -1,7 +1,7 @@
 """
 Unified Transcription State Persistence Service
 
-Provides crash-safe, 5-second auto-save for both WebSocket handlers.
+Provides crash-safe, 2-second auto-save for both WebSocket handlers (CROWN+ spec).
 Ensures consistent persistence guarantees across default and /transcription namespaces.
 """
 
@@ -21,22 +21,22 @@ logger = logging.getLogger(__name__)
 
 class TranscriptionStatePersister:
     """
-    Thread-safe transcription persistence manager with automatic 5-second flush.
+    Thread-safe transcription persistence manager with automatic 2-second flush (CROWN+ spec).
     
     Features:
     - Per-session segment buffering with batch commits
-    - Automatic 5-second flush cadence
+    - Automatic 2-second flush cadence (CROWN+ requirement)
     - Session metadata updates (duration, last_activity, transcript snapshot)
     - Crash-safe with force flush on disconnect
     - Thread-safe with Flask app context handling
     """
     
-    def __init__(self, flush_interval_seconds: int = 5, batch_size: int = 5):
+    def __init__(self, flush_interval_seconds: int = 2, batch_size: int = 5):
         """
         Initialize persistence manager.
         
         Args:
-            flush_interval_seconds: How often to auto-flush (default: 5)
+            flush_interval_seconds: How often to auto-flush (default: 2 per CROWN+ spec)
             batch_size: Min segments to trigger immediate flush (default: 5)
         """
         self.flush_interval = flush_interval_seconds

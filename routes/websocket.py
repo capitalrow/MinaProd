@@ -25,8 +25,14 @@ from services.multi_speaker_diarization import MultiSpeakerDiarization
 from services.ai_insights_service import AIInsightsService
 from services.background_tasks import BackgroundTaskManager
 
-# Import unified persistence service (5-second auto-save)
+# Import unified persistence service (2-second auto-save per CROWN+ spec)
 from services.transcription_persistence import get_persister
+
+# Import event tracking for CROWN+ specification compliance
+from services.event_tracking import get_event_tracker
+
+# Import disconnect handler for event chain enforcement
+from routes.websocket_disconnect import register_connection
 
 logger = logging.getLogger(__name__)
 ws_bp = Blueprint("ws", __name__)
@@ -35,8 +41,11 @@ ws_bp = Blueprint("ws", __name__)
 _ai_insights_service = AIInsightsService()
 _background_tasks = BackgroundTaskManager(num_workers=2)
 
-# Get global persister instance (5-second auto-flush)
+# Get global persister instance (2-second auto-flush per CROWN+ spec)
 _persister = get_persister()
+
+# Get global event tracker for CROWN+ event chain logging
+_event_tracker = get_event_tracker()
 
 # Per-session state (dev-grade, in-memory for audio buffering)
 _BUFFERS: Dict[str, bytearray] = defaultdict(bytearray)
@@ -48,8 +57,8 @@ _SPEAKER_ENGINES: Dict[str, SpeakerDiarizationEngine] = {}
 _MULTI_SPEAKER_SYSTEMS: Dict[str, MultiSpeakerDiarization] = {}
 _SESSION_SPEAKERS: Dict[str, Dict[str, Dict]] = defaultdict(dict)  # session_id -> speaker_id -> speaker_info
 
-# Tunables
-_MIN_MS_BETWEEN_INTERIM = 400.0      # Real-time feel: ~400ms cadence  
+# Tunables (CROWN+ spec: sub-300ms UI feedback)
+_MIN_MS_BETWEEN_INTERIM = 150.0      # CROWN+ spec: 150ms for sub-300ms total latency  
 _MAX_INTERIM_WINDOW_SEC = 14.0       # last N seconds for interim context (optional)
 _MAX_B64_SIZE = 1024 * 1024 * 6      # 6MB guard
 
@@ -269,7 +278,19 @@ def on_join_session(data):
             db.session.commit()
             logger.info(f"[ws] Created Session (external_id={session_id}) with user_id={user_id}, workspace_id={workspace_id}, meeting_id={meeting_id}")
             
-            # Start unified persistence tracking (5-second auto-flush)
+            # CROWN+ Event Chain: Log record_start event
+            trace_id = _event_tracker.record_start(
+                session=session,
+                metadata={
+                    'user_id': user_id,
+                    'workspace_id': workspace_id,
+                    'meeting_id': meeting_id,
+                    'session_title': session_title
+                }
+            )
+            logger.info(f"📊 CROWN+ EVENT: record_start [trace_id={trace_id}]")
+            
+            # Start unified persistence tracking (2-second auto-flush per CROWN+ spec)
             _persister.start_session(
                 session_id=session_id,
                 db_session_id=session.id,
@@ -323,6 +344,10 @@ def on_join_session(data):
     except Exception as e:
         logger.warning(f"⚠️ Speaker diarization initialization failed: {e}")
     
+    # CROWN+ Event Chain: Register connection for disconnect tracking
+    from flask import request
+    register_connection(session_id, request.sid)
+    
     emit("server_hello", {"msg": "connected", "t": int(_now_ms())})
     logger.info(f"[ws] join_session {session_id}")
 
@@ -365,6 +390,26 @@ def on_audio_chunk(data):
 
     # Append to full buffer for the eventual final pass
     _BUFFERS[session_id].extend(chunk)
+    
+    # CROWN+ Event Chain: Log audio_chunk event (CRITICAL - zero tolerance)
+    start_time = _now_ms()
+    try:
+        session = db.session.query(Session).filter_by(external_id=session_id).first()
+        if not session:
+            logger.error(f"🚨 CROWN+ VIOLATION: Session not found for audio_chunk (session_id={session_id})")
+            emit("error", {"message": "Session not found - cannot log audio_chunk", "critical": True})
+            return
+        
+        _event_tracker.audio_chunk(
+            session=session,
+            chunk_size=len(chunk),
+            chunk_index=len(_BUFFERS[session_id]) // len(chunk) if len(chunk) > 0 else 0,
+            start_time_ms=start_time
+        )
+    except Exception as e:
+        logger.error(f"🚨 CROWN+ VIOLATION: Failed to log audio_chunk event - event chain broken: {e}")
+        emit("error", {"message": "Critical event logging failure", "critical": True})
+        return
 
     # Only process if we have meaningful audio data (> 200 bytes for real-time feel)
     if len(chunk) < 200:
@@ -436,6 +481,22 @@ def on_audio_chunk(data):
     if text and text != _LAST_INTERIM_TEXT.get(session_id, ""):
         _LAST_INTERIM_TEXT[session_id] = text
         
+        # CROWN+ Event Chain: Log transcript_partial event (CRITICAL - zero tolerance)
+        try:
+            session = db.session.query(Session).filter_by(external_id=session_id).first()
+            if not session:
+                logger.error(f"🚨 CROWN+ VIOLATION: Session not found for transcript_partial (session_id={session_id})")
+                # Don't return - still emit interim result to user, but log violation
+            else:
+                _event_tracker.transcript_partial(
+                    session=session,
+                    text=text,
+                    confidence=0.8,
+                    start_time_ms=start_time
+                )
+        except Exception as e:
+            logger.error(f"🚨 CROWN+ VIOLATION: Failed to log transcript_partial event: {e}")
+        
         # Emit enhanced transcription_result with speaker information
         result = {
             "text": text,
@@ -484,9 +545,15 @@ def on_finalize(data):
     final_text = (final_text or "").strip()
     
     # Save final segment and update Session/Meeting status
+    finalize_start_time = _now_ms()
     try:
         session = db.session.query(Session).filter_by(external_id=session_id).first()
         if session:
+            # CROWN+ Event Chain: Log record_stop event
+            _event_tracker.record_stop(
+                session=session,
+                final_duration_ms=int(len(full_audio) / 16000 * 1000)
+            )
             # Enqueue final segment if we have transcribed text
             if final_text:
                 segment_data = {
@@ -512,6 +579,23 @@ def on_finalize(data):
             # End persistence tracking (flushes final segment + marks session complete)
             _persister.end_session(session_id)
             logger.info(f"[ws] Finalized session {session_id}: has_text={bool(final_text)}")
+            
+            # CROWN+ Event Chain: Log transcript_final event
+            total_segments = len(final_text.split('.')) if final_text else 0
+            total_words = len(final_text.split()) if final_text else 0
+            _event_tracker.transcript_final(
+                session=session,
+                total_segments=total_segments,
+                total_words=total_words,
+                avg_confidence=0.9
+            )
+            
+            # CROWN+ Event Chain: Log session_finalized event
+            _event_tracker.session_finalized(
+                session=session,
+                start_time_ms=finalize_start_time
+            )
+            logger.info(f"📊 CROWN+ EVENT CHAIN COMPLETE for session {session_id}")
             
             # Trigger AI insights generation as background task (non-blocking)
             if final_text and session:
