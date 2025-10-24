@@ -25,12 +25,18 @@ from services.multi_speaker_diarization import MultiSpeakerDiarization
 from services.ai_insights_service import AIInsightsService
 from services.background_tasks import BackgroundTaskManager
 
+# Import unified persistence service (5-second auto-save)
+from services.transcription_persistence import get_persister
+
 logger = logging.getLogger(__name__)
 ws_bp = Blueprint("ws", __name__)
 
 # Initialize AI insights service and background task manager
 _ai_insights_service = AIInsightsService()
 _background_tasks = BackgroundTaskManager(num_workers=2)
+
+# Get global persister instance (5-second auto-flush)
+_persister = get_persister()
 
 # Per-session state (dev-grade, in-memory for audio buffering)
 _BUFFERS: Dict[str, bytearray] = defaultdict(bytearray)
@@ -262,8 +268,29 @@ def on_join_session(data):
             db.session.add(session)
             db.session.commit()
             logger.info(f"[ws] Created Session (external_id={session_id}) with user_id={user_id}, workspace_id={workspace_id}, meeting_id={meeting_id}")
+            
+            # Start unified persistence tracking (5-second auto-flush)
+            _persister.start_session(
+                session_id=session_id,
+                db_session_id=session.id,
+                metadata={
+                    'user_id': user_id,
+                    'workspace_id': workspace_id,
+                    'meeting_id': meeting_id
+                }
+            )
         else:
             logger.info(f"[ws] Using existing session: {session_id}")
+            # Start persistence tracking for existing session
+            _persister.start_session(
+                session_id=session_id,
+                db_session_id=session.id,
+                metadata={
+                    'user_id': session.user_id,
+                    'workspace_id': session.workspace_id,
+                    'meeting_id': session.meeting_id
+                }
+            )
     except Exception as e:
         logger.error(f"[ws] Database error creating session/meeting: {e}")
         db.session.rollback()
@@ -460,23 +487,18 @@ def on_finalize(data):
     try:
         session = db.session.query(Session).filter_by(external_id=session_id).first()
         if session:
-            # Only save segment if we have transcribed text
+            # Enqueue final segment if we have transcribed text
             if final_text:
-                segment = Segment(
-                    session_id=session.id,
-                    text=final_text,
-                    kind="final",
-                    start_ms=0,  # Could be calculated from audio duration
-                    end_ms=int(len(full_audio) / 16000 * 1000),  # Convert to milliseconds
-                    avg_confidence=0.9  # Correct field name
-                )
-                db.session.add(segment)
-                session.total_segments = 1
-            
-            # Always update session status (even if transcript is empty)
-            session.status = "completed"
-            session.completed_at = datetime.utcnow()
-            session.total_duration = len(full_audio) / 16000 if full_audio else 0
+                segment_data = {
+                    'kind': 'final',
+                    'text': final_text,
+                    'avg_confidence': 0.9,
+                    'start_ms': 0,
+                    'end_ms': int(len(full_audio) / 16000 * 1000),
+                    'created_at': datetime.utcnow()
+                }
+                _persister.enqueue_segment(session_id, segment_data)
+                logger.info(f"[ws] Enqueued final segment for session {session_id}")
             
             # Update associated Meeting status if it exists
             if session.meeting_id:
@@ -484,10 +506,12 @@ def on_finalize(data):
                 if meeting:
                     meeting.status = "completed"
                     meeting.actual_end = datetime.utcnow()
+                    db.session.commit()
                     logger.info(f"[ws] Updated Meeting (id={meeting.id}) status to completed, duration={meeting.duration_minutes} minutes")
             
-            db.session.commit()
-            logger.info(f"[ws] Finalized session {session_id}: status=completed, has_text={bool(final_text)}")
+            # End persistence tracking (flushes final segment + marks session complete)
+            _persister.end_session(session_id)
+            logger.info(f"[ws] Finalized session {session_id}: has_text={bool(final_text)}")
             
             # Trigger AI insights generation as background task (non-blocking)
             if final_text and session:
