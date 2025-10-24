@@ -67,6 +67,7 @@ def on_join_session(data):
             # Get authenticated user and their default workspace
             user_id = None
             workspace_id = None
+            meeting_id = None
             
             if current_user and current_user.is_authenticated:
                 user_id = current_user.id
@@ -75,31 +76,40 @@ def on_join_session(data):
                     workspace_id = current_user.workspaces[0].id
                     logger.info(f"[ws] Using authenticated user {user_id} with workspace {workspace_id}")
             
-            # Create Meeting record first
-            meeting = Meeting(
-                title=f"Live Recording - {datetime.utcnow().strftime('%b %d, %Y at %I:%M %p')}",
-                workspace_id=workspace_id,
-                organizer_id=user_id,
-                status="in_progress",
-                meeting_type="live_recording",
-                started_at=datetime.utcnow()
-            )
-            db.session.add(meeting)
-            db.session.flush()  # Get meeting.id before creating session
+            # Only create Meeting record if user is authenticated with a workspace
+            # (Meeting.organizer_id and workspace_id are NOT NULL)
+            if user_id and workspace_id:
+                meeting = Meeting(
+                    title=f"Live Recording - {datetime.utcnow().strftime('%b %d, %Y at %I:%M %p')}",
+                    workspace_id=workspace_id,
+                    organizer_id=user_id,
+                    status="in_progress",
+                    meeting_type="live_recording",
+                    actual_start=datetime.utcnow()
+                )
+                db.session.add(meeting)
+                db.session.flush()  # Get meeting.id before creating session
+                meeting_id = meeting.id
+                session_title = meeting.title
+                logger.info(f"[ws] Created Meeting (id={meeting_id}) for authenticated user")
+            else:
+                # Anonymous session - no Meeting record
+                session_title = "Live Transcription Session"
+                logger.info(f"[ws] Creating anonymous session (no Meeting record)")
             
-            # Create Session linked to Meeting
+            # Create Session (with or without Meeting linkage)
             session = Session(
                 external_id=session_id,
-                title=meeting.title,
+                title=session_title,
                 status="active",
                 started_at=datetime.utcnow(),
                 user_id=user_id,
                 workspace_id=workspace_id,
-                meeting_id=meeting.id
+                meeting_id=meeting_id
             )
             db.session.add(session)
             db.session.commit()
-            logger.info(f"[ws] Created Meeting (id={meeting.id}) and Session (external_id={session_id}) for user_id={user_id}, workspace_id={workspace_id}")
+            logger.info(f"[ws] Created Session (external_id={session_id}) with user_id={user_id}, workspace_id={workspace_id}, meeting_id={meeting_id}")
         else:
             logger.info(f"[ws] Using existing session: {session_id}")
     except Exception as e:
@@ -294,30 +304,41 @@ def on_finalize(data):
 
     final_text = (final_text or "").strip()
     
-    # Save final segment to database
+    # Save final segment and update Session/Meeting status
     try:
         session = db.session.query(Session).filter_by(external_id=session_id).first()
-        if session and final_text:
-            segment = Segment(
-                session_id=session.id,
-                text=final_text,
-                kind="final",
-                start_ms=0,  # Could be calculated from audio duration
-                end_ms=int(len(full_audio) / 16000 * 1000),  # Convert to milliseconds
-                avg_confidence=0.9  # Correct field name
-            )
-            db.session.add(segment)
+        if session:
+            # Only save segment if we have transcribed text
+            if final_text:
+                segment = Segment(
+                    session_id=session.id,
+                    text=final_text,
+                    kind="final",
+                    start_ms=0,  # Could be calculated from audio duration
+                    end_ms=int(len(full_audio) / 16000 * 1000),  # Convert to milliseconds
+                    avg_confidence=0.9  # Correct field name
+                )
+                db.session.add(segment)
+                session.total_segments = 1
             
-            # Update session status
+            # Always update session status (even if transcript is empty)
             session.status = "completed"
             session.completed_at = datetime.utcnow()
-            session.total_segments = 1
-            session.total_duration = len(full_audio) / 16000
+            session.total_duration = len(full_audio) / 16000 if full_audio else 0
+            
+            # Update associated Meeting status if it exists
+            if session.meeting_id:
+                meeting = db.session.query(Meeting).filter_by(id=session.meeting_id).first()
+                if meeting:
+                    meeting.status = "completed"
+                    meeting.actual_end = datetime.utcnow()
+                    logger.info(f"[ws] Updated Meeting (id={meeting.id}) status to completed, duration={meeting.duration_minutes} minutes")
             
             db.session.commit()
-            logger.info(f"[ws] Saved final segment to DB for session: {session_id}")
+            logger.info(f"[ws] Finalized session {session_id}: status=completed, has_text={bool(final_text)}")
     except Exception as e:
-        logger.error(f"[ws] Database error saving segment: {e}")
+        logger.error(f"[ws] Database error finalizing session/meeting: {e}")
+        db.session.rollback()
 
     # Emit transcription_result that frontend expects
     emit("transcription_result", {
