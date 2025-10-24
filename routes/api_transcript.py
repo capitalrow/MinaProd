@@ -333,25 +333,58 @@ def update_segment(meeting_id, segment_id):
     if not segment:
         return jsonify({'success': False, 'message': 'Segment not found'}), 404
     
-    # Get new text from request
+    # Get new text and version from request
     data = request.get_json()
     new_text = data.get('text', '').strip()
+    client_version = data.get('version')  # Client sends current version for conflict detection
     
     if not new_text:
         return jsonify({'success': False, 'message': 'Text is required'}), 400
+    
+    # CROWN+ Version Control: Check for concurrent edit conflicts
+    if client_version is not None and hasattr(segment, 'version'):
+        if segment.version != client_version:
+            return jsonify({
+                'success': False,
+                'conflict': True,
+                'message': f'This segment was edited by another user. Please review their changes.',
+                'current_version': segment.version,
+                'current_text': segment.text,
+                'your_version': client_version,
+                'your_text': new_text
+            }), 409  # 409 Conflict
     
     # Update segment
     old_text = segment.text
     segment.text = new_text
     
-    # Add edit metadata if column exists
+    # CROWN+ Version Control: Increment version on edit
+    if hasattr(segment, 'version'):
+        segment.version += 1
+    
+    # Add edit metadata
     if hasattr(segment, 'edited_at'):
         segment.edited_at = datetime.utcnow()
     if hasattr(segment, 'edited_by_id'):
         segment.edited_by_id = current_user.id
     
     try:
+        # Get session for event tracking
+        session = db.session.query(Session).filter_by(id=segment.session_id).first()
+        
         db.session.commit()
+        
+        # CROWN+ Event Chain: Log edit_commit event
+        if session:
+            from services.event_tracking import get_event_tracker
+            event_tracker = get_event_tracker()
+            event_tracker.edit_commit(
+                session=session,
+                segment_id=segment.id,
+                old_text=old_text,
+                new_text=new_text,
+                user_id=current_user.id
+            )
         
         return jsonify({
             'success': True,
@@ -360,6 +393,7 @@ def update_segment(meeting_id, segment_id):
                 'id': segment.id,
                 'text': segment.text,
                 'old_text': old_text,
+                'version': segment.version if hasattr(segment, 'version') else None,
                 'edited_at': segment.edited_at.isoformat() if hasattr(segment, 'edited_at') and segment.edited_at else None
             }
         })
