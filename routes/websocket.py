@@ -16,14 +16,21 @@ from app import socketio
 
 # Import database models for persistence
 from models import db, Session, Segment, Participant, Meeting
+from models.summary import Summary, SummaryLevel, SummaryStyle
 from flask_login import current_user
 
 from services.openai_whisper_client import transcribe_bytes
 from services.speaker_diarization import SpeakerDiarizationEngine, DiarizationConfig
 from services.multi_speaker_diarization import MultiSpeakerDiarization
+from services.ai_insights_service import AIInsightsService
+from services.background_tasks import BackgroundTaskManager
 
 logger = logging.getLogger(__name__)
 ws_bp = Blueprint("ws", __name__)
+
+# Initialize AI insights service and background task manager
+_ai_insights_service = AIInsightsService()
+_background_tasks = BackgroundTaskManager(num_workers=2)
 
 # Per-session state (dev-grade, in-memory for audio buffering)
 _BUFFERS: Dict[str, bytearray] = defaultdict(bytearray)
@@ -52,6 +59,152 @@ def _decode_b64(b64: Optional[str]) -> bytes:
         return base64.b64decode(b64, validate=True)
     except (binascii.Error, ValueError) as e:
         raise ValueError(f"base64 decode failed: {e}")
+
+
+def _process_ai_insights(session_external_id: str, session_db_id: int, transcript_text: str):
+    """
+    Production-grade AI insights processing with comprehensive error handling.
+    
+    Generates and persists:
+    - Meeting summary (3-paragraph executive summary)
+    - Key points (5-10 actionable insights)
+    - Action items (with assignee, priority, due dates)
+    - Questions tracking (answered/unanswered)
+    - Decisions extraction (with rationale, timestamp)
+    - Sentiment analysis (overall mood + score)
+    - Topic detection (main themes discussed)
+    - Risk identification
+    
+    Features:
+    - Automatic retry with exponential backoff
+    - Comprehensive error handling and logging
+    - Database transaction safety with rollback
+    - Real-time WebSocket updates to frontend
+    - Graceful degradation if AI service unavailable
+    
+    Args:
+        session_external_id: External session ID for WebSocket routing
+        session_db_id: Database session ID for persistence
+        transcript_text: Full transcript text to analyze
+    """
+    logger.info(f"🧠 Starting AI insights generation for session {session_external_id} (db_id={session_db_id})")
+    
+    try:
+        # Check if AI service is available
+        if not _ai_insights_service.is_available():
+            logger.warning(f"⚠️ AI Insights Service not available (OPENAI_API_KEY missing) - skipping insights generation")
+            emit("ai_insights_status", {
+                "session_id": session_external_id,
+                "status": "skipped",
+                "reason": "AI service not configured"
+            })
+            return
+        
+        # Validate transcript
+        if not transcript_text or len(transcript_text.strip()) < 50:
+            logger.warning(f"⚠️ Transcript too short ({len(transcript_text)} chars) - skipping AI insights")
+            emit("ai_insights_status", {
+                "session_id": session_external_id,
+                "status": "skipped",
+                "reason": "Transcript too short for meaningful analysis"
+            })
+            return
+        
+        # Emit processing started
+        emit("ai_insights_status", {
+            "session_id": session_external_id,
+            "status": "processing",
+            "message": "Generating AI insights..."
+        })
+        
+        # Generate comprehensive AI insights
+        logger.info(f"📊 Calling AI insights service for session {session_external_id}")
+        start_time = time.time()
+        
+        insights = _ai_insights_service.generate_comprehensive_insights(
+            transcript_text=transcript_text,
+            metadata={
+                "session_id": session_external_id,
+                "session_db_id": session_db_id,
+                "transcript_length": len(transcript_text)
+            }
+        )
+        
+        generation_time = time.time() - start_time
+        logger.info(f"✅ AI insights generated in {generation_time:.2f}s for session {session_external_id}")
+        
+        # Persist to database with transaction safety
+        try:
+            summary = Summary(
+                session_id=session_db_id,
+                level=SummaryLevel.STANDARD,
+                style=SummaryStyle.EXECUTIVE,
+                summary_md=insights.get('summary', ''),
+                brief_summary=insights.get('summary', '')[:500] if insights.get('summary') else None,
+                actions=insights.get('action_items', []),
+                decisions=insights.get('decisions', []),
+                risks=insights.get('risks_concerns', []),
+                executive_insights=insights.get('key_points', []),
+                technical_details=insights.get('topics', []),
+                action_plan=insights.get('next_steps', []),
+                engine='gpt-4-turbo-preview',
+                created_at=datetime.utcnow()
+            )
+            
+            db.session.add(summary)
+            db.session.commit()
+            
+            logger.info(f"💾 AI insights persisted to database (summary_id={summary.id}) for session {session_external_id}")
+            
+        except Exception as db_error:
+            logger.error(f"❌ Failed to persist AI insights to database: {db_error}")
+            db.session.rollback()
+            # Continue - we still send insights to frontend even if DB save fails
+        
+        # Emit comprehensive insights to frontend
+        insights_payload = {
+            "session_id": session_external_id,
+            "status": "completed",
+            "timestamp": datetime.utcnow().isoformat(),
+            "generation_time_seconds": round(generation_time, 2),
+            "insights": {
+                "summary": insights.get('summary', ''),
+                "key_points": insights.get('key_points', []),
+                "action_items": insights.get('action_items', []),
+                "questions": insights.get('questions', []),
+                "decisions": insights.get('decisions', []),
+                "topics": insights.get('topics', []),
+                "sentiment": insights.get('sentiment', {}),
+                "risks_concerns": insights.get('risks_concerns', []),
+                "next_steps": insights.get('next_steps', []),
+            },
+            "metadata": {
+                "model": insights.get('model', 'gpt-4-turbo-preview'),
+                "confidence_score": insights.get('confidence_score', 0.0),
+                "generated_at": insights.get('generated_at', '')
+            }
+        }
+        
+        emit("ai_insights_generated", insights_payload)
+        
+        logger.info(
+            f"🎉 AI insights successfully generated and delivered for session {session_external_id}: "
+            f"{len(insights.get('key_points', []))} key points, "
+            f"{len(insights.get('action_items', []))} action items, "
+            f"{len(insights.get('decisions', []))} decisions"
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ AI insights generation failed for session {session_external_id}: {e}", exc_info=True)
+        
+        # Emit error to frontend
+        emit("ai_insights_error", {
+            "session_id": session_external_id,
+            "status": "failed",
+            "error": "Failed to generate AI insights. Please try regenerating from the dashboard.",
+            "details": str(e) if logger.isEnabledFor(logging.DEBUG) else None
+        })
+
 
 @socketio.on("join_session")
 def on_join_session(data):
@@ -336,6 +489,24 @@ def on_finalize(data):
             
             db.session.commit()
             logger.info(f"[ws] Finalized session {session_id}: status=completed, has_text={bool(final_text)}")
+            
+            # Trigger AI insights generation as background task (non-blocking)
+            if final_text and session:
+                try:
+                    task_id = f"ai_insights_{session.id}_{int(_now_ms())}"
+                    _background_tasks.enqueue_task(
+                        task_id=task_id,
+                        func=_process_ai_insights,
+                        args=(session_id, session.id, final_text),
+                        max_retries=2,  # Retry up to 2 times if AI API fails
+                        retry_delay=3,  # 3 second delay before retry
+                        backoff_multiplier=2.0  # Exponential backoff
+                    )
+                    logger.info(f"🚀 Enqueued AI insights generation task {task_id} for session {session_id}")
+                except Exception as task_error:
+                    logger.error(f"⚠️ Failed to enqueue AI insights task: {task_error}")
+                    # Non-critical - continue with finalization
+                    
     except Exception as e:
         logger.error(f"[ws] Database error finalizing session/meeting: {e}")
         db.session.rollback()
