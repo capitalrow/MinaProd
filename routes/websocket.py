@@ -498,8 +498,8 @@ def on_finalize(data):
                     
                     task_id = f"ai_insights_{session.id}_{int(_now_ms())}"
                     _background_tasks.submit_task(
-                        task_id=task_id,
-                        func=_process_ai_insights,
+                        task_id,
+                        _process_ai_insights,
                         session_id, session.id, final_text,  # positional args
                         max_retries=2,  # Retry up to 2 times if AI API fails
                         retry_delay=3  # 3 second delay before retry
