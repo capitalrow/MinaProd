@@ -43,20 +43,73 @@ buffer_config = BufferConfig(
 # Background processing worker
 processing_workers = {}
 
+# 🔥 PRODUCTION FIX: Segment buffer for batch commits
+segment_buffers = {}  # session_id -> list of pending segments
+BATCH_COMMIT_SIZE = 5  # Commit every 5 segments to reduce DB load
+BATCH_COMMIT_INTERVAL = 10  # Or commit every 10 seconds
+
+def _safe_commit_segments(session_id: str, force=False):
+    """
+    Thread-safe batch commit of buffered segments.
+    Only commits when batch size reached or force=True.
+    Uses Flask app context for safety.
+    """
+    if session_id not in segment_buffers:
+        return
+    
+    pending = segment_buffers[session_id]
+    
+    # Only commit if we have enough segments or forced
+    if not force and len(pending) < BATCH_COMMIT_SIZE:
+        return
+    
+    if not pending:
+        return
+    
+    try:
+        # Use Flask app context for thread safety
+        from flask import current_app
+        with current_app.app_context():
+            # Add all pending segments
+            for segment_data in pending:
+                segment = Segment(**segment_data)
+                db.session.add(segment)
+            
+            db.session.commit()
+            logger.info(f"💾 [batch-commit] Saved {len(pending)} segments for session {session_id}")
+            
+            # Clear buffer after successful commit
+            segment_buffers[session_id] = []
+            
+    except Exception as e:
+        logger.error(f"❌ [batch-commit] Failed to commit segments: {e}")
+        db.session.rollback()
+        # Keep segments in buffer for retry
+        
 def _background_processor(session_id: str, buffer_manager):
-    """Simple background worker for processing buffered audio chunks"""
+    """Background worker for processing buffered audio chunks and periodic batch commits"""
     logger.info(f"🔧 Started background processor for session {session_id}")
+    
+    last_commit_time = time.time()
     
     try:
         while session_id in active_sessions:
-            time.sleep(1)  # Simple polling interval
-            # Basic background processing - can be enhanced later
+            time.sleep(1)  # Poll every second
+            
+            # Check if it's time for a periodic batch commit
+            current_time = time.time()
+            if current_time - last_commit_time >= BATCH_COMMIT_INTERVAL:
+                _safe_commit_segments(session_id, force=False)  # Commit if threshold met
+                last_commit_time = current_time
+            
             if session_id not in active_sessions:
                 break
                 
     except Exception as e:
         logger.error(f"Background processor error for session {session_id}: {e}")
     finally:
+        # Final commit of any remaining segments
+        _safe_commit_segments(session_id, force=True)
         logger.info(f"🔧 Background processor stopped for session {session_id}")
 
 @socketio.on('connect', namespace='/transcription')
@@ -147,8 +200,12 @@ def on_start_session(data):
             'audio_buffer': bytearray(),
             'webm_header': None,
             'last_process_time': 0,
-            'segment_counter': 0  # Track segments for this session
+            'segment_counter': 0,  # Track segments for this session
+            'session_start_ms': int(time.time() * 1000)  # Track absolute start time
         }
+        
+        # 🔥 Initialize segment buffer for batch commits
+        segment_buffers[session_id] = []
         
         # Start background processing worker for this session
         worker = threading.Thread(
@@ -290,33 +347,48 @@ def on_audio_data(data):
                     result = response.json()
                     text = result.get('final_text', '') or result.get('text', '')
                     if text and text.strip():
-                        # 🔥 SAVE SEGMENT TO DATABASE
+                        # 🔥 PRODUCTION FIX: Buffer segments for batch commit
                         try:
                             is_final = result.get('is_final', True)
                             db_session_id = session_info.get('db_session_id')
                             
                             if db_session_id:
-                                segment = Segment(
-                                    session_id=db_session_id,
-                                    kind="final" if is_final else "interim",
-                                    text=text,
-                                    avg_confidence=result.get('confidence', 0.9),
-                                    start_ms=int(time.time() * 1000),  # Current timestamp
-                                    end_ms=None,  # Will be set on next segment or end
-                                    created_at=datetime.utcnow()
-                                )
-                                db.session.add(segment)
-                                db.session.commit()
+                                # Calculate relative timing from session start
+                                session_start_ms = session_info.get('session_start_ms', 0)
+                                current_ms = int(time.time() * 1000)
+                                relative_start_ms = current_ms - session_start_ms
+                                
+                                # Use processing_time from response if available, otherwise estimate
+                                processing_time = result.get('processing_time', result.get('processing_time_ms', 0))
+                                
+                                # Create segment data dict (don't create object yet for thread safety)
+                                segment_data = {
+                                    'session_id': db_session_id,
+                                    'kind': "final" if is_final else "interim",
+                                    'text': text,
+                                    'avg_confidence': result.get('confidence', 0.9),
+                                    'start_ms': relative_start_ms,
+                                    'end_ms': relative_start_ms + processing_time if processing_time else None,
+                                    'created_at': datetime.utcnow()
+                                }
+                                
+                                # Add to buffer instead of immediate commit
+                                if session_id not in segment_buffers:
+                                    segment_buffers[session_id] = []
+                                segment_buffers[session_id].append(segment_data)
                                 
                                 # Update segment counter
                                 session_info['segment_counter'] = session_info.get('segment_counter', 0) + 1
                                 
-                                logger.info(f"💾 [transcription] Saved segment #{session_info['segment_counter']} to DB (ID: {segment.id}, kind: {segment.kind})")
+                                logger.info(f"📝 [transcription] Buffered segment #{session_info['segment_counter']} (kind: {segment_data['kind']}, buffer size: {len(segment_buffers[session_id])})")
+                                
+                                # Trigger batch commit if threshold reached
+                                if len(segment_buffers[session_id]) >= BATCH_COMMIT_SIZE:
+                                    _safe_commit_segments(session_id, force=True)
                             else:
                                 logger.warning(f"⚠️ [transcription] No db_session_id found, cannot save segment")
-                        except Exception as db_error:
-                            logger.error(f"❌ [transcription] Failed to save segment to database: {db_error}")
-                            db.session.rollback()
+                        except Exception as buffer_error:
+                            logger.error(f"❌ [transcription] Failed to buffer segment: {buffer_error}")
                         
                         # Emit properly formatted transcription result
                         emit('transcription_result', {
@@ -363,25 +435,47 @@ def on_end_session(data=None):
             session_info = active_sessions.pop(session_id, None)
             logger.info(f"[transcription] Ended session: {session_id}")
 
+            # 🔥 PRODUCTION FIX: Commit any remaining buffered segments first
+            logger.info(f"[transcription] Finalizing session {session_id}, committing remaining segments...")
+            _safe_commit_segments(session_id, force=True)
+            
+            # Clean up segment buffer
+            if session_id in segment_buffers:
+                del segment_buffers[session_id]
+            
             # 🔥 MARK SESSION AS COMPLETED IN DATABASE
             try:
                 db_session_id = session_info.get('db_session_id') if session_info else None
                 if db_session_id:
-                    db_session_obj = db.session.query(Session).filter_by(id=db_session_id).first()
-                    if db_session_obj:
-                        db_session_obj.status = "completed"
-                        db_session_obj.completed_at = datetime.utcnow()
-                        
-                        # Update session statistics
-                        segments = db.session.query(Segment).filter_by(session_id=db_session_id, kind="final").all()
-                        db_session_obj.total_segments = len(segments)
-                        if segments:
-                            db_session_obj.average_confidence = sum(s.avg_confidence or 0.0 for s in segments) / len(segments)
-                        
-                        db.session.commit()
-                        logger.info(f"💾 [transcription] Marked session as completed in DB (ID: {db_session_id}, segments: {db_session_obj.total_segments})")
-                    else:
-                        logger.warning(f"⚠️ [transcription] Session not found in database: {db_session_id}")
+                    # Use Flask app context for thread safety
+                    from flask import current_app
+                    with current_app.app_context():
+                        db_session_obj = db.session.query(Session).filter_by(id=db_session_id).first()
+                        if db_session_obj:
+                            db_session_obj.status = "completed"
+                            db_session_obj.completed_at = datetime.utcnow()
+                            
+                            # Update session statistics from ALL segments (final only)
+                            final_segments = db.session.query(Segment).filter_by(
+                                session_id=db_session_id, 
+                                kind="final"
+                            ).all()
+                            
+                            db_session_obj.total_segments = len(final_segments)
+                            
+                            if final_segments:
+                                # Calculate average confidence from final segments
+                                total_confidence = sum(s.avg_confidence or 0.0 for s in final_segments)
+                                db_session_obj.average_confidence = total_confidence / len(final_segments)
+                                
+                                # Calculate total duration from segment timings
+                                if final_segments[-1].end_ms and final_segments[0].start_ms:
+                                    db_session_obj.total_duration = (final_segments[-1].end_ms - final_segments[0].start_ms) / 1000.0  # Convert to seconds
+                            
+                            db.session.commit()
+                            logger.info(f"💾 [transcription] Session completed in DB (ID: {db_session_id}, final_segments: {db_session_obj.total_segments}, avg_conf: {db_session_obj.average_confidence:.2f if db_session_obj.average_confidence else 0})")
+                        else:
+                            logger.warning(f"⚠️ [transcription] Session not found in database: {db_session_id}")
                 else:
                     logger.warning(f"⚠️ [transcription] No db_session_id found for session: {session_id}")
             except Exception as db_error:
