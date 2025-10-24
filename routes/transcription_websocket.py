@@ -168,16 +168,68 @@ def on_start_session(data):
     """Start a new transcription session"""
     try:
         session_id = str(uuid.uuid4())
+        meeting_title = data.get('title', f"Live Recording - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
         
-        # 🔥 CREATE DATABASE SESSION RECORD
+        # 🔥 CRITICAL FIX: Create Meeting record first for dashboard visibility
+        workspace_id = None
+        if current_user.is_authenticated:
+            # Get or create workspace for user
+            if hasattr(current_user, 'workspace_id') and current_user.workspace_id:
+                workspace_id = current_user.workspace_id
+            else:
+                # Create default workspace if missing
+                from models import Workspace
+                try:
+                    workspace_name = f"{current_user.first_name}'s Workspace" if hasattr(current_user, 'first_name') and current_user.first_name else f"{current_user.username}'s Workspace"
+                    workspace = Workspace(
+                        name=workspace_name,
+                        slug=Workspace.generate_slug(workspace_name),
+                        owner_id=current_user.id
+                    )
+                    db.session.add(workspace)
+                    db.session.flush()
+                    workspace_id = workspace.id
+                    current_user.workspace_id = workspace_id
+                    logger.info(f"✅ [transcription] Created default workspace for user {current_user.id}")
+                except Exception as e:
+                    logger.error(f"❌ [transcription] Failed to create workspace: {e}")
+                    db.session.rollback()
+        
+        # Create Meeting record (required for dashboard)
+        from models import Meeting
+        meeting = None
+        if current_user.is_authenticated and workspace_id:
+            try:
+                meeting = Meeting(
+                    title=meeting_title,
+                    description=data.get('description', 'Live transcription recording'),
+                    meeting_type='general',
+                    status='live',
+                    actual_start=datetime.utcnow(),
+                    organizer_id=current_user.id,
+                    workspace_id=workspace_id,
+                    recording_enabled=True,
+                    transcription_enabled=True,
+                    ai_insights_enabled=data.get('ai_insights', True)
+                )
+                db.session.add(meeting)
+                db.session.flush()  # Get meeting.id
+                logger.info(f"✅ [transcription] Created Meeting record: {meeting_title} (ID: {meeting.id})")
+            except Exception as e:
+                logger.error(f"❌ [transcription] Failed to create Meeting: {e}")
+                db.session.rollback()
+                meeting = None
+        
+        # 🔥 CREATE DATABASE SESSION RECORD (linked to Meeting)
         db_session = Session(
             external_id=session_id,
-            title=data.get('title', f"Live Recording - {datetime.now().strftime('%Y-%m-%d %H:%M')}"),
+            title=meeting_title,
             status="active",
             locale=data.get('language', 'en'),
             started_at=datetime.utcnow(),
             user_id=current_user.id if current_user.is_authenticated else None,
-            workspace_id=current_user.default_workspace_id if (current_user.is_authenticated and hasattr(current_user, 'default_workspace_id')) else None,
+            workspace_id=workspace_id,
+            meeting_id=meeting.id if meeting else None,  # 🔥 Link to Meeting
             meta={
                 'client_sid': request.sid,
                 'enhance_audio': data.get('enhance_audio', True)
@@ -185,7 +237,7 @@ def on_start_session(data):
         )
         db.session.add(db_session)
         db.session.commit()
-        logger.info(f"✅ [transcription] Created database Session record: {session_id} (DB ID: {db_session.id})")
+        logger.info(f"✅ [transcription] Created Session record: {session_id} (DB ID: {db_session.id}, Meeting ID: {db_session.meeting_id})")
         
         # Store session info with advanced buffer manager
         buffer_manager = buffer_registry.get_or_create_session(session_id)
@@ -443,7 +495,7 @@ def on_end_session(data=None):
             if session_id in segment_buffers:
                 del segment_buffers[session_id]
             
-            # 🔥 MARK SESSION AS COMPLETED IN DATABASE
+            # 🔥 MARK SESSION AND MEETING AS COMPLETED IN DATABASE
             try:
                 db_session_id = session_info.get('db_session_id') if session_info else None
                 if db_session_id:
@@ -471,6 +523,21 @@ def on_end_session(data=None):
                                 # Calculate total duration from segment timings
                                 if final_segments[-1].end_ms and final_segments[0].start_ms:
                                     db_session_obj.total_duration = (final_segments[-1].end_ms - final_segments[0].start_ms) / 1000.0  # Convert to seconds
+                            
+                            # 🔥 CRITICAL FIX: Update linked Meeting record for dashboard visibility
+                            if db_session_obj.meeting_id:
+                                from models import Meeting
+                                meeting = db.session.query(Meeting).filter_by(id=db_session_obj.meeting_id).first()
+                                if meeting:
+                                    meeting.status = "completed"
+                                    meeting.actual_end = datetime.utcnow()
+                                    
+                                    # Calculate duration for logging
+                                    duration_seconds = 0
+                                    if meeting.actual_start and meeting.actual_end:
+                                        duration_seconds = (meeting.actual_end - meeting.actual_start).total_seconds()
+                                    
+                                    logger.info(f"✅ [transcription] Updated Meeting record (ID: {meeting.id}) - status: completed, duration: {duration_seconds:.0f}s, segments: {db_session_obj.total_segments}")
                             
                             db.session.commit()
                             logger.info(f"💾 [transcription] Session completed in DB (ID: {db_session_id}, final_segments: {db_session_obj.total_segments}, avg_conf: {db_session_obj.average_confidence:.2f if db_session_obj.average_confidence else 0})")
