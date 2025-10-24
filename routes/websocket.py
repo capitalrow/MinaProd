@@ -135,21 +135,20 @@ def _process_ai_insights(session_external_id: str, session_db_id: int, transcrip
         
         # Persist to database with transaction safety
         try:
-            summary = Summary(
-                session_id=session_db_id,
-                level=SummaryLevel.STANDARD,
-                style=SummaryStyle.EXECUTIVE,
-                summary_md=insights.get('summary', ''),
-                brief_summary=insights.get('summary', '')[:500] if insights.get('summary') else None,
-                actions=insights.get('action_items', []),
-                decisions=insights.get('decisions', []),
-                risks=insights.get('risks_concerns', []),
-                executive_insights=insights.get('key_points', []),
-                technical_details=insights.get('topics', []),
-                action_plan=insights.get('next_steps', []),
-                engine='gpt-4-turbo-preview',
-                created_at=datetime.utcnow()
-            )
+            summary = Summary()
+            summary.session_id = session_db_id
+            summary.level = SummaryLevel.STANDARD
+            summary.style = SummaryStyle.EXECUTIVE
+            summary.summary_md = insights.get('summary', '')
+            summary.brief_summary = insights.get('summary', '')[:500] if insights.get('summary') else None
+            summary.actions = insights.get('action_items', [])
+            summary.decisions = insights.get('decisions', [])
+            summary.risks = insights.get('risks_concerns', [])
+            summary.executive_insights = insights.get('key_points', [])
+            summary.technical_details = insights.get('topics', [])
+            summary.action_plan = insights.get('next_steps', [])
+            summary.engine = 'gpt-4-turbo-preview'
+            summary.created_at = datetime.utcnow()
             
             db.session.add(summary)
             db.session.commit()
@@ -493,14 +492,17 @@ def on_finalize(data):
             # Trigger AI insights generation as background task (non-blocking)
             if final_text and session:
                 try:
+                    # Start background task manager if not already running
+                    if not _background_tasks.running:
+                        _background_tasks.start()
+                    
                     task_id = f"ai_insights_{session.id}_{int(_now_ms())}"
-                    _background_tasks.enqueue_task(
+                    _background_tasks.submit_task(
                         task_id=task_id,
                         func=_process_ai_insights,
-                        args=(session_id, session.id, final_text),
+                        session_id, session.id, final_text,  # positional args
                         max_retries=2,  # Retry up to 2 times if AI API fails
-                        retry_delay=3,  # 3 second delay before retry
-                        backoff_multiplier=2.0  # Exponential backoff
+                        retry_delay=3  # 3 second delay before retry
                     )
                     logger.info(f"🚀 Enqueued AI insights generation task {task_id} for session {session_id}")
                 except Exception as task_error:
