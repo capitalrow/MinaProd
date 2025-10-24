@@ -1,10 +1,8 @@
-# extensions.py
-from flask_socketio import SocketIO
+"""
+Flask extensions and shared instances.
+Provides centralized access to database and other extensions.
+"""
 
-# Threading works on Replit + polling
-socketio = SocketIO(
-    cors_allowed_origins="*",
-    async_mode="threading",
-    ping_timeout=60,
-    ping_interval=25,
-)
+from models import db
+
+__all__ = ['db']

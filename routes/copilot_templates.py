@@ -8,6 +8,7 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 from models import db, CopilotTemplate
+from app import db as app_db
 
 logger = logging.getLogger(__name__)
 
@@ -81,138 +82,83 @@ SYSTEM_TEMPLATES = [
 @copilot_templates_bp.route('/', methods=['GET'])
 @login_required
 def get_templates():
-    """
-    Get all templates (system + user-defined) for current user.
-    """
+    """List all AI Copilot templates (built-in quick actions + user-defined)."""
     try:
-        category = request.args.get('category')
-        favorites_only = request.args.get('favorites') == 'true'
-        
-        # Get user templates
-        query = CopilotTemplate.query.filter(
-            (CopilotTemplate.user_id == current_user.id) | (CopilotTemplate.is_system == True)
-        )
-        
-        if category:
-            query = query.filter_by(category=category)
-        
-        if favorites_only:
-            query = query.filter_by(is_favorite=True)
-        
-        templates = query.order_by(
-            CopilotTemplate.is_system.desc(),
-            CopilotTemplate.usage_count.desc()
-        ).all()
-        
-        return jsonify({
-            'templates': [t.to_dict() for t in templates],
-            'categories': ['general', 'meetings', 'tasks', 'analysis', 'email']
-        }), 200
-        
+        # Built-in quick action templates (defaults)
+        default_templates = [
+            {"id": None, "user_id": None, "title": "Summarize Meeting", 
+             "prompt": "Provide a concise summary of the meeting."},
+            {"id": None, "user_id": None, "title": "Extract Action Items", 
+             "prompt": "List all action items with owners and due dates from the meeting."},
+            {"id": None, "user_id": None, "title": "Draft Follow-up Email", 
+             "prompt": "Draft a follow-up email to participants summarizing key points and next steps."}
+        ]
+        # Fetch user-defined templates from DB (order newest first)
+        templates = CopilotTemplate.query.order_by(CopilotTemplate.created_at.desc()).all()
+        user_templates = [t.to_dict() for t in templates]
+        return jsonify({"success": True, "templates": default_templates + user_templates}), 200
     except Exception as e:
-        logger.error(f"Error fetching templates: {e}")
-        return jsonify({'error': 'Failed to fetch templates'}), 500
-
+        logger.error(f"Error listing Copilot templates: {e}")
+        return jsonify({"success": False, "error": "Failed to list templates"}), 500
+        
 
 @copilot_templates_bp.route('/', methods=['POST'])
 @login_required
 def create_template():
-    """
-    Create a new user-defined template.
-    """
+    """Create a new custom Copilot prompt template."""
+    data = request.get_json(force=True)
+    if not data or 'title' not in data or 'prompt' not in data:
+        return jsonify({"success": False, "error": "Title and prompt are required"}), 400
+    title = data['title']; prompt_text = data['prompt']; user_id = data.get('user_id')
     try:
-        data = request.get_json()
-        
-        if not data.get('name') or not data.get('prompt'):
-            return jsonify({'error': 'Name and prompt are required'}), 400
-        
-        template = CopilotTemplate(
-            name=data['name'],
-            description=data.get('description'),
-            prompt=data['prompt'],
-            category=data.get('category', 'general'),
-            icon=data.get('icon'),
-            user_id=current_user.id,
-            is_system=False
-        )
-        
-        db.session.add(template)
-        db.session.commit()
-        
-        logger.info(f"User {current_user.id} created template: {template.name}")
-        return jsonify(template.to_dict()), 201
-        
+        new_template = CopilotTemplate(title=title, prompt=prompt_text, user_id=user_id)
+        db.session.add(new_template); db.session.commit()
+        logger.info(f"Created new Copilot template '{title}' (id={new_template.id})")
+        return jsonify({"success": True, "template": new_template.to_dict()}), 201
     except Exception as e:
+        logger.error(f"Error creating Copilot template: {e}")
         db.session.rollback()
-        logger.error(f"Error creating template: {e}")
-        return jsonify({'error': 'Failed to create template'}), 500
-
+        return jsonify({"success": False, "error": "Failed to create template"}), 500
+        
 
 @copilot_templates_bp.route('/<int:template_id>', methods=['PUT'])
 @login_required
 def update_template(template_id):
-    """
-    Update an existing user template.
-    """
+    """Update an existing custom Copilot template (title and/or prompt)."""
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"success": False, "error": "No update data provided"}), 400
     try:
-        template = CopilotTemplate.query.filter_by(
-            id=template_id,
-            user_id=current_user.id
-        ).first()
-        
+        template = CopilotTemplate.query.get(template_id)
         if not template:
-            return jsonify({'error': 'Template not found or not owned by user'}), 404
-        
-        data = request.get_json()
-        
-        if 'name' in data:
-            template.name = data['name']
-        if 'description' in data:
-            template.description = data['description']
-        if 'prompt' in data:
-            template.prompt = data['prompt']
-        if 'category' in data:
-            template.category = data['category']
-        if 'icon' in data:
-            template.icon = data['icon']
-        if 'is_favorite' in data:
-            template.is_favorite = data['is_favorite']
-        
-        template.updated_at = datetime.utcnow()
+            return jsonify({"success": False, "error": "Template not found"}), 404
+        if 'title' in data: template.title = data['title']
+        if 'prompt' in data: template.prompt = data['prompt']
         db.session.commit()
-        
-        return jsonify(template.to_dict()), 200
-        
+        logger.info(f"Updated Copilot template id={template_id}")
+        return jsonify({"success": True, "template": template.to_dict()}), 200
     except Exception as e:
+        logger.error(f"Error updating Copilot template {template_id}: {e}")
         db.session.rollback()
-        logger.error(f"Error updating template: {e}")
-        return jsonify({'error': 'Failed to update template'}), 500
-
+        return jsonify({"success": False, "error": "Failed to update template"}), 500
+        
 
 @copilot_templates_bp.route('/<int:template_id>', methods=['DELETE'])
 @login_required
 def delete_template(template_id):
-    """
-    Delete a user template.
-    """
+    """Delete a custom Copilot template."""
     try:
-        template = CopilotTemplate.query.filter_by(
-            id=template_id,
-            user_id=current_user.id
-        ).first()
-        
+        template = CopilotTemplate.query.get(template_id)
         if not template:
-            return jsonify({'error': 'Template not found or not owned by user'}), 404
-        
-        db.session.delete(template)
-        db.session.commit()
-        
-        return jsonify({'message': 'Template deleted successfully'}), 200
-        
+            return jsonify({"success": False, "error": "Template not found"}), 404
+        db.session.delete(template); db.session.commit()
+        logger.info(f"Deleted Copilot template id={template_id}")
+        return jsonify({"success": True, "message": "Template deleted"}), 200
     except Exception as e:
+        logger.error(f"Error deleting Copilot template {template_id}: {e}")
         db.session.rollback()
-        logger.error(f"Error deleting template: {e}")
-        return jsonify({'error': 'Failed to delete template'}), 500
+        return jsonify({"success": False, "error": "Failed to delete template"}), 500
+
 
 
 @copilot_templates_bp.route('/<int:template_id>/use', methods=['POST'])

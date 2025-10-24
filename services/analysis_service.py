@@ -17,6 +17,9 @@ from app import db
 from models.session import Session
 from models.segment import Segment
 from models.summary import Summary, SummaryLevel, SummaryStyle
+from server.models.memory_store import MemoryStore
+memory = MemoryStore()
+import inspect
 
 logger = logging.getLogger(__name__)
 
@@ -188,7 +191,22 @@ class AnalysisService:
             ValueError: If session not found or no segments available
         """
         logger.info(f"Generating summary for session {session_id}")
-        
+
+        # --- Memory-aware context (NEW) ---
+        try:
+            memory_context = ""
+            related_memories = memory.search_memory(f"session_{session_id}", top_k=10)
+            if related_memories:
+                joined = "\n".join([m["content"] for m in related_memories])
+                memory_context = f"\n\nPreviously recalled notes:\n{joined}\n\n"
+                logger.info(f"Added {len(related_memories)} related memories to context.")
+            else:
+                logger.info("No related memories found for this session.")
+        except Exception as e:
+            logger.warning(f"Memory retrieval skipped: {e}")
+            memory_context = ""
+        # -----------------------------------
+
         # Load session and segments
         session = db.session.get(Session, session_id)
         if not session:
@@ -217,6 +235,7 @@ class AnalysisService:
         else:
             # Build context string from segments
             context = AnalysisService._build_context(final_segments)
+            
             logger.info(f"Built context with {len(context)} characters for session {session_id}")
             
             # Generate insights using configured engine with level and style
@@ -227,8 +246,63 @@ class AnalysisService:
         
         # Persist summary to database
         summary = AnalysisService._persist_summary(session_id, summary_data, engine, level, style)
-        
+        # Combine transcript with any recalled memory context
+        context = f"{memory_context}{context}"
+
         logger.info(f"Generated summary {summary.id} for session {session_id} using {engine}")
+
+        # --- Store summary + key insights back into memory (NEW) ---
+        try:
+            def _safe(text):
+                return text.strip() if isinstance(text, str) else ""
+
+            # store main summary
+            if summary_data.get("summary_md"):
+                memory.add_memory(session_id, "summary_bot", _safe(summary_data["summary_md"]), source_type="summary")
+
+            # store highlights / actions / decisions for semantic recall
+            for item in summary_data.get("actions", []) or []:
+                memory.add_memory(session_id, "summary_bot", _safe(item.get("text")), source_type="action_item")
+
+            for item in summary_data.get("decisions", []) or []:
+                memory.add_memory(session_id, "summary_bot", _safe(item.get("text")), source_type="decision")
+
+            for item in summary_data.get("risks", []) or []:
+                memory.add_memory(session_id, "summary_bot", _safe(item.get("text")), source_type="risk")
+
+            logger.info("Summary data stored back into MemoryStore successfully.")
+        except Exception as e:
+            logger.warning(f"Could not persist summary to MemoryStore: {e}")
+        # -------------------------------------------------------------
+            # -------------------------------------------------------------
+            # 🔄 Trigger analytics sync if relevant meeting exists
+            try:
+                from models.session import Session
+                from services.analytics_service import AnalyticsService
+                import asyncio, inspect
+
+                session_obj = db.session.get(Session, session_id)
+                meeting = getattr(session_obj, "meeting", None)
+
+                if meeting:
+                    analytics_service = AnalyticsService()
+                    analytics_fn = analytics_service.analyze_meeting
+
+                    # ✅ Handle async vs sync implementations safely
+                    if inspect.iscoroutinefunction(analytics_fn):
+                        asyncio.create_task(analytics_fn(meeting.id))
+                    else:
+                        asyncio.to_thread(analytics_fn, meeting.id)
+
+                    logger.info(f"Triggered analytics sync for meeting {meeting.id} (session {session_id})")
+                else:
+                    logger.info(f"No linked meeting found for session {session_id}, skipping analytics sync.")
+            except Exception as e:
+                logger.warning(f"Failed to trigger analytics after summary: {e}")
+            # -------------------------------------------------------------
+
+        # -------------------------------------------------------------
+
         return summary.to_dict()
     
     @staticmethod

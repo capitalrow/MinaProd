@@ -16,6 +16,24 @@ import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+from server.routes.metrics import metrics_bp
+from server.utils.logger import get_logger
+from server.routes.memory_api import memory_bp
+#from routes.export import export_bp
+#from routes.summary import summary_bp
+#from routes.flags import flags_bp
+#from routes.billing import billing_bp
+#from routes.integrations import integrations_bp
+#from routes.teams import teams_bp
+#from routes.comments import comments_bp
+from server.models.memory_store import MemoryStore
+import openai
+import numpy as np
+import psycopg2
+from flask_migrate import Migrate
+from models import db, Segment, Comment 
+from datetime import datetime
+from services import memory_persistence as mem
 
 # ---------- Config (fallback if config.Config not present)
 try:
@@ -421,19 +439,17 @@ def create_app() -> Flask:
         try:
             from models import db
             from flask_migrate import Migrate
-            
+
             db.init_app(app)
-            
-            # Initialize Flask-Migrate for database migrations
             migrate = Migrate(app, db)
-            
+
             # Create all tables that don't exist yet (development fallback)
-            # Flask-Migrate handles schema changes via migrations
             with app.app_context():
                 db.create_all()
-            app.logger.info("Database connected and initialized (migrations enabled)")
+
+            app.logger.info("✅ Database connected and initialized (migrations enabled)")
         except Exception as e:
-            app.logger.warning(f"Database initialization failed: {e}")
+            app.logger.warning(f"⚠️ Database initialization failed: {e}")
             app.logger.info("Continuing without database persistence")
         
         # Initialize Flask-Login
@@ -605,6 +621,15 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"Failed to register Sharing API routes: {e}")
 
+    # --- Session Finalization API ---
+    try:
+        from routes.api_session_finalize import api_session_finalize_bp
+        app.register_blueprint(api_session_finalize_bp)  # bp already has url_prefix="/api/sessions"
+        csrf.exempt(api_session_finalize_bp)  # POST endpoint; avoid CSRF block from browser fetch
+        app.logger.info("Session Finalization API routes registered")
+    except Exception as e:
+        app.logger.warning(f"Failed to register Session Finalization API: {e}")
+
     # Settings routes
     try:
         from routes.settings import settings_bp
@@ -631,7 +656,74 @@ def create_app() -> Flask:
         app.logger.info("AI Copilot routes registered")
     except Exception as e:
         app.logger.error(f"Failed to register AI Copilot routes: {e}")
+
+    # Register Memory API routes
+    try:
+        from server.routes.memory_api import memory_bp
+        app.register_blueprint(memory_bp, url_prefix="/api")
+        csrf.exempt(memory_bp)
+        app.logger.info("✅ Memory API routes registered (/api/memory)")
+    except Exception as e:
+        app.logger.error(f"❌ Failed to register Memory API routes: {e}")
+
+    # Register Export API routes
+    try:
+        from routes.export import export_bp
+        app.register_blueprint(export_bp, url_prefix="/api")
+        csrf.exempt(export_bp)
+        app.logger.info("✅ Export API routes registered (/api/export)")
+    except Exception as e:
+        app.logger.error(f"❌ Failed to register Export API routes: {e}")
+
     
+    # --- Summary Routes ---
+    try:
+        from routes.summary import summary_bp
+        app.register_blueprint(summary_bp)
+        app.logger.info("Blueprint registered: summary_bp")
+    except Exception as e:
+        app.logger.warning(f"Failed to register summary_bp: {e}")
+        
+    # --- Flags Routes ---
+    try:
+        from routes.flags import flags_bp
+        app.register_blueprint(flags_bp)
+        app.logger.info("Blueprint registered: flags_bp")
+    except Exception as e:
+        app.logger.warning(f"Failed to register flags_bp: {e}")
+        
+    # --- Billing Routes ---
+    try:
+        from routes.billing import billing_bp
+        app.register_blueprint(billing_bp)
+        app.logger.info("Blueprint registered: billing_bp")
+    except Exception as e:
+        app.logger.warning(f"Failed to register billing_bp: {e}")
+        
+    # --- Integrations Routes ---
+    try:
+        from routes.integrations import integrations_bp
+        app.register_blueprint(integrations_bp)
+        app.logger.info("Blueprint registered: integrations_bp")
+    except Exception as e:
+        app.logger.warning(f"Failed to register integrations_bp: {e}")
+        
+    # --- Teams Routes ---
+    try:
+        from routes.teams import teams_bp
+        app.register_blueprint(teams_bp)
+        app.logger.info("Blueprint registered: teams_bp")
+    except Exception as e:
+        app.logger.warning(f"Failed to register teams_bp: {e}")
+        
+    # --- Comments Routes ---
+    try:
+        from routes.comments import comments_bp
+        app.register_blueprint(comments_bp)
+        app.logger.info("Blueprint registered: comments_bp")
+    except Exception as e:
+        app.logger.warning(f"Failed to register comments_bp: {e}")
+        
     # Production Monitoring Dashboard
     try:
         from monitoring_dashboard import monitoring_bp
@@ -639,11 +731,18 @@ def create_app() -> Flask:
         app.logger.info("Production Monitoring Dashboard registered")
     except Exception as e:
         app.logger.error(f"Failed to register Production Monitoring Dashboard: {e}")
-    
+        
     # Operations routes (Sentry testing, performance monitoring)
     try:
         from routes.ops import ops_bp
         app.register_blueprint(ops_bp)
+        app.logger.info("Ops routes registered (Sentry testing, performance monitoring)")
+    except Exception as e:
+        app.logger.error(f"Failed to register ops routes: {e}")
+
+    try:
+        from routes.ui import ui_bp
+        app.register_blueprint(ui_bp)
         app.logger.info("Ops routes registered (Sentry testing, performance monitoring)")
     except Exception as e:
         app.logger.error(f"Failed to register ops routes: {e}")
@@ -667,7 +766,7 @@ def create_app() -> Flask:
     # other blueprints (guarded)
     _optional = [
         ("routes.final_upload", "final_bp", "/api"),
-        ("routes.export", "export_bp", "/api"),
+        #("routes.export", "export_bp", "/api"),
         ("routes.insights", "insights_bp", "/api"),
         ("routes.nudges", "nudges_bp", "/api"),
         ("routes.team_collaboration", "team_bp", "/api"),
@@ -826,6 +925,61 @@ def create_app() -> Flask:
 # WSGI entrypoints
 app = create_app()
 
+@app.route("/api/memory/search", methods=["POST"])
+def search_memory():
+    try:
+        data = request.get_json()
+        query = data.get("query")
+        if not query:
+            return jsonify({"error": "Missing query"}), 400
+
+        # 1. Create embedding for the query
+        embed_response = openai.embeddings.create(
+            input=query,
+            model="text-embedding-3-large"
+        )
+        query_embedding = embed_response.data[0].embedding
+
+        # 2. Run similarity search
+        conn = get_pg_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT id, content,
+                   1 - (embedding <=> %s::vector) AS similarity
+            FROM memory_embeddings
+            ORDER BY similarity DESC
+            LIMIT 5;
+        """, (query_embedding,))
+
+        results = [
+            {"id": r[0], "content": r[1], "similarity": round(r[2], 4)}
+            for r in cur.fetchall()
+        ]
+
+        cur.close()
+        conn.close()
+
+        return jsonify({"results": results, "count": len(results)}), 200
+
+    except Exception as e:
+        print("❌ Error in search_memory:", e)
+        return jsonify({"error": str(e)}), 500
+        
+logger = get_logger()
+logger.info("🚀 Starting Mina backend...")
+
+app.register_blueprint(metrics_bp)
+
+@app.before_request
+def before_request():
+    logger.info(f"Incoming request: {request.method} {request.path}")
+
+@app.after_request
+def after_request(response):
+    logger.info(f"Completed: {request.path} [{response.status_code}]")
+    return response
+
 # graceful shutdown for local/threading runs
 def _shutdown(*_):
     app.logger.info("Shutting down gracefully…")
@@ -833,7 +987,110 @@ def _shutdown(*_):
 signal.signal(signal.SIGTERM, _shutdown)
 signal.signal(signal.SIGINT, _shutdown)
 
+app = create_app()
+
+# Initialize Memory Persistence safely after Flask app context is ready
+with app.app_context():
+    try:
+        mem.init_db()
+        app.logger.info("✅ Memory persistence initialized successfully")
+    except Exception as e:
+        app.logger.error(f"❌ Failed to initialize memory persistence: {e}")
+
+# Register metrics blueprint (keep if not already registered)
+app.register_blueprint(metrics_bp)
+
+@app.route("/api/memory/search", methods=["POST"])
+def search_memory():
+    """
+    Perform semantic similarity search against stored memory embeddings.
+    """
+    try:
+        data = request.get_json(force=True)
+        query = data.get("query")
+        if not query:
+            return jsonify({"error": "Missing query"}), 400
+
+        # Generate embedding for the query using OpenAI’s embedding API
+        embed_response = openai.embeddings.create(
+            input=query,
+            model="text-embedding-3-large"
+        )
+        query_embedding = embed_response.data[0].embedding
+
+        # Use SQLAlchemy for vector similarity search
+        from sqlalchemy import text
+        results = db.session.execute(text("""
+            SELECT id, content,
+                   1 - (embedding <=> :query_embedding::vector) AS similarity
+            FROM memory_embeddings
+            ORDER BY similarity DESC
+            LIMIT 5;
+        """), {"query_embedding": query_embedding}).fetchall()
+
+        formatted = [
+            {"id": r.id, "content": r.content, "similarity": round(r.similarity, 4)}
+            for r in results
+        ]
+        return jsonify({"results": formatted, "count": len(formatted)}), 200
+
+    except Exception as e:
+        app.logger.error(f"❌ Error in /api/memory/search: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+# ============================================
+# Analytics API Endpoint
+# ============================================
+@app.route("/api/v1/analytics/<meeting_id>", methods=["GET"])
+def analytics_api():
+    """
+    Returns aggregated analytics data for the dashboard.
+    Pulls sentiment and impact scores from memory persistence.
+    """
+    try:
+        all_memories = mem.get_memory("M-123")  # placeholder meeting_id
+        sentiment_data = []
+        impact_data = []
+
+        for entry in all_memories:
+            date_str = entry["created_at"].split(" ")[0]
+            sentiment_val = (
+                1 if entry["sentiment"] == "positive"
+                else -1 if entry["sentiment"] == "negative"
+                else 0
+            )
+            sentiment_data.append({"date": date_str, "value": sentiment_val})
+            impact_data.append({"user": entry["user_id"], "score": entry["impact_score"]})
+
+        return jsonify({
+            "sentiment": sentiment_data,
+            "impact": impact_data
+        })
+
+    except Exception as e:
+        print(f"[ERROR] analytics_api failed: {e}")
+        return jsonify({
+            "sentiment": [],
+            "impact": [],
+            "error": str(e)
+        }), 500
+
+
+# Graceful shutdown handlers (keep as-is)
+def _shutdown(*_):
+    app.logger.info("Shutting down gracefully…")
+
+signal.signal(signal.SIGTERM, _shutdown)
+signal.signal(signal.SIGINT, _shutdown)
+
+if __name__ == "__main__":
+    app.logger.info(
+        "🚀 Mina running at http://0.0.0.0:5000 (Socket.IO path %s)",
+        app.config.get("SOCKETIO_PATH", "/socket.io")
+    )
+    socketio.run(app, host="0.0.0.0", port=5000, use_reloader=False, log_output=True)
+
 if __name__ == "__main__":
     app.logger.info("🚀 Mina at http://0.0.0.0:5000  (Socket.IO path %s)", app.config.get("SOCKETIO_PATH", "/socket.io"))
     socketio.run(app, host="0.0.0.0", port=5000, use_reloader=False, log_output=True)
-    
+

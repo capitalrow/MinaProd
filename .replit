@@ -1,3 +1,6 @@
+# ✅ Stable Replit config – confirmed working on 2025-10-22
+# Runs Mina backend + frontend successfully in Preview
+
 modules = ["python-3.11", "postgresql-16", "python3", "nodejs-20"]
 
 [nix]
@@ -6,7 +9,8 @@ packages = ["bc", "cargo", "ffmpeg", "ffmpeg-full", "freetype", "gitFull", "glib
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
+run = ["gunicorn", "-k", "gevent", "--timeout", "120", "--bind", "0.0.0.0:5000", "main:app"]
+
 
 [workflows]
 runButton = "Project"

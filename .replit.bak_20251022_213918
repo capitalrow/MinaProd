@@ -1,0 +1,98 @@
+modules = ["python-3.11", "postgresql-16", "python3", "nodejs-20"]
+
+[nix]
+channel = "stable-25_05"
+packages = ["bc", "cargo", "ffmpeg", "ffmpeg-full", "freetype", "gitFull", "glibcLocales", "gnupg", "iana-etc", "jq", "k6", "libiconv", "libxcrypt", "openssl", "pkg-config", "playwright-driver", "postgresql", "rustc", "xsimd", "psmisc"]
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["gunicorn", "--worker-class", "gevent", "--timeout", "120", "--preload", "--bind", "0.0.0.0:8080", "app:app"]
+
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "gunicorn --worker-class gevent --bind 0.0.0.0:8080 --reuse-port --reload app:app"
+waitForPort = 8080
+
+[agent]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+exposeLocalhost = true
+
+[[ports]]
+localPort = 34567
+externalPort = 3002
+
+[[ports]]
+localPort = 34803
+externalPort = 3001
+
+[[ports]]
+localPort = 34921
+externalPort = 8080
+
+[[ports]]
+localPort = 34955
+externalPort = 5173
+
+[[ports]]
+localPort = 35455
+externalPort = 3000
+
+[[ports]]
+localPort = 36621
+externalPort = 4200
+
+[[ports]]
+localPort = 36841
+externalPort = 5000
+
+[[ports]]
+localPort = 37025
+externalPort = 8099
+
+[[ports]]
+localPort = 37191
+externalPort = 3003
+
+[[ports]]
+localPort = 38017
+externalPort = 9000
+
+[[ports]]
+localPort = 39703
+externalPort = 6000
+
+[[ports]]
+localPort = 42367
+externalPort = 8081
+
+[[ports]]
+localPort = 43641
+externalPort = 6800
+
+[[ports]]
+localPort = 45629
+externalPort = 8008
+
+[[ports]]
+localPort = 46065
+externalPort = 8000

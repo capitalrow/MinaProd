@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Feature Flags – Mina{% endblock %}
+{% block extra_css %}
+<style>
+.flags-workspace{width:clamp(960px,90vw,1440px);margin:0 auto;padding:var(--space-8)var(--space-6);}
+.flags-header{margin-bottom:var(--space-6);animation:fadeInUp .6s ease-out;}
+.flags-title{font-size:var(--font-size-4xl);font-weight:var(--font-weight-bold);
+background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.flags-table{width:100%;border-collapse:collapse;}
+.flags-table th,.flags-table td{padding:var(--space-3);border-bottom:1px solid var(--glass-border);}
+.flags-card{background:var(--glass-bg);backdrop-filter:var(--backdrop-blur);
+border:1px solid var(--glass-border);border-radius:var(--radius-xl);
+padding:var(--space-6);animation:fadeInUp .6s ease-out;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flags-workspace">
+  <div class="flags-header">
+    <h1 class="flags-title">Feature Flags</h1>
+    <p class="text-secondary">Toggle experimental features safely.</p>
+  </div>
+  <div class="flags-card">
+    <table class="flags-table">
+      <thead><tr><th>Key</th><th>Enabled</th><th>Note</th></tr></thead>
+      <tbody id="flagsBody"><tr><td colspan="3" class="text-center text-secondary py-6">(loading...)</td></tr></tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
