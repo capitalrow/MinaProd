@@ -16,6 +16,11 @@ from flask_login import current_user
 # Import the socketio instance from the consolidated app
 from app import socketio
 
+# Import database models
+from models import db
+from models.session import Session
+from models.segment import Segment
+
 # Import advanced buffer management
 from services.session_buffer_manager import buffer_registry, BufferConfig
 # After existing imports
@@ -111,18 +116,38 @@ def on_start_session(data):
     try:
         session_id = str(uuid.uuid4())
         
+        # 🔥 CREATE DATABASE SESSION RECORD
+        db_session = Session(
+            external_id=session_id,
+            title=data.get('title', f"Live Recording - {datetime.now().strftime('%Y-%m-%d %H:%M')}"),
+            status="active",
+            locale=data.get('language', 'en'),
+            started_at=datetime.utcnow(),
+            user_id=current_user.id if current_user.is_authenticated else None,
+            workspace_id=current_user.default_workspace_id if (current_user.is_authenticated and hasattr(current_user, 'default_workspace_id')) else None,
+            meta={
+                'client_sid': request.sid,
+                'enhance_audio': data.get('enhance_audio', True)
+            }
+        )
+        db.session.add(db_session)
+        db.session.commit()
+        logger.info(f"✅ [transcription] Created database Session record: {session_id} (DB ID: {db_session.id})")
+        
         # Store session info with advanced buffer manager
         buffer_manager = buffer_registry.get_or_create_session(session_id)
         
         active_sessions[session_id] = {
             'client_sid': request.sid,
+            'db_session_id': db_session.id,  # Store DB ID for later use
             'started_at': datetime.utcnow(),
             'language': data.get('language', 'en'),
             'enhance_audio': data.get('enhance_audio', True),
             'buffer_manager': buffer_manager,
             'audio_buffer': bytearray(),
             'webm_header': None,
-            'last_process_time': 0
+            'last_process_time': 0,
+            'segment_counter': 0  # Track segments for this session
         }
         
         # Start background processing worker for this session
@@ -147,6 +172,7 @@ def on_start_session(data):
         
     except Exception as e:
         logger.error(f"[transcription] Error starting session: {e}")
+        db.session.rollback()  # Rollback on error
         emit('error', {'message': f'Failed to start session: {str(e)}'})
 
 @socketio.on('audio_data', namespace='/transcription')
@@ -264,6 +290,34 @@ def on_audio_data(data):
                     result = response.json()
                     text = result.get('final_text', '') or result.get('text', '')
                     if text and text.strip():
+                        # 🔥 SAVE SEGMENT TO DATABASE
+                        try:
+                            is_final = result.get('is_final', True)
+                            db_session_id = session_info.get('db_session_id')
+                            
+                            if db_session_id:
+                                segment = Segment(
+                                    session_id=db_session_id,
+                                    kind="final" if is_final else "interim",
+                                    text=text,
+                                    avg_confidence=result.get('confidence', 0.9),
+                                    start_ms=int(time.time() * 1000),  # Current timestamp
+                                    end_ms=None,  # Will be set on next segment or end
+                                    created_at=datetime.utcnow()
+                                )
+                                db.session.add(segment)
+                                db.session.commit()
+                                
+                                # Update segment counter
+                                session_info['segment_counter'] = session_info.get('segment_counter', 0) + 1
+                                
+                                logger.info(f"💾 [transcription] Saved segment #{session_info['segment_counter']} to DB (ID: {segment.id}, kind: {segment.kind})")
+                            else:
+                                logger.warning(f"⚠️ [transcription] No db_session_id found, cannot save segment")
+                        except Exception as db_error:
+                            logger.error(f"❌ [transcription] Failed to save segment to database: {db_error}")
+                            db.session.rollback()
+                        
                         # Emit properly formatted transcription result
                         emit('transcription_result', {
                             'text': text,
@@ -309,9 +363,34 @@ def on_end_session(data=None):
             session_info = active_sessions.pop(session_id, None)
             logger.info(f"[transcription] Ended session: {session_id}")
 
+            # 🔥 MARK SESSION AS COMPLETED IN DATABASE
+            try:
+                db_session_id = session_info.get('db_session_id') if session_info else None
+                if db_session_id:
+                    db_session_obj = db.session.query(Session).filter_by(id=db_session_id).first()
+                    if db_session_obj:
+                        db_session_obj.status = "completed"
+                        db_session_obj.completed_at = datetime.utcnow()
+                        
+                        # Update session statistics
+                        segments = db.session.query(Segment).filter_by(session_id=db_session_id, kind="final").all()
+                        db_session_obj.total_segments = len(segments)
+                        if segments:
+                            db_session_obj.average_confidence = sum(s.avg_confidence or 0.0 for s in segments) / len(segments)
+                        
+                        db.session.commit()
+                        logger.info(f"💾 [transcription] Marked session as completed in DB (ID: {db_session_id}, segments: {db_session_obj.total_segments})")
+                    else:
+                        logger.warning(f"⚠️ [transcription] Session not found in database: {db_session_id}")
+                else:
+                    logger.warning(f"⚠️ [transcription] No db_session_id found for session: {session_id}")
+            except Exception as db_error:
+                logger.error(f"❌ [transcription] Failed to update session in database: {db_error}")
+                db.session.rollback()
+
             # 🗂️ Optional: persist final transcript before triggering analysis
             try:
-                buffer_manager = session_info.get("buffer_manager")
+                buffer_manager = session_info.get("buffer_manager") if session_info else None
                 if buffer_manager:
                     final_transcript = buffer_manager.flush_and_finalize(session_id=session_id)
                     logger.info(f"[transcription] Final transcript stored for session {session_id} ({len(final_transcript)} chars)")
@@ -325,7 +404,7 @@ def on_end_session(data=None):
                 asyncio.create_task(
                     AnalysisDispatcher.run_full_analysis(
                         session_id=session_id,
-                        meeting_id=session_info.get("meeting_id", str(uuid.uuid4()))  # fallback if not tracked
+                        meeting_id=session_info.get("meeting_id", str(uuid.uuid4())) if session_info else str(uuid.uuid4())  # fallback if not tracked
                     )
                 )
                 logger.info(f"[analysis] Dispatched background analytics job for session {session_id}")
