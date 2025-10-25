@@ -124,10 +124,11 @@ def get_session_detail(session_identifier):
     if response_format == 'json':
         return jsonify(session_detail)
     
-    # Return HTML template for browser requests  
+    # Return HTML template for browser requests (CROWN+ Tabbed UI)
     return render_template('dashboard/meeting_detail.html',
-                         meeting=session_detail['session'],
-                         segments=session_detail['segments'])
+                         session=session_detail['session'],
+                         segments=session_detail['segments'],
+                         recording_url=session_detail.get('recording_url', ''))
 
 
 @sessions_bp.route('/', methods=['POST'])
@@ -246,3 +247,140 @@ def export_session_markdown(session_id):
         
     except Exception as e:
         return jsonify({'error': f'Failed to export session: {str(e)}'}), 500
+
+
+# ============================================================================
+# CROWN+ Tabbed UI Data Endpoints
+# ============================================================================
+
+@sessions_bp.route('/<session_identifier>/refined', methods=['GET'])
+def get_refined_transcript(session_identifier):
+    """GET /sessions/<id>/refined - Get refined/cleaned transcript"""
+    try:
+        # TODO: Implement refined transcript generation
+        # For now, return empty data
+        return jsonify({
+            'refined_text': None,
+            'status': 'pending',
+            'message': 'Refined transcript processing not yet implemented'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@sessions_bp.route('/<session_identifier>/insights', methods=['GET'])
+def get_ai_insights(session_identifier):
+    """GET /sessions/<id>/insights - Get AI-generated insights"""
+    try:
+        # Find session
+        if session_identifier.isdigit():
+            session = SessionService.get_session_by_id(int(session_identifier))
+        else:
+            session = SessionService.get_session_by_external_id(session_identifier)
+        
+        if not session:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        # Get AI insights if available
+        insights_data = {
+            'summary': session.summary_data.get('summary') if hasattr(session, 'summary_data') and session.summary_data else None,
+            'key_points': session.summary_data.get('key_points', []) if hasattr(session, 'summary_data') and session.summary_data else [],
+            'action_items': session.summary_data.get('action_items', []) if hasattr(session, 'summary_data') and session.summary_data else [],
+            'questions': session.summary_data.get('questions', []) if hasattr(session, 'summary_data') and session.summary_data else [],
+            'decisions': session.summary_data.get('decisions', []) if hasattr(session, 'summary_data') and session.summary_data else [],
+            'sentiment': session.summary_data.get('sentiment') if hasattr(session, 'summary_data') and session.summary_data else None
+        }
+        
+        return jsonify(insights_data)
+    except Exception as e:
+        logger.error(f"Failed to get insights: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@sessions_bp.route('/<session_identifier>/analytics', methods=['GET'])
+def get_analytics_data(session_identifier):
+    """GET /sessions/<id>/analytics - Get meeting analytics data"""
+    try:
+        # Find session
+        if session_identifier.isdigit():
+            session = SessionService.get_session_by_id(int(session_identifier))
+        else:
+            session = SessionService.get_session_by_external_id(session_identifier)
+        
+        if not session:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        # Get segments for analysis
+        from models import Segment
+        from sqlalchemy import select
+        from app import db
+        
+        stmt = select(Segment).filter(Segment.session_id == session.id).order_by(Segment.created_at)
+        segments = db.session.execute(stmt).scalars().all()
+        
+        # Calculate speaking time distribution
+        speaking_time = {}
+        for seg in segments:
+            speaker = seg.speaker or 'Unknown'
+            duration = seg.duration or 1.0
+            speaking_time[speaker] = speaking_time.get(speaker, 0) + duration
+        
+        # Basic analytics
+        analytics = {
+            'speaking_time': speaking_time,
+            'total_segments': len(segments),
+            'total_duration': session.total_duration or 0,
+            'participation': {
+                speaker: round((time / session.total_duration * 100) if session.total_duration else 0, 1)
+                for speaker, time in speaking_time.items()
+            }
+        }
+        
+        return jsonify(analytics)
+    except Exception as e:
+        logger.error(f"Failed to get analytics: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@sessions_bp.route('/<session_identifier>/tasks', methods=['GET'])
+def get_extracted_tasks(session_identifier):
+    """GET /sessions/<id>/tasks - Get tasks extracted from meeting"""
+    try:
+        # Find session
+        if session_identifier.isdigit():
+            session = SessionService.get_session_by_id(int(session_identifier))
+        else:
+            session = SessionService.get_session_by_external_id(session_identifier)
+        
+        if not session:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        # Get action items from summary_data
+        action_items = []
+        if hasattr(session, 'summary_data') and session.summary_data:
+            raw_actions = session.summary_data.get('action_items', [])
+            
+            # Transform to task format
+            for idx, item in enumerate(raw_actions):
+                if isinstance(item, dict):
+                    action_items.append({
+                        'id': idx + 1,
+                        'title': item.get('action', item.get('title', 'Untitled task')),
+                        'assignee': item.get('assignee'),
+                        'priority': item.get('priority', 'medium'),
+                        'due_date': item.get('due_date'),
+                        'completed': False
+                    })
+                else:
+                    # Simple string action item
+                    action_items.append({
+                        'id': idx + 1,
+                        'title': str(item),
+                        'priority': 'medium',
+                        'completed': False
+                    })
+        
+        return jsonify({'tasks': action_items})
+    except Exception as e:
+        logger.error(f"Failed to get tasks: {e}")
+        return jsonify({'error': str(e)}), 500

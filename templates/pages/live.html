@@ -832,9 +832,27 @@ socket.on('ai_insights_error', (data) => {
     console.error('AI insights error:', data);
     
     aiInsightsCard.style.display = 'block';
-    aiInsightsStatus.className = 'ai-insights-status error';
+    aiInsightsStatus.className = 'ai_insights-status error';
     aiInsightsStatus.textContent = `❌ ${data.error || 'Failed to generate insights'}`;
     aiInsightsContent.innerHTML = '';
+});
+
+// CROWN+ Session Finalized - Auto-redirect to tabbed UI
+socket.on('session_finalized', (data) => {
+    console.log('Session finalized:', data);
+    
+    // Show transition message
+    const statusEl = document.querySelector('.recording-status');
+    if (statusEl) {
+        statusEl.textContent = 'Processing complete - Redirecting to meeting insights...';
+        statusEl.style.color = '#22c55e';
+    }
+    
+    // Redirect to tabbed meeting detail page after 1.5 seconds
+    setTimeout(() => {
+        const sessionIdForUrl = data.session_id || sessionId;
+        window.location.href = `/sessions/${sessionIdForUrl}`;
+    }, 1500);
 });
 
 // Helper function to escape HTML
