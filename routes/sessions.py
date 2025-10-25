@@ -281,14 +281,24 @@ def get_ai_insights(session_identifier):
         if not session:
             return jsonify({'error': 'Session not found'}), 404
         
-        # Get AI insights if available
+        # Query Summary table for AI insights
+        from models.summary import Summary
+        summary = Summary.query.filter_by(session_id=session.id).first()
+        
+        # Build insights response from Summary model
         insights_data = {
-            'summary': session.summary_data.get('summary') if hasattr(session, 'summary_data') and session.summary_data else None,
-            'key_points': session.summary_data.get('key_points', []) if hasattr(session, 'summary_data') and session.summary_data else [],
-            'action_items': session.summary_data.get('action_items', []) if hasattr(session, 'summary_data') and session.summary_data else [],
-            'questions': session.summary_data.get('questions', []) if hasattr(session, 'summary_data') and session.summary_data else [],
-            'decisions': session.summary_data.get('decisions', []) if hasattr(session, 'summary_data') and session.summary_data else [],
-            'sentiment': session.summary_data.get('sentiment') if hasattr(session, 'summary_data') and session.summary_data else None
+            'summary': summary.summary_md if summary else None,
+            'brief_summary': summary.brief_summary if summary else None,
+            'detailed_summary': summary.detailed_summary if summary else None,
+            'action_items': summary.actions if summary and summary.actions else [],
+            'decisions': summary.decisions if summary and summary.decisions else [],
+            'risks': summary.risks if summary and summary.risks else [],
+            'executive_insights': summary.executive_insights if summary and summary.executive_insights else [],
+            'technical_details': summary.technical_details if summary and summary.technical_details else [],
+            'action_plan': summary.action_plan if summary and summary.action_plan else [],
+            'key_points': [],  # TODO: Add key_points extraction
+            'questions': [],   # TODO: Add questions extraction
+            'sentiment': None  # TODO: Add sentiment analysis
         }
         
         return jsonify(insights_data)
