@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 COMPREHENSIVE MINA TEST SUITE
-Tests all critical functionality with 100% thoroughness
+Tests all critical functionality with 100% thoroughness including production-critical paths
 """
 
 import sys
@@ -53,6 +53,7 @@ def test_01_database_models():
         from models.analytics import Analytics
         from models.task import Task
         from models.summary import Summary
+        from models.event_ledger import EventLedger
         
         with app.app_context():
             # Test Session model
@@ -65,6 +66,9 @@ def test_01_database_models():
             assert hasattr(Segment, 'id'), "Segment missing id"
             assert hasattr(Segment, 'session_id'), "Segment missing session_id"
             assert hasattr(Segment, 'text'), "Segment missing text"
+            assert hasattr(Segment, 'kind'), "Segment missing kind"
+            assert hasattr(Segment, 'start_ms'), "Segment missing start_ms"
+            assert hasattr(Segment, 'end_ms'), "Segment missing end_ms"
             
             # Test Analytics model
             assert hasattr(Analytics, 'session_id'), "Analytics missing session_id"
@@ -74,6 +78,10 @@ def test_01_database_models():
             
             # Test Summary model
             assert hasattr(Summary, 'session_id'), "Summary missing session_id"
+            
+            # Test EventLedger model
+            assert hasattr(EventLedger, 'session_id'), "EventLedger missing session_id"
+            assert hasattr(EventLedger, 'event_type'), "EventLedger missing event_type"
             
             log_test_result("Database Models Schema", True)
             return True
@@ -364,7 +372,7 @@ def test_06_task_extraction_service():
 
 
 def test_07_post_transcription_orchestrator():
-    """Test 7: Post-Transcription Orchestrator"""
+    """Test 7: Post-Transcription Orchestrator with Event Verification"""
     logger.info("\n" + "="*80)
     logger.info("TEST 7: Post-Transcription Orchestrator")
     logger.info("="*80)
@@ -374,6 +382,7 @@ def test_07_post_transcription_orchestrator():
         from services.session_service import SessionService
         from models.segment import Segment
         from models.session import Session
+        from models.event_ledger import EventLedger
         
         with app.app_context():
             # Create session with segments
@@ -406,10 +415,20 @@ def test_07_post_transcription_orchestrator():
             session = db.session.get(Session, session_id)
             assert session.status == "completed", "Session not completed"
             
+            # Verify event ledger logged orchestration events
+            events = db.session.query(EventLedger).filter_by(session_id=session_id).all()
+            assert len(events) > 0, "No events logged by orchestrator"
+            
+            event_types = [e.event_type for e in events]
+            assert 'session_finalized' in event_types, "session_finalized event not logged"
+            
             # Cleanup
             from models.analytics import Analytics
             from models.task import Task
             from models.summary import Summary
+            
+            for event in events:
+                db.session.delete(event)
             
             analytics = db.session.query(Analytics).filter_by(session_id=session_id).first()
             if analytics:
@@ -483,10 +502,45 @@ def test_08_event_ledger():
         return False
 
 
-def test_09_frontend_pages():
-    """Test 9: Frontend Pages Loading"""
+def test_09_error_handling():
+    """Test 9: Error Handling & Recovery"""
     logger.info("\n" + "="*80)
-    logger.info("TEST 9: Frontend Pages Loading")
+    logger.info("TEST 9: Error Handling & Recovery")
+    logger.info("="*80)
+    
+    try:
+        from app import app, db
+        from services.session_service import SessionService
+        
+        with app.app_context():
+            # Test getting non-existent session
+            result = SessionService.get_session_by_id(999999)
+            assert result is None, "Should return None for non-existent session"
+            
+            # Test getting session by invalid external ID
+            result = SessionService.get_session_by_external("invalid-id-123")
+            assert result is None, "Should return None for invalid external ID"
+            
+            # Test completing non-existent session
+            result = SessionService.complete_session(999999)
+            assert result is False, "Should return False for non-existent session"
+            
+            # Test finalizing non-existent session
+            result = SessionService.finalize_session(999999, room="test")
+            assert result is False, "Should return False for non-existent session"
+            
+            log_test_result("Error Handling & Recovery", True)
+            return True
+            
+    except Exception as e:
+        log_test_result("Error Handling & Recovery", False, str(e))
+        return False
+
+
+def test_10_frontend_pages():
+    """Test 10: Frontend Pages Loading"""
+    logger.info("\n" + "="*80)
+    logger.info("TEST 10: Frontend Pages Loading")
     logger.info("="*80)
     
     try:
@@ -517,10 +571,10 @@ def test_09_frontend_pages():
         return False
 
 
-def test_10_static_assets():
-    """Test 10: Static Assets Availability"""
+def test_11_static_assets():
+    """Test 11: Static Assets Availability"""
     logger.info("\n" + "="*80)
-    logger.info("TEST 10: Static Assets Availability")
+    logger.info("TEST 11: Static Assets Availability")
     logger.info("="*80)
     
     try:
@@ -550,13 +604,43 @@ def test_10_static_assets():
         return False
 
 
+def test_12_api_endpoints():
+    """Test 12: Core API Endpoints"""
+    logger.info("\n" + "="*80)
+    logger.info("TEST 12: Core API Endpoints")
+    logger.info("="*80)
+    
+    try:
+        import requests
+        
+        base_url = "http://127.0.0.1:5000"
+        
+        # Test sessions list endpoint
+        response = requests.get(f"{base_url}/sessions/?format=json", timeout=5)
+        assert response.status_code == 200, f"Sessions list failed: {response.status_code}"
+        
+        data = response.json()
+        assert 'sessions' in data, "Invalid response format - missing sessions"
+        assert 'total' in data, "Invalid response format - missing total"
+        assert isinstance(data['sessions'], list), "Sessions should be a list"
+        
+        logger.info(f"  ✅ Sessions API working (total: {data['total']})")
+        
+        log_test_result("Core API Endpoints", True)
+        return True
+        
+    except Exception as e:
+        log_test_result("Core API Endpoints", False, str(e))
+        return False
+
+
 def run_all_tests():
     """Execute all tests and generate report"""
     global TOTAL_TESTS
     
     logger.info("\n")
     logger.info("🧪 " + "="*76 + " 🧪")
-    logger.info("🧪   MINA COMPREHENSIVE TEST SUITE")
+    logger.info("🧪   MINA COMPREHENSIVE TEST SUITE - PRODUCTION GRADE")
     logger.info("🧪 " + "="*76 + " 🧪")
     logger.info("\n")
     
@@ -569,8 +653,9 @@ def run_all_tests():
         test_06_task_extraction_service,
         test_07_post_transcription_orchestrator,
         test_08_event_ledger,
-        test_09_frontend_pages,
-        test_10_static_assets,
+        test_09_error_handling,
+        test_10_frontend_pages,
+        test_11_static_assets,
     ]
     
     TOTAL_TESTS = len(tests)
