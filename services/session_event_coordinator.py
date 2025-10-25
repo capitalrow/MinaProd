@@ -284,6 +284,108 @@ class SessionEventCoordinator:
             metadata=metadata or {})
         
         return success
+    
+    def emit_post_transcription_reveal(
+        self,
+        session: Session,
+        room: Optional[str] = None,
+        redirect_url: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """
+        Emit post_transcription_reveal event after all processing tasks complete.
+        
+        This CROWN+ event triggers automatic page transition to refined view.
+        
+        Args:
+            session: Session database object
+            room: Socket.IO room to broadcast to
+            redirect_url: URL to redirect user to
+            metadata: Additional context
+        """
+        payload = {
+            'session_id': session.external_id,
+            'trace_id': str(session.trace_id),
+            'redirect_url': redirect_url or f'/sessions/{session.external_id}/refined',
+            'timestamp': datetime.utcnow().isoformat(),
+            'message': 'All processing complete - ready for review'
+        }
+        
+        # Log to EventLedger
+        success = self.event_logger.emit_event(
+            event_type='post_transcription_reveal',
+            trace_id=session.trace_id,
+            session_id=session.id,
+            payload=payload,
+            metadata=metadata or {}
+        )
+        
+        # Emit to Socket.IO (use socketio directly for background context compatibility)
+        if room and socketio:
+            try:
+                socketio.emit('post_transcription_reveal', payload, to=room)
+                logger.info(f"post_transcription_reveal emitted to room {room}")
+            except RuntimeError as e:
+                logger.debug(f"Socket.IO emit skipped (background context): {e}")
+        
+        return success
+    
+    def emit_dashboard_refresh(
+        self,
+        session: Session,
+        action: str = 'session_completed',
+        room: Optional[str] = None,
+        broadcast: bool = True,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """
+        Emit dashboard_refresh event to update all connected dashboards.
+        
+        This CROWN+ event enables multi-page synchronization.
+        
+        Args:
+            session: Session database object
+            action: Action type (session_completed, session_updated, etc.)
+            room: Socket.IO room (if None, broadcasts globally)
+            broadcast: Whether to broadcast to all clients
+            metadata: Additional context
+        """
+        payload = {
+            'session_id': session.external_id,
+            'trace_id': str(session.trace_id),
+            'action': action,
+            'timestamp': datetime.utcnow().isoformat(),
+            'session_data': {
+                'title': session.title,
+                'status': session.status,
+                'completed_at': session.completed_at.isoformat() if session.completed_at else None
+            }
+        }
+        
+        # Log to EventLedger
+        success = self.event_logger.emit_event(
+            event_type='dashboard_refresh',
+            trace_id=session.trace_id,
+            session_id=session.id,
+            payload=payload,
+            metadata=metadata or {}
+        )
+        
+        # Emit to Socket.IO (broadcast or room-specific)
+        if socketio:
+            try:
+                if broadcast and not room:
+                    # Global broadcast to all connected clients
+                    socketio.emit('dashboard_refresh', payload, broadcast=True)
+                    logger.info(f"dashboard_refresh broadcast globally")
+                elif room:
+                    # Room-specific broadcast
+                    socketio.emit('dashboard_refresh', payload, to=room)
+                    logger.info(f"dashboard_refresh emitted to room {room}")
+            except RuntimeError as e:
+                logger.debug(f"Socket.IO emit skipped (background context): {e}")
+        
+        return success
 
 
 # Singleton instance
