@@ -1003,43 +1003,204 @@ document.addEventListener('keydown', e => {
 });
 
 /* ---------- Socket.IO Real-time Updates ---------- */
-// Auto-load tabs when processing completes
-// Connection will be established by live.html Socket.IO client
+// CROWN+ Real-time Event Integration
 if (typeof io !== 'undefined') {
   const socket = io('/live');
   
+  // Join session-specific room for targeted broadcasts
+  socket.emit('join_session', { session_id: sessionId });
+  
+  // Track processing progress
+  let processingTasks = {
+    refinement: false,
+    analytics: false,
+    tasks: false,
+    summary: false
+  };
+  
+  function updateProcessingStatus() {
+    const allComplete = Object.values(processingTasks).every(v => v === true);
+    const statusBadge = document.getElementById('processingStatus');
+    
+    if (allComplete) {
+      statusBadge.textContent = 'Ready';
+      statusBadge.classList.remove('processing');
+      statusBadge.classList.add('ready');
+    } else {
+      const completed = Object.values(processingTasks).filter(v => v === true).length;
+      statusBadge.textContent = `Processing ${completed}/4`;
+      statusBadge.classList.add('processing');
+      statusBadge.classList.remove('ready');
+    }
+  }
+  
+  // Processing started events - show progress
+  socket.on('refinement_started', (data) => {
+    if (data.session_id === sessionId) {
+      showToast('✨ Refining transcript...');
+      updateProcessingStatus();
+    }
+  });
+  
+  socket.on('analytics_started', (data) => {
+    if (data.session_id === sessionId) {
+      showToast('📊 Analyzing meeting...');
+      updateProcessingStatus();
+    }
+  });
+  
+  socket.on('tasks_started', (data) => {
+    if (data.session_id === sessionId) {
+      showToast('✅ Extracting tasks...');
+      updateProcessingStatus();
+    }
+  });
+  
+  socket.on('summary_started', (data) => {
+    if (data.session_id === sessionId) {
+      showToast('🧠 Generating insights...');
+      updateProcessingStatus();
+    }
+  });
+  
+  // Processing ready events - auto-load and notify
+  socket.on('refinement_ready', (data) => {
+    if (data.session_id === sessionId) {
+      processingTasks.refinement = true;
+      document.getElementById('refinedBadge').textContent = 'New';
+      document.getElementById('refinedBadge').style.display = 'inline-block';
+      window.refinedLoaded = false;
+      showToast('✨ Refined transcript ready!');
+      updateProcessingStatus();
+      
+      // Auto-load if user is on refined tab
+      const activeTab = document.querySelector('.tab-content.active');
+      if (activeTab && activeTab.id === 'tab-refined') {
+        loadRefined();
+      }
+    }
+  });
+  
   socket.on('analytics_ready', (data) => {
     if (data.session_id === sessionId) {
+      processingTasks.analytics = true;
       document.getElementById('analyticsBadge').textContent = 'Ready';
       document.getElementById('analyticsBadge').style.display = 'inline-block';
-      window.analyticsLoaded = false; // Force reload
-      showToast('📊 Analytics ready!');
+      window.analyticsLoaded = false;
+      showToast('📊 Analytics complete!');
+      updateProcessingStatus();
+      
+      // Auto-load if user is on analytics tab
+      const activeTab = document.querySelector('.tab-content.active');
+      if (activeTab && activeTab.id === 'tab-analytics') {
+        loadAnalytics();
+      }
     }
   });
   
   socket.on('tasks_ready', (data) => {
     if (data.session_id === sessionId) {
-      window.tasksLoaded = false; // Force reload
-      showToast('✅ Tasks extracted!');
+      processingTasks.tasks = true;
+      const count = data.task_count || data.count || 0;
+      document.getElementById('tasksBadge').textContent = count;
+      document.getElementById('tasksBadge').style.display = 'inline-block';
+      window.tasksLoaded = false;
+      showToast(`✅ ${count} tasks identified!`);
+      updateProcessingStatus();
+      
+      // Auto-load if user is on tasks tab
+      const activeTab = document.querySelector('.tab-content.active');
+      if (activeTab && activeTab.id === 'tab-tasks') {
+        loadTasks();
+      }
     }
   });
   
-  socket.on('insights_ready', (data) => {
+  socket.on('summary_ready', (data) => {
     if (data.session_id === sessionId) {
+      processingTasks.summary = true;
       document.getElementById('insightsBadge').textContent = 'Ready';
       document.getElementById('insightsBadge').style.display = 'inline-block';
-      window.insightsLoaded = false; // Force reload
-      showToast('🧠 AI Insights ready!');
+      window.insightsLoaded = false;
+      showToast('🧠 AI insights ready!');
+      updateProcessingStatus();
+      
+      // Auto-load if user is on insights tab
+      const activeTab = document.querySelector('.tab-content.active');
+      if (activeTab && activeTab.id === 'tab-insights') {
+        loadInsights();
+      }
     }
   });
   
-  socket.on('refinement_ready', (data) => {
+  // Post-transcription reveal - auto-redirect when all processing complete
+  socket.on('post_transcription_reveal', (data) => {
     if (data.session_id === sessionId) {
-      document.getElementById('refinedBadge').textContent = 'New';
-      document.getElementById('refinedBadge').style.display = 'inline-block';
-      window.refinedLoaded = false; // Force reload
-      showToast('✨ Refined transcript ready!');
+      showToast('🎉 Meeting processed! Redirecting to refined view...');
+      setTimeout(() => {
+        // Smooth transition with fade effect
+        document.body.style.opacity = '0';
+        setTimeout(() => {
+          window.location.href = data.redirect_url || `/sessions/${sessionId}/refined`;
+        }, 300);
+      }, 1500);
     }
+  });
+  
+  // Dashboard refresh - reload page if session status changed
+  socket.on('dashboard_refresh', (data) => {
+    if (data.session_id === sessionId && data.action === 'session_completed') {
+      // Refresh tab badges and status
+      processingTasks = {
+        refinement: true,
+        analytics: true,
+        tasks: true,
+        summary: true
+      };
+      updateProcessingStatus();
+    }
+  });
+  
+  // Processing failed events
+  socket.on('refinement_failed', (data) => {
+    if (data.session_id === sessionId) {
+      showToast('⚠️ Refinement failed - using original transcript');
+      processingTasks.refinement = true; // Mark as done to not block
+      updateProcessingStatus();
+    }
+  });
+  
+  socket.on('analytics_failed', (data) => {
+    if (data.session_id === sessionId) {
+      showToast('⚠️ Analytics generation failed');
+      processingTasks.analytics = true;
+      updateProcessingStatus();
+    }
+  });
+  
+  socket.on('tasks_failed', (data) => {
+    if (data.session_id === sessionId) {
+      showToast('⚠️ Task extraction failed');
+      processingTasks.tasks = true;
+      updateProcessingStatus();
+    }
+  });
+  
+  socket.on('summary_failed', (data) => {
+    if (data.session_id === sessionId) {
+      showToast('⚠️ Summary generation failed');
+      processingTasks.summary = true;
+      updateProcessingStatus();
+    }
+  });
+  
+  // Connection events
+  socket.on('connect', () => {
+    console.log('🔌 Socket.IO connected to session room');
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('🔌 Socket.IO disconnected');
   });
 }
 </script>
