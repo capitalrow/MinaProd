@@ -13,6 +13,8 @@ Preferred communication style: Simple, everyday language.
 The application utilizes a layered architecture with Flask as the web framework and Socket.IO for real-time communication, following an application factory pattern. The frontend employs a "Crown+" design system with a dark theme, vanilla JavaScript, and Socket.IO client for a modern and accessible UI/UX.
 
 **Recent Fixes (October 2025):**
+- **Wave 0-14: Rate Limiting (COMPLETE)**: Implemented comprehensive defense-in-depth rate limiting with Flask-Limiter (global baseline) + DistributedRateLimiter (Redis-backed sliding window). Applied per-endpoint limits to auth (5/min) and transcription (20/min) routes. Slack abuse alerts trigger at ≥5 violations. Progressive backoff, whitelist/blacklist support, graceful Redis failover. Docs: docs/RATE_LIMITING.md
+- **Wave 0-10: Circuit Breaker (COMPLETE)**: Integrated Circuit Breaker pattern for OpenAI Whisper API calls with automatic failure tracking, exponential backoff, and graceful local state fallback when Redis unavailable. Slack alerts on circuit OPEN state. Docs: docs/CIRCUIT_BREAKER.md
 - **Comment Model Registry Conflict (Resolved)**: Fixed SQLAlchemy duplicate model registration by separating SessionComment (session-level comments in "session_comments" table) from Comment/SegmentComment (segment-level threaded comments in "comments" table). Auto-created tables via db.create_all(). No data loss.
 
 **UI/UX Decisions:**
