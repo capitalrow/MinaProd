@@ -185,7 +185,7 @@ def check_event_ledger(session_id):
     
     # Query event_ledger table
     query = text("""
-        SELECT event_type, status, payload 
+        SELECT event_type, status 
         FROM event_ledger 
         WHERE session_id = :session_id 
         ORDER BY created_at

@@ -112,7 +112,7 @@ class TranscriptRefinementService:
             refined_text = self._create_paragraphs(refined_text)
             
             # Calculate average confidence
-            confidences = [seg.confidence for seg in segments if seg.confidence is not None]
+            confidences = [seg.avg_confidence for seg in segments if seg.avg_confidence is not None]
             avg_confidence = sum(confidences) / len(confidences) if confidences else 0.0
             
             logger.info(
