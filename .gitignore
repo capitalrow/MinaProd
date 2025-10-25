@@ -1,3 +1,5 @@
 backups/
 *.gpg
 *.b64
+.env.staging.local
+.env.production.local
