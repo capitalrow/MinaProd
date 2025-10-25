@@ -219,6 +219,23 @@
 .transcript-text {
     color: var(--color-text-primary);
     line-height: var(--line-height-relaxed);
+    transition: color 0.3s ease, opacity 0.3s ease;
+}
+
+/* Confidence-based coloring */
+.transcript-text[data-confidence="low"] {
+    color: var(--color-text-tertiary);
+    opacity: 0.7;
+}
+
+.transcript-text[data-confidence="medium"] {
+    color: var(--color-text-secondary);
+    opacity: 0.85;
+}
+
+.transcript-text[data-confidence="high"] {
+    color: var(--color-text-primary);
+    opacity: 1;
 }
 
 .transcript-timestamp {
@@ -434,6 +451,54 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.6; }
 }
+
+/* Keyboard shortcuts hint */
+.shortcuts-hint {
+    position: fixed;
+    bottom: var(--space-4);
+    right: var(--space-4);
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-4);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    z-index: 100;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all var(--transition-base);
+}
+
+.shortcuts-hint.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.shortcut-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+.shortcut-item:last-child {
+    margin-bottom: 0;
+}
+
+.shortcut-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    padding: 2px 6px;
+    background: var(--color-surface-light);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-family: monospace;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+}
 </style>
 {% endblock %}
 
@@ -445,7 +510,7 @@
                 <div class="recorder-card">
                     <div class="recorder-status" id="recorder-status">
                         <span class="status-dot"></span>
-                        <span>Ready to record</span>
+                        <span>Ready when you are</span>
                     </div>
 
                     <div class="waveform-container">
@@ -454,7 +519,7 @@
                         </div>
                     </div>
 
-                    <div class="recording-time" id="recording-time">00:00:00</div>
+                    <div class="recording-time" id="recording-time">00:00:00.00</div>
 
                     <div class="recording-controls">
                         <button class="control-button" id="pause-button" disabled aria-label="Pause recording">
@@ -493,7 +558,7 @@
                             <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-bottom: var(--space-4);">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
                             </svg>
-                            <p>Start recording to see live transcription</p>
+                            <p>Your words will appear here, like magic ✨</p>
                         </div>
                     </div>
                 </div>
@@ -513,6 +578,10 @@
                     <div class="info-row">
                         <span class="info-label">Words Spoken</span>
                         <span class="info-value" id="word-count">0</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Speaking Pace</span>
+                        <span class="info-value" id="speaking-pace">- wpm</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Speakers</span>
@@ -559,6 +628,27 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Keyboard Shortcuts Hint -->
+<div class="shortcuts-hint" id="shortcuts-hint">
+    <div style="font-weight: var(--font-weight-semibold); margin-bottom: var(--space-3);">Keyboard Shortcuts</div>
+    <div class="shortcut-item">
+        <kbd class="shortcut-key">Space</kbd>
+        <span>Start/Stop recording</span>
+    </div>
+    <div class="shortcut-item">
+        <kbd class="shortcut-key">P</kbd>
+        <span>Pause/Resume</span>
+    </div>
+    <div class="shortcut-item">
+        <kbd class="shortcut-key">E</kbd>
+        <span>Export transcript</span>
+    </div>
+    <div class="shortcut-item">
+        <kbd class="shortcut-key">?</kbd>
+        <span>Toggle this help</span>
     </div>
 </div>
 
@@ -617,13 +707,24 @@ socket.on('disconnect', () => {
 let currentInterimSegment = null;
 let lastSpeaker = null;
 
+// Track analytics
+let totalWords = 0;
+let sessionStartTime = null;
+
 socket.on('transcription_result', (data) => {
     if (transcriptContent.querySelector('.transcript-empty')) {
         transcriptContent.innerHTML = '';
+        sessionStartTime = Date.now();
     }
     
     const speakerName = data.speaker_name || data.speaker_id || 'Speaker 1';
     const timestamp = new Date(data.timestamp || Date.now()).toLocaleTimeString();
+    
+    // Determine confidence level
+    const confidence = data.confidence || 0.9;
+    let confidenceLevel = 'high';
+    if (confidence < 0.7) confidenceLevel = 'low';
+    else if (confidence < 0.85) confidenceLevel = 'medium';
     
     // If this is a final transcript
     if (data.is_final) {
@@ -641,6 +742,7 @@ socket.on('transcription_result', (data) => {
             // Merge with existing segment
             const textEl = lastSegment.querySelector('.transcript-text');
             textEl.textContent += ' ' + data.text;
+            textEl.setAttribute('data-confidence', confidenceLevel);
             lastSegment.querySelector('.transcript-timestamp').textContent = timestamp;
         } else {
             // Create new final segment
@@ -648,7 +750,7 @@ socket.on('transcription_result', (data) => {
             segment.className = 'transcript-segment fade-in';
             segment.innerHTML = `
                 <div class="transcript-speaker">${speakerName}</div>
-                <div class="transcript-text">${data.text}</div>
+                <div class="transcript-text" data-confidence="${confidenceLevel}">${data.text}</div>
                 <div class="transcript-timestamp">${timestamp}</div>
             `;
             transcriptContent.appendChild(segment);
@@ -668,7 +770,7 @@ socket.on('transcription_result', (data) => {
             currentInterimSegment.className = 'transcript-segment interim';
             currentInterimSegment.innerHTML = `
                 <div class="transcript-speaker">${speakerName}</div>
-                <div class="transcript-text">${data.text}</div>
+                <div class="transcript-text" data-confidence="medium">${data.text}</div>
                 <div class="transcript-timestamp">${timestamp} <span class="interim-indicator">●</span></div>
             `;
             transcriptContent.appendChild(currentInterimSegment);
@@ -683,8 +785,22 @@ socket.on('transcription_result', (data) => {
     
     transcriptContent.scrollTop = transcriptContent.scrollHeight;
     
-    const wordCount = transcriptContent.textContent.split(/\s+/).filter(w => w.length > 0).length;
-    wordCountEl.textContent = wordCount;
+    // Update analytics
+    const words = transcriptContent.textContent.split(/\s+/).filter(w => w.length > 0);
+    totalWords = words.length;
+    wordCountEl.textContent = totalWords;
+    
+    // Calculate speaking pace (words per minute)
+    if (sessionStartTime && isRecording) {
+        const elapsedMinutes = (Date.now() - sessionStartTime) / 60000;
+        const wordsPerMinute = elapsedMinutes > 0 ? Math.round(totalWords / elapsedMinutes) : 0;
+        
+        // Update speaking pace display if element exists
+        const paceEl = document.getElementById('speaking-pace');
+        if (paceEl) {
+            paceEl.textContent = wordsPerMinute + ' wpm';
+        }
+    }
 });
 
 socket.on('final_transcript', (data) => {
@@ -845,25 +961,78 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Update timer
+// Audio analysis setup
+let audioContext = null;
+let analyser = null;
+let dataArray = null;
+
+// Soft chime sound effect using Web Audio API
+function playChime() {
+    const chimeContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = chimeContext.createOscillator();
+    const gainNode = chimeContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(chimeContext.destination);
+    
+    // Create a pleasant two-tone chime (C5 -> E5)
+    oscillator.frequency.setValueAtTime(523.25, chimeContext.currentTime); // C5
+    oscillator.frequency.setValueAtTime(659.25, chimeContext.currentTime + 0.1); // E5
+    
+    // Soft envelope
+    gainNode.gain.setValueAtTime(0, chimeContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.15, chimeContext.currentTime + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, chimeContext.currentTime + 0.4);
+    
+    oscillator.type = 'sine';
+    oscillator.start(chimeContext.currentTime);
+    oscillator.stop(chimeContext.currentTime + 0.4);
+    
+    // Clean up after playing
+    setTimeout(() => chimeContext.close(), 500);
+}
+
+// Update timer with millisecond precision
 function updateTimer() {
     if (!startTime) return;
     const elapsed = Date.now() - startTime;
     const hours = Math.floor(elapsed / 3600000);
     const minutes = Math.floor((elapsed % 3600000) / 60000);
     const seconds = Math.floor((elapsed % 60000) / 1000);
-    recordingTime.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    const milliseconds = Math.floor((elapsed % 1000) / 10);
+    recordingTime.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
 }
 
-// Animate waveform
+// Animate waveform with real audio data
 function animateWaveform() {
-    if (!isRecording || isPaused) return;
     const bars = waveform.querySelectorAll('.waveform-bar');
-    bars.forEach(bar => {
-        const height = Math.random() * 100 + 10;
-        bar.style.height = height + 'px';
-    });
-    requestAnimationFrame(animateWaveform);
+    
+    if (isRecording && !isPaused && analyser && dataArray) {
+        // Get live frequency data
+        analyser.getByteFrequencyData(dataArray);
+        
+        // Sample the frequency data to match bar count
+        const step = Math.floor(dataArray.length / bars.length);
+        bars.forEach((bar, i) => {
+            const index = i * step;
+            const value = dataArray[index];
+            const normalizedValue = value / 255;
+            const height = Math.max(10, normalizedValue * 100);
+            
+            // Use GSAP for smooth animation
+            gsap.to(bar, {
+                height: height + 'px',
+                duration: 0.1,
+                ease: 'power2.out'
+            });
+        });
+        
+        // Continue animation loop
+        requestAnimationFrame(animateWaveform);
+    } else if (isRecording && !isPaused) {
+        // Keep the animation loop running even if analyser isn't ready yet
+        requestAnimationFrame(animateWaveform);
+    }
 }
 
 // Record button click
@@ -893,6 +1062,15 @@ recordButton.addEventListener('click', async () => {
             
             console.log('Using MIME type:', mimeType || 'browser default');
             audioQualityEl.textContent = 'High (16kHz)';
+            
+            // Set up audio analysis for waveform
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            analyser.smoothingTimeConstant = 0.8;
+            const source = audioContext.createMediaStreamSource(stream);
+            source.connect(analyser);
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
             
             // Create MediaRecorder
             mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
@@ -942,13 +1120,13 @@ recordButton.addEventListener('click', async () => {
             // Update UI
             isRecording = true;
             startTime = Date.now();
-            timerInterval = setInterval(updateTimer, 1000);
+            timerInterval = setInterval(updateTimer, 50); // Update every 50ms for smooth milliseconds
             
             recordButton.classList.add('recording');
             pauseButton.disabled = false;
             stopButton.disabled = false;
             recorderStatus.classList.add('recording');
-            recorderStatus.querySelector('span:last-child').textContent = 'Recording...';
+            recorderStatus.querySelector('span:last-child').textContent = 'Listening intently...';
             
             // Clear transcript
             transcriptContent.innerHTML = '';
@@ -957,7 +1135,7 @@ recordButton.addEventListener('click', async () => {
             
         } catch (error) {
             console.error('Error accessing microphone:', error);
-            alert('Could not access microphone. Please grant permission and try again.');
+            alert('We need microphone access to capture your brilliant ideas. Please allow and try again.');
         }
     }
 });
@@ -972,13 +1150,13 @@ pauseButton.addEventListener('click', () => {
         clearInterval(timerInterval);
         recorderStatus.classList.remove('recording');
         recorderStatus.classList.add('paused');
-        recorderStatus.querySelector('span:last-child').textContent = 'Paused';
+        recorderStatus.querySelector('span:last-child').textContent = 'Taking a breath...';
     } else {
         mediaRecorder.resume();
-        timerInterval = setInterval(updateTimer, 1000);
+        timerInterval = setInterval(updateTimer, 50);
         recorderStatus.classList.remove('paused');
         recorderStatus.classList.add('recording');
-        recorderStatus.querySelector('span:last-child').textContent = 'Recording...';
+        recorderStatus.querySelector('span:last-child').textContent = 'Back to listening...';
         animateWaveform();
     }
 });
@@ -989,6 +1167,9 @@ stopButton.addEventListener('click', () => {
     isPaused = false;
     clearInterval(timerInterval);
     
+    // Play soft chime when recording stops
+    playChime();
+    
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
     }
@@ -997,17 +1178,84 @@ stopButton.addEventListener('click', () => {
         stream.getTracks().forEach(track => track.stop());
     }
     
+    // Clean up audio context
+    if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+        analyser = null;
+        dataArray = null;
+    }
+    
     recordButton.classList.remove('recording');
     pauseButton.disabled = true;
     stopButton.disabled = true;
     recorderStatus.classList.remove('recording', 'paused');
-    recorderStatus.querySelector('span:last-child').textContent = 'Ready to record';
+    recorderStatus.querySelector('span:last-child').textContent = 'All done! Ready for next time';
     
     // Stop waveform animation
     const bars = waveform.querySelectorAll('.waveform-bar');
     bars.forEach(bar => bar.style.height = '10px');
     
     console.log('Recording stopped');
+});
+
+// Keyboard shortcuts
+const shortcutsHint = document.getElementById('shortcuts-hint');
+let shortcutsVisible = false;
+
+// Show shortcuts hint on first load
+setTimeout(() => {
+    shortcutsHint.classList.add('visible');
+    shortcutsVisible = true;
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        shortcutsHint.classList.remove('visible');
+        shortcutsVisible = false;
+    }, 5000);
+}, 1000);
+
+document.addEventListener('keydown', (e) => {
+    // Don't trigger shortcuts if user is typing in an input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+    }
+    
+    switch(e.key.toLowerCase()) {
+        case ' ':
+            e.preventDefault();
+            if (!isRecording) {
+                recordButton.click();
+            } else if (mediaRecorder && mediaRecorder.state === 'recording') {
+                stopButton.click();
+            }
+            break;
+            
+        case 'p':
+            e.preventDefault();
+            if (isRecording && !pauseButton.disabled) {
+                pauseButton.click();
+            }
+            break;
+            
+        case 'e':
+            e.preventDefault();
+            const exportBtn = document.getElementById('export-button');
+            if (exportBtn && !exportBtn.disabled) {
+                exportBtn.click();
+            }
+            break;
+            
+        case '?':
+            e.preventDefault();
+            shortcutsVisible = !shortcutsVisible;
+            if (shortcutsVisible) {
+                shortcutsHint.classList.add('visible');
+            } else {
+                shortcutsHint.classList.remove('visible');
+            }
+            break;
+    }
 });
 </script>
 {% endblock %}
