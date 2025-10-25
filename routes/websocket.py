@@ -41,6 +41,9 @@ from services.websocket_shutdown import (
     is_shutdown_in_progress
 )
 
+# Import API versioning for backward compatibility during deployments
+from services.api_versioning import emit_dual_events, emit_versioned
+
 logger = logging.getLogger(__name__)
 ws_bp = Blueprint("ws", __name__)
 
@@ -570,7 +573,22 @@ def on_audio_chunk(data):
                 "background_speakers": speaker_info["background_speakers"]
             })
         
-        emit("transcription_result", result)
+        # Emit with dual versioning for backward compatibility (interim/partial transcription)
+        emit_dual_events(
+            v1_event="transcription_result",
+            v2_event="transcript_partial",  # Canonical v2 name for interim events
+            data={
+                "content": result.get("text", ""),
+                "is_complete": result.get("is_final", False),
+                "recording_id": session_id,
+                "confidence": result.get("confidence", 0.0),
+                "timestamp": result.get("timestamp", int(_now_ms())),
+                "speaker_id": result.get("speaker_id"),
+                "speaker_name": result.get("speaker_name"),
+                "overlap_detected": result.get("overlap_detected", False),
+                "background_speakers": result.get("background_speakers", [])
+            }
+        )
 
     emit("ack", {"ok": True})
 
@@ -708,14 +726,18 @@ def on_finalize(data):
         # Do NOT emit success or cleanup state - let the error propagate
         return
 
-    # Emit transcription_result that frontend expects
-    emit("transcription_result", {
-        "text": final_text,
-        "is_final": True,
-        "confidence": 0.9,  # Higher confidence for final
-        "session_id": session_id,
-        "timestamp": int(_now_ms())
-    })
+    # Emit with dual versioning for backward compatibility
+    emit_dual_events(
+        v1_event="transcription_result",
+        v2_event="transcript_complete",
+        data={
+            "content": final_text,
+            "is_complete": True,
+            "recording_id": session_id,
+            "confidence": 0.9,
+            "timestamp": int(_now_ms())
+        }
+    )
     
     # clear session memory
     _BUFFERS.pop(session_id, None)
