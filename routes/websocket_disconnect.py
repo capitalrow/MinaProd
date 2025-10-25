@@ -74,10 +74,25 @@ def on_disconnect():
                 try:
                     session = db.session.query(Session).filter_by(external_id=session_id).first()
                     
-                    if session and session.status == 'active':
-                        # Session was never finalized - enforce event chain closure
-                        logger.error(f"🚨 CROWN+ ENFORCEMENT: Session {session_id} disconnected before finalize - closing event chain")
-                        
+                    if not session:
+                        logger.debug(f"📡 No session found for {session_id} on disconnect")
+                        return
+                    
+                    # CROWN+ Zero-Tolerance: Only log closure events if session has trace_id (record_start was called)
+                    if not hasattr(session, 'trace_id') or not session.trace_id:
+                        logger.warning(f"⚠️ Session {session_id} disconnected without trace_id - no record_start event, skipping closure events")
+                        return
+                    
+                    # Only enforce closure if session is still active (not already finalized)
+                    if session.status != 'active':
+                        logger.debug(f"📡 Session {session_id} already {session.status}, skipping closure events")
+                        return
+                    
+                    # Session was never finalized - enforce event chain closure
+                    logger.error(f"🚨 CROWN+ ENFORCEMENT: Session {session_id} (trace={session.trace_id}) disconnected before finalize - closing event chain")
+                    
+                    try:
+                        # CROWN+ Zero-Tolerance: EventTracker failures are FATAL
                         # Log record_stop
                         _event_tracker.record_stop(
                             session=session,
@@ -102,9 +117,17 @@ def on_disconnect():
                         
                         logger.info(f"✅ CROWN+ event chain enforced on disconnect for session {session_id}")
                         
+                    except Exception as tracker_error:
+                        # EventTracker failure is FATAL - rollback and raise
+                        db.session.rollback()
+                        logger.error(f"❌ FATAL: EventTracker failed on disconnect for session {session_id}: {tracker_error}")
+                        raise RuntimeError(f"CROWN+ VIOLATION: Event chain closure failed on disconnect: {tracker_error}") from tracker_error
+                        
                 except Exception as e:
                     logger.error(f"❌ Failed to enforce event chain on disconnect: {e}")
                     db.session.rollback()
+                    # Re-raise to ensure visibility of critical failures
+                    raise
             
             break
     
