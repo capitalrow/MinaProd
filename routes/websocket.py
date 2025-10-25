@@ -34,6 +34,13 @@ from services.event_tracking import get_event_tracker
 # Import disconnect handler for event chain enforcement
 from routes.websocket_disconnect import register_connection
 
+# Import shutdown service for graceful connection draining
+from services.websocket_shutdown import (
+    register_websocket_connection,
+    unregister_websocket_connection,
+    is_shutdown_in_progress
+)
+
 logger = logging.getLogger(__name__)
 ws_bp = Blueprint("ws", __name__)
 
@@ -64,6 +71,33 @@ _MAX_B64_SIZE = 1024 * 1024 * 6      # 6MB guard
 
 def _now_ms() -> float:
     return time.time() * 1000.0
+
+
+@socketio.on('connect')
+def on_connect():
+    """
+    Handle new WebSocket connection.
+    
+    Registers the connection for graceful shutdown tracking with atomic race-condition protection.
+    Rejects connections if server is shutting down.
+    """
+    from flask import request
+    sid = request.sid
+    
+    # Atomic registration with shutdown check (prevents race conditions)
+    registration_success = register_websocket_connection(sid)
+    
+    if not registration_success:
+        logger.warning(f"⚠️ REJECTED connection {sid[:8]} - server is shutting down")
+        return False  # Reject connection
+    
+    logger.info(f"📡 WebSocket connected: {sid[:8]}")
+    
+    # Emit welcome message
+    emit('connected', {
+        'message': 'Connected to Mina transcription server',
+        'timestamp': int(_now_ms())
+    })
 
 def _decode_b64(b64: Optional[str]) -> bytes:
     if not b64:

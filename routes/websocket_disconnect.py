@@ -57,7 +57,12 @@ def on_disconnect():
     This ensures zero-tolerance event chain integrity.
     """
     from flask import request
+    from services.websocket_shutdown import unregister_websocket_connection
+    
     sid = request.sid
+    
+    # Unregister from graceful shutdown tracking
+    unregister_websocket_connection(sid)
     
     logger.info(f"📡 Client disconnected: {sid[:8]}")
     
