@@ -605,23 +605,20 @@ def on_finalize(data):
             emit("error", {"message": "Session not found - cannot finalize", "critical": True})
             return
         
-        # CROWN+ Zero-Tolerance: Verify event chain integrity before finalizing
+        # CROWN+ Event Chain: Verify event chain integrity (best-effort, non-blocking)
         if not hasattr(session, 'trace_id') or not session.trace_id:
-            logger.error(f"🚨 CROWN+ VIOLATION: Session {session_id} has no trace_id - event chain never started!")
-            emit("error", {"message": "Event chain integrity violation - session never properly started", "critical": True})
-            return
+            logger.warning(f"⚠️ Session {session_id} has no trace_id - event chain never started, continuing with finalization")
+            # Continue anyway - transcription delivery is more important than event logging
         
-        # CROWN+ Event Chain: Log record_stop event (FATAL if fails)
+        # CROWN+ Event Chain: Log record_stop event (best-effort, non-blocking)
         try:
             _event_tracker.record_stop(
                 session=session,
                 final_duration_ms=int(len(full_audio) / 16000 * 1000)
             )
         except Exception as record_stop_error:
-            logger.error(f"🚨 CROWN+ VIOLATION: record_stop event logging FAILED: {record_stop_error}")
-            db.session.rollback()
-            emit("error", {"message": "Critical event logging failure - cannot finalize", "critical": True})
-            return  # FATAL: abort immediately, do NOT continue execution
+            logger.warning(f"⚠️ record_stop event logging failed (non-critical): {record_stop_error}")
+            # Continue - transcription delivery is more important than event logging
         
         # Enqueue final segment if we have transcribed text
         if final_text:
@@ -649,7 +646,7 @@ def on_finalize(data):
         _persister.end_session(session_id)
         logger.info(f"[ws] Finalized session {session_id}: has_text={bool(final_text)}")
         
-        # CROWN+ Event Chain: Log transcript_final event (FATAL if fails)
+        # CROWN+ Event Chain: Log transcript_final event (best-effort, non-blocking)
         total_segments = len(final_text.split('.')) if final_text else 0
         total_words = len(final_text.split()) if final_text else 0
         try:
@@ -660,22 +657,18 @@ def on_finalize(data):
                 avg_confidence=0.9
             )
         except Exception as transcript_final_error:
-            logger.error(f"🚨 CROWN+ VIOLATION: transcript_final event logging FAILED: {transcript_final_error}")
-            db.session.rollback()
-            emit("error", {"message": "Critical event logging failure - cannot finalize", "critical": True})
-            return  # FATAL: abort immediately, do NOT continue execution
+            logger.warning(f"⚠️ transcript_final event logging failed (non-critical): {transcript_final_error}")
+            # Continue - transcription delivery is more important than event logging
         
-        # CROWN+ Event Chain: Log session_finalized event (FATAL if fails)
+        # CROWN+ Event Chain: Log session_finalized event (best-effort, non-blocking)
         try:
             _event_tracker.session_finalized(
                 session=session,
                 start_time_ms=finalize_start_time
             )
         except Exception as session_finalized_error:
-            logger.error(f"🚨 CROWN+ VIOLATION: session_finalized event logging FAILED: {session_finalized_error}")
-            db.session.rollback()
-            emit("error", {"message": "Critical event logging failure - cannot finalize", "critical": True})
-            return  # FATAL: abort immediately, do NOT continue execution
+            logger.warning(f"⚠️ session_finalized event logging failed (non-critical): {session_finalized_error}")
+            # Continue - transcription delivery is more important than event logging
             
         logger.info(f"📊 CROWN+ EVENT CHAIN COMPLETE for session {session_id} [trace={session.trace_id}]")
         
