@@ -656,6 +656,15 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.error(f"Failed to register calendar routes: {e}")
     
+    # Admin drain routes (for blue/green deployment)
+    try:
+        from routes.admin_drain import admin_drain_bp
+        app.register_blueprint(admin_drain_bp)
+        csrf.exempt(admin_drain_bp)  # POST endpoints require exemption
+        app.logger.info("Admin drain routes registered")
+    except Exception as e:
+        app.logger.error(f"Failed to register admin drain routes: {e}")
+    
     # AI Copilot routes
     try:
         from routes.copilot import copilot_bp
@@ -1025,9 +1034,42 @@ def analytics_api():
         }), 500
 
 
-# Graceful shutdown handlers
-def _shutdown(*_):
-    app.logger.info("Shutting down gracefully…")
+# Graceful shutdown handlers with WebSocket connection draining
+def _shutdown(signum, frame):
+    """
+    Graceful shutdown handler for SIGTERM/SIGINT signals.
+    
+    This handler:
+    1. Initiates WebSocket connection draining (30s timeout)
+    2. Notifies all connected clients of shutdown
+    3. Waits for active sessions to complete
+    4. Exits cleanly
+    
+    Used during blue/green deployments to ensure zero downtime.
+    """
+    from services.websocket_shutdown import start_graceful_shutdown, get_active_connection_count
+    
+    signal_name = "SIGTERM" if signum == signal.SIGTERM else "SIGINT"
+    app.logger.info(f"🛑 Received {signal_name} - initiating graceful shutdown...")
+    
+    # Get connection count before draining
+    active_count = get_active_connection_count()
+    app.logger.info(f"📊 Active WebSocket connections: {active_count}")
+    
+    if active_count > 0:
+        # Start graceful connection draining (30-second timeout)
+        success = start_graceful_shutdown(socketio, timeout_seconds=30)
+        
+        if success:
+            app.logger.info("✅ All WebSocket connections drained successfully")
+        else:
+            remaining = get_active_connection_count()
+            app.logger.warning(f"⚠️ Graceful shutdown timeout - {remaining} connections still active")
+            app.logger.warning("⚠️ Proceeding with shutdown - active sessions may be interrupted")
+    else:
+        app.logger.info("✅ No active connections - proceeding with shutdown")
+    
+    app.logger.info("👋 Shutdown complete - exiting")
 
 signal.signal(signal.SIGTERM, _shutdown)
 signal.signal(signal.SIGINT, _shutdown)
