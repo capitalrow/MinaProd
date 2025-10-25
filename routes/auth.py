@@ -11,6 +11,19 @@ import re
 import logging
 import traceback
 
+# Wave 0-14: Import rate limiter for auth endpoint protection
+try:
+    from services.distributed_rate_limiter import rate_limit
+    RATE_LIMIT_AVAILABLE = True
+except ImportError:
+    RATE_LIMIT_AVAILABLE = False
+    logging.warning("DistributedRateLimiter not available for auth routes")
+    # No-op decorator fallback (Flask-Limiter still applies global limits)
+    def rate_limit(*args, **kwargs):
+        def decorator(f):
+            return f
+        return decorator
+
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -33,6 +46,7 @@ def is_valid_password(password):
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
+@rate_limit()  # Wave 0-14: 5 requests/min for auth endpoints
 def register():
     """User registration page and handler."""
     if current_user.is_authenticated:
@@ -134,6 +148,7 @@ def register():
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@rate_limit()  # Wave 0-14: 5 requests/min for auth endpoints
 def login():
     """User login page and handler."""
     if current_user.is_authenticated:

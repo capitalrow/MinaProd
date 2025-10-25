@@ -344,6 +344,40 @@ def create_app() -> Flask:
     
     storage_type = "Redis" if redis_url else "Memory"
     app.logger.info(f"✅ Flask-Limiter configured ({storage_type} backend): 100/min, 1000/hour per IP")
+    
+    # Initialize DistributedRateLimiter for advanced rate limiting (Wave 0-14)
+    # This provides sliding window, per-endpoint limits, burst protection, whitelist/blacklist
+    # Works alongside Flask-Limiter for defense-in-depth
+    if redis_url:
+        try:
+            import redis
+            from services.distributed_rate_limiter import init_rate_limiter, RateLimitConfig
+            
+            # Connect to Redis
+            redis_client = redis.from_url(redis_url, decode_responses=True)
+            
+            # Configure advanced rate limiting
+            rate_limit_config = RateLimitConfig(
+                requests_per_minute=100,
+                requests_per_hour=1000,
+                requests_per_day=10000,
+                burst_limit=10,
+                auth_attempts_per_minute=5,
+                upload_requests_per_hour=50,
+                transcription_requests_per_minute=20,
+                enable_whitelist=True,
+                enable_blacklist=True,
+                enable_progressive_backoff=True
+            )
+            
+            # Initialize distributed rate limiter
+            init_rate_limiter(app, redis_client, rate_limit_config)
+            app.logger.info("✅ DistributedRateLimiter configured with Slack abuse alerts (Wave 0-14)")
+            
+        except Exception as e:
+            app.logger.warning(f"⚠️ DistributedRateLimiter initialization failed, using Flask-Limiter only: {e}")
+    else:
+        app.logger.info("ℹ️  Redis not configured - DistributedRateLimiter disabled, using Flask-Limiter only")
 
     # gzip (optional)
     try:

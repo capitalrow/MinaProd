@@ -17,6 +17,19 @@ import json
 # Import socketio instance
 from app import socketio
 
+# Wave 0-14: Import rate limiter for transcription endpoint protection
+try:
+    from services.distributed_rate_limiter import rate_limit
+    RATE_LIMIT_AVAILABLE = True
+except ImportError:
+    RATE_LIMIT_AVAILABLE = False
+    print("[LIVE-API] ⚠️ DistributedRateLimiter not available")
+    # No-op decorator fallback (Flask-Limiter still applies global limits)
+    def rate_limit(*args, **kwargs):
+        def decorator(f):
+            return f
+        return decorator
+
 # Create blueprint
 live_transcription_bp = Blueprint('live_transcription_working', __name__)
 
@@ -34,6 +47,7 @@ except Exception as e:
     print(f"[LIVE-API] ❌ OpenAI initialization failed: {e}")
 
 @live_transcription_bp.route('/api/transcribe_chunk_streaming', methods=['POST', 'GET', 'OPTIONS'])
+@rate_limit()  # Wave 0-14: 20 requests/min for transcription endpoints
 def transcribe_chunk_streaming():
     """
     CRITICAL: The main transcription endpoint that actually works
