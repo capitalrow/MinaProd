@@ -170,12 +170,17 @@ def create_session():
 
 
 @sessions_bp.route('/<int:session_id>/finalize', methods=['POST'])
-def finalize_session(session_id):
+def finalize_session_endpoint(session_id):
     """
-    POST /sessions/<id>/finalize - Mark session as completed (idempotent)
+    POST /sessions/<id>/finalize - Finalize session and trigger post-transcription orchestration
     
     Request body (JSON, optional):
     - final_text: Optional final transcript text to add
+    
+    CRITICAL: This endpoint now uses SessionService.finalize_session() which:
+    1. Updates session status and calculates metrics
+    2. Emits session_finalized event  
+    3. Triggers PostTranscriptionOrchestrator asynchronously
     """
     data = request.get_json() or {}
     final_text = data.get('final_text')
@@ -186,24 +191,34 @@ def finalize_session(session_id):
         if not session:
             return jsonify({'error': 'Session not found'}), 404
         
-        # Complete the session (idempotent)
-        SessionService.complete_session(session_id)
-        
         # Finalize segments if final text provided
         if final_text:
             finalized_count = SessionService.finalize_session_segments(session_id, final_text)
+            logger.info(f"Finalized {finalized_count} segments for session {session_id}")
+        
+        # CRITICAL FIX: Use finalize_session() instead of complete_session()
+        # This ensures post-transcription orchestration is triggered
+        success = SessionService.finalize_session(
+            session_id=session_id,
+            room=session.external_id,
+            metadata={
+                'finalized_via': 'rest_api',
+                'final_text_provided': bool(final_text)
+            }
+        )
+        
+        if success:
             return jsonify({
-                'message': f'Session {session_id} completed',
-                'finalized_segments': finalized_count,
-                'status': 'completed'
-            })
+                'message': f'Session {session_id} finalized successfully - post-transcription processing initiated',
+                'finalized_segments': finalized_count if final_text else 0,
+                'status': 'completed',
+                'external_id': session.external_id
+            }), 200
         else:
-            return jsonify({
-                'message': f'Session {session_id} completed',
-                'status': 'completed'
-            })
+            return jsonify({'error': 'Session finalization failed'}), 500
             
     except Exception as e:
+        logger.error(f"Failed to finalize session {session_id}: {e}", exc_info=True)
         return jsonify({'error': f'Failed to finalize session: {str(e)}'}), 500
 
 
