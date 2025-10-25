@@ -192,6 +192,7 @@ def finalize_session_endpoint(session_id):
             return jsonify({'error': 'Session not found'}), 404
         
         # Finalize segments if final text provided
+        finalized_count = 0
         if final_text:
             finalized_count = SessionService.finalize_session_segments(session_id, final_text)
             logger.info(f"Finalized {finalized_count} segments for session {session_id}")
@@ -210,7 +211,7 @@ def finalize_session_endpoint(session_id):
         if success:
             return jsonify({
                 'message': f'Session {session_id} finalized successfully - post-transcription processing initiated',
-                'finalized_segments': finalized_count if final_text else 0,
+                'finalized_segments': finalized_count,
                 'status': 'completed',
                 'external_id': session.external_id
             }), 200
