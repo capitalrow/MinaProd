@@ -10,6 +10,9 @@ from models import db, Meeting, Session, Segment, SegmentComment
 from datetime import datetime
 from io import BytesIO
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Document generation libraries
 try:
@@ -369,13 +372,21 @@ def update_segment(meeting_id, segment_id):
         segment.edited_by_id = current_user.id
     
     try:
-        # Get session for event tracking
+        # Get session for event tracking BEFORE commit
         session = db.session.query(Session).filter_by(id=segment.session_id).first()
         
+        # Commit database changes
         db.session.commit()
         
-        # CROWN+ Event Chain: Log edit_commit event
-        if session:
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+    # CROWN+ Event Chain: Log edit_commit event AFTER successful commit
+    # Separate try/except to ensure API returns success even if event logging fails
+    event_logged = False
+    if session:
+        try:
             from services.event_tracking import get_event_tracker
             event_tracker = get_event_tracker()
             event_tracker.edit_commit(
@@ -385,21 +396,24 @@ def update_segment(meeting_id, segment_id):
                 new_text=new_text,
                 user_id=current_user.id
             )
-        
-        return jsonify({
-            'success': True,
-            'message': 'Segment updated successfully',
-            'segment': {
-                'id': segment.id,
-                'text': segment.text,
-                'old_text': old_text,
-                'version': segment.version if hasattr(segment, 'version') else None,
-                'edited_at': segment.edited_at.isoformat() if hasattr(segment, 'edited_at') and segment.edited_at else None
-            }
-        })
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+            event_logged = True
+        except Exception as event_error:
+            # Edit succeeded but event logging failed - log warning but don't fail the request
+            logger.warning(f"⚠️ CROWN+ WARNING: edit_commit event logging failed for segment {segment.id}: {event_error}")
+            # Continue - edit was successful even if event logging failed
+    
+    return jsonify({
+        'success': True,
+        'message': 'Segment updated successfully',
+        'segment': {
+            'id': segment.id,
+            'text': segment.text,
+            'old_text': old_text,
+            'version': segment.version if hasattr(segment, 'version') else None,
+            'edited_at': segment.edited_at.isoformat() if hasattr(segment, 'edited_at') and segment.edited_at else None
+        },
+        'event_logged': event_logged  # Indicate if event was logged for debugging
+    })
 
 
 # ============================================
