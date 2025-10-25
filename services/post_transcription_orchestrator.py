@@ -9,14 +9,13 @@ import time
 import uuid
 from typing import Dict, Any, Optional
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from models import db, Session
 from services.session_event_coordinator import get_session_event_coordinator
 
-logger = logging.getLogger(__name__)
+# Import socketio for background task execution
+from app import socketio
 
-# Thread pool for async task execution
-_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="post_transcription")
+logger = logging.getLogger(__name__)
 
 
 class PostTranscriptionOrchestrator:
@@ -40,13 +39,14 @@ class PostTranscriptionOrchestrator:
     
     def run_async(self, session_id: int, room: Optional[str] = None) -> None:
         """
-        Run orchestration asynchronously in background thread.
+        Run orchestration asynchronously in Socket.IO background task.
         
         Args:
             session_id: Database session ID
             room: Socket.IO room for event broadcasting
         """
-        _executor.submit(self._run_orchestration, session_id, room)
+        # Use socketio.start_background_task for proper context management
+        socketio.start_background_task(self._run_orchestration, session_id, room)
         logger.info(f"✅ Post-transcription orchestration queued for session {session_id}")
     
     def _run_orchestration(self, session_id: int, room: Optional[str] = None) -> None:
