@@ -366,10 +366,13 @@ def get_extracted_tasks(session_identifier):
         if not session:
             return jsonify({'error': 'Session not found'}), 404
         
-        # Get action items from summary_data
+        # Query Summary table for action items
+        from models.summary import Summary
+        summary = Summary.query.filter_by(session_id=session.id).first()
+        
         action_items = []
-        if hasattr(session, 'summary_data') and session.summary_data:
-            raw_actions = session.summary_data.get('action_items', [])
+        if summary and summary.actions:
+            raw_actions = summary.actions
             
             # Transform to task format
             for idx, item in enumerate(raw_actions):
