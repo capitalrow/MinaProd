@@ -294,6 +294,10 @@ def create_app() -> Flask:
     # Enable API versioning middleware for all /api/* routes
     from services.api_versioning import create_version_middleware
     create_version_middleware(app)
+    
+    # Enable Row-Level Security context middleware
+    from middleware.rls_context import set_rls_context
+    set_rls_context(app)
 
     # reverse proxy (Replit)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
