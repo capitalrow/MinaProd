@@ -313,7 +313,7 @@ class PostTranscriptionOrchestrator:
                     session_id=session.id,
                     level=SummaryLevel.STANDARD,
                     style=SummaryStyle.EXECUTIVE,
-                    engine=summary_result.get('model', 'gpt-4o-mini')
+                    engine=summary_result.get('model', 'gpt-3.5-turbo')
                 )
                 db.session.add(summary)
             
