@@ -59,7 +59,7 @@ class AIInsightsService:
             prompt = self._build_comprehensive_prompt(transcript_text, metadata)
             
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini",
                 messages=[
                     {
                         "role": "system",
@@ -80,7 +80,7 @@ class AIInsightsService:
             
             # Add metadata
             insights['generated_at'] = datetime.utcnow().isoformat()
-            insights['model'] = 'gpt-4-turbo-preview'
+            insights['model'] = 'gpt-4o-mini'
             insights['confidence_score'] = self._calculate_confidence(insights)
             
             logger.info(f"✅ Generated comprehensive insights: {len(insights.get('key_points', []))} key points, {len(insights.get('action_items', []))} actions")
@@ -450,7 +450,7 @@ Be concise, accurate, and actionable. Use null for missing information."""
             "estimated_input_tokens": int(estimated_tokens),
             "estimated_output_tokens": 500,
             "estimated_cost_usd": round(estimated_cost, 4),
-            "model": "gpt-4-turbo-preview"
+            "model": "gpt-4o-mini"
         }
     def generate_insights(self, session_id: int) -> Dict[str, Any]:
         """

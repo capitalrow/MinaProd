@@ -286,6 +286,7 @@ class PostTranscriptionOrchestrator:
         Run AI summary generation task.
         
         Generates key points, topics, decisions, and participant summary.
+        PERSISTS results to Summary table.
         """
         try:
             # Emit started event
@@ -298,9 +299,36 @@ class PostTranscriptionOrchestrator:
             
             # Import and run AI insights service
             from services.ai_insights_service import AIInsightsService
+            from models.summary import Summary, SummaryLevel, SummaryStyle
             insights_service = AIInsightsService()
             
             summary_result = insights_service.generate_insights(session_id=session.id)
+            
+            # PERSIST: Create or update Summary record
+            existing_summary = db.session.query(Summary).filter_by(session_id=session.id).first()
+            if existing_summary:
+                summary = existing_summary
+            else:
+                summary = Summary(
+                    session_id=session.id,
+                    level=SummaryLevel.STANDARD,
+                    style=SummaryStyle.EXECUTIVE,
+                    engine=summary_result.get('model', 'gpt-4o-mini')
+                )
+                db.session.add(summary)
+            
+            # Update summary fields with AI insights
+            summary.summary_md = summary_result.get('summary', '')
+            summary.brief_summary = summary_result.get('summary', '')[:500] if summary_result.get('summary') else None
+            summary.detailed_summary = summary_result.get('summary', '')
+            summary.actions = summary_result.get('action_items', [])
+            summary.decisions = summary_result.get('decisions', [])
+            summary.risks = summary_result.get('risks_concerns', [])
+            summary.executive_insights = summary_result.get('key_points', [])
+            summary.action_plan = summary_result.get('next_steps', [])
+            
+            db.session.commit()
+            logger.info(f"✅ Summary persisted to database for session {session.external_id}")
             
             # Emit ready event with summary
             self.coordinator.emit_processing_event(
@@ -319,6 +347,7 @@ class PostTranscriptionOrchestrator:
             
         except Exception as e:
             logger.error(f"❌ Summary generation failed for session {session.external_id}: {e}", exc_info=True)
+            db.session.rollback()
             self.coordinator.emit_processing_event(
                 session=session,
                 task_type='summary',
