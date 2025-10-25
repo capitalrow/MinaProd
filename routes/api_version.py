@@ -38,4 +38,11 @@ def get_api_version():
         }
     }
     """
-    return jsonify(get_version_info()), 200
+    from config import Config
+    
+    version_info = get_version_info()
+    
+    # Add environment to version response (staging/production/development)
+    version_info['environment'] = Config.ENVIRONMENT
+    
+    return jsonify(version_info), 200
