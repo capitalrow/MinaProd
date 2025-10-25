@@ -34,7 +34,11 @@ def create_test_session():
     logger.info("🔨 Creating test session with segments...")
     
     # Create session WITHOUT meeting_id (mimics 70% of real sessions)
+    from uuid import uuid4
+    external_id = f"test-{uuid4().hex[:12]}"
+    
     session = Session(
+        external_id=external_id,  # REQUIRED: Unique session identifier
         title=f"CROWN+ Test Session - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         status='completed',
         started_at=datetime.now(),
@@ -49,28 +53,26 @@ def create_test_session():
     db.session.add(session)
     db.session.flush()
     
-    # Add realistic segments
+    # Add realistic segments (using correct field names)
     test_segments = [
-        {"text": "Welcome everyone to today's meeting. Let's discuss our project goals.", "speaker": "Alice", "confidence": 0.95},
-        {"text": "Thanks Alice. I think we should focus on improving user experience.", "speaker": "Bob", "confidence": 0.92},
-        {"text": "I agree. We need to prioritize the mobile app redesign.", "speaker": "Charlie", "confidence": 0.89},
-        {"text": "Let me add that to our action items. Bob, can you lead this?", "speaker": "Alice", "confidence": 0.94},
-        {"text": "Absolutely. I'll create a proposal by next Friday.", "speaker": "Bob", "confidence": 0.91},
-        {"text": "Great. What about the API integration we discussed?", "speaker": "Alice", "confidence": 0.93},
-        {"text": "I've been working on that. Should be ready for testing next week.", "speaker": "Charlie", "confidence": 0.90},
-        {"text": "Perfect. Let's schedule a follow-up meeting for next Monday.", "speaker": "Alice", "confidence": 0.96},
+        {"text": "Welcome everyone to today's meeting. Let's discuss our project goals.", "confidence": 0.95},
+        {"text": "Thanks Alice. I think we should focus on improving user experience.", "confidence": 0.92},
+        {"text": "I agree. We need to prioritize the mobile app redesign.", "confidence": 0.89},
+        {"text": "Let me add that to our action items. Bob, can you lead this?", "confidence": 0.94},
+        {"text": "Absolutely. I'll create a proposal by next Friday.", "confidence": 0.91},
+        {"text": "Great. What about the API integration we discussed?", "confidence": 0.93},
+        {"text": "I've been working on that. Should be ready for testing next week.", "confidence": 0.90},
+        {"text": "Perfect. Let's schedule a follow-up meeting for next Monday.", "confidence": 0.96},
     ]
     
     for i, seg_data in enumerate(test_segments):
         segment = Segment(
             session_id=session.id,
+            kind='final',  # Segment type: 'final' or 'interim'
             text=seg_data["text"],
-            speaker_label=seg_data["speaker"],
-            confidence=seg_data["confidence"],
-            start_time=i * 5.0,
-            end_time=(i + 1) * 5.0 - 0.5,
-            sequence_number=i,
-            is_final=True
+            avg_confidence=seg_data["confidence"],
+            start_ms=i * 5000,  # Milliseconds
+            end_ms=(i + 1) * 5000 - 500  # Milliseconds
         )
         db.session.add(segment)
     
