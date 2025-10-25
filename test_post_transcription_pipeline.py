@@ -232,14 +232,17 @@ def run_comprehensive_test():
             test_results['session_creation'] = True
             logger.info(f"✅ Session created: {session_id}\n")
             
-            # Step 2: Run post-transcription orchestrator
-            logger.info("🚀 STEP 2: Running post-transcription orchestrator...")
+            # Step 2: Run post-transcription orchestrator (SYNCHRONOUSLY for testing)
+            logger.info("🚀 STEP 2: Running post-transcription orchestrator (sync mode)...")
             orchestrator = PostTranscriptionOrchestrator()
             
             try:
-                orchestrator.run_async(session_id)
+                # Call _run_orchestration directly for synchronous execution in tests
+                # This bypasses socketio.start_background_task which doesn't work in standalone scripts
+                orchestrator._run_orchestration(session_id, room=None)
                 test_results['orchestrator_execution'] = True
                 logger.info("✅ Orchestrator completed\n")
+                    
             except Exception as e:
                 logger.error(f"❌ Orchestrator failed: {e}")
                 logger.error(traceback.format_exc())
