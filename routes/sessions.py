@@ -276,7 +276,7 @@ def get_ai_insights(session_identifier):
         if session_identifier.isdigit():
             session = SessionService.get_session_by_id(int(session_identifier))
         else:
-            session = SessionService.get_session_by_external_id(session_identifier)
+            session = SessionService.get_session_by_external(session_identifier)
         
         if not session:
             return jsonify({'error': 'Session not found'}), 404
@@ -305,7 +305,7 @@ def get_analytics_data(session_identifier):
         if session_identifier.isdigit():
             session = SessionService.get_session_by_id(int(session_identifier))
         else:
-            session = SessionService.get_session_by_external_id(session_identifier)
+            session = SessionService.get_session_by_external(session_identifier)
         
         if not session:
             return jsonify({'error': 'Session not found'}), 404
@@ -350,7 +350,7 @@ def get_extracted_tasks(session_identifier):
         if session_identifier.isdigit():
             session = SessionService.get_session_by_id(int(session_identifier))
         else:
-            session = SessionService.get_session_by_external_id(session_identifier)
+            session = SessionService.get_session_by_external(session_identifier)
         
         if not session:
             return jsonify({'error': 'Session not found'}), 404
