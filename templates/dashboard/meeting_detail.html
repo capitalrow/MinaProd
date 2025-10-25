@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Meeting Transcript - Mina{% endblock %}
+{% block title %}Meeting Details - Mina{% endblock %}
 
 {% block extra_css %}
 <style>
 /* ------------------------------
-   Transcript Workspace Styling
-   Matches Analytics page design system
+   Meeting Detail Workspace
+   Crown+ Design System with Tabbed Interface
 --------------------------------*/
-.transcript-workspace {
+.meeting-workspace {
   width: clamp(960px, 90vw, 1440px);
   max-width: 100%;
   min-height: calc(100vh - 64px);
@@ -16,14 +16,14 @@
   animation: fadeInUp 0.6s ease-out;
 }
 
-.transcript-header {
+.meeting-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: var(--space-6);
 }
 
-.transcript-title {
+.meeting-title {
   font-size: var(--font-size-4xl);
   font-weight: var(--font-weight-bold);
   background: var(--gradient-primary);
@@ -33,12 +33,98 @@
   margin-bottom: var(--space-2);
 }
 
-.transcript-subtitle {
+.meeting-subtitle {
   color: var(--color-text-secondary);
   font-size: var(--font-size-lg);
 }
 
-/* Controls toolbar */
+.audio-player-wrapper {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  backdrop-filter: var(--backdrop-blur);
+}
+
+/* ===== TABS NAVIGATION ===== */
+.tabs-nav {
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 2px solid var(--glass-border);
+  margin-bottom: var(--space-6);
+  position: relative;
+}
+
+.tab-button {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  padding: var(--space-3) var(--space-5);
+  cursor: pointer;
+  position: relative;
+  transition: all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94); /* easeInOutQuart */
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.tab-button:hover {
+  color: var(--color-text-primary);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.tab-button.active {
+  color: var(--color-primary);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-bottom: none;
+  margin-bottom: -2px;
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-primary);
+  border-radius: 2px 2px 0 0;
+}
+
+.tab-button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Tab indicator line animation */
+.tabs-nav::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  height: 3px;
+  background: var(--gradient-primary);
+  transition: all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border-radius: 2px;
+}
+
+/* ===== TAB CONTENT PANES ===== */
+.tab-content {
+  display: none;
+  animation: fadeIn 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94); /* easeInOutQuart */
+}
+
+.tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== TRANSCRIPT TAB STYLES ===== */
 .transcript-toolbar {
   display: flex;
   gap: var(--space-3);
@@ -57,6 +143,11 @@
   border: none;
   color: var(--color-text-primary);
   font-size: 0.9rem;
+  padding: var(--space-2);
+}
+
+.transcript-toolbar input:focus {
+  outline: none;
 }
 
 .transcript-toolbar button {
@@ -67,13 +158,17 @@
   padding: var(--space-1) var(--space-2);
   cursor: pointer;
   transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
 }
+
 .transcript-toolbar button:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
-/* Transcript body */
 .transcript-body {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -93,14 +188,17 @@
   transition: background 0.3s ease, transform 0.2s ease;
   cursor: pointer;
 }
+
 .segment:hover {
   background: rgba(99,102,241,0.05);
   transform: translateY(-2px);
 }
+
 .segment.current-segment {
   background: rgba(99,102,241,0.15);
   border-left: 4px solid var(--color-primary);
 }
+
 .segment.highlighted {
   background: rgba(255, 235, 59, 0.3);
   border-left: 4px solid var(--color-warning);
@@ -111,31 +209,214 @@
   color: var(--color-text-secondary);
   margin-right: var(--space-2);
 }
+
 .segment .speaker {
   color: var(--color-primary);
   margin-right: var(--space-1);
   font-weight: 600;
 }
+
 .segment .text {
   color: var(--color-text-primary);
 }
+
 .segment .actions {
   display: flex;
   gap: var(--space-2);
   margin-top: var(--space-1);
 }
+
 .segment .actions button {
   border: none;
   background: none;
   cursor: pointer;
   color: var(--color-text-tertiary);
   transition: color 0.2s ease;
+  padding: var(--space-1);
 }
+
 .segment .actions button:hover {
   color: var(--color-primary);
 }
 
-/* Toast notification */
+/* ===== TASKS TAB STYLES ===== */
+.tasks-container {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  backdrop-filter: var(--backdrop-blur);
+}
+
+.task-card {
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  transition: all 0.2s ease;
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-2);
+}
+
+.task-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.task-priority {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+}
+
+.task-priority.urgent {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.task-priority.high {
+  background: rgba(249, 115, 22, 0.2);
+  color: #f97316;
+}
+
+.task-priority.medium {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.task-priority.low {
+  background: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+}
+
+.task-meta {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.task-meta span {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-8) var(--space-6);
+  color: var(--color-text-secondary);
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-4);
+  opacity: 0.5;
+}
+
+.empty-state-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+
+/* ===== INSIGHTS TAB STYLES ===== */
+.insights-container {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  backdrop-filter: var(--backdrop-blur);
+}
+
+.insights-section {
+  margin-bottom: var(--space-6);
+}
+
+.insights-section:last-child {
+  margin-bottom: 0;
+}
+
+.insights-section h3 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.summary-text {
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-3);
+}
+
+.key-points-list {
+  list-style: none;
+  padding: 0;
+}
+
+.key-points-list li {
+  padding: var(--space-2) 0;
+  padding-left: var(--space-4);
+  position: relative;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.key-points-list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--color-primary);
+  font-weight: bold;
+}
+
+.sentiment-score {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: var(--radius-lg);
+  margin-top: var(--space-3);
+}
+
+.sentiment-value {
+  font-size: 2.5rem;
+  font-weight: var(--font-weight-bold);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.sentiment-label {
+  color: var(--color-text-secondary);
+}
+
+/* ===== UTILITY STYLES ===== */
 .toast {
   position: fixed;
   bottom: 2rem;
@@ -145,100 +426,342 @@
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   padding: 0.75rem 1.25rem;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
   opacity: 0;
   animation: fadeInOut 3s ease forwards;
   z-index: 9999;
+  backdrop-filter: var(--backdrop-blur);
 }
+
 @keyframes fadeInOut {
   0% { opacity: 0; transform: translateY(20px); }
   10%, 90% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(-10px); }
 }
 
-/* Search highlight */
 mark.highlight {
   background-color: rgba(255, 235, 59, 0.4);
   border-radius: var(--radius-sm);
   padding: 0 2px;
 }
+
 mark.highlight.active-match {
   background-color: rgba(255, 193, 7, 0.7);
 }
 
-/* Responsive */
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
+  .meeting-workspace {
+    padding: var(--space-4) var(--space-3);
+  }
+  
+  .meeting-header {
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  
+  .tabs-nav {
+    overflow-x: auto;
+  }
+  
+  .tab-button {
+    white-space: nowrap;
+    padding: var(--space-2) var(--space-3);
+  }
+  
   .transcript-toolbar {
     flex-direction: column;
     align-items: stretch;
   }
+  
   .transcript-toolbar button {
     width: 100%;
+    justify-content: center;
   }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="transcript-workspace">
-  <div class="transcript-header">
+<div class="meeting-workspace">
+  <!-- Header -->
+  <div class="meeting-header">
     <div>
-      <h1 class="transcript-title">Meeting Transcript</h1>
-      <p class="transcript-subtitle">Interactive AI-powered meeting playback and insights</p>
+      <h1 class="meeting-title">{{ meeting.title|default('Meeting Details') }}</h1>
+      <p class="meeting-subtitle">Interactive AI-powered meeting insights and replay</p>
     </div>
-    <div>
+    <div class="audio-player-wrapper">
       <audio id="audioPlayer" src="{{ recording_url }}" controls></audio>
     </div>
   </div>
 
-  <!-- Toolbar: Search, Copy, Navigation -->
-  <div class="transcript-toolbar">
-    <input type="text" id="searchInput" placeholder="Search transcript..." />
-    <button id="prevMatchBtn" title="Previous match">↑</button>
-    <button id="nextMatchBtn" title="Next match">↓</button>
-    <button id="copyAllBtn" title="Copy entire transcript">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M8 16h8M8 12h8m-5-8h8a2 2 0 012 2v14a2 2 0 01-2 2H9a2 2 0 01-2-2v-5m0 0H5a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v5" />
-      </svg> Copy All
+  <!-- Tabs Navigation -->
+  <nav class="tabs-nav" role="tablist" aria-label="Meeting detail tabs">
+    <button 
+      class="tab-button active" 
+      id="tab-transcript-btn"
+      role="tab"
+      aria-selected="true"
+      aria-controls="tab-transcript"
+      tabindex="0"
+      data-tab="transcript">
+      📝 Transcript
     </button>
+    <button 
+      class="tab-button" 
+      id="tab-tasks-btn"
+      role="tab"
+      aria-selected="false"
+      aria-controls="tab-tasks"
+      tabindex="-1"
+      data-tab="tasks">
+      ✓ Tasks
+    </button>
+    <button 
+      class="tab-button" 
+      id="tab-insights-btn"
+      role="tab"
+      aria-selected="false"
+      aria-controls="tab-insights"
+      tabindex="-1"
+      data-tab="insights">
+      💡 Insights
+    </button>
+  </nav>
+
+  <!-- Tab Content: Transcript -->
+  <div class="tab-content active" id="tab-transcript" role="tabpanel" aria-labelledby="tab-transcript-btn" aria-hidden="false">
+    <div class="transcript-toolbar">
+      <input 
+        type="text" 
+        id="searchInput" 
+        placeholder="Search transcript..." 
+        aria-label="Search transcript"
+      />
+      <button id="prevMatchBtn" title="Previous match" aria-label="Previous search match">↑</button>
+      <button id="nextMatchBtn" title="Next match" aria-label="Next search match">↓</button>
+      <button id="copyAllBtn" title="Copy entire transcript" aria-label="Copy entire transcript">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 16h8M8 12h8m-5-8h8a2 2 0 012 2v14a2 2 0 01-2 2H9a2 2 0 01-2-2v-5m0 0H5a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v5" />
+        </svg>
+        Copy All
+      </button>
+    </div>
+
+    <div class="transcript-body" id="transcript">
+      {% if segments %}
+        {% for segment in segments %}
+        <div class="segment" data-id="{{ segment.id }}" data-start="{{ segment.start_time }}">
+          <span class="timestamp">[{{ segment.timestamp }}]</span>
+          <strong class="speaker">{{ segment.speaker }}</strong>
+          <span class="text">{{ segment.text }}</span>
+          <div class="actions">
+            <button class="copySegmentBtn" title="Copy this segment" aria-label="Copy segment">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 16h8M8 12h8m-5-8h8a2 2 0 012 2v14a2 2 0 01-2 2H9a2 2 0 01-2-2v-5m0 0H5a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v5" />
+              </svg>
+            </button>
+            <button class="highlightBtn" title="Highlight segment" aria-label="Highlight segment">⭐</button>
+            <button class="commentBtn" title="Add comment" aria-label="Add comment">💬</button>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-state-icon">📝</div>
+          <h3 class="empty-state-title">No transcript available yet</h3>
+          <p>Start recording to generate a transcript</p>
+        </div>
+      {% endif %}
+    </div>
   </div>
 
-  <!-- Transcript Content -->
-  <div class="transcript-body" id="transcript">
-    {% for segment in segments %}
-    <div class="segment" data-id="{{ segment.id }}" data-start="{{ segment.start_time }}">
-      <span class="timestamp">[{{ segment.timestamp }}]</span>
-      <strong class="speaker">{{ segment.speaker }}</strong>
-      <span class="text">{{ segment.text }}</span>
-      <div class="actions">
-        <button class="copySegmentBtn" title="Copy this segment">
-          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M8 16h8M8 12h8m-5-8h8a2 2 0 012 2v14a2 2 0 01-2 2H9a2 2 0 01-2-2v-5m0 0H5a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v5" />
-          </svg>
-        </button>
-        <button class="highlightBtn" title="Highlight segment">⭐</button>
-        <button class="commentBtn" title="Add comment">💬</button>
-      </div>
+  <!-- Tab Content: Tasks -->
+  <div class="tab-content" id="tab-tasks" role="tabpanel" aria-labelledby="tab-tasks-btn" aria-hidden="true">
+    <div class="tasks-container">
+      {% if tasks %}
+        {% for task in tasks %}
+        <div class="task-card">
+          <div class="task-header">
+            <h4 class="task-title">{{ task.title }}</h4>
+            <span class="task-priority {{ task.priority|lower }}">{{ task.priority }}</span>
+          </div>
+          {% if task.description %}
+          <p style="color: var(--color-text-secondary); margin: var(--space-2) 0;">{{ task.description }}</p>
+          {% endif %}
+          <div class="task-meta">
+            {% if task.assigned_to %}
+            <span>
+              <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
+              </svg>
+              {{ task.assigned_to }}
+            </span>
+            {% endif %}
+            {% if task.due_date_text %}
+            <span>
+              <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+              </svg>
+              {{ task.due_date_text }}
+            </span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-state-icon">✓</div>
+          <h3 class="empty-state-title">No action items detected</h3>
+          <p>Tasks will be automatically extracted from your meeting transcript</p>
+        </div>
+      {% endif %}
     </div>
-    {% endfor %}
+  </div>
+
+  <!-- Tab Content: Insights -->
+  <div class="tab-content" id="tab-insights" role="tabpanel" aria-labelledby="tab-insights-btn" aria-hidden="true">
+    <div class="insights-container">
+      {% if summary or key_points %}
+        <!-- AI Summary -->
+        {% if summary %}
+        <div class="insights-section">
+          <h3>
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+              <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+            </svg>
+            Meeting Summary
+          </h3>
+          <p class="summary-text">{{ summary }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Key Points -->
+        {% if key_points %}
+        <div class="insights-section">
+          <h3>
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+            </svg>
+            Key Points
+          </h3>
+          <ul class="key-points-list">
+            {% for point in key_points %}
+            <li>{{ point }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- Sentiment Score -->
+        {% if sentiment_score is not none %}
+        <div class="insights-section">
+          <h3>
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm7-1a1 1 0 11-2 0 1 1 0 012 0zm-.464 5.535a1 1 0 10-1.415-1.414 3 3 0 01-4.242 0 1 1 0 00-1.415 1.414 5 5 0 007.072 0z" clip-rule="evenodd"/>
+            </svg>
+            Meeting Sentiment
+          </h3>
+          <div class="sentiment-score">
+            <div class="sentiment-value">{{ sentiment_score }}/100</div>
+            <div class="sentiment-label">
+              {% if sentiment_score >= 70 %}
+              Positive and productive discussion
+              {% elif sentiment_score >= 40 %}
+              Neutral and balanced conversation
+              {% else %}
+              Areas for improvement identified
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Meeting Duration -->
+        {% if duration %}
+        <div class="insights-section">
+          <h3>
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+            </svg>
+            Duration
+          </h3>
+          <p class="summary-text">{{ duration }} minutes</p>
+        </div>
+        {% endif %}
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-state-icon">💡</div>
+          <h3 class="empty-state-title">Insights processing</h3>
+          <p>AI-powered insights will appear here after your meeting is complete</p>
+        </div>
+      {% endif %}
+    </div>
   </div>
 </div>
-<!-- ===========================
-     Inline JavaScript Logic
-     =========================== -->
+
+<!-- JavaScript -->
 <script>
-/* ---------- Toast Notification ---------- */
+/* ===== TAB SWITCHING LOGIC ===== */
+const tabButtons = document.querySelectorAll('.tab-button');
+const tabContents = document.querySelectorAll('.tab-content');
+
+function switchTab(tabName) {
+  // Update buttons with proper ARIA and tabindex
+  tabButtons.forEach(btn => {
+    const isActive = btn.dataset.tab === tabName;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-selected', isActive);
+    btn.setAttribute('tabindex', isActive ? '0' : '-1');
+  });
+
+  // Update content panes with smooth transition and aria-hidden
+  tabContents.forEach(content => {
+    const isActive = content.id === `tab-${tabName}`;
+    content.classList.toggle('active', isActive);
+    content.setAttribute('aria-hidden', !isActive);
+  });
+}
+
+// Tab button click handlers
+tabButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    switchTab(btn.dataset.tab);
+  });
+});
+
+// Keyboard navigation for tabs (Arrow keys)
+tabButtons.forEach((btn, index) => {
+  btn.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      const nextIndex = (index + 1) % tabButtons.length;
+      tabButtons[nextIndex].focus();
+      switchTab(tabButtons[nextIndex].dataset.tab);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const prevIndex = (index - 1 + tabButtons.length) % tabButtons.length;
+      tabButtons[prevIndex].focus();
+      switchTab(tabButtons[prevIndex].dataset.tab);
+    }
+  });
+});
+
+/* ===== TOAST NOTIFICATION ===== */
 function showToast(message) {
   const toast = document.createElement('div');
   toast.className = 'toast';
   toast.textContent = message;
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
 }
 
-/* ---------- Transcript Search & Navigation ---------- */
+/* ===== TRANSCRIPT SEARCH & NAVIGATION ===== */
 const searchInput = document.getElementById('searchInput');
 const transcriptContainer = document.getElementById('transcript');
 const prevBtn = document.getElementById('prevMatchBtn');
@@ -250,6 +773,7 @@ function clearHighlights() {
   highlightEls.forEach(el => el.outerHTML = el.textContent);
   highlightEls = [];
 }
+
 function highlightSearch(query) {
   clearHighlights();
   if (!query) return;
@@ -261,6 +785,7 @@ function highlightSearch(query) {
   currentMatchIndex = highlightEls.length ? 0 : -1;
   if (currentMatchIndex >= 0) scrollToMatch(currentMatchIndex);
 }
+
 function scrollToMatch(i) {
   highlightEls.forEach(el => el.classList.remove('active-match'));
   const el = highlightEls[i];
@@ -269,35 +794,44 @@ function scrollToMatch(i) {
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }
+
 function goToNextMatch() {
   if (!highlightEls.length) return;
   currentMatchIndex = (currentMatchIndex + 1) % highlightEls.length;
   scrollToMatch(currentMatchIndex);
 }
+
 function goToPrevMatch() {
   if (!highlightEls.length) return;
   currentMatchIndex = (currentMatchIndex - 1 + highlightEls.length) % highlightEls.length;
   scrollToMatch(currentMatchIndex);
 }
-searchInput.addEventListener('input', () => highlightSearch(searchInput.value));
-nextBtn.addEventListener('click', goToNextMatch);
-prevBtn.addEventListener('click', goToPrevMatch);
+
+if (searchInput) {
+  searchInput.addEventListener('input', () => highlightSearch(searchInput.value));
+}
+if (prevBtn) prevBtn.addEventListener('click', goToPrevMatch);
+if (nextBtn) nextBtn.addEventListener('click', goToNextMatch);
+
 document.addEventListener('keydown', e => {
   if (e.ctrlKey && e.key === 'f') {
-    e.preventDefault(); searchInput.focus();
+    e.preventDefault();
+    if (searchInput) searchInput.focus();
   }
 });
 
-/* ---------- Copy Entire Transcript ---------- */
+/* ===== COPY ENTIRE TRANSCRIPT ===== */
 const copyAllBtn = document.getElementById('copyAllBtn');
-copyAllBtn.addEventListener('click', () => {
-  const text = transcriptContainer.innerText;
-  navigator.clipboard.writeText(text)
-    .then(() => showToast('Transcript copied to clipboard'))
-    .catch(() => showToast('Failed to copy transcript'));
-});
+if (copyAllBtn) {
+  copyAllBtn.addEventListener('click', () => {
+    const text = transcriptContainer.innerText;
+    navigator.clipboard.writeText(text)
+      .then(() => showToast('Transcript copied to clipboard'))
+      .catch(() => showToast('Failed to copy transcript'));
+  });
+}
 
-/* ---------- Copy Individual Segment ---------- */
+/* ===== COPY INDIVIDUAL SEGMENT ===== */
 document.querySelectorAll('.copySegmentBtn').forEach(btn => {
   btn.addEventListener('click', e => {
     const seg = e.target.closest('.segment');
@@ -308,7 +842,7 @@ document.querySelectorAll('.copySegmentBtn').forEach(btn => {
   });
 });
 
-/* ---------- Highlight Toggle & Persistence ---------- */
+/* ===== HIGHLIGHT TOGGLE ===== */
 document.querySelectorAll('.highlightBtn').forEach(btn => {
   btn.addEventListener('click', e => {
     const seg = e.target.closest('.segment');
@@ -323,7 +857,7 @@ document.querySelectorAll('.highlightBtn').forEach(btn => {
   });
 });
 
-/* ---------- Commenting ---------- */
+/* ===== COMMENTING ===== */
 document.querySelectorAll('.commentBtn').forEach(btn => {
   btn.addEventListener('click', e => {
     const seg = e.target.closest('.segment');
@@ -341,9 +875,10 @@ document.querySelectorAll('.commentBtn').forEach(btn => {
   });
 });
 
-/* ---------- Audio Synchronization ---------- */
+/* ===== AUDIO SYNCHRONIZATION ===== */
 const audio = document.getElementById('audioPlayer');
 const segments = Array.from(document.querySelectorAll('.segment'));
+
 function findCurrentSegmentIndex(t) {
   for (let i = segments.length - 1; i >= 0; i--) {
     const s = parseFloat(segments[i].dataset.start) || 0;
@@ -351,31 +886,45 @@ function findCurrentSegmentIndex(t) {
   }
   return 0;
 }
+
 segments.forEach(seg => {
   seg.addEventListener('click', () => {
     const start = parseFloat(seg.dataset.start) || 0;
-    audio.currentTime = start; audio.play();
+    audio.currentTime = start;
+    audio.play();
     segments.forEach(s => s.classList.remove('current-segment'));
     seg.classList.add('current-segment');
   });
 });
-audio.addEventListener('timeupdate', () => {
-  const idx = findCurrentSegmentIndex(audio.currentTime);
-  segments.forEach(s => s.classList.remove('current-segment'));
-  const cur = segments[idx];
-  if (cur) {
-    cur.classList.add('current-segment');
-    cur.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-});
 
-/* ---------- Keyboard Shortcuts ---------- */
+if (audio) {
+  audio.addEventListener('timeupdate', () => {
+    const idx = findCurrentSegmentIndex(audio.currentTime);
+    segments.forEach(s => s.classList.remove('current-segment'));
+    const cur = segments[idx];
+    if (cur) {
+      cur.classList.add('current-segment');
+      cur.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  });
+}
+
+/* ===== KEYBOARD SHORTCUTS ===== */
 document.addEventListener('keydown', e => {
+  // Space to play/pause (when not in input field)
   if (e.code === 'Space' && document.activeElement.tagName !== 'INPUT') {
-    e.preventDefault(); audio.paused ? audio.play() : audio.pause();
+    e.preventDefault();
+    if (audio) {
+      audio.paused ? audio.play() : audio.pause();
+    }
   }
-  if (e.ctrlKey && e.key === 'c') {
-    e.preventDefault(); copyAllBtn.click();
+  // R to replay from start
+  if (e.key === 'r' && !e.ctrlKey && document.activeElement.tagName !== 'INPUT') {
+    e.preventDefault();
+    if (audio) {
+      audio.currentTime = 0;
+      audio.play();
+    }
   }
 });
 </script>
