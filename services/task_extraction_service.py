@@ -439,26 +439,50 @@ class TaskExtractionService:
                     self._extract_tasks_with_ai(transcript, session_wrapper)
                 )
                 
-                # Format tasks for response (don't save to DB for anonymous sessions)
+                # PERSIST tasks to database using session_id
                 if extracted_tasks:
+                    # Create dummy meeting to satisfy meeting_id constraint
+                    from models.meeting import Meeting
+                    dummy_meeting = Meeting(title=f"Auto-generated for session {session_id}")
+                    db.session.add(dummy_meeting)
+                    db.session.flush()  # Get meeting_id
+                    
+                    # Save extracted tasks to database
+                    from models.task import Task
+                    saved_tasks = []
+                    for task_data in extracted_tasks:
+                        task = Task(
+                            meeting_id=dummy_meeting.id,  # Required by schema
+                            session_id=session_id,  # Actual link to session
+                            title=task_data.title,
+                            description=task_data.description,
+                            priority=task_data.priority,
+                            category=task_data.category,
+                            extracted_by_ai=True,
+                            confidence_score=task_data.confidence
+                        )
+                        db.session.add(task)
+                        saved_tasks.append(task)
+                    
+                    db.session.commit()
+                    
                     tasks_list = [
                         {
+                            'id': task.id,
                             'title': task.title,
                             'description': task.description,
                             'priority': task.priority,
                             'category': task.category,
-                            'assigned_to': task.assigned_to,
-                            'due_date_text': task.due_date_text,
-                            'confidence': task.confidence
+                            'confidence': task.confidence_score
                         }
-                        for task in extracted_tasks
+                        for task in saved_tasks
                     ]
                     
-                    logger.info(f"✅ Extracted {len(tasks_list)} tasks from session {session.external_id}")
+                    logger.info(f"✅ Extracted and persisted {len(tasks_list)} tasks from session {session.external_id}")
                     
                     return {
                         'success': True,
-                        'message': f'Extracted {len(tasks_list)} tasks',
+                        'message': f'Extracted and persisted {len(tasks_list)} tasks',
                         'tasks': tasks_list,
                         'tasks_created': len(tasks_list)
                     }

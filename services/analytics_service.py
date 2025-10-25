@@ -819,6 +819,7 @@ class AnalyticsService:
         """
         Wrapper method for PostTranscriptionOrchestrator compatibility.
         Accepts session_id and generates analytics directly from Session data.
+        PERSISTS analytics to database using session_id.
         
         Args:
             session_id: Database session ID
@@ -851,24 +852,48 @@ class AnalyticsService:
             word_count = sum(len(seg.text.split()) for seg in segments if seg.text)
             avg_confidence = session.average_confidence or 0.0
             
-            analytics_data = {
-                'total_duration_minutes': round(total_duration / 60, 2) if total_duration else 0,
-                'word_count': word_count,
-                'average_confidence': round(avg_confidence, 2),
-                'segment_count': len(segments),
-                'words_per_minute': round(word_count / (total_duration / 60), 2) if total_duration > 0 else 0,
-            }
+            # Create or update Analytics record using session_id
+            analytics = db.session.query(Analytics).filter_by(session_id=session_id).first()
+            if not analytics:
+                # Create new analytics record
+                # meeting_id is required but we don't have one, so use a dummy value
+                # We'll use the session_id field for actual linking
+                from models.meeting import Meeting
+                dummy_meeting = Meeting(title=f"Auto-generated for session {session_id}")
+                db.session.add(dummy_meeting)
+                db.session.flush()  # Get meeting_id
+                
+                analytics = Analytics(
+                    meeting_id=dummy_meeting.id,  # Required by schema but not used
+                    session_id=session_id  # Actual link to session
+                )
+                db.session.add(analytics)
             
-            logger.info(f"✅ Generated analytics for session {session.external_id}: {word_count} words, {len(segments)} segments")
+            # Update analytics fields
+            analytics.total_duration_minutes = round(total_duration / 60, 2) if total_duration else 0
+            analytics.word_count = word_count
+            analytics.participant_count = 1  # Default
+            
+            db.session.commit()
+            
+            logger.info(f"✅ Generated and persisted analytics for session {session.external_id}: {word_count} words, {len(segments)} segments")
             
             return {
                 'success': True,
-                'message': 'Analytics generated successfully',
-                'analytics': analytics_data
+                'message': 'Analytics generated and persisted successfully',
+                'analytics_id': analytics.id,
+                'analytics': {
+                    'total_duration_minutes': analytics.total_duration_minutes,
+                    'word_count': word_count,
+                    'average_confidence': round(avg_confidence, 2),
+                    'segment_count': len(segments),
+                    'words_per_minute': round(word_count / (total_duration / 60), 2) if total_duration > 0 else 0,
+                }
             }
                 
         except Exception as e:
             logger.error(f"❌ generate_analytics failed for session {session_id}: {e}", exc_info=True)
+            db.session.rollback()
             return {
                 'success': False,
                 'message': f'Analytics generation failed: {str(e)}',
