@@ -522,6 +522,14 @@ def on_finalize(data):
         "timestamp": int(_now_ms())
     })
     
+    # CROWN+ Emit session_finalized to trigger redirect to tabbed UI
+    emit("session_finalized", {
+        "session_id": session_id,
+        "status": "completed",
+        "final_text": final_text,
+        "timestamp": int(_now_ms())
+    })
+    
     # clear session memory
     _BUFFERS.pop(session_id, None)
     _LAST_EMIT_AT.pop(session_id, None)
