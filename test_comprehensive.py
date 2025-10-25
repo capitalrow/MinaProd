@@ -280,12 +280,14 @@ def test_05_analytics_service():
             result = analytics_service.generate_analytics(session_id=session_id)
             
             assert result is not None, "Analytics service returned None"
-            assert 'total_speaking_time' in result, "Missing total_speaking_time"
+            assert 'success' in result, "Missing success field"
+            assert result['success'] is True, "Analytics generation failed"
+            assert 'analytics' in result, "Missing analytics field"
             
             # Check database persistence
             analytics = db.session.query(Analytics).filter_by(session_id=session_id).first()
             assert analytics is not None, "Analytics not persisted to database"
-            assert analytics.total_speaking_time > 0, "Speaking time not calculated"
+            assert analytics.word_count > 0, "Word count not calculated"
             
             # Cleanup
             db.session.delete(analytics)
