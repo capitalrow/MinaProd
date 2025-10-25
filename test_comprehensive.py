@@ -154,12 +154,11 @@ def test_03_segment_persistence():
             for i in range(5):
                 segment = Segment(
                     session_id=session_id,
+                    kind="final",
                     text=f"Test segment {i+1}",
-                    speaker_label=f"Speaker {(i % 2) + 1}",
-                    start_time=i * 3.0,
-                    end_time=(i + 1) * 3.0,
-                    avg_confidence=0.92 + (i * 0.01),
-                    language="en"
+                    start_ms=i * 3000,
+                    end_ms=(i + 1) * 3000,
+                    avg_confidence=0.92 + (i * 0.01)
                 )
                 db.session.add(segment)
             
@@ -169,7 +168,7 @@ def test_03_segment_persistence():
             segments = db.session.query(Segment).filter_by(session_id=session_id).all()
             assert len(segments) == 5, f"Expected 5 segments, got {len(segments)}"
             assert segments[0].text == "Test segment 1", "First segment text mismatch"
-            assert segments[2].speaker_label == "Speaker 1", "Speaker label mismatch"
+            assert segments[2].kind == "final", "Segment kind mismatch"
             
             # Cleanup
             for segment in segments:
@@ -206,12 +205,11 @@ def test_04_session_finalization():
             for i in range(3):
                 segment = Segment(
                     session_id=session_id,
+                    kind="final",
                     text=f"Segment {i+1}",
-                    speaker_label="Speaker 1",
-                    start_time=i * 2.0,
-                    end_time=(i + 1) * 2.0,
-                    avg_confidence=0.95,
-                    language="en"
+                    start_ms=i * 2000,
+                    end_ms=(i + 1) * 2000,
+                    avg_confidence=0.95
                 )
                 db.session.add(segment)
             db.session.commit()
@@ -264,16 +262,15 @@ def test_05_analytics_service():
             # Create session with segments
             session_id = SessionService.create_session(title="Analytics Test")
             
-            # Add segments with different speakers
+            # Add segments
             for i in range(6):
                 segment = Segment(
                     session_id=session_id,
+                    kind="final",
                     text=f"Test text {i}",
-                    speaker_label=f"Speaker {(i % 2) + 1}",
-                    start_time=i * 5.0,
-                    end_time=(i + 1) * 5.0,
-                    avg_confidence=0.90,
-                    language="en"
+                    start_ms=i * 5000,
+                    end_ms=(i + 1) * 5000,
+                    avg_confidence=0.90
                 )
                 db.session.add(segment)
             db.session.commit()
@@ -328,12 +325,11 @@ def test_06_task_extraction_service():
             # Add segments with action items
             segment = Segment(
                 session_id=session_id,
+                kind="final",
                 text="We need to schedule a follow-up meeting and send the report by Friday.",
-                speaker_label="Speaker 1",
-                start_time=0.0,
-                end_time=5.0,
-                avg_confidence=0.95,
-                language="en"
+                start_ms=0,
+                end_ms=5000,
+                avg_confidence=0.95
             )
             db.session.add(segment)
             db.session.commit()
@@ -384,12 +380,11 @@ def test_07_post_transcription_orchestrator():
             for i in range(3):
                 segment = Segment(
                     session_id=session_id,
+                    kind="final",
                     text=f"Important meeting discussion point {i+1}",
-                    speaker_label="Speaker 1",
-                    start_time=i * 3.0,
-                    end_time=(i + 1) * 3.0,
-                    avg_confidence=0.92,
-                    language="en"
+                    start_ms=i * 3000,
+                    end_ms=(i + 1) * 3000,
+                    avg_confidence=0.92
                 )
                 db.session.add(segment)
             db.session.commit()
