@@ -34,11 +34,6 @@ class Segment(Base):
     # 🔹 NEW: Interactive transcript attributes
     is_highlighted: Mapped[bool] = mapped_column(Boolean, default=False)
     highlight_color: Mapped[Optional[str]] = mapped_column(String(24), default="yellow")
-    
-    # CROWN+ Specification: Version control for concurrent edit conflict resolution
-    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
-    edited_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    edited_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey('users.id'), nullable=True)
 
     session: Mapped["Session"] = relationship(back_populates="segments")
     comments: Mapped[list["Comment"]] = relationship(back_populates="segment", cascade="all, delete-orphan")

@@ -71,7 +71,7 @@ class TestLiveTranscriptionJourney:
         performance_monitor['final_state'] = {
             'timer': final_timer,
             'words': final_words,
-            'transcript_length': len(final_transcript) if final_transcript else 0,
+            'transcript_length': len(final_transcript),
             'session_duration': performance_monitor['recording_end'] - performance_monitor['recording_start']
         }
         
@@ -147,7 +147,7 @@ class TestLiveTranscriptionJourney:
                 'session': session_num + 1,
                 'timer': timer,
                 'words': words,
-                'transcript_length': len(transcript) if transcript else 0
+                'transcript_length': len(transcript)
             })
             
             print(f"Session {session_num + 1} results: {timer}, {words} words")
@@ -237,7 +237,7 @@ class TestTranscriptionQuality:
         transcript_text = await page.locator('#transcript').text_content()
         
         # Count words in transcript (excluding UI text)
-        if transcript_text and displayed_word_count and not transcript_text.startswith('Click the red button'):
+        if transcript_text and not transcript_text.startswith('Click the red button'):
             actual_word_count = len([w for w in transcript_text.split() if w.strip()])
             expected_count = int(displayed_word_count)
             
@@ -256,11 +256,7 @@ class TestErrorHandling:
     async def test_microphone_permission_denied(self, page: Page):
         """Test handling when microphone permission is denied."""
         # Create context without microphone permission
-        browser = page.context.browser
-        if not browser:
-            print("Browser not available for context creation")
-            return
-        context = await browser.new_context(
+        context = await page.context.browser.new_context(
             permissions=[]  # No permissions granted
         )
         

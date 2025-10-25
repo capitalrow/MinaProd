@@ -1,23 +1,12 @@
 from __future__ import annotations
-from flask import Blueprint, request, jsonify, abort, render_template
+from flask import Blueprint, request, jsonify, abort
 from services.feature_flags import flags, require_flag_admin
 from models.core_models import FeatureFlag
 from models import db
 
 flags_bp = Blueprint("flags", __name__, url_prefix="/flags")
 
-
-@flags_bp.get("/admin")
-@require_flag_admin  
-def admin_page():
-    try:
-        from flask_login import current_user
-        return render_template('admin/flags.html', user=current_user)
-    except ImportError:
-        abort(500, "Authentication system unavailable")
-
 @flags_bp.get("/")
-@require_flag_admin
 def list_flags():
     return jsonify([f.to_dict() for f in FeatureFlag.query.order_by(FeatureFlag.key).all()])
 

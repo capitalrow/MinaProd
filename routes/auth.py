@@ -11,19 +11,6 @@ import re
 import logging
 import traceback
 
-# Wave 0-14: Import rate limiter for auth endpoint protection
-try:
-    from services.distributed_rate_limiter import rate_limit
-    RATE_LIMIT_AVAILABLE = True
-except ImportError:
-    RATE_LIMIT_AVAILABLE = False
-    logging.warning("DistributedRateLimiter not available for auth routes")
-    # No-op decorator fallback (Flask-Limiter still applies global limits)
-    def rate_limit(*args, **kwargs):
-        def decorator(f):
-            return f
-        return decorator
-
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -46,7 +33,6 @@ def is_valid_password(password):
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
-@rate_limit()  # Wave 0-14: 5 requests/min for auth endpoints
 def register():
     """User registration page and handler."""
     if current_user.is_authenticated:
@@ -148,73 +134,66 @@ def register():
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
-@rate_limit()  # Wave 0-14: 5 requests/min for auth endpoints
 def login():
     """User login page and handler."""
     if current_user.is_authenticated:
         return redirect(url_for('dashboard.index'))
     
     if request.method == 'POST':
-        try:
-            email_or_username = request.form.get('email_or_username', '').strip()
-            password = request.form.get('password', '')
-            remember_me = request.form.get('remember_me') == 'on'
+        email_or_username = request.form.get('email_or_username', '').strip()
+        password = request.form.get('password', '')
+        remember_me = request.form.get('remember_me') == 'on'
+        
+        logging.info(f"Login attempt for: {email_or_username}")
+        
+        if not email_or_username or not password:
+            flash('Please enter both email/username and password', 'error')
+            return render_template('auth/login.html')
+        
+        # Find user by email or username
+        user = None
+        if '@' in email_or_username:
+            user = db.session.query(User).filter_by(email=email_or_username.lower()).first()
+            logging.debug(f"Searching by email: {email_or_username.lower()} - User found: {user is not None}")
+        else:
+            user = db.session.query(User).filter_by(username=email_or_username).first()
+            logging.debug(f"Searching by username: {email_or_username} - User found: {user is not None}")
+        
+        if user:
+            password_valid = user.check_password(password)
+            logging.debug(f"Password check for user {user.username}: {password_valid}")
             
-            logging.info(f"Login attempt for: {email_or_username}")
-            
-            if not email_or_username or not password:
-                flash('Please enter both email/username and password', 'error')
-                return render_template('auth/login.html')
-            
-            # Find user by email or username
-            user = None
-            if '@' in email_or_username:
-                user = db.session.query(User).filter_by(email=email_or_username.lower()).first()
-                logging.debug(f"Searching by email: {email_or_username.lower()} - User found: {user is not None}")
-            else:
-                user = db.session.query(User).filter_by(username=email_or_username).first()
-                logging.debug(f"Searching by username: {email_or_username} - User found: {user is not None}")
-            
-            if user:
-                password_valid = user.check_password(password)
-                logging.debug(f"Password check for user {user.username}: {password_valid}")
+            if password_valid:
+                if not user.active:
+                    logging.warning(f"Login denied - inactive account: {user.username}")
+                    flash('Your account has been deactivated. Please contact support.', 'error')
+                    return render_template('auth/login.html')
                 
-                if password_valid:
-                    if not user.active:
-                        logging.warning(f"Login denied - inactive account: {user.username}")
-                        flash('Your account has been deactivated. Please contact support.', 'error')
-                        return render_template('auth/login.html')
-                    
-                    # Log in user
-                    login_user(user, remember=remember_me)
-                    user.update_last_login()
-                    db.session.commit()
-                    logging.info(f"Login successful for user: {user.username}")
-                    
-                    # Rotate session to prevent session fixation attacks
-                    try:
-                        from middleware.session_security import rotate_session
-                        rotate_session()
-                        logging.debug(f"Session rotated for user {user.username}")
-                    except Exception as e:
-                        logging.warning(f"Session rotation failed: {e}")
-                    
-                    # Redirect to next page or dashboard
-                    next_page = request.args.get('next')
-                    if next_page and next_page.startswith('/'):
-                        return redirect(next_page)
-                    return redirect(url_for('dashboard.index'))
-                else:
-                    logging.warning(f"Login failed - invalid password for user: {user.username}")
-                    flash('Invalid email/username or password', 'error')
+                # Log in user
+                login_user(user, remember=remember_me)
+                user.update_last_login()
+                db.session.commit()
+                logging.info(f"Login successful for user: {user.username}")
+                
+                # Rotate session to prevent session fixation attacks
+                try:
+                    from middleware.session_security import rotate_session
+                    rotate_session()
+                    logging.debug(f"Session rotated for user {user.username}")
+                except Exception as e:
+                    logging.warning(f"Session rotation failed: {e}")
+                
+                # Redirect to next page or dashboard
+                next_page = request.args.get('next')
+                if next_page and next_page.startswith('/'):
+                    return redirect(next_page)
+                return redirect(url_for('dashboard.index'))
             else:
-                logging.warning(f"Login failed - user not found: {email_or_username}")
+                logging.warning(f"Login failed - invalid password for user: {user.username}")
                 flash('Invalid email/username or password', 'error')
-        except Exception as e:
-            db.session.rollback()
-            logging.error(f"Login error: {str(e)}")
-            logging.error(traceback.format_exc())
-            flash('An error occurred during login. Please try again.', 'error')
+        else:
+            logging.warning(f"Login failed - user not found: {email_or_username}")
+            flash('Invalid email/username or password', 'error')
     
     return render_template('auth/login.html')
 

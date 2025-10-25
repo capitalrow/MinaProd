@@ -5,14 +5,13 @@
 Implements comprehensive rate limiting using Redis backend for distributed scaling.
 Prevents abuse and ensures fair resource allocation across all API endpoints.
 
-Key Features (Wave 0-14):
+Key Features:
 - Redis-backed distributed rate limiting
 - Per-IP, per-user, and per-endpoint limits
 - Sliding window algorithm
 - Burst protection and backoff
 - Rate limit headers for clients
 - Whitelist/blacklist support
-- Slack alerting for abuse patterns
 """
 
 import logging
@@ -219,11 +218,11 @@ class DistributedRateLimiter:
         backoff_key = f"{self.key_prefix}:backoff:{identifier}"
         
         try:
-            ttl_result = self.redis_client.ttl(backoff_key)
-            ttl = int(ttl_result) if ttl_result is not None else -1
+            ttl = self.redis_client.ttl(backoff_key)
+            ttl = int(ttl) if ttl is not None else -1
             if ttl > 0:
                 violations_val = self.redis_client.get(backoff_key)
-                violations = int(str(violations_val)) if violations_val else 0
+                violations = int(violations_val) if violations_val else 0
                 return True, ttl
             return False, 0
         except Exception as e:
@@ -253,10 +252,8 @@ class DistributedRateLimiter:
     def get_stats(self) -> Dict:
         """Get rate limiter statistics."""
         try:
-            whitelist_result = self.redis_client.scard(self.whitelist_key)
-            blacklist_result = self.redis_client.scard(self.blacklist_key)
-            whitelist_count = int(whitelist_result) if whitelist_result is not None else 0
-            blacklist_count = int(blacklist_result) if blacklist_result is not None else 0
+            whitelist_count = int(self.redis_client.scard(self.whitelist_key) or 0)
+            blacklist_count = int(self.redis_client.scard(self.blacklist_key) or 0)
             
             return {
                 **self.stats,
@@ -267,72 +264,6 @@ class DistributedRateLimiter:
         except Exception as e:
             logger.error(f"Stats retrieval error: {e}")
             return self.stats
-    
-    def send_abuse_alert(self, identifier: str, violations: int, endpoint: str):
-        """
-        Send Slack alert for rate limit abuse (Wave 0-14-5).
-        
-        Args:
-            identifier: Client identifier (IP or user_id)
-            violations: Number of violations
-            endpoint: Endpoint being abused
-        """
-        try:
-            # Import here to avoid circular dependency
-            from services.slack_service import SlackService
-            
-            slack = SlackService()
-            if not slack.is_available():
-                logger.debug(f"Slack not configured, skipping rate limit abuse alert for '{identifier}'")
-                return
-            
-            # Extract IP from identifier
-            ip_address = identifier.split(':')[-1] if ':' in identifier else identifier
-            user_id = identifier.split(':')[1] if identifier.startswith('user:') else 'anonymous'
-            
-            # Build alert message
-            blocks = [
-                {
-                    "type": "header",
-                    "text": {
-                        "type": "plain_text",
-                        "text": f"⚠️ Rate Limit Abuse Detected"
-                    }
-                },
-                {
-                    "type": "section",
-                    "fields": [
-                        {"type": "mrkdwn", "text": f"*Client:*\n{identifier}"},
-                        {"type": "mrkdwn", "text": f"*IP Address:*\n{ip_address}"},
-                        {"type": "mrkdwn", "text": f"*User ID:*\n{user_id}"},
-                        {"type": "mrkdwn", "text": f"*Violations:*\n{violations}"},
-                        {"type": "mrkdwn", "text": f"*Endpoint:*\n{endpoint}"}
-                    ]
-                },
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"⏰ Alert Time: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}"
-                    }
-                }
-            ]
-            
-            import requests
-            response = requests.post(
-                slack.webhook_url or "",
-                json={"blocks": blocks},
-                headers={'Content-Type': 'application/json'},
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                logger.info(f"✅ Rate limit abuse alert sent to Slack: {identifier} ({violations} violations)")
-            else:
-                logger.error(f"❌ Slack abuse alert failed: {response.status_code}")
-                
-        except Exception as e:
-            logger.error(f"❌ Failed to send rate limit abuse alert: {e}")
 
 def rate_limit(requests_per_minute: Optional[int] = None, 
                requests_per_hour: Optional[int] = None,
@@ -410,13 +341,8 @@ def rate_limit(requests_per_minute: Optional[int] = None,
                 # Track violations for progressive backoff
                 violation_key = f"rate_limit:violations:{identifier}"
                 try:
-                    violations_val = rate_limiter.redis_client.get(violation_key)
-                    violations = (int(str(violations_val)) if violations_val else 0) + 1
+                    violations = int(rate_limiter.redis_client.get(violation_key) or 0) + 1
                     rate_limiter.redis_client.setex(violation_key, 3600, violations)  # 1 hour
-                    
-                    # Send Slack alert for abuse (>= 5 violations)
-                    if violations >= 5:
-                        rate_limiter.send_abuse_alert(identifier, violations, endpoint)
                     
                     # Apply backoff if too many violations
                     if violations >= 3:

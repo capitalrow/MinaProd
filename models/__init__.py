@@ -15,7 +15,6 @@ from .shared_link import SharedLink
 from .team_share import TeamShare
 from .share_analytics import ShareAnalytic
 from .metrics import ChunkMetric, SessionMetric
-from .event_ledger import EventLedger
 
 # Import new comprehensive models for Mina productivity platform
 from .user import User
@@ -26,8 +25,7 @@ from .task import Task
 from .calendar_event import CalendarEvent
 from .analytics import Analytics
 from .marker import Marker
-# Import segment Comment as SegmentComment to avoid conflict with SessionComment
-from .comment import Comment as SegmentComment
+from .comment import Comment
 from .copilot_template import CopilotTemplate
 from .copilot_conversation import CopilotConversation
 
@@ -40,7 +38,7 @@ except ImportError:
 
 __all__ = [
     'db', 'Base', 'Session', 'Segment', 'Summary', 'SharedLink', 'TeamShare', 'ShareAnalytic',
-    'ChunkMetric', 'SessionMetric', 'EventLedger', 'User', 'Workspace', 'Meeting', 
-    'Participant', 'Task', 'CalendarEvent', 'Analytics', 'Marker', 'SegmentComment', 'CopilotTemplate',
+    'ChunkMetric', 'SessionMetric', 'User', 'Workspace', 'Meeting', 
+    'Participant', 'Task', 'CalendarEvent', 'Analytics', 'Marker', 'Comment', 'CopilotTemplate',
     'CopilotConversation'
 ]

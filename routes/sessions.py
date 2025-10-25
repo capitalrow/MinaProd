@@ -7,7 +7,6 @@ import logging
 from flask import Blueprint, request, jsonify, render_template, abort, Response
 from services.session_service import SessionService
 from services.export_service import ExportService
-from services.api_versioning import api_version_negotiation
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +14,6 @@ sessions_bp = Blueprint('sessions', __name__, url_prefix='/sessions')
 
 
 @sessions_bp.route('/', methods=['GET'])
-@api_version_negotiation
 def list_sessions():
     """
     GET /sessions - List sessions with optional filtering

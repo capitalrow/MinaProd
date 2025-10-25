@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from .user import User
     from .workspace import Workspace
     from .meeting import Meeting
-    from .event_ledger import EventLedger
 
 class Session(Base):
     """
@@ -47,10 +46,6 @@ class Session(Base):
     average_confidence: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
     total_duration: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
     
-    # CROWN+ Specification: Version control for concurrent edit conflict resolution
-    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
-    trace_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)  # Event chain identifier
-    
     # Ownership relationships
     user: Mapped[Optional["User"]] = relationship(back_populates="sessions", foreign_keys=[user_id])
     workspace: Mapped[Optional["Workspace"]] = relationship(back_populates="sessions", foreign_keys=[workspace_id])
@@ -76,11 +71,6 @@ class Session(Base):
     )
     session_metrics: Mapped[Optional["SessionMetric"]] = relationship(
         back_populates="session", cascade="all, delete-orphan", uselist=False
-    )
-    
-    # CROWN+ Specification: EventLedger for audit trail
-    event_ledger: Mapped[list["EventLedger"]] = relationship(
-        back_populates="session", cascade="all, delete-orphan"
     )
     
     # Database indexes for query optimization
