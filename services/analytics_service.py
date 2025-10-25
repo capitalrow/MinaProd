@@ -818,7 +818,7 @@ class AnalyticsService:
     def generate_analytics(self, session_id: int) -> Dict:
         """
         Wrapper method for PostTranscriptionOrchestrator compatibility.
-        Accepts session_id and generates analytics synchronously.
+        Accepts session_id and generates analytics directly from Session data.
         
         Args:
             session_id: Database session ID
@@ -826,31 +826,46 @@ class AnalyticsService:
         Returns:
             Dictionary with analytics results
         """
-        import asyncio
-        
         try:
-            # Get session and associated meeting
+            # Get session
             session = db.session.get(Session, session_id)
             if not session:
                 raise ValueError(f"Session {session_id} not found")
             
-            # If no meeting linked, return basic stats without full analytics
-            if not session.meeting_id:
-                logger.warning(f"Session {session_id} has no linked meeting - returning basic stats only")
+            # Get segments for analysis
+            segments = db.session.query(Segment).filter_by(
+                session_id=session_id,
+                kind='final'
+            ).order_by(Segment.start_ms).all()
+            
+            if not segments:
+                logger.warning(f"Session {session_id} has no segments - skipping analytics")
                 return {
                     'success': False,
-                    'message': 'No meeting linked to session (anonymous session)',
+                    'message': 'No transcript segments available for analysis',
                     'analytics': {}
                 }
             
-            # Run async analyze_meeting in sync context
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                result = loop.run_until_complete(self.analyze_meeting(session.meeting_id))
-                return result
-            finally:
-                loop.close()
+            # Generate basic analytics from session data
+            total_duration = session.total_duration or 0.0
+            word_count = sum(len(seg.text.split()) for seg in segments if seg.text)
+            avg_confidence = session.average_confidence or 0.0
+            
+            analytics_data = {
+                'total_duration_minutes': round(total_duration / 60, 2) if total_duration else 0,
+                'word_count': word_count,
+                'average_confidence': round(avg_confidence, 2),
+                'segment_count': len(segments),
+                'words_per_minute': round(word_count / (total_duration / 60), 2) if total_duration > 0 else 0,
+            }
+            
+            logger.info(f"✅ Generated analytics for session {session.external_id}: {word_count} words, {len(segments)} segments")
+            
+            return {
+                'success': True,
+                'message': 'Analytics generated successfully',
+                'analytics': analytics_data
+            }
                 
         except Exception as e:
             logger.error(f"❌ generate_analytics failed for session {session_id}: {e}", exc_info=True)

@@ -386,7 +386,7 @@ class TaskExtractionService:
     def extract_tasks(self, session_id: int) -> Dict:
         """
         Wrapper method for PostTranscriptionOrchestrator compatibility.
-        Accepts session_id and extracts tasks synchronously.
+        Accepts session_id and extracts tasks directly from Session segments.
         
         Args:
             session_id: Database session ID
@@ -400,37 +400,67 @@ class TaskExtractionService:
         logger = logging.getLogger(__name__)
         
         try:
-            # Get session and associated meeting
+            # Get session
             session = db.session.get(Session, session_id)
             if not session:
                 raise ValueError(f"Session {session_id} not found")
             
-            # If no meeting linked, return empty task list
-            if not session.meeting_id:
-                logger.warning(f"Session {session_id} has no linked meeting - skipping task extraction")
+            # Get segments from session
+            segments = db.session.query(Segment).filter_by(
+                session_id=session_id,
+                kind='final'
+            ).order_by(Segment.created_at).all()
+            
+            if not segments:
+                logger.warning(f"Session {session_id} has no segments - skipping task extraction")
                 return {
                     'success': True,
-                    'message': 'No meeting linked to session (anonymous session)',
+                    'message': 'No transcript segments available for task extraction',
                     'tasks': [],
                     'tasks_created': 0
                 }
             
-            # Run async extract_tasks_from_meeting in sync context
+            # Build transcript from segments
+            transcript = self._build_transcript(segments)
+            
+            # Extract tasks using AI
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
+                # Create a minimal meeting-like object for the AI extraction
+                class SessionWrapper:
+                    def __init__(self, sess):
+                        self.title = sess.title
+                        self.created_at = sess.created_at or sess.started_at
+                        self.session = sess
+                
+                session_wrapper = SessionWrapper(session)
                 extracted_tasks = loop.run_until_complete(
-                    self.extract_tasks_from_meeting(session.meeting_id)
+                    self._extract_tasks_with_ai(transcript, session_wrapper)
                 )
                 
-                # Create tasks in database
+                # Format tasks for response (don't save to DB for anonymous sessions)
                 if extracted_tasks:
-                    created_tasks = self.create_tasks_in_database(session.meeting_id, extracted_tasks)
+                    tasks_list = [
+                        {
+                            'title': task.title,
+                            'description': task.description,
+                            'priority': task.priority,
+                            'category': task.category,
+                            'assigned_to': task.assigned_to,
+                            'due_date_text': task.due_date_text,
+                            'confidence': task.confidence
+                        }
+                        for task in extracted_tasks
+                    ]
+                    
+                    logger.info(f"✅ Extracted {len(tasks_list)} tasks from session {session.external_id}")
+                    
                     return {
                         'success': True,
-                        'message': f'Extracted {len(created_tasks)} tasks',
-                        'tasks': [t.to_dict() for t in created_tasks],
-                        'tasks_created': len(created_tasks)
+                        'message': f'Extracted {len(tasks_list)} tasks',
+                        'tasks': tasks_list,
+                        'tasks_created': len(tasks_list)
                     }
                 else:
                     return {
