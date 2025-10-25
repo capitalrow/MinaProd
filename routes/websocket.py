@@ -391,28 +391,45 @@ def on_audio_chunk(data):
     if not chunk:
         return
 
-    # Append to full buffer for the eventual final pass
-    _BUFFERS[session_id].extend(chunk)
-    
-    # CROWN+ Event Chain: Log audio_chunk event (CRITICAL - zero tolerance)
+    # CROWN+ Event Chain: Log audio_chunk event FIRST (CRITICAL - zero tolerance)
+    # Must log before buffering to maintain event chain integrity
     start_time = _now_ms()
     try:
         session = db.session.query(Session).filter_by(external_id=session_id).first()
         if not session:
             logger.error(f"🚨 CROWN+ VIOLATION: Session not found for audio_chunk (session_id={session_id})")
-            emit("error", {"message": "Session not found - cannot log audio_chunk", "critical": True})
+            emit("error", {"message": "Session not found - recording stopped", "critical": True})
+            # Hard-fail: Clear session state
+            _BUFFERS.pop(session_id, None)
+            _LAST_EMIT_AT.pop(session_id, None)
+            _LAST_INTERIM_TEXT.pop(session_id, None)
             return
         
         _event_tracker.audio_chunk(
             session=session,
             chunk_size=len(chunk),
-            chunk_index=len(_BUFFERS[session_id]) // len(chunk) if len(chunk) > 0 else 0,
+            chunk_index=len(_BUFFERS.get(session_id, bytearray())) // len(chunk) if len(chunk) > 0 else 0,
             start_time_ms=start_time
         )
     except Exception as e:
         logger.error(f"🚨 CROWN+ VIOLATION: Failed to log audio_chunk event - event chain broken: {e}")
-        emit("error", {"message": "Critical event logging failure", "critical": True})
+        emit("error", {"message": "Critical event logging failure - recording stopped", "critical": True})
+        # Hard-fail: Clear session state to stop all processing
+        _BUFFERS.pop(session_id, None)
+        _LAST_EMIT_AT.pop(session_id, None)
+        _LAST_INTERIM_TEXT.pop(session_id, None)
+        # Mark session as broken
+        try:
+            if session:
+                session.status = 'error'
+                db.session.commit()
+        except Exception as db_err:
+            logger.error(f"Failed to mark session as error: {db_err}")
+            db.session.rollback()
         return
+    
+    # NOW safe to buffer after event logged
+    _BUFFERS[session_id].extend(chunk)
 
     # Only process if we have meaningful audio data (> 200 bytes for real-time feel)
     if len(chunk) < 200:
