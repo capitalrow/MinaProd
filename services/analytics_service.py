@@ -3,6 +3,7 @@ Analytics Service
 Comprehensive meeting analytics, insights, and performance metrics calculation.
 """
 
+import logging
 import json
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta
@@ -10,6 +11,8 @@ from statistics import mean, median
 from collections import defaultdict
 from models import db, Analytics, Meeting, Participant, Task, Session, Segment
 from services.openai_client_manager import get_openai_client
+
+logger = logging.getLogger(__name__)
 
 
 class AnalyticsService:
@@ -852,20 +855,13 @@ class AnalyticsService:
             word_count = sum(len(seg.text.split()) for seg in segments if seg.text)
             avg_confidence = session.average_confidence or 0.0
             
-            # Create or update Analytics record using session_id
+            # Create or update Analytics record using session_id (NO meeting required!)
             analytics = db.session.query(Analytics).filter_by(session_id=session_id).first()
             if not analytics:
-                # Create new analytics record
-                # meeting_id is required but we don't have one, so use a dummy value
-                # We'll use the session_id field for actual linking
-                from models.meeting import Meeting
-                dummy_meeting = Meeting(title=f"Auto-generated for session {session_id}")
-                db.session.add(dummy_meeting)
-                db.session.flush()  # Get meeting_id
-                
+                # Create new analytics record with session_id only (meeting_id is optional)
                 analytics = Analytics(
-                    meeting_id=dummy_meeting.id,  # Required by schema but not used
-                    session_id=session_id  # Actual link to session
+                    session_id=session_id,
+                    meeting_id=None  # Optional - 70% of sessions don't create meetings
                 )
                 db.session.add(analytics)
             
