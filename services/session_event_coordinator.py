@@ -220,9 +220,13 @@ class SessionEventCoordinator:
             metadata=metadata or {}
         )
         
-        # Emit to Socket.IO separately
-        if room:
-            socketio.emit('session_finalized', payload, to=room)
+        # Emit to Socket.IO separately (only if socketio available and in proper context)
+        if room and socketio:
+            try:
+                socketio.emit('session_finalized', payload, to=room)
+            except RuntimeError as e:
+                # Ignore "working outside of request context" errors from background tasks
+                logger.debug(f"Socket.IO emit skipped (background context): {e}")
         
         # Backward compatibility
         if ENABLE_LEGACY_EVENTS:
