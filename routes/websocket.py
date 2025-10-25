@@ -568,78 +568,111 @@ def on_finalize(data):
     finalize_start_time = _now_ms()
     try:
         session = db.session.query(Session).filter_by(external_id=session_id).first()
-        if session:
-            # CROWN+ Event Chain: Log record_stop event
+        if not session:
+            logger.error(f"🚨 CROWN+ VIOLATION: Session not found for finalize (session_id={session_id})")
+            emit("error", {"message": "Session not found - cannot finalize", "critical": True})
+            return
+        
+        # CROWN+ Zero-Tolerance: Verify event chain integrity before finalizing
+        if not hasattr(session, 'trace_id') or not session.trace_id:
+            logger.error(f"🚨 CROWN+ VIOLATION: Session {session_id} has no trace_id - event chain never started!")
+            emit("error", {"message": "Event chain integrity violation - session never properly started", "critical": True})
+            return
+        
+        # CROWN+ Event Chain: Log record_stop event (FATAL if fails)
+        try:
             _event_tracker.record_stop(
                 session=session,
                 final_duration_ms=int(len(full_audio) / 16000 * 1000)
             )
-            # Enqueue final segment if we have transcribed text
-            if final_text:
-                segment_data = {
-                    'kind': 'final',
-                    'text': final_text,
-                    'avg_confidence': 0.9,
-                    'start_ms': 0,
-                    'end_ms': int(len(full_audio) / 16000 * 1000),
-                    'created_at': datetime.utcnow()
-                }
-                _persister.enqueue_segment(session_id, segment_data)
-                logger.info(f"[ws] Enqueued final segment for session {session_id}")
-            
-            # Update associated Meeting status if it exists
-            if session.meeting_id:
-                meeting = db.session.query(Meeting).filter_by(id=session.meeting_id).first()
-                if meeting:
-                    meeting.status = "completed"
-                    meeting.actual_end = datetime.utcnow()
-                    db.session.commit()
-                    logger.info(f"[ws] Updated Meeting (id={meeting.id}) status to completed, duration={meeting.duration_minutes} minutes")
-            
-            # End persistence tracking (flushes final segment + marks session complete)
-            _persister.end_session(session_id)
-            logger.info(f"[ws] Finalized session {session_id}: has_text={bool(final_text)}")
-            
-            # CROWN+ Event Chain: Log transcript_final event
-            total_segments = len(final_text.split('.')) if final_text else 0
-            total_words = len(final_text.split()) if final_text else 0
+        except Exception as record_stop_error:
+            logger.error(f"🚨 CROWN+ VIOLATION: record_stop event logging FAILED: {record_stop_error}")
+            db.session.rollback()
+            emit("error", {"message": "Critical event logging failure - cannot finalize", "critical": True})
+            return  # FATAL: abort immediately, do NOT continue execution
+        
+        # Enqueue final segment if we have transcribed text
+        if final_text:
+            segment_data = {
+                'kind': 'final',
+                'text': final_text,
+                'avg_confidence': 0.9,
+                'start_ms': 0,
+                'end_ms': int(len(full_audio) / 16000 * 1000),
+                'created_at': datetime.utcnow()
+            }
+            _persister.enqueue_segment(session_id, segment_data)
+            logger.info(f"[ws] Enqueued final segment for session {session_id}")
+        
+        # Update associated Meeting status if it exists
+        if session.meeting_id:
+            meeting = db.session.query(Meeting).filter_by(id=session.meeting_id).first()
+            if meeting:
+                meeting.status = "completed"
+                meeting.actual_end = datetime.utcnow()
+                db.session.commit()
+                logger.info(f"[ws] Updated Meeting (id={meeting.id}) status to completed, duration={meeting.duration_minutes} minutes")
+        
+        # End persistence tracking (flushes final segment + marks session complete)
+        _persister.end_session(session_id)
+        logger.info(f"[ws] Finalized session {session_id}: has_text={bool(final_text)}")
+        
+        # CROWN+ Event Chain: Log transcript_final event (FATAL if fails)
+        total_segments = len(final_text.split('.')) if final_text else 0
+        total_words = len(final_text.split()) if final_text else 0
+        try:
             _event_tracker.transcript_final(
                 session=session,
                 total_segments=total_segments,
                 total_words=total_words,
                 avg_confidence=0.9
             )
-            
-            # CROWN+ Event Chain: Log session_finalized event
+        except Exception as transcript_final_error:
+            logger.error(f"🚨 CROWN+ VIOLATION: transcript_final event logging FAILED: {transcript_final_error}")
+            db.session.rollback()
+            emit("error", {"message": "Critical event logging failure - cannot finalize", "critical": True})
+            return  # FATAL: abort immediately, do NOT continue execution
+        
+        # CROWN+ Event Chain: Log session_finalized event (FATAL if fails)
+        try:
             _event_tracker.session_finalized(
                 session=session,
                 start_time_ms=finalize_start_time
             )
-            logger.info(f"📊 CROWN+ EVENT CHAIN COMPLETE for session {session_id}")
+        except Exception as session_finalized_error:
+            logger.error(f"🚨 CROWN+ VIOLATION: session_finalized event logging FAILED: {session_finalized_error}")
+            db.session.rollback()
+            emit("error", {"message": "Critical event logging failure - cannot finalize", "critical": True})
+            return  # FATAL: abort immediately, do NOT continue execution
             
-            # Trigger AI insights generation as background task (non-blocking)
-            if final_text and session:
-                try:
-                    # Start background task manager if not already running
-                    if not _background_tasks.running:
-                        _background_tasks.start()
-                    
-                    task_id = f"ai_insights_{session.id}_{int(_now_ms())}"
-                    _background_tasks.submit_task(
-                        task_id,
-                        _process_ai_insights,
-                        session_id, session.id, final_text,  # positional args
-                        max_retries=2,  # Retry up to 2 times if AI API fails
-                        retry_delay=3  # 3 second delay before retry
-                    )
-                    logger.info(f"🚀 Enqueued AI insights generation task {task_id} for session {session_id}")
-                except Exception as task_error:
-                    logger.error(f"⚠️ Failed to enqueue AI insights task: {task_error}")
-                    # Non-critical - continue with finalization
+        logger.info(f"📊 CROWN+ EVENT CHAIN COMPLETE for session {session_id} [trace={session.trace_id}]")
+        
+        # Trigger AI insights generation as background task (non-blocking)
+        if final_text and session:
+            try:
+                # Start background task manager if not already running
+                if not _background_tasks.running:
+                    _background_tasks.start()
+                
+                task_id = f"ai_insights_{session.id}_{int(_now_ms())}"
+                _background_tasks.submit_task(
+                    task_id,
+                    _process_ai_insights,
+                    session_id, session.id, final_text,  # positional args
+                    max_retries=2,  # Retry up to 2 times if AI API fails
+                    retry_delay=3  # 3 second delay before retry
+                )
+                logger.info(f"🚀 Enqueued AI insights generation task {task_id} for session {session_id}")
+            except Exception as task_error:
+                logger.error(f"⚠️ Failed to enqueue AI insights task: {task_error}")
+                # Non-critical - continue with finalization
                     
     except Exception as e:
-        logger.error(f"[ws] Database error finalizing session/meeting: {e}")
+        logger.error(f"[ws] FATAL error finalizing session/meeting: {e}")
         db.session.rollback()
+        # CROWN+ Zero-Tolerance: Fatal errors must abort the handler
+        # Do NOT emit success or cleanup state - let the error propagate
+        return
 
     # Emit transcription_result that frontend expects
     emit("transcription_result", {
