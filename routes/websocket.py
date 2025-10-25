@@ -428,42 +428,23 @@ def on_audio_chunk(data):
     if not chunk:
         return
 
-    # CROWN+ Event Chain: Log audio_chunk event FIRST (CRITICAL - zero tolerance)
-    # Must log before buffering to maintain event chain integrity
+    # CROWN+ Event Chain: Log audio_chunk event (best-effort, non-blocking)
+    # Transcription must work even if event logging fails
     start_time = _now_ms()
     try:
         session = db.session.query(Session).filter_by(external_id=session_id).first()
-        if not session:
-            logger.error(f"🚨 CROWN+ VIOLATION: Session not found for audio_chunk (session_id={session_id})")
-            emit("error", {"message": "Session not found - recording stopped", "critical": True})
-            # Hard-fail: Clear session state
-            _BUFFERS.pop(session_id, None)
-            _LAST_EMIT_AT.pop(session_id, None)
-            _LAST_INTERIM_TEXT.pop(session_id, None)
-            return
-        
-        _event_tracker.audio_chunk(
-            session=session,
-            chunk_size=len(chunk),
-            chunk_index=len(_BUFFERS.get(session_id, bytearray())) // len(chunk) if len(chunk) > 0 else 0,
-            start_time_ms=start_time
-        )
+        if session:
+            _event_tracker.audio_chunk(
+                session=session,
+                chunk_size=len(chunk),
+                chunk_index=len(_BUFFERS.get(session_id, bytearray())) // len(chunk) if len(chunk) > 0 else 0,
+                start_time_ms=start_time
+            )
+        else:
+            logger.warning(f"⚠️ Session not found for audio_chunk (session_id={session_id}) - skipping event logging but continuing transcription")
     except Exception as e:
-        logger.error(f"🚨 CROWN+ VIOLATION: Failed to log audio_chunk event - event chain broken: {e}")
-        emit("error", {"message": "Critical event logging failure - recording stopped", "critical": True})
-        # Hard-fail: Clear session state to stop all processing
-        _BUFFERS.pop(session_id, None)
-        _LAST_EMIT_AT.pop(session_id, None)
-        _LAST_INTERIM_TEXT.pop(session_id, None)
-        # Mark session as broken
-        try:
-            if session:
-                session.status = 'error'
-                db.session.commit()
-        except Exception as db_err:
-            logger.error(f"Failed to mark session as error: {db_err}")
-            db.session.rollback()
-        return
+        logger.warning(f"⚠️ Failed to log audio_chunk event (non-critical): {e}")
+        # Continue processing - transcription is more important than event logging
     
     # NOW safe to buffer after event logged
     _BUFFERS[session_id].extend(chunk)
@@ -538,21 +519,20 @@ def on_audio_chunk(data):
     if text and text != _LAST_INTERIM_TEXT.get(session_id, ""):
         _LAST_INTERIM_TEXT[session_id] = text
         
-        # CROWN+ Event Chain: Log transcript_partial event (CRITICAL - zero tolerance)
+        # CROWN+ Event Chain: Log transcript_partial event (best-effort, non-blocking)
         try:
             session = db.session.query(Session).filter_by(external_id=session_id).first()
-            if not session:
-                logger.error(f"🚨 CROWN+ VIOLATION: Session not found for transcript_partial (session_id={session_id})")
-                # Don't return - still emit interim result to user, but log violation
-            else:
+            if session:
                 _event_tracker.transcript_partial(
                     session=session,
                     text=text,
                     confidence=0.8,
                     start_time_ms=start_time
                 )
+            else:
+                logger.warning(f"⚠️ Session not found for transcript_partial (session_id={session_id}) - skipping event logging")
         except Exception as e:
-            logger.error(f"🚨 CROWN+ VIOLATION: Failed to log transcript_partial event: {e}")
+            logger.warning(f"⚠️ Failed to log transcript_partial event (non-critical): {e}")
         
         # Emit enhanced transcription_result with speaker information
         result = {
