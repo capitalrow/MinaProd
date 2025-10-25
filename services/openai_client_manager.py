@@ -1,6 +1,8 @@
 """
 Enterprise-Grade OpenAI Client Manager
 Centralized, robust initialization and management of OpenAI clients
+
+UPGRADE (Wave 0-10): Circuit breaker protection for all OpenAI API calls
 """
 
 import os
@@ -8,8 +10,26 @@ import logging
 from typing import Optional
 from openai import OpenAI
 from openai._exceptions import OpenAIError
+from services.circuit_breaker import CircuitBreaker, CircuitBreakerConfig, CircuitBreakerOpenError
 
 logger = logging.getLogger(__name__)
+
+# Circuit breaker for OpenAI transcription API
+_openai_circuit_breaker = None
+
+def get_openai_circuit_breaker() -> CircuitBreaker:
+    """Get or create circuit breaker for OpenAI API calls."""
+    global _openai_circuit_breaker
+    if _openai_circuit_breaker is None:
+        config = CircuitBreakerConfig(
+            failure_threshold=3,    # Open after 3 consecutive failures
+            recovery_timeout=30,    # Try recovery after 30s
+            success_threshold=2,    # Close after 2 consecutive successes
+            request_timeout=45      # 45s timeout for transcription
+        )
+        _openai_circuit_breaker = CircuitBreaker("openai_transcription", config)
+        logger.info("🔒 OpenAI circuit breaker initialized")
+    return _openai_circuit_breaker
 
 class OpenAIClientManager:
     """Centralized OpenAI client management with robust error handling"""
@@ -127,7 +147,7 @@ class OpenAIClientManager:
     
     async def transcribe_audio_async(self, audio_file, model: str = "whisper-1", **kwargs) -> Optional[str]:
         """
-        Async transcribe audio with robust error handling
+        Async transcribe audio with robust error handling + circuit breaker protection.
         
         Args:
             audio_file: Audio file object or path
@@ -140,6 +160,15 @@ class OpenAIClientManager:
         client = self.get_client()
         if not client:
             logger.error("OpenAI client not available for transcription")
+            return None
+        
+        # Get circuit breaker
+        cb = get_openai_circuit_breaker()
+        
+        # Check if circuit is open
+        if not cb.can_execute():
+            state = cb.get_state()
+            logger.warning(f"🚨 OpenAI circuit breaker is {state.value}, blocking async transcription request")
             return None
         
         try:
@@ -158,18 +187,29 @@ class OpenAIClientManager:
                 clean_kwargs["temperature"] = kwargs["temperature"]
             
             response = client.audio.transcriptions.create(**clean_kwargs)
-            return getattr(response, "text", "") or ""
+            text = getattr(response, "text", "") or ""
             
+            # Record success
+            cb.record_success()
+            return text
+            
+        except CircuitBreakerOpenError as e:
+            logger.warning(f"🚨 Circuit breaker prevented async OpenAI call: {e}")
+            return None
         except OpenAIError as e:
-            logger.error(f"OpenAI transcription error: {e}")
+            logger.error(f"OpenAI async transcription error: {e}")
+            # Record failure
+            cb.record_failure(e)
             return None
         except Exception as e:
-            logger.error(f"Unexpected transcription error: {e}")
+            logger.error(f"Unexpected async transcription error: {e}")
+            # Record failure
+            cb.record_failure(e)
             return None
 
     def transcribe_audio(self, audio_file, model: str = "whisper-1", **kwargs) -> Optional[str]:
         """
-        Transcribe audio with robust error handling
+        Transcribe audio with robust error handling + circuit breaker protection.
         
         Args:
             audio_file: Audio file object or path
@@ -182,6 +222,15 @@ class OpenAIClientManager:
         client = self.get_client()
         if not client:
             logger.error("OpenAI client not available for transcription")
+            return None
+        
+        # Get circuit breaker
+        cb = get_openai_circuit_breaker()
+        
+        # Check if circuit is open (service unavailable)
+        if not cb.can_execute():
+            state = cb.get_state()
+            logger.warning(f"🚨 OpenAI circuit breaker is {state.value}, blocking transcription request")
             return None
         
         try:
@@ -200,13 +249,24 @@ class OpenAIClientManager:
                 clean_kwargs["temperature"] = kwargs["temperature"]
             
             response = client.audio.transcriptions.create(**clean_kwargs)
-            return getattr(response, "text", "") or ""
+            text = getattr(response, "text", "") or ""
             
+            # Record success
+            cb.record_success()
+            return text
+            
+        except CircuitBreakerOpenError as e:
+            logger.warning(f"🚨 Circuit breaker prevented OpenAI call: {e}")
+            return None
         except OpenAIError as e:
             logger.error(f"OpenAI transcription error: {e}")
+            # Record failure to trigger circuit breaker
+            cb.record_failure(e)
             return None
         except Exception as e:
             logger.error(f"Unexpected transcription error: {e}")
+            # Record failure
+            cb.record_failure(e)
             return None
 
 # Global singleton instance
