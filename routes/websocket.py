@@ -279,6 +279,7 @@ def on_join_session(data):
             logger.info(f"[ws] Created Session (external_id={session_id}) with user_id={user_id}, workspace_id={workspace_id}, meeting_id={meeting_id}")
             
             # CROWN+ Event Chain: Log record_start event
+            # This commits the trace_id to session, so we must refresh after
             trace_id = _event_tracker.record_start(
                 session=session,
                 metadata={
@@ -288,7 +289,9 @@ def on_join_session(data):
                     'session_title': session_title
                 }
             )
-            logger.info(f"📊 CROWN+ EVENT: record_start [trace_id={trace_id}]")
+            # CRITICAL: Refresh session object to get the committed trace_id
+            db.session.refresh(session)
+            logger.info(f"📊 CROWN+ EVENT: record_start [trace_id={trace_id}] (session refreshed)")
             
             # Start unified persistence tracking (2-second auto-flush per CROWN+ spec)
             _persister.start_session(
