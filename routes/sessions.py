@@ -329,11 +329,12 @@ def get_analytics_data(session_identifier):
         segments = db.session.execute(stmt).scalars().all()
         
         # Calculate speaking time distribution
+        # TODO: Add speaker field to Segment model for multi-speaker support
         speaking_time = {}
         for seg in segments:
-            speaker = seg.speaker or 'Unknown'
-            duration = seg.duration or 1.0
-            speaking_time[speaker] = speaking_time.get(speaker, 0) + duration
+            speaker = 'Unknown'  # Segment model doesn't have speaker field yet
+            duration_sec = (seg.duration_ms / 1000.0) if seg.duration_ms else 0.0
+            speaking_time[speaker] = speaking_time.get(speaker, 0) + duration_sec
         
         # Basic analytics
         analytics = {
