@@ -8,7 +8,7 @@ import re
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime, timedelta
 from dataclasses import dataclass
-from models import db, Task, Meeting, Segment
+from models import db, Task, Meeting, Segment, Session
 from services.openai_client_manager import get_openai_client
 
 
