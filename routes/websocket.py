@@ -24,6 +24,7 @@ from services.speaker_diarization import SpeakerDiarizationEngine, DiarizationCo
 from services.multi_speaker_diarization import MultiSpeakerDiarization
 from services.ai_insights_service import AIInsightsService
 from services.background_tasks import BackgroundTaskManager
+from services.session_service import SessionService
 
 logger = logging.getLogger(__name__)
 ws_bp = Blueprint("ws", __name__)
@@ -456,7 +457,7 @@ def on_finalize(data):
 
     final_text = (final_text or "").strip()
     
-    # Save final segment and update Session/Meeting status
+    # Save final segment and finalize session via SessionService (CROWN+)
     try:
         session = db.session.query(Session).filter_by(external_id=session_id).first()
         if session:
@@ -468,26 +469,35 @@ def on_finalize(data):
                     kind="final",
                     start_ms=0,  # Could be calculated from audio duration
                     end_ms=int(len(full_audio) / 16000 * 1000),  # Convert to milliseconds
-                    avg_confidence=0.9  # Correct field name
+                    avg_confidence=0.9
                 )
                 db.session.add(segment)
-                session.total_segments = 1
+                db.session.commit()  # Commit segment before finalization
             
-            # Always update session status (even if transcript is empty)
-            session.status = "completed"
-            session.completed_at = datetime.utcnow()
-            session.total_duration = len(full_audio) / 16000 if full_audio else 0
-            
-            # Update associated Meeting status if it exists
+            # Update associated Meeting status if it exists (before SessionService call)
             if session.meeting_id:
                 meeting = db.session.query(Meeting).filter_by(id=session.meeting_id).first()
                 if meeting:
                     meeting.status = "completed"
                     meeting.actual_end = datetime.utcnow()
+                    db.session.commit()
                     logger.info(f"[ws] Updated Meeting (id={meeting.id}) status to completed, duration={meeting.duration_minutes} minutes")
             
-            db.session.commit()
-            logger.info(f"[ws] Finalized session {session_id}: status=completed, has_text={bool(final_text)}")
+            # CROWN+ Finalize session via SessionService (handles status, stats, EventLedger, orchestrator)
+            success = SessionService.finalize_session(
+                session_id=session.id,
+                room=session_id,  # Socket.IO room is external_id
+                metadata={
+                    'source': 'websocket_finalize',
+                    'has_transcript': bool(final_text),
+                    'audio_duration_sec': len(full_audio) / 16000 if full_audio else 0
+                }
+            )
+            
+            if success:
+                logger.info(f"✅ [CROWN+] Session {session_id} finalized via SessionService")
+            else:
+                logger.error(f"❌ [CROWN+] SessionService.finalize_session() failed for {session_id}")
             
             # Trigger AI insights generation as background task (non-blocking)
             if final_text and session:
@@ -513,7 +523,7 @@ def on_finalize(data):
         logger.error(f"[ws] Database error finalizing session/meeting: {e}")
         db.session.rollback()
 
-    # Emit transcription_result that frontend expects
+    # Emit transcription_result that frontend expects (backward compatibility)
     emit("transcription_result", {
         "text": final_text,
         "is_final": True,
@@ -522,13 +532,8 @@ def on_finalize(data):
         "timestamp": int(_now_ms())
     })
     
-    # CROWN+ Emit session_finalized to trigger redirect to tabbed UI
-    emit("session_finalized", {
-        "session_id": session_id,
-        "status": "completed",
-        "final_text": final_text,
-        "timestamp": int(_now_ms())
-    })
+    # NOTE: session_finalized event is emitted by SessionService via coordinator
+    # No need to emit it here - avoids duplication
     
     # clear session memory
     _BUFFERS.pop(session_id, None)
