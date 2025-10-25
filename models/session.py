@@ -8,6 +8,7 @@ from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, DateTime, Text, JSON, Boolean, Float, ForeignKey, func, Index
+from sqlalchemy.dialects.postgresql import UUID
 from .base import Base
 
 # Forward reference for type checking
@@ -18,6 +19,7 @@ if TYPE_CHECKING:
     from .user import User
     from .workspace import Workspace
     from .meeting import Meeting
+    from .event_ledger import EventLedger
 
 class Session(Base):
     """
@@ -28,6 +30,16 @@ class Session(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     external_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)  # WS/session key
+    
+    # 🎯 CROWN+: Trace ID for complete event lineage
+    trace_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), 
+        unique=True, 
+        nullable=False, 
+        index=True,
+        default=uuid.uuid4
+    )
+    
     title: Mapped[str] = mapped_column(String(255), default="Untitled Meeting")
     status: Mapped[str] = mapped_column(String(32), default="active")  # active|completed|error
     started_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
@@ -73,6 +85,11 @@ class Session(Base):
         back_populates="session", cascade="all, delete-orphan", uselist=False
     )
     
+    # 🎯 CROWN+: Event ledger for complete traceability
+    event_ledger_entries: Mapped[list["EventLedger"]] = relationship(
+        back_populates="session", cascade="all, delete-orphan"
+    )
+    
     # Database indexes for query optimization
     __table_args__ = (
         # Composite index for active/recent sessions queries
@@ -97,6 +114,7 @@ class Session(Base):
         return {
             'id': self.id,
             'external_id': self.external_id,
+            'trace_id': str(self.trace_id),
             'title': self.title,
             'status': self.status,
             'started_at': self.started_at.isoformat() if self.started_at else None,
