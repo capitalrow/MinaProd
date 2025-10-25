@@ -375,8 +375,8 @@ class SessionEventCoordinator:
         if socketio:
             try:
                 if broadcast and not room:
-                    # Global broadcast to all connected clients
-                    socketio.emit('dashboard_refresh', payload, broadcast=True)
+                    # Global broadcast to all connected clients (no room specified)
+                    socketio.emit('dashboard_refresh', payload)
                     logger.info(f"dashboard_refresh broadcast globally")
                 elif room:
                     # Room-specific broadcast
