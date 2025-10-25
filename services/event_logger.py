@@ -9,7 +9,6 @@ import logging
 from typing import Dict, Any, Optional, Callable
 from datetime import datetime
 from contextlib import contextmanager
-from flask_socketio import emit as socketio_emit
 from models import db, EventLedger, Session
 
 logger = logging.getLogger(__name__)
@@ -35,14 +34,12 @@ class EventLogger:
         trace_id: uuid.UUID,
         session_id: Optional[int] = None,
         payload: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        socketio_event_name: Optional[str] = None,
-        socketio_payload: Optional[Dict[str, Any]] = None,
-        broadcast: bool = False,
-        room: Optional[str] = None
+        metadata: Optional[Dict[str, Any]] = None
     ) -> bool:
         """
-        Emit an event with atomic logging to EventLedger and optional Socket.IO broadcast.
+        Emit an event with atomic logging to EventLedger.
+        
+        NOTE: This only logs to database. Socket.IO emission is handled by SessionEventCoordinator.
         
         Args:
             event_type: Internal event type for ledger (e.g., "record_start", "session_finalized")
@@ -50,10 +47,6 @@ class EventLogger:
             session_id: Database session ID for linkage
             payload: Event-specific data to log
             metadata: Contextual metadata (user agent, IP, etc.)
-            socketio_event_name: Socket.IO event name to emit (defaults to event_type)
-            socketio_payload: Custom payload for Socket.IO (defaults to payload + trace_id)
-            broadcast: Whether to broadcast to all clients in room
-            room: Socket.IO room to broadcast to
             
         Returns:
             True if event logged successfully, False otherwise
@@ -84,24 +77,6 @@ class EventLogger:
             duration_ms = int((time.time() - start_time) * 1000)
             event_entry.duration_ms = duration_ms
             db.session.commit()
-            
-            # Emit to Socket.IO if requested
-            if socketio_event_name or payload:
-                emission_payload = socketio_payload or (payload or {})
-                
-                # Always include trace_id in Socket.IO events
-                if isinstance(emission_payload, dict):
-                    emission_payload['trace_id'] = trace_id_str
-                    emission_payload['event_sequence'] = sequence
-                
-                event_name = socketio_event_name or event_type
-                
-                if broadcast and room:
-                    socketio_emit(event_name, emission_payload, room=room, broadcast=True)
-                elif room:
-                    socketio_emit(event_name, emission_payload, room=room)
-                else:
-                    socketio_emit(event_name, emission_payload)
             
             logger.info(
                 f"✅ Event logged: {event_type} "

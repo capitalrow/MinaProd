@@ -60,12 +60,7 @@ class SessionEventCoordinator:
             trace_id=session.trace_id,
             session_id=session.id,
             payload=payload,
-            metadata=metadata or {},
-            socketio_event_name='record_start',
-            socketio_payload=payload,
-            broadcast=True,
-            room=room
-        )
+            metadata=metadata or {})
         
         # Backward compatibility: Also emit legacy event name
         if ENABLE_LEGACY_EVENTS:
@@ -76,7 +71,7 @@ class SessionEventCoordinator:
                     'message': 'Transcription session started'
                 }
                 if room:
-                    socketio_emit('session_started', legacy_payload, room=room, broadcast=True)
+                    socketio_emit('session_started', legacy_payload)
                 else:
                     socketio_emit('session_started', legacy_payload)
             except Exception as e:
@@ -120,12 +115,7 @@ class SessionEventCoordinator:
             trace_id=session.trace_id,
             session_id=session.id,
             payload=payload,
-            metadata=metadata or {},
-            socketio_event_name='transcript_partial',
-            socketio_payload=payload,
-            broadcast=True,
-            room=room
-        )
+            metadata=metadata or {})
         
         # Backward compatibility
         if ENABLE_LEGACY_EVENTS and confidence > 0.1:
@@ -138,7 +128,7 @@ class SessionEventCoordinator:
                     'segments': segments or []
                 }
                 if room:
-                    socketio_emit('transcription_result', legacy_payload, room=room, broadcast=True)
+                    socketio_emit('transcription_result', legacy_payload)
                 else:
                     socketio_emit('transcription_result', legacy_payload)
             except Exception as e:
@@ -181,12 +171,7 @@ class SessionEventCoordinator:
             trace_id=session.trace_id,
             session_id=session.id,
             payload=payload,
-            metadata=metadata or {},
-            socketio_event_name='transcript_final',
-            socketio_payload=payload,
-            broadcast=True,
-            room=room
-        )
+            metadata=metadata or {})
         
         return success
     
@@ -220,17 +205,18 @@ class SessionEventCoordinator:
             }
         }
         
+        # Log to EventLedger
         success = self.event_logger.emit_event(
             event_type='session_finalized',
             trace_id=session.trace_id,
             session_id=session.id,
             payload=payload,
-            metadata=metadata or {},
-            socketio_event_name='session_finalized',
-            socketio_payload=payload,
-            broadcast=True,
-            room=room
+            metadata=metadata or {}
         )
+        
+        # Emit to Socket.IO separately
+        if room:
+            socketio.emit('session_finalized', payload, to=room)
         
         # Backward compatibility
         if ENABLE_LEGACY_EVENTS:
@@ -241,7 +227,7 @@ class SessionEventCoordinator:
                     'message': 'Transcription session ended'
                 }
                 if room:
-                    socketio_emit('session_ended', legacy_payload, room=room, broadcast=True)
+                    socketio_emit('session_ended', legacy_payload)
                 else:
                     socketio_emit('session_ended', legacy_payload)
             except Exception as e:
@@ -285,12 +271,7 @@ class SessionEventCoordinator:
             trace_id=session.trace_id,
             session_id=session.id,
             payload=payload,
-            metadata=metadata or {},
-            socketio_event_name=event_name,
-            socketio_payload=payload,
-            broadcast=True,
-            room=room
-        )
+            metadata=metadata or {})
         
         return success
 

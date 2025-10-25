@@ -402,7 +402,7 @@ class SessionService:
         return finalized_count
 
     @staticmethod
-    def finalize_session(session_id: int, final_text: Optional[str] = None, trigger_summary: Optional[bool] = None) -> Dict[str, Any]:
+    def finalize_session_legacy(session_id: int, final_text: Optional[str] = None, trigger_summary: Optional[bool] = None) -> Dict[str, Any]:
         """
         Complete a session by finalizing segments and updating status.
         
