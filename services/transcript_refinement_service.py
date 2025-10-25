@@ -61,7 +61,7 @@ class TranscriptRefinementService:
             
             segments = db.session.query(Segment).filter_by(
                 session_id=session_id
-            ).order_by(Segment.start_time).all()
+            ).order_by(Segment.start_ms).all()
             
             if not segments:
                 return {
