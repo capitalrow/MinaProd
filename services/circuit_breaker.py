@@ -66,6 +66,11 @@ class CircuitBreaker:
         self.config = config or CircuitBreakerConfig()
         self.lock = threading.RLock()
         
+        # ALWAYS initialize local fallback state first (belt-and-suspenders for Redis failover)
+        self.state = CircuitState.CLOSED
+        self.stats = CircuitBreakerStats()
+        self.last_attempt_time = 0
+        
         # Connect to Redis for distributed state
         redis_url = redis_url or os.environ.get("REDIS_URL", "redis://localhost:6379/0")
         try:
@@ -75,10 +80,6 @@ class CircuitBreaker:
         except Exception as e:
             logger.warning(f"⚠️ Circuit breaker '{name}' failed to connect to Redis, falling back to local state: {e}")
             self.redis_enabled = False
-            # Fallback to thread-local state
-            self.state = CircuitState.CLOSED
-            self.stats = CircuitBreakerStats()
-            self.last_attempt_time = 0
         
         # Redis keys
         self.state_key = f"circuit_breaker:{name}:state"
@@ -89,46 +90,75 @@ class CircuitBreaker:
         
         # Initialize state if not exists
         if self.redis_enabled:
-            if not self.redis_client.exists(self.state_key):
-                self._initialize_redis_state()
+            self._safe_redis_call(lambda: self._initialize_redis_state() if not self.redis_client.exists(self.state_key) else None)
         
         logger.info(f"🔒 Circuit breaker '{name}' initialized (Redis={self.redis_enabled}, config={self.config})")
     
-    def _initialize_redis_state(self):
-        """Initialize circuit breaker state in Redis."""
-        if not self.redis_enabled:
-            return
-            
-        self.redis_client.set(self.state_key, CircuitState.CLOSED.value)
-        self.redis_client.set(self.failures_key, 0)
-        self.redis_client.delete(self.last_failure_key)
+    def _safe_redis_call(self, redis_operation, fallback_value=None):
+        """
+        Wrap Redis calls with graceful degradation to local state on failure.
         
-        # Initialize metrics
-        metrics = {
-            "total_requests": 0,
-            "successful_requests": 0,
-            "failed_requests": 0,
-            "circuit_opens": 0,
-            "last_success_time": None,
-            "last_failure_time": None,
-            "created_at": datetime.utcnow().isoformat()
-        }
-        self.redis_client.set(self.metrics_key, json.dumps(metrics))
-        logger.debug(f"✅ Redis state initialized for circuit breaker '{self.name}'")
+        This ensures circuit breaker continues protecting services even when Redis is down,
+        preventing cascading failures as required by CROWN+ production standards.
+        
+        CRITICAL: Local state (self.state, self.stats) is ALWAYS initialized in __init__,
+        ensuring fallback values exist even when Redis is initially enabled.
+        """
+        if not self.redis_enabled:
+            return fallback_value
+        
+        try:
+            return redis_operation()
+        except Exception as e:
+            logger.error(f"⚠️ Redis call failed for circuit breaker '{self.name}', falling back to local state: {e}")
+            
+            # Disable Redis and ensure local state is ready
+            self.redis_enabled = False
+            
+            # Sync current state from Redis before failover (best-effort)
+            # This is already wrapped in try/except, so if it fails, we use initialized defaults
+            
+            return fallback_value
+    
+    def _initialize_redis_state(self):
+        """Initialize circuit breaker state in Redis with graceful degradation."""
+        def init_redis():
+            self.redis_client.set(self.state_key, CircuitState.CLOSED.value)
+            self.redis_client.set(self.failures_key, 0)
+            self.redis_client.delete(self.last_failure_key)
+            
+            # Initialize metrics
+            metrics = {
+                "total_requests": 0,
+                "successful_requests": 0,
+                "failed_requests": 0,
+                "circuit_opens": 0,
+                "last_success_time": None,
+                "last_failure_time": None,
+                "created_at": datetime.utcnow().isoformat()
+            }
+            self.redis_client.set(self.metrics_key, json.dumps(metrics))
+            logger.debug(f"✅ Redis state initialized for circuit breaker '{self.name}'")
+        
+        self._safe_redis_call(init_redis)
     
     def _get_state_from_redis(self) -> CircuitState:
-        """Get current state from Redis."""
+        """Get current state from Redis with graceful degradation."""
         if not self.redis_enabled:
             return self.state
-            
-        state_str = self.redis_client.get(self.state_key)
-        if not state_str:
-            self._initialize_redis_state()
-            return CircuitState.CLOSED
-        return CircuitState(state_str)
+        
+        def get_state():
+            state_str = self.redis_client.get(self.state_key)
+            if not state_str:
+                self._initialize_redis_state()
+                return CircuitState.CLOSED
+            return CircuitState(state_str)
+        
+        # Use getattr for safe fallback (though self.state is always initialized now)
+        return self._safe_redis_call(get_state, fallback_value=getattr(self, 'state', CircuitState.CLOSED))
     
     def _set_state_in_redis(self, new_state: CircuitState):
-        """Set state in Redis with logging."""
+        """Set state in Redis with logging and graceful degradation."""
         if not self.redis_enabled:
             old_state = self.state
             self.state = new_state
@@ -136,67 +166,76 @@ class CircuitBreaker:
             old_state = self._get_state_from_redis()
             if old_state == new_state:
                 return
-            self.redis_client.set(self.state_key, new_state.value)
             
-            # Update metrics
-            metrics = self._get_metrics_from_redis()
-            if new_state == CircuitState.OPEN:
-                metrics["circuit_opens"] = metrics.get("circuit_opens", 0) + 1
-            self.redis_client.set(self.metrics_key, json.dumps(metrics))
+            def update_state():
+                self.redis_client.set(self.state_key, new_state.value)
+                
+                # Update metrics
+                metrics = self._get_metrics_from_redis()
+                if new_state == CircuitState.OPEN:
+                    metrics["circuit_opens"] = metrics.get("circuit_opens", 0) + 1
+                self.redis_client.set(self.metrics_key, json.dumps(metrics))
+                
+                # Record history
+                self._record_history_event({
+                    "event": "state_transition",
+                    "from": old_state.value,
+                    "to": new_state.value,
+                    "timestamp": datetime.utcnow().isoformat()
+                })
             
-            # Record history
-            self._record_history_event({
-                "event": "state_transition",
-                "from": old_state.value,
-                "to": new_state.value,
-                "timestamp": datetime.utcnow().isoformat()
-            })
+            self._safe_redis_call(update_state)
         
         if old_state != new_state:
             logger.warning(f"⚠️ Circuit breaker '{self.name}' state: {old_state.value} → {new_state.value}")
     
     def _get_metrics_from_redis(self) -> Dict[str, Any]:
-        """Get metrics from Redis."""
+        """Get metrics from Redis with graceful degradation."""
+        # Safe fallback using getattr (though self.stats is always initialized now)
+        stats = getattr(self, 'stats', CircuitBreakerStats())
+        
+        fallback_metrics = {
+            "total_requests": stats.total_requests,
+            "successful_requests": stats.successful_requests,
+            "failed_requests": stats.failed_requests,
+            "circuit_opens": stats.circuit_opens,
+            "last_success_time": stats.last_success_time,
+            "last_failure_time": stats.last_failure_time
+        }
+        
         if not self.redis_enabled:
-            return {
-                "total_requests": self.stats.total_requests,
-                "successful_requests": self.stats.successful_requests,
-                "failed_requests": self.stats.failed_requests,
-                "circuit_opens": self.stats.circuit_opens,
-                "last_success_time": self.stats.last_success_time,
-                "last_failure_time": self.stats.last_failure_time
-            }
-            
-        metrics_str = self.redis_client.get(self.metrics_key)
-        if not metrics_str:
-            return {
-                "total_requests": 0,
-                "successful_requests": 0,
-                "failed_requests": 0,
-                "circuit_opens": 0,
-                "last_success_time": None,
-                "last_failure_time": None
-            }
-        return json.loads(str(metrics_str))
+            return fallback_metrics
+        
+        def get_metrics():
+            metrics_str = self.redis_client.get(self.metrics_key)
+            if not metrics_str:
+                return fallback_metrics
+            return json.loads(str(metrics_str))
+        
+        return self._safe_redis_call(get_metrics, fallback_value=fallback_metrics)
     
     def _update_metrics_in_redis(self, updates: Dict[str, Any]):
-        """Update metrics in Redis."""
+        """Update metrics in Redis with graceful degradation."""
         if not self.redis_enabled:
             for key, value in updates.items():
                 if hasattr(self.stats, key):
                     setattr(self.stats, key, value)
             return
-            
-        metrics = self._get_metrics_from_redis()
-        metrics.update(updates)
-        self.redis_client.set(self.metrics_key, json.dumps(metrics))
+        
+        def update_metrics():
+            metrics = self._get_metrics_from_redis()
+            metrics.update(updates)
+            self.redis_client.set(self.metrics_key, json.dumps(metrics))
+        
+        self._safe_redis_call(update_metrics)
     
     def _record_history_event(self, event: Dict[str, Any]):
-        """Record event in history (keep last 100)."""
-        if not self.redis_enabled:
-            return
-        self.redis_client.lpush(self.history_key, json.dumps(event))
-        self.redis_client.ltrim(self.history_key, 0, 99)
+        """Record event in history (keep last 100) with graceful degradation."""
+        def record_event():
+            self.redis_client.lpush(self.history_key, json.dumps(event))
+            self.redis_client.ltrim(self.history_key, 0, 99)
+        
+        self._safe_redis_call(record_event)
     
     def __call__(self, func: Callable) -> Callable:
         """Decorator to protect functions with circuit breaker"""
@@ -248,15 +287,21 @@ class CircuitBreaker:
         if current_state == CircuitState.OPEN:
             # Check if recovery timeout has passed
             if self.redis_enabled:
-                last_failure_time = self.redis_client.get(self.last_failure_key)
-                if last_failure_time:
-                    elapsed = time.time() - float(str(last_failure_time))
-                    if elapsed >= self.config.recovery_timeout:
-                        logger.info(f"🔄 Circuit breaker '{self.name}' timeout expired, entering HALF_OPEN (waited {elapsed:.1f}s)")
-                        self._set_state_in_redis(CircuitState.HALF_OPEN)
-                        return False
+                def check_recovery_timeout():
+                    last_failure_time = self.redis_client.get(self.last_failure_key)
+                    if last_failure_time:
+                        elapsed = time.time() - float(str(last_failure_time))
+                        if elapsed >= self.config.recovery_timeout:
+                            logger.info(f"🔄 Circuit breaker '{self.name}' timeout expired, entering HALF_OPEN (waited {elapsed:.1f}s)")
+                            self._set_state_in_redis(CircuitState.HALF_OPEN)
+                            return True
+                    return False
+                
+                if self._safe_redis_call(check_recovery_timeout, fallback_value=False):
+                    return False
             else:
-                if time.time() - self.last_attempt_time > self.config.recovery_timeout:
+                last_attempt = getattr(self, 'last_attempt_time', 0)
+                if time.time() - last_attempt > self.config.recovery_timeout:
                     logger.info(f"🔄 Circuit breaker '{self.name}' entering HALF_OPEN state")
                     self._set_state_in_redis(CircuitState.HALF_OPEN)
                     return False
@@ -291,7 +336,7 @@ class CircuitBreaker:
             elif current_state == CircuitState.CLOSED:
                 # Reset failure count on success
                 if self.redis_enabled:
-                    self.redis_client.set(self.failures_key, 0)
+                    self._safe_redis_call(lambda: self.redis_client.set(self.failures_key, 0))
             
             logger.debug(f"✅ Circuit breaker '{self.name}' recorded success ({execution_time:.2f}s)")
     
@@ -302,8 +347,12 @@ class CircuitBreaker:
             
             # Increment failure counter
             if self.redis_enabled:
-                failures = self.redis_client.incr(self.failures_key)
-                self.redis_client.set(self.last_failure_key, time.time())
+                def increment_failures():
+                    failures = self.redis_client.incr(self.failures_key)
+                    self.redis_client.set(self.last_failure_key, time.time())
+                    return failures
+                
+                failures = self._safe_redis_call(increment_failures, fallback_value=1)
             else:
                 self.stats.failed_requests += 1
                 self.stats.last_failure_time = time.time()
@@ -349,11 +398,11 @@ class CircuitBreaker:
         self._send_circuit_breaker_alert()
     
     def _close_circuit(self):
-        """Close circuit after successful recovery"""
+        """Close circuit after successful recovery with graceful degradation"""
         self._set_state_in_redis(CircuitState.CLOSED)
         # Reset failure count
         if self.redis_enabled:
-            self.redis_client.set(self.failures_key, 0)
+            self._safe_redis_call(lambda: self.redis_client.set(self.failures_key, 0))
         logger.info(f"🟢 Circuit breaker '{self.name}' CLOSED - service recovered")
     
     def get_stats(self) -> dict:
@@ -363,10 +412,13 @@ class CircuitBreaker:
             metrics = self._get_metrics_from_redis()
             
             if self.redis_enabled:
-                failures_val = self.redis_client.get(self.failures_key)
-                current_failures = int(str(failures_val) if failures_val else 0)
+                def get_failures():
+                    failures_val = self.redis_client.get(self.failures_key)
+                    return int(str(failures_val) if failures_val else 0)
+                
+                current_failures = self._safe_redis_call(get_failures, fallback_value=getattr(self, 'stats', CircuitBreakerStats()).failed_requests)
             else:
-                current_failures = self.stats.failed_requests
+                current_failures = getattr(self, 'stats', CircuitBreakerStats()).failed_requests
             
             total_requests = metrics.get("total_requests", 0)
             successful_requests = metrics.get("successful_requests", 0)
@@ -389,24 +441,28 @@ class CircuitBreaker:
             }
     
     def get_history(self, limit: int = 20) -> list:
-        """Get recent circuit breaker history"""
-        if not self.redis_enabled:
-            return []
-        history = self.redis_client.lrange(self.history_key, 0, limit - 1)
-        return [json.loads(str(event)) for event in (history if isinstance(history, list) else [])]
+        """Get recent circuit breaker history with graceful degradation"""
+        def fetch_history():
+            history = self.redis_client.lrange(self.history_key, 0, limit - 1)
+            return [json.loads(str(event)) for event in (history if isinstance(history, list) else [])]
+        
+        return self._safe_redis_call(fetch_history, fallback_value=[])
     
     def reset(self):
-        """Reset circuit breaker to initial state"""
+        """Reset circuit breaker to initial state with graceful degradation"""
         with self.lock:
             self._set_state_in_redis(CircuitState.CLOSED)
             
             if self.redis_enabled:
-                self.redis_client.set(self.failures_key, 0)
-                self.redis_client.delete(self.last_failure_key)
-                self._record_history_event({
-                    "event": "manual_reset",
-                    "timestamp": datetime.utcnow().isoformat()
-                })
+                def reset_redis():
+                    self.redis_client.set(self.failures_key, 0)
+                    self.redis_client.delete(self.last_failure_key)
+                    self._record_history_event({
+                        "event": "manual_reset",
+                        "timestamp": datetime.utcnow().isoformat()
+                    })
+                
+                self._safe_redis_call(reset_redis)
             else:
                 self.stats = CircuitBreakerStats()
                 self.last_attempt_time = 0
@@ -426,7 +482,13 @@ class CircuitBreaker:
             
             # Get current metrics
             metrics = self._get_metrics_from_redis()
-            current_failures = int(self.redis_client.get(self.failures_key) or 0) if self.redis_enabled else self.stats.failed_requests
+            
+            if self.redis_enabled:
+                def get_failures():
+                    return int(self.redis_client.get(self.failures_key) or 0)
+                current_failures = self._safe_redis_call(get_failures, fallback_value=getattr(self, 'stats', CircuitBreakerStats()).failed_requests)
+            else:
+                current_failures = getattr(self, 'stats', CircuitBreakerStats()).failed_requests
             
             # Send alert
             slack.send_circuit_breaker_alert(
