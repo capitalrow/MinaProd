@@ -227,13 +227,13 @@ class PostTranscriptionOrchestrator:
             logger.info(f"✅ Analytics complete for session {session.external_id}")
             
         except Exception as e:
-            logger.error(f"❌ Analytics failed for session {session.external_id}: {e}")
+            logger.error(f"❌ Analytics failed for session {session.external_id}: {e}", exc_info=True)
             self.coordinator.emit_processing_event(
                 session=session,
                 task_type='analytics',
                 status='failed',
                 room=room,
-                payload_data={'error': str(e)}
+                payload_data={'error': str(e), 'error_type': type(e).__name__}
             )
     
     def _run_task_extraction(self, session: Session, room: Optional[str]) -> None:
@@ -272,13 +272,13 @@ class PostTranscriptionOrchestrator:
             logger.info(f"✅ Task extraction complete for session {session.external_id}")
             
         except Exception as e:
-            logger.error(f"❌ Task extraction failed for session {session.external_id}: {e}")
+            logger.error(f"❌ Task extraction failed for session {session.external_id}: {e}", exc_info=True)
             self.coordinator.emit_processing_event(
                 session=session,
                 task_type='tasks',
                 status='failed',
                 room=room,
-                payload_data={'error': str(e)}
+                payload_data={'error': str(e), 'error_type': type(e).__name__}
             )
     
     def _run_summary(self, session: Session, room: Optional[str]) -> None:
@@ -318,13 +318,13 @@ class PostTranscriptionOrchestrator:
             logger.info(f"✅ Summary generation complete for session {session.external_id}")
             
         except Exception as e:
-            logger.error(f"❌ Summary generation failed for session {session.external_id}: {e}")
+            logger.error(f"❌ Summary generation failed for session {session.external_id}: {e}", exc_info=True)
             self.coordinator.emit_processing_event(
                 session=session,
                 task_type='summary',
                 status='failed',
                 room=room,
-                payload_data={'error': str(e)}
+                payload_data={'error': str(e), 'error_type': type(e).__name__}
             )
 
 
