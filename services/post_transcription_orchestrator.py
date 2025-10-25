@@ -93,6 +93,31 @@ class PostTranscriptionOrchestrator:
                     f"in {total_time:.2f}s"
                 )
                 
+                # CROWN+ Event: Emit post_transcription_reveal after all processing complete
+                try:
+                    self.coordinator.emit_post_transcription_reveal(
+                        session=session,
+                        room=room,
+                        redirect_url=f'/sessions/{session.external_id}/refined',
+                        metadata={'total_duration_ms': int(total_time * 1000)}
+                    )
+                    logger.info(f"🎉 post_transcription_reveal emitted for session {session.external_id}")
+                except Exception as e:
+                    logger.warning(f"Failed to emit post_transcription_reveal: {e}")
+                
+                # CROWN+ Event: Emit dashboard_refresh for global sync
+                try:
+                    self.coordinator.emit_dashboard_refresh(
+                        session=session,
+                        action='session_completed',
+                        room=room,
+                        broadcast=True,
+                        metadata={'processing_time_ms': int(total_time * 1000)}
+                    )
+                    logger.info(f"📊 dashboard_refresh broadcast for session {session.external_id}")
+                except Exception as e:
+                    logger.warning(f"Failed to emit dashboard_refresh: {e}")
+                
             except Exception as e:
                 logger.error(f"❌ Post-transcription orchestration failed: {e}", exc_info=True)
                 
