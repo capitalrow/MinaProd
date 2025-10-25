@@ -837,6 +837,151 @@ socket.on('ai_insights_error', (data) => {
     aiInsightsContent.innerHTML = '';
 });
 
+// ============================================================================
+// CROWN+ POST-TRANSCRIPTION EVENT LISTENERS
+// ============================================================================
+
+// Track post-transcription progress
+let postTranscriptionProgress = {
+    refinement: false,
+    analytics: false,
+    tasks: false,
+    summary: false
+};
+
+// Refinement Events
+socket.on('refinement_started', (data) => {
+    console.log('🔄 Refinement started:', data);
+    updatePostTranscriptionStatus('Refining transcript...');
+});
+
+socket.on('refinement_ready', (data) => {
+    console.log('✅ Refinement ready:', data);
+    postTranscriptionProgress.refinement = true;
+    updatePostTranscriptionStatus('Transcript refined ✓');
+    checkPostTranscriptionComplete();
+});
+
+socket.on('refinement_failed', (data) => {
+    console.error('❌ Refinement failed:', data);
+    updatePostTranscriptionStatus('Refinement failed ⚠️');
+});
+
+// Analytics Events
+socket.on('analytics_started', (data) => {
+    console.log('🔄 Analytics started:', data);
+    updatePostTranscriptionStatus('Analyzing meeting metrics...');
+});
+
+socket.on('analytics_ready', (data) => {
+    console.log('✅ Analytics ready:', data);
+    postTranscriptionProgress.analytics = true;
+    updatePostTranscriptionStatus('Analytics generated ✓');
+    checkPostTranscriptionComplete();
+});
+
+socket.on('analytics_failed', (data) => {
+    console.error('❌ Analytics failed:', data);
+    updatePostTranscriptionStatus('Analytics failed ⚠️');
+});
+
+// Tasks Events
+socket.on('tasks_started', (data) => {
+    console.log('🔄 Tasks started:', data);
+    updatePostTranscriptionStatus('Extracting action items...');
+});
+
+socket.on('tasks_ready', (data) => {
+    console.log('✅ Tasks ready:', data);
+    postTranscriptionProgress.tasks = true;
+    updatePostTranscriptionStatus('Tasks extracted ✓');
+    checkPostTranscriptionComplete();
+});
+
+socket.on('tasks_failed', (data) => {
+    console.error('❌ Tasks failed:', data);
+    updatePostTranscriptionStatus('Task extraction failed ⚠️');
+});
+
+// Summary Events
+socket.on('summary_started', (data) => {
+    console.log('🔄 Summary started:', data);
+    updatePostTranscriptionStatus('Generating AI summary...');
+});
+
+socket.on('summary_ready', (data) => {
+    console.log('✅ Summary ready:', data);
+    postTranscriptionProgress.summary = true;
+    updatePostTranscriptionStatus('AI summary generated ✓');
+    checkPostTranscriptionComplete();
+});
+
+socket.on('summary_failed', (data) => {
+    console.error('❌ Summary failed:', data);
+    updatePostTranscriptionStatus('Summary generation failed ⚠️');
+});
+
+// Post-Transcription Reveal - All processing complete
+socket.on('post_transcription_reveal', (data) => {
+    console.log('🎉 Post-transcription reveal:', data);
+    updatePostTranscriptionStatus('Processing complete! Preparing results...');
+    
+    // Show completion animation
+    setTimeout(() => {
+        showPostTranscriptionComplete();
+    }, 500);
+});
+
+// Dashboard Refresh - Trigger UI updates
+socket.on('dashboard_refresh', (data) => {
+    console.log('📊 Dashboard refresh requested:', data);
+    // Could trigger a reload of dashboard data if needed
+});
+
+// Helper: Update status message
+function updatePostTranscriptionStatus(message) {
+    const statusEl = document.getElementById('recorder-status');
+    if (statusEl) {
+        const statusText = statusEl.querySelector('span:last-child');
+        if (statusText) {
+            statusText.textContent = message;
+        }
+    }
+    
+    // Also update AI insights status
+    if (aiInsightsStatus) {
+        aiInsightsStatus.textContent = message;
+        aiInsightsCard.style.display = 'block';
+    }
+}
+
+// Helper: Check if all post-transcription tasks complete
+function checkPostTranscriptionComplete() {
+    const allComplete = Object.values(postTranscriptionProgress).every(v => v === true);
+    if (allComplete) {
+        console.log('🎉 All post-transcription tasks complete!');
+    }
+}
+
+// Helper: Show completion and redirect
+function showPostTranscriptionComplete() {
+    const statusEl = document.getElementById('recorder-status');
+    if (statusEl) {
+        statusEl.classList.remove('recording');
+        statusEl.classList.add('completed');
+        const statusText = statusEl.querySelector('span:last-child');
+        if (statusText) {
+            statusText.textContent = '✅ Processing complete - Redirecting...';
+        }
+    }
+    
+    // Redirect to session detail page or dashboard
+    setTimeout(() => {
+        const targetUrl = sessionId ? `/sessions/${sessionId}` : '/dashboard';
+        window.location.href = targetUrl;
+    }, 1500);
+}
+
 // CROWN+ Session Finalized - Auto-redirect to tabbed UI
 socket.on('session_finalized', (data) => {
     console.log('Session finalized:', data);
@@ -844,15 +989,12 @@ socket.on('session_finalized', (data) => {
     // Show transition message
     const statusEl = document.querySelector('.recording-status');
     if (statusEl) {
-        statusEl.textContent = 'Processing complete - Redirecting to meeting insights...';
+        statusEl.textContent = 'Session finalized - Processing insights...';
         statusEl.style.color = '#22c55e';
     }
     
-    // Redirect to tabbed meeting detail page after 1.5 seconds
-    setTimeout(() => {
-        const sessionIdForUrl = data.session_id || sessionId;
-        window.location.href = `/sessions/${sessionIdForUrl}`;
-    }, 1500);
+    // Update status to show post-transcription is starting
+    updatePostTranscriptionStatus('Finalizing session... Starting AI processing');
 });
 
 // Helper function to escape HTML
