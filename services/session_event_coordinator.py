@@ -276,12 +276,21 @@ class SessionEventCoordinator:
             **(payload_data or {})
         }
         
+        # Log to EventLedger
         success = self.event_logger.emit_event(
             event_type=event_name,
             trace_id=session.trace_id,
             session_id=session.id,
             payload=payload,
             metadata=metadata or {})
+        
+        # CRITICAL FIX: Emit to Socket.IO for frontend progress updates
+        if room and socketio:
+            try:
+                socketio.emit(event_name, payload, to=room)
+                logger.debug(f"{event_name} emitted to room {room}")
+            except RuntimeError as e:
+                logger.debug(f"Socket.IO emit skipped (background context): {e}")
         
         return success
     
