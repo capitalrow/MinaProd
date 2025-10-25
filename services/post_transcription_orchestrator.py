@@ -107,14 +107,23 @@ class PostTranscriptionOrchestrator:
                 
                 # CROWN+ Event: Emit dashboard_refresh for global sync
                 try:
+                    # Emit to session room first
                     self.coordinator.emit_dashboard_refresh(
                         session=session,
                         action='session_completed',
                         room=room,
+                        broadcast=False,
+                        metadata={'processing_time_ms': int(total_time * 1000)}
+                    )
+                    # Then broadcast globally to all dashboards (no room = global)
+                    self.coordinator.emit_dashboard_refresh(
+                        session=session,
+                        action='session_completed',
+                        room=None,
                         broadcast=True,
                         metadata={'processing_time_ms': int(total_time * 1000)}
                     )
-                    logger.info(f"📊 dashboard_refresh broadcast for session {session.external_id}")
+                    logger.info(f"📊 dashboard_refresh emitted to room and broadcast globally for session {session.external_id}")
                 except Exception as e:
                     logger.warning(f"Failed to emit dashboard_refresh: {e}")
                 
