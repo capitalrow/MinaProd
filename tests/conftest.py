@@ -69,13 +69,10 @@ def test_user(db_session):
     """Create a test user."""
     from models import User
     from werkzeug.security import generate_password_hash
-    import uuid
     
-    # Use unique email for each test to avoid UNIQUE constraint failures
-    unique_id = str(uuid.uuid4())[:8]
     user = User(
-        username=f'testuser_{unique_id}',
-        email=f'test_{unique_id}@example.com',
+        username='testuser',
+        email='test@example.com',
         password_hash=generate_password_hash('testpassword123')
     )
     db_session.add(user)
@@ -83,7 +80,8 @@ def test_user(db_session):
     
     yield user
     
-    # Cleanup handled by db_session rollback
+    db_session.delete(user)
+    db_session.commit()
 
 @pytest.fixture(scope='function')
 def mock_openai_response(mocker):

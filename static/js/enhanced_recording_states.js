@@ -132,7 +132,7 @@ class EnhancedRecordingStates {
         <div class="btn-group ms-2" role="group" aria-label="Advanced recording options">
           <button class="btn btn-outline-secondary btn-sm" 
                   id="autoSaveBtn" 
-                  title="Toggle auto-save every 2 seconds (CROWN+ spec)">
+                  title="Toggle auto-save every 30 seconds">
             <i class="fas fa-save me-1"></i>
             Auto-save
           </button>
@@ -325,11 +325,11 @@ class EnhancedRecordingStates {
       this.updateSessionTimer();
     }, 1000);
     
-    // Start auto-save if enabled (CROWN+ spec: 2s interval)
+    // Start auto-save if enabled
     if (this.isAutoSaveEnabled()) {
       this.timers.autoSave = setInterval(() => {
         this.autoSaveSession();
-      }, 2000); // Every 2 seconds (CROWN+ requirement)
+      }, 30000); // Every 30 seconds
     }
     
     // Start quality monitoring

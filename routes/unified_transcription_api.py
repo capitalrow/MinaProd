@@ -30,19 +30,6 @@ from services.audio_processor import AudioProcessor
 
 logger = logging.getLogger(__name__)
 
-# Wave 0-14: Import rate limiter for transcription endpoint protection
-try:
-    from services.distributed_rate_limiter import rate_limit
-    RATE_LIMIT_AVAILABLE = True
-except ImportError:
-    RATE_LIMIT_AVAILABLE = False
-    logger.warning("DistributedRateLimiter not available for unified transcription routes")
-    # No-op decorator fallback (Flask-Limiter still applies global limits)
-    def rate_limit(*args, **kwargs):
-        def decorator(f):
-            return f
-        return decorator
-
 # Create unified transcription blueprint
 unified_api_bp = Blueprint('unified_transcription', __name__)
 
@@ -92,7 +79,6 @@ def check_ffmpeg_availability():
         return False
 
 @unified_api_bp.route('/api/transcribe-audio', methods=['POST'])
-@rate_limit()  # Wave 0-14: 20 requests/min for transcription endpoints
 def unified_transcribe_audio():
     """
     🎯 PRODUCTION-GRADE UNIFIED TRANSCRIPTION ENDPOINT

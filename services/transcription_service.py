@@ -96,10 +96,7 @@ class TranscriptionService:
     def __init__(self, config: Optional[TranscriptionServiceConfig] = None):
         # 🔧 FIXED: Import services here to avoid circular imports
         from .vad_service import VADService, VADConfig
-        try:
-            from .whisper_streaming import WhisperStreamingService, TranscriptionConfig
-        except ImportError:
-            from .whisper_streaming_enhanced import WhisperStreamingService, TranscriptionConfig  # type: ignore
+        from .whisper_streaming import WhisperStreamingService, TranscriptionConfig
         from .audio_processor import AudioProcessor
         from .audio_quality_analyzer import AudioQualityAnalyzer, QualityEnhancementConfig
         from .performance_optimizer import PerformanceOptimizer, ResourceLimits
@@ -118,7 +115,7 @@ class TranscriptionService:
         
         # Import and initialize interim throttler
         try:
-            from interim_throttling import get_interim_throttler  # type: ignore
+            from interim_throttling import get_interim_throttler
             self.interim_throttler = get_interim_throttler(self.config)
         except ImportError:
             self.interim_throttler = None  # Fallback if module doesn't exist
@@ -538,17 +535,15 @@ class TranscriptionService:
             db_session.average_confidence = (
                 (db_session.average_confidence or 0) + confidence
             ) / db_session.total_segments
-            # Note: Session model has updated_at which auto-updates via onupdate=func.now()
+            db_session.last_updated = datetime.utcnow()
 
             # ✅ 4. Commit all changes
             db.session.commit()
             logger.info(f"[DB] ✅ Saved transcript for session {session_id}")
 
         except Exception as e:
-            if db and hasattr(db, 'session'):
-                db.session.rollback()
-            if logger:
-                logger.error(f"[DB] ❌ Failed to save transcript: {e}")
+            db.session.rollback()
+            logger.error(f"[DB] ❌ Failed to save transcript: {e}")
 
     async def start_session(self, session_id: Optional[str] = None, 
                            user_config: Optional[Dict[str, Any]] = None) -> str:

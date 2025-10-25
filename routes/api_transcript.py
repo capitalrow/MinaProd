@@ -6,13 +6,10 @@ Part of Phase 2: Transcript Experience Enhancement (T2.3, T2.5, T2.6)
 
 from flask import Blueprint, request, jsonify, send_file
 from flask_login import login_required, current_user
-from models import db, Meeting, Session, Segment, SegmentComment
+from models import db, Meeting, Session, Segment, Comment
 from datetime import datetime
 from io import BytesIO
 import json
-import logging
-
-logger = logging.getLogger(__name__)
 
 # Document generation libraries
 try:
@@ -336,84 +333,39 @@ def update_segment(meeting_id, segment_id):
     if not segment:
         return jsonify({'success': False, 'message': 'Segment not found'}), 404
     
-    # Get new text and version from request
+    # Get new text from request
     data = request.get_json()
     new_text = data.get('text', '').strip()
-    client_version = data.get('version')  # Client sends current version for conflict detection
     
     if not new_text:
         return jsonify({'success': False, 'message': 'Text is required'}), 400
-    
-    # CROWN+ Version Control: Check for concurrent edit conflicts
-    if client_version is not None and hasattr(segment, 'version'):
-        if segment.version != client_version:
-            return jsonify({
-                'success': False,
-                'conflict': True,
-                'message': f'This segment was edited by another user. Please review their changes.',
-                'current_version': segment.version,
-                'current_text': segment.text,
-                'your_version': client_version,
-                'your_text': new_text
-            }), 409  # 409 Conflict
     
     # Update segment
     old_text = segment.text
     segment.text = new_text
     
-    # CROWN+ Version Control: Increment version on edit
-    if hasattr(segment, 'version'):
-        segment.version += 1
-    
-    # Add edit metadata
+    # Add edit metadata if column exists
     if hasattr(segment, 'edited_at'):
         segment.edited_at = datetime.utcnow()
     if hasattr(segment, 'edited_by_id'):
         segment.edited_by_id = current_user.id
     
     try:
-        # Get session for event tracking BEFORE commit
-        session = db.session.query(Session).filter_by(id=segment.session_id).first()
-        
-        # Commit database changes
         db.session.commit()
         
+        return jsonify({
+            'success': True,
+            'message': 'Segment updated successfully',
+            'segment': {
+                'id': segment.id,
+                'text': segment.text,
+                'old_text': old_text,
+                'edited_at': segment.edited_at.isoformat() if hasattr(segment, 'edited_at') and segment.edited_at else None
+            }
+        })
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
-    
-    # CROWN+ Event Chain: Log edit_commit event AFTER successful commit
-    # Separate try/except to ensure API returns success even if event logging fails
-    event_logged = False
-    if session:
-        try:
-            from services.event_tracking import get_event_tracker
-            event_tracker = get_event_tracker()
-            event_tracker.edit_commit(
-                session=session,
-                segment_id=segment.id,
-                old_text=old_text,
-                new_text=new_text,
-                user_id=current_user.id
-            )
-            event_logged = True
-        except Exception as event_error:
-            # Edit succeeded but event logging failed - log warning but don't fail the request
-            logger.warning(f"⚠️ CROWN+ WARNING: edit_commit event logging failed for segment {segment.id}: {event_error}")
-            # Continue - edit was successful even if event logging failed
-    
-    return jsonify({
-        'success': True,
-        'message': 'Segment updated successfully',
-        'segment': {
-            'id': segment.id,
-            'text': segment.text,
-            'old_text': old_text,
-            'version': segment.version if hasattr(segment, 'version') else None,
-            'edited_at': segment.edited_at.isoformat() if hasattr(segment, 'edited_at') and segment.edited_at else None
-        },
-        'event_logged': event_logged  # Indicate if event was logged for debugging
-    })
 
 
 # ============================================
@@ -576,7 +528,7 @@ def update_segment_highlight(meeting_id, segment_id):
 
 
 # ============================================
-# SegmentComment Endpoints (T2.8)
+# Comment Endpoints (T2.8)
 # ============================================
 
 @api_transcript_bp.route('/<int:meeting_id>/segments/<int:segment_id>/comments', methods=['GET'])
@@ -599,10 +551,10 @@ def get_segment_comments(meeting_id, segment_id):
         return jsonify({'success': False, 'message': 'Segment not found'}), 404
     
     # Query comments from database (only top-level comments, includes replies)
-    comments = db.session.query(SegmentComment).filter_by(
+    comments = db.session.query(Comment).filter_by(
         segment_id=segment_id,
         parent_id=None  # Only get top-level comments
-    ).order_by(SegmentComment.created_at.asc()).all()
+    ).order_by(Comment.created_at.asc()).all()
     
     comments_data = [comment.to_dict(include_replies=True) for comment in comments]
     
@@ -637,17 +589,17 @@ def add_segment_comment(meeting_id, segment_id):
     parent_id = data.get('parent_id')  # For threaded replies
     
     if not text:
-        return jsonify({'success': False, 'message': 'SegmentComment text is required'}), 400
+        return jsonify({'success': False, 'message': 'Comment text is required'}), 400
     
     # Validate parent_id if provided (for reply threading)
     if parent_id:
-        parent_comment = db.session.query(SegmentComment).filter_by(id=parent_id).first()
+        parent_comment = db.session.query(Comment).filter_by(id=parent_id).first()
         if not parent_comment or parent_comment.segment_id != segment_id:
             return jsonify({'success': False, 'message': 'Invalid parent comment'}), 400
     
     # Create and save comment to database
     try:
-        comment = SegmentComment(
+        comment = Comment(
             segment_id=segment_id,
             user_id=current_user.id,
             text=text,
@@ -658,7 +610,7 @@ def add_segment_comment(meeting_id, segment_id):
         
         return jsonify({
             'success': True,
-            'message': 'SegmentComment added successfully',
+            'message': 'Comment added successfully',
             'comment': comment.to_dict(include_replies=False)
         }), 201
     except Exception as e:
@@ -683,7 +635,7 @@ def add_comment(segment_id):
     text = data.get("text", "").strip()
     if not text:
         return jsonify({"status": "error", "message": "Empty comment"}), 400
-    new_comment = SegmentComment(segment_id=segment_id, user_id=current_user.id, text=text, created_at=datetime.utcnow())
+    new_comment = Comment(segment_id=segment_id, user_id=current_user.id, text=text, created_at=datetime.utcnow())
     db.session.add(new_comment)
     db.session.commit()
     return jsonify({"status": "ok", "comment": {"id": new_comment.id, "text": new_comment.text}})

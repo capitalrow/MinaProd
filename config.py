@@ -2,11 +2,6 @@ import os
 from datetime import timedelta
 
 class Config:
-    # Environment Detection (CRITICAL for resource isolation)
-    # Options: 'development', 'staging', 'production'
-    # Staging should use isolated DB, Redis, S3, API keys
-    ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
-    
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
     ENV = os.getenv("FLASK_ENV", "development")
     DEBUG = ENV == "development"

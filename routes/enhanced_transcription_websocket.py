@@ -397,7 +397,7 @@ enhanced_buffer_config = BufferConfig(
 @socketio.on('connect', namespace='/transcription')
 def on_enhanced_connect():
     """Enhanced client connection handler"""
-    client_id = request.sid  # type: ignore
+    client_id = flask_socketio.request.sid
     logger.info(f"🔌 Enhanced transcription client connected: {client_id}")
     
     # Send enhanced connection status
@@ -421,7 +421,7 @@ def on_start_enhanced_session(data):
     """Start enhanced transcription session with advanced features"""
     try:
         session_id = str(uuid.uuid4())
-        client_id = request.sid  # type: ignore
+        client_id = flask_socketio.request.sid
         
         # Create enhanced buffer manager
         buffer_manager = buffer_registry.get_or_create_session(session_id)
@@ -585,7 +585,7 @@ def _process_enhanced_audio_input(data) -> tuple:
 @socketio.on('disconnect', namespace='/transcription')
 def on_enhanced_disconnect():
     """Enhanced disconnection handler with comprehensive cleanup"""
-    client_id = request.sid  # type: ignore
+    client_id = flask_socketio.request.sid
     logger.info(f"🔌 Enhanced client disconnected: {client_id}")
     
     # Enhanced cleanup for this client
@@ -615,7 +615,7 @@ def on_enhanced_disconnect():
 def on_end_enhanced_session(data=None):
     """Gracefully end an enhanced transcription session and trigger post-processing analysis"""
     try:
-        client_id = request.sid  # type: ignore
+        client_id = flask_socketio.request.sid
         sessions_to_end = [
             sid for sid, s in enhanced_active_sessions.items() if s.get('client_sid') == client_id
         ]

@@ -36,11 +36,6 @@ class MemoryStore:
 
     def _connect(self):
         """Create a new DB connection."""
-        # Skip psycopg2 connection for SQLite (test mode)
-        if self.db_url and self.db_url.startswith("sqlite://"):
-            print("ℹ️  SQLite detected - MemoryStore running in stub mode for tests")
-            return None
-        
         try:
             conn = psycopg2.connect(self.db_url)
             conn.autocommit = True
@@ -51,10 +46,6 @@ class MemoryStore:
 
     def _ensure_connection(self):
         """Reconnect if DB connection drops."""
-        # Skip if in stub mode (SQLite/test)
-        if self.conn is None:
-            return
-        
         try:
             cur = self.conn.cursor()
             cur.execute("SELECT 1;")
@@ -91,10 +82,6 @@ class MemoryStore:
 
     def add_memory(self, session_id, user_id, content, source_type="transcript"):
         """Store a text snippet with embedding in DB."""
-        # Stub mode - return success without storing
-        if self.conn is None:
-            return True
-        
         try:
             self._ensure_connection()
             embedding = self._generate_embedding(content)
@@ -120,10 +107,6 @@ class MemoryStore:
 
     def search_memory(self, query, top_k=5):
         """Semantic search by vector similarity."""
-        # Stub mode - return empty results
-        if self.conn is None:
-            return []
-        
         try:
             self._ensure_connection()
             query_emb = self._generate_embedding(query)
@@ -172,10 +155,6 @@ class MemoryStore:
     # -----------------------------------------
     def latest_memories(self, limit=5):
         """Fetch recent memory entries for debugging."""
-        # Stub mode - return empty results
-        if self.conn is None:
-            return []
-        
         try:
             self._ensure_connection()
             cur = self.conn.cursor()

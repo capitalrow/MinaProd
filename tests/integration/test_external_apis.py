@@ -3,7 +3,6 @@ Integration tests for external API integrations.
 """
 import pytest
 import os
-from sqlalchemy import text
 
 
 @pytest.mark.integration
@@ -48,7 +47,7 @@ class TestDatabaseConnectionIntegration:
     
     def test_database_connection_active(self, db_session):
         """Test that database connection is active."""
-        result = db_session.execute(text('SELECT 1'))
+        result = db_session.execute('SELECT 1')
         assert result is not None
 
 

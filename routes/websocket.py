@@ -25,37 +25,12 @@ from services.multi_speaker_diarization import MultiSpeakerDiarization
 from services.ai_insights_service import AIInsightsService
 from services.background_tasks import BackgroundTaskManager
 
-# Import unified persistence service (2-second auto-save per CROWN+ spec)
-from services.transcription_persistence import get_persister
-
-# Import event tracking for CROWN+ specification compliance
-from services.event_tracking import get_event_tracker
-
-# Import disconnect handler for event chain enforcement
-from routes.websocket_disconnect import register_connection
-
-# Import shutdown service for graceful connection draining
-from services.websocket_shutdown import (
-    register_websocket_connection,
-    unregister_websocket_connection,
-    is_shutdown_in_progress
-)
-
-# Import API versioning for backward compatibility during deployments
-from services.api_versioning import emit_dual_events, emit_versioned
-
 logger = logging.getLogger(__name__)
 ws_bp = Blueprint("ws", __name__)
 
 # Initialize AI insights service and background task manager
 _ai_insights_service = AIInsightsService()
 _background_tasks = BackgroundTaskManager(num_workers=2)
-
-# Get global persister instance (2-second auto-flush per CROWN+ spec)
-_persister = get_persister()
-
-# Get global event tracker for CROWN+ event chain logging
-_event_tracker = get_event_tracker()
 
 # Per-session state (dev-grade, in-memory for audio buffering)
 _BUFFERS: Dict[str, bytearray] = defaultdict(bytearray)
@@ -67,40 +42,13 @@ _SPEAKER_ENGINES: Dict[str, SpeakerDiarizationEngine] = {}
 _MULTI_SPEAKER_SYSTEMS: Dict[str, MultiSpeakerDiarization] = {}
 _SESSION_SPEAKERS: Dict[str, Dict[str, Dict]] = defaultdict(dict)  # session_id -> speaker_id -> speaker_info
 
-# Tunables (CROWN+ spec: sub-300ms UI feedback)
-_MIN_MS_BETWEEN_INTERIM = 150.0      # CROWN+ spec: 150ms for sub-300ms total latency  
+# Tunables
+_MIN_MS_BETWEEN_INTERIM = 400.0      # Real-time feel: ~400ms cadence  
 _MAX_INTERIM_WINDOW_SEC = 14.0       # last N seconds for interim context (optional)
 _MAX_B64_SIZE = 1024 * 1024 * 6      # 6MB guard
 
 def _now_ms() -> float:
     return time.time() * 1000.0
-
-
-@socketio.on('connect')
-def on_connect():
-    """
-    Handle new WebSocket connection.
-    
-    Registers the connection for graceful shutdown tracking with atomic race-condition protection.
-    Rejects connections if server is shutting down.
-    """
-    from flask import request
-    sid = request.sid
-    
-    # Atomic registration with shutdown check (prevents race conditions)
-    registration_success = register_websocket_connection(sid)
-    
-    if not registration_success:
-        logger.warning(f"⚠️ REJECTED connection {sid[:8]} - server is shutting down")
-        return False  # Reject connection
-    
-    logger.info(f"📡 WebSocket connected: {sid[:8]}")
-    
-    # Emit welcome message
-    emit('connected', {
-        'message': 'Connected to Mina transcription server',
-        'timestamp': int(_now_ms())
-    })
 
 def _decode_b64(b64: Optional[str]) -> bytes:
     if not b64:
@@ -314,44 +262,8 @@ def on_join_session(data):
             db.session.add(session)
             db.session.commit()
             logger.info(f"[ws] Created Session (external_id={session_id}) with user_id={user_id}, workspace_id={workspace_id}, meeting_id={meeting_id}")
-            
-            # CROWN+ Event Chain: Log record_start event
-            # This commits the trace_id to session, so we must refresh after
-            trace_id = _event_tracker.record_start(
-                session=session,
-                metadata={
-                    'user_id': user_id,
-                    'workspace_id': workspace_id,
-                    'meeting_id': meeting_id,
-                    'session_title': session_title
-                }
-            )
-            # CRITICAL: Refresh session object to get the committed trace_id
-            db.session.refresh(session)
-            logger.info(f"📊 CROWN+ EVENT: record_start [trace_id={trace_id}] (session refreshed)")
-            
-            # Start unified persistence tracking (2-second auto-flush per CROWN+ spec)
-            _persister.start_session(
-                session_id=session_id,
-                db_session_id=session.id,
-                metadata={
-                    'user_id': user_id,
-                    'workspace_id': workspace_id,
-                    'meeting_id': meeting_id
-                }
-            )
         else:
             logger.info(f"[ws] Using existing session: {session_id}")
-            # Start persistence tracking for existing session
-            _persister.start_session(
-                session_id=session_id,
-                db_session_id=session.id,
-                metadata={
-                    'user_id': session.user_id,
-                    'workspace_id': session.workspace_id,
-                    'meeting_id': session.meeting_id
-                }
-            )
     except Exception as e:
         logger.error(f"[ws] Database error creating session/meeting: {e}")
         db.session.rollback()
@@ -383,10 +295,6 @@ def on_join_session(data):
         logger.info(f"🎤 Speaker diarization initialized for session: {session_id}")
     except Exception as e:
         logger.warning(f"⚠️ Speaker diarization initialization failed: {e}")
-    
-    # CROWN+ Event Chain: Register connection for disconnect tracking
-    from flask import request
-    register_connection(session_id, request.sid)
     
     emit("server_hello", {"msg": "connected", "t": int(_now_ms())})
     logger.info(f"[ws] join_session {session_id}")
@@ -428,25 +336,7 @@ def on_audio_chunk(data):
     if not chunk:
         return
 
-    # CROWN+ Event Chain: Log audio_chunk event (best-effort, non-blocking)
-    # Transcription must work even if event logging fails
-    start_time = _now_ms()
-    try:
-        session = db.session.query(Session).filter_by(external_id=session_id).first()
-        if session:
-            _event_tracker.audio_chunk(
-                session=session,
-                chunk_size=len(chunk),
-                chunk_index=len(_BUFFERS.get(session_id, bytearray())) // len(chunk) if len(chunk) > 0 else 0,
-                start_time_ms=start_time
-            )
-        else:
-            logger.warning(f"⚠️ Session not found for audio_chunk (session_id={session_id}) - skipping event logging but continuing transcription")
-    except Exception as e:
-        logger.warning(f"⚠️ Failed to log audio_chunk event (non-critical): {e}")
-        # Continue processing - transcription is more important than event logging
-    
-    # NOW safe to buffer after event logged
+    # Append to full buffer for the eventual final pass
     _BUFFERS[session_id].extend(chunk)
 
     # Only process if we have meaningful audio data (> 200 bytes for real-time feel)
@@ -519,21 +409,6 @@ def on_audio_chunk(data):
     if text and text != _LAST_INTERIM_TEXT.get(session_id, ""):
         _LAST_INTERIM_TEXT[session_id] = text
         
-        # CROWN+ Event Chain: Log transcript_partial event (best-effort, non-blocking)
-        try:
-            session = db.session.query(Session).filter_by(external_id=session_id).first()
-            if session:
-                _event_tracker.transcript_partial(
-                    session=session,
-                    text=text,
-                    confidence=0.8,
-                    start_time_ms=start_time
-                )
-            else:
-                logger.warning(f"⚠️ Session not found for transcript_partial (session_id={session_id}) - skipping event logging")
-        except Exception as e:
-            logger.warning(f"⚠️ Failed to log transcript_partial event (non-critical): {e}")
-        
         # Emit enhanced transcription_result with speaker information
         result = {
             "text": text,
@@ -553,22 +428,7 @@ def on_audio_chunk(data):
                 "background_speakers": speaker_info["background_speakers"]
             })
         
-        # Emit with dual versioning for backward compatibility (interim/partial transcription)
-        emit_dual_events(
-            v1_event="transcription_result",
-            v2_event="transcript_partial",  # Canonical v2 name for interim events
-            data={
-                "content": result.get("text", ""),
-                "is_complete": result.get("is_final", False),
-                "recording_id": session_id,
-                "confidence": result.get("confidence", 0.0),
-                "timestamp": result.get("timestamp", int(_now_ms())),
-                "speaker_id": result.get("speaker_id"),
-                "speaker_name": result.get("speaker_name"),
-                "overlap_detected": result.get("overlap_detected", False),
-                "background_speakers": result.get("background_speakers", [])
-            }
-        )
+        emit("transcription_result", result)
 
     emit("ack", {"ok": True})
 
@@ -597,120 +457,70 @@ def on_finalize(data):
     final_text = (final_text or "").strip()
     
     # Save final segment and update Session/Meeting status
-    finalize_start_time = _now_ms()
     try:
         session = db.session.query(Session).filter_by(external_id=session_id).first()
-        if not session:
-            logger.error(f"🚨 CROWN+ VIOLATION: Session not found for finalize (session_id={session_id})")
-            emit("error", {"message": "Session not found - cannot finalize", "critical": True})
-            return
-        
-        # CROWN+ Event Chain: Verify event chain integrity (best-effort, non-blocking)
-        if not hasattr(session, 'trace_id') or not session.trace_id:
-            logger.warning(f"⚠️ Session {session_id} has no trace_id - event chain never started, continuing with finalization")
-            # Continue anyway - transcription delivery is more important than event logging
-        
-        # CROWN+ Event Chain: Log record_stop event (best-effort, non-blocking)
-        try:
-            _event_tracker.record_stop(
-                session=session,
-                final_duration_ms=int(len(full_audio) / 16000 * 1000)
-            )
-        except Exception as record_stop_error:
-            logger.warning(f"⚠️ record_stop event logging failed (non-critical): {record_stop_error}")
-            # Continue - transcription delivery is more important than event logging
-        
-        # Enqueue final segment if we have transcribed text
-        if final_text:
-            segment_data = {
-                'kind': 'final',
-                'text': final_text,
-                'avg_confidence': 0.9,
-                'start_ms': 0,
-                'end_ms': int(len(full_audio) / 16000 * 1000),
-                'created_at': datetime.utcnow()
-            }
-            _persister.enqueue_segment(session_id, segment_data)
-            logger.info(f"[ws] Enqueued final segment for session {session_id}")
-        
-        # Update associated Meeting status if it exists
-        if session.meeting_id:
-            meeting = db.session.query(Meeting).filter_by(id=session.meeting_id).first()
-            if meeting:
-                meeting.status = "completed"
-                meeting.actual_end = datetime.utcnow()
-                db.session.commit()
-                logger.info(f"[ws] Updated Meeting (id={meeting.id}) status to completed, duration={meeting.duration_minutes} minutes")
-        
-        # End persistence tracking (flushes final segment + marks session complete)
-        _persister.end_session(session_id)
-        logger.info(f"[ws] Finalized session {session_id}: has_text={bool(final_text)}")
-        
-        # CROWN+ Event Chain: Log transcript_final event (best-effort, non-blocking)
-        total_segments = len(final_text.split('.')) if final_text else 0
-        total_words = len(final_text.split()) if final_text else 0
-        try:
-            _event_tracker.transcript_final(
-                session=session,
-                total_segments=total_segments,
-                total_words=total_words,
-                avg_confidence=0.9
-            )
-        except Exception as transcript_final_error:
-            logger.warning(f"⚠️ transcript_final event logging failed (non-critical): {transcript_final_error}")
-            # Continue - transcription delivery is more important than event logging
-        
-        # CROWN+ Event Chain: Log session_finalized event (best-effort, non-blocking)
-        try:
-            _event_tracker.session_finalized(
-                session=session,
-                start_time_ms=finalize_start_time
-            )
-        except Exception as session_finalized_error:
-            logger.warning(f"⚠️ session_finalized event logging failed (non-critical): {session_finalized_error}")
-            # Continue - transcription delivery is more important than event logging
-            
-        logger.info(f"📊 CROWN+ EVENT CHAIN COMPLETE for session {session_id} [trace={session.trace_id}]")
-        
-        # Trigger AI insights generation as background task (non-blocking)
-        if final_text and session:
-            try:
-                # Start background task manager if not already running
-                if not _background_tasks.running:
-                    _background_tasks.start()
-                
-                task_id = f"ai_insights_{session.id}_{int(_now_ms())}"
-                _background_tasks.submit_task(
-                    task_id,
-                    _process_ai_insights,
-                    session_id, session.id, final_text,  # positional args
-                    max_retries=2,  # Retry up to 2 times if AI API fails
-                    retry_delay=3  # 3 second delay before retry
+        if session:
+            # Only save segment if we have transcribed text
+            if final_text:
+                segment = Segment(
+                    session_id=session.id,
+                    text=final_text,
+                    kind="final",
+                    start_ms=0,  # Could be calculated from audio duration
+                    end_ms=int(len(full_audio) / 16000 * 1000),  # Convert to milliseconds
+                    avg_confidence=0.9  # Correct field name
                 )
-                logger.info(f"🚀 Enqueued AI insights generation task {task_id} for session {session_id}")
-            except Exception as task_error:
-                logger.error(f"⚠️ Failed to enqueue AI insights task: {task_error}")
-                # Non-critical - continue with finalization
+                db.session.add(segment)
+                session.total_segments = 1
+            
+            # Always update session status (even if transcript is empty)
+            session.status = "completed"
+            session.completed_at = datetime.utcnow()
+            session.total_duration = len(full_audio) / 16000 if full_audio else 0
+            
+            # Update associated Meeting status if it exists
+            if session.meeting_id:
+                meeting = db.session.query(Meeting).filter_by(id=session.meeting_id).first()
+                if meeting:
+                    meeting.status = "completed"
+                    meeting.actual_end = datetime.utcnow()
+                    logger.info(f"[ws] Updated Meeting (id={meeting.id}) status to completed, duration={meeting.duration_minutes} minutes")
+            
+            db.session.commit()
+            logger.info(f"[ws] Finalized session {session_id}: status=completed, has_text={bool(final_text)}")
+            
+            # Trigger AI insights generation as background task (non-blocking)
+            if final_text and session:
+                try:
+                    # Start background task manager if not already running
+                    if not _background_tasks.running:
+                        _background_tasks.start()
+                    
+                    task_id = f"ai_insights_{session.id}_{int(_now_ms())}"
+                    _background_tasks.submit_task(
+                        task_id,
+                        _process_ai_insights,
+                        session_id, session.id, final_text,  # positional args
+                        max_retries=2,  # Retry up to 2 times if AI API fails
+                        retry_delay=3  # 3 second delay before retry
+                    )
+                    logger.info(f"🚀 Enqueued AI insights generation task {task_id} for session {session_id}")
+                except Exception as task_error:
+                    logger.error(f"⚠️ Failed to enqueue AI insights task: {task_error}")
+                    # Non-critical - continue with finalization
                     
     except Exception as e:
-        logger.error(f"[ws] FATAL error finalizing session/meeting: {e}")
+        logger.error(f"[ws] Database error finalizing session/meeting: {e}")
         db.session.rollback()
-        # CROWN+ Zero-Tolerance: Fatal errors must abort the handler
-        # Do NOT emit success or cleanup state - let the error propagate
-        return
 
-    # Emit with dual versioning for backward compatibility
-    emit_dual_events(
-        v1_event="transcription_result",
-        v2_event="transcript_complete",
-        data={
-            "content": final_text,
-            "is_complete": True,
-            "recording_id": session_id,
-            "confidence": 0.9,
-            "timestamp": int(_now_ms())
-        }
-    )
+    # Emit transcription_result that frontend expects
+    emit("transcription_result", {
+        "text": final_text,
+        "is_final": True,
+        "confidence": 0.9,  # Higher confidence for final
+        "session_id": session_id,
+        "timestamp": int(_now_ms())
+    })
     
     # clear session memory
     _BUFFERS.pop(session_id, None)

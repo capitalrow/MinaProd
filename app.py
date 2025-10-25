@@ -31,8 +31,7 @@ import openai
 import numpy as np
 import psycopg2
 from flask_migrate import Migrate
-from models import db, Segment
-from models.core_models import SessionComment 
+from models import db, Segment, Comment 
 from datetime import datetime
 from services import memory_persistence as mem
 
@@ -290,14 +289,6 @@ def create_app() -> Flask:
     app.logger.propagate = True
     
     app.logger.info("Booting Mina…")
-    
-    # Enable API versioning middleware for all /api/* routes
-    from services.api_versioning import create_version_middleware
-    create_version_middleware(app)
-    
-    # Enable Row-Level Security context middleware
-    from middleware.rls_context import set_rls_context
-    set_rls_context(app)
 
     # reverse proxy (Replit)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
@@ -322,7 +313,7 @@ def create_app() -> Flask:
         if request.path.startswith('/socket.io'):
             return None  # Allow request to proceed
         return original_error_handler(reason)
-    csrf._error_response = custom_csrf_error  # type: ignore
+    csrf._error_response = custom_csrf_error
 
     # Configure Flask-Limiter for production-grade rate limiting
     # Use Redis if available, fallback to memory storage
@@ -340,44 +331,10 @@ def create_app() -> Flask:
     )
     
     # Make limiter available for route decorators
-    app.limiter = limiter  # type: ignore
+    app.limiter = limiter
     
     storage_type = "Redis" if redis_url else "Memory"
     app.logger.info(f"✅ Flask-Limiter configured ({storage_type} backend): 100/min, 1000/hour per IP")
-    
-    # Initialize DistributedRateLimiter for advanced rate limiting (Wave 0-14)
-    # This provides sliding window, per-endpoint limits, burst protection, whitelist/blacklist
-    # Works alongside Flask-Limiter for defense-in-depth
-    if redis_url:
-        try:
-            import redis
-            from services.distributed_rate_limiter import init_rate_limiter, RateLimitConfig
-            
-            # Connect to Redis
-            redis_client = redis.from_url(redis_url, decode_responses=True)
-            
-            # Configure advanced rate limiting
-            rate_limit_config = RateLimitConfig(
-                requests_per_minute=100,
-                requests_per_hour=1000,
-                requests_per_day=10000,
-                burst_limit=10,
-                auth_attempts_per_minute=5,
-                upload_requests_per_hour=50,
-                transcription_requests_per_minute=20,
-                enable_whitelist=True,
-                enable_blacklist=True,
-                enable_progressive_backoff=True
-            )
-            
-            # Initialize distributed rate limiter
-            init_rate_limiter(app, redis_client, rate_limit_config)
-            app.logger.info("✅ DistributedRateLimiter configured with Slack abuse alerts (Wave 0-14)")
-            
-        except Exception as e:
-            app.logger.warning(f"⚠️ DistributedRateLimiter initialization failed, using Flask-Limiter only: {e}")
-    else:
-        app.logger.info("ℹ️  Redis not configured - DistributedRateLimiter disabled, using Flask-Limiter only")
 
     # gzip (optional)
     try:
@@ -664,15 +621,6 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"Failed to register Sharing API routes: {e}")
 
-    # --- Sessions API ---
-    try:
-        from routes.sessions import sessions_bp
-        app.register_blueprint(sessions_bp, url_prefix="/api")
-        csrf.exempt(sessions_bp)  # Exempt session API endpoints from CSRF
-        app.logger.info("Sessions API routes registered at /api/sessions")
-    except Exception as e:
-        app.logger.warning(f"Failed to register Sessions API: {e}")
-
     # --- Session Finalization API ---
     try:
         from routes.api_session_finalize import api_session_finalize_bp
@@ -697,23 +645,6 @@ def create_app() -> Flask:
         app.logger.info("Calendar routes registered")
     except Exception as e:
         app.logger.error(f"Failed to register calendar routes: {e}")
-    
-    # Admin drain routes (for blue/green deployment)
-    try:
-        from routes.admin_drain import admin_drain_bp
-        app.register_blueprint(admin_drain_bp)
-        csrf.exempt(admin_drain_bp)  # POST endpoints require exemption
-        app.logger.info("Admin drain routes registered")
-    except Exception as e:
-        app.logger.error(f"Failed to register admin drain routes: {e}")
-    
-    # API version endpoint
-    try:
-        from routes.api_version import api_version_bp
-        app.register_blueprint(api_version_bp)
-        app.logger.info("API version endpoint registered")
-    except Exception as e:
-        app.logger.error(f"Failed to register API version endpoint: {e}")
     
     # AI Copilot routes
     try:
@@ -994,6 +925,70 @@ def create_app() -> Flask:
 # WSGI entrypoints
 app = create_app()
 
+@app.route("/api/memory/search", methods=["POST"])
+def search_memory():
+    try:
+        data = request.get_json()
+        query = data.get("query")
+        if not query:
+            return jsonify({"error": "Missing query"}), 400
+
+        # 1. Create embedding for the query
+        embed_response = openai.embeddings.create(
+            input=query,
+            model="text-embedding-3-large"
+        )
+        query_embedding = embed_response.data[0].embedding
+
+        # 2. Run similarity search
+        conn = get_pg_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT id, content,
+                   1 - (embedding <=> %s::vector) AS similarity
+            FROM memory_embeddings
+            ORDER BY similarity DESC
+            LIMIT 5;
+        """, (query_embedding,))
+
+        results = [
+            {"id": r[0], "content": r[1], "similarity": round(r[2], 4)}
+            for r in cur.fetchall()
+        ]
+
+        cur.close()
+        conn.close()
+
+        return jsonify({"results": results, "count": len(results)}), 200
+
+    except Exception as e:
+        print("❌ Error in search_memory:", e)
+        return jsonify({"error": str(e)}), 500
+        
+logger = get_logger()
+logger.info("🚀 Starting Mina backend...")
+
+app.register_blueprint(metrics_bp)
+
+@app.before_request
+def before_request():
+    logger.info(f"Incoming request: {request.method} {request.path}")
+
+@app.after_request
+def after_request(response):
+    logger.info(f"Completed: {request.path} [{response.status_code}]")
+    return response
+
+# graceful shutdown for local/threading runs
+def _shutdown(*_):
+    app.logger.info("Shutting down gracefully…")
+    # In threading mode, there is no socketio.stop(); process will exit.
+signal.signal(signal.SIGTERM, _shutdown)
+signal.signal(signal.SIGINT, _shutdown)
+
+app = create_app()
+
 # Initialize Memory Persistence safely after Flask app context is ready
 with app.app_context():
     try:
@@ -1002,11 +997,8 @@ with app.app_context():
     except Exception as e:
         app.logger.error(f"❌ Failed to initialize memory persistence: {e}")
 
-# Register metrics blueprint
-try:
-    app.register_blueprint(metrics_bp)
-except Exception:
-    pass  # Already registered
+# Register metrics blueprint (keep if not already registered)
+app.register_blueprint(metrics_bp)
 
 @app.route("/api/memory/search", methods=["POST"])
 def search_memory():
@@ -1084,42 +1076,9 @@ def analytics_api():
         }), 500
 
 
-# Graceful shutdown handlers with WebSocket connection draining
-def _shutdown(signum, frame):
-    """
-    Graceful shutdown handler for SIGTERM/SIGINT signals.
-    
-    This handler:
-    1. Initiates WebSocket connection draining (30s timeout)
-    2. Notifies all connected clients of shutdown
-    3. Waits for active sessions to complete
-    4. Exits cleanly
-    
-    Used during blue/green deployments to ensure zero downtime.
-    """
-    from services.websocket_shutdown import start_graceful_shutdown, get_active_connection_count
-    
-    signal_name = "SIGTERM" if signum == signal.SIGTERM else "SIGINT"
-    app.logger.info(f"🛑 Received {signal_name} - initiating graceful shutdown...")
-    
-    # Get connection count before draining
-    active_count = get_active_connection_count()
-    app.logger.info(f"📊 Active WebSocket connections: {active_count}")
-    
-    if active_count > 0:
-        # Start graceful connection draining (30-second timeout)
-        success = start_graceful_shutdown(socketio, timeout_seconds=30)
-        
-        if success:
-            app.logger.info("✅ All WebSocket connections drained successfully")
-        else:
-            remaining = get_active_connection_count()
-            app.logger.warning(f"⚠️ Graceful shutdown timeout - {remaining} connections still active")
-            app.logger.warning("⚠️ Proceeding with shutdown - active sessions may be interrupted")
-    else:
-        app.logger.info("✅ No active connections - proceeding with shutdown")
-    
-    app.logger.info("👋 Shutdown complete - exiting")
+# Graceful shutdown handlers (keep as-is)
+def _shutdown(*_):
+    app.logger.info("Shutting down gracefully…")
 
 signal.signal(signal.SIGTERM, _shutdown)
 signal.signal(signal.SIGINT, _shutdown)
@@ -1129,5 +1088,9 @@ if __name__ == "__main__":
         "🚀 Mina running at http://0.0.0.0:5000 (Socket.IO path %s)",
         app.config.get("SOCKETIO_PATH", "/socket.io")
     )
+    socketio.run(app, host="0.0.0.0", port=5000, use_reloader=False, log_output=True)
+
+if __name__ == "__main__":
+    app.logger.info("🚀 Mina at http://0.0.0.0:5000  (Socket.IO path %s)", app.config.get("SOCKETIO_PATH", "/socket.io"))
     socketio.run(app, host="0.0.0.0", port=5000, use_reloader=False, log_output=True)
 
