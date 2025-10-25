@@ -96,7 +96,7 @@ class AnalyticsService:
         
         # Word count from transcript
         if meeting.session:
-            segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, is_final=True).all()
+            segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, kind='final').all()
             analytics.word_count = sum(len(segment.text.split()) for segment in segments)
 
     async def _analyze_engagement(self, analytics: Analytics, meeting: Meeting):
@@ -172,8 +172,8 @@ class AnalyticsService:
         
         segments = db.session.query(Segment).filter_by(
             session_id=session.id, 
-            is_final=True
-        ).order_by(Segment.timestamp).all()
+            kind='final'
+        ).order_by(Segment.created_at).all()
         
         if not segments:
             return [0.0]
@@ -182,9 +182,9 @@ class AnalyticsService:
         window_size = 5 * 60  # 5 minutes in seconds
         time_windows = defaultdict(list)
         
-        start_time = segments[0].timestamp
+        start_time = segments[0].created_at
         for segment in segments:
-            time_diff = (segment.timestamp - start_time).total_seconds()
+            time_diff = (segment.created_at - start_time).total_seconds()
             window_index = int(time_diff // window_size)
             time_windows[window_index].append(segment.text)
         
@@ -229,7 +229,7 @@ class AnalyticsService:
         
         # Decision analysis
         if meeting.session:
-            segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, is_final=True).all()
+            segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, kind='final').all()
             full_text = " ".join(segment.text.lower() for segment in segments)
             
             # Count decisions made
@@ -270,7 +270,7 @@ class AnalyticsService:
         if not meeting.session:
             return
         
-        segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, is_final=True).all()
+        segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, kind='final').all()
         full_text = " ".join(segment.text.lower() for segment in segments)
         
         # Count different types of content
@@ -330,7 +330,7 @@ class AnalyticsService:
         if not meeting.session:
             return
         
-        segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, is_final=True).all()
+        segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, kind='final').all()
         
         # Analyze consensus moments (simplified)
         consensus_indicators = ["everyone agrees", "we all think", "consensus", "unanimous"]
@@ -604,7 +604,7 @@ class AnalyticsService:
         
         segments = db.session.query(Segment).filter_by(
             session_id=meeting.session.id,
-            is_final=True
+            kind='final'
         ).order_by(Segment.created_at).all()
         
         if not segments:
@@ -724,7 +724,7 @@ class AnalyticsService:
         
         segments = db.session.query(Segment).filter_by(
             session_id=meeting.session.id,
-            is_final=True
+            kind='final'
         ).order_by(Segment.created_at).all()
         
         if not segments:
@@ -815,6 +815,50 @@ class AnalyticsService:
                 "productivity_score": round((total_tasks + total_decisions) / len(meetings), 2) if meetings else 0
             }
         }
+    def generate_analytics(self, session_id: int) -> Dict:
+        """
+        Wrapper method for PostTranscriptionOrchestrator compatibility.
+        Accepts session_id and generates analytics synchronously.
+        
+        Args:
+            session_id: Database session ID
+            
+        Returns:
+            Dictionary with analytics results
+        """
+        import asyncio
+        
+        try:
+            # Get session and associated meeting
+            session = db.session.get(Session, session_id)
+            if not session:
+                raise ValueError(f"Session {session_id} not found")
+            
+            # If no meeting linked, return basic stats without full analytics
+            if not session.meeting_id:
+                logger.warning(f"Session {session_id} has no linked meeting - returning basic stats only")
+                return {
+                    'success': False,
+                    'message': 'No meeting linked to session (anonymous session)',
+                    'analytics': {}
+                }
+            
+            # Run async analyze_meeting in sync context
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                result = loop.run_until_complete(self.analyze_meeting(session.meeting_id))
+                return result
+            finally:
+                loop.close()
+                
+        except Exception as e:
+            logger.error(f"❌ generate_analytics failed for session {session_id}: {e}", exc_info=True)
+            return {
+                'success': False,
+                'message': f'Analytics generation failed: {str(e)}',
+                'analytics': {}
+            }
 
 
 # Singleton instance

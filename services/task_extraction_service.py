@@ -64,8 +64,8 @@ class TaskExtractionService:
         # Get meeting transcript
         segments = Segment.query.filter_by(
             session_id=meeting.session.id,
-            is_final=True
-        ).order_by(Segment.timestamp).all()
+            kind='final'
+        ).order_by(Segment.created_at).all()
         
         if not segments:
             return []
@@ -382,6 +382,73 @@ class TaskExtractionService:
                 "message": f"Task extraction failed: {str(e)}",
                 "tasks_created": 0,
                 "tasks": []
+            }
+    def extract_tasks(self, session_id: int) -> Dict:
+        """
+        Wrapper method for PostTranscriptionOrchestrator compatibility.
+        Accepts session_id and extracts tasks synchronously.
+        
+        Args:
+            session_id: Database session ID
+            
+        Returns:
+            Dictionary with extracted tasks
+        """
+        import asyncio
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
+        try:
+            # Get session and associated meeting
+            session = db.session.get(Session, session_id)
+            if not session:
+                raise ValueError(f"Session {session_id} not found")
+            
+            # If no meeting linked, return empty task list
+            if not session.meeting_id:
+                logger.warning(f"Session {session_id} has no linked meeting - skipping task extraction")
+                return {
+                    'success': True,
+                    'message': 'No meeting linked to session (anonymous session)',
+                    'tasks': [],
+                    'tasks_created': 0
+                }
+            
+            # Run async extract_tasks_from_meeting in sync context
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                extracted_tasks = loop.run_until_complete(
+                    self.extract_tasks_from_meeting(session.meeting_id)
+                )
+                
+                # Create tasks in database
+                if extracted_tasks:
+                    created_tasks = self.create_tasks_in_database(session.meeting_id, extracted_tasks)
+                    return {
+                        'success': True,
+                        'message': f'Extracted {len(created_tasks)} tasks',
+                        'tasks': [t.to_dict() for t in created_tasks],
+                        'tasks_created': len(created_tasks)
+                    }
+                else:
+                    return {
+                        'success': True,
+                        'message': 'No tasks found',
+                        'tasks': [],
+                        'tasks_created': 0
+                    }
+            finally:
+                loop.close()
+                
+        except Exception as e:
+            logger.error(f"❌ extract_tasks failed for session {session_id}: {e}", exc_info=True)
+            return {
+                'success': False,
+                'message': f'Task extraction failed: {str(e)}',
+                'tasks': [],
+                'tasks_created': 0
             }
 
 
