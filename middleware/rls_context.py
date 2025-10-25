@@ -59,12 +59,14 @@ def set_rls_context(app):
                 
                 logger.debug(f"🔒 RLS context set: user_id={current_user.id}")
             else:
-                # For unauthenticated requests, unset the variable
-                # This allows anonymous sessions to be visible
-                db.session.execute(text("SET LOCAL app.current_user_id = NULL"))
+                # For unauthenticated requests, reset the variable
+                # Use RESET instead of SET = NULL to avoid syntax error
+                db.session.execute(text("RESET app.current_user_id"))
                 logger.debug("🔓 RLS context cleared (anonymous request)")
                 
         except Exception as e:
+            # Roll back the session to prevent abort state
+            db.session.rollback()
             # Log warning but don't fail the request
             # RLS is defense-in-depth, application auth is primary
             logger.warning(f"⚠️ Failed to set RLS context: {e}")
@@ -150,7 +152,8 @@ def disable_rls_for_migration():
     
     try:
         # Unset the user context (bypasses RLS)
-        db.session.execute(text("SET LOCAL app.current_user_id = NULL"))
+        # Use RESET instead of SET = NULL to avoid syntax error
+        db.session.execute(text("RESET app.current_user_id"))
         
         # Or use superuser role if available
         # db.session.execute(text("SET ROLE postgres"))
