@@ -23,9 +23,10 @@ class Analytics(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     
-    # Meeting relationship
-    meeting_id: Mapped[int] = mapped_column(ForeignKey("meetings.id"), nullable=False, unique=True)
-    meeting: Mapped["Meeting"] = relationship(back_populates="analytics")
+    # Session and Meeting relationships (70% sessions don't create meetings)
+    session_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
+    meeting_id: Mapped[Optional[int]] = mapped_column(ForeignKey("meetings.id"), nullable=True, unique=True)
+    meeting: Mapped[Optional["Meeting"]] = relationship(back_populates="analytics")
     
     # Overall meeting metrics
     total_duration_minutes: Mapped[Optional[float]] = mapped_column(Float)

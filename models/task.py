@@ -42,9 +42,10 @@ class Task(Base):
     reminder_date: Mapped[Optional[datetime]] = mapped_column(DateTime)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     
-    # Relationships
-    meeting_id: Mapped[int] = mapped_column(ForeignKey("meetings.id"), nullable=False)
-    meeting: Mapped["Meeting"] = relationship(back_populates="tasks")
+    # Relationships (70% sessions don't create meetings - support both)
+    session_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
+    meeting_id: Mapped[Optional[int]] = mapped_column(ForeignKey("meetings.id"), nullable=True)
+    meeting: Mapped[Optional["Meeting"]] = relationship(back_populates="tasks")
     
     assigned_to_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     assigned_to: Mapped[Optional["User"]] = relationship(back_populates="assigned_tasks", foreign_keys=[assigned_to_id])
