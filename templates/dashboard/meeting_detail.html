@@ -4,8 +4,8 @@
 {% block extra_css %}
 <style>
 /* ------------------------------
-   Transcript Workspace Styling
-   Matches Analytics page design system
+   CROWN+ Tabbed Interface
+   Post-Recording Meeting Intelligence UI
 --------------------------------*/
 .transcript-workspace {
   width: clamp(960px, 90vw, 1440px);
@@ -20,7 +20,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
 }
 
 .transcript-title {
@@ -36,9 +36,105 @@
 .transcript-subtitle {
   color: var(--color-text-secondary);
   font-size: var(--font-size-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
-/* Controls toolbar */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+.status-badge.processing {
+  color: var(--color-warning);
+  border-color: var(--color-warning);
+}
+.status-badge.ready {
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+/* Tab Navigation */
+.tab-nav {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-6);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2);
+  backdrop-filter: var(--backdrop-blur);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.tab-btn:hover {
+  color: var(--color-text-primary);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.tab-btn.active {
+  color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.15);
+  font-weight: 600;
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -var(--space-2);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 3px;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+}
+
+.tab-btn .tab-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* Tab Content Panels */
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Toolbar */
 .transcript-toolbar {
   display: flex;
   gap: var(--space-3);
@@ -135,6 +231,146 @@
   color: var(--color-primary);
 }
 
+/* AI Insights Grid */
+.insights-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.insight-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  backdrop-filter: var(--backdrop-blur);
+}
+
+.insight-card h3 {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.insight-card .icon {
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+}
+
+.insight-list {
+  list-style: none;
+  padding: 0;
+}
+
+.insight-list li {
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.insight-list li:last-child {
+  border-bottom: none;
+}
+
+/* Analytics Dashboard */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.analytics-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  backdrop-filter: var(--backdrop-blur);
+}
+
+.analytics-card h4 {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-3);
+}
+
+.chart-container {
+  height: 250px;
+  position: relative;
+}
+
+/* Tasks List */
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.task-item {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  backdrop-filter: var(--backdrop-blur);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  transition: all 0.2s ease;
+}
+
+.task-item:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.task-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.task-content {
+  flex: 1;
+}
+
+.task-title {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.task-meta {
+  display: flex;
+  gap: var(--space-3);
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.priority-badge {
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.priority-badge.high {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+.priority-badge.medium {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+.priority-badge.low {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
 /* Toast notification */
 .toast {
   position: fixed;
@@ -166,8 +402,51 @@ mark.highlight.active-match {
   background-color: rgba(255, 193, 7, 0.7);
 }
 
+/* Loading spinner */
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  color: var(--color-text-secondary);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--glass-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: var(--space-8);
+  color: var(--color-text-secondary);
+}
+
+.empty-state svg {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--space-4);
+  opacity: 0.5;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
+  .tab-nav {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  .tab-btn {
+    white-space: nowrap;
+  }
   .transcript-toolbar {
     flex-direction: column;
     align-items: stretch;
@@ -175,60 +454,400 @@ mark.highlight.active-match {
   .transcript-toolbar button {
     width: 100%;
   }
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="transcript-workspace">
+  <!-- Header -->
   <div class="transcript-header">
     <div>
-      <h1 class="transcript-title">Meeting Transcript</h1>
-      <p class="transcript-subtitle">Interactive AI-powered meeting playback and insights</p>
+      <h1 class="transcript-title">{{ session.title or 'Meeting Transcript' }}</h1>
+      <p class="transcript-subtitle">
+        {{ session.started_at.strftime('%B %d, %Y at %I:%M %p') if session.started_at else 'Session' }}
+        <span class="status-badge ready" id="processingStatus">Ready</span>
+      </p>
     </div>
     <div>
-      <audio id="audioPlayer" src="{{ recording_url }}" controls></audio>
+      <audio id="audioPlayer" src="{{ recording_url }}" controls style="display: none;"></audio>
     </div>
   </div>
 
-  <!-- Toolbar: Search, Copy, Navigation -->
-  <div class="transcript-toolbar">
-    <input type="text" id="searchInput" placeholder="Search transcript..." />
-    <button id="prevMatchBtn" title="Previous match">↑</button>
-    <button id="nextMatchBtn" title="Next match">↓</button>
-    <button id="copyAllBtn" title="Copy entire transcript">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M8 16h8M8 12h8m-5-8h8a2 2 0 012 2v14a2 2 0 01-2 2H9a2 2 0 01-2-2v-5m0 0H5a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v5" />
-      </svg> Copy All
+  <!-- Tab Navigation -->
+  <div class="tab-nav">
+    <button class="tab-btn active" data-tab="transcript">
+      📝 Final Transcript
+    </button>
+    <button class="tab-btn" data-tab="refined">
+      ✨ Refined
+      <span class="tab-badge" id="refinedBadge" style="display: none;">New</span>
+    </button>
+    <button class="tab-btn" data-tab="insights">
+      🧠 AI Insights
+      <span class="tab-badge" id="insightsBadge" style="display: none;">Ready</span>
+    </button>
+    <button class="tab-btn" data-tab="analytics">
+      📊 Analytics
+      <span class="tab-badge" id="analyticsBadge" style="display: none;">Ready</span>
+    </button>
+    <button class="tab-btn" data-tab="tasks">
+      ✅ Tasks
+      <span class="tab-badge" id="tasksBadge" style="display: none;">0</span>
     </button>
   </div>
 
-  <!-- Transcript Content -->
-  <div class="transcript-body" id="transcript">
-    {% for segment in segments %}
-    <div class="segment" data-id="{{ segment.id }}" data-start="{{ segment.start_time }}">
-      <span class="timestamp">[{{ segment.timestamp }}]</span>
-      <strong class="speaker">{{ segment.speaker }}</strong>
-      <span class="text">{{ segment.text }}</span>
-      <div class="actions">
-        <button class="copySegmentBtn" title="Copy this segment">
-          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M8 16h8M8 12h8m-5-8h8a2 2 0 012 2v14a2 2 0 01-2 2H9a2 2 0 01-2-2v-5m0 0H5a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v5" />
-          </svg>
-        </button>
-        <button class="highlightBtn" title="Highlight segment">⭐</button>
-        <button class="commentBtn" title="Add comment">💬</button>
+  <!-- Tab Content: Final Transcript -->
+  <div class="tab-content active" id="tab-transcript">
+    <!-- Toolbar: Search, Copy, Navigation -->
+    <div class="transcript-toolbar">
+      <input type="text" id="searchInput" placeholder="Search transcript..." />
+      <button id="prevMatchBtn" title="Previous match">↑</button>
+      <button id="nextMatchBtn" title="Next match">↓</button>
+      <button id="copyAllBtn" title="Copy entire transcript">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 16h8M8 12h8m-5-8h8a2 2 0 012 2v14a2 2 0 01-2 2H9a2 2 0 01-2-2v-5m0 0H5a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v5" />
+        </svg> Copy All
+      </button>
+    </div>
+
+    <!-- Transcript Content -->
+    <div class="transcript-body" id="transcript">
+      {% if segments %}
+        {% for segment in segments %}
+        <div class="segment" data-id="{{ segment.id }}" data-start="{{ segment.start_time or 0 }}">
+          <span class="timestamp">[{{ segment.timestamp or '00:00' }}]</span>
+          <strong class="speaker">{{ segment.speaker or 'Speaker' }}</strong>
+          <span class="text">{{ segment.text }}</span>
+          <div class="actions">
+            <button class="copySegmentBtn" title="Copy this segment">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 16h8M8 12h8m-5-8h8a2 2 0 012 2v14a2 2 0 01-2 2H9a2 2 0 01-2-2v-5m0 0H5a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v5" />
+              </svg>
+            </button>
+            <button class="highlightBtn" title="Highlight segment">⭐</button>
+            <button class="commentBtn" title="Add comment">💬</button>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <p>No transcript segments available yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Tab Content: Refined Transcript -->
+  <div class="tab-content" id="tab-refined">
+    <div class="transcript-body">
+      <div class="loading-spinner" id="refinedLoading">
+        <div class="spinner"></div>
+        <p style="margin-left: 1rem;">Processing refined transcript...</p>
+      </div>
+      <div id="refinedContent" style="display: none;"></div>
+    </div>
+  </div>
+
+  <!-- Tab Content: AI Insights -->
+  <div class="tab-content" id="tab-insights">
+    <div class="insights-grid">
+      <!-- Summary Card -->
+      <div class="insight-card">
+        <h3>
+          <span class="icon">📋</span>
+          Summary
+        </h3>
+        <div id="insightsSummary">
+          <div class="loading-spinner">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key Points -->
+      <div class="insight-card">
+        <h3>
+          <span class="icon">💡</span>
+          Key Points
+        </h3>
+        <ul class="insight-list" id="insightsKeyPoints">
+          <li>Processing insights...</li>
+        </ul>
+      </div>
+
+      <!-- Action Items -->
+      <div class="insight-card">
+        <h3>
+          <span class="icon">🎯</span>
+          Action Items
+        </h3>
+        <ul class="insight-list" id="insightsActions">
+          <li>Processing actions...</li>
+        </ul>
+      </div>
+
+      <!-- Questions -->
+      <div class="insight-card">
+        <h3>
+          <span class="icon">❓</span>
+          Questions Raised
+        </h3>
+        <ul class="insight-list" id="insightsQuestions">
+          <li>Processing questions...</li>
+        </ul>
+      </div>
+
+      <!-- Decisions -->
+      <div class="insight-card">
+        <h3>
+          <span class="icon">⚖️</span>
+          Decisions Made
+        </h3>
+        <ul class="insight-list" id="insightsDecisions">
+          <li>Processing decisions...</li>
+        </ul>
       </div>
     </div>
-    {% endfor %}
+  </div>
+
+  <!-- Tab Content: Analytics -->
+  <div class="tab-content" id="tab-analytics">
+    <div class="analytics-grid">
+      <!-- Speaking Time -->
+      <div class="analytics-card">
+        <h4>Speaking Time Distribution</h4>
+        <div class="chart-container">
+          <canvas id="speakingTimeChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Participation Balance -->
+      <div class="analytics-card">
+        <h4>Participation Balance</h4>
+        <div class="chart-container">
+          <canvas id="participationChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Sentiment Analysis -->
+      <div class="analytics-card">
+        <h4>Sentiment Over Time</h4>
+        <div class="chart-container">
+          <canvas id="sentimentChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Topic Trends -->
+      <div class="analytics-card">
+        <h4>Topic Distribution</h4>
+        <div class="chart-container">
+          <canvas id="topicChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Content: Tasks -->
+  <div class="tab-content" id="tab-tasks">
+    <div class="tasks-list" id="tasksList">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p style="margin-left: 1rem;">Extracting tasks from transcript...</p>
+      </div>
+    </div>
   </div>
 </div>
-<!-- ===========================
-     Inline JavaScript Logic
-     =========================== -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+/* ===========================
+   CROWN+ Tabbed Meeting Interface
+   Real-time Socket.IO integration
+   =========================== */
+
+const sessionId = '{{ session.external_id }}';
+const sessionDbId = {{ session.id }};
+
+/* ---------- Tab Switching ---------- */
+const tabBtns = document.querySelectorAll('.tab-btn');
+const tabContents = document.querySelectorAll('.tab-content');
+
+tabBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const targetTab = btn.dataset.tab;
+    
+    // Update active states
+    tabBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    tabContents.forEach(content => {
+      if (content.id === `tab-${targetTab}`) {
+        content.classList.add('active');
+        // Load data when tab becomes active
+        loadTabData(targetTab);
+      } else {
+        content.classList.remove('active');
+      }
+    });
+  });
+});
+
+/* ---------- Load Tab Data ---------- */
+function loadTabData(tabName) {
+  switch(tabName) {
+    case 'refined':
+      if (!window.refinedLoaded) loadRefined();
+      break;
+    case 'insights':
+      if (!window.insightsLoaded) loadInsights();
+      break;
+    case 'analytics':
+      if (!window.analyticsLoaded) loadAnalytics();
+      break;
+    case 'tasks':
+      if (!window.tasksLoaded) loadTasks();
+      break;
+  }
+}
+
+/* ---------- Load Refined Transcript ---------- */
+function loadRefined() {
+  fetch(`/sessions/${sessionId}/refined`)
+    .then(r => r.json())
+    .then(data => {
+      window.refinedLoaded = true;
+      const content = document.getElementById('refinedContent');
+      const loading = document.getElementById('refinedLoading');
+      
+      if (data.refined_text) {
+        content.innerHTML = `<p>${data.refined_text}</p>`;
+        content.style.display = 'block';
+        loading.style.display = 'none';
+      }
+    })
+    .catch(err => {
+      console.error('Failed to load refined transcript:', err);
+    });
+}
+
+/* ---------- Load AI Insights ---------- */
+function loadInsights() {
+  fetch(`/sessions/${sessionId}/insights`)
+    .then(r => r.json())
+    .then(data => {
+      window.insightsLoaded = true;
+      
+      // Summary
+      const summaryEl = document.getElementById('insightsSummary');
+      summaryEl.innerHTML = data.summary ? `<p>${data.summary}</p>` : '<p>No summary available</p>';
+      
+      // Key Points
+      const keyPointsEl = document.getElementById('insightsKeyPoints');
+      keyPointsEl.innerHTML = data.key_points && data.key_points.length > 0
+        ? data.key_points.map(p => `<li>${p}</li>`).join('')
+        : '<li>No key points extracted</li>';
+      
+      // Action Items
+      const actionsEl = document.getElementById('insightsActions');
+      actionsEl.innerHTML = data.action_items && data.action_items.length > 0
+        ? data.action_items.map(a => `<li>${a}</li>`).join('')
+        : '<li>No action items found</li>';
+      
+      // Questions
+      const questionsEl = document.getElementById('insightsQuestions');
+      questionsEl.innerHTML = data.questions && data.questions.length > 0
+        ? data.questions.map(q => `<li>${q}</li>`).join('')
+        : '<li>No questions raised</li>';
+      
+      // Decisions
+      const decisionsEl = document.getElementById('insightsDecisions');
+      decisionsEl.innerHTML = data.decisions && data.decisions.length > 0
+        ? data.decisions.map(d => `<li>${d}</li>`).join('')
+        : '<li>No decisions made</li>';
+      
+      document.getElementById('insightsBadge').style.display = 'inline-block';
+    })
+    .catch(err => {
+      console.error('Failed to load insights:', err);
+    });
+}
+
+/* ---------- Load Analytics ---------- */
+function loadAnalytics() {
+  fetch(`/sessions/${sessionId}/analytics`)
+    .then(r => r.json())
+    .then(data => {
+      window.analyticsLoaded = true;
+      renderAnalyticsCharts(data);
+      document.getElementById('analyticsBadge').style.display = 'inline-block';
+    })
+    .catch(err => {
+      console.error('Failed to load analytics:', err);
+    });
+}
+
+function renderAnalyticsCharts(data) {
+  // Speaking Time Chart
+  if (data.speaking_time && Chart) {
+    const ctx1 = document.getElementById('speakingTimeChart');
+    new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(data.speaking_time),
+        datasets: [{
+          label: 'Speaking Time (seconds)',
+          data: Object.values(data.speaking_time),
+          backgroundColor: 'rgba(99, 102, 241, 0.6)',
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+  
+  // Add more charts as needed...
+}
+
+/* ---------- Load Tasks ---------- */
+function loadTasks() {
+  fetch(`/sessions/${sessionId}/tasks`)
+    .then(r => r.json())
+    .then(data => {
+      window.tasksLoaded = true;
+      const tasksList = document.getElementById('tasksList');
+      
+      if (data.tasks && data.tasks.length > 0) {
+        tasksList.innerHTML = data.tasks.map(task => `
+          <div class="task-item">
+            <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
+            <div class="task-content">
+              <div class="task-title">${task.title}</div>
+              <div class="task-meta">
+                <span class="priority-badge ${task.priority || 'medium'}">${task.priority || 'medium'}</span>
+                ${task.assignee ? `<span>👤 ${task.assignee}</span>` : ''}
+                ${task.due_date ? `<span>📅 ${task.due_date}</span>` : ''}
+              </div>
+            </div>
+          </div>
+        `).join('');
+        
+        document.getElementById('tasksBadge').textContent = data.tasks.length;
+        document.getElementById('tasksBadge').style.display = 'inline-block';
+      } else {
+        tasksList.innerHTML = '<div class="empty-state"><p>No tasks extracted from this meeting.</p></div>';
+      }
+    })
+    .catch(err => {
+      console.error('Failed to load tasks:', err);
+      tasksList.innerHTML = '<div class="empty-state"><p>Failed to load tasks.</p></div>';
+    });
+}
+
 /* ---------- Toast Notification ---------- */
 function showToast(message) {
   const toast = document.createElement('div');
@@ -344,30 +963,34 @@ document.querySelectorAll('.commentBtn').forEach(btn => {
 /* ---------- Audio Synchronization ---------- */
 const audio = document.getElementById('audioPlayer');
 const segments = Array.from(document.querySelectorAll('.segment'));
-function findCurrentSegmentIndex(t) {
-  for (let i = segments.length - 1; i >= 0; i--) {
-    const s = parseFloat(segments[i].dataset.start) || 0;
-    if (t >= s) return i;
+if (segments.length > 0) {
+  audio.style.display = 'block';
+  
+  function findCurrentSegmentIndex(t) {
+    for (let i = segments.length - 1; i >= 0; i--) {
+      const s = parseFloat(segments[i].dataset.start) || 0;
+      if (t >= s) return i;
+    }
+    return 0;
   }
-  return 0;
-}
-segments.forEach(seg => {
-  seg.addEventListener('click', () => {
-    const start = parseFloat(seg.dataset.start) || 0;
-    audio.currentTime = start; audio.play();
-    segments.forEach(s => s.classList.remove('current-segment'));
-    seg.classList.add('current-segment');
+  segments.forEach(seg => {
+    seg.addEventListener('click', () => {
+      const start = parseFloat(seg.dataset.start) || 0;
+      audio.currentTime = start; audio.play();
+      segments.forEach(s => s.classList.remove('current-segment'));
+      seg.classList.add('current-segment');
+    });
   });
-});
-audio.addEventListener('timeupdate', () => {
-  const idx = findCurrentSegmentIndex(audio.currentTime);
-  segments.forEach(s => s.classList.remove('current-segment'));
-  const cur = segments[idx];
-  if (cur) {
-    cur.classList.add('current-segment');
-    cur.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-});
+  audio.addEventListener('timeupdate', () => {
+    const idx = findCurrentSegmentIndex(audio.currentTime);
+    segments.forEach(s => s.classList.remove('current-segment'));
+    const cur = segments[idx];
+    if (cur) {
+      cur.classList.add('current-segment');
+      cur.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  });
+}
 
 /* ---------- Keyboard Shortcuts ---------- */
 document.addEventListener('keydown', e => {
@@ -378,5 +1001,46 @@ document.addEventListener('keydown', e => {
     e.preventDefault(); copyAllBtn.click();
   }
 });
+
+/* ---------- Socket.IO Real-time Updates ---------- */
+// Auto-load tabs when processing completes
+// Connection will be established by live.html Socket.IO client
+if (typeof io !== 'undefined') {
+  const socket = io('/live');
+  
+  socket.on('analytics_ready', (data) => {
+    if (data.session_id === sessionId) {
+      document.getElementById('analyticsBadge').textContent = 'Ready';
+      document.getElementById('analyticsBadge').style.display = 'inline-block';
+      window.analyticsLoaded = false; // Force reload
+      showToast('📊 Analytics ready!');
+    }
+  });
+  
+  socket.on('tasks_ready', (data) => {
+    if (data.session_id === sessionId) {
+      window.tasksLoaded = false; // Force reload
+      showToast('✅ Tasks extracted!');
+    }
+  });
+  
+  socket.on('insights_ready', (data) => {
+    if (data.session_id === sessionId) {
+      document.getElementById('insightsBadge').textContent = 'Ready';
+      document.getElementById('insightsBadge').style.display = 'inline-block';
+      window.insightsLoaded = false; // Force reload
+      showToast('🧠 AI Insights ready!');
+    }
+  });
+  
+  socket.on('refinement_ready', (data) => {
+    if (data.session_id === sessionId) {
+      document.getElementById('refinedBadge').textContent = 'New';
+      document.getElementById('refinedBadge').style.display = 'inline-block';
+      window.refinedLoaded = false; // Force reload
+      showToast('✨ Refined transcript ready!');
+    }
+  });
+}
 </script>
 {% endblock %}

@@ -12,6 +12,12 @@ from flask_socketio import emit as socketio_emit
 from models import db, Session
 from services.event_logger import get_event_logger
 
+# Import socketio for direct emission
+try:
+    from app import socketio
+except ImportError:
+    socketio = None
+
 logger = logging.getLogger(__name__)
 
 # Feature flag for dual event emission (backward compatibility)
