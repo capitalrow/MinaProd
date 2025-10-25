@@ -344,6 +344,9 @@ class CircuitBreaker:
         """Open circuit due to failures"""
         self._set_state_in_redis(CircuitState.OPEN)
         logger.warning(f"🔴 Circuit breaker '{self.name}' OPENED due to failures")
+        
+        # Send Slack alert (Wave 0-10-3)
+        self._send_circuit_breaker_alert()
     
     def _close_circuit(self):
         """Close circuit after successful recovery"""
@@ -409,6 +412,32 @@ class CircuitBreaker:
                 self.last_attempt_time = 0
             
             logger.info(f"🔄 Circuit breaker '{self.name}' manually reset")
+    
+    def _send_circuit_breaker_alert(self):
+        """Send Slack alert when circuit breaker opens (Wave 0-10-3)."""
+        try:
+            # Import here to avoid circular dependency
+            from services.slack_service import SlackService
+            
+            slack = SlackService()
+            if not slack.is_available():
+                logger.debug(f"Slack not configured, skipping alert for '{self.name}'")
+                return
+            
+            # Get current metrics
+            metrics = self._get_metrics_from_redis()
+            current_failures = int(self.redis_client.get(self.failures_key) or 0) if self.redis_enabled else self.stats.failed_requests
+            
+            # Send alert
+            slack.send_circuit_breaker_alert(
+                service_name=self.name,
+                state="OPEN",
+                failure_count=current_failures,
+                recovery_timeout=self.config.recovery_timeout,
+                last_error=metrics.get("last_failure_error")
+            )
+        except Exception as e:
+            logger.error(f"❌ Failed to send circuit breaker alert: {e}")
 
 
 def get_all_circuit_breakers(redis_url: Optional[str] = None) -> list:
