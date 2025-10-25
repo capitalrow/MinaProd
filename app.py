@@ -290,6 +290,10 @@ def create_app() -> Flask:
     app.logger.propagate = True
     
     app.logger.info("Booting Mina…")
+    
+    # Enable API versioning middleware for all /api/* routes
+    from services.api_versioning import create_version_middleware
+    create_version_middleware(app)
 
     # reverse proxy (Replit)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
@@ -664,6 +668,14 @@ def create_app() -> Flask:
         app.logger.info("Admin drain routes registered")
     except Exception as e:
         app.logger.error(f"Failed to register admin drain routes: {e}")
+    
+    # API version endpoint
+    try:
+        from routes.api_version import api_version_bp
+        app.register_blueprint(api_version_bp)
+        app.logger.info("API version endpoint registered")
+    except Exception as e:
+        app.logger.error(f"Failed to register API version endpoint: {e}")
     
     # AI Copilot routes
     try:
