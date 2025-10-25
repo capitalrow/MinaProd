@@ -1,0 +1,340 @@
+# **CROWN+ TARGET-STATE MINA FEATURE SPECIFICATION (2025 STANDARD)**
+
+### **Product Experience: Real-Time Recording, Live Transcription, Analytics, and Replay**
+
+---
+
+## **1️⃣ Product Context & Strategic Intent**
+
+**Feature Name:** Mina Live Recording & Transcription Experience
+**Classification:** Core Experience Feature
+**Primary Objective:** Deliver seamless, intelligent, emotionally aware meeting recording and transcription within a unified, real-time, event-driven ecosystem.
+
+**Strategic Purpose:**
+This feature transforms Mina from a transcription tool into an **intelligent meeting companion** — one that listens, interprets, and responds instantly. It enables real-time speech-to-text, live analytics, and replay synchronization with complete transparency and precision.
+
+**Business Value:**
+
+* Increases **engagement** through live, interactive feedback.
+* Reinforces **trust** via visible reliability, data integrity, and empathetic messaging.
+* Drives **retention** through seamless multi-page synchronization and effortless re-entry continuity.
+
+**End Condition:**
+A session in Mina feels **instantaneous**, **intuitive**, and **emotionally intelligent** — indistinguishable from a native OS-level experience. Recording, transcription, analytics, and editing flow as one continuous process with zero delay, zero data loss, and full emotional polish.
+
+---
+
+## **2️⃣ End-to-End User Journey (Definitive Experience Blueprint)**
+
+### **1. Start Recording**
+
+When the user clicks **Record**, the interface transitions instantly.
+
+* The background gently softens; focus shifts to a **live session card** with pulsing gradients.
+* A **waveform animates** in sync with voice amplitude; the **timer starts** at T+0s.
+* A reassuring micro-copy appears: “I’m listening — you’re all set.”
+
+**Backend Response:**
+`record_start` event initiates a `Session` with unique `trace_id`.
+MediaRecorder begins streaming chunks via WebSocket (`audio_chunk`).
+Each chunk is acknowledged, stored, and transcribed in parallel.
+
+---
+
+### **2. Live Transcript Appears**
+
+Within 1–2 seconds, the first words appear in soft gray, fading into solid black as confidence increases.
+
+* The transcript scrolls fluidly beneath the waveform.
+* Analytics tiles update in real-time: **duration**, **word count**, **sentiment**, and **speaking pace**.
+* Every keystroke-level change is broadcast via WebSocket to keep all open pages synchronized.
+
+**Backend Process:**
+Audio chunks enter the `transcription_pipeline`.
+Whisper engine processes in streaming mode.
+Partial segments are validated by the **Semantic QA Filter** to remove duplicates and hallucinations.
+Each approved partial triggers a `transcript_partial` event → UI update.
+
+---
+
+### **3. Stop Recording**
+
+When the user clicks **Stop**, the waveform freezes, and a **shimmer loader** appears with “Processing your meeting…”
+
+* Background transitions from live to calm.
+* A soft chime confirms capture completion.
+* Processing occurs asynchronously — no blocking.
+
+**Backend Logic:**
+
+* `record_stop` event finalizes the session state.
+* All received chunks are stitched, verified, and passed through the **Final ASR Pass**.
+* Hierarchical summarization begins: segment summaries → meta-summary → final transcript.
+
+UI immediately transitions to an “interim transcript” view for continuity.
+No perceived latency — users can scroll, read, and interact instantly.
+
+---
+
+### **4. Replay Available**
+
+As soon as the final transcript completes, playback controls activate.
+
+* The **audio player** appears at the top of the transcript.
+* Clicking **Play** scrolls the transcript in sync with the audio timeline (100 ms accuracy).
+* Clicking a line jumps playback precisely to that sentence.
+
+**Emotional Layer:**
+Progress bar glows subtly; transcript words highlight in sync.
+Micro-copy: “Reliving your meeting — everything’s right here.”
+
+---
+
+### **5. Edit Mode**
+
+Upon completion, the user enters **Edit Mode** seamlessly.
+
+* Text becomes editable in place; all edits auto-save every 2s.
+* Inline task creation (“Mark as Action Item”) links directly to timestamped transcript segments.
+* The audio reference remains available beneath each section for context validation.
+
+**Logic Chain:**
+`edit_commit` → triggers
+
+1. Analytics recalculation (`AnalyticsService.update_metrics`)
+2. Task synchronization (`TaskExtractor.reconcile_manual_edits`)
+3. Version checkpoint creation (`trace_id` version increment)
+
+---
+
+### **6. Cross-Page Sync**
+
+Every view in Mina — Dashboard, Meetings, Tasks, Analytics — reacts instantly via WebSocket event propagation.
+
+* `session_finalized` → dashboard KPIs animate upward.
+* `tasks_update` → task count increment reflects instantly.
+* `analytics_update` → sentiment, topics, and engagement charts refresh smoothly.
+
+All pages share one state: **SessionStore** — atomic, broadcast-driven, and rehydrated from cache on reload.
+
+---
+
+## **3️⃣ Front-End UI Behaviour & Event Responsiveness**
+
+| **Event**            | **UI Response**                             | **Transition Timing** |
+| -------------------- | ------------------------------------------- | --------------------- |
+| `record_start`       | Waveform animates, timer appears, mic glows | 200 ms                |
+| `audio_chunk_sent`   | Confidence shimmer pulses                   | Continuous            |
+| `transcript_partial` | New text slides in with fade transition     | 250 ms                |
+| `record_stop`        | Loader shimmer, waveform freeze             | 300 ms                |
+| `transcript_final`   | Edit tools slide in; analytics animate      | 400 ms                |
+| `edit_commit`        | Snackbar: “Changes saved.”                  | 150 ms                |
+| `session_finalized`  | Cross-page sync broadcast                   | <300 ms               |
+
+**Animation Principles:**
+
+* Framer Motion spring curves (`easeInOutQuart`).
+* Material 3 elevation for cards, transitions for tactile flow.
+* Adaptive color cues (blue/purple gradients) signify recording → processing → finalized.
+* Reduced-motion setting disables waveforms and shimmer effects automatically.
+
+---
+
+## **4️⃣ Functional Logic & System Architecture**
+
+**Pipeline Overview (Event-Driven, Atomic, Idempotent):**
+
+```
+record_start → audio_stream
+→ save_temp_buffer → transcription_pipeline
+→ transcript_finalized → analytics_update
+→ dashboard_refresh → tasks_generation
+→ editable_state + replay_link_active
+```
+
+**Core Services:**
+
+* `TranscriptionService`: manages chunk streaming, final ASR pass, QA filtering.
+* `SessionService`: controls lifecycle and version checkpoints.
+* `SummaryService`: hierarchical summarization logic.
+* `TaskExtractor`: NLP-based action detection.
+* `AnalyticsService`: computes metrics and sentiment.
+* `EventLedger`: logs all events for audit and observability.
+
+**State Rules:**
+
+* Each transition atomic; no overlapping writes.
+* Idempotent updates ensure consistency across retries.
+* All entities share common `trace_id` lineage for auditability.
+
+---
+
+## **5️⃣ Data & Business Logic**
+
+**Core Entities:**
+
+| Entity        | Description                                        | Source of Truth            |
+| ------------- | -------------------------------------------------- | -------------------------- |
+| `Session`     | Parent object controlling full meeting state       | Database                   |
+| `Segment`     | Timestamped transcript segment                     | Transcription pipeline     |
+| `Transcript`  | Combined validated text output                     | Post-processing            |
+| `Task`        | Action item extracted from transcript              | NLP engine + manual edits  |
+| `Analytics`   | Metrics: duration, sentiment, keywords, talk ratio | AnalyticsService           |
+| `EventLedger` | Unified lifecycle log                              | System observability layer |
+
+**Business Impact:**
+
+* **Productivity:** Live, accurate summaries reduce post-meeting admin time by 80%.
+* **Trust:** Transparent event feedback and recovery mechanisms ensure data reliability.
+* **Delight:** Emotionally aware micro-interactions enhance retention and satisfaction.
+
+---
+
+## **6️⃣ State Persistence & Synchronization**
+
+* **Auto-save** occurs every 2 seconds and on every event commit.
+* **Real-time sync:** Socket broadcasting ensures all clients share live data state.
+* **Instant rehydration:** On reload, last session restored from IndexedDB → verified via `trace_id`.
+* **Offline handling:** Two-phase commit ensures pending chunks and edits queue until reconnected.
+
+Result: zero data loss, zero desync, continuous interaction.
+
+---
+
+## **7️⃣ Concurrency & Version Control**
+
+* All edits carry `trace_id` and `version`.
+* Concurrent edits create temporary deltas, merged visually in real time.
+* Conflict detected → inline prompt:
+  “This section was also edited by Alex. Review or keep your version?”
+* Undo/Redo stack stored locally with timestamp checkpoints.
+
+---
+
+## **8️⃣ Error Handling & Recovery**
+
+* **Network Loss:** Local cache activated; “Connection lost — recording locally.”
+* **Server Timeout:** Retry automatically; shimmer persists until confirmed.
+* **Incomplete Transcript:** System re-runs finalization in background; user notified.
+* **Crash Recovery:** Auto-resume last session from local cache.
+
+Error messages use empathetic tone:
+
+> “Looks like your connection paused — I’ve saved everything safely.”
+
+---
+
+## **9️⃣ Accessibility & Inclusion**
+
+* Fully WCAG 2.2 AA compliant.
+* All live updates ARIA-annotated for screen readers (`aria-live="polite"`).
+* Keyboard shortcuts:
+
+  * `Space`: Start/Stop recording
+  * `R`: Replay
+  * `E`: Edit mode toggle
+* Reduced-motion setting disables waveforms, shimmer, and animated text flows.
+* High-contrast theme with proper color ratios (≥4.5:1).
+
+---
+
+## **🔟 Performance & Optimization**
+
+* **Sub-300 ms UI feedback** for all user-triggered actions.
+* **Lazy loading** of session modules (replay, analytics) only when accessed.
+* **Audio stream throttling** and **chunk compression** reduce upload load.
+* **IndexedDB cache** supports up to 2 GB offline storage.
+* **Edge-cached analytics tiles** ensure near-zero dashboard load time.
+
+Performance metrics are monitored continuously in the EventLedger telemetry.
+
+---
+
+## **1️⃣1️⃣ Security, Privacy & Data Ethics**
+
+* **Explicit consent:** Microphone permission required with clear modal: “Mina records only while you choose to.”
+* **Encryption:** All audio and transcript data encrypted in transit (TLS 1.3) and at rest (AES-256).
+* **Granular deletion:** Users can delete any session; associated audio and logs are purged automatically.
+* **Audit transparency:** Each session trace_id can export its full event ledger.
+* **Compliance:** GDPR, CCPA, ISO 27001-aligned controls with privacy-by-design baked into data model.
+
+---
+
+## **1️⃣2️⃣ Observability & Analytics**
+
+Mina continuously measures:
+
+* Event latency (chunk receipt → UI render)
+* Retry and reconnect rates
+* Edit frequency, replay count, and task creation
+* Summary generation time
+* Error rate per event type
+
+**Telemetry Layer:**
+All metrics pushed to `session_metrics` and `event_telemetry` tables for longitudinal performance tracking.
+System dashboards visualize SLOs in Grafana:
+
+* p95 transcript latency
+* Finalization success rate
+* Live sync uptime
+
+---
+
+## **1️⃣3️⃣ Delight & Emotional Intelligence**
+
+Mina communicates in a **human, reassuring tone**:
+
+* “I’m listening — take your time.”
+* “Syncing safely — no words lost.”
+* “Crafting your highlights…”
+* “All done — replay anytime.”
+
+Micro-animations respond to tone:
+
+* Gentle pulses during recording.
+* Confident shimmer on processing.
+* Subtle confetti or checkmark animation on completion.
+
+Emotionally intelligent pacing reinforces trust, confidence, and satisfaction without distraction.
+
+---
+
+## **1️⃣4️⃣ Final Delivery Specification**
+
+**Design Standards**
+
+* **Visual Framework:** Material 3 + Framer Motion transitions + gradient overlays for depth.
+* **Accessibility:** WCAG 2.2 AA, ARIA-complete.
+* **Architecture:** Event-driven, broker-based, atomic state synchronization.
+* **Data Integrity:** Idempotent transactions, consistent trace_id lineage.
+* **Security:** Full E2EE, user consent flows, and deletion transparency.
+* **Telemetry:** OpenTelemetry span integration across front/back layers.
+
+**Performance KPIs**
+
+| Metric                   | Target              | Description                 |
+| ------------------------ | ------------------- | --------------------------- |
+| Time-to-first-transcript | ≤ 2s                | Partial transcript appears  |
+| Time-to-final-summary    | ≤ 8s for 1h session | Parallelized ASR pipeline   |
+| Dashboard sync latency   | ≤ 300 ms            | Event broadcast propagation |
+| Task extraction accuracy | ≥ 95%               | NLP classification F1 score |
+| System uptime            | ≥ 99.95%            | End-to-end reliability      |
+
+**Product Outcomes**
+
+* Seamless, event-synchronized meeting experience.
+* Emotionally resonant UI that builds user trust.
+* Fully auditable, deterministic event system.
+* Adaptive, learning feedback loop improving quality over time.
+
+---
+
+### **The Final State of Mina**
+
+> Mina operates as a **real-time, emotionally intelligent meeting companion** — a unified, flawless environment where recording, transcription, analytics, and replay co-exist as one continuous, living experience.
+>
+> Every motion, update, and micro-interaction reinforces confidence, reliability, and calm.
+>
+> Mina doesn’t just transcribe — it understands, adapts, and delights.
+
+---
