@@ -79,6 +79,7 @@ class HamburgerMenu {
       nav.setAttribute('role', 'navigation');
       nav.setAttribute('aria-label', 'Mobile menu items');
       
+      // Clone navigation links (authenticated users)
       const links = navbarMenu.querySelectorAll('.navbar-link');
       links.forEach((link, index) => {
         const menuItem = document.createElement('a');
@@ -89,9 +90,20 @@ class HamburgerMenu {
         nav.appendChild(menuItem);
       });
       
+      // If no links found, look for direct button children (unauthenticated users)
+      if (links.length === 0) {
+        const buttons = navbarMenu.querySelectorAll('a.btn, button.btn');
+        buttons.forEach((button, index) => {
+          const menuItem = button.cloneNode(true);
+          menuItem.style.setProperty('--stagger-index', index);
+          menuItem.classList.add('hamburger-menu-btn');
+          nav.appendChild(menuItem);
+        });
+      }
+      
       menuContent.appendChild(nav);
       
-      // Add actions section if present
+      // Add actions section if present (authenticated users)
       const actions = navbarMenu.querySelector('.navbar-actions');
       if (actions) {
         const actionsSection = document.createElement('div');
@@ -125,8 +137,8 @@ class HamburgerMenu {
       closeButton.addEventListener('click', () => this.close());
     }
     
-    // Close menu when clicking a link
-    const menuItems = this.menu.querySelectorAll('.hamburger-menu-item');
+    // Close menu when clicking a link or button
+    const menuItems = this.menu.querySelectorAll('.hamburger-menu-item, .hamburger-menu-btn');
     menuItems.forEach(item => {
       item.addEventListener('click', () => {
         setTimeout(() => this.close(), 200);
