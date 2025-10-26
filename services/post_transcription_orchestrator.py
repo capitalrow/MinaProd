@@ -9,10 +9,13 @@ dashboard_refresh
 Every event is atomic, idempotent, and broadcast-driven for seamless UX.
 
 ARCHITECTURE NOTES:
-- Currently runs synchronously (3-4s total pipeline time)
+- Runs asynchronously via BackgroundTaskManager (non-blocking)
+- Finalization endpoints return immediately while processing continues in background
+- Events stream back via WebSocket as each stage completes (real-time updates)
 - Gracefully degrades: user gets transcript even if insights fail
-- Future enhancement: Move to async/background worker (Celery) for non-blocking execution
+- Automatic retry with exponential backoff (2 retries, 10s delay)
 - Events are idempotent and replay-safe for background job retries
+- Total pipeline time: 3-4 seconds (runs in background)
 """
 
 import logging
@@ -27,6 +30,8 @@ from models.event_ledger import EventType
 from services.event_ledger_service import EventLedgerService
 from services.analysis_service import AnalysisService
 from services.analytics_service import AnalyticsService
+from services.background_tasks import background_task_manager
+from services.event_monitoring import log_dashboard_refresh_event
 from app import socketio
 
 logger = logging.getLogger(__name__)
@@ -45,6 +50,52 @@ class PostTranscriptionOrchestrator:
     
     def __init__(self):
         self.event_service = EventLedgerService()
+    
+    def process_session_async(self, external_session_id: str) -> str:
+        """
+        Submit post-transcription pipeline to background task manager.
+        Returns immediately while processing continues in background.
+        
+        Args:
+            external_session_id: External session identifier (trace_id)
+            
+        Returns:
+            task_id: Background task identifier for status tracking
+        """
+        task_id = f"post_transcription_{external_session_id}"
+        
+        # Submit to background task manager with automatic retry
+        background_task_manager.submit_task(
+            task_id=task_id,
+            func=self.process_session,
+            external_session_id=external_session_id,
+            max_retries=2,  # Allow retries for transient failures
+            retry_delay=10  # 10 second delay between retries
+        )
+        
+        logger.info(f"✅ Post-transcription pipeline submitted to background: {task_id}")
+        
+        # Emit initial event to notify frontend processing started
+        socketio.emit('post_transcription_started', {
+            'session_id': external_session_id,
+            'task_id': task_id,
+            'message': 'Processing your meeting insights...',
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+        return task_id
+    
+    def get_task_status(self, task_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get status of a background post-transcription task.
+        
+        Args:
+            task_id: Task identifier returned by process_session_async
+            
+        Returns:
+            Task status dictionary or None if task not found
+        """
+        return background_task_manager.get_task_status(task_id)
     
     def process_session(self, external_session_id: str) -> Dict[str, Any]:
         """
@@ -518,6 +569,9 @@ class PostTranscriptionOrchestrator:
         Event: dashboard_refresh
         """
         event = None
+        start_time = time.time()
+        success = False
+        
         try:
             # Log event
             event = self.event_service.log_event(
@@ -537,9 +591,19 @@ class PostTranscriptionOrchestrator:
             
             # Complete event
             self.event_service.complete_event(event, result={'emitted': True})
+            success = True
             logger.info(f"✅ Dashboard refresh emitted for {session.external_id}")
             
         except Exception as e:
             logger.error(f"Failed to emit dashboard refresh: {e}")
             if event:
                 self.event_service.fail_event(event, str(e))
+        finally:
+            # Log to monitoring service for production tracking
+            duration_ms = (time.time() - start_time) * 1000
+            log_dashboard_refresh_event(
+                session_id=session.external_id,
+                success=success,
+                duration_ms=duration_ms,
+                session_title=session.title
+            )
