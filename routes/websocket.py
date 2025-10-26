@@ -73,7 +73,9 @@ def on_join_session(data):
                 status="active",
                 started_at=datetime.utcnow(),
                 user_id=user_id,
-                workspace_id=workspace_id
+                workspace_id=workspace_id,
+                trace_id=uuid.uuid4(),
+                version=1
             )
             db.session.add(session)
             db.session.commit()

@@ -108,10 +108,11 @@
       // 2) NEW: finalize the session safely (no crash if endpoint missing)
       await finalizeSessionSafe(SESSION_EXTERNAL_ID);
 
-      // 3) NEW: UX flow – prefer /dashboard after a short delay
-      // (If you want to go to /analytics by default, change the href below)
+      // 3) NEW: UX flow – navigate to transcript page after recording
       setTimeout(() => {
-        if (window.location.pathname.includes("/live")) {
+        if (window.location.pathname.includes("/live") && SESSION_EXTERNAL_ID) {
+          window.location.href = `/transcript/${SESSION_EXTERNAL_ID}`;
+        } else if (window.location.pathname.includes("/live")) {
           window.location.href = "/dashboard";
         } else {
           window.location.reload();
