@@ -6,6 +6,7 @@ Provides robust background task execution with:
 - Dead letter queue for failed tasks
 - Task status tracking
 - Error notification
+- Flask app context support for database operations
 """
 
 import time
@@ -18,6 +19,10 @@ import threading
 from queue import Queue, Empty
 
 logger = logging.getLogger(__name__)
+
+# Import Flask app for context management
+# CRITICAL: This enables database operations in background threads
+from app import app as flask_app
 
 
 class TaskStatus:
@@ -61,7 +66,8 @@ class BackgroundTask:
     
     def execute(self) -> bool:
         """
-        Execute the task with retry logic
+        Execute the task with retry logic.
+        Wraps execution in Flask app context for database operations.
         
         Returns:
             bool: True if successful, False if failed
@@ -72,7 +78,11 @@ class BackgroundTask:
         
         try:
             logger.info(f"Executing task {self.task_id} (attempt {self.attempts}/{self.max_retries})")
-            result = self.func(*self.args, **self.kwargs)
+            
+            # 🔥 CRITICAL FIX: Wrap execution in Flask app context
+            # This enables database operations in background threads
+            with flask_app.app_context():
+                result = self.func(*self.args, **self.kwargs)
             
             self.status = TaskStatus.COMPLETED
             self.completed_at = datetime.utcnow()
