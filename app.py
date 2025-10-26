@@ -560,9 +560,13 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"Failed to register dashboard routes: {e}")
     
-    # Note: sessions blueprint causes circular import (SessionService → app.db)
-    # Meetings API (api_meetings_bp) provides equivalent functionality
-    # Template fixes completed in routes/sessions.py for future use
+    # Register sessions blueprint for refined view and session management
+    try:
+        from routes.sessions import sessions_bp
+        app.register_blueprint(sessions_bp)
+        app.logger.info("✅ Sessions routes registered (refined view enabled)")
+    except Exception as e:
+        app.logger.warning(f"Failed to register sessions routes: {e}")
 
     # Register API blueprints for REST endpoints
     try:
@@ -629,6 +633,14 @@ def create_app() -> Flask:
         app.logger.info("Session Finalization API routes registered")
     except Exception as e:
         app.logger.warning(f"Failed to register Session Finalization API: {e}")
+
+    # --- CROWN+ Monitoring API ---
+    try:
+        from routes.api_crown_monitoring import crown_monitoring_bp
+        app.register_blueprint(crown_monitoring_bp)
+        app.logger.info("CROWN+ Monitoring API routes registered (/api/crown/)")
+    except Exception as e:
+        app.logger.warning(f"Failed to register CROWN+ Monitoring API: {e}")
 
     # Settings routes
     try:

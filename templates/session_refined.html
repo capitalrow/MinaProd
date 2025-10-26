@@ -1,0 +1,902 @@
+{% extends "base.html" %}
+{% block title %}{{ session.title or 'Meeting Insights' }} - Mina{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ========================================
+   CROWN+ Session Refined View - Mobile-First Tabbed Interface
+   Implements CROWN+ Event Sequencing UI/UX principles
+   ======================================== */
+
+:root {
+  --tab-transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  --reveal-animation: fadeInUp 0.6s ease-out;
+}
+
+/* Main Container */
+.refined-workspace {
+  width: 100%;
+  max-width: 1600px;
+  min-height: calc(100vh - 64px);
+  margin: 0 auto;
+  padding: var(--space-4);
+  animation: var(--reveal-animation);
+}
+
+@media (min-width: 768px) {
+  .refined-workspace {
+    padding: var(--space-8) var(--space-6);
+  }
+}
+
+/* Header Section */
+.refined-header {
+  margin-bottom: var(--space-6);
+}
+
+.refined-title {
+  font-size: clamp(1.75rem, 5vw, var(--font-size-4xl));
+  font-weight: var(--font-weight-bold);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: var(--space-2);
+}
+
+.refined-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.refined-meta-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Smart Banner */
+.smart-banner {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(147, 51, 234, 0.1));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  animation: slideInFromTop 0.5s ease-out;
+}
+
+.smart-banner-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.smart-banner-text {
+  flex: 1;
+  color: var(--color-text-primary);
+}
+
+.smart-banner-title {
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-1);
+  font-size: var(--font-size-base);
+}
+
+/* ========================================
+   MOBILE-FIRST TAB NAVIGATION
+   ======================================== */
+
+.tab-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .tab-navigation {
+    flex-direction: row;
+    gap: var(--space-2);
+    border-bottom: 2px solid var(--glass-border);
+    overflow-x: auto;
+  }
+}
+
+/* Tab Buttons - Mobile First */
+.tab-button {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  position: relative;
+  transition: var(--tab-transition);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 56px;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .tab-button {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: var(--space-3) var(--space-4);
+    width: auto;
+    min-height: auto;
+    white-space: nowrap;
+    justify-content: flex-start;
+    gap: var(--space-2);
+  }
+}
+
+/* Tab Button Content */
+.tab-button-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.tab-button-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .tab-button-icon {
+    font-size: 1.25rem;
+  }
+}
+
+.tab-button-label {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Hover State */
+.tab-button:hover {
+  color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateX(2px);
+}
+
+@media (min-width: 768px) {
+  .tab-button:hover {
+    transform: none;
+    background: rgba(99, 102, 241, 0.05);
+  }
+}
+
+/* Active State - Mobile */
+.tab-button.active {
+  color: var(--color-primary);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(147, 51, 234, 0.1));
+  border-color: var(--color-primary);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+/* Active State - Desktop */
+@media (min-width: 768px) {
+  .tab-button.active {
+    background: transparent;
+    border-color: transparent;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+    animation: slideInFromLeft 0.3s ease-out;
+    border-radius: 2px 2px 0 0;
+  }
+}
+
+/* Badge */
+.tab-badge {
+  background: var(--color-primary);
+  color: white;
+  border-radius: 16px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-bold);
+  min-width: 24px;
+  text-align: center;
+}
+
+.tab-button.active .tab-badge {
+  background: white;
+  color: var(--color-primary);
+}
+
+.tab-badge-secondary {
+  background: var(--color-text-secondary);
+}
+
+/* Tab Content */
+.tab-content {
+  display: none;
+  animation: var(--reveal-animation);
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Tab Panels */
+.tab-panel {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  backdrop-filter: var(--backdrop-blur);
+  box-shadow: var(--shadow-md);
+}
+
+@media (min-width: 768px) {
+  .tab-panel {
+    padding: var(--space-6);
+  }
+}
+
+/* Transcript Tab */
+.segment-list {
+  max-height: 70vh;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.segment-item {
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-3);
+  transition: var(--tab-transition);
+  border-left: 3px solid transparent;
+}
+
+.segment-item:hover {
+  background: rgba(99, 102, 241, 0.05);
+  border-left-color: var(--color-primary);
+  transform: translateX(4px);
+}
+
+.segment-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.segment-speaker {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.segment-text {
+  color: var(--color-text-primary);
+  line-height: 1.6;
+  font-size: var(--font-size-base);
+}
+
+/* Highlights Tab */
+.highlights-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.highlight-section {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.highlight-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  margin-bottom: var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.highlight-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.highlight-item {
+  background: rgba(255, 255, 255, 0.03);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-primary);
+}
+
+.highlight-item-text {
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+  line-height: 1.5;
+}
+
+.highlight-item-meta {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Analytics Tab */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .analytics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+}
+
+.metric-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(147, 51, 234, 0.05));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  transition: var(--tab-transition);
+}
+
+.metric-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.metric-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.metric-value {
+  font-size: clamp(1.75rem, 5vw, var(--font-size-3xl));
+  font-weight: var(--font-weight-bold);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.metric-unit {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  margin-left: var(--space-1);
+}
+
+/* Tasks Tab */
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.task-item {
+  background: rgba(255, 255, 255, 0.02);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: start;
+  gap: var(--space-3);
+  transition: var(--tab-transition);
+  border-left: 3px solid var(--color-primary);
+}
+
+.task-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateX(4px);
+}
+
+.task-checkbox {
+  margin-top: 4px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.task-content {
+  flex: 1;
+}
+
+.task-text {
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+  line-height: 1.5;
+}
+
+.task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Empty States */
+.empty-state {
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  color: var(--color-text-secondary);
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-3);
+  opacity: 0.5;
+}
+
+.empty-state-text {
+  font-size: var(--font-size-lg);
+  line-height: 1.5;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Progressive reveal for tabs */
+.tab-button {
+  opacity: 0;
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.tab-button:nth-child(1) { animation-delay: 0.1s; }
+.tab-button:nth-child(2) { animation-delay: 0.15s; }
+.tab-button:nth-child(3) { animation-delay: 0.2s; }
+.tab-button:nth-child(4) { animation-delay: 0.25s; }
+.tab-button:nth-child(5) { animation-delay: 0.3s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="refined-workspace">
+  
+  <!-- Header -->
+  <div class="refined-header">
+    <h1 class="refined-title">{{ session.title or 'Live Transcription Session' }}</h1>
+    <div class="refined-meta">
+      <div class="refined-meta-item">
+        <span>📅</span>
+        <span>{{ session.started_at }}</span>
+      </div>
+      {% if session.completed_at %}
+      <div class="refined-meta-item">
+        <span>✅</span>
+        <span>Completed {{ session.completed_at }}</span>
+      </div>
+      {% endif %}
+      <div class="refined-meta-item">
+        <span>💬</span>
+        <span>{{ segments|length }} segments</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Smart Banner -->
+  <div class="smart-banner">
+    <div class="smart-banner-icon">🎯</div>
+    <div class="smart-banner-text">
+      <div class="smart-banner-title">Mina has generated your meeting insights</div>
+      <div>Explore your transcript, highlights, analytics, and action items below.</div>
+    </div>
+  </div>
+  
+  <!-- Tab Navigation - Mobile-First Design -->
+  <nav class="tab-navigation" role="tablist">
+    <button class="tab-button active" data-tab="transcript" role="tab" aria-selected="true" aria-controls="transcript-tab">
+      <div class="tab-button-content">
+        <span class="tab-button-icon">📝</span>
+        <span class="tab-button-label">Transcript</span>
+      </div>
+      <span class="tab-badge">{{ segments|length }}</span>
+    </button>
+    <button class="tab-button" data-tab="highlights" role="tab" aria-selected="false" aria-controls="highlights-tab">
+      <div class="tab-button-content">
+        <span class="tab-button-icon">⭐</span>
+        <span class="tab-button-label">Highlights</span>
+      </div>
+      {% if summary %}
+      <span class="tab-badge">{{ (summary.actions|length + summary.decisions|length + summary.risks|length) if summary else 0 }}</span>
+      {% endif %}
+    </button>
+    <button class="tab-button" data-tab="analytics" role="tab" aria-selected="false" aria-controls="analytics-tab">
+      <div class="tab-button-content">
+        <span class="tab-button-icon">📊</span>
+        <span class="tab-button-label">Analytics</span>
+      </div>
+    </button>
+    <button class="tab-button" data-tab="tasks" role="tab" aria-selected="false" aria-controls="tasks-tab">
+      <div class="tab-button-content">
+        <span class="tab-button-icon">✅</span>
+        <span class="tab-button-label">Tasks</span>
+      </div>
+      {% if summary and summary.actions %}
+      <span class="tab-badge">{{ summary.actions|length }}</span>
+      {% endif %}
+    </button>
+    <button class="tab-button" data-tab="replay" role="tab" aria-selected="false" aria-controls="replay-tab">
+      <div class="tab-button-content">
+        <span class="tab-button-icon">🎵</span>
+        <span class="tab-button-label">Replay</span>
+      </div>
+      <span class="tab-badge tab-badge-secondary">Soon</span>
+    </button>
+  </nav>
+  
+  <!-- Transcript Tab -->
+  <div id="transcript-tab" class="tab-content active" role="tabpanel" aria-labelledby="transcript-button">
+    <div class="tab-panel">
+      <h2 style="margin-bottom: var(--space-4); color: var(--color-primary);">Full Transcript</h2>
+      {% if segments %}
+      <div class="segment-list">
+        {% for segment in segments %}
+        <div class="segment-item">
+          <div class="segment-header">
+            {% if segment.speaker_id %}
+            <span class="segment-speaker">{{ segment.speaker_id }}</span>
+            {% endif %}
+            {% if segment.start_ms %}
+            <span>{{ (segment.start_ms / 1000)|round(1) }}s</span>
+            {% endif %}
+            {% if segment.avg_confidence %}
+            <span>Confidence: {{ (segment.avg_confidence * 100)|round }}%</span>
+            {% endif %}
+          </div>
+          <div class="segment-text">{{ segment.text }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">📝</div>
+        <div class="empty-state-text">No transcript available yet</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- Highlights Tab -->
+  <div id="highlights-tab" class="tab-content" role="tabpanel" aria-labelledby="highlights-button">
+    <div class="tab-panel">
+      {% if summary %}
+      <div class="highlights-grid">
+        
+        <!-- Summary -->
+        {% if summary.summary_md %}
+        <div class="highlight-section">
+          <h3 class="highlight-title">📋 Summary</h3>
+          <div style="color: var(--color-text-primary); line-height: 1.6;">
+            {{ summary.summary_md|safe }}
+          </div>
+        </div>
+        {% endif %}
+        
+        <!-- Actions -->
+        {% if summary.actions %}
+        <div class="highlight-section">
+          <h3 class="highlight-title">🎯 Action Items</h3>
+          <div class="highlight-list">
+            {% for action in summary.actions %}
+            <div class="highlight-item">
+              <div class="highlight-item-text">{{ action.text }}</div>
+              <div class="highlight-item-meta">
+                {% if action.owner %}Owner: {{ action.owner }}{% endif %}
+                {% if action.due %} • Due: {{ action.due }}{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        
+        <!-- Decisions -->
+        {% if summary.decisions %}
+        <div class="highlight-section">
+          <h3 class="highlight-title">✅ Decisions</h3>
+          <div class="highlight-list">
+            {% for decision in summary.decisions %}
+            <div class="highlight-item">
+              <div class="highlight-item-text">{{ decision.text }}</div>
+              {% if decision.impact %}
+              <div class="highlight-item-meta">Impact: {{ decision.impact }}</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        
+        <!-- Risks -->
+        {% if summary.risks %}
+        <div class="highlight-section">
+          <h3 class="highlight-title">⚠️ Risks</h3>
+          <div class="highlight-list">
+            {% for risk in summary.risks %}
+            <div class="highlight-item">
+              <div class="highlight-item-text">{{ risk.text }}</div>
+              {% if risk.mitigation %}
+              <div class="highlight-item-meta">Mitigation: {{ risk.mitigation }}</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">⭐</div>
+        <div class="empty-state-text">Insights are still being generated...</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- Analytics Tab -->
+  <div id="analytics-tab" class="tab-content" role="tabpanel" aria-labelledby="analytics-button">
+    <div class="tab-panel">
+      <h2 style="margin-bottom: var(--space-4); color: var(--color-primary);">Session Analytics</h2>
+      {% if analytics %}
+      <div class="analytics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Total Words</div>
+          <div class="metric-value">{{ analytics.word_count }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Duration</div>
+          <div class="metric-value">{{ (analytics.total_duration / 60)|round(1) }}<span class="metric-unit">min</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Average Confidence</div>
+          <div class="metric-value">{{ (analytics.average_confidence * 100)|round }}%</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Speaking Rate</div>
+          <div class="metric-value">{{ analytics.words_per_minute|round }}<span class="metric-unit">wpm</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Segments</div>
+          <div class="metric-value">{{ analytics.segment_count }}</div>
+        </div>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">📊</div>
+        <div class="empty-state-text">Analytics are being calculated...</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- Tasks Tab -->
+  <div id="tasks-tab" class="tab-content" role="tabpanel" aria-labelledby="tasks-button">
+    <div class="tab-panel">
+      <h2 style="margin-bottom: var(--space-4); color: var(--color-primary);">Action Items</h2>
+      {% if summary and summary.actions %}
+      <div class="task-list">
+        {% for action in summary.actions %}
+        <div class="task-item">
+          <input type="checkbox" class="task-checkbox" data-task-id="{{ loop.index }}" aria-label="Mark task as complete">
+          <div class="task-content">
+            <div class="task-text">{{ action.text }}</div>
+            <div class="task-meta">
+              {% if action.owner %}
+              <span>👤 {{ action.owner }}</span>
+              {% endif %}
+              {% if action.due %}
+              <span>📅 {{ action.due }}</span>
+              {% endif %}
+              {% if action.priority %}
+              <span>⚡ {{ action.priority|capitalize }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">✅</div>
+        <div class="empty-state-text">No action items identified yet</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- Replay Tab (Future) -->
+  <div id="replay-tab" class="tab-content" role="tabpanel" aria-labelledby="replay-button">
+    <div class="tab-panel">
+      <div class="empty-state">
+        <div class="empty-state-icon">🎵</div>
+        <div class="empty-state-text">Audio replay with transcript sync coming soon</div>
+        <p style="margin-top: var(--space-2); color: var(--color-text-secondary); max-width: 500px; margin-left: auto; margin-right: auto;">
+          This feature will allow you to replay your meeting audio with synchronized transcript highlighting.
+        </p>
+      </div>
+    </div>
+  </div>
+  
+</div>
+
+<script>
+// ========================================
+// Tab Switching - Runs Immediately (DOM already loaded)
+// ========================================
+(function() {
+  console.log('[Tabs] Initializing tab switching functionality...');
+  
+  const tabButtons = document.querySelectorAll('.tab-button');
+  const tabContents = document.querySelectorAll('.tab-content');
+  
+  console.log(`[Tabs] Found ${tabButtons.length} tab buttons and ${tabContents.length} tab contents`);
+  
+  if (tabButtons.length === 0) {
+    console.error('[Tabs] No tab buttons found! Check HTML structure.');
+    return;
+  }
+  
+  // Tab switching function
+  function switchTab(tabId) {
+    console.log(`[Tabs] Switching to tab: ${tabId}`);
+    
+    // Remove active from all buttons
+    tabButtons.forEach(btn => {
+      btn.classList.remove('active');
+      btn.setAttribute('aria-selected', 'false');
+    });
+    
+    // Remove active from all content
+    tabContents.forEach(content => {
+      content.classList.remove('active');
+    });
+    
+    // Add active to clicked button
+    const activeButton = document.querySelector(`[data-tab="${tabId}"]`);
+    if (activeButton) {
+      activeButton.classList.add('active');
+      activeButton.setAttribute('aria-selected', 'true');
+      console.log(`[Tabs] Activated button: ${tabId}`);
+    }
+    
+    // Add active to corresponding content
+    const activeContent = document.getElementById(`${tabId}-tab`);
+    if (activeContent) {
+      activeContent.classList.add('active');
+      console.log(`[Tabs] Activated content: ${tabId}-tab`);
+    } else {
+      console.error(`[Tabs] Content panel not found: ${tabId}-tab`);
+    }
+  }
+  
+  // Add click listeners to all tab buttons
+  tabButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const tabId = this.getAttribute('data-tab');
+      if (tabId) {
+        switchTab(tabId);
+      } else {
+        console.error('[Tabs] Button missing data-tab attribute:', this);
+      }
+    });
+  });
+  
+  console.log('[Tabs] Tab switching initialized successfully!');
+  
+  // ========================================
+  // Task Checkbox Handling
+  // ========================================
+  const taskCheckboxes = document.querySelectorAll('.task-checkbox');
+  console.log(`[Tasks] Found ${taskCheckboxes.length} task checkboxes`);
+  
+  taskCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', function(e) {
+      const taskId = e.target.getAttribute('data-task-id');
+      const taskItem = e.target.closest('.task-item');
+      
+      if (!taskItem) return;
+      
+      if (e.target.checked) {
+        taskItem.style.opacity = '0.6';
+        const taskText = taskItem.querySelector('.task-text');
+        if (taskText) {
+          taskText.style.textDecoration = 'line-through';
+        }
+        
+        console.log(`[Tasks] Task ${taskId} marked as complete`);
+        
+        // Emit task_complete event via WebSocket if available
+        if (window.socket) {
+          window.socket.emit('task_complete', {
+            session_id: '{{ session.external_id }}',
+            task_id: taskId
+          });
+        }
+      } else {
+        taskItem.style.opacity = '1';
+        const taskText = taskItem.querySelector('.task-text');
+        if (taskText) {
+          taskText.style.textDecoration = 'none';
+        }
+      }
+    });
+  });
+  
+  // ========================================
+  // WebSocket Event Listeners
+  // ========================================
+  if (window.socket) {
+    console.log('[WebSocket] Listening for real-time updates...');
+    
+    window.socket.on('insights_generate', function(data) {
+      console.log('[WebSocket] Insights update received:', data);
+      if (data.status === 'completed') {
+        console.log('[WebSocket] Insights completed, reloading page...');
+        setTimeout(() => location.reload(), 1000);
+      }
+    });
+    
+    window.socket.on('analytics_update', function(data) {
+      console.log('[WebSocket] Analytics update received:', data);
+    });
+  }
+})();
+</script>
+{% endblock %}

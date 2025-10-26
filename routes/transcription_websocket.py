@@ -16,11 +16,6 @@ from flask_login import current_user
 # Import the socketio instance from the consolidated app
 from app import socketio
 
-# Import database models
-from models import db
-from models.session import Session
-from models.segment import Segment
-
 # Import advanced buffer management
 from services.session_buffer_manager import buffer_registry, BufferConfig
 # After existing imports
@@ -43,73 +38,20 @@ buffer_config = BufferConfig(
 # Background processing worker
 processing_workers = {}
 
-# 🔥 PRODUCTION FIX: Segment buffer for batch commits
-segment_buffers = {}  # session_id -> list of pending segments
-BATCH_COMMIT_SIZE = 5  # Commit every 5 segments to reduce DB load
-BATCH_COMMIT_INTERVAL = 10  # Or commit every 10 seconds
-
-def _safe_commit_segments(session_id: str, force=False):
-    """
-    Thread-safe batch commit of buffered segments.
-    Only commits when batch size reached or force=True.
-    Uses Flask app context for safety.
-    """
-    if session_id not in segment_buffers:
-        return
-    
-    pending = segment_buffers[session_id]
-    
-    # Only commit if we have enough segments or forced
-    if not force and len(pending) < BATCH_COMMIT_SIZE:
-        return
-    
-    if not pending:
-        return
-    
-    try:
-        # Use Flask app context for thread safety
-        from flask import current_app
-        with current_app.app_context():
-            # Add all pending segments
-            for segment_data in pending:
-                segment = Segment(**segment_data)
-                db.session.add(segment)
-            
-            db.session.commit()
-            logger.info(f"💾 [batch-commit] Saved {len(pending)} segments for session {session_id}")
-            
-            # Clear buffer after successful commit
-            segment_buffers[session_id] = []
-            
-    except Exception as e:
-        logger.error(f"❌ [batch-commit] Failed to commit segments: {e}")
-        db.session.rollback()
-        # Keep segments in buffer for retry
-        
 def _background_processor(session_id: str, buffer_manager):
-    """Background worker for processing buffered audio chunks and periodic batch commits"""
+    """Simple background worker for processing buffered audio chunks"""
     logger.info(f"🔧 Started background processor for session {session_id}")
-    
-    last_commit_time = time.time()
     
     try:
         while session_id in active_sessions:
-            time.sleep(1)  # Poll every second
-            
-            # Check if it's time for a periodic batch commit
-            current_time = time.time()
-            if current_time - last_commit_time >= BATCH_COMMIT_INTERVAL:
-                _safe_commit_segments(session_id, force=False)  # Commit if threshold met
-                last_commit_time = current_time
-            
+            time.sleep(1)  # Simple polling interval
+            # Basic background processing - can be enhanced later
             if session_id not in active_sessions:
                 break
                 
     except Exception as e:
         logger.error(f"Background processor error for session {session_id}: {e}")
     finally:
-        # Final commit of any remaining segments
-        _safe_commit_segments(session_id, force=True)
         logger.info(f"🔧 Background processor stopped for session {session_id}")
 
 @socketio.on('connect', namespace='/transcription')
@@ -168,96 +110,20 @@ def on_start_session(data):
     """Start a new transcription session"""
     try:
         session_id = str(uuid.uuid4())
-        meeting_title = data.get('title', f"Live Recording - {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-        
-        # 🔥 CRITICAL FIX: Create Meeting record first for dashboard visibility
-        workspace_id = None
-        if current_user.is_authenticated:
-            # Get or create workspace for user
-            if hasattr(current_user, 'workspace_id') and current_user.workspace_id:
-                workspace_id = current_user.workspace_id
-            else:
-                # Create default workspace if missing
-                from models import Workspace
-                try:
-                    workspace_name = f"{current_user.first_name}'s Workspace" if hasattr(current_user, 'first_name') and current_user.first_name else f"{current_user.username}'s Workspace"
-                    workspace = Workspace(
-                        name=workspace_name,
-                        slug=Workspace.generate_slug(workspace_name),
-                        owner_id=current_user.id
-                    )
-                    db.session.add(workspace)
-                    db.session.flush()
-                    workspace_id = workspace.id
-                    current_user.workspace_id = workspace_id
-                    logger.info(f"✅ [transcription] Created default workspace for user {current_user.id}")
-                except Exception as e:
-                    logger.error(f"❌ [transcription] Failed to create workspace: {e}")
-                    db.session.rollback()
-        
-        # Create Meeting record (required for dashboard)
-        from models import Meeting
-        meeting = None
-        if current_user.is_authenticated and workspace_id:
-            try:
-                meeting = Meeting(
-                    title=meeting_title,
-                    description=data.get('description', 'Live transcription recording'),
-                    meeting_type='general',
-                    status='live',
-                    actual_start=datetime.utcnow(),
-                    organizer_id=current_user.id,
-                    workspace_id=workspace_id,
-                    recording_enabled=True,
-                    transcription_enabled=True,
-                    ai_insights_enabled=data.get('ai_insights', True)
-                )
-                db.session.add(meeting)
-                db.session.flush()  # Get meeting.id
-                logger.info(f"✅ [transcription] Created Meeting record: {meeting_title} (ID: {meeting.id})")
-            except Exception as e:
-                logger.error(f"❌ [transcription] Failed to create Meeting: {e}")
-                db.session.rollback()
-                meeting = None
-        
-        # 🔥 CREATE DATABASE SESSION RECORD (linked to Meeting)
-        db_session = Session(
-            external_id=session_id,
-            title=meeting_title,
-            status="active",
-            locale=data.get('language', 'en'),
-            started_at=datetime.utcnow(),
-            user_id=current_user.id if current_user.is_authenticated else None,
-            workspace_id=workspace_id,
-            meeting_id=meeting.id if meeting else None,  # 🔥 Link to Meeting
-            meta={
-                'client_sid': request.sid,
-                'enhance_audio': data.get('enhance_audio', True)
-            }
-        )
-        db.session.add(db_session)
-        db.session.commit()
-        logger.info(f"✅ [transcription] Created Session record: {session_id} (DB ID: {db_session.id}, Meeting ID: {db_session.meeting_id})")
         
         # Store session info with advanced buffer manager
         buffer_manager = buffer_registry.get_or_create_session(session_id)
         
         active_sessions[session_id] = {
             'client_sid': request.sid,
-            'db_session_id': db_session.id,  # Store DB ID for later use
             'started_at': datetime.utcnow(),
             'language': data.get('language', 'en'),
             'enhance_audio': data.get('enhance_audio', True),
             'buffer_manager': buffer_manager,
             'audio_buffer': bytearray(),
             'webm_header': None,
-            'last_process_time': 0,
-            'segment_counter': 0,  # Track segments for this session
-            'session_start_ms': int(time.time() * 1000)  # Track absolute start time
+            'last_process_time': 0
         }
-        
-        # 🔥 Initialize segment buffer for batch commits
-        segment_buffers[session_id] = []
         
         # Start background processing worker for this session
         worker = threading.Thread(
@@ -281,7 +147,6 @@ def on_start_session(data):
         
     except Exception as e:
         logger.error(f"[transcription] Error starting session: {e}")
-        db.session.rollback()  # Rollback on error
         emit('error', {'message': f'Failed to start session: {str(e)}'})
 
 @socketio.on('audio_data', namespace='/transcription')
@@ -399,49 +264,6 @@ def on_audio_data(data):
                     result = response.json()
                     text = result.get('final_text', '') or result.get('text', '')
                     if text and text.strip():
-                        # 🔥 PRODUCTION FIX: Buffer segments for batch commit
-                        try:
-                            is_final = result.get('is_final', True)
-                            db_session_id = session_info.get('db_session_id')
-                            
-                            if db_session_id:
-                                # Calculate relative timing from session start
-                                session_start_ms = session_info.get('session_start_ms', 0)
-                                current_ms = int(time.time() * 1000)
-                                relative_start_ms = current_ms - session_start_ms
-                                
-                                # Use processing_time from response if available, otherwise estimate
-                                processing_time = result.get('processing_time', result.get('processing_time_ms', 0))
-                                
-                                # Create segment data dict (don't create object yet for thread safety)
-                                segment_data = {
-                                    'session_id': db_session_id,
-                                    'kind': "final" if is_final else "interim",
-                                    'text': text,
-                                    'avg_confidence': result.get('confidence', 0.9),
-                                    'start_ms': relative_start_ms,
-                                    'end_ms': relative_start_ms + processing_time if processing_time else None,
-                                    'created_at': datetime.utcnow()
-                                }
-                                
-                                # Add to buffer instead of immediate commit
-                                if session_id not in segment_buffers:
-                                    segment_buffers[session_id] = []
-                                segment_buffers[session_id].append(segment_data)
-                                
-                                # Update segment counter
-                                session_info['segment_counter'] = session_info.get('segment_counter', 0) + 1
-                                
-                                logger.info(f"📝 [transcription] Buffered segment #{session_info['segment_counter']} (kind: {segment_data['kind']}, buffer size: {len(segment_buffers[session_id])})")
-                                
-                                # Trigger batch commit if threshold reached
-                                if len(segment_buffers[session_id]) >= BATCH_COMMIT_SIZE:
-                                    _safe_commit_segments(session_id, force=True)
-                            else:
-                                logger.warning(f"⚠️ [transcription] No db_session_id found, cannot save segment")
-                        except Exception as buffer_error:
-                            logger.error(f"❌ [transcription] Failed to buffer segment: {buffer_error}")
-                        
                         # Emit properly formatted transcription result
                         emit('transcription_result', {
                             'text': text,
@@ -487,71 +309,9 @@ def on_end_session(data=None):
             session_info = active_sessions.pop(session_id, None)
             logger.info(f"[transcription] Ended session: {session_id}")
 
-            # 🔥 PRODUCTION FIX: Commit any remaining buffered segments first
-            logger.info(f"[transcription] Finalizing session {session_id}, committing remaining segments...")
-            _safe_commit_segments(session_id, force=True)
-            
-            # Clean up segment buffer
-            if session_id in segment_buffers:
-                del segment_buffers[session_id]
-            
-            # 🔥 MARK SESSION AND MEETING AS COMPLETED IN DATABASE
-            try:
-                db_session_id = session_info.get('db_session_id') if session_info else None
-                if db_session_id:
-                    # Use Flask app context for thread safety
-                    from flask import current_app
-                    with current_app.app_context():
-                        db_session_obj = db.session.query(Session).filter_by(id=db_session_id).first()
-                        if db_session_obj:
-                            db_session_obj.status = "completed"
-                            db_session_obj.completed_at = datetime.utcnow()
-                            
-                            # Update session statistics from ALL segments (final only)
-                            final_segments = db.session.query(Segment).filter_by(
-                                session_id=db_session_id, 
-                                kind="final"
-                            ).all()
-                            
-                            db_session_obj.total_segments = len(final_segments)
-                            
-                            if final_segments:
-                                # Calculate average confidence from final segments
-                                total_confidence = sum(s.avg_confidence or 0.0 for s in final_segments)
-                                db_session_obj.average_confidence = total_confidence / len(final_segments)
-                                
-                                # Calculate total duration from segment timings
-                                if final_segments[-1].end_ms and final_segments[0].start_ms:
-                                    db_session_obj.total_duration = (final_segments[-1].end_ms - final_segments[0].start_ms) / 1000.0  # Convert to seconds
-                            
-                            # 🔥 CRITICAL FIX: Update linked Meeting record for dashboard visibility
-                            if db_session_obj.meeting_id:
-                                from models import Meeting
-                                meeting = db.session.query(Meeting).filter_by(id=db_session_obj.meeting_id).first()
-                                if meeting:
-                                    meeting.status = "completed"
-                                    meeting.actual_end = datetime.utcnow()
-                                    
-                                    # Calculate duration for logging
-                                    duration_seconds = 0
-                                    if meeting.actual_start and meeting.actual_end:
-                                        duration_seconds = (meeting.actual_end - meeting.actual_start).total_seconds()
-                                    
-                                    logger.info(f"✅ [transcription] Updated Meeting record (ID: {meeting.id}) - status: completed, duration: {duration_seconds:.0f}s, segments: {db_session_obj.total_segments}")
-                            
-                            db.session.commit()
-                            logger.info(f"💾 [transcription] Session completed in DB (ID: {db_session_id}, final_segments: {db_session_obj.total_segments}, avg_conf: {db_session_obj.average_confidence:.2f if db_session_obj.average_confidence else 0})")
-                        else:
-                            logger.warning(f"⚠️ [transcription] Session not found in database: {db_session_id}")
-                else:
-                    logger.warning(f"⚠️ [transcription] No db_session_id found for session: {session_id}")
-            except Exception as db_error:
-                logger.error(f"❌ [transcription] Failed to update session in database: {db_error}")
-                db.session.rollback()
-
             # 🗂️ Optional: persist final transcript before triggering analysis
             try:
-                buffer_manager = session_info.get("buffer_manager") if session_info else None
+                buffer_manager = session_info.get("buffer_manager")
                 if buffer_manager:
                     final_transcript = buffer_manager.flush_and_finalize(session_id=session_id)
                     logger.info(f"[transcription] Final transcript stored for session {session_id} ({len(final_transcript)} chars)")
@@ -565,7 +325,7 @@ def on_end_session(data=None):
                 asyncio.create_task(
                     AnalysisDispatcher.run_full_analysis(
                         session_id=session_id,
-                        meeting_id=session_info.get("meeting_id", str(uuid.uuid4())) if session_info else str(uuid.uuid4())  # fallback if not tracked
+                        meeting_id=session_info.get("meeting_id", str(uuid.uuid4()))  # fallback if not tracked
                     )
                 )
                 logger.info(f"[analysis] Dispatched background analytics job for session {session_id}")

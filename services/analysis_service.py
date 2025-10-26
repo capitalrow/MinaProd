@@ -223,6 +223,9 @@ class AnalysisService:
         # Determine analysis engine from configuration
         engine = current_app.config.get('ANALYSIS_ENGINE', 'mock')
         
+        # Initialize context variable for all code paths
+        context = ""
+        
         if not final_segments:
             logger.warning(f"No final segments found for session {session_id}")
             # Create empty summary for sessions without transcript
@@ -238,16 +241,36 @@ class AnalysisService:
             
             logger.info(f"Built context with {len(context)} characters for session {session_id}")
             
-            # Generate insights using configured engine with level and style
-            if engine == 'openai_gpt':
-                summary_data = AnalysisService._analyse_with_openai(context, level, style)
+            # Combine transcript with any recalled memory context
+            context_with_memory = f"{memory_context}{context}"
+            
+            # Validate transcript quality before processing
+            validation_result = AnalysisService._validate_transcript_quality(context)
+            
+            if not validation_result['is_valid']:
+                logger.warning(f"Transcript quality issue for session {session_id}: {validation_result['reason']}")
+                # Return informative message for low-quality transcripts
+                summary_data = {
+                    'summary_md': validation_result['message'],
+                    'actions': [],
+                    'decisions': [],
+                    'risks': [],
+                    'validation_warning': validation_result['reason']
+                }
             else:
-                summary_data = AnalysisService._analyse_with_mock(context, final_segments, level, style)
+                # Generate insights using configured engine with level and style
+                if engine == 'openai_gpt':
+                    summary_data = AnalysisService._analyse_with_openai(context_with_memory, level, style)
+                else:
+                    summary_data = AnalysisService._analyse_with_mock(context_with_memory, final_segments, level, style)
+                
+                # Attach any validation warnings to summary data for UI display
+                if validation_result.get('warning'):
+                    summary_data['quality_warning'] = validation_result['warning']
+                    logger.info(f"Quality warning for session {session_id}: {validation_result['warning']}")
         
         # Persist summary to database
         summary = AnalysisService._persist_summary(session_id, summary_data, engine, level, style)
-        # Combine transcript with any recalled memory context
-        context = f"{memory_context}{context}"
 
         logger.info(f"Generated summary {summary.id} for session {session_id} using {engine}")
 
@@ -273,35 +296,38 @@ class AnalysisService:
             logger.info("Summary data stored back into MemoryStore successfully.")
         except Exception as e:
             logger.warning(f"Could not persist summary to MemoryStore: {e}")
-        # -------------------------------------------------------------
-            # -------------------------------------------------------------
-            # 🔄 Trigger analytics sync if relevant meeting exists
-            try:
-                from models.session import Session
-                from services.analytics_service import AnalyticsService
-                import asyncio, inspect
+        
+        # 🔄 Trigger analytics sync if relevant meeting exists
+        try:
+            from services.analytics_service import AnalyticsService
+            from flask import current_app
+            import threading
 
-                session_obj = db.session.get(Session, session_id)
-                meeting = getattr(session_obj, "meeting", None)
+            session_obj = db.session.get(Session, session_id)
+            meeting = getattr(session_obj, "meeting", None)
 
-                if meeting:
-                    analytics_service = AnalyticsService()
-                    analytics_fn = analytics_service.analyze_meeting
-
-                    # ✅ Handle async vs sync implementations safely
-                    if inspect.iscoroutinefunction(analytics_fn):
-                        asyncio.create_task(analytics_fn(meeting.id))
-                    else:
-                        asyncio.to_thread(analytics_fn, meeting.id)
-
-                    logger.info(f"Triggered analytics sync for meeting {meeting.id} (session {session_id})")
-                else:
-                    logger.info(f"No linked meeting found for session {session_id}, skipping analytics sync.")
-            except Exception as e:
-                logger.warning(f"Failed to trigger analytics after summary: {e}")
-            # -------------------------------------------------------------
-
-        # -------------------------------------------------------------
+            if meeting:
+                analytics_service = AnalyticsService()
+                # Capture real Flask app object (not LocalProxy) for thread safety
+                app = current_app._get_current_object()
+                meeting_id = meeting.id
+                
+                # Run analytics in background thread with app context
+                def run_analytics():
+                    try:
+                        with app.app_context():
+                            analytics_service.analyze_meeting(meeting_id)
+                            logger.info(f"Analytics sync completed for meeting {meeting_id}")
+                    except Exception as e:
+                        logger.warning(f"Analytics sync failed for meeting {meeting_id}: {e}")
+                
+                thread = threading.Thread(target=run_analytics, daemon=True)
+                thread.start()
+                logger.info(f"Triggered analytics sync for meeting {meeting_id} (session {session_id})")
+            else:
+                logger.info(f"No linked meeting found for session {session_id}, skipping analytics sync.")
+        except Exception as e:
+            logger.warning(f"Failed to trigger analytics after summary: {e}")
 
         return summary.to_dict()
     
@@ -323,6 +349,71 @@ class AnalysisService:
         summary = db.session.execute(stmt).scalar_one_or_none()
         
         return summary.to_dict() if summary else None
+    
+    @staticmethod
+    def _validate_transcript_quality(context: str) -> Dict[str, any]:
+        """
+        Validate transcript quality before AI processing.
+        
+        Args:
+            context: Transcript text to validate
+            
+        Returns:
+            Dictionary with validation results:
+            - is_valid: bool indicating if transcript is suitable for analysis
+            - reason: str explaining validation failure (if any)
+            - message: str user-friendly message for invalid transcripts
+        """
+        # Calculate basic metrics
+        word_count = len(context.split())
+        char_count = len(context.strip())
+        
+        # Check for completely empty transcript
+        if char_count == 0:
+            return {
+                'is_valid': False,
+                'reason': 'empty_transcript',
+                'message': 'No transcript content available for analysis.'
+            }
+        
+        # Check for very short transcripts (< 30 words)
+        if word_count < 30:
+            return {
+                'is_valid': False,
+                'reason': 'transcript_too_short',
+                'message': f'This recording is too short to analyze ({word_count} words). Please record at least 30 words for meaningful insights.'
+            }
+        
+        # Check for minimal content (30-50 words - warning zone)
+        if word_count < 50:
+            logger.info(f"Transcript has minimal content ({word_count} words), insights may be limited")
+            # Allow processing but flag as limited
+            return {
+                'is_valid': True,
+                'reason': 'limited_content',
+                'message': None,
+                'warning': f'Short transcript ({word_count} words). Insights may be limited.'
+            }
+        
+        # Check for nonsensical/repetitive content (simple heuristic)
+        words = context.lower().split()
+        unique_words = set(words)
+        uniqueness_ratio = len(unique_words) / len(words) if words else 0
+        
+        # If less than 20% unique words, likely gibberish or highly repetitive
+        if uniqueness_ratio < 0.2 and word_count > 50:
+            return {
+                'is_valid': False,
+                'reason': 'low_content_quality',
+                'message': 'This transcript appears to contain mostly repetitive content. Please ensure clear audio for better results.'
+            }
+        
+        # All validation checks passed
+        return {
+            'is_valid': True,
+            'reason': None,
+            'message': None
+        }
     
     @staticmethod
     def _build_context(segments: List[Segment]) -> str:

@@ -43,8 +43,11 @@ class Task(Base):
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     
     # Relationships
-    meeting_id: Mapped[int] = mapped_column(ForeignKey("meetings.id"), nullable=False)
-    meeting: Mapped["Meeting"] = relationship(back_populates="tasks")
+    meeting_id: Mapped[Optional[int]] = mapped_column(ForeignKey("meetings.id"), nullable=True)
+    meeting: Mapped[Optional["Meeting"]] = relationship(back_populates="tasks")
+    
+    # Session relationship (for tasks created directly from session transcripts)
+    session_id: Mapped[Optional[int]] = mapped_column(ForeignKey("sessions.id"), nullable=True)
     
     assigned_to_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     assigned_to: Mapped[Optional["User"]] = relationship(back_populates="assigned_tasks", foreign_keys=[assigned_to_id])

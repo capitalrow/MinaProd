@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 @socketio.on('connect', namespace='/live-transcription')
 def handle_connect():
     """Client connected to /live-transcription namespace"""
-    logger.info(f"Client connected to live transcription: {request.sid}")
+    logger.info("Client connected to live transcription")
     emit('connected', {'status': 'connected', 'message': 'Ready for live transcription'})
 
 @socketio.on('disconnect', namespace='/live-transcription')
