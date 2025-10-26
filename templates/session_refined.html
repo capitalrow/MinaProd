@@ -775,10 +775,12 @@
   </div>
   
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 // ========================================
-// Tab Switching - Runs Immediately (DOM already loaded)
+// Tab Switching - Proper Block Placement
 // ========================================
 (function() {
   console.log('[Tabs] Initializing tab switching functionality...');
