@@ -4,7 +4,7 @@
 {% block extra_css %}
 <style>
 /* ========================================
-   CROWN+ Session Refined View - Tabbed Interface
+   CROWN+ Session Refined View - Mobile-First Tabbed Interface
    Implements CROWN+ Event Sequencing UI/UX principles
    ======================================== */
 
@@ -15,12 +15,18 @@
 
 /* Main Container */
 .refined-workspace {
-  width: clamp(960px, 95vw, 1600px);
-  max-width: 100%;
+  width: 100%;
+  max-width: 1600px;
   min-height: calc(100vh - 64px);
   margin: 0 auto;
-  padding: var(--space-8) var(--space-6);
+  padding: var(--space-4);
   animation: var(--reveal-animation);
+}
+
+@media (min-width: 768px) {
+  .refined-workspace {
+    padding: var(--space-8) var(--space-6);
+  }
 }
 
 /* Header Section */
@@ -29,7 +35,7 @@
 }
 
 .refined-title {
-  font-size: var(--font-size-4xl);
+  font-size: clamp(1.75rem, 5vw, var(--font-size-4xl));
   font-weight: var(--font-weight-bold);
   background: var(--gradient-primary);
   -webkit-background-clip: text;
@@ -40,7 +46,8 @@
 
 .refined-meta {
   display: flex;
-  gap: var(--space-4);
+  flex-wrap: wrap;
+  gap: var(--space-3);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
@@ -66,6 +73,7 @@
 
 .smart-banner-icon {
   font-size: 2rem;
+  flex-shrink: 0;
 }
 
 .smart-banner-text {
@@ -76,60 +84,150 @@
 .smart-banner-title {
   font-weight: var(--font-weight-semibold);
   margin-bottom: var(--space-1);
+  font-size: var(--font-size-base);
 }
 
-/* Tab Navigation */
+/* ========================================
+   MOBILE-FIRST TAB NAVIGATION
+   ======================================== */
+
 .tab-navigation {
   display: flex;
+  flex-direction: column;
   gap: var(--space-2);
-  border-bottom: 2px solid var(--glass-border);
   margin-bottom: var(--space-6);
-  overflow-x: auto;
 }
 
+@media (min-width: 768px) {
+  .tab-navigation {
+    flex-direction: row;
+    gap: var(--space-2);
+    border-bottom: 2px solid var(--glass-border);
+    overflow-x: auto;
+  }
+}
+
+/* Tab Buttons - Mobile First */
 .tab-button {
-  background: transparent;
-  border: none;
-  padding: var(--space-3) var(--space-4);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
   cursor: pointer;
   position: relative;
   transition: var(--tab-transition);
-  white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  justify-content: space-between;
+  min-height: 56px;
+  width: 100%;
 }
 
+@media (min-width: 768px) {
+  .tab-button {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: var(--space-3) var(--space-4);
+    width: auto;
+    min-height: auto;
+    white-space: nowrap;
+    justify-content: flex-start;
+    gap: var(--space-2);
+  }
+}
+
+/* Tab Button Content */
+.tab-button-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.tab-button-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .tab-button-icon {
+    font-size: 1.25rem;
+  }
+}
+
+.tab-button-label {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Hover State */
 .tab-button:hover {
   color: var(--color-primary);
-  background: rgba(99, 102, 241, 0.05);
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateX(2px);
 }
 
+@media (min-width: 768px) {
+  .tab-button:hover {
+    transform: none;
+    background: rgba(99, 102, 241, 0.05);
+  }
+}
+
+/* Active State - Mobile */
 .tab-button.active {
   color: var(--color-primary);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(147, 51, 234, 0.1));
+  border-color: var(--color-primary);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
 
-.tab-button.active::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--gradient-primary);
-  animation: slideInFromLeft 0.3s ease-out;
+/* Active State - Desktop */
+@media (min-width: 768px) {
+  .tab-button.active {
+    background: transparent;
+    border-color: transparent;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+    animation: slideInFromLeft 0.3s ease-out;
+    border-radius: 2px 2px 0 0;
+  }
 }
 
+/* Badge */
 .tab-badge {
   background: var(--color-primary);
   color: white;
-  border-radius: 12px;
-  padding: 2px 8px;
+  border-radius: 16px;
+  padding: 4px 10px;
   font-size: 0.75rem;
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
+  min-width: 24px;
+  text-align: center;
+}
+
+.tab-button.active .tab-badge {
+  background: white;
+  color: var(--color-primary);
+}
+
+.tab-badge-secondary {
+  background: var(--color-text-secondary);
 }
 
 /* Tab Content */
@@ -147,9 +245,15 @@
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
-  padding: var(--space-6);
+  padding: var(--space-4);
   backdrop-filter: var(--backdrop-blur);
   box-shadow: var(--shadow-md);
+}
+
+@media (min-width: 768px) {
+  .tab-panel {
+    padding: var(--space-6);
+  }
 }
 
 /* Transcript Tab */
@@ -175,7 +279,8 @@
 
 .segment-header {
   display: flex;
-  gap: var(--space-3);
+  flex-wrap: wrap;
+  gap: var(--space-2);
   margin-bottom: var(--space-2);
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
@@ -189,6 +294,7 @@
 .segment-text {
   color: var(--color-text-primary);
   line-height: 1.6;
+  font-size: var(--font-size-base);
 }
 
 /* Highlights Tab */
@@ -229,6 +335,7 @@
 .highlight-item-text {
   color: var(--color-text-primary);
   margin-bottom: var(--space-2);
+  line-height: 1.5;
 }
 
 .highlight-item-meta {
@@ -239,9 +346,15 @@
 /* Analytics Tab */
 .analytics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--space-4);
   margin-bottom: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .analytics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
 }
 
 .metric-card {
@@ -264,7 +377,7 @@
 }
 
 .metric-value {
-  font-size: var(--font-size-3xl);
+  font-size: clamp(1.75rem, 5vw, var(--font-size-3xl));
   font-weight: var(--font-weight-bold);
   background: var(--gradient-primary);
   -webkit-background-clip: text;
@@ -306,6 +419,7 @@
   width: 20px;
   height: 20px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .task-content {
@@ -320,6 +434,7 @@
 
 .task-meta {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-3);
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
@@ -328,7 +443,7 @@
 /* Empty States */
 .empty-state {
   text-align: center;
-  padding: var(--space-8);
+  padding: var(--space-8) var(--space-4);
   color: var(--color-text-secondary);
 }
 
@@ -340,6 +455,7 @@
 
 .empty-state-text {
   font-size: var(--font-size-lg);
+  line-height: 1.5;
 }
 
 /* Animations */
@@ -382,10 +498,10 @@
 }
 
 .tab-button:nth-child(1) { animation-delay: 0.1s; }
-.tab-button:nth-child(2) { animation-delay: 0.2s; }
-.tab-button:nth-child(3) { animation-delay: 0.3s; }
-.tab-button:nth-child(4) { animation-delay: 0.4s; }
-.tab-button:nth-child(5) { animation-delay: 0.5s; }
+.tab-button:nth-child(2) { animation-delay: 0.15s; }
+.tab-button:nth-child(3) { animation-delay: 0.2s; }
+.tab-button:nth-child(4) { animation-delay: 0.25s; }
+.tab-button:nth-child(5) { animation-delay: 0.3s; }
 </style>
 {% endblock %}
 
@@ -394,7 +510,7 @@
   
   <!-- Header -->
   <div class="refined-header">
-    <h1 class="refined-title">{{ session.title or 'Meeting Insights' }}</h1>
+    <h1 class="refined-title">{{ session.title or 'Live Transcription Session' }}</h1>
     <div class="refined-meta">
       <div class="refined-meta-item">
         <span>📅</span>
@@ -422,35 +538,50 @@
     </div>
   </div>
   
-  <!-- Tab Navigation -->
-  <nav class="tab-navigation">
-    <button class="tab-button active" data-tab="transcript">
-      📝 Transcript
+  <!-- Tab Navigation - Mobile-First Design -->
+  <nav class="tab-navigation" role="tablist">
+    <button class="tab-button active" data-tab="transcript" role="tab" aria-selected="true" aria-controls="transcript-tab">
+      <div class="tab-button-content">
+        <span class="tab-button-icon">📝</span>
+        <span class="tab-button-label">Transcript</span>
+      </div>
       <span class="tab-badge">{{ segments|length }}</span>
     </button>
-    <button class="tab-button" data-tab="highlights">
-      ⭐ Highlights
+    <button class="tab-button" data-tab="highlights" role="tab" aria-selected="false" aria-controls="highlights-tab">
+      <div class="tab-button-content">
+        <span class="tab-button-icon">⭐</span>
+        <span class="tab-button-label">Highlights</span>
+      </div>
       {% if summary %}
       <span class="tab-badge">{{ (summary.actions|length + summary.decisions|length + summary.risks|length) if summary else 0 }}</span>
       {% endif %}
     </button>
-    <button class="tab-button" data-tab="analytics">
-      📊 Analytics
+    <button class="tab-button" data-tab="analytics" role="tab" aria-selected="false" aria-controls="analytics-tab">
+      <div class="tab-button-content">
+        <span class="tab-button-icon">📊</span>
+        <span class="tab-button-label">Analytics</span>
+      </div>
     </button>
-    <button class="tab-button" data-tab="tasks">
-      ✅ Tasks
+    <button class="tab-button" data-tab="tasks" role="tab" aria-selected="false" aria-controls="tasks-tab">
+      <div class="tab-button-content">
+        <span class="tab-button-icon">✅</span>
+        <span class="tab-button-label">Tasks</span>
+      </div>
       {% if summary and summary.actions %}
       <span class="tab-badge">{{ summary.actions|length }}</span>
       {% endif %}
     </button>
-    <button class="tab-button" data-tab="replay">
-      🎵 Replay
-      <span class="tab-badge" style="background: var(--color-text-secondary);">Soon</span>
+    <button class="tab-button" data-tab="replay" role="tab" aria-selected="false" aria-controls="replay-tab">
+      <div class="tab-button-content">
+        <span class="tab-button-icon">🎵</span>
+        <span class="tab-button-label">Replay</span>
+      </div>
+      <span class="tab-badge tab-badge-secondary">Soon</span>
     </button>
   </nav>
   
   <!-- Transcript Tab -->
-  <div id="transcript-tab" class="tab-content active">
+  <div id="transcript-tab" class="tab-content active" role="tabpanel" aria-labelledby="transcript-button">
     <div class="tab-panel">
       <h2 style="margin-bottom: var(--space-4); color: var(--color-primary);">Full Transcript</h2>
       {% if segments %}
@@ -482,7 +613,7 @@
   </div>
   
   <!-- Highlights Tab -->
-  <div id="highlights-tab" class="tab-content">
+  <div id="highlights-tab" class="tab-content" role="tabpanel" aria-labelledby="highlights-button">
     <div class="tab-panel">
       {% if summary %}
       <div class="highlights-grid">
@@ -560,7 +691,7 @@
   </div>
   
   <!-- Analytics Tab -->
-  <div id="analytics-tab" class="tab-content">
+  <div id="analytics-tab" class="tab-content" role="tabpanel" aria-labelledby="analytics-button">
     <div class="tab-panel">
       <h2 style="margin-bottom: var(--space-4); color: var(--color-primary);">Session Analytics</h2>
       {% if analytics %}
@@ -596,14 +727,14 @@
   </div>
   
   <!-- Tasks Tab -->
-  <div id="tasks-tab" class="tab-content">
+  <div id="tasks-tab" class="tab-content" role="tabpanel" aria-labelledby="tasks-button">
     <div class="tab-panel">
       <h2 style="margin-bottom: var(--space-4); color: var(--color-primary);">Action Items</h2>
       {% if summary and summary.actions %}
       <div class="task-list">
         {% for action in summary.actions %}
         <div class="task-item">
-          <input type="checkbox" class="task-checkbox" data-task-id="{{ loop.index }}">
+          <input type="checkbox" class="task-checkbox" data-task-id="{{ loop.index }}" aria-label="Mark task as complete">
           <div class="task-content">
             <div class="task-text">{{ action.text }}</div>
             <div class="task-meta">
@@ -631,12 +762,12 @@
   </div>
   
   <!-- Replay Tab (Future) -->
-  <div id="replay-tab" class="tab-content">
+  <div id="replay-tab" class="tab-content" role="tabpanel" aria-labelledby="replay-button">
     <div class="tab-panel">
       <div class="empty-state">
         <div class="empty-state-icon">🎵</div>
         <div class="empty-state-text">Audio replay with transcript sync coming soon</div>
-        <p style="margin-top: var(--space-2); color: var(--color-text-secondary);">
+        <p style="margin-top: var(--space-2); color: var(--color-text-secondary); max-width: 500px; margin-left: auto; margin-right: auto;">
           This feature will allow you to replay your meeting audio with synchronized transcript highlighting.
         </p>
       </div>
@@ -646,61 +777,126 @@
 </div>
 
 <script>
-// Tab switching functionality
-document.querySelectorAll('.tab-button').forEach(button => {
-  button.addEventListener('click', () => {
-    const tabId = button.getAttribute('data-tab');
+// ========================================
+// Tab Switching - Fixed with DOMContentLoaded
+// ========================================
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[Tabs] Initializing tab switching functionality...');
+  
+  const tabButtons = document.querySelectorAll('.tab-button');
+  const tabContents = document.querySelectorAll('.tab-content');
+  
+  console.log(`[Tabs] Found ${tabButtons.length} tab buttons and ${tabContents.length} tab contents`);
+  
+  if (tabButtons.length === 0) {
+    console.error('[Tabs] No tab buttons found! Check HTML structure.');
+    return;
+  }
+  
+  // Tab switching function
+  function switchTab(tabId) {
+    console.log(`[Tabs] Switching to tab: ${tabId}`);
     
-    // Update active button
-    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-    button.classList.add('active');
+    // Remove active from all buttons
+    tabButtons.forEach(btn => {
+      btn.classList.remove('active');
+      btn.setAttribute('aria-selected', 'false');
+    });
     
-    // Update active content
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    document.getElementById(`${tabId}-tab`).classList.add('active');
-  });
-});
-
-// Task checkbox handling
-document.querySelectorAll('.task-checkbox').forEach(checkbox => {
-  checkbox.addEventListener('change', (e) => {
-    const taskId = e.target.getAttribute('data-task-id');
-    const taskItem = e.target.closest('.task-item');
+    // Remove active from all content
+    tabContents.forEach(content => {
+      content.classList.remove('active');
+    });
     
-    if (e.target.checked) {
-      taskItem.style.opacity = '0.6';
-      taskItem.querySelector('.task-text').style.textDecoration = 'line-through';
-      
-      // TODO: Send update to server
-      console.log(`Task ${taskId} marked as complete`);
-      
-      // Emit task_complete event via WebSocket if available
-      if (window.socket) {
-        window.socket.emit('task_complete', {
-          session_id: '{{ session.external_id }}',
-          task_id: taskId
-        });
-      }
+    // Add active to clicked button
+    const activeButton = document.querySelector(`[data-tab="${tabId}"]`);
+    if (activeButton) {
+      activeButton.classList.add('active');
+      activeButton.setAttribute('aria-selected', 'true');
+      console.log(`[Tabs] Activated button: ${tabId}`);
+    }
+    
+    // Add active to corresponding content
+    const activeContent = document.getElementById(`${tabId}-tab`);
+    if (activeContent) {
+      activeContent.classList.add('active');
+      console.log(`[Tabs] Activated content: ${tabId}-tab`);
     } else {
-      taskItem.style.opacity = '1';
-      taskItem.querySelector('.task-text').style.textDecoration = 'none';
+      console.error(`[Tabs] Content panel not found: ${tabId}-tab`);
     }
-  });
-});
-
-// Listen for WebSocket events (if socket is available)
-if (window.socket) {
-  // Listen for updates to insights, analytics, etc.
-  window.socket.on('insights_generate', (data) => {
-    if (data.status === 'completed') {
-      console.log('Insights updated, reloading page...');
-      setTimeout(() => location.reload(), 1000);
-    }
+  }
+  
+  // Add click listeners to all tab buttons
+  tabButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const tabId = this.getAttribute('data-tab');
+      if (tabId) {
+        switchTab(tabId);
+      } else {
+        console.error('[Tabs] Button missing data-tab attribute:', this);
+      }
+    });
   });
   
-  window.socket.on('analytics_update', (data) => {
-    console.log('Analytics updated:', data);
+  console.log('[Tabs] Tab switching initialized successfully!');
+  
+  // ========================================
+  // Task Checkbox Handling
+  // ========================================
+  const taskCheckboxes = document.querySelectorAll('.task-checkbox');
+  console.log(`[Tasks] Found ${taskCheckboxes.length} task checkboxes`);
+  
+  taskCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', function(e) {
+      const taskId = e.target.getAttribute('data-task-id');
+      const taskItem = e.target.closest('.task-item');
+      
+      if (!taskItem) return;
+      
+      if (e.target.checked) {
+        taskItem.style.opacity = '0.6';
+        const taskText = taskItem.querySelector('.task-text');
+        if (taskText) {
+          taskText.style.textDecoration = 'line-through';
+        }
+        
+        console.log(`[Tasks] Task ${taskId} marked as complete`);
+        
+        // Emit task_complete event via WebSocket if available
+        if (window.socket) {
+          window.socket.emit('task_complete', {
+            session_id: '{{ session.external_id }}',
+            task_id: taskId
+          });
+        }
+      } else {
+        taskItem.style.opacity = '1';
+        const taskText = taskItem.querySelector('.task-text');
+        if (taskText) {
+          taskText.style.textDecoration = 'none';
+        }
+      }
+    });
   });
-}
+  
+  // ========================================
+  // WebSocket Event Listeners
+  // ========================================
+  if (window.socket) {
+    console.log('[WebSocket] Listening for real-time updates...');
+    
+    window.socket.on('insights_generate', function(data) {
+      console.log('[WebSocket] Insights update received:', data);
+      if (data.status === 'completed') {
+        console.log('[WebSocket] Insights completed, reloading page...');
+        setTimeout(() => location.reload(), 1000);
+      }
+    });
+    
+    window.socket.on('analytics_update', function(data) {
+      console.log('[WebSocket] Analytics update received:', data);
+    });
+  }
+});
 </script>
 {% endblock %}
