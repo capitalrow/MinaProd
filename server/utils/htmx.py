@@ -19,11 +19,11 @@ def is_htmx_request():
 
 def render_partial(template_name, **context):
     """
-    Render a template as either a full page or partial content.
+    Render a template as either a full page or partial content for htmx.
     
-    For htmx requests, injects 'is_htmx=True' into template context,
-    allowing templates to conditionally extend base.html.
-    For regular requests, renders the full page.
+    For htmx requests, tries to render a _partial.html version if it exists.
+    Falls back to extracting #main-content from the full template.
+    For regular requests, renders the full page normally.
     
     Args:
         template_name: The template to render (e.g., 'dashboard/index.html')
@@ -37,18 +37,49 @@ def render_partial(template_name, **context):
         def dashboard():
             return render_partial('dashboard/index.html', meetings=meetings)
         
-    Template Usage:
-        {% if not is_htmx %}{% extends "base.html" %}{% endif %}
-        
-        {% if not is_htmx %}{% block content %}{% endif %}
-        <div id="main-content">
-            <!-- Your content here -->
-        </div>
-        {% if not is_htmx %}{% endblock %}{% endif %}
+    Template Structure:
+        dashboard/index.html - Full page (extends base.html)
+        dashboard/_index_partial.html - Content only (for htmx, optional)
     """
-    # Inject htmx flag into context
-    context['is_htmx'] = is_htmx_request()
-    return render_template(template_name, **context)
+    from flask import current_app
+    from bs4 import BeautifulSoup
+    
+    if not is_htmx_request():
+        # Regular request: return full page
+        return render_template(template_name, **context)
+    
+    # htmx request: try partial template first
+    # Convert 'dashboard/index.html' to 'dashboard/_index_partial.html'
+    path_parts = template_name.rsplit('/', 1)
+    if len(path_parts) == 2:
+        folder, filename = path_parts
+        name_without_ext = filename.rsplit('.', 1)[0]
+        partial_template = f"{folder}/_{name_without_ext}_partial.html"
+    else:
+        filename = template_name
+        name_without_ext = filename.rsplit('.', 1)[0]
+        partial_template = f"_{name_without_ext}_partial.html"
+    
+    # Try to render partial template
+    try:
+        return render_template(partial_template, **context)
+    except Exception:
+        # Partial doesn't exist, extract from full template
+        pass
+    
+    # Render full template and extract #main-content
+    full_html = render_template(template_name, **context)
+    
+    try:
+        soup = BeautifulSoup(full_html, 'html.parser')
+        main_content = soup.find(id='main-content')
+        if main_content:
+            return str(main_content)
+    except Exception as e:
+        current_app.logger.warning(f"Failed to extract #main-content: {e}")
+    
+    # Fallback: return full page (htmx will handle it)
+    return full_html
 
 
 def htmx_redirect(url):

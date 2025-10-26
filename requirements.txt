@@ -50,3 +50,4 @@ reportlab
 python-docx
 psycopg2-binary
 celery
+beautifulsoup4

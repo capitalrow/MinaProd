@@ -1,4 +1,4 @@
-{% extends "_htmx_wrapper.html" %}
+{% extends "base.html" %}
 
 {% block title %}Meetings - Mina{% endblock %}
 
@@ -201,8 +201,8 @@
 </style>
 {% endblock %}
 
-{% block main_content %}
-<div class="container meetings-container">
+{% block content %}
+<div id="main-content" class="container meetings-container" tabindex="-1">
     <div class="meetings-header">
         <div class="flex justify-between items-center">
             <div>
