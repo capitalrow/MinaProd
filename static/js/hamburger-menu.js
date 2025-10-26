@@ -23,6 +23,12 @@ class HamburgerMenu {
   }
   
   createMenuStructure() {
+    // Check if GSAP is available
+    if (typeof gsap === 'undefined') {
+      console.warn('[Hamburger Menu] GSAP not available, menu animations disabled');
+      return;
+    }
+    
     // Create glassmorphism backdrop
     this.backdrop = document.createElement('div');
     this.backdrop.className = 'hamburger-backdrop';
@@ -99,9 +105,11 @@ class HamburgerMenu {
     
     document.body.appendChild(this.menu);
     
-    // Set initial state (hidden)
-    gsap.set(this.backdrop, { opacity: 0, pointerEvents: 'none' });
-    gsap.set(this.menu, { x: '100%' });
+    // Set initial state (hidden) - only if GSAP is available
+    if (this.backdrop && this.menu) {
+      gsap.set(this.backdrop, { opacity: 0, pointerEvents: 'none' });
+      gsap.set(this.menu, { x: '100%' });
+    }
   }
   
   attachEventListeners() {
@@ -174,7 +182,8 @@ class HamburgerMenu {
   }
   
   open() {
-    if (this.animating || this.isOpen) return;
+    if (this.animating || this.isOpen || !this.backdrop || !this.menu) return;
+    if (typeof gsap === 'undefined') return;
     
     this.animating = true;
     this.isOpen = true;
@@ -214,19 +223,22 @@ class HamburgerMenu {
       ease: 'power3.out'
     }, '-=0.2');
     
-    // Stagger menu items
-    const items = this.menu.querySelectorAll('.hamburger-menu-item');
-    tl.from(items, {
-      x: 40,
-      opacity: 0,
-      stagger: 0.05,
-      duration: 0.3,
-      ease: 'power2.out'
-    }, '-=0.2');
+    // Stagger menu items - only if they exist
+    const items = Array.from(this.menu.querySelectorAll('.hamburger-menu-item'));
+    if (items && items.length > 0) {
+      tl.from(items, {
+        x: 40,
+        opacity: 0,
+        stagger: 0.05,
+        duration: 0.3,
+        ease: 'power2.out'
+      }, '-=0.2');
+    }
   }
   
   close(animated = true) {
-    if (this.animating || !this.isOpen) return;
+    if (this.animating || !this.isOpen || !this.backdrop || !this.menu) return;
+    if (typeof gsap === 'undefined') return;
     
     this.animating = true;
     this.isOpen = false;
@@ -273,44 +285,58 @@ class HamburgerMenu {
   }
   
   animateHamburgerIcon(toX) {
+    if (typeof gsap === 'undefined' || !this.button) return;
+    
     const icon = this.button.querySelector('svg');
     if (!icon) return;
     
-    const paths = icon.querySelectorAll('path');
-    if (paths.length === 0) return;
+    const paths = Array.from(icon.querySelectorAll('path'));
+    if (!paths || paths.length < 3) return;
     
     if (toX) {
       // Transform to X
-      gsap.to(paths[0], {
-        attr: { d: 'M6 6l12 12' },
-        duration: 0.3,
-        ease: 'power2.inOut'
-      });
-      gsap.to(paths[1], {
-        opacity: 0,
-        duration: 0.2
-      });
-      gsap.to(paths[2], {
-        attr: { d: 'M18 6L6 18' },
-        duration: 0.3,
-        ease: 'power2.inOut'
-      });
+      if (paths[0]) {
+        gsap.to(paths[0], {
+          attr: { d: 'M6 6l12 12' },
+          duration: 0.3,
+          ease: 'power2.inOut'
+        });
+      }
+      if (paths[1]) {
+        gsap.to(paths[1], {
+          opacity: 0,
+          duration: 0.2
+        });
+      }
+      if (paths[2]) {
+        gsap.to(paths[2], {
+          attr: { d: 'M18 6L6 18' },
+          duration: 0.3,
+          ease: 'power2.inOut'
+        });
+      }
     } else {
       // Transform back to hamburger
-      gsap.to(paths[0], {
-        attr: { d: 'M4 6h16' },
-        duration: 0.3,
-        ease: 'power2.inOut'
-      });
-      gsap.to(paths[1], {
-        opacity: 1,
-        duration: 0.2
-      });
-      gsap.to(paths[2], {
-        attr: { d: 'M4 18h16' },
-        duration: 0.3,
-        ease: 'power2.inOut'
-      });
+      if (paths[0]) {
+        gsap.to(paths[0], {
+          attr: { d: 'M4 6h16' },
+          duration: 0.3,
+          ease: 'power2.inOut'
+        });
+      }
+      if (paths[1]) {
+        gsap.to(paths[1], {
+          opacity: 1,
+          duration: 0.2
+        });
+      }
+      if (paths[2]) {
+        gsap.to(paths[2], {
+          attr: { d: 'M4 18h16' },
+          duration: 0.3,
+          ease: 'power2.inOut'
+        });
+      }
     }
   }
 }

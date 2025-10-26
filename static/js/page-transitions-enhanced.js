@@ -46,13 +46,16 @@ class EnhancedPageTransitions extends PageTransitionManager {
     // GSAP-powered fallback
     this.showSkeletonScreen();
     
-    // Fade out current content
-    await gsap.to('#main-content', {
-      opacity: 0,
-      y: -20,
-      duration: 0.2,
-      ease: 'power2.in'
-    });
+    // Fade out current content - only if it exists
+    const mainContent = document.querySelector('#main-content');
+    if (mainContent) {
+      await gsap.to('#main-content', {
+        opacity: 0,
+        y: -20,
+        duration: 0.2,
+        ease: 'power2.in'
+      });
+    }
     
     // Update page content
     await this.updatePage(url);
@@ -64,6 +67,8 @@ class EnhancedPageTransitions extends PageTransitionManager {
   }
   
   animateContentIn() {
+    if (!this.gsapAvailable) return Promise.resolve();
+    
     const main = document.querySelector('#main-content');
     if (!main) return Promise.resolve();
     
@@ -80,9 +85,9 @@ class EnhancedPageTransitions extends PageTransitionManager {
       ease: 'power3.out'
     });
     
-    // Stagger in cards and sections
-    const cards = main.querySelectorAll('.card, .card-glass, .metric-card');
-    if (cards.length > 0) {
+    // Stagger in cards and sections - only if they exist
+    const cards = Array.from(main.querySelectorAll('.card, .card-glass, .metric-card'));
+    if (cards && cards.length > 0) {
       tl.from(cards, {
         opacity: 0,
         y: 30,
@@ -92,7 +97,7 @@ class EnhancedPageTransitions extends PageTransitionManager {
       }, '-=0.3');
     }
     
-    // Animate page title
+    // Animate page title - only if it exists
     const pageTitle = main.querySelector('h1, .page-title');
     if (pageTitle) {
       tl.from(pageTitle, {
