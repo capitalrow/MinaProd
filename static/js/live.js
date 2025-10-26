@@ -108,16 +108,8 @@
       // 2) NEW: finalize the session safely (no crash if endpoint missing)
       await finalizeSessionSafe(SESSION_EXTERNAL_ID);
 
-      // 3) NEW: UX flow – navigate to transcript page after recording
-      setTimeout(() => {
-        if (window.location.pathname.includes("/live") && SESSION_EXTERNAL_ID) {
-          window.location.href = `/transcript/${SESSION_EXTERNAL_ID}`;
-        } else if (window.location.pathname.includes("/live")) {
-          window.location.href = "/dashboard";
-        } else {
-          window.location.reload();
-        }
-      }, 600);
+      // 3) CROWN+: Show processing shimmer and wait for post_transcription_reveal event
+      showProcessingShimmer();
     };
 
     // Chunk every 3s (unchanged)
@@ -134,17 +126,84 @@
     }
   }
 
-  // === Transcript UI (unchanged) ==========================================
+  // === Transcript UI - Enhanced with speaker info ========================
   let interimBuffer = "";
-  socket.on("transcript", (p) => {
-    interimBuffer += p.text + " ";
-    if ($("interim")) $("interim").textContent = interimBuffer;
+  let finalBuffer = "";
+  
+  socket.on("transcription_result", (data) => {
+    const text = (data.text || "").trim();
+    if (!text) return;
+    
+    const isFinal = data.is_final || false;
+    const speakerName = data.speaker_name || "";
+    
+    if (isFinal) {
+      // Final result - append to final transcript
+      finalBuffer = finalBuffer ? finalBuffer + " " + text : text;
+      if ($("final")) $("final").textContent = finalBuffer;
+      
+      // Clear interim
+      interimBuffer = "";
+      if ($("interim")) $("interim").textContent = "";
+      
+      dlog(`✅ Final: ${text.substring(0, 50)}...`);
+    } else {
+      // Interim result - show in interim area
+      interimBuffer = text;
+      if ($("interim")) {
+        $("interim").textContent = speakerName ? `${speakerName}: ${text}` : text;
+      }
+    }
   });
 
-  socket.on("transcript_final", (p) => {
-    if ($("final")) $("final").textContent = p.text;
-    interimBuffer = "";
-    if ($("interim")) $("interim").textContent = "";
+  // === CROWN+ Event Listeners for Post-Transcription Pipeline ============
+  socket.on("transcript_finalized", (data) => {
+    dlog(`📝 Transcript finalized: ${data.word_count} words`);
+    updateProcessingState("Finalizing transcript...", 12.5);
+  });
+
+  socket.on("transcript_refined", (data) => {
+    dlog(`✨ Transcript refined: ${data.word_count} words`);
+    updateProcessingState("Polishing transcript...", 25);
+  });
+
+  socket.on("insights_generate", (data) => {
+    if (data.status === 'processing') {
+      dlog(`🎯 ${data.message}`);
+      updateProcessingState("Crafting highlights...", 37.5);
+    } else if (data.status === 'completed') {
+      dlog(`✅ Insights generated: ${data.action_count} actions`);
+      updateProcessingState("Insights ready...", 50);
+    }
+  });
+
+  socket.on("analytics_update", (data) => {
+    dlog(`📊 Analytics updated`);
+    updateProcessingState("Analyzing metrics...", 62.5);
+  });
+
+  socket.on("tasks_generation", (data) => {
+    dlog(`✅ ${data.message}`);
+    updateProcessingState("Extracting action items...", 75);
+  });
+
+  socket.on("post_transcription_reveal", (data) => {
+    dlog(`🎬 Post-transcription complete! Redirecting...`);
+    updateProcessingState("Preparing your insights...", 87.5);
+    
+    // Event-driven navigation (replaces timeout)
+    setTimeout(() => {
+      window.location.href = data.redirect_url || `/sessions/${SESSION_EXTERNAL_ID}/refined`;
+    }, 800);
+  });
+
+  socket.on("session_finalized", (data) => {
+    dlog(`✅ Session finalized: ${data.session_id}`);
+    updateProcessingState("Finalizing session...", 100);
+  });
+
+  socket.on("dashboard_refresh", (data) => {
+    dlog(`🔄 Dashboard refresh triggered`);
   });
 
   // === NEW: finalize helper with graceful fallbacks ========================
@@ -188,4 +247,107 @@
   }
 
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // === CROWN+ Processing Shimmer UI =====================================
+  function showProcessingShimmer() {
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'processing-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeIn 0.3s ease-out;
+    `;
+
+    // Create content container
+    const content = document.createElement('div');
+    content.style.cssText = `
+      text-align: center;
+      max-width: 400px;
+      padding: 40px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(147, 51, 234, 0.1));
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    `;
+
+    // Title
+    const title = document.createElement('h2');
+    title.textContent = 'Processing Your Meeting';
+    title.style.cssText = `
+      font-size: 24px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #6366f1, #9333ea);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 20px;
+    `;
+
+    // Status message
+    const status = document.createElement('p');
+    status.id = 'processing-status';
+    status.textContent = 'Initializing...';
+    status.style.cssText = `
+      color: #a1a1aa;
+      font-size: 14px;
+      margin-bottom: 24px;
+    `;
+
+    // Progress bar container
+    const progressContainer = document.createElement('div');
+    progressContainer.style.cssText = `
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    `;
+
+    // Progress bar
+    const progressBar = document.createElement('div');
+    progressBar.id = 'processing-progress';
+    progressBar.style.cssText = `
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #6366f1, #9333ea);
+      border-radius: 2px;
+      transition: width 0.5s ease-out;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+    `;
+
+    progressContainer.appendChild(progressBar);
+    content.appendChild(title);
+    content.appendChild(status);
+    content.appendChild(progressContainer);
+    overlay.appendChild(content);
+    document.body.appendChild(overlay);
+
+    // Add CSS animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function updateProcessingState(message, progress) {
+    const statusEl = document.getElementById('processing-status');
+    const progressEl = document.getElementById('processing-progress');
+    
+    if (statusEl) statusEl.textContent = message;
+    if (progressEl) progressEl.style.width = `${progress}%`;
+  }
 })();
