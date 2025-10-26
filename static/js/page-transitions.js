@@ -62,7 +62,9 @@ class PageTransitionManager {
             link.hasAttribute('download') ||
             link.hasAttribute('target') ||
             link.getAttribute('rel') === 'external' ||
-            this.prefersReducedMotion
+            this.prefersReducedMotion ||
+            href.includes('/live') || // Force full page load for /live (requires JS initialization)
+            href.includes('/auth/') // Force full page load for auth pages
         );
     }
 
