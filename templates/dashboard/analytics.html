@@ -1,4 +1,4 @@
-{% extends "_htmx_wrapper.html" %}
+{% extends "base.html" %}
 
 {% block title %}Analytics - Mina{% endblock %}
 
@@ -273,8 +273,8 @@
 </style>
 {% endblock %}
 
-{% block main_content %}
-<div class="analytics-workspace">
+{% block content %}
+<div id="main-content" class="analytics-workspace" tabindex="-1">
     <!-- Header with Filters -->
     <div class="analytics-header">
         <div class="flex justify-between items-start mb-4">
