@@ -75,10 +75,31 @@ class PostTranscriptionOrchestrator:
                     logger.error(f"❌ Session {session_id} not found")
                     return
                 
-                # IDEMPOTENCY GUARD: Check if already processed
-                if hasattr(session, 'post_transcription_status') and session.post_transcription_status == 'completed':
-                    logger.warning(f"⚠️  Session {session_id} already processed, skipping orchestration")
+                # ATOMIC IDEMPOTENCY GUARD: Only ONE worker can set status to 'processing'
+                # Uses atomic UPDATE...WHERE to prevent race conditions
+                from sqlalchemy import text
+                result = db.session.execute(
+                    text(
+                        "UPDATE sessions SET post_transcription_status = 'processing' "
+                        "WHERE id = :session_id AND "
+                        "(post_transcription_status IS NULL OR post_transcription_status NOT IN ('processing', 'completed'))"
+                    ),
+                    {'session_id': session_id}
+                )
+                db.session.commit()
+                
+                if result.rowcount == 0:
+                    # Another worker is already processing or has completed
+                    # Refresh session to get current status
+                    db.session.expire(session)
+                    session = db.session.get(Session, session_id)
+                    logger.warning(
+                        f"⚠️  Session {session_id} post-transcription already '{session.post_transcription_status}', "
+                        f"skipping orchestration to prevent duplicates (atomic guard blocked)"
+                    )
                     return
+                
+                logger.info(f"🔒 Post-transcription status atomically set to 'processing' for session {session.external_id}")
                 
                 logger.info(
                     f"🚀 Starting PARALLEL post-transcription orchestration for session {session.external_id} "
@@ -185,13 +206,23 @@ class PostTranscriptionOrchestrator:
                 except Exception as e:
                     logger.warning(f"Failed to emit dashboard_refresh: {e}")
                 
-                # Mark orchestration as completed (if field exists)
-                if hasattr(session, 'post_transcription_status'):
-                    session.post_transcription_status = 'completed'
-                    db.session.commit()
+                # Mark orchestration as completed
+                session.post_transcription_status = 'completed'
+                db.session.commit()
+                logger.info(f"✅ Post-transcription status set to 'completed' for session {session.external_id}")
                 
             except Exception as e:
                 logger.error(f"❌ Post-transcription orchestration failed: {e}", exc_info=True)
+                
+                # Set status to 'failed' to allow retries
+                try:
+                    session = db.session.get(Session, session_id)
+                    if session:
+                        session.post_transcription_status = 'failed'
+                        db.session.commit()
+                        logger.warning(f"⚠️  Post-transcription status set to 'failed' for session {session_id}")
+                except Exception as cleanup_error:
+                    logger.error(f"Failed to update status after error: {cleanup_error}")
                 
             finally:
                 # CRITICAL: Clean up database session to prevent leaks
