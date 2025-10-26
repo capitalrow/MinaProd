@@ -778,9 +778,9 @@
 
 <script>
 // ========================================
-// Tab Switching - Fixed with DOMContentLoaded
+// Tab Switching - Runs Immediately (DOM already loaded)
 // ========================================
-document.addEventListener('DOMContentLoaded', function() {
+(function() {
   console.log('[Tabs] Initializing tab switching functionality...');
   
   const tabButtons = document.querySelectorAll('.tab-button');
@@ -897,6 +897,6 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log('[WebSocket] Analytics update received:', data);
     });
   }
-});
+})();
 </script>
 {% endblock %}
