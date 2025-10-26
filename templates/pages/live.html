@@ -324,6 +324,140 @@
     height: 20px;
     color: var(--color-primary);
 }
+
+/* CROWN+ Processing Shimmer Overlay */
+.processing-shimmer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(10px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.shimmer-content {
+    text-align: center;
+    max-width: 500px;
+    padding: var(--space-8);
+}
+
+.shimmer-animation {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto var(--space-6);
+}
+
+.shimmer-circle, .shimmer-circle-2 {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: var(--color-primary);
+    animation: shimmerSpin 1.5s linear infinite;
+}
+
+.shimmer-circle {
+    width: 100px;
+    height: 100px;
+}
+
+.shimmer-circle-2 {
+    width: 70px;
+    height: 70px;
+    border-top-color: var(--color-secondary);
+    animation-duration: 1s;
+    animation-direction: reverse;
+}
+
+@keyframes shimmerSpin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.shimmer-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.shimmer-message {
+    font-size: var(--font-size-base);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-6);
+}
+
+.shimmer-progress {
+    width: 100%;
+    height: 4px;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: var(--space-8);
+}
+
+.shimmer-progress-bar {
+    height: 100%;
+    background: var(--gradient-primary);
+    transition: width 0.3s ease;
+}
+
+.shimmer-stage-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    text-align: left;
+}
+
+.shimmer-stage {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    color: var(--color-text-secondary);
+    transition: all var(--transition-base);
+}
+
+.shimmer-stage.active {
+    background-color: rgba(99, 102, 241, 0.1);
+    color: var(--color-primary);
+}
+
+.shimmer-stage.completed {
+    color: var(--color-success);
+}
+
+.shimmer-stage-icon {
+    flex-shrink: 0;
+}
+
+.shimmer-stage-icon.pending {
+    opacity: 0.3;
+}
+
+.shimmer-stage-icon.active {
+    opacity: 1;
+    animation: pulse 2s infinite;
+}
+
+.shimmer-stage-icon.completed {
+    opacity: 1;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
 </style>
 {% endblock %}
 
@@ -433,6 +567,53 @@
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CROWN+ Processing Shimmer Overlay -->
+<div id="processing-shimmer" class="processing-shimmer" style="display: none;">
+    <div class="shimmer-content">
+        <div class="shimmer-animation">
+            <div class="shimmer-circle"></div>
+            <div class="shimmer-circle-2"></div>
+        </div>
+        <h2 id="shimmer-title" class="shimmer-title">Processing your meeting</h2>
+        <p id="shimmer-message" class="shimmer-message">Consolidating transcript...</p>
+        <div class="shimmer-progress">
+            <div id="shimmer-progress-bar" class="shimmer-progress-bar" style="width: 0%"></div>
+        </div>
+        <div id="shimmer-stage-list" class="shimmer-stage-list">
+            <div class="shimmer-stage" data-stage="transcript_finalized">
+                <svg class="shimmer-stage-icon pending" width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" fill="none"/>
+                </svg>
+                <span>Finalizing transcript</span>
+            </div>
+            <div class="shimmer-stage" data-stage="transcript_refined">
+                <svg class="shimmer-stage-icon pending" width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" fill="none"/>
+                </svg>
+                <span>Refining text</span>
+            </div>
+            <div class="shimmer-stage" data-stage="insights_generate">
+                <svg class="shimmer-stage-icon pending" width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" fill="none"/>
+                </svg>
+                <span>Generating insights</span>
+            </div>
+            <div class="shimmer-stage" data-stage="analytics_update">
+                <svg class="shimmer-stage-icon pending" width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" fill="none"/>
+                </svg>
+                <span>Computing analytics</span>
+            </div>
+            <div class="shimmer-stage" data-stage="tasks_generation">
+                <svg class="shimmer-stage-icon pending" width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" fill="none"/>
+                </svg>
+                <span>Extracting action items</span>
             </div>
         </div>
     </div>
@@ -653,7 +834,10 @@ recordButton.addEventListener('click', async () => {
                 const fullBlob = new Blob(chunks, { type: mimeType });
                 chunks = [];
                 
-                // Call finalize_session to get final transcription
+                // CROWN+: Show processing shimmer immediately
+                showProcessingShimmer();
+                
+                // Call finalize_session to trigger post-transcription pipeline
                 fullBlob.arrayBuffer().then((buf) => {
                     socket.emit('finalize_session', {
                         session_id: String(sessionId),
@@ -737,5 +921,123 @@ stopButton.addEventListener('click', () => {
     
     console.log('Recording stopped');
 });
+
+// ========================================
+// CROWN+ Event Sequencing System
+// ========================================
+
+const CROWN_STAGES = {
+    'transcript_finalized': { progress: 12.5, message: 'Consolidating transcript...' },
+    'transcript_refined': { progress: 25, message: 'Refining text...' },
+    'insights_generate': { progress: 50, message: 'Crafting highlights...' },
+    'analytics_update': { progress: 62.5, message: 'Computing analytics...' },
+    'tasks_generation': { progress: 75, message: 'Extracting action items...' },
+    'post_transcription_reveal': { progress: 87.5, message: 'Preparing insights...' },
+    'session_finalized': { progress: 95, message: 'Finalizing session...' },
+    'dashboard_refresh': { progress: 100, message: 'Complete!' }
+};
+
+function showProcessingShimmer() {
+    const shimmer = document.getElementById('processing-shimmer');
+    shimmer.style.display = 'flex';
+    updateProcessingState('transcript_finalized', 'Consolidating transcript...', 0);
+}
+
+function hideProcessingShimmer() {
+    const shimmer = document.getElementById('processing-shimmer');
+    shimmer.style.display = 'none';
+}
+
+function updateProcessingState(stageName, message, progress) {
+    const titleEl = document.getElementById('shimmer-title');
+    const messageEl = document.getElementById('shimmer-message');
+    const progressBar = document.getElementById('shimmer-progress-bar');
+    const stageEl = document.querySelector(`.shimmer-stage[data-stage="${stageName}"]`);
+    
+    // Update title and message
+    if (message) messageEl.textContent = message;
+    
+    // Update progress bar
+    progressBar.style.width = progress + '%';
+    
+    // Update stage indicator
+    if (stageEl) {
+        // Mark as active
+        stageEl.classList.add('active');
+        const icon = stageEl.querySelector('.shimmer-stage-icon');
+        icon.classList.remove('pending');
+        icon.classList.add('active');
+        
+        // After a delay, mark as completed
+        setTimeout(() => {
+            stageEl.classList.remove('active');
+            stageEl.classList.add('completed');
+            icon.classList.remove('active');
+            icon.classList.add('completed');
+            icon.innerHTML = '<path fill="currentColor" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>';
+        }, 500);
+    }
+}
+
+// CROWN+ WebSocket Event Listeners
+socket.on('transcript_finalized', (data) => {
+    console.log('[CROWN+] Stage 1: transcript_finalized', data);
+    const stage = CROWN_STAGES['transcript_finalized'];
+    updateProcessingState('transcript_finalized', stage.message, stage.progress);
+});
+
+socket.on('transcript_refined', (data) => {
+    console.log('[CROWN+] Stage 2: transcript_refined', data);
+    const stage = CROWN_STAGES['transcript_refined'];
+    updateProcessingState('transcript_refined', stage.message, stage.progress);
+});
+
+socket.on('insights_generate', (data) => {
+    console.log('[CROWN+] Stage 3: insights_generate', data);
+    const stage = CROWN_STAGES['insights_generate'];
+    if (data.status === 'processing') {
+        updateProcessingState('insights_generate', data.message || stage.message, stage.progress);
+    } else if (data.status === 'completed') {
+        updateProcessingState('insights_generate', `Generated ${data.action_count} insights`, stage.progress);
+    }
+});
+
+socket.on('analytics_update', (data) => {
+    console.log('[CROWN+] Stage 4: analytics_update', data);
+    const stage = CROWN_STAGES['analytics_update'];
+    updateProcessingState('analytics_update', stage.message, stage.progress);
+});
+
+socket.on('tasks_generation', (data) => {
+    console.log('[CROWN+] Stage 5: tasks_generation', data);
+    const stage = CROWN_STAGES['tasks_generation'];
+    updateProcessingState('tasks_generation', data.message || stage.message, stage.progress);
+});
+
+socket.on('post_transcription_reveal', (data) => {
+    console.log('[CROWN+] Stage 6: post_transcription_reveal - Auto-redirecting...', data);
+    const stage = CROWN_STAGES['post_transcription_reveal'];
+    updateProcessingState('post_transcription_reveal', stage.message, stage.progress);
+    
+    // Auto-redirect after brief delay for UX
+    setTimeout(() => {
+        window.location.href = data.redirect_url || `/sessions/${sessionId}/refined`;
+    }, 1500);
+});
+
+socket.on('session_finalized', (data) => {
+    console.log('[CROWN+] Stage 7: session_finalized', data);
+    const stage = CROWN_STAGES['session_finalized'];
+    updateProcessingState('session_finalized', stage.message, stage.progress);
+});
+
+socket.on('dashboard_refresh', (data) => {
+    console.log('[CROWN+] Stage 8: dashboard_refresh - Pipeline complete', data);
+    const stage = CROWN_STAGES['dashboard_refresh'];
+    updateProcessingState('dashboard_refresh', stage.message, stage.progress);
+});
+
+// Modify MediaRecorder.onstop to show shimmer
+const originalOnstop = mediaRecorder?.onstop;
 </script>
 {% endblock %}
