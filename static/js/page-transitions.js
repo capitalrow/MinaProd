@@ -370,13 +370,17 @@ const styleSheet = document.createElement('style');
 styleSheet.textContent = transitionStyles;
 document.head.appendChild(styleSheet);
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
+// Initialize when DOM is ready (only if enhanced version isn't loaded)
+if (!window.pageTransitionsInitialized) {
+  window.pageTransitionsInitialized = true;
+  
+  if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        new PageTransitionManager();
+      new PageTransitionManager();
     });
-} else {
+  } else {
     new PageTransitionManager();
+  }
 }
 
 // Export for use in other scripts
