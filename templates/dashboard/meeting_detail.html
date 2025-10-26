@@ -215,6 +215,26 @@
 .segment .text {
   color: var(--color-text-primary);
 }
+
+/* Inline editing styles */
+.editable {
+  outline: none;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.editable:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+.editable:focus {
+  background: rgba(99, 102, 241, 0.15);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+.editable.saving {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 .segment .actions {
   display: flex;
   gap: var(--space-2);
@@ -402,6 +422,33 @@ mark.highlight.active-match {
   background-color: rgba(255, 193, 7, 0.7);
 }
 
+/* Fade-in animation for page load */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.transcript-workspace {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Stagger animation for transcript segments */
+.segment {
+  animation: fadeInUp 0.4s ease-out backwards;
+}
+
+.segment:nth-child(1) { animation-delay: 0.05s; }
+.segment:nth-child(2) { animation-delay: 0.1s; }
+.segment:nth-child(3) { animation-delay: 0.15s; }
+.segment:nth-child(4) { animation-delay: 0.2s; }
+.segment:nth-child(5) { animation-delay: 0.25s; }
+
 /* Loading spinner */
 .loading-spinner {
   display: flex;
@@ -521,8 +568,8 @@ mark.highlight.active-match {
         {% for segment in segments %}
         <div class="segment" data-id="{{ segment.id }}" data-start="{{ segment.start_time or 0 }}">
           <span class="timestamp">[{{ segment.timestamp or '00:00' }}]</span>
-          <strong class="speaker">{{ segment.speaker or 'Speaker' }}</strong>
-          <span class="text">{{ segment.text }}</span>
+          <strong class="speaker editable" contenteditable="true" data-original="{{ segment.speaker or 'Speaker' }}">{{ segment.speaker or 'Speaker' }}</strong>
+          <span class="text editable" contenteditable="true" data-original="{{ segment.text }}">{{ segment.text }}</span>
           <div class="actions">
             <button class="copySegmentBtn" title="Copy this segment">
               <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -957,6 +1004,65 @@ document.querySelectorAll('.commentBtn').forEach(btn => {
       .then(r => r.json())
       .then(d => d.status === 'ok' ? showToast('Comment added') : showToast('Failed to add comment'))
       .catch(() => showToast('Error adding comment'));
+  });
+});
+
+/* ---------- Inline Editing ---------- */
+document.querySelectorAll('.editable').forEach(el => {
+  let originalValue = el.textContent.trim();
+  
+  el.addEventListener('focus', () => {
+    originalValue = el.textContent.trim();
+  });
+  
+  el.addEventListener('blur', async () => {
+    const newValue = el.textContent.trim();
+    
+    // Skip if no change
+    if (newValue === originalValue) return;
+    
+    // Don't allow empty values
+    if (!newValue) {
+      el.textContent = originalValue;
+      showToast('Cannot save empty value');
+      return;
+    }
+    
+    const segment = el.closest('.segment');
+    const segmentId = segment.dataset.id;
+    const field = el.classList.contains('speaker') ? 'speaker' : 'text';
+    
+    // Visual feedback
+    el.classList.add('saving');
+    
+    try {
+      const response = await fetch(`/api/meetings/segments/${segmentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: newValue })
+      });
+      
+      if (response.ok) {
+        originalValue = newValue;
+        showToast(`${field === 'speaker' ? 'Speaker' : 'Text'} updated`);
+      } else {
+        throw new Error('Failed to save');
+      }
+    } catch (error) {
+      console.error('Save failed:', error);
+      el.textContent = originalValue;
+      showToast('Failed to save changes');
+    } finally {
+      el.classList.remove('saving');
+    }
+  });
+  
+  // Save on Enter key (for speaker name)
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && el.classList.contains('speaker')) {
+      e.preventDefault();
+      el.blur();
+    }
   });
 });
 

@@ -16,6 +16,18 @@
     --glass-border-strong: rgba(255, 255, 255, 0.2);
 }
 
+/* Fade-in animation for page load */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Mobile-First Container */
 .live-container {
     min-height: 100vh;
@@ -24,6 +36,7 @@
     padding: var(--space-3) 0;
     background: linear-gradient(180deg, rgba(102, 126, 234, 0.03) 0%, transparent 100%);
     overflow-x: hidden;
+    animation: fadeInUp 0.6s ease-out;
 }
 
 @media (min-width: 768px) {
