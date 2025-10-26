@@ -241,6 +241,18 @@
   height: 80%;
 }
 
+/* Button styles for unauthenticated users */
+.hamburger-menu-btn {
+  width: 100%;
+  justify-content: center;
+  margin-top: var(--space-2);
+  animation-delay: calc(var(--stagger-index, 0) * 50ms);
+}
+
+.hamburger-menu-btn:first-of-type {
+  margin-top: var(--space-4);
+}
+
 /* ==========================================================================
    MENU ACTIONS
    ========================================================================== */
