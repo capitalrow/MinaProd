@@ -684,7 +684,10 @@
       {% else %}
       <div class="empty-state">
         <div class="empty-state-icon">⭐</div>
-        <div class="empty-state-text">Insights are still being generated...</div>
+        <div class="empty-state-text">No highlights available yet</div>
+        <p style="margin-top: var(--space-2); color: var(--color-text-secondary); max-width: 500px; margin-left: auto; margin-right: auto; font-size: var(--font-size-sm);">
+          Insights are being generated from your transcript. Refresh the page in a moment to see your summary, decisions, and key points.
+        </p>
       </div>
       {% endif %}
     </div>
@@ -755,7 +758,14 @@
       {% else %}
       <div class="empty-state">
         <div class="empty-state-icon">✅</div>
-        <div class="empty-state-text">No action items identified yet</div>
+        <div class="empty-state-text">No action items found</div>
+        <p style="margin-top: var(--space-2); color: var(--color-text-secondary); max-width: 500px; margin-left: auto; margin-right: auto; font-size: var(--font-size-sm);">
+          {% if summary %}
+          No explicit action items were mentioned in this conversation. If you discussed tasks, try stating them more clearly next time (e.g., "I need to..." or "Action: ...").
+          {% else %}
+          Insights are still being generated. Refresh the page in a moment to see results.
+          {% endif %}
+        </p>
       </div>
       {% endif %}
     </div>
