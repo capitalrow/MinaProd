@@ -45,14 +45,31 @@ class AnalysisService:
         """,
         
         "brief_action": """
-        You are a project manager. Extract only the most critical action items from this meeting (2-3 sentences summary).
-        Focus on urgent tasks and immediate next steps.
+        You are a strict meeting analyst. Extract ONLY explicitly stated action items from this transcript.
+        
+        CRITICAL RULES - READ CAREFULLY:
+        - Only extract tasks that are clearly stated as commitments: "I need to...", "We should...", "Action: ...", "I'll...", "Let's..."
+        - If someone mentions an activity casually (e.g., "I'm going to check on my car" in passing), DO NOT extract it
+        - Return an EMPTY array if there are NO clear action items
+        - Do NOT infer, assume, or hallucinate tasks
+        - Do NOT extract general conversation as tasks
+        - Be conservative - when in doubt, don't extract it
         
         Return ONLY valid JSON:
         {
-            "brief_summary": "2-3 sentence action-focused summary",
-            "action_plan": [{"action": "Critical task", "owner": "Person or unknown", "priority": "high/medium/low", "due": "Date or unknown"}]
+            "brief_summary": "2-3 sentence summary of what was discussed, or 'No action items were explicitly stated in this conversation' if none",
+            "action_plan": [{"action": "Exact task as stated in the transcript", "owner": "Person mentioned or 'Not specified'", "priority": "high/medium/low if urgency was mentioned", "due": "Specific date mentioned or 'Not specified'"}]
         }
+        
+        EXAMPLES OF WHAT TO EXTRACT:
+        ✓ "I need to review the report by Friday"
+        ✓ "Let's schedule a follow-up meeting next week"
+        ✓ "Action item: update the database schema"
+        
+        EXAMPLES OF WHAT NOT TO EXTRACT:
+        ✗ "I'm going to grab coffee" (casual, not a task)
+        ✗ "I might check on my car later" (maybe/casual)
+        ✗ "We could consider doing X" (just an idea, not committed)
         
         Meeting transcript:
         {transcript}
@@ -60,16 +77,36 @@ class AnalysisService:
         
         # Standard Level Prompts
         "standard_executive": """
-        You are a professional meeting analyst. Create a standard executive summary (1-2 paragraphs) focusing on business outcomes.
-        Include key decisions, strategic direction, and business impact.
+        You are a professional meeting analyst. Analyze this transcript and extract information STRICTLY as stated.
+        
+        CRITICAL RULES:
+        - Only extract what is EXPLICITLY stated in the transcript
+        - Do NOT infer, assume, or hallucinate information
+        - Return EMPTY arrays [] if nothing was explicitly mentioned
+        - Be conservative and accurate - this is more important than being helpful
+        - Extract exact quotes when possible
+        
+        For ACTIONS:
+        - Only extract clear commitments: "I need to...", "I'll...", "We should...", "Action: ..."
+        - Skip casual mentions: "I'm going to check on my car", "maybe I'll...", "I could..."
+        - Return [] if no clear action items
+        
+        For DECISIONS:
+        - Only extract explicit decisions: "We decided...", "The decision is...", "We're going with..."
+        - Skip opinions or ideas: "We could...", "maybe...", "I think..."
+        - Return [] if no decisions were made
+        
+        For RISKS:
+        - Only extract explicitly mentioned concerns: "The risk is...", "I'm concerned about...", "This could be a problem..."
+        - Skip speculation
+        - Return [] if no risks mentioned
         
         Return ONLY valid JSON:
         {
-            "summary_md": "Standard executive summary in markdown format",
-            "actions": [{"text": "Action description", "owner": "Person or unknown", "due": "Date or unknown"}],
-            "decisions": [{"text": "Decision description", "impact": "Business impact"}],
-            "risks": [{"text": "Risk description", "mitigation": "Suggested mitigation or unknown"}],
-            "executive_insights": [{"insight": "Strategic point", "impact": "Business impact", "next_steps": "What needs to happen"}]
+            "summary_md": "Neutral summary of what was discussed (2-3 paragraphs). If just casual conversation, say so.",
+            "actions": [{"text": "Exact action as stated", "owner": "Person name or 'Not specified'", "due": "Exact date/time mentioned or 'Not specified'"}],
+            "decisions": [{"text": "Exact decision as stated", "impact": "Impact mentioned or 'Not specified'"}],
+            "risks": [{"text": "Exact risk/concern as stated", "mitigation": "Mitigation mentioned or 'Not specified'"}]
         }
         
         Meeting transcript:
@@ -242,7 +279,10 @@ class AnalysisService:
             # Build context string from segments
             context = AnalysisService._build_context(list(final_segments))
             
-            logger.info(f"Built context with {len(context)} characters for session {session_id}")
+            # Log what we're analyzing for debugging
+            word_count = len(context.split())
+            logger.info(f"[AI Analysis] Session {session_id}: {len(final_segments)} final segments, {word_count} words, {len(context)} chars")
+            logger.debug(f"[AI Analysis] Transcript preview: {context[:500]}...")
             
             # Combine transcript with any recalled memory context
             context_with_memory = f"{memory_context}{context}"
@@ -511,6 +551,17 @@ class AnalysisService:
             if result_text is None:
                 raise ValueError("OpenAI returned empty response")
             result = json.loads(result_text)
+            
+            # Log what the AI extracted for debugging
+            action_count = len(result.get('actions', []))
+            decision_count = len(result.get('decisions', []))
+            risk_count = len(result.get('risks', []))
+            logger.info(f"[AI Extraction] Actions: {action_count}, Decisions: {decision_count}, Risks: {risk_count}")
+            
+            if action_count > 0:
+                logger.debug(f"[AI Extraction] Actions extracted: {result.get('actions')}")
+            else:
+                logger.info("[AI Extraction] No actions found (this is OK if none were explicitly stated)")
             
             # Validate required keys based on level/style
             missing_keys = [key for key in expected_keys if key not in result]
