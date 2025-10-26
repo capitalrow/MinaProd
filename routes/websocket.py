@@ -300,14 +300,11 @@ def on_finalize(data):
                 orchestrator = PostTranscriptionOrchestrator()
                 logger.info(f"[ws] 🎬 Starting post-transcription pipeline for: {session_id}")
                 
-                # Run pipeline in background (non-blocking)
-                # For now, run synchronously - can be moved to Celery/background worker later
-                pipeline_results = orchestrator.process_session(session_id)
+                # Submit to background task manager (non-blocking)
+                # Events will stream back via WebSocket as each stage completes
+                task_id = orchestrator.process_session_async(session_id)
                 
-                if pipeline_results.get('success'):
-                    logger.info(f"[ws] ✅ Pipeline completed successfully for {session_id}")
-                else:
-                    logger.warning(f"[ws] ⚠️ Pipeline completed with errors for {session_id}: {pipeline_results.get('events_failed')}")
+                logger.info(f"[ws] ✅ Pipeline submitted to background (task_id={task_id})")
                     
             except Exception as pipeline_error:
                 # Graceful degradation - log error but don't fail the finalization

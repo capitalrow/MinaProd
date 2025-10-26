@@ -82,20 +82,17 @@ def finalize_session(external_id: str):
             logger.warning(f"Cache clear failed: {ce}")
         
         # 🚀 CROWN+ Event Sequencing: Trigger post-transcription pipeline
-        pipeline_success = False
+        pipeline_task_id = None
         try:
             from services.post_transcription_orchestrator import PostTranscriptionOrchestrator
             orchestrator = PostTranscriptionOrchestrator()
             logger.info(f"[API] 🎬 Starting post-transcription pipeline for: {external_id}")
             
-            # Run pipeline synchronously
-            pipeline_results = orchestrator.process_session(external_id)
-            pipeline_success = pipeline_results.get('success', False)
+            # Submit to background task manager (non-blocking)
+            # Events will stream back via WebSocket as each stage completes
+            pipeline_task_id = orchestrator.process_session_async(external_id)
             
-            if pipeline_success:
-                logger.info(f"[API] ✅ Pipeline completed successfully for {external_id}")
-            else:
-                logger.warning(f"[API] ⚠️ Pipeline completed with errors: {pipeline_results.get('events_failed')}")
+            logger.info(f"[API] ✅ Pipeline submitted to background (task_id={pipeline_task_id})")
                 
         except Exception as pipeline_error:
             # Graceful degradation - log error but don't fail the response
@@ -108,7 +105,7 @@ def finalize_session(external_id: str):
             "total_segments": total_segments,
             "average_confidence": avg_conf,
             "total_duration": total_dur,
-            "pipeline_executed": pipeline_success
+            "pipeline_task_id": pipeline_task_id
         }), 200
 
     except Exception as e:

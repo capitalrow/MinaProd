@@ -630,6 +630,14 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"Failed to register Session Finalization API: {e}")
 
+    # --- CROWN+ Monitoring API ---
+    try:
+        from routes.api_crown_monitoring import crown_monitoring_bp
+        app.register_blueprint(crown_monitoring_bp)
+        app.logger.info("CROWN+ Monitoring API routes registered (/api/crown/)")
+    except Exception as e:
+        app.logger.warning(f"Failed to register CROWN+ Monitoring API: {e}")
+
     # Settings routes
     try:
         from routes.settings import settings_bp
