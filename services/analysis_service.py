@@ -7,7 +7,7 @@ from meeting transcripts using configurable AI engines.
 
 import json
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from datetime import datetime
 
 from flask import current_app
@@ -221,7 +221,10 @@ class AnalysisService:
         final_segments = db.session.execute(stmt).scalars().all()
         
         # Determine analysis engine from configuration
-        engine = current_app.config.get('ANALYSIS_ENGINE', 'mock')
+        try:
+            engine = current_app.config.get('ANALYSIS_ENGINE', 'mock')
+        except RuntimeError:
+            engine = 'mock'
         
         # Initialize context variable for all code paths
         context = ""
@@ -237,7 +240,7 @@ class AnalysisService:
             }
         else:
             # Build context string from segments
-            context = AnalysisService._build_context(final_segments)
+            context = AnalysisService._build_context(list(final_segments))
             
             logger.info(f"Built context with {len(context)} characters for session {session_id}")
             
@@ -262,7 +265,7 @@ class AnalysisService:
                 if engine == 'openai_gpt':
                     summary_data = AnalysisService._analyse_with_openai(context_with_memory, level, style)
                 else:
-                    summary_data = AnalysisService._analyse_with_mock(context_with_memory, final_segments, level, style)
+                    summary_data = AnalysisService._analyse_with_mock(context_with_memory, list(final_segments), level, style)
                 
                 # Attach any validation warnings to summary data for UI display
                 if validation_result.get('warning'):
@@ -300,7 +303,6 @@ class AnalysisService:
         # 🔄 Trigger analytics sync if relevant meeting exists
         try:
             from services.analytics_service import AnalyticsService
-            from flask import current_app
             import threading
 
             session_obj = db.session.get(Session, session_id)
@@ -309,14 +311,16 @@ class AnalysisService:
             if meeting:
                 analytics_service = AnalyticsService()
                 # Capture real Flask app object (not LocalProxy) for thread safety
-                app = current_app._get_current_object()
+                from flask import current_app as app_proxy
+                app = app_proxy._get_current_object()  # type: ignore
                 meeting_id = meeting.id
                 
                 # Run analytics in background thread with app context
                 def run_analytics():
                     try:
+                        import asyncio
                         with app.app_context():
-                            analytics_service.analyze_meeting(meeting_id)
+                            asyncio.run(analytics_service.analyze_meeting(meeting_id))
                             logger.info(f"Analytics sync completed for meeting {meeting_id}")
                     except Exception as e:
                         logger.warning(f"Analytics sync failed for meeting {meeting_id}: {e}")
@@ -351,7 +355,7 @@ class AnalysisService:
         return summary.to_dict() if summary else None
     
     @staticmethod
-    def _validate_transcript_quality(context: str) -> Dict[str, any]:
+    def _validate_transcript_quality(context: str) -> Dict[str, Any]:
         """
         Validate transcript quality before AI processing.
         
@@ -426,13 +430,21 @@ class AnalysisService:
         Returns:
             Context string limited to configured character count
         """
-        max_chars = current_app.config.get('SUMMARY_CONTEXT_CHARS', 12000)
+        try:
+            max_chars = current_app.config.get('SUMMARY_CONTEXT_CHARS', 12000)
+        except RuntimeError:
+            max_chars = 12000
         
         # Build full transcript
         transcript_parts = []
         for segment in segments:
             # Format with timestamp for context
-            time_str = f"[{segment.start_time_formatted}]" if hasattr(segment, 'start_time_formatted') else f"[{segment.start_ms//1000}s]"
+            if hasattr(segment, 'start_time_formatted'):
+                time_str = f"[{segment.start_time_formatted}]"
+            elif segment.start_ms is not None:
+                time_str = f"[{segment.start_ms//1000}s]"
+            else:
+                time_str = "[0s]"
             transcript_parts.append(f"{time_str} {segment.text}")
         
         full_transcript = " ".join(transcript_parts)
@@ -461,6 +473,11 @@ class AnalysisService:
         Returns:
             Analysis results dictionary
         """
+        # Initialize variables before try block to avoid unbound errors
+        client = None
+        prompt = ""
+        expected_keys: List[str] = []
+        
         try:
             from openai import OpenAI
             
@@ -491,6 +508,8 @@ class AnalysisService:
             )
             
             result_text = response.choices[0].message.content
+            if result_text is None:
+                raise ValueError("OpenAI returned empty response")
             result = json.loads(result_text)
             
             # Validate required keys based on level/style
@@ -506,6 +525,9 @@ class AnalysisService:
             
             # Retry with stricter prompt
             try:
+                if client is None:
+                    raise ValueError("OpenAI client not initialized")
+                    
                 retry_prompt = f"The previous response was invalid JSON. Respond with VALID JSON ONLY in the exact format requested:\n\n{prompt}"
                 
                 response = client.chat.completions.create(
@@ -519,6 +541,8 @@ class AnalysisService:
                 )
                 
                 result_text = response.choices[0].message.content
+                if result_text is None:
+                    raise ValueError("OpenAI retry returned empty response")
                 result = json.loads(result_text)
                 
                 # Validate expected keys for this level/style
@@ -741,7 +765,7 @@ Multiple action items were identified with clear ownership and timelines. Follow
             db.session.delete(existing_summary)
             db.session.flush()  # Ensure deletion is processed
         
-        summary = Summary(
+        summary = Summary(  # type: ignore[call-arg]
             session_id=session_id,
             level=level,
             style=style,
