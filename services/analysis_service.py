@@ -238,11 +238,30 @@ class AnalysisService:
             
             logger.info(f"Built context with {len(context)} characters for session {session_id}")
             
-            # Generate insights using configured engine with level and style
-            if engine == 'openai_gpt':
-                summary_data = AnalysisService._analyse_with_openai(context, level, style)
+            # Validate transcript quality before processing
+            validation_result = AnalysisService._validate_transcript_quality(context)
+            
+            if not validation_result['is_valid']:
+                logger.warning(f"Transcript quality issue for session {session_id}: {validation_result['reason']}")
+                # Return informative message for low-quality transcripts
+                summary_data = {
+                    'summary_md': validation_result['message'],
+                    'actions': [],
+                    'decisions': [],
+                    'risks': [],
+                    'validation_warning': validation_result['reason']
+                }
             else:
-                summary_data = AnalysisService._analyse_with_mock(context, final_segments, level, style)
+                # Generate insights using configured engine with level and style
+                if engine == 'openai_gpt':
+                    summary_data = AnalysisService._analyse_with_openai(context, level, style)
+                else:
+                    summary_data = AnalysisService._analyse_with_mock(context, final_segments, level, style)
+                
+                # Attach any validation warnings to summary data for UI display
+                if validation_result.get('warning'):
+                    summary_data['quality_warning'] = validation_result['warning']
+                    logger.info(f"Quality warning for session {session_id}: {validation_result['warning']}")
         
         # Persist summary to database
         summary = AnalysisService._persist_summary(session_id, summary_data, engine, level, style)
@@ -326,6 +345,71 @@ class AnalysisService:
         summary = db.session.execute(stmt).scalar_one_or_none()
         
         return summary.to_dict() if summary else None
+    
+    @staticmethod
+    def _validate_transcript_quality(context: str) -> Dict[str, any]:
+        """
+        Validate transcript quality before AI processing.
+        
+        Args:
+            context: Transcript text to validate
+            
+        Returns:
+            Dictionary with validation results:
+            - is_valid: bool indicating if transcript is suitable for analysis
+            - reason: str explaining validation failure (if any)
+            - message: str user-friendly message for invalid transcripts
+        """
+        # Calculate basic metrics
+        word_count = len(context.split())
+        char_count = len(context.strip())
+        
+        # Check for completely empty transcript
+        if char_count == 0:
+            return {
+                'is_valid': False,
+                'reason': 'empty_transcript',
+                'message': 'No transcript content available for analysis.'
+            }
+        
+        # Check for very short transcripts (< 30 words)
+        if word_count < 30:
+            return {
+                'is_valid': False,
+                'reason': 'transcript_too_short',
+                'message': f'This recording is too short to analyze ({word_count} words). Please record at least 30 words for meaningful insights.'
+            }
+        
+        # Check for minimal content (30-50 words - warning zone)
+        if word_count < 50:
+            logger.info(f"Transcript has minimal content ({word_count} words), insights may be limited")
+            # Allow processing but flag as limited
+            return {
+                'is_valid': True,
+                'reason': 'limited_content',
+                'message': None,
+                'warning': f'Short transcript ({word_count} words). Insights may be limited.'
+            }
+        
+        # Check for nonsensical/repetitive content (simple heuristic)
+        words = context.lower().split()
+        unique_words = set(words)
+        uniqueness_ratio = len(unique_words) / len(words) if words else 0
+        
+        # If less than 20% unique words, likely gibberish or highly repetitive
+        if uniqueness_ratio < 0.2 and word_count > 50:
+            return {
+                'is_valid': False,
+                'reason': 'low_content_quality',
+                'message': 'This transcript appears to contain mostly repetitive content. Please ensure clear audio for better results.'
+            }
+        
+        # All validation checks passed
+        return {
+            'is_valid': True,
+            'reason': None,
+            'message': None
+        }
     
     @staticmethod
     def _build_context(segments: List[Segment]) -> str:
