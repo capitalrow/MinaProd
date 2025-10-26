@@ -8,6 +8,7 @@ from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, DateTime, Text, JSON, Boolean, Float, ForeignKey, func, Index
+from sqlalchemy.dialects.postgresql import UUID
 from .base import Base
 
 # Forward reference for type checking
@@ -45,6 +46,11 @@ class Session(Base):
     total_segments: Mapped[Optional[int]] = mapped_column(Integer, default=0, nullable=True)
     average_confidence: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
     total_duration: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
+    
+    # Observability and versioning fields
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), default=uuid.uuid4, server_default=func.gen_random_uuid())
+    post_transcription_status: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     
     # Ownership relationships
     user: Mapped[Optional["User"]] = relationship(back_populates="sessions", foreign_keys=[user_id])
