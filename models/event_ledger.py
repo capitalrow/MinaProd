@@ -1,93 +1,156 @@
 """
-EventLedger Model - CROWN+ Traceability
-Append-only audit log for all state transitions and events in the system.
-Provides complete event lineage with trace_id correlation.
+EventLedger Model - Atomic event tracking for CROWN+ Event Sequencing
+
+Every event in Mina is tracked for auditability, replay, and debugging.
+Ensures atomic, idempotent, and traceable event history.
 """
 
-import uuid
-from typing import Optional, TYPE_CHECKING
 from datetime import datetime
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, DateTime, Text, JSON, ForeignKey, func, Index
-from sqlalchemy.dialects.postgresql import UUID
+from typing import Optional, Dict, Any
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, Integer, DateTime, JSON, Enum as SQLEnum, Index, ForeignKey, Text, func
+import enum
 from .base import Base
 
-if TYPE_CHECKING:
-    from .session import Session
+
+class EventStatus(enum.Enum):
+    """Event processing status"""
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+
+
+class EventType(enum.Enum):
+    """CROWN+ Event Types - matches event sequencing spec"""
+    # Recording Phase
+    RECORD_START = "record_start"
+    AUDIO_CHUNK_SENT = "audio_chunk_sent"
+    TRANSCRIPT_PARTIAL = "transcript_partial"
+    RECORD_STOP = "record_stop"
+    
+    # Post-Transcription Phase
+    TRANSCRIPT_FINALIZED = "transcript_finalized"
+    TRANSCRIPT_REFINED = "transcript_refined"
+    INSIGHTS_GENERATE = "insights_generate"
+    POST_TRANSCRIPTION_REVEAL = "post_transcription_reveal"
+    
+    # Reflection Phase
+    SESSION_REFINED_READY = "session_refined_ready"
+    ANALYTICS_UPDATE = "analytics_update"
+    TASKS_GENERATION = "tasks_generation"
+    SESSION_FINALIZED = "session_finalized"
+    
+    # User Interactions
+    EDIT_COMMIT = "edit_commit"
+    DASHBOARD_REFRESH = "dashboard_refresh"
+    REPLAY_ENGAGE = "replay_engage"
+    TASK_COMPLETE = "task_complete"
+    
+    # System Events
+    ERROR_OCCURRED = "error_occurred"
+    RECOVERY_ATTEMPTED = "recovery_attempted"
 
 
 class EventLedger(Base):
     """
-    Append-only event ledger for complete system traceability.
+    Event Ledger for tracking all system events.
     
-    Every significant state transition emits an event that is logged here.
-    This enables:
-    - Complete audit trail per session
-    - Event correlation via trace_id
-    - Debugging and observability
-    - Compliance and data integrity
+    Implements CROWN+ philosophy:
+    - Atomic: Each event is a single unit of truth
+    - Idempotent: Can be replayed safely
+    - Traceable: Full audit trail for debugging and compliance
     """
     __tablename__ = "event_ledger"
-
+    
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     
     # Event identification
-    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
-    event_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
-    event_sequence: Mapped[int] = mapped_column(Integer, nullable=False, default=0)  # Order within trace
+    event_type: Mapped[EventType] = mapped_column(SQLEnum(EventType), nullable=False, index=True)
+    event_name: Mapped[str] = mapped_column(String(128), nullable=False)  # Human-readable name
     
     # Session linkage
     session_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("sessions.id", ondelete="CASCADE"), 
-        nullable=True, 
+        ForeignKey('sessions.id', ondelete='CASCADE'),
+        nullable=True,
+        index=True
+    )
+    external_session_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    
+    # Event metadata
+    status: Mapped[EventStatus] = mapped_column(
+        SQLEnum(EventStatus),
+        default=EventStatus.PENDING,
+        nullable=False,
         index=True
     )
     
-    # Event payload and context
-    event_payload: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
-    event_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # User agent, IP, etc.
+    # Timing
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False, index=True)
+    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     
-    # Status and error tracking
-    status: Mapped[str] = mapped_column(String(32), default="success")  # success|failed|pending
+    # Event data and context
+    payload: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)  # Event input data
+    result: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)   # Event output data
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
-    # Timing
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
-    duration_ms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # Event processing time
+    # Tracing and correlation
+    trace_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)  # For distributed tracing
+    parent_event_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey('event_ledger.id'),
+        nullable=True
+    )
     
-    # Relationships
-    session: Mapped[Optional["Session"]] = relationship(back_populates="event_ledger_entries")
+    # Performance tracking
+    duration_ms: Mapped[Optional[float]] = mapped_column(nullable=True)  # Event processing time
     
-    # Database indexes for query optimization
+    # Versioning for idempotency
+    event_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    idempotency_key: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, index=True)
+    
+    # Indexes for performance
     __table_args__ = (
-        # Composite indexes for common queries
-        Index('ix_event_ledger_trace_sequence', 'trace_id', 'event_sequence'),
-        Index('ix_event_ledger_session_type', 'session_id', 'event_type'),
-        Index('ix_event_ledger_type_created', 'event_type', 'created_at'),
+        Index('ix_event_ledger_session_created', 'session_id', 'created_at'),
+        Index('ix_event_ledger_type_status', 'event_type', 'status'),
+        Index('ix_event_ledger_trace_created', 'trace_id', 'created_at'),
     )
     
     def __repr__(self):
-        return f'<EventLedger trace={str(self.trace_id)[:8]} type={self.event_type} seq={self.event_sequence}>'
+        return f'<EventLedger {self.event_type.value} session={self.external_session_id} status={self.status.value}>'
     
-    def to_dict(self):
-        """Convert event to dictionary for JSON serialization."""
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert event to dictionary for JSON serialization"""
         return {
             'id': self.id,
-            'trace_id': str(self.trace_id),
-            'event_type': self.event_type,
-            'event_sequence': self.event_sequence,
+            'event_type': self.event_type.value,
+            'event_name': self.event_name,
             'session_id': self.session_id,
-            'status': self.status,
-            'event_payload': self.event_payload,
-            'event_metadata': self.event_metadata,
-            'error_message': self.error_message,
+            'external_session_id': self.external_session_id,
+            'status': self.status.value,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'duration_ms': self.duration_ms
+            'started_at': self.started_at.isoformat() if self.started_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'payload': self.payload,
+            'result': self.result,
+            'error_message': self.error_message,
+            'trace_id': self.trace_id,
+            'duration_ms': self.duration_ms,
+            'event_version': self.event_version
         }
     
-    @staticmethod
-    def generate_trace_id() -> uuid.UUID:
-        """Generate a new UUIDv7 for event tracing (time-ordered)."""
-        # Note: UUIDv7 isn't in standard library yet, using UUID4 for now
-        # TODO: Upgrade to UUIDv7 when available for time-based ordering
-        return uuid.uuid4()
+    @property
+    def is_completed(self) -> bool:
+        """Check if event completed successfully"""
+        return self.status == EventStatus.COMPLETED
+    
+    @property
+    def is_failed(self) -> bool:
+        """Check if event failed"""
+        return self.status == EventStatus.FAILED
+    
+    @property
+    def processing_time_seconds(self) -> Optional[float]:
+        """Get processing time in seconds"""
+        return self.duration_ms / 1000.0 if self.duration_ms else None

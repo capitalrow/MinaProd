@@ -59,7 +59,7 @@ class AIInsightsService:
             prompt = self._build_comprehensive_prompt(transcript_text, metadata)
             
             response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4-turbo-preview",
                 messages=[
                     {
                         "role": "system",
@@ -80,7 +80,7 @@ class AIInsightsService:
             
             # Add metadata
             insights['generated_at'] = datetime.utcnow().isoformat()
-            insights['model'] = 'gpt-3.5-turbo'
+            insights['model'] = 'gpt-4-turbo-preview'
             insights['confidence_score'] = self._calculate_confidence(insights)
             
             logger.info(f"✅ Generated comprehensive insights: {len(insights.get('key_points', []))} key points, {len(insights.get('action_items', []))} actions")
@@ -450,68 +450,8 @@ Be concise, accurate, and actionable. Use null for missing information."""
             "estimated_input_tokens": int(estimated_tokens),
             "estimated_output_tokens": 500,
             "estimated_cost_usd": round(estimated_cost, 4),
-            "model": "gpt-3.5-turbo"
+            "model": "gpt-4-turbo-preview"
         }
-    def generate_insights(self, session_id: int) -> Dict[str, Any]:
-        """
-        Wrapper method for PostTranscriptionOrchestrator compatibility.
-        Accepts session_id and generates comprehensive AI insights.
-        
-        Args:
-            session_id: Database session ID
-            
-        Returns:
-            Dictionary with AI insights
-        """
-        from models import Session, Segment
-        from models import db
-        
-        try:
-            # Get session
-            session = db.session.get(Session, session_id)
-            if not session:
-                raise ValueError(f"Session {session_id} not found")
-            
-            # Get final segments from session
-            segments = db.session.query(Segment).filter_by(
-                session_id=session_id,
-                kind='final'
-            ).order_by(Segment.start_ms).all()
-            
-            if not segments:
-                logger.warning(f"Session {session_id} has no final segments - returning empty insights")
-                return self._get_fallback_insights(error="No transcript data available")
-            
-            # Build transcript text
-            transcript_text = ' '.join([seg.text for seg in segments if seg.text])
-            
-            if not transcript_text or len(transcript_text.strip()) < 10:
-                logger.warning(f"Session {session_id} transcript too short - returning empty insights")
-                return self._get_fallback_insights(error="Transcript too short")
-            
-            # Generate comprehensive insights
-            metadata = {
-                "session_id": session.external_id,
-                "session_db_id": session_id,
-                "title": session.title or "Untitled Session",
-                "segment_count": len(segments),
-                "transcript_length": len(transcript_text)
-            }
-            
-            insights = self.generate_comprehensive_insights(
-                transcript_text=transcript_text,
-                metadata=metadata
-            )
-            
-            logger.info(f"✅ Generated insights for session {session.external_id}: "
-                       f"{len(insights.get('key_points', []))} key points, "
-                       f"{len(insights.get('action_items', []))} action items")
-            
-            return insights
-            
-        except Exception as e:
-            logger.error(f"❌ generate_insights failed for session {session_id}: {e}", exc_info=True)
-            return self._get_fallback_insights(error=str(e))
 
 
 # Singleton instance

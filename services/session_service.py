@@ -109,93 +109,6 @@ class SessionService:
         return False
     
     @staticmethod
-    def finalize_session(
-        session_id: int, 
-        room: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> bool:
-        """
-        Finalize session and trigger post-transcription orchestration (CROWN+).
-        
-        This method:
-        1. Marks session as completed
-        2. Calculates final statistics
-        3. Emits session_finalized event
-        4. Triggers PostTranscriptionOrchestrator asynchronously
-        
-        Args:
-            session_id: Database session ID
-            room: Socket.IO room for event broadcasting
-            metadata: Additional metadata for event logging
-            
-        Returns:
-            True if session was finalized successfully, False if not found
-        """
-        from services.session_event_coordinator import get_session_event_coordinator
-        from services.post_transcription_orchestrator import get_post_transcription_orchestrator
-        
-        session = SessionService.get_session_by_id(session_id)
-        if not session:
-            logger.error(f"❌ Cannot finalize session {session_id}: not found")
-            return False
-        
-        try:
-            # Mark session as completed
-            session.complete()
-            
-            # Calculate final statistics
-            segments_stmt = select(Segment).where(Segment.session_id == session_id)
-            segments = db.session.scalars(segments_stmt).all()
-            
-            total_segments = len(segments)
-            avg_confidence = 0.0
-            total_duration = 0.0
-            
-            if segments:
-                confidences = [s.avg_confidence for s in segments if s.avg_confidence is not None]
-                avg_confidence = sum(confidences) / len(confidences) if confidences else 0.0
-                
-                # Calculate duration from timestamps
-                if session.started_at and session.completed_at:
-                    total_duration = (session.completed_at - session.started_at).total_seconds()
-            
-            # Update session statistics
-            session.total_segments = total_segments
-            session.average_confidence = avg_confidence
-            session.total_duration = total_duration
-            
-            db.session.commit()
-            
-            # Emit session_finalized event
-            coordinator = get_session_event_coordinator()
-            coordinator.emit_session_finalized(
-                session=session,
-                room=room or session.external_id,
-                final_stats={
-                    'total_segments': total_segments,
-                    'average_confidence': avg_confidence,
-                    'total_duration': total_duration
-                },
-                metadata=metadata or {}
-            )
-            
-            # Trigger post-transcription orchestration asynchronously
-            orchestrator = get_post_transcription_orchestrator()
-            orchestrator.run_async(session_id=session_id, room=room or session.external_id)
-            
-            logger.info(
-                f"✅ Session {session.external_id} finalized successfully "
-                f"[trace={str(session.trace_id)[:8]}, segments={total_segments}]"
-            )
-            
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Failed to finalize session {session_id}: {e}", exc_info=True)
-            db.session.rollback()
-            return False
-    
-    @staticmethod
     def list_sessions(q: Optional[str] = None, status: Optional[str] = None, 
                      limit: int = 50, offset: int = 0) -> List[Session]:
         """
@@ -402,7 +315,7 @@ class SessionService:
         return finalized_count
 
     @staticmethod
-    def finalize_session_legacy(session_id: int, final_text: Optional[str] = None, trigger_summary: Optional[bool] = None) -> Dict[str, Any]:
+    def finalize_session(session_id: int, final_text: Optional[str] = None, trigger_summary: Optional[bool] = None) -> Dict[str, Any]:
         """
         Complete a session by finalizing segments and updating status.
         

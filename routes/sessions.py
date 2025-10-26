@@ -37,9 +37,9 @@ def list_sessions():
         sessions_result = SessionService.list_sessions(q=q, status=status, limit=limit, offset=offset)
         
         # Handle pagination object vs list
-        if hasattr(sessions_result, 'items'):
-            sessions = sessions_result.items
-            total_count = sessions_result.total
+        if hasattr(sessions_result, 'items') and hasattr(sessions_result, 'total'):
+            sessions = sessions_result.items  # type: ignore
+            total_count = sessions_result.total  # type: ignore
         elif isinstance(sessions_result, list):
             sessions = sessions_result
             total_count = len(sessions)
@@ -124,11 +124,10 @@ def get_session_detail(session_identifier):
     if response_format == 'json':
         return jsonify(session_detail)
     
-    # Return HTML template for browser requests (CROWN+ Tabbed UI)
+    # Return HTML template for browser requests  
     return render_template('dashboard/meeting_detail.html',
-                         session=session_detail['session'],
-                         segments=session_detail['segments'],
-                         recording_url=session_detail.get('recording_url', ''))
+                         meeting=session_detail['session'],
+                         segments=session_detail['segments'])
 
 
 @sessions_bp.route('/', methods=['POST'])
@@ -170,17 +169,12 @@ def create_session():
 
 
 @sessions_bp.route('/<int:session_id>/finalize', methods=['POST'])
-def finalize_session_endpoint(session_id):
+def finalize_session(session_id):
     """
-    POST /sessions/<id>/finalize - Finalize session and trigger post-transcription orchestration
+    POST /sessions/<id>/finalize - Mark session as completed (idempotent)
     
     Request body (JSON, optional):
     - final_text: Optional final transcript text to add
-    
-    CRITICAL: This endpoint now uses SessionService.finalize_session() which:
-    1. Updates session status and calculates metrics
-    2. Emits session_finalized event  
-    3. Triggers PostTranscriptionOrchestrator asynchronously
     """
     data = request.get_json() or {}
     final_text = data.get('final_text')
@@ -191,35 +185,24 @@ def finalize_session_endpoint(session_id):
         if not session:
             return jsonify({'error': 'Session not found'}), 404
         
+        # Complete the session (idempotent)
+        SessionService.complete_session(session_id)
+        
         # Finalize segments if final text provided
-        finalized_count = 0
         if final_text:
             finalized_count = SessionService.finalize_session_segments(session_id, final_text)
-            logger.info(f"Finalized {finalized_count} segments for session {session_id}")
-        
-        # CRITICAL FIX: Use finalize_session() instead of complete_session()
-        # This ensures post-transcription orchestration is triggered
-        success = SessionService.finalize_session(
-            session_id=session_id,
-            room=session.external_id,
-            metadata={
-                'finalized_via': 'rest_api',
-                'final_text_provided': bool(final_text)
-            }
-        )
-        
-        if success:
             return jsonify({
-                'message': f'Session {session_id} finalized successfully - post-transcription processing initiated',
+                'message': f'Session {session_id} completed',
                 'finalized_segments': finalized_count,
-                'status': 'completed',
-                'external_id': session.external_id
-            }), 200
+                'status': 'completed'
+            })
         else:
-            return jsonify({'error': 'Session finalization failed'}), 500
+            return jsonify({
+                'message': f'Session {session_id} completed',
+                'status': 'completed'
+            })
             
     except Exception as e:
-        logger.error(f"Failed to finalize session {session_id}: {e}", exc_info=True)
         return jsonify({'error': f'Failed to finalize session: {str(e)}'}), 500
 
 
@@ -233,6 +216,81 @@ def get_session_stats():
         return jsonify(stats)
     except Exception as e:
         return jsonify({'error': f'Failed to get stats: {str(e)}'}), 500
+
+
+@sessions_bp.route('/<session_identifier>/refined', methods=['GET'])
+def get_session_refined(session_identifier):
+    """
+    GET /sessions/<id_or_external_id>/refined - Refined session view with tabs
+    
+    This is the post-transcription view with:
+    - Transcript tab
+    - Highlights tab (summary, insights)
+    - Analytics tab (metrics, sentiment)
+    - Tasks tab (action items)
+    - Replay tab (audio sync)
+    
+    Automatically navigated to after post_transcription_reveal event.
+    """
+    # Try to get session by database ID first (if numeric), then by external_id
+    session_detail = None
+    if session_identifier.isdigit():
+        session_detail = SessionService.get_session_detail(int(session_identifier))
+    else:
+        session_detail = SessionService.get_session_detail_by_external(session_identifier)
+    
+    if not session_detail:
+        abort(404)
+    
+    # Get additional data for tabs
+    session_data = session_detail['session']
+    segments = session_detail['segments']
+    
+    # Get summary/insights data
+    summary_data = None
+    try:
+        from services.analysis_service import AnalysisService
+        summary_data = AnalysisService.get_session_summary(session_data['id'])
+    except Exception as e:
+        logger.warning(f"Failed to get summary for session {session_identifier}: {e}")
+    
+    # Get analytics data
+    analytics_data = None
+    try:
+        # Calculate basic analytics from segments
+        word_count = sum(len((s.get('text') or '').split()) for s in segments)
+        total_duration = sum((s.get('end_ms', 0) - s.get('start_ms', 0)) for s in segments) / 1000.0
+        avg_confidence = sum(s.get('avg_confidence', 0) for s in segments) / len(segments) if segments else 0
+        
+        analytics_data = {
+            'word_count': word_count,
+            'total_duration': total_duration,
+            'average_confidence': avg_confidence,
+            'segment_count': len(segments),
+            'words_per_minute': (word_count / (total_duration / 60)) if total_duration > 0 else 0
+        }
+    except Exception as e:
+        logger.warning(f"Failed to calculate analytics for session {session_identifier}: {e}")
+    
+    # Get event timeline for debugging/status
+    event_timeline = []
+    try:
+        from services.event_ledger_service import EventLedgerService
+        event_timeline = EventLedgerService.get_event_timeline(
+            session_data.get('external_id') or session_identifier
+        )
+    except Exception as e:
+        logger.warning(f"Failed to get event timeline: {e}")
+    
+    # Render refined template with all data
+    return render_template(
+        'session_refined.html',
+        session=session_data,
+        segments=segments,
+        summary=summary_data,
+        analytics=analytics_data,
+        event_timeline=event_timeline
+    )
 
 
 @sessions_bp.route('/<int:session_id>/export.md', methods=['GET'])
@@ -263,154 +321,3 @@ def export_session_markdown(session_id):
         
     except Exception as e:
         return jsonify({'error': f'Failed to export session: {str(e)}'}), 500
-
-
-# ============================================================================
-# CROWN+ Tabbed UI Data Endpoints
-# ============================================================================
-
-@sessions_bp.route('/<session_identifier>/refined', methods=['GET'])
-def get_refined_transcript(session_identifier):
-    """GET /sessions/<id>/refined - Get refined/cleaned transcript"""
-    try:
-        # TODO: Implement refined transcript generation
-        # For now, return empty data
-        return jsonify({
-            'refined_text': None,
-            'status': 'pending',
-            'message': 'Refined transcript processing not yet implemented'
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@sessions_bp.route('/<session_identifier>/insights', methods=['GET'])
-def get_ai_insights(session_identifier):
-    """GET /sessions/<id>/insights - Get AI-generated insights"""
-    try:
-        # Find session
-        if session_identifier.isdigit():
-            session = SessionService.get_session_by_id(int(session_identifier))
-        else:
-            session = SessionService.get_session_by_external(session_identifier)
-        
-        if not session:
-            return jsonify({'error': 'Session not found'}), 404
-        
-        # Query Summary table for AI insights
-        from models.summary import Summary
-        summary = Summary.query.filter_by(session_id=session.id).first()
-        
-        # Build insights response from Summary model
-        insights_data = {
-            'summary': summary.summary_md if summary else None,
-            'brief_summary': summary.brief_summary if summary else None,
-            'detailed_summary': summary.detailed_summary if summary else None,
-            'action_items': summary.actions if summary and summary.actions else [],
-            'decisions': summary.decisions if summary and summary.decisions else [],
-            'risks': summary.risks if summary and summary.risks else [],
-            'executive_insights': summary.executive_insights if summary and summary.executive_insights else [],
-            'technical_details': summary.technical_details if summary and summary.technical_details else [],
-            'action_plan': summary.action_plan if summary and summary.action_plan else [],
-            'key_points': [],  # TODO: Add key_points extraction
-            'questions': [],   # TODO: Add questions extraction
-            'sentiment': None  # TODO: Add sentiment analysis
-        }
-        
-        return jsonify(insights_data)
-    except Exception as e:
-        logger.error(f"Failed to get insights: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@sessions_bp.route('/<session_identifier>/analytics', methods=['GET'])
-def get_analytics_data(session_identifier):
-    """GET /sessions/<id>/analytics - Get meeting analytics data"""
-    try:
-        # Find session
-        if session_identifier.isdigit():
-            session = SessionService.get_session_by_id(int(session_identifier))
-        else:
-            session = SessionService.get_session_by_external(session_identifier)
-        
-        if not session:
-            return jsonify({'error': 'Session not found'}), 404
-        
-        # Get segments for analysis
-        from models import Segment
-        from sqlalchemy import select
-        from app import db
-        
-        stmt = select(Segment).filter(Segment.session_id == session.id).order_by(Segment.created_at)
-        segments = db.session.execute(stmt).scalars().all()
-        
-        # Calculate speaking time distribution
-        # TODO: Add speaker field to Segment model for multi-speaker support
-        speaking_time = {}
-        for seg in segments:
-            speaker = 'Unknown'  # Segment model doesn't have speaker field yet
-            duration_sec = (seg.duration_ms / 1000.0) if seg.duration_ms else 0.0
-            speaking_time[speaker] = speaking_time.get(speaker, 0) + duration_sec
-        
-        # Basic analytics
-        analytics = {
-            'speaking_time': speaking_time,
-            'total_segments': len(segments),
-            'total_duration': session.total_duration or 0,
-            'participation': {
-                speaker: round((time / session.total_duration * 100) if session.total_duration else 0, 1)
-                for speaker, time in speaking_time.items()
-            }
-        }
-        
-        return jsonify(analytics)
-    except Exception as e:
-        logger.error(f"Failed to get analytics: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@sessions_bp.route('/<session_identifier>/tasks', methods=['GET'])
-def get_extracted_tasks(session_identifier):
-    """GET /sessions/<id>/tasks - Get tasks extracted from meeting"""
-    try:
-        # Find session
-        if session_identifier.isdigit():
-            session = SessionService.get_session_by_id(int(session_identifier))
-        else:
-            session = SessionService.get_session_by_external(session_identifier)
-        
-        if not session:
-            return jsonify({'error': 'Session not found'}), 404
-        
-        # Query Summary table for action items
-        from models.summary import Summary
-        summary = Summary.query.filter_by(session_id=session.id).first()
-        
-        action_items = []
-        if summary and summary.actions:
-            raw_actions = summary.actions
-            
-            # Transform to task format
-            for idx, item in enumerate(raw_actions):
-                if isinstance(item, dict):
-                    action_items.append({
-                        'id': idx + 1,
-                        'title': item.get('action', item.get('title', 'Untitled task')),
-                        'assignee': item.get('assignee'),
-                        'priority': item.get('priority', 'medium'),
-                        'due_date': item.get('due_date'),
-                        'completed': False
-                    })
-                else:
-                    # Simple string action item
-                    action_items.append({
-                        'id': idx + 1,
-                        'title': str(item),
-                        'priority': 'medium',
-                        'completed': False
-                    })
-        
-        return jsonify({'tasks': action_items})
-    except Exception as e:
-        logger.error(f"Failed to get tasks: {e}")
-        return jsonify({'error': str(e)}), 500

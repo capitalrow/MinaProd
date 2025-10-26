@@ -3,7 +3,6 @@ Analytics Service
 Comprehensive meeting analytics, insights, and performance metrics calculation.
 """
 
-import logging
 import json
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta
@@ -11,8 +10,6 @@ from statistics import mean, median
 from collections import defaultdict
 from models import db, Analytics, Meeting, Participant, Task, Session, Segment
 from services.openai_client_manager import get_openai_client
-
-logger = logging.getLogger(__name__)
 
 
 class AnalyticsService:
@@ -99,7 +96,7 @@ class AnalyticsService:
         
         # Word count from transcript
         if meeting.session:
-            segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, kind='final').all()
+            segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, is_final=True).all()
             analytics.word_count = sum(len(segment.text.split()) for segment in segments)
 
     async def _analyze_engagement(self, analytics: Analytics, meeting: Meeting):
@@ -175,8 +172,8 @@ class AnalyticsService:
         
         segments = db.session.query(Segment).filter_by(
             session_id=session.id, 
-            kind='final'
-        ).order_by(Segment.created_at).all()
+            is_final=True
+        ).order_by(Segment.timestamp).all()
         
         if not segments:
             return [0.0]
@@ -185,9 +182,9 @@ class AnalyticsService:
         window_size = 5 * 60  # 5 minutes in seconds
         time_windows = defaultdict(list)
         
-        start_time = segments[0].created_at
+        start_time = segments[0].timestamp
         for segment in segments:
-            time_diff = (segment.created_at - start_time).total_seconds()
+            time_diff = (segment.timestamp - start_time).total_seconds()
             window_index = int(time_diff // window_size)
             time_windows[window_index].append(segment.text)
         
@@ -232,7 +229,7 @@ class AnalyticsService:
         
         # Decision analysis
         if meeting.session:
-            segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, kind='final').all()
+            segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, is_final=True).all()
             full_text = " ".join(segment.text.lower() for segment in segments)
             
             # Count decisions made
@@ -273,7 +270,7 @@ class AnalyticsService:
         if not meeting.session:
             return
         
-        segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, kind='final').all()
+        segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, is_final=True).all()
         full_text = " ".join(segment.text.lower() for segment in segments)
         
         # Count different types of content
@@ -333,7 +330,7 @@ class AnalyticsService:
         if not meeting.session:
             return
         
-        segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, kind='final').all()
+        segments = db.session.query(Segment).filter_by(session_id=meeting.session.id, is_final=True).all()
         
         # Analyze consensus moments (simplified)
         consensus_indicators = ["everyone agrees", "we all think", "consensus", "unanimous"]
@@ -607,7 +604,7 @@ class AnalyticsService:
         
         segments = db.session.query(Segment).filter_by(
             session_id=meeting.session.id,
-            kind='final'
+            is_final=True
         ).order_by(Segment.created_at).all()
         
         if not segments:
@@ -727,7 +724,7 @@ class AnalyticsService:
         
         segments = db.session.query(Segment).filter_by(
             session_id=meeting.session.id,
-            kind='final'
+            is_final=True
         ).order_by(Segment.created_at).all()
         
         if not segments:
@@ -818,83 +815,6 @@ class AnalyticsService:
                 "productivity_score": round((total_tasks + total_decisions) / len(meetings), 2) if meetings else 0
             }
         }
-    def generate_analytics(self, session_id: int) -> Dict:
-        """
-        Wrapper method for PostTranscriptionOrchestrator compatibility.
-        Accepts session_id and generates analytics directly from Session data.
-        PERSISTS analytics to database using session_id.
-        
-        Args:
-            session_id: Database session ID
-            
-        Returns:
-            Dictionary with analytics results
-        """
-        try:
-            # Get session
-            session = db.session.get(Session, session_id)
-            if not session:
-                raise ValueError(f"Session {session_id} not found")
-            
-            # Get segments for analysis
-            segments = db.session.query(Segment).filter_by(
-                session_id=session_id,
-                kind='final'
-            ).order_by(Segment.start_ms).all()
-            
-            if not segments:
-                logger.warning(f"Session {session_id} has no segments - skipping analytics")
-                return {
-                    'success': False,
-                    'message': 'No transcript segments available for analysis',
-                    'analytics': {}
-                }
-            
-            # Generate basic analytics from session data
-            total_duration = session.total_duration or 0.0
-            word_count = sum(len(seg.text.split()) for seg in segments if seg.text)
-            avg_confidence = session.average_confidence or 0.0
-            
-            # Create or update Analytics record using session_id (NO meeting required!)
-            analytics = db.session.query(Analytics).filter_by(session_id=session_id).first()
-            if not analytics:
-                # Create new analytics record with session_id only (meeting_id is optional)
-                analytics = Analytics(
-                    session_id=session_id,
-                    meeting_id=None  # Optional - 70% of sessions don't create meetings
-                )
-                db.session.add(analytics)
-            
-            # Update analytics fields
-            analytics.total_duration_minutes = round(total_duration / 60, 2) if total_duration else 0
-            analytics.word_count = word_count
-            analytics.participant_count = 1  # Default
-            
-            db.session.commit()
-            
-            logger.info(f"✅ Generated and persisted analytics for session {session.external_id}: {word_count} words, {len(segments)} segments")
-            
-            return {
-                'success': True,
-                'message': 'Analytics generated and persisted successfully',
-                'analytics_id': analytics.id,
-                'analytics': {
-                    'total_duration_minutes': analytics.total_duration_minutes,
-                    'word_count': word_count,
-                    'average_confidence': round(avg_confidence, 2),
-                    'segment_count': len(segments),
-                    'words_per_minute': round(word_count / (total_duration / 60), 2) if total_duration > 0 else 0,
-                }
-            }
-                
-        except Exception as e:
-            logger.error(f"❌ generate_analytics failed for session {session_id}: {e}", exc_info=True)
-            db.session.rollback()
-            return {
-                'success': False,
-                'message': f'Analytics generation failed: {str(e)}',
-                'analytics': {}
-            }
 
 
 # Singleton instance

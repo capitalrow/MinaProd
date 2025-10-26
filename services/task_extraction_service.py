@@ -8,7 +8,7 @@ import re
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime, timedelta
 from dataclasses import dataclass
-from models import db, Task, Meeting, Segment, Session
+from models import db, Task, Meeting, Segment
 from services.openai_client_manager import get_openai_client
 
 
@@ -64,8 +64,8 @@ class TaskExtractionService:
         # Get meeting transcript
         segments = Segment.query.filter_by(
             session_id=meeting.session.id,
-            kind='final'
-        ).order_by(Segment.created_at).all()
+            is_final=True
+        ).order_by(Segment.timestamp).all()
         
         if not segments:
             return []
@@ -382,127 +382,6 @@ class TaskExtractionService:
                 "message": f"Task extraction failed: {str(e)}",
                 "tasks_created": 0,
                 "tasks": []
-            }
-    def extract_tasks(self, session_id: int) -> Dict:
-        """
-        Wrapper method for PostTranscriptionOrchestrator compatibility.
-        Accepts session_id and extracts tasks directly from Session segments.
-        
-        Args:
-            session_id: Database session ID
-            
-        Returns:
-            Dictionary with extracted tasks
-        """
-        import asyncio
-        import logging
-        
-        logger = logging.getLogger(__name__)
-        
-        try:
-            # Get session
-            session = db.session.get(Session, session_id)
-            if not session:
-                raise ValueError(f"Session {session_id} not found")
-            
-            # Get segments from session
-            segments = db.session.query(Segment).filter_by(
-                session_id=session_id,
-                kind='final'
-            ).order_by(Segment.created_at).all()
-            
-            if not segments:
-                logger.warning(f"Session {session_id} has no segments - skipping task extraction")
-                return {
-                    'success': True,
-                    'message': 'No transcript segments available for task extraction',
-                    'tasks': [],
-                    'tasks_created': 0
-                }
-            
-            # Build transcript from segments
-            transcript = self._build_transcript(segments)
-            
-            # Extract tasks using AI
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                # Create a minimal meeting-like object for the AI extraction
-                class SessionWrapper:
-                    def __init__(self, sess):
-                        self.title = sess.title
-                        self.created_at = sess.created_at or sess.started_at
-                        self.session = sess
-                
-                session_wrapper = SessionWrapper(session)
-                extracted_tasks = loop.run_until_complete(
-                    self._extract_tasks_with_ai(transcript, session_wrapper)
-                )
-                
-                # PERSIST tasks to database using session_id
-                if extracted_tasks:
-                    # Create dummy meeting to satisfy meeting_id constraint
-                    from models.meeting import Meeting
-                    dummy_meeting = Meeting(title=f"Auto-generated for session {session_id}")
-                    db.session.add(dummy_meeting)
-                    db.session.flush()  # Get meeting_id
-                    
-                    # Save extracted tasks to database
-                    from models.task import Task
-                    saved_tasks = []
-                    for task_data in extracted_tasks:
-                        task = Task(
-                            meeting_id=dummy_meeting.id,  # Required by schema
-                            session_id=session_id,  # Actual link to session
-                            title=task_data.title,
-                            description=task_data.description,
-                            priority=task_data.priority,
-                            category=task_data.category,
-                            extracted_by_ai=True,
-                            confidence_score=task_data.confidence
-                        )
-                        db.session.add(task)
-                        saved_tasks.append(task)
-                    
-                    db.session.commit()
-                    
-                    tasks_list = [
-                        {
-                            'id': task.id,
-                            'title': task.title,
-                            'description': task.description,
-                            'priority': task.priority,
-                            'category': task.category,
-                            'confidence': task.confidence_score
-                        }
-                        for task in saved_tasks
-                    ]
-                    
-                    logger.info(f"✅ Extracted and persisted {len(tasks_list)} tasks from session {session.external_id}")
-                    
-                    return {
-                        'success': True,
-                        'message': f'Extracted and persisted {len(tasks_list)} tasks',
-                        'tasks': tasks_list,
-                        'tasks_created': len(tasks_list)
-                    }
-                else:
-                    return {
-                        'success': True,
-                        'message': 'No tasks found',
-                        'tasks': [],
-                        'tasks_created': 0
-                    }
-            finally:
-                loop.close()
-                
-        except Exception as e:
-            logger.error(f"❌ extract_tasks failed for session {session_id}: {e}", exc_info=True)
-            return {
-                'success': False,
-                'message': f'Task extraction failed: {str(e)}',
-                'tasks': [],
-                'tasks_created': 0
             }
 
 

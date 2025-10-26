@@ -1,5 +1,5 @@
 # routes/pages.py
-from flask import Blueprint, redirect, url_for, render_template, make_response
+from flask import Blueprint, redirect, url_for, render_template
 from flask_login import login_required, current_user
 
 pages_bp = Blueprint("pages", __name__)
@@ -23,12 +23,7 @@ def app():
 @login_required
 def live():
     """Production live recording interface with all features consolidated"""
-    response = make_response(render_template("pages/live.html"))
-    # Force cache invalidation for mobile browsers
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    return response
+    return render_template("pages/live.html")
 
 @pages_bp.route("/live-enhanced")
 @login_required

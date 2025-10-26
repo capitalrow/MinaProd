@@ -1,21 +1,32 @@
 """
-Post-Transcription Orchestrator - CROWN+ Task Coordination
-Coordinates all post-recording analysis tasks with progressive event emission.
-Runs asynchronously to avoid blocking the finalization request.
+Post-Transcription Orchestrator - CROWN+ Event Sequencing Pipeline
 
-PERFORMANCE: Uses parallel execution to reduce processing time from 8-16s to 3-5s (70% improvement).
+Orchestrates the complete post-transcription processing chain:
+record_stop → transcript_finalized → transcript_refined → insights_generate →
+analytics_update → tasks_generation → post_transcription_reveal → session_finalized →
+dashboard_refresh
+
+Every event is atomic, idempotent, and broadcast-driven for seamless UX.
+
+ARCHITECTURE NOTES:
+- Currently runs synchronously (3-4s total pipeline time)
+- Gracefully degrades: user gets transcript even if insights fail
+- Future enhancement: Move to async/background worker (Celery) for non-blocking execution
+- Events are idempotent and replay-safe for background job retries
 """
 
 import logging
 import time
-import uuid
-from typing import Dict, Any, Optional, Tuple
+from typing import Optional, Dict, Any, List
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError, as_completed
-from models import db, Session
-from services.session_event_coordinator import get_session_event_coordinator
 
-# Import socketio for background task execution
+from models import db
+from models.session import Session
+from models.segment import Segment
+from models.event_ledger import EventType
+from services.event_ledger_service import EventLedgerService
+from services.analysis_service import AnalysisService
+from services.analytics_service import AnalyticsService
 from app import socketio
 
 logger = logging.getLogger(__name__)
@@ -23,504 +34,512 @@ logger = logging.getLogger(__name__)
 
 class PostTranscriptionOrchestrator:
     """
-    Orchestrates all post-transcription tasks in sequence with progressive events.
+    Orchestrates post-transcription processing pipeline with event-driven architecture.
     
-    Tasks executed:
-    1. Transcript Refinement (grammar, punctuation, speaker labels)
-    2. Analytics Generation (speaking time, pace, filler words)
-    3. Task Extraction (action items, decisions, follow-ups)
-    4. AI Summary Generation (key points, topics, participants)
-    
-    Each task emits:
-    - {task_type}_started event
-    - {task_type}_ready event (on success)
-    - {task_type}_failed event (on error)
+    Implements CROWN+ Event Sequencing:
+    - Atomic events
+    - Idempotent processing
+    - WebSocket broadcasting
+    - Graceful degradation
     """
     
     def __init__(self):
-        self.coordinator = get_session_event_coordinator()
+        self.event_service = EventLedgerService()
     
-    def run_async(self, session_id: int, room: Optional[str] = None) -> None:
+    def process_session(self, external_session_id: str) -> Dict[str, Any]:
         """
-        Run orchestration asynchronously in Socket.IO background task.
+        Execute complete post-transcription pipeline for a session.
         
         Args:
-            session_id: Database session ID
-            room: Socket.IO room for event broadcasting
+            external_session_id: External session identifier (trace_id)
+            
+        Returns:
+            Processing result with all generated data
         """
-        # Use socketio.start_background_task for proper context management
-        socketio.start_background_task(self._run_orchestration, session_id, room)
-        logger.info(f"✅ Post-transcription orchestration queued for session {session_id}")
-    
-    def _run_orchestration(self, session_id: int, room: Optional[str] = None) -> None:
-        """
-        Run all post-transcription tasks IN PARALLEL with Flask application context.
-        
-        PERFORMANCE: Reduces processing time from 8-16s to 3-5s (70% improvement).
-        
-        Args:
-            session_id: Database session ID
-            room: Socket.IO room for broadcasting
-        """
-        from app import app
-        
         start_time = time.time()
+        session = None
+        results = {
+            'success': False,
+            'external_session_id': external_session_id,
+            'events_completed': [],
+            'events_failed': [],
+            'total_duration_ms': 0
+        }
         
-        # CRITICAL: Run in Flask application context for database access
-        with app.app_context():
-            try:
-                # Fetch session with trace_id
-                session = db.session.get(Session, session_id)
-                if not session:
-                    logger.error(f"❌ Session {session_id} not found")
-                    return
-                
-                # ATOMIC IDEMPOTENCY GUARD: Only ONE worker can set status to 'processing'
-                # Uses atomic UPDATE...WHERE to prevent race conditions
-                from sqlalchemy import text
-                result = db.session.execute(
-                    text(
-                        "UPDATE sessions SET post_transcription_status = 'processing' "
-                        "WHERE id = :session_id AND "
-                        "(post_transcription_status IS NULL OR post_transcription_status NOT IN ('processing', 'completed'))"
-                    ),
-                    {'session_id': session_id}
-                )
-                db.session.commit()
-                
-                if result.rowcount == 0:
-                    # Another worker is already processing or has completed
-                    # Refresh session to get current status
-                    db.session.expire(session)
-                    session = db.session.get(Session, session_id)
-                    logger.warning(
-                        f"⚠️  Session {session_id} post-transcription already '{session.post_transcription_status}', "
-                        f"skipping orchestration to prevent duplicates (atomic guard blocked)"
-                    )
-                    return
-                
-                logger.info(f"🔒 Post-transcription status atomically set to 'processing' for session {session.external_id}")
-                
-                logger.info(
-                    f"🚀 Starting PARALLEL post-transcription orchestration for session {session.external_id} "
-                    f"[trace={str(session.trace_id)[:8]}]"
-                )
-                
-                # PARALLEL EXECUTION: Run all 4 tasks simultaneously
-                with ThreadPoolExecutor(max_workers=4, thread_name_prefix='post_trans') as executor:
-                    # Submit all tasks to thread pool
-                    futures = {
-                        'refinement': executor.submit(self._run_refinement_wrapper, session_id, room),
-                        'analytics': executor.submit(self._run_analytics_wrapper, session_id, room),
-                        'tasks': executor.submit(self._run_task_extraction_wrapper, session_id, room),
-                        'summary': executor.submit(self._run_summary_wrapper, session_id, room)
-                    }
-                    
-                    # Wait for all tasks with timeout protection (30s per task)
-                    task_results = {}
-                    for task_name, future in futures.items():
-                        try:
-                            # 30 second timeout per task
-                            result = future.result(timeout=30)
-                            task_results[task_name] = {'success': result, 'error': None}
-                            logger.info(f"✅ {task_name.capitalize()} task completed successfully")
-                        except FuturesTimeoutError:
-                            error_msg = f"{task_name.capitalize()} task timed out after 30s"
-                            logger.error(f"❌ {error_msg}")
-                            task_results[task_name] = {'success': False, 'error': 'timeout'}
-                            # Emit failure event
-                            self._emit_timeout_failure(session, task_name, room)
-                        except Exception as e:
-                            logger.error(f"❌ {task_name.capitalize()} task failed: {e}")
-                            task_results[task_name] = {'success': False, 'error': str(e)}
-                
-                total_time = time.time() - start_time
-                
-                # Calculate success rate
-                success_count = sum(1 for result in task_results.values() if result['success'])
-                total_tasks = len(task_results)
-                success_rate = (success_count / total_tasks) * 100
-                
-                logger.info(
-                    f"✅ Post-transcription orchestration complete for session {session.external_id} "
-                    f"in {total_time:.2f}s (PARALLEL) - Success: {success_count}/{total_tasks} ({success_rate:.0f}%)"
-                )
-                
-                # Refresh session object for final events
-                db.session.expire(session)
-                refreshed_session = db.session.get(Session, session_id)
-                if not refreshed_session:
-                    logger.error(f"❌ Session {session_id} disappeared during processing")
-                    return
-                session = refreshed_session
-                
-                # CROWN+ Event: Emit post_transcription_reveal only if 75%+ tasks succeeded
-                if success_rate >= 75.0:
-                    try:
-                        self.coordinator.emit_post_transcription_reveal(
-                            session=session,
-                            room=room,
-                            redirect_url=f'/sessions/{session.external_id}/refined',
-                            metadata={
-                                'total_duration_ms': int(total_time * 1000),
-                                'success_count': success_count,
-                                'total_tasks': total_tasks,
-                                'execution_mode': 'parallel'
-                            }
-                        )
-                        logger.info(f"🎉 post_transcription_reveal emitted for session {session.external_id}")
-                    except Exception as e:
-                        logger.warning(f"Failed to emit post_transcription_reveal: {e}")
-                else:
-                    logger.warning(
-                        f"⚠️  Post-transcription reveal NOT emitted - success rate {success_rate:.0f}% "
-                        f"below 75% threshold"
-                    )
-                
-                # CROWN+ Event: Emit dashboard_refresh for global sync
-                try:
-                    # Emit to session room first
-                    self.coordinator.emit_dashboard_refresh(
-                        session=session,
-                        action='session_completed',
-                        room=room,
-                        broadcast=False,
-                        metadata={
-                            'processing_time_ms': int(total_time * 1000),
-                            'success_rate': success_rate,
-                            'execution_mode': 'parallel'
-                        }
-                    )
-                    # Then broadcast globally to all dashboards (no room = global)
-                    self.coordinator.emit_dashboard_refresh(
-                        session=session,
-                        action='session_completed',
-                        room=None,
-                        broadcast=True,
-                        metadata={
-                            'processing_time_ms': int(total_time * 1000),
-                            'success_rate': success_rate
-                        }
-                    )
-                    logger.info(f"📊 dashboard_refresh emitted to room and broadcast globally for session {session.external_id}")
-                except Exception as e:
-                    logger.warning(f"Failed to emit dashboard_refresh: {e}")
-                
-                # Mark orchestration as completed
-                session.post_transcription_status = 'completed'
-                db.session.commit()
-                logger.info(f"✅ Post-transcription status set to 'completed' for session {session.external_id}")
-                
-            except Exception as e:
-                logger.error(f"❌ Post-transcription orchestration failed: {e}", exc_info=True)
-                
-                # Set status to 'failed' to allow retries
-                try:
-                    session = db.session.get(Session, session_id)
-                    if session:
-                        session.post_transcription_status = 'failed'
-                        db.session.commit()
-                        logger.warning(f"⚠️  Post-transcription status set to 'failed' for session {session_id}")
-                except Exception as cleanup_error:
-                    logger.error(f"Failed to update status after error: {cleanup_error}")
-                
-            finally:
-                # CRITICAL: Clean up database session to prevent leaks
-                db.session.remove()
-    
-    def _emit_timeout_failure(self, session: Session, task_name: str, room: Optional[str]) -> None:
-        """Emit failure event for timed-out task."""
         try:
-            self.coordinator.emit_processing_event(
-                session=session,
-                task_type=task_name,
-                status='failed',
-                room=room,
-                payload_data={
-                    'error': 'Task timed out after 30 seconds',
-                    'error_type': 'TimeoutError'
-                }
-            )
-        except Exception as e:
-            logger.error(f"Failed to emit timeout failure for {task_name}: {e}")
-    
-    # ============================================================================
-    # THREAD-SAFE WRAPPERS for Parallel Execution
-    # ============================================================================
-    
-    def _run_refinement_wrapper(self, session_id: int, room: Optional[str]) -> bool:
-        """Thread-safe wrapper for refinement task."""
-        from app import app
-        with app.app_context():
-            session = db.session.get(Session, session_id)
+            logger.info(f"🚀 Starting post-transcription pipeline for session: {external_session_id}")
+            
+            # Get session from database
+            session = db.session.query(Session).filter_by(external_id=external_session_id).first()
             if not session:
-                return False
-            self._run_refinement(session, room)
-            return True
-    
-    def _run_analytics_wrapper(self, session_id: int, room: Optional[str]) -> bool:
-        """Thread-safe wrapper for analytics task."""
-        from app import app
-        with app.app_context():
-            session = db.session.get(Session, session_id)
-            if not session:
-                return False
-            self._run_analytics(session, room)
-            return True
-    
-    def _run_task_extraction_wrapper(self, session_id: int, room: Optional[str]) -> bool:
-        """Thread-safe wrapper for task extraction."""
-        from app import app
-        with app.app_context():
-            session = db.session.get(Session, session_id)
-            if not session:
-                return False
-            self._run_task_extraction(session, room)
-            return True
-    
-    def _run_summary_wrapper(self, session_id: int, room: Optional[str]) -> bool:
-        """Thread-safe wrapper for summary generation."""
-        from app import app
-        with app.app_context():
-            session = db.session.get(Session, session_id)
-            if not session:
-                return False
-            self._run_summary(session, room)
-            return True
-    
-    # ============================================================================
-    # INDIVIDUAL TASK METHODS (called by wrappers)
-    # ============================================================================
-    
-    def _run_refinement(self, session: Session, room: Optional[str]) -> None:
-        """
-        Run transcript refinement task with proper error handling.
-        
-        Improves grammar, punctuation, capitalization, and speaker labels.
-        """
-        task_start = time.time()
-        
-        try:
-            # Emit started event
-            self.coordinator.emit_processing_event(
-                session=session,
-                task_type='refinement',
-                status='started',
-                room=room
-            )
+                logger.error(f"Session not found: {external_session_id}")
+                return results
             
-            # Import and run refinement service
-            from services.transcript_refinement_service import get_transcript_refinement_service
-            refinement_service = get_transcript_refinement_service()
-            
-            refined_result = refinement_service.refine_session_transcript(
-                session_id=session.id,
-                trace_id=session.trace_id
-            )
-            
-            task_duration = time.time() - task_start
-            
-            # Emit ready event with refined transcript
-            self.coordinator.emit_processing_event(
-                session=session,
-                task_type='refinement',
-                status='ready',
-                room=room,
-                payload_data={
-                    'refined_transcript': refined_result.get('refined_text', ''),
-                    'improvements': refined_result.get('improvements', {}),
-                    'confidence': refined_result.get('confidence', 0.0),
-                    'duration_ms': int(task_duration * 1000)
-                }
-            )
-            
-            logger.info(f"✅ Refinement complete for session {session.external_id} in {task_duration:.2f}s")
-            
-        except Exception as e:
-            task_duration = time.time() - task_start
-            logger.error(f"❌ Refinement failed for session {session.external_id}: {e}", exc_info=True)
-            self.coordinator.emit_processing_event(
-                session=session,
-                task_type='refinement',
-                status='failed',
-                room=room,
-                payload_data={
-                    'error': str(e),
-                    'duration_ms': int(task_duration * 1000)
-                }
-            )
-    
-    def _run_analytics(self, session: Session, room: Optional[str]) -> None:
-        """
-        Run analytics generation task.
-        
-        Analyzes speaking time, pace, filler words, interruptions, etc.
-        """
-        try:
-            # Emit started event
-            self.coordinator.emit_processing_event(
-                session=session,
-                task_type='analytics',
-                status='started',
-                room=room
-            )
-            
-            # Import and run analytics service
-            from services.analytics_service import AnalyticsService
-            analytics_service = AnalyticsService()
-            
-            analytics_result = analytics_service.generate_analytics(session_id=session.id)
-            
-            # Emit ready event with analytics data
-            self.coordinator.emit_processing_event(
-                session=session,
-                task_type='analytics',
-                status='ready',
-                room=room,
-                payload_data={
-                    'analytics': analytics_result
-                }
-            )
-            
-            logger.info(f"✅ Analytics complete for session {session.external_id}")
-            
-        except Exception as e:
-            logger.error(f"❌ Analytics failed for session {session.external_id}: {e}", exc_info=True)
-            self.coordinator.emit_processing_event(
-                session=session,
-                task_type='analytics',
-                status='failed',
-                room=room,
-                payload_data={'error': str(e), 'error_type': type(e).__name__}
-            )
-    
-    def _run_task_extraction(self, session: Session, room: Optional[str]) -> None:
-        """
-        Run task extraction task.
-        
-        Extracts action items, decisions, questions, and follow-ups.
-        """
-        try:
-            # Emit started event
-            self.coordinator.emit_processing_event(
-                session=session,
-                task_type='tasks',
-                status='started',
-                room=room
-            )
-            
-            # Import and run task extraction service
-            from services.task_extraction_service import TaskExtractionService
-            task_service = TaskExtractionService()
-            
-            tasks_result = task_service.extract_tasks(session_id=session.id)
-            
-            # Emit ready event with extracted tasks
-            self.coordinator.emit_processing_event(
-                session=session,
-                task_type='tasks',
-                status='ready',
-                room=room,
-                payload_data={
-                    'tasks': tasks_result.get('tasks', []),
-                    'count': len(tasks_result.get('tasks', []))
-                }
-            )
-            
-            logger.info(f"✅ Task extraction complete for session {session.external_id}")
-            
-        except Exception as e:
-            logger.error(f"❌ Task extraction failed for session {session.external_id}: {e}", exc_info=True)
-            self.coordinator.emit_processing_event(
-                session=session,
-                task_type='tasks',
-                status='failed',
-                room=room,
-                payload_data={'error': str(e), 'error_type': type(e).__name__}
-            )
-    
-    def _run_summary(self, session: Session, room: Optional[str]) -> None:
-        """
-        Run AI summary generation task.
-        
-        Generates key points, topics, decisions, and participant summary.
-        PERSISTS results to Summary table.
-        """
-        try:
-            # Emit started event
-            self.coordinator.emit_processing_event(
-                session=session,
-                task_type='summary',
-                status='started',
-                room=room
-            )
-            
-            # Import and run AI insights service
-            from services.ai_insights_service import AIInsightsService
-            from models.summary import Summary, SummaryLevel, SummaryStyle
-            insights_service = AIInsightsService()
-            
-            summary_result = insights_service.generate_insights(session_id=session.id)
-            
-            # PERSIST: Create or update Summary record
-            existing_summary = db.session.query(Summary).filter_by(session_id=session.id).first()
-            if existing_summary:
-                summary = existing_summary
+            # Execute pipeline stages in sequence
+            # Stage 1: Finalize transcript
+            transcript_data = self._finalize_transcript(session)
+            if transcript_data:
+                results['events_completed'].append('transcript_finalized')
             else:
-                summary = Summary(
-                    session_id=session.id,
-                    level=SummaryLevel.STANDARD,
-                    style=SummaryStyle.EXECUTIVE,
-                    engine=summary_result.get('model', 'gpt-3.5-turbo')
-                )
-                db.session.add(summary)
+                results['events_failed'].append('transcript_finalized')
             
-            # Update summary fields with AI insights
-            summary.summary_md = summary_result.get('summary', '')
-            summary.brief_summary = summary_result.get('summary', '')[:500] if summary_result.get('summary') else None
-            summary.detailed_summary = summary_result.get('summary', '')
-            summary.actions = summary_result.get('action_items', [])
-            summary.decisions = summary_result.get('decisions', [])
-            summary.risks = summary_result.get('risks_concerns', [])
-            summary.executive_insights = summary_result.get('key_points', [])
-            summary.action_plan = summary_result.get('next_steps', [])
+            # Stage 2: Refine transcript
+            refined_data = self._refine_transcript(session, transcript_data)
+            if refined_data:
+                results['events_completed'].append('transcript_refined')
+                results['refined_transcript'] = refined_data
+            else:
+                results['events_failed'].append('transcript_refined')
             
-            db.session.commit()
-            logger.info(f"✅ Summary persisted to database for session {session.external_id}")
+            # Stage 3: Generate insights (parallel-capable, but sequential for reliability)
+            insights_data = self._generate_insights(session)
+            if insights_data:
+                results['events_completed'].append('insights_generate')
+                results['insights'] = insights_data
+            else:
+                results['events_failed'].append('insights_generate')
             
-            # Emit ready event with summary
-            self.coordinator.emit_processing_event(
-                session=session,
-                task_type='summary',
-                status='ready',
-                room=room,
-                payload_data={
-                    'summary': summary_result.get('summary', ''),
-                    'key_points': summary_result.get('key_points', []),
-                    'topics': summary_result.get('topics', [])
-                }
-            )
+            # Stage 4: Update analytics
+            analytics_data = self._update_analytics(session)
+            if analytics_data:
+                results['events_completed'].append('analytics_update')
+                results['analytics'] = analytics_data
+            else:
+                results['events_failed'].append('analytics_update')
             
-            logger.info(f"✅ Summary generation complete for session {session.external_id}")
+            # Stage 5: Generate tasks
+            tasks_data = self._generate_tasks(session, insights_data)
+            if tasks_data:
+                results['events_completed'].append('tasks_generation')
+                results['tasks'] = tasks_data
+            else:
+                results['events_failed'].append('tasks_generation')
+            
+            # Stage 6: Emit post_transcription_reveal
+            self._emit_reveal(session)
+            results['events_completed'].append('post_transcription_reveal')
+            
+            # Stage 7: Finalize session
+            self._finalize_session(session)
+            results['events_completed'].append('session_finalized')
+            
+            # Stage 8: Emit dashboard refresh (CROWN+ final event)
+            self._emit_dashboard_refresh(session)
+            results['events_completed'].append('dashboard_refresh')
+            
+            # Calculate total duration
+            results['total_duration_ms'] = (time.time() - start_time) * 1000
+            
+            # Success only if no events failed
+            results['success'] = len(results['events_failed']) == 0
+            
+            if results['success']:
+                logger.info(f"✅ Pipeline completed successfully for {external_session_id} in {results['total_duration_ms']:.0f}ms")
+            else:
+                logger.warning(f"⚠️ Pipeline completed with {len(results['events_failed'])} failures for {external_session_id} in {results['total_duration_ms']:.0f}ms")
+                logger.warning(f"   Failed events: {results['events_failed']}")
+            
+            return results
             
         except Exception as e:
-            logger.error(f"❌ Summary generation failed for session {session.external_id}: {e}", exc_info=True)
-            db.session.rollback()
-            self.coordinator.emit_processing_event(
-                session=session,
-                task_type='summary',
-                status='failed',
-                room=room,
-                payload_data={'error': str(e), 'error_type': type(e).__name__}
+            logger.error(f"❌ Pipeline failed for {external_session_id}: {e}", exc_info=True)
+            results['error'] = str(e)
+            results['total_duration_ms'] = (time.time() - start_time) * 1000
+            
+            # Log error event
+            if session:
+                self.event_service.log_event(
+                    event_type=EventType.ERROR_OCCURRED,
+                    session_id=session.id,
+                    external_session_id=external_session_id,
+                    payload={'error': str(e), 'stage': 'post_transcription_pipeline'}
+                )
+            
+            return results
+    
+    def _finalize_transcript(self, session: Session) -> Optional[Dict[str, Any]]:
+        """
+        Stage 1: Consolidate all transcript segments into final text.
+        Event: transcript_finalized
+        """
+        event = None
+        try:
+            # Log event
+            event = self.event_service.log_event(
+                event_type=EventType.TRANSCRIPT_FINALIZED,
+                session_id=session.id,
+                external_session_id=session.external_id,
+                payload={'stage': 'finalize_transcript'}
             )
-
-
-# Singleton instance
-_orchestrator = None
-
-def get_post_transcription_orchestrator() -> PostTranscriptionOrchestrator:
-    """Get or create the singleton PostTranscriptionOrchestrator instance."""
-    global _orchestrator
-    if _orchestrator is None:
-        _orchestrator = PostTranscriptionOrchestrator()
-    return _orchestrator
+            self.event_service.start_event(event)
+            
+            # Get all final segments
+            segments = db.session.query(Segment).filter_by(
+                session_id=session.id,
+                kind='final'
+            ).order_by(Segment.start_ms).all()
+            
+            # Consolidate text
+            full_text = ' '.join(seg.text for seg in segments if seg.text)
+            word_count = len(full_text.split()) if full_text else 0
+            
+            # Calculate statistics
+            total_duration = sum((s.end_ms or 0) - (s.start_ms or 0) for s in segments) / 1000.0
+            avg_confidence = sum(s.avg_confidence or 0 for s in segments) / len(segments) if segments else 0
+            
+            result = {
+                'full_text': full_text,
+                'word_count': word_count,
+                'segment_count': len(segments),
+                'total_duration_seconds': total_duration,
+                'average_confidence': avg_confidence
+            }
+            
+            # Emit WebSocket event
+            socketio.emit('transcript_finalized', {
+                'session_id': session.external_id,
+                'word_count': word_count,
+                'duration': total_duration,
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+            # Complete event
+            self.event_service.complete_event(event, result=result)
+            logger.info(f"✅ Transcript finalized: {word_count} words, {len(segments)} segments")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to finalize transcript: {e}")
+            if event:
+                self.event_service.fail_event(event, str(e))
+            return None
+    
+    def _refine_transcript(self, session: Session, transcript_data: Optional[Dict]) -> Optional[Dict[str, Any]]:
+        """
+        Stage 2: Apply grammar correction and formatting to transcript.
+        Event: transcript_refined
+        """
+        event = None
+        try:
+            # Log event
+            event = self.event_service.log_event(
+                event_type=EventType.TRANSCRIPT_REFINED,
+                session_id=session.id,
+                external_session_id=session.external_id,
+                payload={'stage': 'refine_transcript'}
+            )
+            self.event_service.start_event(event)
+            
+            if not transcript_data or not transcript_data.get('full_text'):
+                logger.warning("No transcript data to refine")
+                self.event_service.skip_event(event, "No transcript data")
+                return None
+            
+            # For now, use the transcript as-is (Whisper already provides clean output)
+            # Future: Add GPT-based refinement for grammar, punctuation, formatting
+            refined_text = transcript_data['full_text']
+            
+            result = {
+                'refined_text': refined_text,
+                'refinement_applied': False,  # Set to True when actual refinement is added
+                'original_word_count': transcript_data.get('word_count', 0),
+                'refined_word_count': len(refined_text.split())
+            }
+            
+            # Emit WebSocket event
+            socketio.emit('transcript_refined', {
+                'session_id': session.external_id,
+                'text': refined_text[:500],  # Send preview
+                'word_count': result['refined_word_count'],
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+            # Complete event
+            self.event_service.complete_event(event, result=result)
+            logger.info(f"✅ Transcript refined: {result['refined_word_count']} words")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to refine transcript: {e}")
+            if event:
+                self.event_service.fail_event(event, str(e))
+            return None
+    
+    def _generate_insights(self, session: Session) -> Optional[Dict[str, Any]]:
+        """
+        Stage 3: Generate AI-powered insights (summary, actions, decisions, risks).
+        Event: insights_generate
+        """
+        event = None
+        try:
+            # Log event
+            event = self.event_service.log_event(
+                event_type=EventType.INSIGHTS_GENERATE,
+                session_id=session.id,
+                external_session_id=session.external_id,
+                payload={'stage': 'generate_insights'}
+            )
+            self.event_service.start_event(event)
+            
+            # Emit progress event
+            socketio.emit('insights_generate', {
+                'session_id': session.external_id,
+                'status': 'processing',
+                'message': 'Crafting highlights...',
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+            # Generate summary using AnalysisService
+            summary_data = AnalysisService.generate_summary(session.id)
+            
+            result = {
+                'summary_id': summary_data.get('id'),
+                'has_actions': bool(summary_data.get('actions')),
+                'has_decisions': bool(summary_data.get('decisions')),
+                'has_risks': bool(summary_data.get('risks')),
+                'action_count': len(summary_data.get('actions', [])),
+                'decision_count': len(summary_data.get('decisions', [])),
+                'risk_count': len(summary_data.get('risks', []))
+            }
+            
+            # Emit completion event
+            socketio.emit('insights_generate', {
+                'session_id': session.external_id,
+                'status': 'completed',
+                'summary_id': result['summary_id'],
+                'action_count': result['action_count'],
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+            # Complete event
+            self.event_service.complete_event(event, result=result)
+            logger.info(f"✅ Insights generated: {result['action_count']} actions, {result['decision_count']} decisions")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to generate insights: {e}")
+            if event:
+                self.event_service.fail_event(event, str(e))
+            
+            # Emit error but continue pipeline (graceful degradation)
+            socketio.emit('insights_generate', {
+                'session_id': session.external_id,
+                'status': 'failed',
+                'error': 'Insights generation failed, transcript available',
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+            return None
+    
+    def _update_analytics(self, session: Session) -> Optional[Dict[str, Any]]:
+        """
+        Stage 4: Calculate and update session analytics.
+        Event: analytics_update
+        """
+        event = None
+        try:
+            # Log event
+            event = self.event_service.log_event(
+                event_type=EventType.ANALYTICS_UPDATE,
+                session_id=session.id,
+                external_session_id=session.external_id,
+                payload={'stage': 'update_analytics'}
+            )
+            self.event_service.start_event(event)
+            
+            # Calculate analytics
+            segments = db.session.query(Segment).filter_by(session_id=session.id).all()
+            
+            total_duration = sum((s.end_ms or 0) - (s.start_ms or 0) for s in segments) / 1000.0
+            avg_confidence = sum(s.avg_confidence or 0 for s in segments) / len(segments) if segments else 0
+            word_count = sum(len((s.text or '').split()) for s in segments)
+            
+            # Speaker analysis (speaker_id may not be a database field, so handle gracefully)
+            speakers = set(getattr(s, 'speaker_id', None) for s in segments if getattr(s, 'speaker_id', None))
+            speaker_count = len(speakers)
+            
+            result = {
+                'total_duration_seconds': total_duration,
+                'average_confidence': avg_confidence,
+                'word_count': word_count,
+                'segment_count': len(segments),
+                'speaker_count': speaker_count,
+                'words_per_minute': (word_count / (total_duration / 60)) if total_duration > 0 else 0
+            }
+            
+            # Update session statistics
+            session.total_segments = len(segments)
+            session.average_confidence = avg_confidence
+            session.total_duration = total_duration
+            db.session.commit()
+            
+            # Emit WebSocket event
+            socketio.emit('analytics_update', {
+                'session_id': session.external_id,
+                'metrics': result,
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+            # Complete event
+            self.event_service.complete_event(event, result=result)
+            logger.info(f"✅ Analytics updated: {word_count} words, {speaker_count} speakers")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to update analytics: {e}")
+            if event:
+                self.event_service.fail_event(event, str(e))
+            return None
+    
+    def _generate_tasks(self, session: Session, insights_data: Optional[Dict]) -> Optional[Dict[str, Any]]:
+        """
+        Stage 5: Extract and create action items from insights.
+        Event: tasks_generation
+        """
+        event = None
+        try:
+            # Log event
+            event = self.event_service.log_event(
+                event_type=EventType.TASKS_GENERATION,
+                session_id=session.id,
+                external_session_id=session.external_id,
+                payload={'stage': 'generate_tasks'}
+            )
+            self.event_service.start_event(event)
+            
+            if not insights_data or not insights_data.get('summary_id'):
+                logger.warning("No insights data for task generation")
+                self.event_service.skip_event(event, "No insights available")
+                return None
+            
+            # Tasks are already created by AnalysisService in summary
+            # Just count and report them
+            action_count = insights_data.get('action_count', 0)
+            
+            result = {
+                'tasks_created': action_count,
+                'summary_id': insights_data['summary_id']
+            }
+            
+            # Emit WebSocket event
+            if action_count > 0:
+                socketio.emit('tasks_generation', {
+                    'session_id': session.external_id,
+                    'task_count': action_count,
+                    'message': f'{action_count} new action{"s" if action_count != 1 else ""} identified',
+                    'timestamp': datetime.utcnow().isoformat()
+                })
+            
+            # Complete event
+            self.event_service.complete_event(event, result=result)
+            logger.info(f"✅ Tasks generated: {action_count} actions")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to generate tasks: {e}")
+            if event:
+                self.event_service.fail_event(event, str(e))
+            return None
+    
+    def _emit_reveal(self, session: Session):
+        """
+        Stage 6: Emit post_transcription_reveal to trigger UI transition.
+        Event: post_transcription_reveal
+        """
+        event = None
+        try:
+            # Log event
+            event = self.event_service.log_event(
+                event_type=EventType.POST_TRANSCRIPTION_REVEAL,
+                session_id=session.id,
+                external_session_id=session.external_id,
+                payload={'stage': 'post_transcription_reveal'}
+            )
+            self.event_service.start_event(event)
+            
+            # Emit WebSocket event to trigger UI transition
+            socketio.emit('post_transcription_reveal', {
+                'session_id': session.external_id,
+                'redirect_url': f'/sessions/{session.external_id}/refined',
+                'message': 'Your meeting insights are ready',
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+            # Complete event
+            self.event_service.complete_event(event, result={'emitted': True})
+            logger.info(f"✅ Post-transcription reveal emitted for {session.external_id}")
+            
+        except Exception as e:
+            logger.error(f"Failed to emit reveal: {e}")
+            if event:
+                self.event_service.fail_event(event, str(e))
+    
+    def _finalize_session(self, session: Session):
+        """
+        Stage 7: Mark session as finalized.
+        Event: session_finalized
+        """
+        event = None
+        try:
+            # Log event
+            event = self.event_service.log_event(
+                event_type=EventType.SESSION_FINALIZED,
+                session_id=session.id,
+                external_session_id=session.external_id,
+                payload={'stage': 'session_finalized'}
+            )
+            self.event_service.start_event(event)
+            
+            # Session is already marked as completed by finalization endpoint
+            # Just emit confirmation event
+            socketio.emit('session_finalized', {
+                'session_id': session.external_id,
+                'status': 'completed',
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+            # Complete event
+            self.event_service.complete_event(event, result={'status': 'finalized'})
+            logger.info(f"✅ Session finalized: {session.external_id}")
+            
+        except Exception as e:
+            logger.error(f"Failed to finalize session: {e}")
+            if event:
+                self.event_service.fail_event(event, str(e))
+    
+    def _emit_dashboard_refresh(self, session: Session):
+        """
+        Stage 8: Emit dashboard_refresh for cross-page updates (CROWN+ final event).
+        Event: dashboard_refresh
+        """
+        event = None
+        try:
+            # Log event
+            event = self.event_service.log_event(
+                event_type=EventType.DASHBOARD_REFRESH,
+                session_id=session.id,
+                external_session_id=session.external_id,
+                payload={'stage': 'dashboard_refresh'}
+            )
+            self.event_service.start_event(event)
+            
+            # Emit WebSocket event for cross-page updates
+            socketio.emit('dashboard_refresh', {
+                'session_id': session.external_id,
+                'action': 'session_completed',
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+            # Complete event
+            self.event_service.complete_event(event, result={'emitted': True})
+            logger.info(f"✅ Dashboard refresh emitted for {session.external_id}")
+            
+        except Exception as e:
+            logger.error(f"Failed to emit dashboard refresh: {e}")
+            if event:
+                self.event_service.fail_event(event, str(e))

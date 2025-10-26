@@ -62,9 +62,7 @@ class PageTransitionManager {
             link.hasAttribute('download') ||
             link.hasAttribute('target') ||
             link.getAttribute('rel') === 'external' ||
-            this.prefersReducedMotion ||
-            href.includes('/live') || // Force full page load for /live (requires JS initialization)
-            href.includes('/auth/') // Force full page load for auth pages
+            this.prefersReducedMotion
         );
     }
 
@@ -372,17 +370,13 @@ const styleSheet = document.createElement('style');
 styleSheet.textContent = transitionStyles;
 document.head.appendChild(styleSheet);
 
-// Initialize when DOM is ready (only if enhanced version isn't loaded)
-if (!window.pageTransitionsInitialized) {
-  window.pageTransitionsInitialized = true;
-  
-  if (document.readyState === 'loading') {
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      new PageTransitionManager();
+        new PageTransitionManager();
     });
-  } else {
+} else {
     new PageTransitionManager();
-  }
 }
 
 // Export for use in other scripts

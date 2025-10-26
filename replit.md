@@ -4,36 +4,6 @@
 
 Mina is an enterprise-grade SaaS platform designed to transform meetings into actionable moments. It provides real-time transcription with speaker identification, voice activity detection, and AI-powered insights to generate comprehensive meeting summaries and extract actionable tasks. Its core purpose is to enhance productivity and streamline post-meeting workflows. The business vision is to deliver a cutting-edge platform that significantly improves post-meeting productivity, tapping into the growing market for AI-powered business tools.
 
-## Recent Changes (October 26, 2025)
-
-**Post-Transcription Pipeline - PARALLEL EXECUTION (70% Speed Boost)**
-- ⚡ **Implemented parallel task execution** - Reduced processing time from 8-16s to 3-5s (70% improvement)
-- 🔒 **Atomic idempotency guard** - Prevents duplicate processing using atomic UPDATE...WHERE SQL pattern
-- ⏱️  **30-second timeout protection** - Individual task timeouts prevent hanging
-- 🧵 **Thread-safe execution** - Each task runs in ThreadPoolExecutor with its own Flask app context
-- 📊 **Success threshold** - post_transcription_reveal only emits if 75%+ tasks succeed
-- 🔄 **Error recovery** - Failed tasks don't block others, status set to 'failed' for retries
-- ✅ **100% test pass rate (12/12)** - New comprehensive test validates parallel execution mechanism
-
-**Database Schema Updates:**
-- `sessions` table: Added `post_transcription_status` column (pending|processing|completed|failed)
-- `analytics` table: session_id-based persistence, meeting_id nullable
-- `tasks` table: session_id-based persistence, meeting_id nullable
-
-**Post-Transcription Orchestrator:**
-- **Parallel Execution**: All 4 tasks (refinement, analytics, tasks, summary) run concurrently
-- **Atomic Guard**: Single atomic UPDATE query prevents race conditions
-- **Thread Safety**: Per-task Flask app contexts for database access
-- **Event Architecture**: All CROWN+ events emit correctly in parallel mode
-- **Performance**: 3-5s parallel vs 8-16s sequential (production benchmarks)
-
-**Service Layer Enhancements:**
-- `analytics_service.py`: Persist analytics via session_id
-- `task_extraction_service.py`: Persist tasks via session_id
-- `ai_insights_service.py`: Graceful fallback when OpenAI unavailable
-- `transcript_refinement_service.py`: Proper segment confidence field references
-- `post_transcription_orchestrator.py`: Parallel execution with atomic idempotency
-
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

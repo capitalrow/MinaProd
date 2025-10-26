@@ -166,22 +166,12 @@ def transcribe_chunk_streaming():
             
             print(f"[LIVE-API] ✅ Chunk {chunk_id} transcribed successfully:")
 
-            # Save transcription and emit via SessionEventCoordinator
-            from services.session_service import SessionService
-            from services.session_event_coordinator import get_session_event_coordinator
-            
-            # Get session for trace_id
-            session = SessionService.get_session_by_external(session_id)
-            if session:
-                # Emit transcript_partial event (dual emission for backward compatibility)
-                coordinator = get_session_event_coordinator()
-                coordinator.emit_transcript_partial(
-                    session=session,
-                    text=text,
-                    confidence=confidence,
-                    room=session.external_id,
-                    segments=[]  # Will be populated if segments data available
-                )
+            from services.transcription_service import TranscriptionService
+            from app import socketio
+
+            transcription_service = TranscriptionService()
+            transcription_service._save_transcription_text(session_id, text, confidence)
+            socketio.emit('update_dashboard', {'session_id': session_id, 'text': text})
 
             print(f"[LIVE-API]    Text: '{text[:100]}{'...' if len(text) > 100 else ''}'")
             print(f"[LIVE-API]    Confidence: {confidence:.3f}")
@@ -209,7 +199,13 @@ def transcribe_chunk_streaming():
                         'confidence': min(1.0, max(0.0, (getattr(segment, 'avg_logprob', -1) + 1.5) / 1.5))
                     })
             
-            # Event emission now handled by SessionEventCoordinator (dual emission enabled)
+            # Emit to WebSocket for real-time updates (if client connected)
+            try:
+                if text and confidence > 0.1:  # Only emit meaningful results
+                    socketio.emit('transcription_result', response_data)
+                    print(f"[LIVE-API] 📡 Emitted transcription result via WebSocket")
+            except Exception as e:
+                print(f"[LIVE-API] ⚠️ WebSocket emit failed: {e}")
             
             return jsonify(response_data)
             

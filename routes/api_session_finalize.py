@@ -27,13 +27,8 @@ api_session_finalize_bp = Blueprint("api_session_finalize", __name__, url_prefix
 @api_session_finalize_bp.route("/<external_id>/complete", methods=["POST"])
 def finalize_session(external_id: str):
     """
-    🎯 Finalize a transcription session and trigger post-transcription orchestration.
+    🎯 Finalize a transcription session and update analytics visibility.
     Expected payload: { "force": bool (optional) }
-    
-    CRITICAL: This endpoint now uses SessionService.finalize_session() which:
-    1. Updates session status and calculates metrics
-    2. Emits session_finalized event
-    3. Triggers PostTranscriptionOrchestrator asynchronously
     """
     try:
         logger.info(f"🔹 Finalizing session: {external_id}")
@@ -47,48 +42,74 @@ def finalize_session(external_id: str):
             return jsonify({"error": "Session not found"}), 404
 
         # Skip if already finalized unless force=True
-        force = request.json.get("force", False) if request.json else False
-        if session_obj.status == "completed" and not force:
+        request_data = request.get_json() or {}
+        if session_obj.status == "completed" and not request_data.get("force", False):
             return jsonify({"message": "Session already finalized"}), 200
 
-        # CRITICAL FIX: Use SessionService.finalize_session() instead of manual updates
-        # This ensures post-transcription orchestration is triggered
-        from services.session_service import SessionService
+        # --- Aggregate segment metrics -------------------------------------
+        segments = db.session.query(Segment).filter_by(session_id=session_obj.id, kind="final").all()
+        total_segments = len(segments)
+        avg_conf = float(sum([s.avg_confidence or 0 for s in segments]) / total_segments) if total_segments else 0.0
+        total_dur = float(sum([(s.end_ms or 0) - (s.start_ms or 0) for s in segments]) / 1000.0)
+
+        # --- Update session fields ----------------------------------------
+        session_obj.status = "completed"
+        session_obj.completed_at = datetime.utcnow()
+        session_obj.total_segments = total_segments
+        session_obj.average_confidence = round(avg_conf, 4)
+        session_obj.total_duration = total_dur
+
+        db.session.add(session_obj)
+
+        # --- Optional: Update or create SessionMetric row -----------------
+        metric = db.session.query(SessionMetric).filter_by(session_id=session_obj.id).first()
+        if not metric:
+            metric = SessionMetric(session_id=session_obj.id)
+        # SessionMetric has different field names, use available fields
+        metric.total_chunks = total_segments
+        # Other metrics can be calculated from chunk data later
+        db.session.add(metric)
+
+        # --- Commit -------------------------------------------------------
+        db.session.commit()
+        logger.info(f"✅ Session {external_id} finalized successfully.")
+
+        # --- Cache invalidation -------------------------------------------
+        try:
+            cache.delete_prefix("analytics")  # assuming cache supports prefix deletion
+            logger.info("🧹 Analytics cache invalidated.")
+        except Exception as ce:
+            logger.warning(f"Cache clear failed: {ce}")
         
-        success = SessionService.finalize_session(
-            session_id=session_obj.id,
-            room=external_id,  # Use external_id as Socket.IO room
-            metadata={
-                'finalized_via': 'api_endpoint',
-                'force': force
-            }
-        )
-        
-        if success:
-            logger.info(f"✅ Session {external_id} finalized successfully via SessionService")
+        # 🚀 CROWN+ Event Sequencing: Trigger post-transcription pipeline
+        pipeline_success = False
+        try:
+            from services.post_transcription_orchestrator import PostTranscriptionOrchestrator
+            orchestrator = PostTranscriptionOrchestrator()
+            logger.info(f"[API] 🎬 Starting post-transcription pipeline for: {external_id}")
             
-            # --- Cache invalidation -------------------------------------------
-            try:
-                cache.delete_prefix("analytics")
-                logger.info("🧹 Analytics cache invalidated.")
-            except Exception as ce:
-                logger.warning(f"Cache clear failed: {ce}")
+            # Run pipeline synchronously
+            pipeline_results = orchestrator.process_session(external_id)
+            pipeline_success = pipeline_results.get('success', False)
             
-            # Refresh session data after finalization
-            db.session.refresh(session_obj)
-            
-            return jsonify({
-                "message": "Session finalized successfully - post-transcription processing initiated",
-                "session_id": session_obj.id,
-                "external_id": external_id,
-                "total_segments": session_obj.total_segments or 0,
-                "average_confidence": session_obj.average_confidence or 0.0,
-                "total_duration": session_obj.total_duration or 0.0,
-                "status": session_obj.status
-            }), 200
-        else:
-            logger.error(f"❌ SessionService.finalize_session() failed for {external_id}")
-            return jsonify({"error": "Session finalization failed"}), 500
+            if pipeline_success:
+                logger.info(f"[API] ✅ Pipeline completed successfully for {external_id}")
+            else:
+                logger.warning(f"[API] ⚠️ Pipeline completed with errors: {pipeline_results.get('events_failed')}")
+                
+        except Exception as pipeline_error:
+            # Graceful degradation - log error but don't fail the response
+            logger.error(f"[API] ❌ Post-transcription pipeline failed for {external_id}: {pipeline_error}", exc_info=True)
+
+        return jsonify({
+            "message": "Session finalized successfully",
+            "session_id": session_obj.id,
+            "external_id": external_id,
+            "total_segments": total_segments,
+            "average_confidence": avg_conf,
+            "total_duration": total_dur,
+            "pipeline_executed": pipeline_success
+        }), 200
 
     except Exception as e:
         logger.error(f"❌ Finalization failed for {external_id}: {e}", exc_info=True)
