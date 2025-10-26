@@ -214,8 +214,9 @@ class PostTranscriptionOrchestrator:
         Event: transcript_finalized
         """
         event = None
+        
+        # Non-blocking event logging
         try:
-            # Log event
             event = self.event_service.log_event(
                 event_type=EventType.TRANSCRIPT_FINALIZED,
                 session_id=session.id,
@@ -223,7 +224,11 @@ class PostTranscriptionOrchestrator:
                 payload={'stage': 'finalize_transcript'}
             )
             self.event_service.start_event(event)
-            
+        except Exception as log_error:
+            logger.warning(f"Event logging failed (non-blocking): {log_error}")
+            event = None
+        
+        try:
             # Get all final segments
             segments = db.session.query(Segment).filter_by(
                 session_id=session.id,
@@ -246,7 +251,7 @@ class PostTranscriptionOrchestrator:
                 'average_confidence': avg_confidence
             }
             
-            # Emit WebSocket event
+            # CRITICAL: Always emit WebSocket event (even if logging failed)
             socketio.emit('transcript_finalized', {
                 'session_id': session.external_id,
                 'word_count': word_count,
@@ -254,16 +259,23 @@ class PostTranscriptionOrchestrator:
                 'timestamp': datetime.utcnow().isoformat()
             })
             
-            # Complete event
-            self.event_service.complete_event(event, result=result)
-            logger.info(f"✅ Transcript finalized: {word_count} words, {len(segments)} segments")
+            # Non-blocking event completion
+            if event:
+                try:
+                    self.event_service.complete_event(event, result=result)
+                except Exception as log_error:
+                    logger.warning(f"Event completion failed (non-blocking): {log_error}")
             
+            logger.info(f"✅ Transcript finalized: {word_count} words, {len(segments)} segments")
             return result
             
         except Exception as e:
             logger.error(f"Failed to finalize transcript: {e}")
             if event:
-                self.event_service.fail_event(event, str(e))
+                try:
+                    self.event_service.fail_event(event, str(e))
+                except:
+                    pass
             return None
     
     def _refine_transcript(self, session: Session, transcript_data: Optional[Dict]) -> Optional[Dict[str, Any]]:
@@ -272,8 +284,9 @@ class PostTranscriptionOrchestrator:
         Event: transcript_refined
         """
         event = None
+        
+        # Non-blocking event logging
         try:
-            # Log event
             event = self.event_service.log_event(
                 event_type=EventType.TRANSCRIPT_REFINED,
                 session_id=session.id,
@@ -281,10 +294,18 @@ class PostTranscriptionOrchestrator:
                 payload={'stage': 'refine_transcript'}
             )
             self.event_service.start_event(event)
-            
+        except Exception as log_error:
+            logger.warning(f"Event logging failed (non-blocking): {log_error}")
+            event = None
+        
+        try:
             if not transcript_data or not transcript_data.get('full_text'):
                 logger.warning("No transcript data to refine")
-                self.event_service.skip_event(event, "No transcript data")
+                if event:
+                    try:
+                        self.event_service.skip_event(event, "No transcript data")
+                    except:
+                        pass
                 return None
             
             # For now, use the transcript as-is (Whisper already provides clean output)
@@ -298,7 +319,7 @@ class PostTranscriptionOrchestrator:
                 'refined_word_count': len(refined_text.split())
             }
             
-            # Emit WebSocket event
+            # CRITICAL: Always emit WebSocket event (even if logging failed)
             socketio.emit('transcript_refined', {
                 'session_id': session.external_id,
                 'text': refined_text[:500],  # Send preview
@@ -306,16 +327,23 @@ class PostTranscriptionOrchestrator:
                 'timestamp': datetime.utcnow().isoformat()
             })
             
-            # Complete event
-            self.event_service.complete_event(event, result=result)
-            logger.info(f"✅ Transcript refined: {result['refined_word_count']} words")
+            # Non-blocking event completion
+            if event:
+                try:
+                    self.event_service.complete_event(event, result=result)
+                except Exception as log_error:
+                    logger.warning(f"Event completion failed (non-blocking): {log_error}")
             
+            logger.info(f"✅ Transcript refined: {result['refined_word_count']} words")
             return result
             
         except Exception as e:
             logger.error(f"Failed to refine transcript: {e}")
             if event:
-                self.event_service.fail_event(event, str(e))
+                try:
+                    self.event_service.fail_event(event, str(e))
+                except:
+                    pass
             return None
     
     def _generate_insights(self, session: Session) -> Optional[Dict[str, Any]]:
@@ -324,8 +352,9 @@ class PostTranscriptionOrchestrator:
         Event: insights_generate
         """
         event = None
+        
+        # Non-blocking event logging
         try:
-            # Log event
             event = self.event_service.log_event(
                 event_type=EventType.INSIGHTS_GENERATE,
                 session_id=session.id,
@@ -333,8 +362,12 @@ class PostTranscriptionOrchestrator:
                 payload={'stage': 'generate_insights'}
             )
             self.event_service.start_event(event)
-            
-            # Emit progress event
+        except Exception as log_error:
+            logger.warning(f"Event logging failed (non-blocking): {log_error}")
+            event = None
+        
+        try:
+            # CRITICAL: Always emit progress event
             socketio.emit('insights_generate', {
                 'session_id': session.external_id,
                 'status': 'processing',
@@ -355,7 +388,7 @@ class PostTranscriptionOrchestrator:
                 'risk_count': len(summary_data.get('risks', []))
             }
             
-            # Emit completion event
+            # CRITICAL: Always emit completion event
             socketio.emit('insights_generate', {
                 'session_id': session.external_id,
                 'status': 'completed',
@@ -364,16 +397,23 @@ class PostTranscriptionOrchestrator:
                 'timestamp': datetime.utcnow().isoformat()
             })
             
-            # Complete event
-            self.event_service.complete_event(event, result=result)
-            logger.info(f"✅ Insights generated: {result['action_count']} actions, {result['decision_count']} decisions")
+            # Non-blocking event completion
+            if event:
+                try:
+                    self.event_service.complete_event(event, result=result)
+                except Exception as log_error:
+                    logger.warning(f"Event completion failed (non-blocking): {log_error}")
             
+            logger.info(f"✅ Insights generated: {result['action_count']} actions, {result['decision_count']} decisions")
             return result
             
         except Exception as e:
             logger.error(f"Failed to generate insights: {e}")
             if event:
-                self.event_service.fail_event(event, str(e))
+                try:
+                    self.event_service.fail_event(event, str(e))
+                except:
+                    pass
             
             # Emit error but continue pipeline (graceful degradation)
             socketio.emit('insights_generate', {
@@ -391,8 +431,9 @@ class PostTranscriptionOrchestrator:
         Event: analytics_update
         """
         event = None
+        
+        # Non-blocking event logging
         try:
-            # Log event
             event = self.event_service.log_event(
                 event_type=EventType.ANALYTICS_UPDATE,
                 session_id=session.id,
@@ -400,7 +441,11 @@ class PostTranscriptionOrchestrator:
                 payload={'stage': 'update_analytics'}
             )
             self.event_service.start_event(event)
-            
+        except Exception as log_error:
+            logger.warning(f"Event logging failed (non-blocking): {log_error}")
+            event = None
+        
+        try:
             # Calculate analytics
             segments = db.session.query(Segment).filter_by(session_id=session.id).all()
             
@@ -427,23 +472,30 @@ class PostTranscriptionOrchestrator:
             session.total_duration = total_duration
             db.session.commit()
             
-            # Emit WebSocket event
+            # CRITICAL: Always emit WebSocket event
             socketio.emit('analytics_update', {
                 'session_id': session.external_id,
                 'metrics': result,
                 'timestamp': datetime.utcnow().isoformat()
             })
             
-            # Complete event
-            self.event_service.complete_event(event, result=result)
-            logger.info(f"✅ Analytics updated: {word_count} words, {speaker_count} speakers")
+            # Non-blocking event completion
+            if event:
+                try:
+                    self.event_service.complete_event(event, result=result)
+                except Exception as log_error:
+                    logger.warning(f"Event completion failed (non-blocking): {log_error}")
             
+            logger.info(f"✅ Analytics updated: {word_count} words, {speaker_count} speakers")
             return result
             
         except Exception as e:
             logger.error(f"Failed to update analytics: {e}")
             if event:
-                self.event_service.fail_event(event, str(e))
+                try:
+                    self.event_service.fail_event(event, str(e))
+                except:
+                    pass
             return None
     
     def _generate_tasks(self, session: Session, insights_data: Optional[Dict]) -> Optional[Dict[str, Any]]:
@@ -452,8 +504,9 @@ class PostTranscriptionOrchestrator:
         Event: tasks_generation
         """
         event = None
+        
+        # Non-blocking event logging
         try:
-            # Log event
             event = self.event_service.log_event(
                 event_type=EventType.TASKS_GENERATION,
                 session_id=session.id,
@@ -461,10 +514,18 @@ class PostTranscriptionOrchestrator:
                 payload={'stage': 'generate_tasks'}
             )
             self.event_service.start_event(event)
-            
+        except Exception as log_error:
+            logger.warning(f"Event logging failed (non-blocking): {log_error}")
+            event = None
+        
+        try:
             if not insights_data or not insights_data.get('summary_id'):
                 logger.warning("No insights data for task generation")
-                self.event_service.skip_event(event, "No insights available")
+                if event:
+                    try:
+                        self.event_service.skip_event(event, "No insights available")
+                    except:
+                        pass
                 return None
             
             # Tasks are already created by AnalysisService in summary
@@ -476,7 +537,7 @@ class PostTranscriptionOrchestrator:
                 'summary_id': insights_data['summary_id']
             }
             
-            # Emit WebSocket event
+            # CRITICAL: Always emit WebSocket event
             if action_count > 0:
                 socketio.emit('tasks_generation', {
                     'session_id': session.external_id,
@@ -485,16 +546,23 @@ class PostTranscriptionOrchestrator:
                     'timestamp': datetime.utcnow().isoformat()
                 })
             
-            # Complete event
-            self.event_service.complete_event(event, result=result)
-            logger.info(f"✅ Tasks generated: {action_count} actions")
+            # Non-blocking event completion
+            if event:
+                try:
+                    self.event_service.complete_event(event, result=result)
+                except Exception as log_error:
+                    logger.warning(f"Event completion failed (non-blocking): {log_error}")
             
+            logger.info(f"✅ Tasks generated: {action_count} actions")
             return result
             
         except Exception as e:
             logger.error(f"Failed to generate tasks: {e}")
             if event:
-                self.event_service.fail_event(event, str(e))
+                try:
+                    self.event_service.fail_event(event, str(e))
+                except:
+                    pass
             return None
     
     def _emit_reveal(self, session: Session):
@@ -503,8 +571,9 @@ class PostTranscriptionOrchestrator:
         Event: post_transcription_reveal
         """
         event = None
+        
+        # Non-blocking event logging
         try:
-            # Log event
             event = self.event_service.log_event(
                 event_type=EventType.POST_TRANSCRIPTION_REVEAL,
                 session_id=session.id,
@@ -512,8 +581,12 @@ class PostTranscriptionOrchestrator:
                 payload={'stage': 'post_transcription_reveal'}
             )
             self.event_service.start_event(event)
-            
-            # Emit WebSocket event to trigger UI transition
+        except Exception as log_error:
+            logger.warning(f"Event logging failed (non-blocking): {log_error}")
+            event = None
+        
+        try:
+            # CRITICAL: Always emit WebSocket event to trigger UI transition
             socketio.emit('post_transcription_reveal', {
                 'session_id': session.external_id,
                 'redirect_url': f'/sessions/{session.external_id}/refined',
@@ -521,14 +594,22 @@ class PostTranscriptionOrchestrator:
                 'timestamp': datetime.utcnow().isoformat()
             })
             
-            # Complete event
-            self.event_service.complete_event(event, result={'emitted': True})
+            # Non-blocking event completion
+            if event:
+                try:
+                    self.event_service.complete_event(event, result={'emitted': True})
+                except Exception as log_error:
+                    logger.warning(f"Event completion failed (non-blocking): {log_error}")
+            
             logger.info(f"✅ Post-transcription reveal emitted for {session.external_id}")
             
         except Exception as e:
             logger.error(f"Failed to emit reveal: {e}")
             if event:
-                self.event_service.fail_event(event, str(e))
+                try:
+                    self.event_service.fail_event(event, str(e))
+                except:
+                    pass
     
     def _finalize_session(self, session: Session):
         """
@@ -536,8 +617,9 @@ class PostTranscriptionOrchestrator:
         Event: session_finalized
         """
         event = None
+        
+        # Non-blocking event logging
         try:
-            # Log event
             event = self.event_service.log_event(
                 event_type=EventType.SESSION_FINALIZED,
                 session_id=session.id,
@@ -545,23 +627,34 @@ class PostTranscriptionOrchestrator:
                 payload={'stage': 'session_finalized'}
             )
             self.event_service.start_event(event)
-            
-            # Session is already marked as completed by finalization endpoint
-            # Just emit confirmation event
+        except Exception as log_error:
+            logger.warning(f"Event logging failed (non-blocking): {log_error}")
+            event = None
+        
+        try:
+            # CRITICAL: Always emit confirmation event
             socketio.emit('session_finalized', {
                 'session_id': session.external_id,
                 'status': 'completed',
                 'timestamp': datetime.utcnow().isoformat()
             })
             
-            # Complete event
-            self.event_service.complete_event(event, result={'status': 'finalized'})
+            # Non-blocking event completion
+            if event:
+                try:
+                    self.event_service.complete_event(event, result={'status': 'finalized'})
+                except Exception as log_error:
+                    logger.warning(f"Event completion failed (non-blocking): {log_error}")
+            
             logger.info(f"✅ Session finalized: {session.external_id}")
             
         except Exception as e:
             logger.error(f"Failed to finalize session: {e}")
             if event:
-                self.event_service.fail_event(event, str(e))
+                try:
+                    self.event_service.fail_event(event, str(e))
+                except:
+                    pass
     
     def _emit_dashboard_refresh(self, session: Session):
         """
@@ -572,8 +665,8 @@ class PostTranscriptionOrchestrator:
         start_time = time.time()
         success = False
         
+        # Non-blocking event logging
         try:
-            # Log event
             event = self.event_service.log_event(
                 event_type=EventType.DASHBOARD_REFRESH,
                 session_id=session.id,
@@ -581,23 +674,35 @@ class PostTranscriptionOrchestrator:
                 payload={'stage': 'dashboard_refresh'}
             )
             self.event_service.start_event(event)
-            
-            # Emit WebSocket event for cross-page updates
+        except Exception as log_error:
+            logger.warning(f"Event logging failed (non-blocking): {log_error}")
+            event = None
+        
+        try:
+            # CRITICAL: Always emit WebSocket event for cross-page updates
             socketio.emit('dashboard_refresh', {
                 'session_id': session.external_id,
                 'action': 'session_completed',
                 'timestamp': datetime.utcnow().isoformat()
             })
             
-            # Complete event
-            self.event_service.complete_event(event, result={'emitted': True})
+            # Non-blocking event completion
+            if event:
+                try:
+                    self.event_service.complete_event(event, result={'emitted': True})
+                except Exception as log_error:
+                    logger.warning(f"Event completion failed (non-blocking): {log_error}")
+            
             success = True
             logger.info(f"✅ Dashboard refresh emitted for {session.external_id}")
             
         except Exception as e:
             logger.error(f"Failed to emit dashboard refresh: {e}")
             if event:
-                self.event_service.fail_event(event, str(e))
+                try:
+                    self.event_service.fail_event(event, str(e))
+                except:
+                    pass
         finally:
             # Log to monitoring service for production tracking
             duration_ms = (time.time() - start_time) * 1000
