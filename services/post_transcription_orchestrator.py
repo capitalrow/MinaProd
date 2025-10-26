@@ -589,7 +589,7 @@ class PostTranscriptionOrchestrator:
             # CRITICAL: Always emit WebSocket event to trigger UI transition
             socketio.emit('post_transcription_reveal', {
                 'session_id': session.external_id,
-                'redirect_url': f'/sessions/{session.external_id}/refined',
+                'redirect_url': f'/dashboard',
                 'message': 'Your meeting insights are ready',
                 'timestamp': datetime.utcnow().isoformat()
             })
