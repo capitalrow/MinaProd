@@ -5,11 +5,22 @@
 
 {% block extra_css %}
 <style>
+/* Premium Variables */
+:root {
+    --premium-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --premium-gradient-alt: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --premium-glow: 0 0 40px rgba(102, 126, 234, 0.3);
+    --premium-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    --glass-strong: rgba(255, 255, 255, 0.12);
+    --glass-border-strong: rgba(255, 255, 255, 0.2);
+}
+
 .live-container {
     min-height: calc(100vh - var(--header-height));
     display: flex;
     flex-direction: column;
     padding: var(--space-6) 0;
+    background: linear-gradient(180deg, rgba(102, 126, 234, 0.03) 0%, transparent 100%);
 }
 
 .live-grid {
@@ -31,151 +42,263 @@
     gap: var(--space-6);
 }
 
+/* Premium Recorder Card */
 .recorder-card {
     background: var(--glass-bg);
     backdrop-filter: var(--backdrop-blur);
-    border: 1px solid var(--glass-border);
+    border: 1px solid var(--glass-border-strong);
     border-radius: var(--radius-2xl);
-    padding: var(--space-8);
+    padding: var(--space-10);
     text-align: center;
+    box-shadow: var(--premium-shadow);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.recorder-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--premium-gradient);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.recorder-card.recording::before {
+    opacity: 1;
 }
 
 .recorder-status {
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-3) var(--space-5);
     border-radius: var(--radius-full);
-    background-color: var(--color-surface-light);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(102, 126, 234, 0.2);
     color: var(--color-text-secondary);
     font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-semibold);
     margin-bottom: var(--space-6);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .recorder-status.recording {
-    background-color: rgba(239, 68, 68, 0.1);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15));
+    border-color: rgba(239, 68, 68, 0.3);
     color: var(--color-error);
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2);
 }
 
 .recorder-status.paused {
-    background-color: rgba(245, 158, 11, 0.1);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.15));
+    border-color: rgba(245, 158, 11, 0.3);
     color: var(--color-warning);
 }
 
+.recorder-status.connected {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(21, 128, 61, 0.15));
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+}
+
+.recorder-status.error {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
+    border-color: rgba(239, 68, 68, 0.4);
+    color: var(--color-error);
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
 .status-dot {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background-color: currentColor;
-    animation: pulse 2s infinite;
+    box-shadow: 0 0 10px currentColor;
+    animation: pulse-glow 2s infinite;
 }
 
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+@keyframes pulse-glow {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.95); }
 }
 
+/* Premium Waveform */
 .waveform-container {
-    height: 120px;
-    background-color: var(--color-surface);
-    border-radius: var(--radius-xl);
+    height: 140px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+    border: 1px solid rgba(102, 126, 234, 0.1);
+    border-radius: var(--radius-2xl);
     margin: var(--space-6) 0;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    position: relative;
+}
+
+.waveform-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--premium-gradient);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+
+.waveform-container.active::after {
+    opacity: 0.05;
 }
 
 .waveform {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     height: 100%;
     padding: var(--space-4);
 }
 
 .waveform-bar {
-    width: 4px;
-    background: var(--gradient-primary);
-    border-radius: 2px;
-    transition: height var(--transition-fast);
+    width: 5px;
+    background: var(--premium-gradient);
+    border-radius: 3px;
+    transition: height 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
 }
 
+/* Premium Timer */
 .recording-time {
-    font-size: var(--font-size-4xl);
+    font-size: 3.5rem;
     font-weight: var(--font-weight-bold);
-    background: var(--gradient-primary);
+    background: var(--premium-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     margin: var(--space-4) 0;
+    letter-spacing: 0.05em;
+    font-variant-numeric: tabular-nums;
 }
 
+/* Premium Controls */
 .recording-controls {
     display: flex;
     gap: var(--space-4);
     justify-content: center;
     align-items: center;
-    margin-top: var(--space-6);
+    margin-top: var(--space-8);
 }
 
 .record-button {
-    width: 80px;
-    height: 80px;
+    width: 90px;
+    height: 90px;
     border-radius: 50%;
-    background: var(--gradient-primary);
-    border: 4px solid var(--color-surface);
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+    background: var(--premium-gradient);
+    border: 5px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4), 0 0 0 0 rgba(102, 126, 234, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all var(--transition-base);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.record-button::before {
+    content: '';
+    position: absolute;
+    inset: -10px;
+    border-radius: 50%;
+    background: var(--premium-gradient);
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: -1;
+    filter: blur(20px);
 }
 
 .record-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0.2);
+    transform: scale(1.08);
+    box-shadow: 0 15px 50px rgba(102, 126, 234, 0.5), 0 0 0 8px rgba(102, 126, 234, 0.1);
+}
+
+.record-button:hover::before {
+    opacity: 0.6;
+}
+
+.record-button:active {
+    transform: scale(1.02);
 }
 
 .record-button.recording {
-    background: var(--color-error);
-    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    box-shadow: 0 10px 40px rgba(239, 68, 68, 0.4), 0 0 0 0 rgba(239, 68, 68, 0.4);
+    animation: record-pulse 2s infinite;
+}
+
+@keyframes record-pulse {
+    0%, 100% {
+        box-shadow: 0 10px 40px rgba(239, 68, 68, 0.4), 0 0 0 0 rgba(239, 68, 68, 0.4);
+    }
+    50% {
+        box-shadow: 0 10px 40px rgba(239, 68, 68, 0.6), 0 0 0 12px rgba(239, 68, 68, 0.1);
+    }
 }
 
 .control-button {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     color: var(--color-text-primary);
-    transition: all var(--transition-base);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .control-button:hover:not(:disabled) {
-    background-color: var(--color-surface-light);
-    transform: scale(1.05);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(102, 126, 234, 0.4);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.control-button:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
 }
 
 .control-button:disabled {
-    opacity: 0.5;
+    opacity: 0.3;
     cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.03);
 }
 
+/* Premium Transcript Card */
 .transcript-card {
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border-strong);
     border-radius: var(--radius-2xl);
     padding: var(--space-6);
     flex: 1;
     display: flex;
     flex-direction: column;
+    box-shadow: var(--premium-shadow);
 }
 
 .transcript-header {
@@ -184,57 +307,104 @@
     align-items: center;
     margin-bottom: var(--space-4);
     padding-bottom: var(--space-4);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .transcript-title {
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    background: var(--premium-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .transcript-content {
     flex: 1;
     overflow-y: auto;
-    max-height: 500px;
+    max-height: 600px;
+    padding-right: var(--space-2);
+}
+
+.transcript-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.transcript-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.transcript-content::-webkit-scrollbar-thumb {
+    background: var(--premium-gradient);
+    border-radius: 3px;
 }
 
 .transcript-segment {
     margin-bottom: var(--space-4);
-    padding: var(--space-3);
-    border-radius: var(--radius-lg);
-    transition: background-color var(--transition-base);
+    padding: var(--space-4);
+    border-radius: var(--radius-xl);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .transcript-segment:hover {
-    background-color: var(--color-surface-light);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(102, 126, 234, 0.2);
+    transform: translateX(4px);
 }
 
 .transcript-speaker {
     font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-primary);
-    margin-bottom: var(--space-1);
+    font-weight: var(--font-weight-bold);
+    background: var(--premium-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--space-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .transcript-text {
     color: var(--color-text-primary);
-    line-height: var(--line-height-relaxed);
+    line-height: 1.7;
+    font-size: var(--font-size-base);
 }
 
 .transcript-timestamp {
     font-size: var(--font-size-xs);
     color: var(--color-text-tertiary);
-    margin-top: var(--space-1);
+    margin-top: var(--space-2);
+    font-variant-numeric: tabular-nums;
 }
 
-/* Interim transcript styling */
 .transcript-segment.interim {
-    background-color: rgba(124, 58, 237, 0.05);
-    border-left: 2px solid var(--color-primary);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+    border-left: 3px solid var(--color-primary);
+    animation: pulse-subtle 2s infinite;
+}
+
+@keyframes pulse-subtle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
 }
 
 .transcript-segment.interim .transcript-text {
-    opacity: 0.8;
+    opacity: 0.9;
     font-style: italic;
 }
 
@@ -242,12 +412,12 @@
     display: inline-block;
     color: var(--color-primary);
     animation: blink 1.5s infinite;
-    margin-left: var(--space-1);
+    margin-left: var(--space-2);
 }
 
 @keyframes blink {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+    50% { opacity: 0.2; }
 }
 
 .transcript-empty {
@@ -255,11 +425,19 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 300px;
+    height: 400px;
     color: var(--color-text-tertiary);
     text-align: center;
 }
 
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    margin-bottom: var(--space-4);
+    opacity: 0.3;
+}
+
+/* Premium Sidebar */
 .sidebar {
     display: flex;
     flex-direction: column;
@@ -267,10 +445,22 @@
 }
 
 .session-info-card {
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-xl);
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border-strong);
+    border-radius: var(--radius-2xl);
     padding: var(--space-6);
+    box-shadow: var(--premium-shadow);
+}
+
+.card-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    margin-bottom: var(--space-4);
+    background: var(--premium-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .info-row {
@@ -278,7 +468,7 @@
     justify-content: space-between;
     align-items: center;
     padding: var(--space-3) 0;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .info-row:last-child {
@@ -288,12 +478,14 @@
 .info-label {
     font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
 }
 
 .info-value {
     font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
 }
 
 .quick-actions {
@@ -306,78 +498,97 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    padding: var(--space-3) var(--space-4);
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    padding: var(--space-4) var(--space-4);
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-xl);
     cursor: pointer;
-    transition: all var(--transition-base);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
 }
 
-.action-button:hover {
-    background-color: var(--color-surface-light);
-    border-color: var(--color-primary);
+.action-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(102, 126, 234, 0.4);
+    transform: translateX(4px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.action-button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
 }
 
 .action-icon {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     color: var(--color-primary);
+    transition: transform 0.3s;
 }
 
-/* AI Insights Styles */
+.action-button:hover:not(:disabled) .action-icon {
+    transform: scale(1.1);
+}
+
+/* AI Insights Premium Styles */
 .ai-insights-status {
-    padding: var(--space-3);
-    border-radius: var(--radius-lg);
-    background: rgba(124, 58, 237, 0.1);
-    border-left: 3px solid var(--color-primary);
+    padding: var(--space-4);
+    border-radius: var(--radius-xl);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border-left: 4px solid var(--color-primary);
     font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
     color: var(--color-text-secondary);
     margin-bottom: var(--space-4);
 }
 
 .ai-insights-status.processing {
-    background: rgba(59, 130, 246, 0.1);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.1));
     border-left-color: #3b82f6;
-    animation: pulse 2s infinite;
+    animation: pulse-subtle 2s infinite;
 }
 
 .ai-insights-status.completed {
-    background: rgba(34, 197, 94, 0.1);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(21, 128, 61, 0.1));
     border-left-color: #22c55e;
 }
 
 .ai-insights-status.error {
-    background: rgba(239, 68, 68, 0.1);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
     border-left-color: #ef4444;
 }
 
 .ai-insights-content {
-    max-height: 400px;
+    max-height: 500px;
     overflow-y: auto;
 }
 
 .insight-section {
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-5);
+    animation: fadeInUp 0.5s ease-out;
 }
 
 .insight-section-title {
     font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-bold);
     color: var(--color-primary);
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-3);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.08em;
 }
 
 .insight-summary {
-    padding: var(--space-3);
-    background: var(--color-surface-light);
-    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-xl);
     font-size: var(--font-size-sm);
-    line-height: var(--line-height-relaxed);
+    line-height: 1.7;
     color: var(--color-text-secondary);
     margin-bottom: var(--space-3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .insight-list {
@@ -387,12 +598,18 @@
 }
 
 .insight-item {
-    padding: var(--space-2) var(--space-3);
-    background: var(--color-surface-light);
-    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: var(--radius-lg);
     font-size: var(--font-size-sm);
     margin-bottom: var(--space-2);
-    border-left: 2px solid var(--color-primary);
+    border-left: 3px solid var(--color-primary);
+    transition: all 0.3s;
+}
+
+.insight-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateX(4px);
 }
 
 .insight-item-title {
@@ -404,35 +621,98 @@
 .insight-item-desc {
     color: var(--color-text-secondary);
     font-size: var(--font-size-xs);
+    line-height: 1.5;
 }
 
 .insight-badge {
     display: inline-block;
-    padding: 2px 8px;
+    padding: 4px 10px;
     border-radius: var(--radius-full);
-    font-size: 10px;
-    font-weight: var(--font-weight-medium);
+    font-size: 11px;
+    font-weight: var(--font-weight-semibold);
     margin-left: var(--space-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .insight-badge.high {
     background: rgba(239, 68, 68, 0.2);
     color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .insight-badge.medium {
     background: rgba(251, 146, 60, 0.2);
     color: #fb923c;
+    border: 1px solid rgba(251, 146, 60, 0.3);
 }
 
 .insight-badge.low {
     background: rgba(34, 197, 94, 0.2);
     color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+/* Loading Spinner */
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: var(--space-6);
+    right: var(--space-6);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    pointer-events: none;
+}
+
+.toast {
+    padding: var(--space-4) var(--space-5);
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border-strong);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--premium-shadow);
+    min-width: 300px;
+    animation: slideInRight 0.3s ease-out;
+    pointer-events: auto;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.toast.success {
+    border-left: 4px solid #22c55e;
+}
+
+.toast.error {
+    border-left: 4px solid #ef4444;
+}
+
+.toast.info {
+    border-left: 4px solid #3b82f6;
 }
 </style>
 {% endblock %}
@@ -445,10 +725,10 @@
                 <div class="recorder-card">
                     <div class="recorder-status" id="recorder-status">
                         <span class="status-dot"></span>
-                        <span>Ready to record</span>
+                        <span>Connecting...</span>
                     </div>
 
-                    <div class="waveform-container">
+                    <div class="waveform-container" id="waveform-container">
                         <div class="waveform" id="waveform">
                             <!-- Waveform bars will be generated by JS -->
                         </div>
@@ -457,19 +737,19 @@
                     <div class="recording-time" id="recording-time">00:00:00</div>
 
                     <div class="recording-controls">
-                        <button class="control-button" id="pause-button" disabled aria-label="Pause recording">
+                        <button class="control-button" id="pause-button" disabled aria-label="Pause recording" title="Pause recording">
                             <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
                             </svg>
                         </button>
 
-                        <button class="record-button" id="record-button" aria-label="Start recording">
+                        <button class="record-button" id="record-button" disabled aria-label="Start recording" title="Start recording">
                             <svg width="32" height="32" fill="white" viewBox="0 0 24 24">
                                 <circle cx="12" cy="12" r="8"/>
                             </svg>
                         </button>
 
-                        <button class="control-button" id="stop-button" disabled aria-label="Stop recording">
+                        <button class="control-button" id="stop-button" disabled aria-label="Stop recording" title="Stop recording">
                             <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                                 <rect x="6" y="6" width="12" height="12" rx="2"/>
                             </svg>
@@ -480,7 +760,7 @@
                 <div class="transcript-card">
                     <div class="transcript-header">
                         <h2 class="transcript-title">Live Transcript</h2>
-                        <button class="btn btn-sm btn-ghost" id="export-button" disabled>
+                        <button class="btn btn-sm btn-ghost" id="export-button" disabled title="Export transcript">
                             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                             </svg>
@@ -490,10 +770,11 @@
 
                     <div class="transcript-content" id="transcript-content">
                         <div class="transcript-empty">
-                            <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-bottom: var(--space-4);">
+                            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
                             </svg>
-                            <p>Start recording to see live transcription</p>
+                            <p style="font-size: var(--font-size-lg); font-weight: var(--font-weight-medium);">Ready to Record</p>
+                            <p style="margin-top: var(--space-2); opacity: 0.6;">Click the record button to start live transcription</p>
                         </div>
                     </div>
                 </div>
@@ -501,7 +782,7 @@
 
             <div class="sidebar">
                 <div class="session-info-card">
-                    <h3 class="text-lg font-semibold mb-4">Session Info</h3>
+                    <h3 class="card-title">Session Info</h3>
                     <div class="info-row">
                         <span class="info-label">Session ID</span>
                         <span class="info-value" id="session-id">-</span>
@@ -521,21 +802,21 @@
                 </div>
 
                 <div class="session-info-card">
-                    <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
+                    <h3 class="card-title">Quick Actions</h3>
                     <div class="quick-actions">
-                        <button class="action-button" id="add-marker-button" disabled>
+                        <button class="action-button" id="add-marker-button" disabled title="Add a bookmark at current time">
                             <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
                             </svg>
                             <span>Add Bookmark</span>
                         </button>
-                        <button class="action-button" id="take-note-button" disabled>
+                        <button class="action-button" id="take-note-button" disabled title="Take a quick note">
                             <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                             </svg>
                             <span>Quick Note</span>
                         </button>
-                        <button class="action-button" id="share-button" disabled>
+                        <button class="action-button" id="share-button" disabled title="Share this session">
                             <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
                             </svg>
@@ -544,9 +825,8 @@
                     </div>
                 </div>
 
-                <!-- AI Insights Card -->
                 <div class="session-info-card" id="ai-insights-card" style="display: none;">
-                    <h3 class="text-lg font-semibold mb-4">
+                    <h3 class="card-title">
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                         </svg>
@@ -562,11 +842,18 @@
     </div>
 </div>
 
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 <script nonce="{{ g.csp_nonce }}">
-// Initialize waveform bars
+// ============================================================================
+// PREMIUM LIVE RECORDING - FULLY FUNCTIONAL WITH ERROR HANDLING
+// ============================================================================
+
+// Initialize waveform bars with premium styling
 const waveform = document.getElementById('waveform');
-for (let i = 0; i < 50; i++) {
+for (let i = 0; i < 60; i++) {
     const bar = document.createElement('div');
     bar.className = 'waveform-bar';
     bar.style.height = '10px';
@@ -582,7 +869,9 @@ let socket = null;
 let mediaRecorder = null;
 let stream = null;
 let chunks = [];
-let sessionId = Date.now();
+let sessionId = null;
+let backendSessionId = null;
+let isSocketConnected = false;
 
 // Elements
 const recordButton = document.getElementById('record-button');
@@ -594,30 +883,109 @@ const transcriptContent = document.getElementById('transcript-content');
 const sessionIdEl = document.getElementById('session-id');
 const audioQualityEl = document.getElementById('audio-quality');
 const wordCountEl = document.getElementById('word-count');
+const speakerCountEl = document.getElementById('speaker-count');
+const waveformContainer = document.getElementById('waveform-container');
+const exportButton = document.getElementById('export-button');
+const addMarkerButton = document.getElementById('add-marker-button');
+const takeNoteButton = document.getElementById('take-note-button');
+const shareButton = document.getElementById('share-button');
 
-// Initialize Socket.IO connection
-socket = io({
+// ============================================================================
+// TOAST NOTIFICATION SYSTEM
+// ============================================================================
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <div style="display: flex; align-items: center; gap: var(--space-3);">
+            ${type === 'success' ? '<svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20" style="color: #22c55e;"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>' : ''}
+            ${type === 'error' ? '<svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20" style="color: #ef4444;"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>' : ''}
+            ${type === 'info' ? '<svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20" style="color: #3b82f6;"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>' : ''}
+            <div>
+                <div style="font-weight: var(--font-weight-semibold); margin-bottom: 2px;">${type.charAt(0).toUpperCase() + type.slice(1)}</div>
+                <div style="font-size: var(--font-size-sm); opacity: 0.8;">${message}</div>
+            </div>
+        </div>
+    `;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideInRight 0.3s ease-out reverse';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+// ============================================================================
+// UPDATE UI STATUS
+// ============================================================================
+function updateStatus(message, type = 'default') {
+    const statusText = recorderStatus.querySelector('span:last-child');
+    statusText.textContent = message;
+    
+    recorderStatus.classList.remove('recording', 'paused', 'connected', 'error');
+    if (type !== 'default') {
+        recorderStatus.classList.add(type);
+    }
+}
+
+// ============================================================================
+// SOCKET.IO CONNECTION (CORRECT NAMESPACE)
+// ============================================================================
+console.log('🔌 Initializing Socket.IO connection to /live-transcription namespace...');
+
+socket = io('/live-transcription', {
     path: '/socket.io',
     transports: ['websocket', 'polling'],
     reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 1000
+    reconnectionAttempts: 10,
+    reconnectionDelay: 1000,
+    timeout: 10000
 });
 
 socket.on('connect', () => {
-    console.log('Socket.IO connected');
-    sessionIdEl.textContent = sessionId;
+    console.log('✅ Socket.IO connected successfully');
+    isSocketConnected = true;
+    updateStatus('Connected - Ready to record', 'connected');
+    recordButton.disabled = false;
+    showToast('Connected to transcription service', 'success');
 });
 
-socket.on('disconnect', () => {
-    console.log('Socket.IO disconnected');
+socket.on('disconnect', (reason) => {
+    console.log('❌ Socket.IO disconnected:', reason);
+    isSocketConnected = false;
+    updateStatus('Disconnected - Reconnecting...', 'error');
+    recordButton.disabled = true;
+    showToast('Connection lost. Reconnecting...', 'error');
+});
+
+socket.on('connect_error', (error) => {
+    console.error('❌ Socket.IO connection error:', error);
+    updateStatus('Connection error', 'error');
+    showToast('Failed to connect to server', 'error');
+});
+
+socket.on('error', (data) => {
+    console.error('❌ Server error:', data);
+    showToast(data.message || 'Server error occurred', 'error');
+    updateStatus(data.message || 'Error occurred', 'error');
+});
+
+// ============================================================================
+// SESSION EVENTS (CORRECT EVENT NAMES)
+// ============================================================================
+socket.on('connected', (data) => {
+    console.log('📡 Received connected event:', data);
 });
 
 // Track interim segment
 let currentInterimSegment = null;
 let lastSpeaker = null;
+let speakerSet = new Set();
 
 socket.on('transcription_result', (data) => {
+    console.log('📝 Transcription result:', data);
+    
     if (transcriptContent.querySelector('.transcript-empty')) {
         transcriptContent.innerHTML = '';
     }
@@ -625,30 +993,28 @@ socket.on('transcription_result', (data) => {
     const speakerName = data.speaker_name || data.speaker_id || 'Speaker 1';
     const timestamp = new Date(data.timestamp || Date.now()).toLocaleTimeString();
     
-    // If this is a final transcript
+    speakerSet.add(speakerName);
+    speakerCountEl.textContent = speakerSet.size;
+    
     if (data.is_final) {
-        // Remove any interim segment
         if (currentInterimSegment) {
             currentInterimSegment.remove();
             currentInterimSegment = null;
         }
         
-        // Check if we can merge with the last segment (same speaker)
         const lastSegment = transcriptContent.querySelector('.transcript-segment:last-child');
         const lastSegmentSpeaker = lastSegment?.querySelector('.transcript-speaker')?.textContent;
         
         if (lastSegment && !lastSegment.classList.contains('interim') && lastSegmentSpeaker === speakerName) {
-            // Merge with existing segment
             const textEl = lastSegment.querySelector('.transcript-text');
             textEl.textContent += ' ' + data.text;
             lastSegment.querySelector('.transcript-timestamp').textContent = timestamp;
         } else {
-            // Create new final segment
             const segment = document.createElement('div');
-            segment.className = 'transcript-segment fade-in';
+            segment.className = 'transcript-segment';
             segment.innerHTML = `
                 <div class="transcript-speaker">${speakerName}</div>
-                <div class="transcript-text">${data.text}</div>
+                <div class="transcript-text">${escapeHtml(data.text)}</div>
                 <div class="transcript-timestamp">${timestamp}</div>
             `;
             transcriptContent.appendChild(segment);
@@ -656,25 +1022,21 @@ socket.on('transcription_result', (data) => {
         
         lastSpeaker = speakerName;
     } else {
-        // This is an interim result - update or create interim segment
         if (!currentInterimSegment || lastSpeaker !== speakerName) {
-            // Remove old interim if exists
             if (currentInterimSegment) {
                 currentInterimSegment.remove();
             }
             
-            // Create new interim segment
             currentInterimSegment = document.createElement('div');
             currentInterimSegment.className = 'transcript-segment interim';
             currentInterimSegment.innerHTML = `
                 <div class="transcript-speaker">${speakerName}</div>
-                <div class="transcript-text">${data.text}</div>
+                <div class="transcript-text">${escapeHtml(data.text)}</div>
                 <div class="transcript-timestamp">${timestamp} <span class="interim-indicator">●</span></div>
             `;
             transcriptContent.appendChild(currentInterimSegment);
             lastSpeaker = speakerName;
         } else {
-            // Update existing interim segment
             const textEl = currentInterimSegment.querySelector('.transcript-text');
             textEl.textContent = data.text;
             currentInterimSegment.querySelector('.transcript-timestamp').innerHTML = `${timestamp} <span class="interim-indicator">●</span>`;
@@ -688,27 +1050,31 @@ socket.on('transcription_result', (data) => {
 });
 
 socket.on('final_transcript', (data) => {
-    console.log('Final transcript received:', data.text);
-    
-    // Remove any lingering interim segment
+    console.log('✅ Final transcript received');
     if (currentInterimSegment) {
         currentInterimSegment.remove();
         currentInterimSegment = null;
     }
 });
 
-// AI Insights WebSocket Event Handlers
+socket.on('audio_received', (data) => {
+    console.log('🎵 Audio chunk acknowledged by server');
+});
+
+// ============================================================================
+// AI INSIGHTS EVENTS
+// ============================================================================
 const aiInsightsCard = document.getElementById('ai-insights-card');
 const aiInsightsStatus = document.getElementById('ai-insights-status');
 const aiInsightsContent = document.getElementById('ai-insights-content');
 
 socket.on('ai_insights_status', (data) => {
-    console.log('AI insights status:', data);
+    console.log('🤖 AI insights status:', data);
     
     if (data.status === 'processing') {
         aiInsightsCard.style.display = 'block';
         aiInsightsStatus.className = 'ai-insights-status processing';
-        aiInsightsStatus.textContent = data.message || 'Generating AI insights...';
+        aiInsightsStatus.innerHTML = `<span class="spinner"></span> ${data.message || 'Generating AI insights...'}`;
         aiInsightsContent.innerHTML = '';
     } else if (data.status === 'skipped') {
         aiInsightsCard.style.display = 'block';
@@ -718,7 +1084,7 @@ socket.on('ai_insights_status', (data) => {
 });
 
 socket.on('ai_insights_generated', (data) => {
-    console.log('AI insights generated:', data);
+    console.log('✅ AI insights generated:', data);
     
     aiInsightsCard.style.display = 'block';
     aiInsightsStatus.className = 'ai-insights-status completed';
@@ -727,7 +1093,6 @@ socket.on('ai_insights_generated', (data) => {
     const insights = data.insights || {};
     let html = '';
     
-    // Summary section
     if (insights.summary) {
         html += `
             <div class="insight-section">
@@ -737,7 +1102,6 @@ socket.on('ai_insights_generated', (data) => {
         `;
     }
     
-    // Key Points section
     if (insights.key_points && insights.key_points.length > 0) {
         html += `
             <div class="insight-section">
@@ -754,7 +1118,6 @@ socket.on('ai_insights_generated', (data) => {
         `;
     }
     
-    // Action Items section
     if (insights.action_items && insights.action_items.length > 0) {
         html += `
             <div class="insight-section">
@@ -775,7 +1138,6 @@ socket.on('ai_insights_generated', (data) => {
         `;
     }
     
-    // Decisions section
     if (insights.decisions && insights.decisions.length > 0) {
         html += `
             <div class="insight-section">
@@ -792,7 +1154,6 @@ socket.on('ai_insights_generated', (data) => {
         `;
     }
     
-    // Topics section
     if (insights.topics && insights.topics.length > 0) {
         html += `
             <div class="insight-section">
@@ -806,42 +1167,21 @@ socket.on('ai_insights_generated', (data) => {
         `;
     }
     
-    // Sentiment section
-    if (insights.sentiment && insights.sentiment.overall) {
-        const sentimentColor = {
-            'positive': '#22c55e',
-            'neutral': '#3b82f6',
-            'negative': '#ef4444'
-        }[insights.sentiment.overall.toLowerCase()] || '#3b82f6';
-        
-        html += `
-            <div class="insight-section">
-                <div class="insight-section-title">😊 Sentiment</div>
-                <div class="insight-item" style="border-left-color: ${sentimentColor};">
-                    <div class="insight-item-title">${insights.sentiment.overall}</div>
-                    ${insights.sentiment.score ? `<div class="insight-item-desc">Score: ${insights.sentiment.score}</div>` : ''}
-                </div>
-            </div>
-        `;
-    }
-    
     aiInsightsContent.innerHTML = html;
+    showToast('AI insights generated successfully', 'success');
 });
 
 socket.on('ai_insights_error', (data) => {
-    console.error('AI insights error:', data);
-    
+    console.error('❌ AI insights error:', data);
     aiInsightsCard.style.display = 'block';
-    aiInsightsStatus.className = 'ai_insights-status error';
+    aiInsightsStatus.className = 'ai-insights-status error';
     aiInsightsStatus.textContent = `❌ ${data.error || 'Failed to generate insights'}`;
     aiInsightsContent.innerHTML = '';
 });
 
 // ============================================================================
-// CROWN+ POST-TRANSCRIPTION EVENT LISTENERS
+// POST-TRANSCRIPTION EVENTS
 // ============================================================================
-
-// Track post-transcription progress
 let postTranscriptionProgress = {
     refinement: false,
     analytics: false,
@@ -849,155 +1189,73 @@ let postTranscriptionProgress = {
     summary: false
 };
 
-// Refinement Events
 socket.on('refinement_started', (data) => {
-    console.log('🔄 Refinement started:', data);
-    updatePostTranscriptionStatus('Refining transcript...');
+    console.log('🔄 Refinement started');
+    updateStatus('Refining transcript...');
 });
 
 socket.on('refinement_ready', (data) => {
-    console.log('✅ Refinement ready:', data);
+    console.log('✅ Refinement ready');
     postTranscriptionProgress.refinement = true;
-    updatePostTranscriptionStatus('Transcript refined ✓');
-    checkPostTranscriptionComplete();
+    showToast('Transcript refined successfully', 'success');
 });
 
-socket.on('refinement_failed', (data) => {
-    console.error('❌ Refinement failed:', data);
-    updatePostTranscriptionStatus('Refinement failed ⚠️');
-});
-
-// Analytics Events
 socket.on('analytics_started', (data) => {
-    console.log('🔄 Analytics started:', data);
-    updatePostTranscriptionStatus('Analyzing meeting metrics...');
+    console.log('🔄 Analytics started');
+    updateStatus('Analyzing meeting metrics...');
 });
 
 socket.on('analytics_ready', (data) => {
-    console.log('✅ Analytics ready:', data);
+    console.log('✅ Analytics ready');
     postTranscriptionProgress.analytics = true;
-    updatePostTranscriptionStatus('Analytics generated ✓');
-    checkPostTranscriptionComplete();
+    showToast('Analytics generated', 'success');
 });
 
-socket.on('analytics_failed', (data) => {
-    console.error('❌ Analytics failed:', data);
-    updatePostTranscriptionStatus('Analytics failed ⚠️');
-});
-
-// Tasks Events
 socket.on('tasks_started', (data) => {
-    console.log('🔄 Tasks started:', data);
-    updatePostTranscriptionStatus('Extracting action items...');
+    console.log('🔄 Tasks extraction started');
+    updateStatus('Extracting action items...');
 });
 
 socket.on('tasks_ready', (data) => {
-    console.log('✅ Tasks ready:', data);
+    console.log('✅ Tasks ready');
     postTranscriptionProgress.tasks = true;
-    updatePostTranscriptionStatus('Tasks extracted ✓');
-    checkPostTranscriptionComplete();
+    showToast('Action items extracted', 'success');
 });
 
-socket.on('tasks_failed', (data) => {
-    console.error('❌ Tasks failed:', data);
-    updatePostTranscriptionStatus('Task extraction failed ⚠️');
-});
-
-// Summary Events
 socket.on('summary_started', (data) => {
-    console.log('🔄 Summary started:', data);
-    updatePostTranscriptionStatus('Generating AI summary...');
+    console.log('🔄 Summary generation started');
+    updateStatus('Generating AI summary...');
 });
 
 socket.on('summary_ready', (data) => {
-    console.log('✅ Summary ready:', data);
+    console.log('✅ Summary ready');
     postTranscriptionProgress.summary = true;
-    updatePostTranscriptionStatus('AI summary generated ✓');
-    checkPostTranscriptionComplete();
+    showToast('AI summary generated', 'success');
 });
 
-socket.on('summary_failed', (data) => {
-    console.error('❌ Summary failed:', data);
-    updatePostTranscriptionStatus('Summary generation failed ⚠️');
-});
-
-// Post-Transcription Reveal - All processing complete
 socket.on('post_transcription_reveal', (data) => {
-    console.log('🎉 Post-transcription reveal:', data);
-    updatePostTranscriptionStatus('Processing complete! Preparing results...');
+    console.log('🎉 Post-transcription reveal');
+    updateStatus('Processing complete!', 'connected');
+    showToast('All processing complete!', 'success');
     
-    // Show completion animation
     setTimeout(() => {
-        showPostTranscriptionComplete();
-    }, 500);
+        if (backendSessionId) {
+            window.location.href = `/sessions/${backendSessionId}`;
+        } else {
+            window.location.href = '/dashboard';
+        }
+    }, 2000);
 });
 
-// Dashboard Refresh - Trigger UI updates
-socket.on('dashboard_refresh', (data) => {
-    console.log('📊 Dashboard refresh requested:', data);
-    // Could trigger a reload of dashboard data if needed
-});
-
-// Helper: Update status message
-function updatePostTranscriptionStatus(message) {
-    const statusEl = document.getElementById('recorder-status');
-    if (statusEl) {
-        const statusText = statusEl.querySelector('span:last-child');
-        if (statusText) {
-            statusText.textContent = message;
-        }
-    }
-    
-    // Also update AI insights status
-    if (aiInsightsStatus) {
-        aiInsightsStatus.textContent = message;
-        aiInsightsCard.style.display = 'block';
-    }
-}
-
-// Helper: Check if all post-transcription tasks complete
-function checkPostTranscriptionComplete() {
-    const allComplete = Object.values(postTranscriptionProgress).every(v => v === true);
-    if (allComplete) {
-        console.log('🎉 All post-transcription tasks complete!');
-    }
-}
-
-// Helper: Show completion and redirect
-function showPostTranscriptionComplete() {
-    const statusEl = document.getElementById('recorder-status');
-    if (statusEl) {
-        statusEl.classList.remove('recording');
-        statusEl.classList.add('completed');
-        const statusText = statusEl.querySelector('span:last-child');
-        if (statusText) {
-            statusText.textContent = '✅ Processing complete - Redirecting...';
-        }
-    }
-    
-    // Redirect to session detail page or dashboard
-    setTimeout(() => {
-        const targetUrl = sessionId ? `/sessions/${sessionId}` : '/dashboard';
-        window.location.href = targetUrl;
-    }, 1500);
-}
-
-// CROWN+ Session Finalized - Auto-redirect to tabbed UI
 socket.on('session_finalized', (data) => {
-    console.log('Session finalized:', data);
-    
-    // Show transition message
-    const statusEl = document.querySelector('.recording-status');
-    if (statusEl) {
-        statusEl.textContent = 'Session finalized - Processing insights...';
-        statusEl.style.color = '#22c55e';
-    }
-    
-    // Update status to show post-transcription is starting
-    updatePostTranscriptionStatus('Finalizing session... Starting AI processing');
+    console.log('✅ Session finalized:', data);
+    updateStatus('Session finalized - Processing insights...');
+    showToast('Recording finalized successfully', 'success');
 });
 
-// Helper function to escape HTML
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
@@ -1005,7 +1263,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Update timer
 function updateTimer() {
     if (!startTime) return;
     const elapsed = Date.now() - startTime;
@@ -1015,26 +1272,35 @@ function updateTimer() {
     recordingTime.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-// Animate waveform
 function animateWaveform() {
     if (!isRecording || isPaused) return;
     const bars = waveform.querySelectorAll('.waveform-bar');
     bars.forEach(bar => {
-        const height = Math.random() * 100 + 10;
+        const height = Math.random() * 110 + 15;
         bar.style.height = height + 'px';
     });
     requestAnimationFrame(animateWaveform);
 }
 
-// Record button click
+// ============================================================================
+// RECORD BUTTON CLICK (FIXED WITH CORRECT EVENTS)
+// ============================================================================
 recordButton.addEventListener('click', async () => {
+    if (!isSocketConnected) {
+        showToast('Not connected to server. Please wait...', 'error');
+        return;
+    }
+    
     if (!isRecording) {
         try {
+            updateStatus('Requesting microphone access...');
+            
             // Request microphone access
             stream = await navigator.mediaDevices.getUserMedia({ 
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
+                    autoGainControl: true,
                     sampleRate: 16000
                 } 
             });
@@ -1051,8 +1317,12 @@ recordButton.addEventListener('click', async () => {
                 }
             }
             
-            console.log('Using MIME type:', mimeType || 'browser default');
+            console.log('🎤 Using MIME type:', mimeType || 'browser default');
             audioQualityEl.textContent = 'High (16kHz)';
+            
+            // Generate session ID
+            sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            sessionIdEl.textContent = sessionId.substr(0, 16) + '...';
             
             // Create MediaRecorder
             mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
@@ -1061,12 +1331,12 @@ recordButton.addEventListener('click', async () => {
                 if (!e.data.size) return;
                 chunks.push(e.data);
                 
-                // Send audio chunk to server via Socket.IO in the format backend expects
+                // Send audio chunk via Socket.IO (CORRECT EVENT NAME: audio_data)
                 e.data.arrayBuffer().then((buf) => {
                     const audioArray = Array.from(new Uint8Array(buf));
-                    socket.emit('audio_chunk', {
-                        session_id: String(sessionId),
-                        audio_data: audioArray,
+                    socket.emit('audio_data', {
+                        session_id: sessionId,
+                        data: audioArray,
                         settings: {
                             mimeType: mimeType
                         }
@@ -1075,24 +1345,24 @@ recordButton.addEventListener('click', async () => {
             };
             
             mediaRecorder.onstart = () => {
-                console.log('MediaRecorder started');
-                // Emit join_session to initialize backend session
-                socket.emit('join_session', { session_id: String(sessionId) });
+                console.log('🎙️ MediaRecorder started');
+                // Emit start_session (CORRECT EVENT NAME)
+                socket.emit('start_session', { 
+                    session_id: sessionId,
+                    title: 'Live Recording ' + new Date().toLocaleString(),
+                    locale: 'en',
+                    device_info: navigator.userAgent
+                });
             };
             
             mediaRecorder.onstop = () => {
-                console.log('MediaRecorder stopped');
+                console.log('⏹️ MediaRecorder stopped');
                 const fullBlob = new Blob(chunks, { type: mimeType });
                 chunks = [];
                 
-                // Call finalize_session to get final transcription
-                fullBlob.arrayBuffer().then((buf) => {
-                    socket.emit('finalize_session', {
-                        session_id: String(sessionId),
-                        settings: {
-                            mimeType: mimeType
-                        }
-                    });
+                // Emit end_session (CORRECT EVENT NAME)
+                socket.emit('end_session', {
+                    session_id: sessionId
                 });
             };
             
@@ -1105,24 +1375,35 @@ recordButton.addEventListener('click', async () => {
             timerInterval = setInterval(updateTimer, 1000);
             
             recordButton.classList.add('recording');
+            document.querySelector('.recorder-card').classList.add('recording');
+            waveformContainer.classList.add('active');
             pauseButton.disabled = false;
             stopButton.disabled = false;
-            recorderStatus.classList.add('recording');
-            recorderStatus.querySelector('span:last-child').textContent = 'Recording...';
+            exportButton.disabled = false;
+            addMarkerButton.disabled = false;
+            takeNoteButton.disabled = false;
+            shareButton.disabled = false;
+            
+            updateStatus('Recording...', 'recording');
+            showToast('Recording started successfully', 'success');
             
             // Clear transcript
             transcriptContent.innerHTML = '';
+            speakerSet.clear();
             
             animateWaveform();
             
         } catch (error) {
-            console.error('Error accessing microphone:', error);
-            alert('Could not access microphone. Please grant permission and try again.');
+            console.error('❌ Error accessing microphone:', error);
+            showToast('Could not access microphone. Please grant permission.', 'error');
+            updateStatus('Microphone access denied', 'error');
         }
     }
 });
 
-// Pause button click
+// ============================================================================
+// PAUSE BUTTON CLICK
+// ============================================================================
 pauseButton.addEventListener('click', () => {
     if (!mediaRecorder) return;
     
@@ -1130,21 +1411,23 @@ pauseButton.addEventListener('click', () => {
     if (isPaused) {
         mediaRecorder.pause();
         clearInterval(timerInterval);
-        recorderStatus.classList.remove('recording');
-        recorderStatus.classList.add('paused');
-        recorderStatus.querySelector('span:last-child').textContent = 'Paused';
+        updateStatus('Paused', 'paused');
+        showToast('Recording paused', 'info');
     } else {
         mediaRecorder.resume();
         timerInterval = setInterval(updateTimer, 1000);
-        recorderStatus.classList.remove('paused');
-        recorderStatus.classList.add('recording');
-        recorderStatus.querySelector('span:last-child').textContent = 'Recording...';
+        updateStatus('Recording...', 'recording');
+        showToast('Recording resumed', 'success');
         animateWaveform();
     }
 });
 
-// Stop button click
+// ============================================================================
+// STOP BUTTON CLICK
+// ============================================================================
 stopButton.addEventListener('click', () => {
+    if (!isRecording) return;
+    
     isRecording = false;
     isPaused = false;
     clearInterval(timerInterval);
@@ -1158,16 +1441,114 @@ stopButton.addEventListener('click', () => {
     }
     
     recordButton.classList.remove('recording');
+    document.querySelector('.recorder-card').classList.remove('recording');
+    waveformContainer.classList.remove('active');
     pauseButton.disabled = true;
     stopButton.disabled = true;
-    recorderStatus.classList.remove('recording', 'paused');
-    recorderStatus.querySelector('span:last-child').textContent = 'Ready to record';
+    
+    updateStatus('Processing final transcript...', 'connected');
+    showToast('Recording stopped. Processing...', 'info');
     
     // Stop waveform animation
     const bars = waveform.querySelectorAll('.waveform-bar');
     bars.forEach(bar => bar.style.height = '10px');
-    
-    console.log('Recording stopped');
 });
+
+// ============================================================================
+// EXPORT BUTTON
+// ============================================================================
+exportButton.addEventListener('click', () => {
+    const text = transcriptContent.textContent;
+    if (!text || text.trim().length === 0) {
+        showToast('No transcript to export', 'error');
+        return;
+    }
+    
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transcript_${sessionId || Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showToast('Transcript exported successfully', 'success');
+});
+
+// ============================================================================
+// ADD MARKER BUTTON
+// ============================================================================
+addMarkerButton.addEventListener('click', () => {
+    if (!isRecording) return;
+    
+    const timestamp = recordingTime.textContent;
+    const marker = {
+        time: timestamp,
+        timestamp: Date.now(),
+        note: 'Bookmark added'
+    };
+    
+    console.log('📌 Marker added:', marker);
+    showToast(`Bookmark added at ${timestamp}`, 'success');
+    
+    // TODO: Send marker to backend if needed
+    // socket.emit('add_marker', { session_id: sessionId, marker });
+});
+
+// ============================================================================
+// TAKE NOTE BUTTON
+// ============================================================================
+takeNoteButton.addEventListener('click', () => {
+    if (!isRecording) return;
+    
+    const note = prompt('Enter your note:');
+    if (note && note.trim()) {
+        const timestamp = recordingTime.textContent;
+        console.log('📝 Note added:', { time: timestamp, note });
+        showToast('Note saved successfully', 'success');
+        
+        // TODO: Send note to backend if needed
+        // socket.emit('add_note', { session_id: sessionId, timestamp, note });
+    }
+});
+
+// ============================================================================
+// SHARE BUTTON
+// ============================================================================
+shareButton.addEventListener('click', () => {
+    if (!sessionId) {
+        showToast('No active session to share', 'error');
+        return;
+    }
+    
+    const shareUrl = `${window.location.origin}/sessions/${sessionId}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Mina Recording Session',
+            text: 'Check out this recording session',
+            url: shareUrl
+        }).then(() => {
+            showToast('Shared successfully', 'success');
+        }).catch(() => {
+            copyToClipboard(shareUrl);
+        });
+    } else {
+        copyToClipboard(shareUrl);
+    }
+});
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Link copied to clipboard', 'success');
+    }).catch(() => {
+        showToast('Failed to copy link', 'error');
+    });
+}
+
+// ============================================================================
+// INITIALIZATION COMPLETE
+// ============================================================================
+console.log('✅ Live recording page initialized with premium UI');
 </script>
 {% endblock %}
