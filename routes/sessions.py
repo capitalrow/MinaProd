@@ -37,9 +37,9 @@ def list_sessions():
         sessions_result = SessionService.list_sessions(q=q, status=status, limit=limit, offset=offset)
         
         # Handle pagination object vs list
-        if hasattr(sessions_result, 'items'):
-            sessions = sessions_result.items
-            total_count = sessions_result.total
+        if hasattr(sessions_result, 'items') and hasattr(sessions_result, 'total'):
+            sessions = sessions_result.items  # type: ignore
+            total_count = sessions_result.total  # type: ignore
         elif isinstance(sessions_result, list):
             sessions = sessions_result
             total_count = len(sessions)
@@ -216,6 +216,81 @@ def get_session_stats():
         return jsonify(stats)
     except Exception as e:
         return jsonify({'error': f'Failed to get stats: {str(e)}'}), 500
+
+
+@sessions_bp.route('/<session_identifier>/refined', methods=['GET'])
+def get_session_refined(session_identifier):
+    """
+    GET /sessions/<id_or_external_id>/refined - Refined session view with tabs
+    
+    This is the post-transcription view with:
+    - Transcript tab
+    - Highlights tab (summary, insights)
+    - Analytics tab (metrics, sentiment)
+    - Tasks tab (action items)
+    - Replay tab (audio sync)
+    
+    Automatically navigated to after post_transcription_reveal event.
+    """
+    # Try to get session by database ID first (if numeric), then by external_id
+    session_detail = None
+    if session_identifier.isdigit():
+        session_detail = SessionService.get_session_detail(int(session_identifier))
+    else:
+        session_detail = SessionService.get_session_detail_by_external(session_identifier)
+    
+    if not session_detail:
+        abort(404)
+    
+    # Get additional data for tabs
+    session_data = session_detail['session']
+    segments = session_detail['segments']
+    
+    # Get summary/insights data
+    summary_data = None
+    try:
+        from services.analysis_service import AnalysisService
+        summary_data = AnalysisService.get_session_summary(session_data['id'])
+    except Exception as e:
+        logger.warning(f"Failed to get summary for session {session_identifier}: {e}")
+    
+    # Get analytics data
+    analytics_data = None
+    try:
+        # Calculate basic analytics from segments
+        word_count = sum(len((s.get('text') or '').split()) for s in segments)
+        total_duration = sum((s.get('end_ms', 0) - s.get('start_ms', 0)) for s in segments) / 1000.0
+        avg_confidence = sum(s.get('avg_confidence', 0) for s in segments) / len(segments) if segments else 0
+        
+        analytics_data = {
+            'word_count': word_count,
+            'total_duration': total_duration,
+            'average_confidence': avg_confidence,
+            'segment_count': len(segments),
+            'words_per_minute': (word_count / (total_duration / 60)) if total_duration > 0 else 0
+        }
+    except Exception as e:
+        logger.warning(f"Failed to calculate analytics for session {session_identifier}: {e}")
+    
+    # Get event timeline for debugging/status
+    event_timeline = []
+    try:
+        from services.event_ledger_service import EventLedgerService
+        event_timeline = EventLedgerService.get_event_timeline(
+            session_data.get('external_id') or session_identifier
+        )
+    except Exception as e:
+        logger.warning(f"Failed to get event timeline: {e}")
+    
+    # Render refined template with all data
+    return render_template(
+        'session_refined.html',
+        session=session_data,
+        segments=segments,
+        summary=summary_data,
+        analytics=analytics_data,
+        event_timeline=event_timeline
+    )
 
 
 @sessions_bp.route('/<int:session_id>/export.md', methods=['GET'])

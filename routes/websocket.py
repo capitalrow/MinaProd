@@ -293,6 +293,27 @@ def on_finalize(data):
             
             db.session.commit()
             logger.info(f"[ws] Saved final segment to DB for session: {session_id}")
+            
+            # 🚀 CROWN+ Event Sequencing: Trigger post-transcription pipeline
+            try:
+                from services.post_transcription_orchestrator import PostTranscriptionOrchestrator
+                orchestrator = PostTranscriptionOrchestrator()
+                logger.info(f"[ws] 🎬 Starting post-transcription pipeline for: {session_id}")
+                
+                # Run pipeline in background (non-blocking)
+                # For now, run synchronously - can be moved to Celery/background worker later
+                pipeline_results = orchestrator.process_session(session_id)
+                
+                if pipeline_results.get('success'):
+                    logger.info(f"[ws] ✅ Pipeline completed successfully for {session_id}")
+                else:
+                    logger.warning(f"[ws] ⚠️ Pipeline completed with errors for {session_id}: {pipeline_results.get('events_failed')}")
+                    
+            except Exception as pipeline_error:
+                # Graceful degradation - log error but don't fail the finalization
+                logger.error(f"[ws] ❌ Post-transcription pipeline failed for {session_id}: {pipeline_error}", exc_info=True)
+                # User still gets transcript even if pipeline fails
+            
     except Exception as e:
         logger.error(f"[ws] Database error saving segment: {e}")
 

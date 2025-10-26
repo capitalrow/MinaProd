@@ -42,7 +42,8 @@ def finalize_session(external_id: str):
             return jsonify({"error": "Session not found"}), 404
 
         # Skip if already finalized unless force=True
-        if session_obj.status == "completed" and not request.json.get("force", False):
+        request_data = request.get_json() or {}
+        if session_obj.status == "completed" and not request_data.get("force", False):
             return jsonify({"message": "Session already finalized"}), 200
 
         # --- Aggregate segment metrics -------------------------------------
@@ -64,9 +65,9 @@ def finalize_session(external_id: str):
         metric = db.session.query(SessionMetric).filter_by(session_id=session_obj.id).first()
         if not metric:
             metric = SessionMetric(session_id=session_obj.id)
-        metric.avg_confidence = avg_conf
-        metric.total_segments = total_segments
-        metric.total_duration = total_dur
+        # SessionMetric has different field names, use available fields
+        metric.total_chunks = total_segments
+        # Other metrics can be calculated from chunk data later
         db.session.add(metric)
 
         # --- Commit -------------------------------------------------------
@@ -79,6 +80,26 @@ def finalize_session(external_id: str):
             logger.info("🧹 Analytics cache invalidated.")
         except Exception as ce:
             logger.warning(f"Cache clear failed: {ce}")
+        
+        # 🚀 CROWN+ Event Sequencing: Trigger post-transcription pipeline
+        pipeline_success = False
+        try:
+            from services.post_transcription_orchestrator import PostTranscriptionOrchestrator
+            orchestrator = PostTranscriptionOrchestrator()
+            logger.info(f"[API] 🎬 Starting post-transcription pipeline for: {external_id}")
+            
+            # Run pipeline synchronously
+            pipeline_results = orchestrator.process_session(external_id)
+            pipeline_success = pipeline_results.get('success', False)
+            
+            if pipeline_success:
+                logger.info(f"[API] ✅ Pipeline completed successfully for {external_id}")
+            else:
+                logger.warning(f"[API] ⚠️ Pipeline completed with errors: {pipeline_results.get('events_failed')}")
+                
+        except Exception as pipeline_error:
+            # Graceful degradation - log error but don't fail the response
+            logger.error(f"[API] ❌ Post-transcription pipeline failed for {external_id}: {pipeline_error}", exc_info=True)
 
         return jsonify({
             "message": "Session finalized successfully",
@@ -86,7 +107,8 @@ def finalize_session(external_id: str):
             "external_id": external_id,
             "total_segments": total_segments,
             "average_confidence": avg_conf,
-            "total_duration": total_dur
+            "total_duration": total_dur,
+            "pipeline_executed": pipeline_success
         }), 200
 
     except Exception as e:
