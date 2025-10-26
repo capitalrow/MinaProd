@@ -107,12 +107,12 @@ def get_session_detail(session_identifier):
     """
     response_format = request.args.get('format', 'html')
     
-    # Try to get session by database ID first (if it's numeric), then by external_id
-    session_detail = None
-    if session_identifier.isdigit():
+    # Try external_id first (since most lookups use external_id), then database ID as fallback
+    session_detail = SessionService.get_session_detail_by_external(session_identifier)
+    
+    # If not found by external_id and identifier is numeric, try database ID
+    if not session_detail and session_identifier.isdigit():
         session_detail = SessionService.get_session_detail(int(session_identifier))
-    else:
-        session_detail = SessionService.get_session_detail_by_external(session_identifier)
     
     if not session_detail:
         if response_format == 'json':
