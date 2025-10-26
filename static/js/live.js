@@ -106,9 +106,11 @@
       dlog("MediaRecorder stopped");
 
       // 2) NEW: finalize the session safely (no crash if endpoint missing)
+      console.log("🛑 Stop pressed, SESSION_EXTERNAL_ID:", SESSION_EXTERNAL_ID);
       await finalizeSessionSafe(SESSION_EXTERNAL_ID);
 
       // 3) CROWN+: Show processing shimmer and wait for post_transcription_reveal event
+      console.log("✨ Showing processing shimmer...");
       showProcessingShimmer();
     };
 
@@ -208,7 +210,10 @@
 
   // === NEW: finalize helper with graceful fallbacks ========================
   async function finalizeSessionSafe(externalId) {
+    console.log("🎬 finalizeSessionSafe called with:", externalId);
+    
     if (!externalId) {
+      console.warn("⚠️ No external session id found; skipping finalize.");
       dlog("⚠️ No external session id found; skipping finalize.");
       return;
     }
@@ -217,14 +222,22 @@
     await sleep(350);
 
     const url = `/api/sessions/${encodeURIComponent(externalId)}/complete`;
+    console.log("🔄 Calling finalization endpoint:", url);
+    
     try {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ force: false })
       });
+      
+      console.log("📥 Finalization response status:", res.status);
+      
       if (!res.ok) {
+        const errorText = await res.text();
+        console.warn(`⚠️ finalize returned ${res.status}: ${errorText}`);
         dlog(`⚠️ finalize returned ${res.status}; will retry once...`);
+        
         // One retry after a short delay, in case of race with final segment write
         await sleep(500);
         const retry = await fetch(url, {
@@ -232,15 +245,25 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ force: true })
         });
+        
+        console.log("📥 Retry response status:", retry.status);
+        
         if (!retry.ok) {
+          const retryErrorText = await retry.text();
+          console.error(`❌ finalize retry failed: ${retry.status} - ${retryErrorText}`);
           dlog(`❌ finalize retry failed: ${retry.status}`);
         } else {
+          const retryData = await retry.json();
+          console.log("✅ finalize retry succeeded:", retryData);
           dlog("✅ finalize retry succeeded.");
         }
       } else {
+        const data = await res.json();
+        console.log("✅ session finalized:", data);
         dlog("✅ session finalized.");
       }
     } catch (e) {
+      console.error("❌ finalize error:", e);
       dlog("❌ finalize error: " + e.message);
       // Do not throw; we never want to break navigation
     }
@@ -250,6 +273,15 @@
 
   // === CROWN+ Processing Shimmer UI =====================================
   function showProcessingShimmer() {
+    console.log("🎨 Creating processing shimmer overlay...");
+    
+    // Prevent duplicate overlays
+    const existing = document.getElementById('processing-overlay');
+    if (existing) {
+      console.log("⚠️ Shimmer overlay already exists, skipping creation");
+      return;
+    }
+    
     // Create overlay
     const overlay = document.createElement('div');
     overlay.id = 'processing-overlay';
@@ -341,6 +373,8 @@
       }
     `;
     document.head.appendChild(style);
+    
+    console.log("✅ Processing shimmer overlay added to DOM");
   }
 
   function updateProcessingState(message, progress) {
