@@ -223,6 +223,9 @@ class AnalysisService:
         # Determine analysis engine from configuration
         engine = current_app.config.get('ANALYSIS_ENGINE', 'mock')
         
+        # Initialize context variable for all code paths
+        context = ""
+        
         if not final_segments:
             logger.warning(f"No final segments found for session {session_id}")
             # Create empty summary for sessions without transcript
@@ -237,6 +240,9 @@ class AnalysisService:
             context = AnalysisService._build_context(final_segments)
             
             logger.info(f"Built context with {len(context)} characters for session {session_id}")
+            
+            # Combine transcript with any recalled memory context
+            context_with_memory = f"{memory_context}{context}"
             
             # Validate transcript quality before processing
             validation_result = AnalysisService._validate_transcript_quality(context)
@@ -254,9 +260,9 @@ class AnalysisService:
             else:
                 # Generate insights using configured engine with level and style
                 if engine == 'openai_gpt':
-                    summary_data = AnalysisService._analyse_with_openai(context, level, style)
+                    summary_data = AnalysisService._analyse_with_openai(context_with_memory, level, style)
                 else:
-                    summary_data = AnalysisService._analyse_with_mock(context, final_segments, level, style)
+                    summary_data = AnalysisService._analyse_with_mock(context_with_memory, final_segments, level, style)
                 
                 # Attach any validation warnings to summary data for UI display
                 if validation_result.get('warning'):
@@ -265,8 +271,6 @@ class AnalysisService:
         
         # Persist summary to database
         summary = AnalysisService._persist_summary(session_id, summary_data, engine, level, style)
-        # Combine transcript with any recalled memory context
-        context = f"{memory_context}{context}"
 
         logger.info(f"Generated summary {summary.id} for session {session_id} using {engine}")
 

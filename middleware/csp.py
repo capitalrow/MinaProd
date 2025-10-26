@@ -50,6 +50,11 @@ def csp_middleware(app):
         """Generate and store CSP nonce for this request."""
         g.csp_nonce = generate_csp_nonce()
     
+    @app.context_processor
+    def inject_csp_nonce():
+        """Make CSP nonce available to all templates."""
+        return {'csp_nonce': lambda: getattr(g, 'csp_nonce', '')}
+    
     @app.after_request
     def set_csp_headers(response):
         """Apply CSP headers to all responses."""
