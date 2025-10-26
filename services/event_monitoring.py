@@ -125,7 +125,7 @@ class EventMonitoringService:
         cutoff_time = datetime.utcnow() - timedelta(hours=hours)
         
         # Query all events within window
-        events = EventLedger.query.filter(
+        events = db.session.query(EventLedger).filter(
             EventLedger.created_at >= cutoff_time
         ).all()
         
@@ -185,7 +185,7 @@ class EventMonitoringService:
         cutoff_time = datetime.utcnow() - timedelta(hours=hours)
         
         # Query dashboard_refresh events
-        refresh_events = EventLedger.query.filter(
+        refresh_events = db.session.query(EventLedger).filter(
             EventLedger.event_type == EventType.DASHBOARD_REFRESH,
             EventLedger.created_at >= cutoff_time
         ).all()
