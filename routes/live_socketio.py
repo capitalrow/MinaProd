@@ -7,6 +7,7 @@ from app import socketio
 from models import db
 from services.session_service import SessionService
 from services.session_event_coordinator import get_session_event_coordinator
+from services.live_transcription_service import get_live_transcription_service
 from datetime import datetime
 import logging
 import time
@@ -111,7 +112,7 @@ def handle_start_session(data):
 
 @socketio.on('audio_data', namespace='/live-transcription')
 def handle_audio_data(data):
-    """Receive audio data for transcription"""
+    """Receive audio data and transcribe using OpenAI Whisper"""
     sid = request.sid
     
     if sid not in active_sessions:
@@ -142,84 +143,111 @@ def handle_audio_data(data):
             else:
                 audio_bytes = bytes(audio_bytes)
         
-        logger.debug(f"Processing {len(audio_bytes)} bytes of audio for session {session.external_id}")
+        logger.info(f"📥 Processing {len(audio_bytes)} bytes of audio for session {session.external_id}")
         
-        # TODO: Integrate async TranscriptionService with background workers
-        # For MVP, emit realistic transcript segments to verify UI flow
-        import random
-        
-        # Simulate realistic multi-speaker transcription
-        sample_transcripts = [
-            "I think we should focus on the Q4 deliverables first.",
-            "That's a good point, let me add that to the action items.",
-            "We need to coordinate with the design team on this.",
-            "Can someone take ownership of the API integration?",
-            "I'll follow up with the stakeholders after this meeting.",
-            "The metrics look promising, we're on track.",
-            "Let's schedule a follow-up for next week."
-        ]
-        
-        # Determine speaker (weighted toward alternation)
-        last_speaker_key = f"last_speaker_{session.id}"
-        if not hasattr(handle_audio_data, 'session_speakers'):
-            handle_audio_data.session_speakers = {}
-        
-        last_speaker = handle_audio_data.session_speakers.get(last_speaker_key, 1)
-        speaker_id = 2 if last_speaker == 1 else (1 if random.random() < 0.7 else 2)
-        handle_audio_data.session_speakers[last_speaker_key] = speaker_id
-        
-        # Emit interim result
-        emit('transcript_partial', {
-            'text': random.choice(sample_transcripts),
-            'speaker': f"Speaker {speaker_id}",
-            'speaker_id': speaker_id,
-            'timestamp': datetime.now().isoformat(),
-            'is_final': False,
-            'confidence': 0.85 + random.random() * 0.15
-        }, room=session.external_id)
-        
-        # Periodically emit final segments (every ~3 chunks)
+        # Initialize chunk counter for this session
         if not hasattr(handle_audio_data, 'chunk_counters'):
             handle_audio_data.chunk_counters = {}
+        if not hasattr(handle_audio_data, 'session_start_times'):
+            handle_audio_data.session_start_times = {}
         
         counter_key = f"chunk_count_{session.id}"
+        start_time_key = f"start_time_{session.id}"
+        
+        # Track session start time
+        if start_time_key not in handle_audio_data.session_start_times:
+            handle_audio_data.session_start_times[start_time_key] = time.time()
+        
         chunk_count = handle_audio_data.chunk_counters.get(counter_key, 0) + 1
         handle_audio_data.chunk_counters[counter_key] = chunk_count
         
-        if chunk_count % 3 == 0:
+        # Calculate elapsed time for timestamps
+        elapsed_ms = int((time.time() - handle_audio_data.session_start_times[start_time_key]) * 1000)
+        
+        # Get transcription service
+        transcription_service = get_live_transcription_service()
+        
+        # Transcribe every chunk, but treat every 2nd chunk as final
+        is_final = (chunk_count % 2 == 0)
+        
+        # Call OpenAI Whisper API
+        result = transcription_service.transcribe_audio_chunk(
+            audio_bytes=audio_bytes,
+            mime_type=mime_type,
+            is_interim=not is_final
+        )
+        
+        if not result or not result.get('text'):
+            logger.debug("Empty transcription result, skipping")
+            return
+        
+        text = result['text']
+        confidence = result.get('confidence', 0.85)
+        
+        # Emit appropriate event based on whether it's final or interim
+        if is_final:
             # Emit final segment
-            final_text = random.choice(sample_transcripts)
             emit('transcript_segment', {
-                'text': final_text,
-                'speaker': f"Speaker {speaker_id}",
-                'speaker_id': speaker_id,
+                'text': text,
+                'speaker': 'Speaker 1',  # TODO: Add speaker diarization
+                'speaker_id': 1,
                 'timestamp': datetime.now().isoformat(),
                 'is_final': True,
-                'confidence': 0.90 + random.random() * 0.10
+                'confidence': confidence
             }, room=session.external_id)
             
-            # Store in database
+            # Store final segment in database
             try:
                 from models import Segment
                 segment = Segment(
                     session_id=session.id,
-                    text=final_text,
-                    speaker_id=str(speaker_id),
-                    speaker_name=f"Speaker {speaker_id}",
-                    start_time=0.0,  # TODO: track actual timing
-                    end_time=0.0,
-                    confidence=0.90 + random.random() * 0.10
+                    kind='final',  # Use correct schema field
+                    text=text,
+                    avg_confidence=confidence,
+                    start_ms=elapsed_ms - 2000,  # Approximate 2 second chunk
+                    end_ms=elapsed_ms,
+                    created_at=datetime.utcnow()
                 )
                 db.session.add(segment)
                 db.session.commit()
-                logger.debug(f"Stored segment for session {session.external_id}")
+                logger.info(f"✅ Stored final segment: '{text[:50]}...'")
             except Exception as e:
-                logger.error(f"Failed to store segment: {e}", exc_info=True)
+                logger.error(f"❌ Failed to store segment: {e}", exc_info=True)
+                db.session.rollback()
+        else:
+            # Emit interim (partial) result
+            emit('transcript_partial', {
+                'text': text,
+                'speaker': 'Speaker 1',
+                'speaker_id': 1,
+                'timestamp': datetime.now().isoformat(),
+                'is_final': False,
+                'confidence': confidence
+            }, room=session.external_id)
+            
+            # Optionally store interim segments for better context
+            try:
+                from models import Segment
+                segment = Segment(
+                    session_id=session.id,
+                    kind='interim',  # Use correct schema field
+                    text=text,
+                    avg_confidence=confidence,
+                    start_ms=elapsed_ms - 1000,
+                    end_ms=elapsed_ms,
+                    created_at=datetime.utcnow()
+                )
+                db.session.add(segment)
+                db.session.commit()
+                logger.debug(f"📝 Stored interim segment: '{text[:50]}...'")
+            except Exception as e:
+                logger.error(f"⚠️ Failed to store interim segment: {e}")
                 db.session.rollback()
         
     except Exception as e:
-        logger.error(f"Error processing audio data: {e}", exc_info=True)
-        emit('error', {'message': 'Failed to process audio'})
+        logger.error(f"❌ Error processing audio data: {e}", exc_info=True)
+        # Emit error to client
+        emit('error', {'message': f'Transcription error: {str(e)}'})
 
 @socketio.on('end_session', namespace='/live-transcription')
 def handle_end_session(data=None):
