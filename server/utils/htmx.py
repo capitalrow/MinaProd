@@ -74,7 +74,9 @@ def render_partial(template_name, **context):
         soup = BeautifulSoup(full_html, 'html.parser')
         main_content = soup.find(id='main-content')
         if main_content:
-            return str(main_content)
+            # Return innerHTML only (not the div itself) to avoid nested divs
+            # htmx's default swap is innerHTML, so we need just the content
+            return main_content.decode_contents()
     except Exception as e:
         current_app.logger.warning(f"Failed to extract #main-content: {e}")
     
