@@ -21,8 +21,9 @@ def render_partial(template_name, **context):
     """
     Render a template as either a full page or partial content.
     
-    For htmx requests, returns only the main content.
-    For regular requests, returns the full page with base template.
+    For htmx requests, injects 'is_htmx=True' into template context,
+    allowing templates to conditionally extend base.html.
+    For regular requests, renders the full page.
     
     Args:
         template_name: The template to render (e.g., 'dashboard/index.html')
@@ -35,16 +36,19 @@ def render_partial(template_name, **context):
         @app.route('/dashboard')
         def dashboard():
             return render_partial('dashboard/index.html', meetings=meetings)
+        
+    Template Usage:
+        {% if not is_htmx %}{% extends "base.html" %}{% endif %}
+        
+        {% if not is_htmx %}{% block content %}{% endif %}
+        <div id="main-content">
+            <!-- Your content here -->
+        </div>
+        {% if not is_htmx %}{% endblock %}{% endif %}
     """
-    # Check if this is an htmx request
-    if is_htmx_request():
-        # Return just the partial content
-        # htmx will swap this into the target element
-        return render_template(template_name, **context)
-    else:
-        # Return full page with base template
-        # This allows direct URL access to still work
-        return render_template(template_name, **context)
+    # Inject htmx flag into context
+    context['is_htmx'] = is_htmx_request()
+    return render_template(template_name, **context)
 
 
 def htmx_redirect(url):

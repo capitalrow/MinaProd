@@ -8,6 +8,7 @@ from flask_login import login_required, current_user
 from models import db, Meeting, Task, Analytics, Session, Marker
 from sqlalchemy import desc, func, and_
 from datetime import datetime, timedelta, date
+from server.utils.htmx import render_partial
 
 try:
     from services.uptime_monitoring import uptime_monitor
@@ -151,7 +152,7 @@ def index():
     follow_up_items.sort(key=lambda x: x['timestamp'], reverse=True)
     follow_up_items = follow_up_items[:8]  # Limit to 8 items
     
-    return render_template('dashboard/index.html',
+    return render_partial('dashboard/index.html',
                          recent_meetings=recent_meetings,
                          user_tasks=user_tasks,
                          todays_meetings=todays_meetings,
@@ -194,7 +195,7 @@ def meetings():
     # Paginate results
     meetings_paginated = db.paginate(query, page=page, per_page=20, error_out=False)
     
-    return render_template('dashboard/meetings.html',
+    return render_partial('dashboard/meetings.html',
                          meetings=meetings_paginated.items,
                          has_more=meetings_paginated.has_next,
                          page=page,
@@ -308,7 +309,7 @@ def tasks():
         Task.status == 'completed'
     ).order_by(desc(Task.completed_at)).limit(10).all()
     
-    return render_template('dashboard/tasks.html',
+    return render_partial('dashboard/tasks.html',
                          todo_tasks=todo_tasks,
                          in_progress_tasks=in_progress_tasks,
                          completed_tasks=completed_tasks)
@@ -323,7 +324,7 @@ def analytics():
     from models import Participant
     
     if not current_user.workspace_id:
-        return render_template('dashboard/analytics.html',
+        return render_partial('dashboard/analytics.html',
                              total_meetings=0,
                              total_tasks=0,
                              hours_saved=0,
@@ -398,7 +399,7 @@ def analytics():
         Analytics.overall_sentiment_score.isnot(None)
     ).scalar() or 0
     
-    return render_template('dashboard/analytics.html',
+    return render_partial('dashboard/analytics.html',
                          total_meetings=total_meetings,
                          total_tasks=total_tasks,
                          hours_saved=hours_saved,

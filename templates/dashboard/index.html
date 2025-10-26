@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "_htmx_wrapper.html" %}
 
 {% block title %}Dashboard - Mina{% endblock %}
 
@@ -297,8 +297,8 @@
 </style>
 {% endblock %}
 
-{% block content %}
-<div class="container dashboard-container">
+{% block page_content %}
+<div id="main-content" class="container dashboard-container" tabindex="-1">
     <div class="dashboard-header">
         <div class="flex justify-between items-center">
             <div>
