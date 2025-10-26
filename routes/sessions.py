@@ -5,6 +5,7 @@ REST API endpoints for session management, list, detail, and finalization.
 
 import logging
 from flask import Blueprint, request, jsonify, render_template, abort, Response
+from app import db
 from services.session_service import SessionService
 from services.export_service import ExportService
 
@@ -272,6 +273,17 @@ def get_session_refined(session_identifier):
     except Exception as e:
         logger.warning(f"Failed to calculate analytics for session {session_identifier}: {e}")
     
+    # Get tasks/action items
+    tasks_data = []
+    try:
+        from models.task import Task
+        from sqlalchemy import select
+        stmt = select(Task).filter(Task.session_id == session_data['id']).order_by(Task.created_at)
+        tasks = db.session.execute(stmt).scalars().all()
+        tasks_data = [task.to_dict() for task in tasks] if tasks else []
+    except Exception as e:
+        logger.warning(f"Failed to get tasks for session {session_identifier}: {e}")
+    
     # Get event timeline for debugging/status
     event_timeline = []
     try:
@@ -289,6 +301,7 @@ def get_session_refined(session_identifier):
         segments=segments,
         summary=summary_data,
         analytics=analytics_data,
+        tasks=tasks_data,
         event_timeline=event_timeline
     )
 

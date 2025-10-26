@@ -273,35 +273,38 @@ class AnalysisService:
             logger.info("Summary data stored back into MemoryStore successfully.")
         except Exception as e:
             logger.warning(f"Could not persist summary to MemoryStore: {e}")
-        # -------------------------------------------------------------
-            # -------------------------------------------------------------
-            # 🔄 Trigger analytics sync if relevant meeting exists
-            try:
-                from models.session import Session
-                from services.analytics_service import AnalyticsService
-                import asyncio, inspect
+        
+        # 🔄 Trigger analytics sync if relevant meeting exists
+        try:
+            from services.analytics_service import AnalyticsService
+            from flask import current_app
+            import threading
 
-                session_obj = db.session.get(Session, session_id)
-                meeting = getattr(session_obj, "meeting", None)
+            session_obj = db.session.get(Session, session_id)
+            meeting = getattr(session_obj, "meeting", None)
 
-                if meeting:
-                    analytics_service = AnalyticsService()
-                    analytics_fn = analytics_service.analyze_meeting
-
-                    # ✅ Handle async vs sync implementations safely
-                    if inspect.iscoroutinefunction(analytics_fn):
-                        asyncio.create_task(analytics_fn(meeting.id))
-                    else:
-                        asyncio.to_thread(analytics_fn, meeting.id)
-
-                    logger.info(f"Triggered analytics sync for meeting {meeting.id} (session {session_id})")
-                else:
-                    logger.info(f"No linked meeting found for session {session_id}, skipping analytics sync.")
-            except Exception as e:
-                logger.warning(f"Failed to trigger analytics after summary: {e}")
-            # -------------------------------------------------------------
-
-        # -------------------------------------------------------------
+            if meeting:
+                analytics_service = AnalyticsService()
+                # Capture real Flask app object (not LocalProxy) for thread safety
+                app = current_app._get_current_object()
+                meeting_id = meeting.id
+                
+                # Run analytics in background thread with app context
+                def run_analytics():
+                    try:
+                        with app.app_context():
+                            analytics_service.analyze_meeting(meeting_id)
+                            logger.info(f"Analytics sync completed for meeting {meeting_id}")
+                    except Exception as e:
+                        logger.warning(f"Analytics sync failed for meeting {meeting_id}: {e}")
+                
+                thread = threading.Thread(target=run_analytics, daemon=True)
+                thread.start()
+                logger.info(f"Triggered analytics sync for meeting {meeting_id} (session {session_id})")
+            else:
+                logger.info(f"No linked meeting found for session {session_id}, skipping analytics sync.")
+        except Exception as e:
+            logger.warning(f"Failed to trigger analytics after summary: {e}")
 
         return summary.to_dict()
     
