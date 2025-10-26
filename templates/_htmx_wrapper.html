@@ -1,26 +1,25 @@
 {#
   htmx Wrapper Template
   
-  This template conditionally extends base.html based on whether 
+  This template conditionally wraps content based on whether 
   the request is from htmx or a direct page load.
   
   Usage in your templates:
     {% extends "_htmx_wrapper.html" %}
-    {% block page_content %}
+    {% block main_content %}
       <!-- Your page content here -->
     {% endblock %}
 #}
 
-{% if is_htmx %}
-{# htmx request: Return just the content #}
-{% block page_content %}{% endblock %}
-{% else %}
-{# Regular request: Return full page with base template #}
+{% if not is_htmx %}
 {% extends "base.html" %}
-
 {% block content %}
 <div id="main-content" tabindex="-1">
-{% block page_content %}{% endblock %}
+{% block main_content %}{% endblock %}
 </div>
 {% endblock %}
+{% else %}
+<div id="main-content" tabindex="-1">
+{% block main_content %}{% endblock %}
+</div>
 {% endif %}
