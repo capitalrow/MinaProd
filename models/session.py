@@ -58,6 +58,9 @@ class Session(Base):
     average_confidence: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
     total_duration: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
     
+    # Post-transcription orchestration status (idempotency guard)
+    post_transcription_status: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)  # pending|processing|completed|failed
+    
     # Ownership relationships
     user: Mapped[Optional["User"]] = relationship(back_populates="sessions", foreign_keys=[user_id])
     workspace: Mapped[Optional["Workspace"]] = relationship(back_populates="sessions", foreign_keys=[workspace_id])
