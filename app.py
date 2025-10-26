@@ -469,14 +469,13 @@ def create_app() -> Flask:
     else:
         app.logger.info("No DATABASE_URL found, running without database persistence")
 
-    # pages blueprint or fallback /live
+    # Register pages blueprint
     try:
         from routes.pages import pages_bp  # type: ignore
         app.register_blueprint(pages_bp)
-    except Exception:
-        @app.route("/live")
-        def live():
-            return render_template("live.html")
+        app.logger.info("Pages blueprint registered successfully")
+    except Exception as e:
+        app.logger.error(f"Failed to register pages blueprint: {e}")
 
     # WebSocket routes (required) - import to bind handlers
     import routes.websocket  # noqa: F401
