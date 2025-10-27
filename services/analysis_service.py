@@ -60,10 +60,10 @@ class AnalysisService:
         
         EXAMPLES OF WHAT TO EXTRACT (with evidence):
         ✓ Transcript says: "I need to review the report by Friday"
-          Extract: {"action": "Review the report", "evidence_quote": "I need to review the report by Friday", ...}
+          Extract: {{"action": "Review the report", "evidence_quote": "I need to review the report by Friday", ...}}
         
         ✓ Transcript says: "Action item: Let's schedule a follow-up meeting"
-          Extract: {"action": "Schedule a follow-up meeting", "evidence_quote": "Let's schedule a follow-up meeting", ...}
+          Extract: {{"action": "Schedule a follow-up meeting", "evidence_quote": "Let's schedule a follow-up meeting", ...}}
         
         EXAMPLES OF WHAT NOT TO EXTRACT:
         ✗ Transcript says: "I'm testing the application"
