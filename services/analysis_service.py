@@ -310,10 +310,15 @@ class AnalysisService:
         final_segments = db.session.execute(stmt).scalars().all()
         
         # Determine analysis engine from configuration
+        # Default to 'openai_gpt' to use real AI analysis (not mock)
         try:
-            engine = current_app.config.get('ANALYSIS_ENGINE', 'mock')
+            engine = current_app.config.get('ANALYSIS_ENGINE', 'openai_gpt')
         except RuntimeError:
-            engine = 'mock'
+            # If running outside Flask context, check if API key is available
+            import os
+            api_key = os.environ.get('OPENAI_API_KEY')
+            engine = 'openai_gpt' if api_key else 'mock'
+            logger.warning(f"Running outside Flask context, using engine: {engine}")
         
         # Initialize context variable for all code paths
         context = ""
