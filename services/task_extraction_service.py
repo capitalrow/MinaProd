@@ -6,7 +6,7 @@ AI-powered service for extracting actionable tasks from meeting transcripts and 
 import json
 import re
 from typing import List, Dict, Optional, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from dataclasses import dataclass
 from models import db, Task, Meeting, Segment
 from services.openai_client_manager import get_openai_client
@@ -57,15 +57,17 @@ class TaskExtractionService:
 
     async def extract_tasks_from_meeting(self, meeting_id: int) -> List[ExtractedTask]:
         """Extract tasks from a complete meeting using AI and pattern matching."""
-        meeting = Meeting.query.get(meeting_id)
+        from sqlalchemy import select
+        meeting = db.session.get(Meeting, meeting_id)
         if not meeting or not meeting.session:
             return []
         
         # Get meeting transcript
-        segments = Segment.query.filter_by(
+        stmt = select(Segment).filter_by(
             session_id=meeting.session.id,
             is_final=True
-        ).order_by(Segment.timestamp).all()
+        ).order_by(Segment.start_ms)
+        segments = db.session.execute(stmt).scalars().all()
         
         if not segments:
             return []
@@ -126,7 +128,7 @@ class TaskExtractionService:
         Extract all actionable tasks from this meeting transcript."""
         
         try:
-            response = await self.client.chat.completions.acreate(
+            response = self.client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -136,7 +138,10 @@ class TaskExtractionService:
                 max_tokens=1500
             )
             
-            result = json.loads(response.choices[0].message.content)
+            content = response.choices[0].message.content
+            if not content:
+                return []
+            result = json.loads(content)
             tasks = []
             
             for task_data in result.get("tasks", []):
@@ -209,7 +214,7 @@ class TaskExtractionService:
                 return match.group(1).strip()
         return None
 
-    def _build_transcript(self, segments: List) -> str:
+    def _build_transcript(self, segments) -> str:
         """Build a readable transcript from segments."""
         transcript_lines = []
         current_speaker = None
@@ -305,7 +310,7 @@ class TaskExtractionService:
         
         return created_tasks
 
-    def _parse_due_date(self, due_date_text: Optional[str]) -> Optional:
+    def _parse_due_date(self, due_date_text: Optional[str]) -> Optional[date]:
         """Parse natural language due date into datetime.date."""
         if not due_date_text:
             return None
@@ -337,18 +342,20 @@ class TaskExtractionService:
             return None
         
         from models import User
+        from sqlalchemy import select, or_
         
         name = name.strip().lower()
         
         # Try exact matches first
-        user = User.query.filter(
-            db.or_(
+        stmt = select(User).filter(
+            or_(
                 User.username.ilike(f"%{name}%"),
                 User.first_name.ilike(f"%{name}%"),
                 User.last_name.ilike(f"%{name}%"),
                 User.display_name.ilike(f"%{name}%")
             )
-        ).first()
+        )
+        user = db.session.execute(stmt).scalar_one_or_none()
         
         return user.id if user else None
 
