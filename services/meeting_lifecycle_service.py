@@ -149,6 +149,22 @@ class MeetingLifecycleService:
                 )
                 
                 logger.info(f"📡 Broadcast session_update:created for Meeting {meeting.id}")
+                
+                # Also broadcast dashboard_refresh to update statistics
+                try:
+                    stats = MeetingLifecycleService.get_meeting_statistics(workspace_id, days=365)
+                    event_broadcaster.broadcast_dashboard_refresh(
+                        workspace_id=workspace_id,
+                        stats={
+                            'total_meetings': stats['total_meetings'],
+                            'total_tasks': stats['total_tasks'],
+                            'hours_saved': round(stats['total_duration_hours'], 1)
+                        }
+                    )
+                    logger.info(f"📡 Broadcast dashboard_refresh for workspace {workspace_id}")
+                except Exception as de:
+                    logger.warning(f"Failed to broadcast dashboard_refresh: {de}")
+                    
             except Exception as e:
                 logger.warning(f"Failed to broadcast session_created event: {e}")
             

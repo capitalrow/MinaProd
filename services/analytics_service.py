@@ -10,6 +10,7 @@ from statistics import mean, median
 from collections import defaultdict
 from models import db, Analytics, Meeting, Participant, Task, Session, Segment
 from services.openai_client_manager import get_openai_client
+from services.event_broadcaster import EventBroadcaster
 
 
 class AnalyticsService:
@@ -17,6 +18,7 @@ class AnalyticsService:
     
     def __init__(self):
         self.client = get_openai_client()
+        self.event_broadcaster = EventBroadcaster()
         
         # Keywords for different analysis
         self.decision_keywords = [
@@ -66,10 +68,52 @@ class AnalyticsService:
             analytics.complete_analysis()
             db.session.commit()
             
+            # Broadcast analytics_refresh event with workspace-wide statistics
+            analytics_data = analytics.to_dict(include_detailed_data=True)
+            if meeting.workspace_id:
+                # Get workspace-wide statistics for accurate KPIs
+                try:
+                    from services.meeting_lifecycle_service import MeetingLifecycleService
+                    workspace_stats = MeetingLifecycleService.get_meeting_statistics(
+                        meeting.workspace_id, 
+                        days=365
+                    )
+                    
+                    self.event_broadcaster.broadcast_analytics_refresh(
+                        meeting_id=meeting.id,
+                        analytics_data={
+                            'kpis': {
+                                'total_meetings': workspace_stats['total_meetings'],
+                                'total_hours': round(workspace_stats['total_duration_hours'], 1),
+                                'action_items': workspace_stats['total_tasks'],
+                                'avg_duration': f"{int(workspace_stats.get('avg_duration_minutes', 0))} min"
+                            },
+                            'charts': {
+                                'engagement': analytics_data.get('overall_engagement_score', 0),
+                                'sentiment': analytics_data.get('sentiment_analysis', {}),
+                                'productivity': analytics_data.get('productivity_score', 0)
+                            },
+                            'meeting_specific': {
+                                'participant_count': analytics_data.get('participant_count', 0),
+                                'word_count': analytics_data.get('word_count', 0),
+                                'duration_minutes': analytics_data.get('total_duration_minutes', 0)
+                            }
+                        },
+                        workspace_id=meeting.workspace_id
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to get workspace stats for analytics_refresh: {e}")
+                    # Fallback to basic broadcast without KPIs
+                    self.event_broadcaster.broadcast_analytics_refresh(
+                        meeting_id=meeting.id,
+                        analytics_data={'charts': {}},
+                        workspace_id=meeting.workspace_id
+                    )
+            
             return {
                 "success": True,
                 "message": "Meeting analysis completed",
-                "analytics": analytics.to_dict(include_detailed_data=True)
+                "analytics": analytics_data
             }
             
         except Exception as e:

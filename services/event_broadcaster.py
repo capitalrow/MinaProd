@@ -318,6 +318,42 @@ class EventBroadcaster:
             logger.error(f"Failed to broadcast meeting_update: {e}")
             return None
     
+    def broadcast_dashboard_refresh(
+        self,
+        workspace_id: int,
+        stats: Dict[str, Any]
+    ) -> Optional[EventLedger]:
+        """
+        Broadcast dashboard_refresh event with updated statistics.
+        
+        Args:
+            workspace_id: Workspace ID
+            stats: Dashboard statistics (total_meetings, total_tasks, hours_saved, etc.)
+            
+        Returns:
+            Created EventLedger instance or None
+        """
+        try:
+            event = event_sequencer.create_event(
+                event_type=EventType.DASHBOARD_REFRESH,
+                event_name="Dashboard Statistics Refreshed",
+                payload={
+                    'workspace_id': workspace_id,
+                    'stats': stats,
+                    'timestamp': datetime.utcnow().isoformat()
+                },
+                trace_id=f"dashboard_{workspace_id}_{int(datetime.utcnow().timestamp())}"
+            )
+            
+            # Broadcast to dashboard namespace
+            self.emit_event(event, namespace="/dashboard", room=f"workspace_{workspace_id}")
+            
+            return event
+            
+        except Exception as e:
+            logger.error(f"Failed to broadcast dashboard_refresh: {e}")
+            return None
+    
     def join_workspace_room(self, workspace_id: int, namespace: str = "/dashboard"):
         """
         Have client join workspace room for isolated broadcasts.
