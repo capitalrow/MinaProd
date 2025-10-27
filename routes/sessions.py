@@ -287,7 +287,7 @@ def get_session_refined(session_identifier):
         from sqlalchemy import select
         stmt = select(Task).filter(Task.session_id == session_data['id']).order_by(Task.created_at)
         tasks = db.session.execute(stmt).scalars().all()
-        tasks_data = [task.to_dict() for task in tasks] if tasks else []
+        tasks_data = [task.to_dict(include_relationships=True) for task in tasks] if tasks else []
     except Exception as e:
         logger.warning(f"Failed to get tasks for session {session_identifier}: {e}")
     
