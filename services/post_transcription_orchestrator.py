@@ -728,6 +728,27 @@ class PostTranscriptionOrchestrator:
                             f"[Validation] Task quality summary: {len(tasks_created)} accepted, "
                             f"{rejected_count} rejected, avg score: {avg_score:.2f}"
                         )
+                        
+                        # Emit validation metrics to EventLedger for observability
+                        try:
+                            validation_event = self.event_service.log_event(
+                                event_type=EventType.TASKS_GENERATION,
+                                session_id=session.id,
+                                external_session_id=session.external_id,
+                                payload={
+                                    'validation_metrics': {
+                                        'tasks_accepted': len(tasks_created),
+                                        'tasks_rejected': rejected_count,
+                                        'avg_quality_score': round(avg_score, 2),
+                                        'min_score': round(min(quality_scores), 2) if quality_scores else 0,
+                                        'max_score': round(max(quality_scores), 2) if quality_scores else 0,
+                                        'quality_threshold': validation_engine.MIN_TASK_SCORE
+                                    }
+                                }
+                            )
+                            logger.debug(f"📊 [Observability] Validation metrics logged to EventLedger")
+                        except Exception as obs_error:
+                            logger.warning(f"Failed to log validation metrics (non-blocking): {obs_error}")
                     
                     # Commit AI-extracted tasks
                     try:
