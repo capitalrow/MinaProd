@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 def _determine_priority(task_text: str, evidence_text: str, due_date: Optional[Any]) -> str:
     """
-    Intelligent priority detection based on urgency keywords, deadline proximity, and sentiment.
+    Intelligent priority detection based on urgency keywords, deadline proximity, and sentiment analysis.
     
     Args:
         task_text: The task text
@@ -54,7 +54,7 @@ def _determine_priority(task_text: str, evidence_text: str, due_date: Optional[A
     
     combined_text = f"{task_text} {evidence_text}".lower()
     
-    # HIGH priority indicators
+    # HIGH priority indicators (explicit keywords)
     high_keywords = [
         r'\burgent\b', r'\basap\b', r'\bcritical\b', r'\bemergency\b',
         r'\bimmediate(?:ly)?\b', r'\bpriority\b', r'\bcrisis\b',
@@ -86,7 +86,35 @@ def _determine_priority(task_text: str, evidence_text: str, due_date: Optional[A
         except Exception as e:
             logger.debug(f"Could not calculate deadline proximity: {e}")
     
-    # LOW priority indicators
+    # Sentiment Analysis: Detect negative/urgent tonality
+    # Count sentiment indicators (negative = urgent, positive = relaxed)
+    negative_sentiment_patterns = [
+        r'\bmust\b', r'\bcannot\b', r'\bcan\'t\b', r'\bfail(?:ing|ed)?\b',
+        r'\bbroke(?:n)?\b', r'\bissue\b', r'\bproblem\b', r'\berror\b',
+        r'\bbug\b', r'\bfix\b', r'\bresolve\b', r'\bbefore\b(?:.{1,20}launch|release)',
+        r'\bprevent\b', r'\bavoid\b', r'\bstop\b', r'\bblock\b'
+    ]
+    
+    positive_sentiment_patterns = [
+        r'\bnice\b', r'\bwould\b', r'\bcould\b', r'\bmight\b',
+        r'\bmaybe\b', r'\bsomeday\b', r'\bwhen(?:ever)?\s+(?:time|possible)\b'
+    ]
+    
+    negative_count = sum(1 for pattern in negative_sentiment_patterns if re.search(pattern, combined_text))
+    positive_count = sum(1 for pattern in positive_sentiment_patterns if re.search(pattern, combined_text))
+    
+    sentiment_score = negative_count - positive_count
+    
+    if sentiment_score >= 2:
+        # Strong negative sentiment → urgent
+        logger.debug(f"Priority HIGH: negative sentiment detected (score: {sentiment_score})")
+        return 'high'
+    elif sentiment_score <= -1:
+        # Positive/relaxed sentiment → low priority
+        logger.debug(f"Priority LOW: relaxed sentiment detected (score: {sentiment_score})")
+        return 'low'
+    
+    # LOW priority indicators (explicit keywords)
     low_keywords = [
         r'\bwhenever\b', r'\beventually\b', r'\bnice[ -]to[ -]have\b',
         r'\boptional\b', r'\bif\s+(?:time|possible)\b', r'\blow[ -]priority\b'
