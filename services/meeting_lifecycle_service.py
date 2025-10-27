@@ -57,7 +57,6 @@ class MeetingLifecycleService:
             if not workspace_id:
                 # Get default workspace or create one
                 from models.workspace import Workspace
-                from sqlalchemy import select
                 
                 default_workspace = db.session.scalar(select(Workspace).limit(1))
                 if not default_workspace:
