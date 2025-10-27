@@ -803,13 +803,13 @@
         </p>
       </div>
       
-      {# State 4: AI analysis failed and no tasks found #}
+      {# State 4: AI analysis failed and no tasks found (fallback extraction also found nothing) #}
       {% elif session.post_transcription_status == 'failed' %}
       <div class="empty-state">
-        <div class="empty-state-icon">⚠️</div>
-        <div class="empty-state-text">Insights temporarily unavailable</div>
+        <div class="empty-state-icon">✅</div>
+        <div class="empty-state-text">No action items found</div>
         <p style="margin-top: var(--space-2); color: var(--color-text-secondary); max-width: 500px; margin-left: auto; margin-right: auto; font-size: var(--font-size-sm);">
-          AI analysis encountered an error. Your transcript is safely stored and you can review it in the Transcript tab.
+          AI insights were unavailable, but pattern-based extraction also found no explicit action items in your transcript. Your transcript is safely stored in the Transcript tab.
         </p>
       </div>
       
