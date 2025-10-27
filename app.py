@@ -150,7 +150,7 @@ def _configure_logging(json_logs: bool = False) -> None:
         else logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
     )
     root.addHandler(handler)
-    root.setLevel(logging.INFO)
+    root.setLevel(logging.DEBUG)  # Temporarily DEBUG to diagnose OpenAI parsing issue
     
     # Prevent duplicate logs by ensuring Flask/Werkzeug loggers propagate to root
     # instead of having their own handlers
