@@ -48,33 +48,28 @@ class AnalysisService:
         """,
         
         "brief_action": """
-        You are an insightful meeting analyst. Follow this analysis process step-by-step:
+        You are an expert task extraction specialist. Your job is to extract ALL action items from this transcript - be GENEROUS, not restrictive.
         
-        STEP 1: ANALYZE TRANSCRIPT TYPE
-        First, determine if this is:
-        - A) Real business meeting with actionable content
-        - B) Meta-testing (someone testing the system itself)
-        - C) Casual conversation with no work tasks
-        - D) Demo/walkthrough/tutorial
+        CORE PHILOSOPHY: Extract first, filter later
+        The quality filtering happens in a separate validation pipeline. Your role is to catch EVERYTHING.
         
-        STEP 2: IF META-TESTING DETECTED
-        Keywords indicating meta-testing: "test the app", "check if task extraction works", "verify the pipeline", "from my side", "make sure tasks are extracted"
-        → Return brief_summary describing it's a system test, action_plan = []
+        EXTRACT ALL OF THESE:
+        ✓ Work commitments: "I need to...", "I'll...", "I must..."
+        ✓ Personal tasks: "Buy groceries", "Clean room", "Get cash from ATM"
+        ✓ Proposals: "We could...", "What about...", "Consider..."
+        ✓ Suggestions: "We should...", "Let's...", "Why don't we..."
+        ✓ Questions that imply action: "Who will handle X?", "When should we Y?"
+        ✓ Planning statements: "I'm planning to...", "I'll prepare..."
         
-        STEP 3: EXTRACT ONLY IF REAL MEETING
-        Extract actionable insights including:
-        - ✓ Commitments: "I will...", "I need to...", "We must..."
-        - ✓ Proposals: "We could...", "What about...", "I wonder if..."
-        - ✓ Questions needing answers: "How do we...", "What's the plan for..."
-        - ✓ Suggestions: "We should...", "Consider...", "Let's..."
+        MINIMUM FILTERING (only skip these):
+        ✗ Pure commentary: "That's interesting", "I agree", "Hmm"
+        ✗ Incomplete fragments: "And then I", "So basically"
+        ✗ Questions without implied action: "How are you?", "What do you think?"
         
-        Filter out:
-        - ✗ Meta-testing: "testing the app", "checking if X works"
-        - ✗ Personal errands: "check my car", "grab coffee"
-        - ✗ Current activities: "I'm writing code now"
-        
-        ANTI-HALLUCINATION RULE:
-        NEVER invent content. If summary mentions "budget proposals" or "Q4 planning", those exact phrases must appear in transcript.
+        ANTI-HALLUCINATION RULES:
+        1. NEVER invent tasks not mentioned in transcript
+        2. Each action must have EXACT quote evidence from transcript
+        3. Better to extract too much than miss real tasks
         
         FEW-SHOT EXAMPLES:
         
@@ -88,14 +83,18 @@ class AnalysisService:
             ]
         }}
         
-        Example 2 - Meta-Testing (DETECT AND REJECT):
-        Transcript: "I'm testing the task extraction system. Let me check if the Tasks tab shows the extracted items correctly from my side."
+        Example 2 - Mixed Testing + Real Tasks:
+        Transcript: "I'm testing the task extraction. I also need to clean my bedroom today, get 30 pounds from the ATM, and buy a train ticket for tomorrow."
         Output: {{
-            "brief_summary": "This was a system testing session to verify task extraction functionality.",
-            "action_plan": []
+            "brief_summary": "Session involved system testing and personal task planning including household chores, financial transactions, and travel preparation.",
+            "action_plan": [
+                {{"action": "Clean bedroom", "evidence_quote": "I also need to clean my bedroom today", "owner": "Not specified", "priority": "medium", "due": "today"}},
+                {{"action": "Get 30 pounds from ATM", "evidence_quote": "get 30 pounds from the ATM", "owner": "Not specified", "priority": "medium", "due": "Not specified"}},
+                {{"action": "Buy train ticket for tomorrow", "evidence_quote": "buy a train ticket for tomorrow", "owner": "Not specified", "priority": "high", "due": "tomorrow"}}
+            ]
         }}
         
-        Example 3 - Casual Conversation:
+        Example 3 - Pure Conversation:
         Transcript: "Hey, how was your weekend? I went hiking. The weather was great."
         Output: {{
             "brief_summary": "Casual conversation about weekend activities.",
@@ -104,14 +103,14 @@ class AnalysisService:
         
         Return ONLY valid JSON:
         {{
-            "brief_summary": "2-3 sentence summary describing EXACTLY what was actually discussed (no invention)",
+            "brief_summary": "2-3 sentence summary describing what was discussed",
             "action_plan": [
                 {{
-                    "action": "Clear, actionable task title", 
-                    "evidence_quote": "EXACT quote from transcript",
+                    "action": "Clear task description", 
+                    "evidence_quote": "EXACT quote from transcript (REQUIRED)",
                     "owner": "Person mentioned or 'Not specified'", 
                     "priority": "high/medium/low",
-                    "due": "Date mentioned or 'Not specified'"
+                    "due": "Date/time mentioned or 'Not specified'"
                 }}
             ]
         }}
@@ -122,38 +121,35 @@ class AnalysisService:
         
         # Standard Level Prompts
         "standard_executive": """
-        You are a professional meeting analyst. Follow this step-by-step analysis process:
+        You are an expert meeting analyst. Your job is to extract ALL action items, decisions, and risks from this transcript - be GENEROUS, not restrictive.
         
-        STEP 1: ANALYZE TRANSCRIPT TYPE
-        Determine if this is:
-        - A) Real business meeting
-        - B) Meta-testing/system demo
-        - C) Casual conversation
-        
-        Keywords for meta-testing: "test", "check if", "verify", "from my side", "make sure"
-        
-        STEP 2: IF META-TESTING → Return accurate description, empty arrays
-        STEP 3: IF REAL MEETING → Extract with evidence
-        
-        ANTI-HALLUCINATION RULES:
-        1. NEVER invent content not in transcript
-        2. Every claim in summary_md must have evidence in transcript
-        3. If transcript says "pantry tour", don't write "Q4 planning meeting"
-        4. Empty arrays are better than fake data
+        CORE PHILOSOPHY: Extract first, filter later
+        Quality filtering happens in a separate validation pipeline. Your role is to catch EVERYTHING that might be actionable.
         
         EXTRACTION GUIDELINES:
         
         For ACTIONS - Include evidence_quote for each:
-        ✓ Commitments ("I need to...", "I'll..."), Proposals ("We could...", "What about..."), Suggestions ("We should...", "Consider...")
-        ✗ Meta-testing ("I'm testing the app"), Personal ("I'll check my car"), Current activity ("Writing code now"), Sentence fragments (<8 words)
+        ✓ Work commitments: "I need to...", "I'll...", "We must..."
+        ✓ Personal tasks: "Clean bedroom", "Get cash", "Buy ticket"
+        ✓ Proposals: "We could...", "What about...", "Consider..."
+        ✓ Suggestions: "We should...", "Let's...", "Why don't we..."
+        ✓ Planning statements: "I'm planning to...", "I'll prepare..."
+        ✗ ONLY skip: Pure commentary, incomplete fragments, or pure questions without implied action
         
         For DECISIONS - Include evidence_quote for each:
-        ✓ Explicit decisions ("We decided...", "Approved..."), Strong agreements ("We're going with...")
-        ✗ Opinions without decision ("I think X" without group agreement)
+        ✓ Explicit decisions: "We decided...", "Approved...", "We're going with..."
+        ✓ Strong agreements: "Agreed", "Confirmed", "Settled on..."
         
         For RISKS - Include evidence_quote for each:
-        ✓ Concerns ("I'm concerned..."), Risk statements ("The risk is...")
-        ✗ Vague speculation without specific risk
+        ✓ Concerns: "I'm concerned...", "Worried about..."
+        ✓ Risk statements: "The risk is...", "Potential issue..."
+        ✓ Blockers: "This might prevent...", "Could cause problems..."
+        
+        ANTI-HALLUCINATION RULES:
+        1. NEVER invent content not in transcript
+        2. Every claim must have EXACT quote evidence from transcript
+        3. Better to extract too much than miss real items
+        4. If summary says "budget proposal", that phrase MUST appear in transcript
         
         FEW-SHOT EXAMPLES:
         
@@ -172,11 +168,15 @@ class AnalysisService:
             ]
         }}
         
-        Example 2 - Meta-Testing (CORRECT HANDLING):
-        Transcript: "I'm testing the task extraction. Let me check if tasks appear in the Tasks tab from my side."
+        Example 2 - Mixed Testing + Real Tasks:
+        Transcript: "I'm testing the task extraction. I also need to clean my bedroom today, get 30 pounds from the ATM, and buy a train ticket for tomorrow to work."
         Output: {{
-            "summary_md": "This was a system testing session to verify task extraction and display functionality.",
-            "actions": [],
+            "summary_md": "Session involved system testing and personal task planning including household chores, financial transactions, and travel preparation.",
+            "actions": [
+                {{"text": "Clean bedroom", "evidence_quote": "I also need to clean my bedroom today", "owner": "Not specified", "due": "today"}},
+                {{"text": "Get 30 pounds from ATM", "evidence_quote": "get 30 pounds from the ATM", "owner": "Not specified", "due": "Not specified"}},
+                {{"text": "Buy train ticket for tomorrow to work", "evidence_quote": "buy a train ticket for tomorrow to work", "owner": "Not specified", "due": "tomorrow"}}
+            ],
             "decisions": [],
             "risks": []
         }}
