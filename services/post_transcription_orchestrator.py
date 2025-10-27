@@ -446,8 +446,13 @@ class PostTranscriptionOrchestrator:
             event = None
         
         try:
-            # Calculate analytics
-            segments = db.session.query(Segment).filter_by(session_id=session.id).all()
+            # Calculate analytics - IMPORTANT: Use only 'final' segments for consistency with refined view
+            segments = db.session.query(Segment).filter_by(
+                session_id=session.id,
+                kind='final'
+            ).all()
+            
+            logger.info(f"[Analytics] Using {len(segments)} final segments for session {session.external_id}")
             
             total_duration = sum((s.end_ms or 0) - (s.start_ms or 0) for s in segments) / 1000.0
             avg_confidence = sum(s.avg_confidence or 0 for s in segments) / len(segments) if segments else 0
