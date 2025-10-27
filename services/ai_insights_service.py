@@ -59,7 +59,7 @@ class AIInsightsService:
             prompt = self._build_comprehensive_prompt(transcript_text, metadata)
             
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -138,7 +138,7 @@ Be concise, accurate, and actionable. Use null for missing information."""
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -173,7 +173,7 @@ Be concise, accurate, and actionable. Use null for missing information."""
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -202,7 +202,7 @@ Be concise, accurate, and actionable. Use null for missing information."""
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -255,7 +255,7 @@ Return as JSON array with ALL tasks found:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -284,7 +284,7 @@ Return as JSON array with ALL tasks found:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -313,7 +313,7 @@ Return as JSON array with ALL tasks found:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -341,7 +341,7 @@ Return as JSON array with ALL tasks found:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -370,7 +370,7 @@ Return as JSON array with ALL tasks found:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -402,7 +402,7 @@ Return as JSON array with ALL tasks found:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
