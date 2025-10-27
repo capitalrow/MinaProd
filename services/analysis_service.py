@@ -48,51 +48,67 @@ class AnalysisService:
         """,
         
         "brief_action": """
-        You are an insightful meeting analyst. Extract actionable insights from this transcript including commitments, proposals, questions that need answers, and ideas that require follow-up.
+        You are an insightful meeting analyst. Follow this analysis process step-by-step:
         
-        WHAT TO EXTRACT (be inclusive of valuable work insights):
-        1. ✓ Explicit commitments: "I will...", "I need to...", "Action item:..."
-        2. ✓ Proposals and ideas: "We could...", "What about...", "I wonder if...", "Consider..."
-        3. ✓ Questions needing answers: "How do we...", "What's the plan for...", "Should we..."
-        4. ✓ Suggestions for improvement: "We should improve...", "Let's optimize...", "Think about..."
-        5. ✓ Discussion points implying action: "Look into...", "Explore...", "Investigate..."
+        STEP 1: ANALYZE TRANSCRIPT TYPE
+        First, determine if this is:
+        - A) Real business meeting with actionable content
+        - B) Meta-testing (someone testing the system itself)
+        - C) Casual conversation with no work tasks
+        - D) Demo/walkthrough/tutorial
         
-        WHAT NOT TO EXTRACT (filter these out):
-        ✗ Meta-commentary about testing: "I'm testing the application", "Recording this for demo"
-        ✗ Casual personal tasks: "I will go check my car", "I'll grab coffee"
-        ✗ Current activities: "I'm writing code now", "Currently working on..."
-        ✗ Pure narration: "Testing the pipeline", "Sharing my screen"
+        STEP 2: IF META-TESTING DETECTED
+        Keywords indicating meta-testing: "test the app", "check if task extraction works", "verify the pipeline", "from my side", "make sure tasks are extracted"
+        → Return brief_summary describing it's a system test, action_plan = []
         
-        EXAMPLES OF GOOD EXTRACTION:
-        ✓ "I wonder if we could create a dashboard for tracking requests"
-          → Extract: {{"action": "Create dashboard for tracking requests", "evidence_quote": "I wonder if we could create a dashboard...", "priority": "medium"}}
+        STEP 3: EXTRACT ONLY IF REAL MEETING
+        Extract actionable insights including:
+        - ✓ Commitments: "I will...", "I need to...", "We must..."
+        - ✓ Proposals: "We could...", "What about...", "I wonder if..."
+        - ✓ Questions needing answers: "How do we...", "What's the plan for..."
+        - ✓ Suggestions: "We should...", "Consider...", "Let's..."
         
-        ✓ "What about adding metrics for completion time?"
-          → Extract: {{"action": "Add metrics for completion time", "evidence_quote": "What about adding metrics...", "priority": "medium"}}
+        Filter out:
+        - ✗ Meta-testing: "testing the app", "checking if X works"
+        - ✗ Personal errands: "check my car", "grab coffee"
+        - ✗ Current activities: "I'm writing code now"
         
-        ✓ "We should consider improving performance"
-          → Extract: {{"action": "Consider improving performance", "evidence_quote": "We should consider improving performance", "priority": "low"}}
+        ANTI-HALLUCINATION RULE:
+        NEVER invent content. If summary mentions "budget proposals" or "Q4 planning", those exact phrases must appear in transcript.
         
-        ✓ "I need to review the report by Friday"
-          → Extract: {{"action": "Review the report", "evidence_quote": "I need to review the report by Friday", "due": "Friday", "priority": "high"}}
+        FEW-SHOT EXAMPLES:
         
-        EXAMPLES OF CORRECT FILTERING:
-        ✗ "I'm testing the application right now"
-          → DO NOT extract (current activity, meta-testing)
+        Example 1 - Real Meeting:
+        Transcript: "We need to update the budget proposal by Friday. Sarah will review the marketing strategy and send feedback by EOD Thursday."
+        Output: {{
+            "brief_summary": "Team discussed upcoming deadlines for budget proposal and marketing strategy review.",
+            "action_plan": [
+                {{"action": "Update the budget proposal", "evidence_quote": "We need to update the budget proposal by Friday", "owner": "Not specified", "priority": "high", "due": "Friday"}},
+                {{"action": "Review marketing strategy and send feedback", "evidence_quote": "Sarah will review the marketing strategy and send feedback by EOD Thursday", "owner": "Sarah", "priority": "high", "due": "Thursday"}}
+            ]
+        }}
         
-        ✗ "I will go check my car later"
-          → DO NOT extract (personal, not work-related)
+        Example 2 - Meta-Testing (DETECT AND REJECT):
+        Transcript: "I'm testing the task extraction system. Let me check if the Tasks tab shows the extracted items correctly from my side."
+        Output: {{
+            "brief_summary": "This was a system testing session to verify task extraction functionality.",
+            "action_plan": []
+        }}
         
-        ✗ "Testing the Lina application. I will share the output with ChatGPT to refine the pipeline."
-          → DO NOT extract (meta-commentary about testing/demo)
+        Example 3 - Casual Conversation:
+        Transcript: "Hey, how was your weekend? I went hiking. The weather was great."
+        Output: {{
+            "brief_summary": "Casual conversation about weekend activities.",
+            "action_plan": []
+        }}
         
         Return ONLY valid JSON:
         {{
-            "brief_summary": "2-3 sentence summary of what was discussed",
+            "brief_summary": "2-3 sentence summary describing EXACTLY what was actually discussed (no invention)",
             "action_plan": [
                 {{
                     "action": "Clear, actionable task title", 
-                    "evidence_quote": "Quote from transcript showing this was mentioned",
+                    "evidence_quote": "EXACT quote from transcript",
                     "owner": "Person mentioned or 'Not specified'", 
                     "priority": "high/medium/low",
                     "due": "Date mentioned or 'Not specified'"
@@ -106,41 +122,72 @@ class AnalysisService:
         
         # Standard Level Prompts
         "standard_executive": """
-        You are a professional meeting analyst. Extract actionable insights from this transcript including commitments, proposals, questions, and valuable ideas.
+        You are a professional meeting analyst. Follow this step-by-step analysis process:
+        
+        STEP 1: ANALYZE TRANSCRIPT TYPE
+        Determine if this is:
+        - A) Real business meeting
+        - B) Meta-testing/system demo
+        - C) Casual conversation
+        
+        Keywords for meta-testing: "test", "check if", "verify", "from my side", "make sure"
+        
+        STEP 2: IF META-TESTING → Return accurate description, empty arrays
+        STEP 3: IF REAL MEETING → Extract with evidence
+        
+        ANTI-HALLUCINATION RULES:
+        1. NEVER invent content not in transcript
+        2. Every claim in summary_md must have evidence in transcript
+        3. If transcript says "pantry tour", don't write "Q4 planning meeting"
+        4. Empty arrays are better than fake data
         
         EXTRACTION GUIDELINES:
-        1. Include evidence_quote from transcript for each extracted item
-        2. Extract valuable work-related insights (commitments, proposals, questions, ideas)
-        3. Filter out meta-testing commentary and personal tasks
-        4. Return EMPTY arrays [] if no valuable insights found
         
         For ACTIONS - Include evidence_quote for each:
-        ✓ Extract: Commitments ("I need to...", "I'll..."), Proposals ("We could...", "What about..."), Questions ("How do we...", "Should we..."), Suggestions ("We should...", "Let's...", "Consider...")
-        ✗ Skip: Meta-testing ("I'm testing the app"), Personal ("I'll check my car"), Current activity narration ("Writing code now")
+        ✓ Commitments ("I need to...", "I'll..."), Proposals ("We could...", "What about..."), Suggestions ("We should...", "Consider...")
+        ✗ Meta-testing ("I'm testing the app"), Personal ("I'll check my car"), Current activity ("Writing code now"), Sentence fragments (<8 words)
         
         For DECISIONS - Include evidence_quote for each:
-        ✓ Extract: Explicit decisions ("We decided...", "Approved..."), Strong agreements ("We're going with...", "The decision is...")
-        ✗ Skip: Pure opinions without decision context ("I think X" without group agreement)
+        ✓ Explicit decisions ("We decided...", "Approved..."), Strong agreements ("We're going with...")
+        ✗ Opinions without decision ("I think X" without group agreement)
         
         For RISKS - Include evidence_quote for each:
-        ✓ Extract: Concerns ("I'm concerned about...", "This could be a problem..."), Risk statements ("The risk is...", "We might face...")
-        ✗ Skip: Vague speculation without specific risk identified
+        ✓ Concerns ("I'm concerned..."), Risk statements ("The risk is...")
+        ✗ Vague speculation without specific risk
         
-        FILTER OUT meta-testing commentary:
-        ✗ "Testing the Lina application. I will share the output including the post-transcription pipeline."
-          → DO NOT extract (meta-testing narration)
+        FEW-SHOT EXAMPLES:
         
-        EXTRACT valuable work insights:
-        ✓ "I wonder if we could add a dashboard for tracking completion metrics"
-          → Extract as action: {{"text": "Add dashboard for tracking completion metrics", "evidence_quote": "I wonder if we could add a dashboard...", "owner": "Not specified", "due": "Not specified"}}
+        Example 1 - Real Meeting:
+        Transcript: "We decided to move forward with the cloud migration. John will lead the infrastructure team and coordinate with vendors. This carries some risk around downtime during cutover."
+        Output: {{
+            "summary_md": "Team decided to proceed with cloud migration. John assigned as lead for infrastructure coordination. Potential downtime risk identified during cutover phase.",
+            "actions": [
+                {{"text": "Lead infrastructure team and coordinate with vendors for cloud migration", "evidence_quote": "John will lead the infrastructure team and coordinate with vendors", "owner": "John", "due": "Not specified"}}
+            ],
+            "decisions": [
+                {{"text": "Proceed with cloud migration", "evidence_quote": "We decided to move forward with the cloud migration", "impact": "Not specified"}}
+            ],
+            "risks": [
+                {{"text": "Potential downtime during cutover", "evidence_quote": "This carries some risk around downtime during cutover", "mitigation": "Not specified"}}
+            ]
+        }}
+        
+        Example 2 - Meta-Testing (CORRECT HANDLING):
+        Transcript: "I'm testing the task extraction. Let me check if tasks appear in the Tasks tab from my side."
+        Output: {{
+            "summary_md": "This was a system testing session to verify task extraction and display functionality.",
+            "actions": [],
+            "decisions": [],
+            "risks": []
+        }}
         
         Return ONLY valid JSON with evidence quotes:
         {{
-            "summary_md": "Factual summary of what was discussed (2-3 paragraphs). State clearly if this was just a test/casual conversation.",
+            "summary_md": "Factual summary of what was ACTUALLY discussed (2-3 paragraphs). No invention. State clearly if this was testing/casual conversation.",
             "actions": [
                 {{
                     "text": "Clear actionable task", 
-                    "evidence_quote": "REQUIRED: Quote from transcript",
+                    "evidence_quote": "REQUIRED: EXACT quote from transcript",
                     "owner": "Person name or 'Not specified'", 
                     "due": "Exact date/time mentioned or 'Not specified'"
                 }}
@@ -148,14 +195,14 @@ class AnalysisService:
             "decisions": [
                 {{
                     "text": "Decision made",
-                    "evidence_quote": "REQUIRED: Quote from transcript",
+                    "evidence_quote": "REQUIRED: EXACT quote from transcript",
                     "impact": "Impact mentioned or 'Not specified'"
                 }}
             ],
             "risks": [
                 {{
                     "text": "Risk or concern",
-                    "evidence_quote": "REQUIRED: Quote from transcript",
+                    "evidence_quote": "REQUIRED: EXACT quote from transcript",
                     "mitigation": "Mitigation mentioned or 'Not specified'"
                 }}
             ]
@@ -703,7 +750,7 @@ class AnalysisService:
                         {"role": "user", "content": prompt}
                     ],
                     response_format={"type": "json_object"},
-                    temperature=0.3
+                    temperature=0.2  # Lower temperature for consistency and reduced hallucination
                 )
             
             # Call with intelligent fallback and retry
