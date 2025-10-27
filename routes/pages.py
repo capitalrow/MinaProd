@@ -53,6 +53,12 @@ def cookies():
     """Cookie Policy page"""
     return render_template("legal/cookies.html")
 
+@pages_bp.route("/test-crown4")
+def test_crown4():
+    """CROWN⁴ Feature Test Suite"""
+    from flask import send_from_directory
+    return send_from_directory('.', 'test_crown4_features.html')
+
 # Onboarding
 @pages_bp.route("/onboarding")
 @login_required
