@@ -451,6 +451,245 @@
 {% block extra_js %}
 <script>
 /**
+ * Morph Transition Handlers - Defined globally FIRST
+ * Must be available before cache bootstrap runs
+ */
+const prefetchedSessions = new Set();
+
+window.handleCardHover = function(event) {
+    const card = event.currentTarget;
+    const sessionId = card.dataset.sessionId;
+    const meetingTitle = card.dataset.meetingTitle;
+    
+    // Skip if no session ID (meeting without linked session)
+    if (!sessionId) {
+        return;
+    }
+    
+    // Skip if already prefetched
+    if (prefetchedSessions.has(sessionId)) {
+        return;
+    }
+    
+    // Mark as prefetched
+    prefetchedSessions.add(sessionId);
+    
+    console.log('🔮 Prefetching session:', sessionId);
+    
+    // Broadcast session_prefetch event
+    try {
+        if (window.wsManager) {
+            window.wsManager.emit('session_prefetch', {
+                session_id: sessionId,
+                meeting_title: meetingTitle,
+                timestamp: Date.now()
+            });
+        }
+    } catch (e) {
+        console.warn('Failed to broadcast session_prefetch:', e);
+    }
+    
+    // Prefetch session data via fetch
+    fetch(`/sessions/${sessionId}?format=json`)
+        .then(response => {
+            if (response.ok) {
+                console.log('✅ Session data prefetched:', sessionId);
+                return response.json();
+            }
+        })
+        .then(data => {
+            if (data) {
+                try {
+                    sessionStorage.setItem(`session_${sessionId}`, JSON.stringify({
+                        data,
+                        timestamp: Date.now()
+                    }));
+                } catch (e) {
+                    console.warn('Failed to cache session data:', e);
+                }
+            }
+        })
+        .catch(err => {
+            console.warn('Failed to prefetch session:', err);
+        });
+};
+
+window.handleCardClick = function(event) {
+    event.preventDefault();
+    
+    const card = event.currentTarget;
+    const meetingId = card.dataset.meetingId;
+    const meetingTitle = card.dataset.meetingTitle;
+    const sessionId = card.dataset.sessionId;
+    
+    // If no session ID, skip
+    if (!sessionId) {
+        console.warn('⚠️ Meeting has no session ID, skipping navigation:', meetingId);
+        return;
+    }
+    
+    console.log('🎬 Starting morph transition for session:', sessionId);
+    
+    // Create clone for animation
+    const clone = card.cloneNode(true);
+    const rect = card.getBoundingClientRect();
+    
+    // Style clone as fixed overlay
+    Object.assign(clone.style, {
+        position: 'fixed',
+        top: `${rect.top}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+        margin: '0',
+        zIndex: '9999',
+        pointerEvents: 'none'
+    });
+    
+    document.body.appendChild(clone);
+    
+    // Hide original card
+    gsap.to(card, {
+        opacity: 0,
+        duration: 0.3
+    });
+    
+    // Create overlay backdrop
+    const overlay = document.createElement('div');
+    Object.assign(overlay.style, {
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        right: '0',
+        bottom: '0',
+        backgroundColor: 'rgba(0, 0, 0, 0)',
+        zIndex: '9998',
+        pointerEvents: 'none'
+    });
+    document.body.appendChild(overlay);
+    
+    // Animate backdrop fade in
+    gsap.to(overlay, {
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        duration: 0.4
+    });
+    
+    // Create loading overlay
+    const loadingOverlay = document.createElement('div');
+    Object.assign(loadingOverlay.style, {
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        textAlign: 'center',
+        zIndex: '10000',
+        pointerEvents: 'none',
+        opacity: '0'
+    });
+    
+    loadingOverlay.innerHTML = `
+        <div style="
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            padding: 32px 48px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        ">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="
+                animation: spin 1s linear infinite;
+                margin-bottom: 16px;
+            ">
+                <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="white" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+            <div style="
+                color: white;
+                font-size: 18px;
+                font-weight: 600;
+                margin-bottom: 8px;
+                letter-spacing: -0.02em;
+            ">${meetingTitle || 'Meeting'}</div>
+            <div style="
+                color: rgba(255, 255, 255, 0.85);
+                font-size: 14px;
+                font-weight: 500;
+            ">Preparing insights...</div>
+        </div>
+        <style>
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        </style>
+    `;
+    
+    document.body.appendChild(loadingOverlay);
+    
+    // Fade in loading overlay
+    gsap.to(loadingOverlay, {
+        opacity: 1,
+        duration: 0.3,
+        delay: 0.2
+    });
+    
+    // Calculate target dimensions
+    const targetWidth = Math.min(window.innerWidth - 64, 1200);
+    const targetHeight = window.innerHeight - 128;
+    const targetLeft = (window.innerWidth - targetWidth) / 2;
+    const targetTop = 64;
+    
+    // Cinematic morph animation
+    const timeline = gsap.timeline({
+        onComplete: () => {
+            window.location.href = `/sessions/${sessionId}/refined`;
+        }
+    });
+    
+    timeline
+        .to(clone, {
+            top: targetTop,
+            left: targetLeft,
+            width: targetWidth,
+            height: targetHeight,
+            borderRadius: '24px',
+            duration: 0.6,
+            ease: 'power3.inOut'
+        })
+        .to(clone, {
+            opacity: 0,
+            duration: 0.2
+        }, '-=0.1');
+    
+    // Store transition data
+    try {
+        sessionStorage.setItem('morphTransition', JSON.stringify({
+            meetingId,
+            meetingTitle,
+            fromDashboard: true,
+            timestamp: Date.now()
+        }));
+    } catch (e) {
+        console.warn('Failed to store transition data:', e);
+    }
+};
+
+window.initMorphTransitions = function() {
+    const meetingCards = document.querySelectorAll('.meeting-card');
+    
+    meetingCards.forEach(card => {
+        // Remove existing listeners to prevent duplicates
+        card.removeEventListener('click', window.handleCardClick);
+        card.removeEventListener('mouseenter', window.handleCardHover);
+        
+        // Add fresh listeners
+        card.addEventListener('click', window.handleCardClick);
+        card.addEventListener('mouseenter', window.handleCardHover);
+        card.style.cursor = 'pointer';
+    });
+    
+    console.log(`🎬 Initialized morph transitions for ${meetingCards.length} meeting cards`);
+};
+
+/**
  * Dashboard Real-time WebSocket Integration
  * CROWN⁴ Event Handling for Live Updates
  */
@@ -1242,274 +1481,6 @@
         }
     `;
     document.head.appendChild(style);
-    
-})();
-
-/**
- * Cinematic Morph Transition for Meeting Cards
- * CROWN⁴ UX Requirement: Smooth morphing animation from card to detail view
- */
-(function() {
-    'use strict';
-    
-    /**
-     * Handle meeting card hover for session prefetch
-     * @param {Event} event - Hover event
-     */
-    const prefetchedSessions = new Set();
-    function handleCardHover(event) {
-        const card = event.currentTarget;
-        const sessionId = card.dataset.sessionId;
-        const meetingTitle = card.dataset.meetingTitle;
-        
-        // Skip if no session ID (meeting without linked session)
-        if (!sessionId) {
-            return;
-        }
-        
-        // Skip if already prefetched
-        if (prefetchedSessions.has(sessionId)) {
-            return;
-        }
-        
-        // Mark as prefetched
-        prefetchedSessions.add(sessionId);
-        
-        console.log('🔮 Prefetching session:', sessionId);
-        
-        // Broadcast session_prefetch event
-        try {
-            if (window.wsManager) {
-                window.wsManager.emit('session_prefetch', {
-                    session_id: sessionId,
-                    meeting_title: meetingTitle,
-                    timestamp: Date.now()
-                });
-            }
-        } catch (e) {
-            console.warn('Failed to broadcast session_prefetch:', e);
-        }
-        
-        // Prefetch session data via fetch (use session detail endpoint)
-        fetch(`/sessions/${sessionId}?format=json`)
-            .then(response => {
-                if (response.ok) {
-                    console.log('✅ Session data prefetched:', sessionId);
-                    // Store in sessionStorage for faster loading
-                    return response.json();
-                }
-            })
-            .then(data => {
-                if (data) {
-                    try {
-                        sessionStorage.setItem(`session_${sessionId}`, JSON.stringify({
-                            data,
-                            timestamp: Date.now()
-                        }));
-                    } catch (e) {
-                        console.warn('Failed to cache session data:', e);
-                    }
-                }
-            })
-            .catch(err => {
-                console.warn('Failed to prefetch session:', err);
-            });
-    }
-    
-    /**
-     * Handle meeting card click with cinematic morph animation
-     * @param {Event} event - Click event
-     */
-    function handleCardClick(event) {
-        event.preventDefault();
-        
-        const card = event.currentTarget;
-        const meetingId = card.dataset.meetingId;
-        const meetingTitle = card.dataset.meetingTitle;
-        const sessionId = card.dataset.sessionId;
-        
-        // If no session ID, skip - meeting card shouldn't be clickable
-        if (!sessionId) {
-            console.warn('⚠️ Meeting has no session ID, skipping navigation:', meetingId);
-            return;
-        }
-        
-        console.log('🎬 Starting morph transition for session:', sessionId);
-        
-        // Create clone for animation
-        const clone = card.cloneNode(true);
-        const rect = card.getBoundingClientRect();
-        
-        // Style clone as fixed overlay
-        Object.assign(clone.style, {
-            position: 'fixed',
-            top: `${rect.top}px`,
-            left: `${rect.left}px`,
-            width: `${rect.width}px`,
-            height: `${rect.height}px`,
-            margin: '0',
-            zIndex: '9999',
-            pointerEvents: 'none'
-        });
-        
-        document.body.appendChild(clone);
-        
-        // Hide original card
-        gsap.to(card, {
-            opacity: 0,
-            duration: 0.3
-        });
-        
-        // Create overlay backdrop
-        const overlay = document.createElement('div');
-        Object.assign(overlay.style, {
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            right: '0',
-            bottom: '0',
-            backgroundColor: 'rgba(0, 0, 0, 0)',
-            zIndex: '9998',
-            pointerEvents: 'none'
-        });
-        document.body.appendChild(overlay);
-        
-        // Animate backdrop fade in
-        gsap.to(overlay, {
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            duration: 0.4
-        });
-        
-        // Create loading overlay with meeting title and status
-        const loadingOverlay = document.createElement('div');
-        Object.assign(loadingOverlay.style, {
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            textAlign: 'center',
-            zIndex: '10000',
-            pointerEvents: 'none',
-            opacity: '0'
-        });
-        
-        loadingOverlay.innerHTML = `
-            <div style="
-                background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
-                backdrop-filter: blur(20px);
-                padding: 32px 48px;
-                border-radius: 20px;
-                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            ">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="
-                    animation: spin 1s linear infinite;
-                    margin-bottom: 16px;
-                ">
-                    <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
-                    <path d="M12 2a10 10 0 0 1 10 10" stroke="white" stroke-width="3" stroke-linecap="round"/>
-                </svg>
-                <div style="
-                    color: white;
-                    font-size: 18px;
-                    font-weight: 600;
-                    margin-bottom: 8px;
-                    letter-spacing: -0.02em;
-                ">${meetingTitle || 'Meeting'}</div>
-                <div style="
-                    color: rgba(255, 255, 255, 0.85);
-                    font-size: 14px;
-                    font-weight: 500;
-                ">Preparing insights...</div>
-            </div>
-            <style>
-                @keyframes spin {
-                    to { transform: rotate(360deg); }
-                }
-            </style>
-        `;
-        
-        document.body.appendChild(loadingOverlay);
-        
-        // Fade in loading overlay
-        gsap.to(loadingOverlay, {
-            opacity: 1,
-            duration: 0.3,
-            delay: 0.2
-        });
-        
-        // Calculate target dimensions (centered, full-width container)
-        const targetWidth = Math.min(window.innerWidth - 64, 1200);
-        const targetHeight = window.innerHeight - 128;
-        const targetLeft = (window.innerWidth - targetWidth) / 2;
-        const targetTop = 64;
-        
-        // Cinematic morph animation using GSAP
-        const timeline = gsap.timeline({
-            onComplete: () => {
-                // Navigate to refined session view after animation
-                window.location.href = `/sessions/${sessionId}/refined`;
-            }
-        });
-        
-        timeline
-            .to(clone, {
-                top: targetTop,
-                left: targetLeft,
-                width: targetWidth,
-                height: targetHeight,
-                borderRadius: '24px',
-                duration: 0.6,
-                ease: 'power3.inOut'
-            })
-            .to(clone, {
-                opacity: 0,
-                duration: 0.2
-            }, '-=0.1');
-        
-        // Store transition data for potential use on detail page
-        try {
-            sessionStorage.setItem('morphTransition', JSON.stringify({
-                meetingId,
-                meetingTitle,
-                fromDashboard: true,
-                timestamp: Date.now()
-            }));
-        } catch (e) {
-            console.warn('Failed to store transition data:', e);
-        }
-    }
-    
-    /**
-     * Initialize morph transitions for meeting cards
-     */
-    function initMorphTransitions() {
-        const meetingCards = document.querySelectorAll('.meeting-card');
-        
-        meetingCards.forEach(card => {
-            // Remove existing listeners to prevent duplicates (make re-runnable)
-            card.removeEventListener('click', handleCardClick);
-            card.removeEventListener('mouseenter', handleCardHover);
-            
-            // Add fresh listeners
-            card.addEventListener('click', handleCardClick);
-            card.addEventListener('mouseenter', handleCardHover);
-            card.style.cursor = 'pointer';
-        });
-        
-        console.log(`🎬 Initialized morph transitions for ${meetingCards.length} meeting cards`);
-    }
-    
-    // Expose globally for cache rendering to call
-    window.initMorphTransitions = initMorphTransitions;
-    window.handleCardClick = handleCardClick;
-    window.handleCardHover = handleCardHover;
-    
-    // Initialize on DOM ready (for server-rendered cards)
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initMorphTransitions);
-    } else {
-        initMorphTransitions();
-    }
     
 })();
 </script>
