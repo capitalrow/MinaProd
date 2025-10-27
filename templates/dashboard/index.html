@@ -365,7 +365,10 @@
     {% if recent_meetings and recent_meetings|length > 0 %}
     <div class="meetings-list">
         {% for meeting in recent_meetings %}
-        <div class="meeting-card" onclick="window.location='{{ url_for('dashboard.meeting_detail', meeting_id=meeting.id) }}'">
+        <div class="meeting-card" 
+             data-meeting-id="{{ meeting.id }}" 
+             data-meeting-title="{{ meeting.title or 'Untitled Meeting' }}"
+             {% if meeting.session and meeting.session.external_id %}data-session-id="{{ meeting.session.external_id }}"{% endif %}>
             <div class="flex justify-between items-start">
                 <div class="flex-1">
                     <h3 class="meeting-title">{{ meeting.title or 'Untitled Meeting' }}</h3>
@@ -846,6 +849,208 @@
         }
     `;
     document.head.appendChild(style);
+    
+})();
+
+/**
+ * Cinematic Morph Transition for Meeting Cards
+ * CROWN⁴ UX Requirement: Smooth morphing animation from card to detail view
+ */
+(function() {
+    'use strict';
+    
+    /**
+     * Initialize morph transitions for meeting cards
+     */
+    function initMorphTransitions() {
+        const meetingCards = document.querySelectorAll('.meeting-card');
+        
+        meetingCards.forEach(card => {
+            card.addEventListener('click', handleCardClick);
+            card.addEventListener('mouseenter', handleCardHover);
+            card.style.cursor = 'pointer';
+        });
+        
+        console.log(`🎬 Initialized morph transitions for ${meetingCards.length} meeting cards`);
+    }
+    
+    /**
+     * Handle meeting card hover for session prefetch
+     * @param {Event} event - Hover event
+     */
+    const prefetchedSessions = new Set();
+    function handleCardHover(event) {
+        const card = event.currentTarget;
+        const sessionId = card.dataset.sessionId;
+        const meetingTitle = card.dataset.meetingTitle;
+        
+        // Skip if no session ID (meeting without linked session)
+        if (!sessionId) {
+            return;
+        }
+        
+        // Skip if already prefetched
+        if (prefetchedSessions.has(sessionId)) {
+            return;
+        }
+        
+        // Mark as prefetched
+        prefetchedSessions.add(sessionId);
+        
+        console.log('🔮 Prefetching session:', sessionId);
+        
+        // Broadcast session_prefetch event
+        try {
+            if (window.wsManager) {
+                window.wsManager.emit('session_prefetch', {
+                    session_id: sessionId,
+                    meeting_title: meetingTitle,
+                    timestamp: Date.now()
+                });
+            }
+        } catch (e) {
+            console.warn('Failed to broadcast session_prefetch:', e);
+        }
+        
+        // Prefetch session data via fetch (use session detail endpoint)
+        fetch(`/sessions/${sessionId}?format=json`)
+            .then(response => {
+                if (response.ok) {
+                    console.log('✅ Session data prefetched:', sessionId);
+                    // Store in sessionStorage for faster loading
+                    return response.json();
+                }
+            })
+            .then(data => {
+                if (data) {
+                    try {
+                        sessionStorage.setItem(`session_${sessionId}`, JSON.stringify({
+                            data,
+                            timestamp: Date.now()
+                        }));
+                    } catch (e) {
+                        console.warn('Failed to cache session data:', e);
+                    }
+                }
+            })
+            .catch(err => {
+                console.warn('Failed to prefetch session:', err);
+            });
+    }
+    
+    /**
+     * Handle meeting card click with cinematic morph animation
+     * @param {Event} event - Click event
+     */
+    function handleCardClick(event) {
+        event.preventDefault();
+        
+        const card = event.currentTarget;
+        const meetingId = card.dataset.meetingId;
+        const meetingTitle = card.dataset.meetingTitle;
+        const sessionId = card.dataset.sessionId;
+        
+        // If no session ID, fallback to legacy meeting detail page without animation
+        if (!sessionId) {
+            console.log('⚠️ No session ID, using legacy meeting detail view for meeting:', meetingId);
+            window.location.href = `/dashboard/meeting/${meetingId}`;
+            return;
+        }
+        
+        console.log('🎬 Starting morph transition for session:', sessionId);
+        
+        // Create clone for animation
+        const clone = card.cloneNode(true);
+        const rect = card.getBoundingClientRect();
+        
+        // Style clone as fixed overlay
+        Object.assign(clone.style, {
+            position: 'fixed',
+            top: `${rect.top}px`,
+            left: `${rect.left}px`,
+            width: `${rect.width}px`,
+            height: `${rect.height}px`,
+            margin: '0',
+            zIndex: '9999',
+            pointerEvents: 'none'
+        });
+        
+        document.body.appendChild(clone);
+        
+        // Hide original card
+        gsap.to(card, {
+            opacity: 0,
+            duration: 0.3
+        });
+        
+        // Create overlay backdrop
+        const overlay = document.createElement('div');
+        Object.assign(overlay.style, {
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            backgroundColor: 'rgba(0, 0, 0, 0)',
+            zIndex: '9998',
+            pointerEvents: 'none'
+        });
+        document.body.appendChild(overlay);
+        
+        // Animate backdrop fade in
+        gsap.to(overlay, {
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            duration: 0.4
+        });
+        
+        // Calculate target dimensions (centered, full-width container)
+        const targetWidth = Math.min(window.innerWidth - 64, 1200);
+        const targetHeight = window.innerHeight - 128;
+        const targetLeft = (window.innerWidth - targetWidth) / 2;
+        const targetTop = 64;
+        
+        // Cinematic morph animation using GSAP
+        const timeline = gsap.timeline({
+            onComplete: () => {
+                // Navigate to refined session view after animation
+                window.location.href = `/sessions/${sessionId}/refined`;
+            }
+        });
+        
+        timeline
+            .to(clone, {
+                top: targetTop,
+                left: targetLeft,
+                width: targetWidth,
+                height: targetHeight,
+                borderRadius: '24px',
+                duration: 0.6,
+                ease: 'power3.inOut'
+            })
+            .to(clone, {
+                opacity: 0,
+                duration: 0.2
+            }, '-=0.1');
+        
+        // Store transition data for potential use on detail page
+        try {
+            sessionStorage.setItem('morphTransition', JSON.stringify({
+                meetingId,
+                meetingTitle,
+                fromDashboard: true,
+                timestamp: Date.now()
+            }));
+        } catch (e) {
+            console.warn('Failed to store transition data:', e);
+        }
+    }
+    
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initMorphTransitions);
+    } else {
+        initMorphTransitions();
+    }
     
 })();
 </script>
