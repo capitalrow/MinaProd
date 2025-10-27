@@ -854,6 +854,11 @@ def create_app() -> Flask:
 
     @app.errorhandler(404)
     def not_found(e):
+        # Return HTML page for browser requests, JSON for API requests
+        if request.accept_mimetypes.accept_html and \
+           not request.path.startswith('/api/'):
+            return render_template('errors/404.html'), 404
+        
         return jsonify({
             'error': 'not_found',
             'message': 'The requested resource was not found',

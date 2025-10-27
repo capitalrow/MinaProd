@@ -378,8 +378,17 @@
                     {% endif %}
                 </div>
                 <div class="flex items-center gap-3">
-                    {% if meeting.duration %}
-                    <span class="badge badge-primary">{{ (meeting.duration / 60)|round|int }} min</span>
+                    {% if not meeting.session or not meeting.session.external_id %}
+                    <span class="badge badge-warning" title="Session is being processed">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: inline; margin-right: 4px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Processing
+                    </span>
+                    {% else %}
+                        {% if meeting.duration %}
+                        <span class="badge badge-primary">{{ (meeting.duration / 60)|round|int }} min</span>
+                        {% endif %}
                     {% endif %}
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.5;">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -1388,6 +1397,63 @@
         gsap.to(overlay, {
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
             duration: 0.4
+        });
+        
+        // Create loading overlay with meeting title and status
+        const loadingOverlay = document.createElement('div');
+        Object.assign(loadingOverlay.style, {
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center',
+            zIndex: '10000',
+            pointerEvents: 'none',
+            opacity: '0'
+        });
+        
+        loadingOverlay.innerHTML = `
+            <div style="
+                background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+                backdrop-filter: blur(20px);
+                padding: 32px 48px;
+                border-radius: 20px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            ">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="
+                    animation: spin 1s linear infinite;
+                    margin-bottom: 16px;
+                ">
+                    <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+                <div style="
+                    color: white;
+                    font-size: 18px;
+                    font-weight: 600;
+                    margin-bottom: 8px;
+                    letter-spacing: -0.02em;
+                ">${meetingTitle || 'Meeting'}</div>
+                <div style="
+                    color: rgba(255, 255, 255, 0.85);
+                    font-size: 14px;
+                    font-weight: 500;
+                ">Preparing insights...</div>
+            </div>
+            <style>
+                @keyframes spin {
+                    to { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+        
+        document.body.appendChild(loadingOverlay);
+        
+        // Fade in loading overlay
+        gsap.to(loadingOverlay, {
+            opacity: 1,
+            duration: 0.3,
+            delay: 0.2
         });
         
         // Calculate target dimensions (centered, full-width container)
