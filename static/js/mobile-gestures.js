@@ -45,6 +45,12 @@
      * Initialize mobile gestures
      */
     function init() {
+        // Only initialize on dashboard page
+        const isDashboard = document.querySelector('.dashboard-container');
+        if (!isDashboard) {
+            return; // Not on dashboard, skip initialization
+        }
+        
         if (!isMobileDevice()) {
             console.log('📱 Desktop detected - mobile gestures disabled');
             return;
