@@ -1060,36 +1060,76 @@ class PostTranscriptionOrchestrator:
                         logger.debug(f"[Pattern Matching] Skipped (too few words): '{task_text[:50]}...'")
                         continue
                     
-                    # Deduplication
-                    task_title = task_text[:100]  # Limit title length
-                    if task_title.lower() in seen_titles:
-                        logger.debug(f"[Pattern Matching] Skipped duplicate task: '{task_title[:50]}...'")
+                    # Deduplication - check full text before refinement
+                    if task_text.lower() in seen_titles:
+                        logger.debug(f"[Pattern Matching] Skipped duplicate task: '{task_text[:50]}...'")
                         continue
                         
-                    seen_titles.add(task_title.lower())
+                    seen_titles.add(task_text.lower())
                     
                     # Track pattern match for diagnostics
                     pattern_name = f"pattern_{idx}"
                     pattern_match_counts[pattern_name] = pattern_match_counts.get(pattern_name, 0) + 1
-                    logger.debug(f"[Pattern Matching] Pattern {idx} matched: '{task_title[:50]}...' in segment {segment_id}")
+                    logger.debug(f"[Pattern Matching] Pattern {idx} matched: '{task_text[:50]}...' in segment {segment_id}")
                     
-                    # Create task in database with segment linkage
+                    # ===== APPLY REFINEMENT TO PATTERN-MATCHED TASKS =====
+                    from services.task_refinement_service import get_task_refinement_service
+                    from services.date_parser_service import get_date_parser_service
+                    
+                    raw_task_text = task_text
+                    refinement_service = get_task_refinement_service()
+                    
+                    # Refine task text (conversational → professional)
+                    refinement_result = refinement_service.refine_task(
+                        raw_task=task_text,
+                        context={'evidence_quote': text[:200]}  # Use full segment text as context
+                    )
+                    
+                    if refinement_result.success:
+                        task_text = refinement_result.refined_text
+                        logger.info(f"[Pattern+Refinement] '{raw_task_text[:40]}...' → '{task_text[:60]}'")
+                    else:
+                        logger.warning(f"[Pattern+Refinement] Failed: {refinement_result.error}, using original")
+                    
+                    # Parse due date if present in text
+                    date_parser = get_date_parser_service()
+                    due_date = None
+                    due_interpretation = None
+                    
+                    # Look for temporal markers in the original segment text
+                    date_result = date_parser.parse_due_date(text)
+                    if date_result.success:
+                        due_date = date_result.date
+                        due_interpretation = date_result.interpretation
+                        logger.info(f"[Pattern+Date] Parsed due date: {due_interpretation}")
+                    
+                    # Create task in database with refinement metadata
                     try:
                         task = Task(
                             session_id=session_id,
-                            title=task_title,
-                            description=f"Extracted from transcript",
-                            priority="medium",
+                            title=task_text,  # Use FULL refined text (no truncation)
+                            description=f"Extracted from transcript via pattern matching",
+                            priority="medium",  # Default, could be enhanced with NLP sentiment analysis
                             status="todo",
+                            due_date=due_date,  # Parsed due date
                             extracted_by_ai=False,  # Pattern-based extraction
-                            confidence_score=0.6,  # Lower confidence for pattern matching
+                            confidence_score=0.75 if refinement_result.success else 0.6,  # Higher confidence if refined
                             extraction_context={
                                 'source': 'pattern',
-                                'transcript_snippet': task_text[:500],
+                                'raw_text': raw_task_text,  # CRITICAL: Store original for transparency
+                                'transcript_snippet': text[:500],
                                 'source_segment_id': segment_id,  # Enable 'jump to context'
                                 'start_ms': seg_data.get('start_ms'),
                                 'end_ms': seg_data.get('end_ms'),
-                                'matched_pattern': pattern[:50]  # Store which pattern matched
+                                'matched_pattern': pattern[:50],  # Store which pattern matched
+                                'refinement': {
+                                    'transformation_applied': refinement_result.success,
+                                    'method': 'llm' if refinement_result.transformation_applied else 'passthrough',
+                                    'error': refinement_result.error if not refinement_result.success else None
+                                },
+                                'metadata_extraction': {
+                                    'due_date_parsed': due_interpretation
+                                }
                             }
                         )
                         db.session.add(task)
