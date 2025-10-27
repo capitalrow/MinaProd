@@ -569,43 +569,38 @@ class AnalyticsService:
         }
         
         try:
-            # Try models in order of preference with fallback
-            models_to_try = ["gpt-4o-mini", "gpt-3.5-turbo", "gpt-4o"]
-            last_error = None
-            response = None
+            # Use unified AI model manager with GPT-4.1 fallback (async version)
+            from services.ai_model_manager import AIModelManager
             
-            for model in models_to_try:
-                try:
-                    response = await self.client.chat.completions.create(
-                        model=model,
-                        messages=[
+            async def make_api_call(model: str):
+                return await self.client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": """Analyze this meeting data and provide insights and recommendations.
+                            Return a JSON object with:
                             {
-                                "role": "system",
-                                "content": """Analyze this meeting data and provide insights and recommendations.
-                                Return a JSON object with:
-                                {
-                                  "insights": ["insight 1", "insight 2", ...],
-                                  "recommendations": ["recommendation 1", "recommendation 2", ...]
-                                }"""
-                            },
-                            {"role": "user", "content": json.dumps(meeting_summary)}
-                        ],
-                        temperature=0.3,
-                        max_tokens=500
-                    )
-                    break  # Success
-                except Exception as model_error:
-                    last_error = model_error
-                    error_msg = str(model_error)
-                    
-                    # Check if it's a permission/access error
-                    if "403" in error_msg or "model_not_found" in error_msg or "does not have access" in error_msg:
-                        continue  # Try next model
-                    else:
-                        raise
+                              "insights": ["insight 1", "insight 2", ...],
+                              "recommendations": ["recommendation 1", "recommendation 2", ...]
+                            }"""
+                        },
+                        {"role": "user", "content": json.dumps(meeting_summary)}
+                    ],
+                    temperature=0.3,
+                    max_tokens=500
+                )
             
-            if response is None:
-                raise last_error
+            # Use async version of AI model manager
+            result_obj = await AIModelManager.call_with_fallback_async(
+                make_api_call,
+                operation_name="analytics insights generation"
+            )
+            
+            if not result_obj.success:
+                raise Exception(f"All AI models failed")
+            
+            response = result_obj.response
             
             result = json.loads(response.choices[0].message.content)
             analytics.insights_generated = result.get("insights", [])
