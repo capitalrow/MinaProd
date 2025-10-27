@@ -48,56 +48,57 @@ class AnalysisService:
         """,
         
         "brief_action": """
-        You are a strict meeting analyst. Extract ONLY explicitly stated action items from this transcript.
+        You are an insightful meeting analyst. Extract actionable insights from this transcript including commitments, proposals, questions that need answers, and ideas that require follow-up.
         
-        CRITICAL RULES - YOU MUST FOLLOW THESE EXACTLY:
-        1. Only extract tasks that are EXPLICITLY STATED as commitments in the transcript
-        2. You MUST include the exact quote from the transcript for each task as evidence
-        3. If you cannot find a direct quote, DO NOT extract that task
-        4. Return an EMPTY array if there are NO clear action items
-        5. Do NOT infer, assume, create, or hallucinate tasks
-        6. Be extremely conservative - when in doubt, don't extract it
+        WHAT TO EXTRACT (be inclusive of valuable work insights):
+        1. ✓ Explicit commitments: "I will...", "I need to...", "Action item:..."
+        2. ✓ Proposals and ideas: "We could...", "What about...", "I wonder if...", "Consider..."
+        3. ✓ Questions needing answers: "How do we...", "What's the plan for...", "Should we..."
+        4. ✓ Suggestions for improvement: "We should improve...", "Let's optimize...", "Think about..."
+        5. ✓ Discussion points implying action: "Look into...", "Explore...", "Investigate..."
         
-        EXAMPLES OF WHAT TO EXTRACT (with evidence):
-        ✓ Transcript says: "I need to review the report by Friday"
-          Extract: {{"action": "Review the report", "evidence_quote": "I need to review the report by Friday", ...}}
+        WHAT NOT TO EXTRACT (filter these out):
+        ✗ Meta-commentary about testing: "I'm testing the application", "Recording this for demo"
+        ✗ Casual personal tasks: "I will go check my car", "I'll grab coffee"
+        ✗ Current activities: "I'm writing code now", "Currently working on..."
+        ✗ Pure narration: "Testing the pipeline", "Sharing my screen"
         
-        ✓ Transcript says: "Action item: Let's schedule a follow-up meeting"
-          Extract: {{"action": "Schedule a follow-up meeting", "evidence_quote": "Let's schedule a follow-up meeting", ...}}
+        EXAMPLES OF GOOD EXTRACTION:
+        ✓ "I wonder if we could create a dashboard for tracking requests"
+          → Extract: {{"action": "Create dashboard for tracking requests", "evidence_quote": "I wonder if we could create a dashboard...", "priority": "medium"}}
         
-        EXAMPLES OF WHAT NOT TO EXTRACT:
-        ✗ Transcript says: "I'm testing the application"
-          DO NOT extract "Test the application" - this is describing current activity, not a future task
+        ✓ "What about adding metrics for completion time?"
+          → Extract: {{"action": "Add metrics for completion time", "evidence_quote": "What about adding metrics...", "priority": "medium"}}
         
-        ✗ Transcript says: "I will go check my car"
-          DO NOT extract - casual conversation, not a work task
+        ✓ "We should consider improving performance"
+          → Extract: {{"action": "Consider improving performance", "evidence_quote": "We should consider improving performance", "priority": "low"}}
         
-        ✗ Transcript says: "We could consider improving performance"
-          DO NOT extract - just an idea, not a commitment
+        ✓ "I need to review the report by Friday"
+          → Extract: {{"action": "Review the report", "evidence_quote": "I need to review the report by Friday", "due": "Friday", "priority": "high"}}
         
-        ✗ Transcript says: "Testing the post-transcription pipeline"
-          DO NOT extract - describing what they're doing NOW, not a task for later
+        EXAMPLES OF CORRECT FILTERING:
+        ✗ "I'm testing the application right now"
+          → DO NOT extract (current activity, meta-testing)
         
-        REAL-WORLD NEGATIVE EXAMPLE (DO NOT EXTRACT FROM THIS):
-        "Testing the Lina application. I will go ahead and share the output from my screen recording, including the post-transcription pipeline with Chad GPT. It will help me refine how the pipeline will work after recording has stopped."
-        → This has NO action items. They're describing their current testing activity.
-        → CORRECT response: action_plan = []
+        ✗ "I will go check my car later"
+          → DO NOT extract (personal, not work-related)
         
-        Return ONLY valid JSON with evidence quotes:
+        ✗ "Testing the Lina application. I will share the output with ChatGPT to refine the pipeline."
+          → DO NOT extract (meta-commentary about testing/demo)
+        
+        Return ONLY valid JSON:
         {{
             "brief_summary": "2-3 sentence summary of what was discussed",
             "action_plan": [
                 {{
-                    "action": "Exact task as stated", 
-                    "evidence_quote": "REQUIRED: Exact quote from transcript showing this task was mentioned",
+                    "action": "Clear, actionable task title", 
+                    "evidence_quote": "Quote from transcript showing this was mentioned",
                     "owner": "Person mentioned or 'Not specified'", 
-                    "priority": "high/medium/low if urgency mentioned",
+                    "priority": "high/medium/low",
                     "due": "Date mentioned or 'Not specified'"
                 }}
             ]
         }}
-        
-        If NO action items found, return: {{"brief_summary": "This was a [casual conversation/test/discussion] with no specific action items mentioned.", "action_plan": []}}
         
         Meeting transcript:
         {transcript}
@@ -105,41 +106,40 @@ class AnalysisService:
         
         # Standard Level Prompts
         "standard_executive": """
-        You are a professional meeting analyst. Analyze this transcript and extract information STRICTLY as stated.
+        You are a professional meeting analyst. Extract actionable insights from this transcript including commitments, proposals, questions, and valuable ideas.
         
-        CRITICAL RULES - FOLLOW EXACTLY:
-        1. Only extract what is EXPLICITLY stated in the transcript
-        2. You MUST provide evidence_quote from transcript for each extracted item
-        3. Do NOT infer, assume, create, or hallucinate information
-        4. Return EMPTY arrays [] if nothing was explicitly mentioned
-        5. Be extremely conservative - accuracy over completeness
+        EXTRACTION GUIDELINES:
+        1. Include evidence_quote from transcript for each extracted item
+        2. Extract valuable work-related insights (commitments, proposals, questions, ideas)
+        3. Filter out meta-testing commentary and personal tasks
+        4. Return EMPTY arrays [] if no valuable insights found
         
         For ACTIONS - Include evidence_quote for each:
-        ✓ Extract: "I need to...", "I'll...", "Action: ...", "We should...", "Let's..."
-        ✗ Skip: Casual mentions ("I'm going to check my car"), maybes ("I could..."), current activities ("I'm testing...")
-        ✗ Return [] if no clear action items
+        ✓ Extract: Commitments ("I need to...", "I'll..."), Proposals ("We could...", "What about..."), Questions ("How do we...", "Should we..."), Suggestions ("We should...", "Let's...", "Consider...")
+        ✗ Skip: Meta-testing ("I'm testing the app"), Personal ("I'll check my car"), Current activity narration ("Writing code now")
         
         For DECISIONS - Include evidence_quote for each:
-        ✓ Extract: "We decided...", "The decision is...", "We're going with...", "Approved..."
-        ✗ Skip: Opinions ("I think..."), ideas ("We could...", "maybe...")
-        ✗ Return [] if no decisions were made
+        ✓ Extract: Explicit decisions ("We decided...", "Approved..."), Strong agreements ("We're going with...", "The decision is...")
+        ✗ Skip: Pure opinions without decision context ("I think X" without group agreement)
         
         For RISKS - Include evidence_quote for each:
-        ✓ Extract: "The risk is...", "I'm concerned about...", "This could be a problem..."
-        ✗ Skip: General speculation
-        ✗ Return [] if no risks mentioned
+        ✓ Extract: Concerns ("I'm concerned about...", "This could be a problem..."), Risk statements ("The risk is...", "We might face...")
+        ✗ Skip: Vague speculation without specific risk identified
         
-        REAL-WORLD NEGATIVE EXAMPLE (DO NOT EXTRACT FROM THIS):
-        "Testing the Lina application. I will share the output including the post-transcription pipeline. It will help me refine how the pipeline works."
-        → This is someone describing their CURRENT testing activity
-        → CORRECT response: actions=[], decisions=[], risks=[]
+        FILTER OUT meta-testing commentary:
+        ✗ "Testing the Lina application. I will share the output including the post-transcription pipeline."
+          → DO NOT extract (meta-testing narration)
+        
+        EXTRACT valuable work insights:
+        ✓ "I wonder if we could add a dashboard for tracking completion metrics"
+          → Extract as action: {{"text": "Add dashboard for tracking completion metrics", "evidence_quote": "I wonder if we could add a dashboard...", "owner": "Not specified", "due": "Not specified"}}
         
         Return ONLY valid JSON with evidence quotes:
         {{
             "summary_md": "Factual summary of what was discussed (2-3 paragraphs). State clearly if this was just a test/casual conversation.",
             "actions": [
                 {{
-                    "text": "Exact action as stated", 
+                    "text": "Clear actionable task", 
                     "evidence_quote": "REQUIRED: Quote from transcript",
                     "owner": "Person name or 'Not specified'", 
                     "due": "Exact date/time mentioned or 'Not specified'"
@@ -147,14 +147,14 @@ class AnalysisService:
             ],
             "decisions": [
                 {{
-                    "text": "Exact decision as stated",
+                    "text": "Decision made",
                     "evidence_quote": "REQUIRED: Quote from transcript",
                     "impact": "Impact mentioned or 'Not specified'"
                 }}
             ],
             "risks": [
                 {{
-                    "text": "Exact risk/concern as stated",
+                    "text": "Risk or concern",
                     "evidence_quote": "REQUIRED: Quote from transcript",
                     "mitigation": "Mitigation mentioned or 'Not specified'"
                 }}
