@@ -616,26 +616,32 @@ class PostTranscriptionOrchestrator:
                     extracted_tasks = self._extract_tasks_with_patterns_and_segments(
                         transcript_with_segments, session.id
                     )
-                    task_count = len(extracted_tasks)
                     task_source = "pattern_extraction"
                     
-                    logger.info(f"[Tasks] Extracted {task_count} tasks using pattern matching")
+                    logger.info(f"[Tasks] Pattern extraction attempted {len(extracted_tasks)} tasks")
                 else:
                     logger.warning(f"[Tasks] No final segments found for session {session.id}")
-                    task_count = 0
                     task_source = "no_segments"
             
+            # CRITICAL: Query database to get ACTUAL persisted count (after commit)
+            from sqlalchemy import select, func
+            persisted_task_count = db.session.scalar(
+                select(func.count()).select_from(Task).where(Task.session_id == session.id)
+            ) or 0
+            
+            logger.info(f"[Tasks] Database verification: {persisted_task_count} tasks persisted for session {session.id}")
+            
             result = {
-                'tasks_created': task_count,
+                'tasks_created': persisted_task_count,  # Use DB count, not in-memory count
                 'task_source': task_source,
                 'session_id': session.id
             }
             
-            # CRITICAL: Always emit WebSocket event (even if 0 tasks)
+            # CRITICAL: Emit WebSocket event AFTER database verification (use DB count)
             socketio.emit('tasks_generation', {
                 'session_id': session.external_id,
-                'task_count': task_count,
-                'message': f'{task_count} new action{"s" if task_count != 1 else ""} identified' if task_count > 0 else 'No action items found',
+                'task_count': persisted_task_count,  # Use verified DB count
+                'message': f'{persisted_task_count} new action{"s" if persisted_task_count != 1 else ""} identified' if persisted_task_count > 0 else 'No action items found',
                 'timestamp': datetime.utcnow().isoformat()
             })
             
@@ -771,19 +777,62 @@ class PostTranscriptionOrchestrator:
                         logger.warning(f"Failed to create pattern-extracted task: {e}")
                         continue
         
-        # Commit all tasks at once
+        # Commit all tasks at once with comprehensive error handling
         try:
             if created_tasks:
+                # Log pre-commit state for debugging
+                logger.info(f"[Database] Attempting to commit {len(created_tasks)} tasks for session_id={session_id}")
+                
+                # Verify session exists before committing (FK constraint check)
+                from models.session import Session as SessionModel
+                session_exists = db.session.query(SessionModel).filter_by(id=session_id).first()
+                if not session_exists:
+                    logger.error(f"[Database] FK violation prevented: session_id={session_id} does not exist")
+                    db.session.rollback()
+                    return []
+                
+                # Commit to database
                 db.session.commit()
-                logger.info(f"Created {len(created_tasks)} pattern-extracted tasks with segment linkage")
+                
+                # CRITICAL: Verify tasks were actually persisted by querying database
+                from sqlalchemy import select, func
+                persisted_count = db.session.scalar(
+                    select(func.count()).select_from(Task).where(Task.session_id == session_id)
+                )
+                
+                if persisted_count != len(created_tasks):
+                    logger.error(
+                        f"[Database] Task persistence mismatch! "
+                        f"Expected {len(created_tasks)} but found {persisted_count} in database "
+                        f"for session_id={session_id}"
+                    )
+                
+                logger.info(
+                    f"✅ [Database] Successfully persisted {persisted_count} tasks "
+                    f"(attempted {len(created_tasks)}) for session_id={session_id}"
+                )
+                
                 # Log diagnostic information about pattern matching
                 if pattern_match_counts:
                     logger.info(f"[Pattern Matching] Match distribution: {pattern_match_counts}")
             else:
                 logger.info(f"[Pattern Matching] No tasks extracted from {len(transcript_segments)} segments")
         except Exception as e:
+            import traceback
+            error_traceback = traceback.format_exc()
+            error_type = type(e).__name__
+            
+            # Detailed error logging with full context
+            logger.error(f"❌ [Database] Failed to commit tasks: {error_type}: {e}")
+            logger.error(f"[Database] Error traceback:\n{error_traceback}")
+            logger.error(
+                f"[Database] Context: session_id={session_id}, "
+                f"attempted_tasks={len(created_tasks)}, "
+                f"task_titles={[t.title[:30] for t in created_tasks[:3]]}"
+            )
+            
+            # Rollback and return empty list
             db.session.rollback()
-            logger.error(f"Failed to commit pattern-extracted tasks: {e}")
             return []
         
         return created_tasks
