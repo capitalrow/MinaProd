@@ -172,7 +172,7 @@ def create_session():
 @sessions_bp.route('/<int:session_id>/finalize', methods=['POST'])
 def finalize_session(session_id):
     """
-    POST /sessions/<id>/finalize - Mark session as completed (idempotent)
+    POST /sessions/<id>/finalize - Mark session as completed and create meeting (idempotent)
     
     Request body (JSON, optional):
     - final_text: Optional final transcript text to add
@@ -186,24 +186,35 @@ def finalize_session(session_id):
         if not session:
             return jsonify({'error': 'Session not found'}), 404
         
-        # Complete the session (idempotent)
-        SessionService.complete_session(session_id)
-        
         # Finalize segments if final text provided
         if final_text:
             finalized_count = SessionService.finalize_session_segments(session_id, final_text)
+        else:
+            finalized_count = 0
+        
+        # Use new meeting lifecycle service to complete session + create meeting
+        from services.meeting_lifecycle_service import MeetingLifecycleService
+        result = MeetingLifecycleService.finalize_session_with_meeting(session_id)
+        
+        if result.get('success'):
             return jsonify({
-                'message': f'Session {session_id} completed',
+                'message': f'Session {session_id} completed and meeting created',
+                'session_id': session_id,
+                'meeting_id': result.get('meeting_id'),
                 'finalized_segments': finalized_count,
                 'status': 'completed'
             })
         else:
+            # Fallback to just completing session
+            SessionService.complete_session(session_id, create_meeting=False)
             return jsonify({
-                'message': f'Session {session_id} completed',
-                'status': 'completed'
+                'message': f'Session {session_id} completed (meeting creation failed)',
+                'status': 'completed',
+                'error': result.get('error')
             })
             
     except Exception as e:
+        logger.error(f"Error finalizing session {session_id}: {e}", exc_info=True)
         return jsonify({'error': f'Failed to finalize session: {str(e)}'}), 500
 
 
