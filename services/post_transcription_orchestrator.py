@@ -560,6 +560,9 @@ class PostTranscriptionOrchestrator:
         task extraction directly from transcript segments. Falls back to insights
         if available, but continues even if insights failed.
         """
+        from models.task import Task
+        from sqlalchemy import select, func
+        
         event = None
         
         # Non-blocking event logging
@@ -588,8 +591,6 @@ class PostTranscriptionOrchestrator:
             
             # Option 2: Extract tasks directly from transcript (independent of insights)
             else:
-                from models.task import Task
-                from sqlalchemy import select
                 
                 logger.info(f"[Tasks] Insights unavailable or empty, extracting from transcript directly")
                 
@@ -624,7 +625,6 @@ class PostTranscriptionOrchestrator:
                     task_source = "no_segments"
             
             # CRITICAL: Query database to get ACTUAL persisted count (after commit)
-            from sqlalchemy import select, func
             persisted_task_count = db.session.scalar(
                 select(func.count()).select_from(Task).where(Task.session_id == session.id)
             ) or 0
@@ -737,6 +737,48 @@ class PostTranscriptionOrchestrator:
                     # Basic validation
                     if len(task_text) < 5 or len(task_text) > 200:
                         logger.debug(f"[Pattern Matching] Skipped task (length {len(task_text)}): '{task_text[:50]}...'")
+                        continue
+                    
+                    # Context-aware filtering to eliminate false positives
+                    task_lower = task_text.lower()
+                    
+                    # Filter 1: Reject meta-commentary about the application/testing
+                    meta_patterns = [
+                        'task extraction', 'should be able', 'the objective', 
+                        'testing the', 'i am testing', 'we are testing',
+                        'the feature', 'this feature', 'the application', 'this application',
+                        'the system', 'this system', 'the pipeline', 'this pipeline',
+                        'the goal is', 'the purpose is', 'the idea is',
+                        'i\'m recording', 'i am recording', 'screen recording'
+                    ]
+                    if any(meta in task_lower for meta in meta_patterns):
+                        logger.debug(f"[Pattern Matching] Skipped meta-commentary: '{task_text[:50]}...'")
+                        continue
+                    
+                    # Filter 2: Reject questions (not action items)
+                    if task_text.strip().endswith('?'):
+                        logger.debug(f"[Pattern Matching] Skipped question: '{task_text[:50]}...'")
+                        continue
+                    
+                    # Filter 3: Reject if doesn't contain action verbs (for commitment patterns)
+                    # Only apply to commitment patterns (patterns 1 and 2)
+                    if idx in [1, 2]:  # Commitment patterns that use "will", "should", etc.
+                        action_verbs = [
+                            'review', 'update', 'send', 'create', 'finish', 'complete',
+                            'prepare', 'schedule', 'contact', 'call', 'email', 'write',
+                            'fix', 'implement', 'test', 'deploy', 'check', 'submit',
+                            'approve', 'analyze', 'research', 'present', 'discuss',
+                            'follow up', 'followup', 'reach out', 'set up', 'setup'
+                        ]
+                        has_action_verb = any(verb in task_lower for verb in action_verbs)
+                        if not has_action_verb:
+                            logger.debug(f"[Pattern Matching] Skipped (no action verb): '{task_text[:50]}...'")
+                            continue
+                    
+                    # Filter 4: Minimum meaningful content (at least 3 words after filtering)
+                    word_count = len(task_text.split())
+                    if word_count < 3:
+                        logger.debug(f"[Pattern Matching] Skipped (too few words): '{task_text[:50]}...'")
                         continue
                     
                     # Deduplication
