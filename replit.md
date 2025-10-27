@@ -28,7 +28,13 @@ The application utilizes a layered architecture with Flask as the web framework 
 - **Real-time Audio Processing Pipeline**: Client-side VAD, WebSocket streaming, server-side processing, OpenAI Whisper API integration, real-time broadcasting, multi-speaker diarization, multi-language detection, adaptive VAD, real-time audio quality monitoring, confidence scoring.
 - **Security & Authentication**: JWT-based authentication with RBAC, bcrypt, AES-256 encryption, rate limiting, CSP headers, CSRF protection, input validation.
 - **Performance**: Low Word Error Rate (WER), sub-400ms end-to-end transcription latency, optimized database indexing.
-- **Task Extraction**: Two-stage extraction with primary AI extraction and pattern matching as fallback. Task model is the single source of truth.
+- **Task Extraction**: Premium two-stage extraction with AI-powered refinement:
+  - **Stage 1**: AI extraction with ValidationEngine quality scoring (0.65 threshold)
+  - **Stage 2**: LLM-based semantic transformation (GPT-4o-mini) converts conversational fragments → professional action items
+  - **Metadata Enrichment**: Intelligent parsing of priority, due dates (temporal references), and assignees
+  - **Quality Gates**: Sentence completeness detection, grammar checking, deduplication (0.7 threshold)
+  - **Pattern Matching Fallback**: Regex-based extraction when AI unavailable
+  - **Task Model**: Single source of truth with full metadata (priority, due_date, assigned_to, confidence_score, extraction_context)
 
 **System Design Choices:**
 - **Backend**: Flask with Flask-SocketIO.

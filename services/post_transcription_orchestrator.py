@@ -691,18 +691,90 @@ class PostTranscriptionOrchestrator:
                                 )
                                 continue  # Skip this task
                             
+                            # === ENHANCEMENT: Task Refinement & Metadata Extraction ===
+                            
+                            # Store original raw text before refinement
+                            raw_task_text = task_text
+                            
+                            # Step 1: Refine task text (conversational → professional)
+                            from services.task_refinement_service import get_task_refinement_service
+                            refinement_service = get_task_refinement_service()
+                            
+                            refinement_result = refinement_service.refine_task(
+                                raw_task=task_text,
+                                context={'evidence_quote': evidence_quote}
+                            )
+                            
+                            if refinement_result.success:
+                                task_text = refinement_result.refined_text
+                                logger.info(f"[Refinement] '{raw_task_text[:40]}...' → '{task_text}'")
+                            else:
+                                logger.warning(f"[Refinement] Failed: {refinement_result.error}, using original")
+                            
+                            # Step 2: Extract priority (map from AI response)
+                            priority_mapping = {
+                                'high': 'high',
+                                'urgent': 'high',
+                                'critical': 'high',
+                                'medium': 'medium',
+                                'normal': 'medium',
+                                'low': 'low'
+                            }
+                            raw_priority = action.get('priority', 'medium').lower().strip()
+                            priority = priority_mapping.get(raw_priority, 'medium')
+                            
+                            # Step 3: Parse due date (temporal reference → concrete date)
+                            from services.date_parser_service import get_date_parser_service
+                            date_parser = get_date_parser_service()
+                            
+                            due_text = action.get('due', '').strip()
+                            due_date = None
+                            due_interpretation = None
+                            
+                            if due_text and due_text.lower() not in ['not specified', 'none', 'unknown', '']:
+                                date_result = date_parser.parse_due_date(due_text)
+                                if date_result.success:
+                                    due_date = date_result.date
+                                    due_interpretation = date_result.interpretation
+                                    logger.info(f"[Date Parsing] '{due_text}' → {due_date} ({due_interpretation})")
+                                else:
+                                    logger.debug(f"[Date Parsing] Could not parse: '{due_text}'")
+                            
+                            # Step 4: Match user/owner (name → user_id or store name)
+                            from services.user_matching_service import get_user_matching_service
+                            user_matcher = get_user_matching_service()
+                            
+                            owner_name = action.get('owner', '').strip()
+                            assigned_to_id = None
+                            assigned_to_name = None
+                            
+                            if owner_name and owner_name.lower() not in ['not specified', 'none', 'unknown', '']:
+                                match_result = user_matcher.match_user(owner_name, session.id)
+                                if match_result.success and match_result.user_id:
+                                    assigned_to_id = match_result.user_id
+                                    logger.info(f"[User Matching] '{owner_name}' → user_id {assigned_to_id}")
+                                else:
+                                    # Store name in extraction context if no user match
+                                    assigned_to_name = match_result.user_name
+                                    logger.debug(f"[User Matching] '{owner_name}' stored as name (no user match)")
+                            
                             # Create task only if quality is acceptable
                             task = Task(
                                 session_id=session.id,
-                                title=task_text[:100],  # Limit title length
+                                title=task_text[:255],  # Use refined text
                                 description=f"AI-extracted action item (quality score: {quality_score.total_score:.2f})",
-                                priority=action.get('priority', 'medium').lower(),
+                                priority=priority,  # Parsed priority
                                 status="todo",
-                                assigned_to=action.get('owner', '').strip() or None,
-                                extracted_by_ai=True,  # Mark as AI-extracted
-                                confidence_score=quality_score.total_score,  # Use quality score as confidence
+                                due_date=due_date,  # Parsed due date
+                                assigned_to_id=assigned_to_id,  # Matched user ID
+                                extracted_by_ai=True,
+                                confidence_score=quality_score.total_score,
                                 extraction_context={
                                     'source': 'ai_insights',
+                                    'raw_text': raw_task_text,  # PRESERVE ORIGINAL for validation
+                                    'refined_text': task_text if refinement_result.success else None,
+                                    'refinement_applied': refinement_result.transformation_applied,
+                                    'refinement_confidence': refinement_result.confidence,
                                     'original_action': action,
                                     'quality_score': quality_score.total_score,
                                     'quality_breakdown': {
@@ -710,7 +782,18 @@ class PostTranscriptionOrchestrator:
                                         'has_subject': quality_score.has_subject,
                                         'appropriate_length': quality_score.appropriate_length,
                                         'has_evidence': quality_score.has_evidence
-                                    }
+                                    },
+                                    'metadata_extraction': {
+                                        'priority_raw': raw_priority,
+                                        'priority_mapped': priority,
+                                        'due_text': due_text,
+                                        'due_date': due_date.isoformat() if due_date else None,
+                                        'due_interpretation': due_interpretation,
+                                        'owner_raw': owner_name,
+                                        'owner_matched_id': assigned_to_id,
+                                        'owner_name': assigned_to_name
+                                    },
+                                    'evidence_quote': evidence_quote
                                 }
                             )
                             db.session.add(task)

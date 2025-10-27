@@ -244,7 +244,7 @@
         </div>
     </div>
 
-    {% if meetings and meetings|length > 0 %}
+    {% if meetings %}
     <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-4);">
         {% for meeting in meetings %}
         <div class="meeting-card" onclick="window.location='{{ url_for('dashboard.meeting_detail', meeting_id=meeting.id) }}'">

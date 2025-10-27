@@ -68,7 +68,7 @@ class ValidationEngine:
     MIN_SUMMARY_SIMILARITY = 0.7
     MIN_TASK_LENGTH = 8
     MAX_TASK_LENGTH = 100
-    DEDUP_SIMILARITY_THRESHOLD = 0.8
+    DEDUP_SIMILARITY_THRESHOLD = 0.7  # Lowered from 0.8 to catch more semantic duplicates
     
     def __init__(self):
         """Initialize validation engine"""
@@ -237,6 +237,78 @@ class ValidationEngine:
             ]
         )
     
+    def check_sentence_completeness(self, task_text: str) -> ValidationResult:
+        """
+        Check if task is a complete, grammatically sound sentence.
+        
+        Detects:
+        - Cut-off mid-sentence (ends with "and", "or", conjunction)
+        - Broken grammar ("is then check", "from here is")
+        - Incomplete phrases ("relevantly and correctly" with no continuation)
+        - Sentence fragments
+        """
+        if not task_text or not task_text.strip():
+            return ValidationResult(
+                is_valid=False,
+                score=0.0,
+                reasons=["Empty task text"]
+            )
+        
+        task_clean = task_text.strip()
+        task_lower = task_clean.lower()
+        
+        # Check 1: Ends mid-thought with conjunction
+        incomplete_endings = [
+            ' and', ' or', ' but', ' with', ' to', ' from', ' for',
+            ' the', ' a', ' an', ' is', ' are', ' will', ' should'
+        ]
+        for ending in incomplete_endings:
+            if task_clean.endswith(ending):
+                return ValidationResult(
+                    is_valid=False,
+                    score=0.2,
+                    reasons=[f"Sentence cuts off mid-thought (ends with '{ending}')"]
+                )
+        
+        # Check 2: Contains broken grammar patterns
+        broken_patterns = [
+            r'\s+is\s+then\s+',  # "from here is then check"
+            r'\s+from\s+here\s+is\s+',  # "take from here is"
+            r'\s+that\s+all\s+the\s+tabs\s+are\s+relevantly\s+and\s+correctly$',  # cut-off example
+        ]
+        for pattern in broken_patterns:
+            if re.search(pattern, task_lower):
+                return ValidationResult(
+                    is_valid=False,
+                    score=0.3,
+                    reasons=[f"Broken grammar detected (pattern: {pattern})"]
+                )
+        
+        # Check 3: Too short to be meaningful (< 3 words)
+        word_count = len(task_clean.split())
+        if word_count < 3:
+            return ValidationResult(
+                is_valid=False,
+                score=0.4,
+                reasons=[f"Too short to be meaningful ({word_count} words)"]
+            )
+        
+        # Check 4: Missing verb (likely incomplete)
+        has_verb = any(verb in task_lower for verb in self.ACTION_VERBS)
+        if not has_verb and word_count < 6:
+            return ValidationResult(
+                is_valid=False,
+                score=0.5,
+                reasons=["Short phrase with no action verb (likely fragment)"]
+            )
+        
+        # Sentence appears complete
+        return ValidationResult(
+            is_valid=True,
+            score=1.0,
+            reasons=["Sentence appears grammatically complete"]
+        )
+    
     def score_task_quality(
         self, 
         task_text: str, 
@@ -249,10 +321,29 @@ class ValidationEngine:
         - Subject (0.2): Has clear subject (who/what)
         - Length (0.2): Appropriate length (8-100 words)
         - Evidence (0.3): Has valid evidence quote
+        
+        ENHANCED: Now includes sentence completeness check
         """
         task_lower = task_text.lower()
         words = task_text.split()
         word_count = len(words)
+        
+        # 0. Completeness check (CRITICAL - rejects broken sentences)
+        completeness = self.check_sentence_completeness(task_text)
+        if not completeness.is_valid:
+            logger.warning(f"Task rejected for incompleteness: {task_text[:50]}... - {completeness.reasons}")
+            # Return very low score to trigger rejection
+            return TaskQualityScore(
+                total_score=0.2,  # Well below 0.65 threshold
+                has_action_verb=False,
+                has_subject=False,
+                appropriate_length=False,
+                has_evidence=False,
+                verb_score=0.0,
+                subject_score=0.0,
+                length_score=0.0,
+                evidence_score=0.0
+            )
         
         # 1. Action verb check (0.3 weight)
         has_verb = any(verb in task_lower for verb in self.ACTION_VERBS)
