@@ -576,13 +576,10 @@
             meetingsListEl.insertAdjacentHTML('beforeend', cardHTML);
         });
         
-        // Attach event listeners to rendered cards
-        const cards = meetingsListEl.querySelectorAll('.meeting-card');
-        cards.forEach(card => {
-            card.addEventListener('click', handleCardClick);
-            card.addEventListener('mouseenter', handleCardHover);
-            card.style.cursor = 'pointer';
-        });
+        // Initialize morph transitions for newly rendered cards
+        if (window.initMorphTransitions) {
+            window.initMorphTransitions();
+        }
     }
     
     /**
@@ -938,15 +935,14 @@
         // Insert at top of list
         meetingsListEl.insertAdjacentHTML('afterbegin', cardHTML);
         
-        // Get the newly inserted card and attach event listeners
+        // Initialize morph transitions for all cards (including the new one)
+        if (window.initMorphTransitions) {
+            window.initMorphTransitions();
+        }
+        
+        // Get the newly inserted card for additional styling
         const newCard = meetingsListEl.querySelector('.new-card');
         if (newCard) {
-            // Attach click handler for morph transition
-            newCard.addEventListener('click', handleCardClick);
-            // Attach hover handler for prefetch
-            newCard.addEventListener('mouseenter', handleCardHover);
-            newCard.style.cursor = 'pointer';
-            
             // Apply pulse glow animation to the entire card
             newCard.style.animation += ', pulseGlow 2s ease-in-out 2';
             
@@ -1490,6 +1486,11 @@
         const meetingCards = document.querySelectorAll('.meeting-card');
         
         meetingCards.forEach(card => {
+            // Remove existing listeners to prevent duplicates (make re-runnable)
+            card.removeEventListener('click', handleCardClick);
+            card.removeEventListener('mouseenter', handleCardHover);
+            
+            // Add fresh listeners
             card.addEventListener('click', handleCardClick);
             card.addEventListener('mouseenter', handleCardHover);
             card.style.cursor = 'pointer';
@@ -1498,7 +1499,12 @@
         console.log(`🎬 Initialized morph transitions for ${meetingCards.length} meeting cards`);
     }
     
-    // Initialize on DOM ready
+    // Expose globally for cache rendering to call
+    window.initMorphTransitions = initMorphTransitions;
+    window.handleCardClick = handleCardClick;
+    window.handleCardHover = handleCardHover;
+    
+    // Initialize on DOM ready (for server-rendered cards)
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initMorphTransitions);
     } else {
