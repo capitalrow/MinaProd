@@ -808,40 +808,16 @@ class PostTranscriptionOrchestrator:
                 if summary and summary.actions:
                     for idx, action in enumerate(summary.actions):
                         try:
-                            task_text = action.get('text', '').strip()
+                            # Step 1: Store original raw text from AI
+                            raw_task_text = action.get('text', '').strip()
                             evidence_quote = action.get('evidence_quote', '')
                             
-                            # Validate task quality using scoring rubric
-                            quality_score = validation_engine.score_task_quality(
-                                task_text=task_text,
-                                evidence_quote=evidence_quote,
-                                transcript=full_transcript
-                            )
-                            
-                            quality_scores.append(quality_score.total_score)
-                            
-                            # Reject low-quality tasks
-                            if quality_score.total_score < validation_engine.MIN_TASK_SCORE:
-                                rejected_count += 1
-                                logger.info(
-                                    f"[Validation] Rejected low-quality task (score: {quality_score.total_score:.2f}): "
-                                    f"{task_text[:50]}... "
-                                    f"(verb:{quality_score.has_action_verb}, subject:{quality_score.has_subject}, "
-                                    f"length:{quality_score.appropriate_length}, evidence:{quality_score.has_evidence})"
-                                )
-                                continue  # Skip this task
-                            
-                            # === ENHANCEMENT: Task Refinement & Metadata Extraction ===
-                            
-                            # Store original raw text before refinement
-                            raw_task_text = task_text
-                            
-                            # Step 1: Refine task text (conversational → professional)
+                            # Step 2: REFINE FIRST (conversational → professional)
                             from services.task_refinement_service import get_task_refinement_service
                             refinement_service = get_task_refinement_service()
                             
                             refinement_result = refinement_service.refine_task(
-                                raw_task=task_text,
+                                raw_task=raw_task_text,
                                 context={'evidence_quote': evidence_quote}
                             )
                             
@@ -849,9 +825,30 @@ class PostTranscriptionOrchestrator:
                                 task_text = refinement_result.refined_text
                                 logger.info(f"[Refinement] '{raw_task_text[:40]}...' → '{task_text}'")
                             else:
+                                task_text = raw_task_text
                                 logger.warning(f"[Refinement] Failed: {refinement_result.error}, using original")
                             
-                            # Step 2: Parse due date FIRST (needed for priority intelligence)
+                            # Step 3: THEN VALIDATE the refined text
+                            quality_score = validation_engine.score_task_quality(
+                                task_text=task_text,  # Validate REFINED text, not raw
+                                evidence_quote=evidence_quote,
+                                transcript=full_transcript
+                            )
+                            
+                            quality_scores.append(quality_score.total_score)
+                            
+                            # Reject low-quality tasks (after refinement)
+                            if quality_score.total_score < validation_engine.MIN_TASK_SCORE:
+                                rejected_count += 1
+                                logger.info(
+                                    f"[Validation] Rejected refined task (score: {quality_score.total_score:.2f}): "
+                                    f"{task_text[:50]}... "
+                                    f"(verb:{quality_score.has_action_verb}, subject:{quality_score.has_subject}, "
+                                    f"length:{quality_score.appropriate_length}, evidence:{quality_score.has_evidence})"
+                                )
+                                continue  # Skip this task
+                            
+                            # Step 4: Parse due date (needed for priority intelligence)
                             from services.date_parser_service import get_date_parser_service
                             date_parser = get_date_parser_service()
                             
@@ -868,7 +865,7 @@ class PostTranscriptionOrchestrator:
                                 else:
                                     logger.debug(f"[Date Parsing] Could not parse: '{due_text}'")
                             
-                            # Step 3: Intelligent priority detection (keywords + deadline proximity)
+                            # Step 5: Intelligent priority detection (keywords + deadline proximity)
                             ai_suggested_priority = action.get('priority', 'medium').lower().strip()
                             priority = _determine_priority(
                                 task_text=task_text,
@@ -881,7 +878,7 @@ class PostTranscriptionOrchestrator:
                             elif ai_suggested_priority == 'low' and priority == 'medium':
                                 priority = 'low'
                             
-                            # Step 4: Extract assignee from context (NLP-based)
+                            # Step 6: Extract assignee from context (NLP-based)
                             # First try AI-suggested owner, then extract from evidence
                             owner_name = action.get('owner', '').strip()
                             if not owner_name or owner_name.lower() in ['not specified', 'none', 'unknown', '']:
@@ -893,7 +890,7 @@ class PostTranscriptionOrchestrator:
                                 if extracted_assignee:
                                     owner_name = extracted_assignee
                             
-                            # Step 5: Match user/owner (name → user_id or store name)
+                            # Step 7: Match user/owner (name → user_id or store name)
                             from services.user_matching_service import get_user_matching_service
                             user_matcher = get_user_matching_service()
                             
@@ -952,7 +949,7 @@ class PostTranscriptionOrchestrator:
                                         'has_evidence': quality_score.has_evidence
                                     },
                                     'metadata_extraction': {
-                                        'priority_raw': raw_priority,
+                                        'priority_raw': ai_suggested_priority,
                                         'priority_mapped': priority,
                                         'due_text': due_text,
                                         'due_date': due_date.isoformat() if due_date else None,
