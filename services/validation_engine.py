@@ -296,13 +296,13 @@ class ValidationEngine:
                     reasons=[f"Broken grammar detected (pattern: {pattern})"]
                 )
         
-        # Check 3: Too short to be meaningful (< 3 words)
+        # Check 3: Too short to be meaningful (use MIN_TASK_LENGTH configuration)
         word_count = len(task_clean.split())
-        if word_count < 3:
+        if word_count < self.MIN_TASK_LENGTH:
             return ValidationResult(
                 is_valid=False,
                 score=0.4,
-                reasons=[f"Too short to be meaningful ({word_count} words)"]
+                reasons=[f"Too short to be meaningful ({word_count} words, minimum: {self.MIN_TASK_LENGTH})"]
             )
         
         # Check 4: Missing verb (HARD-FAIL - all tasks must have action verbs)
