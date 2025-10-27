@@ -1257,21 +1257,6 @@
     'use strict';
     
     /**
-     * Initialize morph transitions for meeting cards
-     */
-    function initMorphTransitions() {
-        const meetingCards = document.querySelectorAll('.meeting-card');
-        
-        meetingCards.forEach(card => {
-            card.addEventListener('click', handleCardClick);
-            card.addEventListener('mouseenter', handleCardHover);
-            card.style.cursor = 'pointer';
-        });
-        
-        console.log(`🎬 Initialized morph transitions for ${meetingCards.length} meeting cards`);
-    }
-    
-    /**
      * Handle meeting card hover for session prefetch
      * @param {Event} event - Hover event
      */
@@ -1496,6 +1481,21 @@
         } catch (e) {
             console.warn('Failed to store transition data:', e);
         }
+    }
+    
+    /**
+     * Initialize morph transitions for meeting cards
+     */
+    function initMorphTransitions() {
+        const meetingCards = document.querySelectorAll('.meeting-card');
+        
+        meetingCards.forEach(card => {
+            card.addEventListener('click', handleCardClick);
+            card.addEventListener('mouseenter', handleCardHover);
+            card.style.cursor = 'pointer';
+        });
+        
+        console.log(`🎬 Initialized morph transitions for ${meetingCards.length} meeting cards`);
     }
     
     // Initialize on DOM ready
