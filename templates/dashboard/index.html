@@ -766,9 +766,22 @@ window.initMorphTransitions = function() {
             // Always sync with server in background (validate even if fresh)
             syncWithServer();
             
+            // Initialize morph transitions for all cards (server-rendered + cache-rendered)
+            // This ensures event listeners are attached regardless of card source
+            console.log('🎯 Attaching event listeners to all meeting cards...');
+            if (window.initMorphTransitions) {
+                window.initMorphTransitions();
+            } else {
+                console.error('❌ initMorphTransitions not available!');
+            }
+            
         } catch (error) {
             console.error('❌ Bootstrap failed:', error);
             // Graceful degradation: page will use server-rendered data
+            // Still try to attach event listeners to server-rendered cards
+            if (window.initMorphTransitions) {
+                window.initMorphTransitions();
+            }
         }
     }
     
@@ -1481,6 +1494,45 @@ window.initMorphTransitions = function() {
         }
     `;
     document.head.appendChild(style);
+    
+    /**
+     * Initialize Dashboard - CROWN⁴ Event Sequencing Entry Point
+     * Event #1: dashboard_bootstrap
+     */
+    function initializeDashboard() {
+        console.log('🌟 CROWN⁴ Dashboard Initialization Starting...');
+        console.log('📋 Event Sequence: dashboard_bootstrap → session_prefetch → session_card_click');
+        
+        // Step 1: Bootstrap cache-first rendering
+        bootstrapDashboard()
+            .then(() => {
+                console.log('✅ Bootstrap complete - cache loaded, cards rendered, listeners attached');
+                
+                // Step 2: Initialize WebSocket for real-time updates (Event #2: session_update:created)
+                console.log('🔌 Initializing WebSocket connection...');
+                initWebSocket();
+                
+                // Step 3: Start background idle sync (Event #13: dashboard_idle_sync)
+                console.log('⏰ Starting idle sync timer...');
+                startIdleSync();
+                
+                console.log('🎉 CROWN⁴ Dashboard fully initialized - ready for user interaction!');
+            })
+            .catch(error => {
+                console.error('❌ Dashboard initialization failed:', error);
+                // Fallback: still try to initialize WebSocket and sync
+                initWebSocket();
+                startIdleSync();
+            });
+    }
+    
+    // Trigger initialization when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
+    } else {
+        // DOM already loaded, execute immediately
+        initializeDashboard();
+    }
     
 })();
 </script>
