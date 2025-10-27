@@ -692,7 +692,7 @@ class AnalysisService:
             expected_keys = AnalysisService._get_expected_keys(level, style)
             
             response = client.chat.completions.create(
-                model="gpt-4",  # Use proven model (gpt-5 may not exist)
+                model="gpt-4o-mini",  # Supports response_format, faster and cheaper than gpt-4
                 messages=[
                     {"role": "system", "content": "You are a professional meeting analyst. Respond with valid JSON only."},
                     {"role": "user", "content": prompt}
