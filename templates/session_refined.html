@@ -2,6 +2,7 @@
 {% block title %}{{ session.title or 'Meeting Insights' }} - Mina{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tasks.css') }}">
 <style>
 /* ========================================
    CROWN+ Session Refined View - Mobile-First Tabbed Interface
@@ -761,32 +762,202 @@
       
       {# State 1: Tasks found (Task model is single source of truth) #}
       {% if tasks and tasks|length > 0 %}
-      <div class="task-list">
-        {% for task in tasks %}
-        <div class="task-item">
-          <input type="checkbox" class="task-checkbox" 
-                 data-task-id="{{ task.id }}" 
-                 {% if task.status == 'done' %}checked{% endif %}
-                 aria-label="Mark task as complete">
-          <div class="task-content">
-            <div class="task-text">{{ task.title }}</div>
-            <div class="task-meta">
-              {% if task.assigned_to %}
-              <span>👤 {{ task.assigned_to }}</span>
-              {% endif %}
-              {% if task.due_date %}
-              <span>📅 {{ task.due_date.strftime('%b %d') }}</span>
-              {% endif %}
-              {% if task.priority %}
-              <span>⚡ {{ task.priority|capitalize }}</span>
-              {% endif %}
+      
+      {# Sort tasks: high priority first, then medium, then low #}
+      {% set high_priority_tasks = tasks|selectattr('priority', 'equalto', 'high')|list %}
+      {% set medium_priority_tasks = tasks|selectattr('priority', 'in', ['medium', 'normal'])|list %}
+      {% set low_priority_tasks = tasks|selectattr('priority', 'equalto', 'low')|list %}
+      {% set no_priority_tasks = tasks|rejectattr('priority')|list %}
+      
+      <div class="task-list-enhanced">
+        {# High Priority Tasks (Pinned to top) #}
+        {% if high_priority_tasks|length > 0 %}
+        <div class="task-priority-section">
+          <div class="priority-header priority-high">
+            <span class="priority-icon">🔴</span>
+            <span class="priority-label">High Priority</span>
+            <span class="priority-count">{{ high_priority_tasks|length }}</span>
+          </div>
+          {% for task in high_priority_tasks %}
+          <div class="task-item-enhanced task-priority-high" data-task-id="{{ task.id }}">
+            <div class="task-checkbox-wrapper">
+              <input type="checkbox" class="task-checkbox" 
+                     data-task-id="{{ task.id }}" 
+                     {% if task.status == 'completed' or task.status == 'done' %}checked{% endif %}
+                     aria-label="Mark task as complete">
+            </div>
+            <div class="task-content-enhanced">
+              <div class="task-header-row">
+                <div class="task-title">{{ task.title }}</div>
+                {% if task.confidence_score %}
+                <div class="task-confidence" title="Quality score: {{ (task.confidence_score * 100)|round }}%">
+                  {% if task.confidence_score >= 0.85 %}
+                  <span class="confidence-indicator confidence-high" title="High quality extraction ({{ (task.confidence_score * 100)|round }}%)">✅</span>
+                  {% elif task.confidence_score >= 0.65 %}
+                  <span class="confidence-indicator confidence-medium" title="Medium quality extraction ({{ (task.confidence_score * 100)|round }}%)">⚠️</span>
+                  {% else %}
+                  <span class="confidence-indicator confidence-low" title="Lower quality extraction ({{ (task.confidence_score * 100)|round }}%)">ℹ️</span>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
+              <div class="task-metadata-row">
+                {% if task.due_date %}
+                <span class="task-meta-item task-due-date {% if task.is_overdue %}overdue{% elif task.is_due_soon %}due-soon{% endif %}" title="Due date">
+                  <span class="meta-icon">📅</span>
+                  <span class="meta-text">{{ task.due_date }}</span>
+                  {% if task.is_overdue %}<span class="due-badge overdue-badge">Overdue</span>{% elif task.is_due_soon %}<span class="due-badge soon-badge">Due Soon</span>{% endif %}
+                </span>
+                {% endif %}
+                {% if task.extraction_context and task.extraction_context.get('metadata_extraction', {}).get('owner_name') %}
+                <span class="task-meta-item task-assignee" title="Assigned to">
+                  <span class="meta-icon">👤</span>
+                  <span class="meta-text">{{ task.extraction_context['metadata_extraction']['owner_name'] }}</span>
+                </span>
+                {% elif task.assigned_to %}
+                <span class="task-meta-item task-assignee" title="Assigned to">
+                  <span class="meta-icon">👤</span>
+                  <span class="meta-text">{{ task.assigned_to.username if task.assigned_to.username else 'Assigned' }}</span>
+                </span>
+                {% endif %}
+                {% if task.category %}
+                <span class="task-meta-item task-category" title="Category">
+                  <span class="meta-icon">🏷️</span>
+                  <span class="meta-text">{{ task.category|capitalize }}</span>
+                </span>
+                {% endif %}
+              </div>
             </div>
           </div>
+          {% endfor %}
         </div>
-        {% endfor %}
+        {% endif %}
+        
+        {# Medium Priority Tasks #}
+        {% if medium_priority_tasks|length > 0 or no_priority_tasks|length > 0 %}
+        <div class="task-priority-section">
+          <div class="priority-header priority-medium">
+            <span class="priority-icon">🟡</span>
+            <span class="priority-label">Medium Priority</span>
+            <span class="priority-count">{{ (medium_priority_tasks|length) + (no_priority_tasks|length) }}</span>
+          </div>
+          {% for task in medium_priority_tasks + no_priority_tasks %}
+          <div class="task-item-enhanced task-priority-medium" data-task-id="{{ task.id }}">
+            <div class="task-checkbox-wrapper">
+              <input type="checkbox" class="task-checkbox" 
+                     data-task-id="{{ task.id }}" 
+                     {% if task.status == 'completed' or task.status == 'done' %}checked{% endif %}
+                     aria-label="Mark task as complete">
+            </div>
+            <div class="task-content-enhanced">
+              <div class="task-header-row">
+                <div class="task-title">{{ task.title }}</div>
+                {% if task.confidence_score %}
+                <div class="task-confidence" title="Quality score: {{ (task.confidence_score * 100)|round }}%">
+                  {% if task.confidence_score >= 0.85 %}
+                  <span class="confidence-indicator confidence-high" title="High quality ({{ (task.confidence_score * 100)|round }}%)">✅</span>
+                  {% elif task.confidence_score >= 0.65 %}
+                  <span class="confidence-indicator confidence-medium" title="Medium quality ({{ (task.confidence_score * 100)|round }}%)">⚠️</span>
+                  {% else %}
+                  <span class="confidence-indicator confidence-low" title="Lower quality ({{ (task.confidence_score * 100)|round }}%)">ℹ️</span>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
+              <div class="task-metadata-row">
+                {% if task.due_date %}
+                <span class="task-meta-item task-due-date {% if task.is_overdue %}overdue{% elif task.is_due_soon %}due-soon{% endif %}">
+                  <span class="meta-icon">📅</span>
+                  <span class="meta-text">{{ task.due_date }}</span>
+                  {% if task.is_overdue %}<span class="due-badge overdue-badge">Overdue</span>{% elif task.is_due_soon %}<span class="due-badge soon-badge">Due Soon</span>{% endif %}
+                </span>
+                {% endif %}
+                {% if task.extraction_context and task.extraction_context.get('metadata_extraction', {}).get('owner_name') %}
+                <span class="task-meta-item task-assignee">
+                  <span class="meta-icon">👤</span>
+                  <span class="meta-text">{{ task.extraction_context['metadata_extraction']['owner_name'] }}</span>
+                </span>
+                {% elif task.assigned_to %}
+                <span class="task-meta-item task-assignee">
+                  <span class="meta-icon">👤</span>
+                  <span class="meta-text">{{ task.assigned_to.username if task.assigned_to.username else 'Assigned' }}</span>
+                </span>
+                {% endif %}
+                {% if task.category %}
+                <span class="task-meta-item task-category">
+                  <span class="meta-icon">🏷️</span>
+                  <span class="meta-text">{{ task.category|capitalize }}</span>
+                </span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        
+        {# Low Priority Tasks #}
+        {% if low_priority_tasks|length > 0 %}
+        <div class="task-priority-section">
+          <div class="priority-header priority-low">
+            <span class="priority-icon">⚪</span>
+            <span class="priority-label">Low Priority</span>
+            <span class="priority-count">{{ low_priority_tasks|length }}</span>
+          </div>
+          {% for task in low_priority_tasks %}
+          <div class="task-item-enhanced task-priority-low" data-task-id="{{ task.id }}">
+            <div class="task-checkbox-wrapper">
+              <input type="checkbox" class="task-checkbox" 
+                     data-task-id="{{ task.id }}" 
+                     {% if task.status == 'completed' or task.status == 'done' %}checked{% endif %}
+                     aria-label="Mark task as complete">
+            </div>
+            <div class="task-content-enhanced">
+              <div class="task-header-row">
+                <div class="task-title">{{ task.title }}</div>
+                {% if task.confidence_score %}
+                <div class="task-confidence" title="Quality score: {{ (task.confidence_score * 100)|round }}%">
+                  {% if task.confidence_score >= 0.85 %}
+                  <span class="confidence-indicator confidence-high" title="High quality ({{ (task.confidence_score * 100)|round }}%)">✅</span>
+                  {% elif task.confidence_score >= 0.65 %}
+                  <span class="confidence-indicator confidence-medium" title="Medium quality ({{ (task.confidence_score * 100)|round }}%)">ℹ️</span>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
+              <div class="task-metadata-row">
+                {% if task.due_date %}
+                <span class="task-meta-item task-due-date {% if task.is_overdue %}overdue{% elif task.is_due_soon %}due-soon{% endif %}">
+                  <span class="meta-icon">📅</span>
+                  <span class="meta-text">{{ task.due_date }}</span>
+                </span>
+                {% endif %}
+                {% if task.extraction_context and task.extraction_context.get('metadata_extraction', {}).get('owner_name') %}
+                <span class="task-meta-item task-assignee">
+                  <span class="meta-icon">👤</span>
+                  <span class="meta-text">{{ task.extraction_context['metadata_extraction']['owner_name'] }}</span>
+                </span>
+                {% elif task.assigned_to %}
+                <span class="task-meta-item task-assignee">
+                  <span class="meta-icon">👤</span>
+                  <span class="meta-text">{{ task.assigned_to.username if task.assigned_to.username else 'Assigned' }}</span>
+                </span>
+                {% endif %}
+                {% if task.category %}
+                <span class="task-meta-item task-category">
+                  <span class="meta-icon">🏷️</span>
+                  <span class="meta-text">{{ task.category|capitalize }}</span>
+                </span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
       </div>
       
-      {# State 2: No tasks found (regardless of how we tried) #}
+      {# State 2: No tasks found (with intelligent context) #}
       {% elif session.post_transcription_status == 'success' or session.post_transcription_status == 'failed' %}
       <div class="empty-state">
         <div class="empty-state-icon">✓</div>

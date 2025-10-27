@@ -183,6 +183,7 @@ class Task(Base):
             'created_by_id': self.created_by_id,
             'extracted_by_ai': self.extracted_by_ai,
             'confidence_score': self.confidence_score,
+            'extraction_context': self.extraction_context,
             'estimated_hours': self.estimated_hours,
             'actual_hours': self.actual_hours,
             'tags': self.tags,
