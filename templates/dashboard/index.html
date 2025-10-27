@@ -462,6 +462,267 @@
     const meetingsListEl = document.querySelector('.meetings-list');
     const emptyStateEl = document.querySelector('.empty-state');
     
+    // Track bootstrap performance
+    const bootstrapStart = performance.now();
+    let cacheLoadTime = 0;
+    let serverLoadTime = 0;
+    
+    /**
+     * Bootstrap dashboard with cache-first strategy
+     * CROWN⁴ requirement: Load from IndexedDB in <200ms, then sync with server
+     */
+    async function bootstrapDashboard() {
+        console.log('⚡ Starting dashboard bootstrap...');
+        
+        try {
+            // Initialize cache manager
+            await window.cacheManager.init();
+            
+            // ALWAYS load from cache first (even if stale) for instant TTI
+            console.log('💾 Loading from cache (stale-acceptable)...');
+            const cacheStart = performance.now();
+            
+            // Load from cache in parallel
+            const [cachedMeetings, cachedAnalytics] = await Promise.all([
+                window.cacheManager.getCachedMeetings(WORKSPACE_ID),
+                window.cacheManager.getCachedAnalytics(WORKSPACE_ID)
+            ]);
+            
+            cacheLoadTime = Math.round(performance.now() - cacheStart);
+            
+            // Render cached data immediately (even if stale)
+            let cacheHit = false;
+            if (cachedMeetings && cachedMeetings.length > 0) {
+                renderCachedMeetings(cachedMeetings.slice(0, 5));
+                cacheHit = true;
+            }
+            
+            if (cachedAnalytics && cachedAnalytics.data) {
+                updateStatsFromCache(cachedAnalytics.data);
+                cacheHit = true;
+            }
+            
+            if (cacheHit) {
+                const totalBootstrapTime = Math.round(performance.now() - bootstrapStart);
+                console.log(`🚀 Dashboard rendered from cache in ${totalBootstrapTime}ms`);
+                
+                if (totalBootstrapTime > 200) {
+                    console.warn(`⚠️ Cache load exceeded 200ms target: ${totalBootstrapTime}ms`);
+                } else {
+                    console.log(`✅ Sub-200ms TTI achieved! (${totalBootstrapTime}ms)`);
+                }
+            } else {
+                console.log('⏳ No cache available, using server-rendered data');
+            }
+            
+            // Always sync with server in background (validate even if fresh)
+            syncWithServer();
+            
+        } catch (error) {
+            console.error('❌ Bootstrap failed:', error);
+            // Graceful degradation: page will use server-rendered data
+        }
+    }
+    
+    /**
+     * Render cached meetings to the DOM
+     * @param {Array} meetings - Cached meeting records
+     */
+    function renderCachedMeetings(meetings) {
+        if (!meetingsListEl || meetings.length === 0) return;
+        
+        // Clear existing content
+        meetingsListEl.innerHTML = '';
+        
+        // Hide empty state
+        if (emptyStateEl) {
+            emptyStateEl.style.display = 'none';
+        }
+        
+        // Render each meeting
+        meetings.forEach((meeting, index) => {
+            const sessionId = meeting.session_id || meeting.external_id || null;
+            const cardHTML = `
+                <div class="meeting-card" 
+                     data-meeting-id="${meeting.id}" 
+                     data-meeting-title="${escapeHtml(meeting.title || 'Untitled Meeting')}"
+                     ${sessionId ? `data-session-id="${sessionId}"` : ''}
+                     style="animation: fadeInUp 0.4s ease-out ${index * 0.1}s both;">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="meeting-title">${escapeHtml(meeting.title || 'Untitled Meeting')}</h3>
+                            <p class="meeting-date">${formatDate(meeting.created_at)}</p>
+                            ${meeting.summary ? `<p class="meeting-summary">${escapeHtml(meeting.summary.substring(0, 150))}${meeting.summary.length > 150 ? '...' : ''}</p>` : ''}
+                        </div>
+                        <div class="flex items-center gap-3">
+                            ${meeting.duration ? `<span class="badge badge-primary">${Math.round(meeting.duration / 60)} min</span>` : ''}
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.5;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            meetingsListEl.insertAdjacentHTML('beforeend', cardHTML);
+        });
+        
+        // Attach event listeners to rendered cards
+        const cards = meetingsListEl.querySelectorAll('.meeting-card');
+        cards.forEach(card => {
+            card.addEventListener('click', handleCardClick);
+            card.addEventListener('mouseenter', handleCardHover);
+            card.style.cursor = 'pointer';
+        });
+    }
+    
+    /**
+     * Update statistics from cached data
+     * @param {Object} data - Cached analytics data
+     */
+    function updateStatsFromCache(data) {
+        if (!data) return;
+        
+        if (data.total_meetings !== undefined && statElements.totalMeetings) {
+            statElements.totalMeetings.textContent = data.total_meetings;
+        }
+        if (data.total_tasks !== undefined && statElements.actionItems) {
+            statElements.actionItems.textContent = data.total_tasks;
+        }
+        if (data.hours_saved !== undefined && statElements.hoursSaved) {
+            statElements.hoursSaved.textContent = data.hours_saved;
+        }
+    }
+    
+    /**
+     * Sync with server in background and validate cache
+     */
+    async function syncWithServer() {
+        console.log('🔄 Starting background server sync...');
+        const serverStart = performance.now();
+        
+        try {
+            // Fetch fresh data from server (use existing stats from page)
+            const serverStats = {
+                total_meetings: {{ stats.total_meetings|default(0) }},
+                total_tasks: {{ stats.total_tasks|default(0) }},
+                hours_saved: {{ stats.get('hours_saved', 0) }}
+            };
+            
+            // Get cached data for validation
+            const [cachedMeetings, cachedAnalytics] = await Promise.all([
+                window.cacheManager.getCachedMeetings(WORKSPACE_ID),
+                window.cacheManager.getCachedAnalytics(WORKSPACE_ID)
+            ]);
+            
+            // Validate analytics
+            if (cachedAnalytics) {
+                const validation = await window.cacheValidator.validate({
+                    cachedData: cachedAnalytics.data,
+                    serverData: serverStats,
+                    key: `analytics_${WORKSPACE_ID}`
+                });
+                
+                if (validation.drift) {
+                    console.log('⚠️ Analytics drift detected, updating from server');
+                    updateStatsFromCache(serverStats);
+                    await window.cacheManager.cacheAnalyticsSnapshot(serverStats, WORKSPACE_ID);
+                }
+            } else {
+                // No cache, store server data
+                await window.cacheManager.cacheAnalyticsSnapshot(serverStats, WORKSPACE_ID);
+            }
+            
+            serverLoadTime = Math.round(performance.now() - serverStart);
+            console.log(`✅ Server sync complete in ${serverLoadTime}ms`);
+            
+        } catch (error) {
+            console.error('❌ Server sync failed:', error);
+        }
+    }
+    
+    /**
+     * Start idle sync timer for background validation
+     * Runs checksum validation every 30 seconds
+     */
+    function startIdleSync() {
+        console.log('⏰ Starting idle sync timer (30s interval)...');
+        
+        setInterval(async () => {
+            try {
+                await performIdleSync();
+            } catch (error) {
+                console.error('❌ Idle sync failed:', error);
+            }
+        }, 30000); // 30 seconds
+    }
+    
+    /**
+     * Perform idle sync validation
+     * Check cache freshness and sync if needed
+     */
+    async function performIdleSync() {
+        console.log('🔍 Running idle sync validation...');
+        const syncStart = performance.now();
+        
+        try {
+            // Get current server stats from DOM
+            const serverStats = {
+                total_meetings: parseInt(statElements.totalMeetings?.textContent || '0'),
+                total_tasks: parseInt(statElements.actionItems?.textContent || '0'),
+                hours_saved: parseInt(statElements.hoursSaved?.textContent || '0')
+            };
+            
+            // Get cached analytics
+            const cachedAnalytics = await window.cacheManager.getCachedAnalytics(WORKSPACE_ID);
+            
+            if (!cachedAnalytics) {
+                console.log('💾 No cache found, caching current state...');
+                await window.cacheManager.cacheAnalyticsSnapshot(serverStats, WORKSPACE_ID);
+                return;
+            }
+            
+            // Validate cache against current state
+            const validation = await window.cacheValidator.validate({
+                cachedData: cachedAnalytics.data,
+                serverData: serverStats,
+                key: `analytics_${WORKSPACE_ID}`
+            });
+            
+            if (validation.drift) {
+                console.warn('⚠️ Cache drift detected during idle sync');
+                
+                // Calculate delta
+                const cachedData = cachedAnalytics.data;
+                const changes = [];
+                
+                if (cachedData.total_meetings !== serverStats.total_meetings) {
+                    changes.push(`meetings: ${cachedData.total_meetings} → ${serverStats.total_meetings}`);
+                }
+                if (cachedData.total_tasks !== serverStats.total_tasks) {
+                    changes.push(`tasks: ${cachedData.total_tasks} → ${serverStats.total_tasks}`);
+                }
+                if (cachedData.hours_saved !== serverStats.hours_saved) {
+                    changes.push(`hours: ${cachedData.hours_saved} → ${serverStats.hours_saved}`);
+                }
+                
+                console.log('📊 Changes detected:', changes.join(', '));
+                
+                // Update cache with current state
+                await window.cacheManager.cacheAnalyticsSnapshot(serverStats, WORKSPACE_ID);
+                console.log('💾 Cache synchronized');
+            } else {
+                console.log('✅ Cache valid, no sync needed');
+            }
+            
+            const syncTime = Math.round(performance.now() - syncStart);
+            console.log(`⏱️ Idle sync completed in ${syncTime}ms`);
+            
+        } catch (error) {
+            console.error('❌ Idle sync error:', error);
+        }
+    }
+    
     /**
      * Initialize WebSocket connection
      */
@@ -525,7 +786,7 @@
      * Handle dashboard refresh event
      * @param {Object} data - Event data with updated statistics
      */
-    function handleDashboardRefresh(data) {
+    async function handleDashboardRefresh(data) {
         console.log('🔄 Dashboard refresh event received:', data);
         
         const stats = data.data || data;
@@ -539,6 +800,14 @@
         }
         if (stats.hours_saved !== undefined) {
             updateCounter(statElements.hoursSaved, stats.hours_saved, 'set');
+        }
+        
+        // Update cache with fresh statistics
+        try {
+            await window.cacheManager.cacheAnalyticsSnapshot(stats, WORKSPACE_ID);
+            console.log('💾 Cache updated with fresh analytics');
+        } catch (error) {
+            console.error('❌ Failed to update cache:', error);
         }
     }
     
@@ -797,9 +1066,17 @@
     
     // Initialize on DOM ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initWebSocket);
+        document.addEventListener('DOMContentLoaded', async () => {
+            await bootstrapDashboard();
+            initWebSocket();
+            startIdleSync();
+        });
     } else {
-        initWebSocket();
+        (async () => {
+            await bootstrapDashboard();
+            initWebSocket();
+            startIdleSync();
+        })();
     }
     
     // Add CSS for new animations
@@ -835,6 +1112,17 @@
             to {
                 opacity: 0;
                 transform: translateX(20px);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
         
