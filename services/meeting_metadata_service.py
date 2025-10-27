@@ -171,35 +171,30 @@ class MeetingMetadataService:
         Only include names you're confident about. Use null for uncertain cases."""
         
         try:
-            # Try models in order of preference with fallback
-            models_to_try = ["gpt-4o-mini", "gpt-3.5-turbo", "gpt-4o"]
-            last_error = None
-            response = None
+            # Use unified AI model manager with GPT-4.1 fallback (async version)
+            from services.ai_model_manager import AIModelManager
             
-            for model in models_to_try:
-                try:
-                    response = await self.client.chat.completions.acreate(
-                        model=model,
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": f"Transcript sample:\n{sample_text}"}
-                        ],
-                        temperature=0.2,
-                        max_tokens=500
-                    )
-                    break  # Success
-                except Exception as model_error:
-                    last_error = model_error
-                    error_msg = str(model_error)
-                    
-                    # Check if it's a permission/access error
-                    if "403" in error_msg or "model_not_found" in error_msg or "does not have access" in error_msg:
-                        continue  # Try next model
-                    else:
-                        raise
+            async def make_api_call(model: str):
+                return await self.client.chat.completions.acreate(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Transcript sample:\n{sample_text}"}
+                    ],
+                    temperature=0.2,
+                    max_tokens=500
+                )
             
-            if response is None:
-                raise last_error
+            # Use async version of AI model manager
+            result_obj = await AIModelManager.call_with_fallback_async(
+                make_api_call,
+                operation_name="speaker name identification"
+            )
+            
+            if not result_obj.success:
+                raise Exception("All AI models failed")
+            
+            response = result_obj.response
             
             name_mapping = json.loads(response.choices[0].message.content)
             

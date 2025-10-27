@@ -410,14 +410,30 @@ class PostTranscriptionOrchestrator:
                 'timestamp': datetime.utcnow().isoformat()
             })
             
+            # Check for model degradation and emit degradation event if needed
+            metadata = summary_data.get('_metadata', {})
+            if metadata.get('model_degraded'):
+                logger.warning(f"⚠️ Model degradation detected: {metadata.get('degradation_reason')}")
+                socketio.emit('insights_generate_degraded', {
+                    'session_id': session.external_id,
+                    'model_used': metadata.get('model_used'),
+                    'degradation_reason': metadata.get('degradation_reason'),
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'message': f"Using {metadata.get('model_used')} instead of primary model"
+                })
+                logger.info(f"📊 Degradation event emitted: {metadata.get('model_used')}")
+            
             # Non-blocking event completion
             if event:
                 try:
+                    # Include model info in event payload
+                    result['model_used'] = metadata.get('model_used', 'unknown')
+                    result['model_degraded'] = metadata.get('model_degraded', False)
                     self.event_service.complete_event(event, result=result)
                 except Exception as log_error:
                     logger.warning(f"Event completion failed (non-blocking): {log_error}")
             
-            logger.info(f"✅ Insights generated: {result['action_count']} actions, {result['decision_count']} decisions, {result['risk_count']} risks")
+            logger.info(f"✅ Insights generated: {result['action_count']} actions, {result['decision_count']} decisions, {result['risk_count']} risks (model: {metadata.get('model_used', 'unknown')})")
             return result
             
         except Exception as e:
@@ -725,6 +741,21 @@ class PostTranscriptionOrchestrator:
                 'message': f'{persisted_task_count} new action{"s" if persisted_task_count != 1 else ""} identified' if persisted_task_count > 0 else 'No action items found',
                 'timestamp': datetime.utcnow().isoformat()
             })
+            
+            # Check for model degradation in task extraction (from insights metadata)
+            if insights_data and task_source == "ai_insights":
+                # Get metadata from insights (passed down through the pipeline)
+                metadata = insights_data.get('_metadata', {})
+                if metadata and metadata.get('model_degraded'):
+                    logger.warning(f"⚠️ Task extraction degradation detected: {metadata.get('degradation_reason')}")
+                    socketio.emit('tasks_generation_degraded', {
+                        'session_id': session.external_id,
+                        'model_used': metadata.get('model_used'),
+                        'degradation_reason': metadata.get('degradation_reason'),
+                        'timestamp': datetime.utcnow().isoformat(),
+                        'message': f"Tasks extracted using {metadata.get('model_used')} instead of primary model"
+                    })
+                    logger.info(f"📊 Task degradation event emitted: {metadata.get('model_used')}")
             
             # Non-blocking event completion
             if event:

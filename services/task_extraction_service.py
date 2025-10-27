@@ -128,37 +128,29 @@ class TaskExtractionService:
         Extract all actionable tasks from this meeting transcript."""
         
         try:
-            # Try models in order of preference with fallback
-            models_to_try = ["gpt-4o-mini", "gpt-3.5-turbo", "gpt-4o"]
-            last_error = None
-            response = None
+            # Use unified AI model manager with GPT-4.1 fallback
+            from services.ai_model_manager import AIModelManager
             
-            for model in models_to_try:
-                try:
-                    response = self.client.chat.completions.create(
-                        model=model,
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt}
-                        ],
-                        temperature=0.3,
-                        max_tokens=1500
-                    )
-                    break  # Success, exit loop
-                except Exception as model_error:
-                    last_error = model_error
-                    error_msg = str(model_error)
-                    
-                    # Check if it's a permission/access error
-                    if "403" in error_msg or "model_not_found" in error_msg or "does not have access" in error_msg:
-                        continue  # Try next model
-                    else:
-                        # Different error type, re-raise
-                        raise
+            def make_api_call(model: str):
+                return self.client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.3,
+                    max_tokens=1500
+                )
             
-            # If all models failed, raise last error
-            if response is None:
-                raise last_error
+            result_obj = AIModelManager.call_with_fallback(
+                make_api_call,
+                operation_name="task extraction"
+            )
+            
+            if not result_obj.success:
+                raise Exception(f"All AI models failed")
+            
+            response = result_obj.response
             
             content = response.choices[0].message.content
             if not content:

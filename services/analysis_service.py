@@ -691,42 +691,46 @@ class AnalysisService:
             # Get expected keys for this level/style combination
             expected_keys = AnalysisService._get_expected_keys(level, style)
             
-            # Try models in order of preference with fallback
-            models_to_try = ["gpt-4o-mini", "gpt-3.5-turbo", "gpt-4o"]
-            last_error = None
-            response = None
+            # Use unified AI model manager with GPT-4.1 fallback chain
+            from services.ai_model_manager import AIModelManager
             
-            for model in models_to_try:
-                try:
-                    logger.info(f"Attempting OpenAI analysis with model: {model}")
-                    response = client.chat.completions.create(
-                        model=model,
-                        messages=[
-                            {"role": "system", "content": "You are a professional meeting analyst. Respond with valid JSON only."},
-                            {"role": "user", "content": prompt}
-                        ],
-                        response_format={"type": "json_object"},
-                        temperature=0.3  # Lower temperature for consistent structured output
-                    )
-                    logger.info(f"✅ Successfully used model: {model}")
-                    break  # Success, exit the loop
-                except Exception as model_error:
-                    last_error = model_error
-                    error_msg = str(model_error)
-                    
-                    # Check if it's a permission/access error
-                    if "403" in error_msg or "model_not_found" in error_msg or "does not have access" in error_msg:
-                        logger.warning(f"Model {model} not accessible, trying next fallback: {error_msg}")
-                        continue  # Try next model
-                    else:
-                        # Different error type, re-raise
-                        logger.error(f"Non-permission error with model {model}: {error_msg}")
-                        raise
+            def make_api_call(model: str):
+                """API call wrapper for model manager."""
+                return client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": "You are a professional meeting analyst. Respond with valid JSON only."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.3
+                )
             
-            # If we exhausted all models, raise the last error
-            if response is None:
-                logger.error(f"All models failed. Last error: {last_error}")
-                raise last_error
+            # Call with intelligent fallback and retry
+            result_obj = AIModelManager.call_with_fallback(
+                make_api_call,
+                operation_name="insights generation"
+            )
+            
+            if not result_obj.success:
+                raise Exception(f"All AI models failed after {len(result_obj.attempts)} attempts")
+            
+            response = result_obj.response
+            
+            # Track degradation metadata for orchestrator
+            degradation_metadata = {}
+            if result_obj.degraded:
+                logger.warning(f"⚠️ Insights generation degraded: {result_obj.degradation_reason}")
+                degradation_metadata = {
+                    'model_degraded': True,
+                    'model_used': result_obj.model_used,
+                    'degradation_reason': result_obj.degradation_reason
+                }
+            else:
+                degradation_metadata = {
+                    'model_degraded': False,
+                    'model_used': result_obj.model_used
+                }
             
             result_text = response.choices[0].message.content
             if result_text is None:
@@ -820,6 +824,9 @@ class AnalysisService:
             if missing_keys:
                 logger.warning(f"Missing expected keys for {level.value} {style.value}: {missing_keys}")
                 # Don't fail for missing keys, just log the warning
+            
+            # Include degradation metadata in result
+            result['_metadata'] = degradation_metadata
             
             return result
             
