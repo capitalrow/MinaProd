@@ -160,7 +160,7 @@
      * Handle pull move
      */
     function handlePullMove(e) {
-        if (pullStartY === 0) return;
+        if (pullStartY === 0 || !pullIndicator) return;
         
         pullCurrentY = e.touches[0].clientY;
         const pullDistance = pullCurrentY - pullStartY;
@@ -180,15 +180,19 @@
             
             // Rotate spinner based on pull distance
             const spinner = pullIndicator.querySelector('.pull-refresh-spinner');
-            spinner.style.transform = `rotate(${resistedDistance * 3}deg)`;
+            if (spinner) {
+                spinner.style.transform = `rotate(${resistedDistance * 3}deg)`;
+            }
             
             // Update text when threshold reached
             const text = pullIndicator.querySelector('.pull-refresh-text');
-            if (resistedDistance >= GESTURE_CONFIG.pullToRefresh.threshold) {
-                text.textContent = 'Release to refresh';
-                haptic('light');
-            } else {
-                text.textContent = 'Pull to refresh';
+            if (text) {
+                if (resistedDistance >= GESTURE_CONFIG.pullToRefresh.threshold) {
+                    text.textContent = 'Release to refresh';
+                    haptic('light');
+                } else {
+                    text.textContent = 'Pull to refresh';
+                }
             }
         }
     }
@@ -217,15 +221,21 @@
      * Trigger dashboard refresh
      */
     async function triggerRefresh() {
+        if (!pullIndicator) return;
+        
         pullRefreshActive = true;
         
         // Show loading state
         pullIndicator.style.transform = 'translateY(0)';
         const spinner = pullIndicator.querySelector('.pull-refresh-spinner');
         const text = pullIndicator.querySelector('.pull-refresh-text');
-        spinner.classList.add('spinning');
-        spinner.style.transform = 'rotate(0)';
-        text.textContent = 'Refreshing...';
+        if (spinner) {
+            spinner.classList.add('spinning');
+            spinner.style.transform = 'rotate(0)';
+        }
+        if (text) {
+            text.textContent = 'Refreshing...';
+        }
         
         haptic('medium');
         
@@ -259,9 +269,13 @@
      * Snap indicator back to hidden position
      */
     function snapBack() {
+        if (!pullIndicator) return;
+        
         pullIndicator.style.transform = 'translateY(-60px)';
         const spinner = pullIndicator.querySelector('.pull-refresh-spinner');
-        spinner.style.transform = 'rotate(0)';
+        if (spinner) {
+            spinner.style.transform = 'rotate(0)';
+        }
     }
     
     /**
