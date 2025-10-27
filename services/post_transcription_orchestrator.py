@@ -421,7 +421,31 @@ class PostTranscriptionOrchestrator:
             return result
             
         except Exception as e:
-            logger.error(f"Failed to generate insights: {e}")
+            import traceback
+            error_traceback = traceback.format_exc()
+            error_type = type(e).__name__
+            error_message = str(e)
+            
+            # Detailed error logging with traceback
+            logger.error(f"❌ Insights generation failed: {error_type}: {error_message}")
+            logger.error(f"Traceback:\n{error_traceback}")
+            
+            # Classify error type for better user messaging
+            if "timeout" in error_message.lower() or "timed out" in error_message.lower():
+                error_category = "timeout"
+                user_message = "AI service timed out - please try again"
+            elif "json" in error_message.lower() or "parse" in error_message.lower():
+                error_category = "parse_error"
+                user_message = "AI response could not be processed"
+            elif "rate" in error_message.lower() or "429" in error_message:
+                error_category = "rate_limit"
+                user_message = "AI service is busy - please try again in a moment"
+            elif "api" in error_message.lower() or "key" in error_message.lower():
+                error_category = "api_error"
+                user_message = "AI service configuration issue"
+            else:
+                error_category = "unknown"
+                user_message = "Insights generation failed, transcript available"
             
             # Set status to 'failed' on exception
             try:
@@ -432,15 +456,18 @@ class PostTranscriptionOrchestrator:
             
             if event:
                 try:
-                    self.event_service.fail_event(event, str(e))
+                    self.event_service.fail_event(event, error_message)
                 except:
                     pass
             
-            # Emit error but continue pipeline (graceful degradation)
+            # Emit detailed error for debugging (graceful degradation)
             socketio.emit('insights_generate', {
                 'session_id': session.external_id,
                 'status': 'failed',
-                'error': 'Insights generation failed, transcript available',
+                'error': user_message,
+                'error_category': error_category,
+                'error_type': error_type,
+                'error_details': error_message,
                 'timestamp': datetime.utcnow().isoformat()
             })
             
@@ -526,8 +553,12 @@ class PostTranscriptionOrchestrator:
     
     def _generate_tasks(self, session: Session, insights_data: Optional[Dict]) -> Optional[Dict[str, Any]]:
         """
-        Stage 5: Extract and create action items from insights.
+        Stage 5: Extract and create action items independently from transcript.
         Event: tasks_generation
+        
+        This stage now works independently of insights success, using NLP-based
+        task extraction directly from transcript segments. Falls back to insights
+        if available, but continues even if insights failed.
         """
         event = None
         
@@ -545,32 +576,68 @@ class PostTranscriptionOrchestrator:
             event = None
         
         try:
-            if not insights_data or not insights_data.get('summary_id'):
-                logger.warning("No insights data for task generation")
-                if event:
-                    try:
-                        self.event_service.skip_event(event, "No insights available")
-                    except:
-                        pass
-                return None
+            # Strategy: Use insights tasks if available, otherwise extract from transcript
+            task_count = 0
+            task_source = "none"
             
-            # Tasks are already created by AnalysisService in summary
-            # Just count and report them
-            action_count = insights_data.get('action_count', 0)
+            # Option 1: Use tasks from insights if available
+            if insights_data and insights_data.get('action_count', 0) > 0:
+                task_count = insights_data.get('action_count', 0)
+                task_source = "insights"
+                logger.info(f"[Tasks] Using {task_count} tasks from insights")
+            
+            # Option 2: Extract tasks directly from transcript (independent of insights)
+            else:
+                from models.task import Task
+                from sqlalchemy import select
+                
+                logger.info(f"[Tasks] Insights unavailable or empty, extracting from transcript directly")
+                
+                # Get transcript segments for NLP extraction
+                segments = db.session.query(Segment).filter_by(
+                    session_id=session.id,
+                    kind='final'
+                ).order_by(Segment.start_ms).all()
+                
+                if segments:
+                    # Build transcript text for pattern matching with segment tracking
+                    transcript_with_segments = []
+                    for seg in segments:
+                        text = seg.text.strip()
+                        if text:
+                            transcript_with_segments.append({
+                                'text': text,
+                                'segment_id': seg.id,
+                                'start_ms': seg.start_ms,
+                                'end_ms': seg.end_ms
+                            })
+                    
+                    # Use pattern-based extraction as fallback with segment linkage
+                    extracted_tasks = self._extract_tasks_with_patterns_and_segments(
+                        transcript_with_segments, session.id
+                    )
+                    task_count = len(extracted_tasks)
+                    task_source = "pattern_extraction"
+                    
+                    logger.info(f"[Tasks] Extracted {task_count} tasks using pattern matching")
+                else:
+                    logger.warning(f"[Tasks] No final segments found for session {session.id}")
+                    task_count = 0
+                    task_source = "no_segments"
             
             result = {
-                'tasks_created': action_count,
-                'summary_id': insights_data['summary_id']
+                'tasks_created': task_count,
+                'task_source': task_source,
+                'session_id': session.id
             }
             
-            # CRITICAL: Always emit WebSocket event
-            if action_count > 0:
-                socketio.emit('tasks_generation', {
-                    'session_id': session.external_id,
-                    'task_count': action_count,
-                    'message': f'{action_count} new action{"s" if action_count != 1 else ""} identified',
-                    'timestamp': datetime.utcnow().isoformat()
-                })
+            # CRITICAL: Always emit WebSocket event (even if 0 tasks)
+            socketio.emit('tasks_generation', {
+                'session_id': session.external_id,
+                'task_count': task_count,
+                'message': f'{task_count} new action{"s" if task_count != 1 else ""} identified' if task_count > 0 else 'No action items found',
+                'timestamp': datetime.utcnow().isoformat()
+            })
             
             # Non-blocking event completion
             if event:
@@ -579,17 +646,113 @@ class PostTranscriptionOrchestrator:
                 except Exception as log_error:
                     logger.warning(f"Event completion failed (non-blocking): {log_error}")
             
-            logger.info(f"✅ Tasks generated: {action_count} actions")
+            logger.info(f"✅ Tasks generated: {task_count} tasks from {task_source}")
             return result
             
         except Exception as e:
-            logger.error(f"Failed to generate tasks: {e}")
+            import traceback
+            logger.error(f"❌ Failed to generate tasks: {e}")
+            logger.error(f"Traceback:\n{traceback.format_exc()}")
+            
             if event:
                 try:
                     self.event_service.fail_event(event, str(e))
                 except:
                     pass
+            
+            # Emit event even on failure (0 tasks found)
+            socketio.emit('tasks_generation', {
+                'session_id': session.external_id,
+                'task_count': 0,
+                'message': 'Task extraction failed',
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
             return None
+    
+    def _extract_tasks_with_patterns_and_segments(self, transcript_segments: List[Dict], session_id: int) -> List:
+        """
+        Extract tasks using regex patterns with segment linkage for 'jump to context'.
+        Creates Task objects directly in database with source segment tracking.
+        
+        Args:
+            transcript_segments: List of dicts with 'text', 'segment_id', 'start_ms', 'end_ms'
+            session_id: Session ID to link tasks to
+            
+        Returns:
+            List of created Task objects
+        """
+        from models.task import Task
+        import re
+        
+        # Simple task patterns to detect action items
+        task_patterns = [
+            r"(?:action item|task|todo|follow up|next step)s?[:\-\s]+(.+?)(?:\.|$)",
+            r"(?:I|we|you) (?:need to|should|must|will)\s+(.+?)(?:\.|$)",
+            r"let['\s]*s\s+(.+?)(?:\.|$)",
+            r"(?:assign|delegate)\s+(.+?)\s+to\s+(\w+)",
+        ]
+        
+        created_tasks = []
+        seen_titles = set()  # Deduplicate
+        
+        # Extract tasks from transcript segments
+        for seg_data in transcript_segments:
+            text = seg_data['text']
+            segment_id = seg_data['segment_id']
+            
+            for pattern in task_patterns:
+                matches = re.finditer(pattern, text, re.IGNORECASE)
+                for match in matches:
+                    task_text = match.group(1).strip()
+                    
+                    # Basic validation
+                    if len(task_text) < 5 or len(task_text) > 200:
+                        continue
+                    
+                    # Deduplication
+                    task_title = task_text[:100]  # Limit title length
+                    if task_title.lower() in seen_titles:
+                        continue
+                        
+                    seen_titles.add(task_title.lower())
+                    
+                    # Create task in database with segment linkage
+                    try:
+                        task = Task(
+                            session_id=session_id,
+                            title=task_title,
+                            description=f"Extracted from transcript",
+                            priority="medium",
+                            status="todo",
+                            extracted_by_ai=False,  # Pattern-based extraction
+                            confidence_score=0.6,  # Lower confidence for pattern matching
+                            extraction_context={
+                                'source': 'pattern',
+                                'transcript_snippet': task_text[:500],
+                                'source_segment_id': segment_id,  # Enable 'jump to context'
+                                'start_ms': seg_data.get('start_ms'),
+                                'end_ms': seg_data.get('end_ms'),
+                                'matched_pattern': pattern[:50]  # Store which pattern matched
+                            }
+                        )
+                        db.session.add(task)
+                        created_tasks.append(task)
+                    except Exception as e:
+                        logger.warning(f"Failed to create pattern-extracted task: {e}")
+                        continue
+        
+        # Commit all tasks at once
+        try:
+            if created_tasks:
+                db.session.commit()
+                logger.info(f"Created {len(created_tasks)} pattern-extracted tasks with segment linkage")
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to commit pattern-extracted tasks: {e}")
+            return []
+        
+        return created_tasks
     
     def _emit_reveal(self, session: Session):
         """

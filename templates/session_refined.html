@@ -793,7 +793,17 @@
         </p>
       </div>
       
-      {# State 3: AI analysis failed (show error message) #}
+      {# State 3: AI analysis failed but tasks were extracted using pattern matching #}
+      {% elif session.post_transcription_status == 'failed' and tasks %}
+      <div class="empty-state">
+        <div class="empty-state-icon">⚠️</div>
+        <div class="empty-state-text">Tasks extracted from transcript</div>
+        <p style="margin-top: var(--space-2); color: var(--color-text-secondary); max-width: 500px; margin-left: auto; margin-right: auto; font-size: var(--font-size-sm);">
+          AI insights were unavailable, but we extracted {{ tasks|length }} potential action item{{ 's' if tasks|length != 1 else '' }} using pattern matching. Review them below.
+        </p>
+      </div>
+      
+      {# State 4: AI analysis failed and no tasks found #}
       {% elif session.post_transcription_status == 'failed' %}
       <div class="empty-state">
         <div class="empty-state-icon">⚠️</div>
