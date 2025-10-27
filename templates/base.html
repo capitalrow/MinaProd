@@ -164,7 +164,14 @@
     <!-- WebSocket Manager -->
     <script src="{{ url_for('static', filename='js/websocket-manager.js') }}"></script>
     
+    <!-- IndexedDB Cache Manager for CROWN⁴ -->
+    <script src="{{ url_for('static', filename='js/cache-manager.js') }}"></script>
+    
+    <!-- Cache Validator with Checksum Validation -->
+    <script src="{{ url_for('static', filename='js/cache-validator.js') }}"></script>
+    
     <script src="{{ url_for('static', filename='js/theme-toggle.js') }}" defer></script>
+
     <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
     {% block extra_js %}{% endblock %}
 </body>
