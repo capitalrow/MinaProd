@@ -10,6 +10,56 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 27, 2025 - CROWN+ Pipeline Task Extraction Fixes
+**Status**: ✅ Critical bugs fixed, ready for testing
+
+**What Was Fixed:**
+- OpenAI API compatibility: Switched from `gpt-4` (doesn't support response_format) to `gpt-4o-mini` across all AI services (faster, cheaper, supports json_object)
+- Database transaction handling: Added FK validation, comprehensive error logging with traceback, and post-commit verification queries
+- Event emission timing: Moved WebSocket events to AFTER database commit with verified task counts (prevents false positives)
+- Pattern matching false positives: Added context-aware filters to reject meta-commentary, questions, and statements without action verbs
+- Task data duplication: Established Task model as single source of truth - AI extractions convert to Task objects, pattern matching as fallback
+- UI simplification: Removed all technical jargon ("AI failed", "pattern matching", "fallback") - users see simple, friendly messages
+
+**Architecture Decisions:**
+- **Single Source of Truth**: Task model is the authoritative source for all action items
+  - AI-extracted tasks (from summary.actions) are converted to Task model objects during pipeline
+  - Pattern matching creates Task model objects as fallback when AI finds no tasks
+  - Templates render ONLY from Task model (no duplication)
+- **Two-Stage Task Extraction**:
+  1. Primary: AI extraction via AnalysisService → converts to Task objects
+  2. Fallback: Pattern matching (if AI found 0 tasks) → creates Task objects with segment linkage
+- **Pattern Matching Filters** (prevents false positives):
+  - Rejects meta-commentary ("task extraction", "testing the", "should be able", etc.)
+  - Rejects questions (ends with ?)
+  - Requires action verbs for commitment patterns ("will", "need to" must contain review/update/send/etc.)
+  - Minimum 3 words after filtering
+
+**Database Transaction Safety:**
+- FK validation before commit (prevents orphaned tasks)
+- Detailed error logging: error type, message, full traceback, task data context
+- Post-commit verification: Query database to count persisted tasks, detect mismatches
+- Event emission uses verified DB count, not in-memory count
+
+**Files Modified:**
+- `services/analysis_service.py`: gpt-4 → gpt-4o-mini
+- `services/task_extraction_service.py`: gpt-4 → gpt-4o-mini
+- `services/analytics_service.py`: gpt-4 → gpt-4o-mini
+- `services/meeting_metadata_service.py`: gpt-4 → gpt-4o-mini
+- `services/post_transcription_orchestrator.py`: 
+  - Database transaction handling with FK validation and error logging
+  - AI task conversion to Task model
+  - Pattern matching with context-aware filters
+  - Event emission after DB verification
+- `templates/session_refined.html`: Tasks tab renders ONLY from Task model, removed summary.actions dependency
+
+**Testing Required:**
+- End-to-end test with real transcripts containing clear commitments
+- Test case: Meta-commentary transcript (should NOT extract false positives)
+- Test case: No tasks transcript (should show friendly "No action items found" message)
+- Verify task persistence after page refresh
+- Verify WebSocket events show correct task counts
+
 ### October 26, 2025 - Tab Switching Fix & CSP Compliance
 **Status**: ✅ Production-ready milestone achieved
 

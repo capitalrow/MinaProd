@@ -579,20 +579,58 @@ class PostTranscriptionOrchestrator:
             event = None
         
         try:
-            # Strategy: Use insights tasks if available, otherwise extract from transcript
-            task_count = 0
+            # Strategy: Use AI-extracted tasks as primary source, pattern matching as supplement
+            # All tasks are persisted to Task model (single source of truth)
             task_source = "none"
+            tasks_created = []
             
-            # Option 1: Use tasks from insights if available
+            # Option 1: If AI succeeded and found tasks, convert them to Task objects
             if insights_data and insights_data.get('action_count', 0) > 0:
-                task_count = insights_data.get('action_count', 0)
-                task_source = "insights"
-                logger.info(f"[Tasks] Using {task_count} tasks from insights")
-            
-            # Option 2: Extract tasks directly from transcript (independent of insights)
-            else:
+                logger.info(f"[Tasks] Converting {insights_data['action_count']} AI-extracted tasks to Task model")
                 
-                logger.info(f"[Tasks] Insights unavailable or empty, extracting from transcript directly")
+                # Get the summary to access actions
+                from models.summary import Summary
+                summary = db.session.query(Summary).filter_by(session_id=session.id).first()
+                
+                if summary and summary.actions:
+                    for idx, action in enumerate(summary.actions):
+                        try:
+                            task = Task(
+                                session_id=session.id,
+                                title=action.get('text', '').strip()[:100],  # Limit title length
+                                description=f"AI-extracted action item",
+                                priority=action.get('priority', 'medium').lower(),
+                                status="todo",
+                                assigned_to=action.get('owner', '').strip() or None,
+                                extracted_by_ai=True,  # Mark as AI-extracted
+                                confidence_score=0.9,  # High confidence for AI extraction
+                                extraction_context={
+                                    'source': 'ai_insights',
+                                    'original_action': action
+                                }
+                            )
+                            db.session.add(task)
+                            tasks_created.append(task)
+                        except Exception as e:
+                            logger.warning(f"Failed to create AI-extracted task: {e}")
+                            continue
+                    
+                    # Commit AI-extracted tasks
+                    try:
+                        db.session.commit()
+                        logger.info(f"✅ [Database] Persisted {len(tasks_created)} AI-extracted tasks")
+                        task_source = "ai_insights"
+                    except Exception as e:
+                        import traceback
+                        logger.error(f"❌ [Database] Failed to commit AI-extracted tasks: {e}")
+                        logger.error(f"Traceback:\n{traceback.format_exc()}")
+                        db.session.rollback()
+                        tasks_created = []
+            
+            # Option 2: If AI failed or found no tasks, use pattern matching as fallback
+            if not tasks_created:
+                logger.info(f"[Tasks] AI tasks unavailable, using pattern matching as fallback")
+                task_source = "pattern_extraction"
                 
                 # Get transcript segments for NLP extraction
                 segments = db.session.query(Segment).filter_by(
@@ -613,11 +651,10 @@ class PostTranscriptionOrchestrator:
                                 'end_ms': seg.end_ms
                             })
                     
-                    # Use pattern-based extraction as fallback with segment linkage
+                    # Use pattern-based extraction with segment linkage
                     extracted_tasks = self._extract_tasks_with_patterns_and_segments(
                         transcript_with_segments, session.id
                     )
-                    task_source = "pattern_extraction"
                     
                     logger.info(f"[Tasks] Pattern extraction attempted {len(extracted_tasks)} tasks")
                 else:
@@ -652,7 +689,7 @@ class PostTranscriptionOrchestrator:
                 except Exception as log_error:
                     logger.warning(f"Event completion failed (non-blocking): {log_error}")
             
-            logger.info(f"✅ Tasks generated: {task_count} tasks from {task_source}")
+            logger.info(f"✅ Tasks generated: {persisted_task_count} tasks from {task_source}")
             return result
             
         except Exception as e:
