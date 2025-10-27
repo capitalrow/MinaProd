@@ -45,7 +45,8 @@ class ValidationEngine:
         'setup', 'install', 'verify', 'check', 'confirm', 'approve', 'submit',
         'follow', 'coordinate', 'organize', 'plan', 'define', 'document',
         'refactor', 'optimize', 'improve', 'fix', 'resolve', 'address',
-        'discuss', 'meet', 'present', 'share', 'communicate', 'notify'
+        'discuss', 'meet', 'present', 'share', 'communicate', 'notify',
+        'charge', 'buy', 'purchase', 'order', 'write', 'call', 'email'
     }
     
     # Meta-testing keywords that indicate system testing/demo
@@ -75,7 +76,7 @@ class ValidationEngine:
     # Quality thresholds
     MIN_TASK_SCORE = 0.70  # Raised from 0.65 for higher quality standards
     MIN_SUMMARY_SIMILARITY = 0.7
-    MIN_TASK_LENGTH = 8
+    MIN_TASK_LENGTH = 3  # Lowered from 8 to allow short imperatives like "Charge battery immediately"
     MAX_TASK_LENGTH = 100
     DEDUP_SIMILARITY_THRESHOLD = 0.7  # Lowered from 0.8 to catch more semantic duplicates
     
