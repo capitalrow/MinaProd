@@ -16,7 +16,9 @@
 
         init() {
             console.log('🎬 Smooth Navigation initialized with GSAP transitions');
-            this.setupMeetingCardNavigation();
+            // NOTE: Meeting card navigation is handled by dashboard template inline handlers
+            // to support session-based navigation with custom loading overlays
+            // this.setupMeetingCardNavigation();
             this.setupLinkInterception();
         }
 
