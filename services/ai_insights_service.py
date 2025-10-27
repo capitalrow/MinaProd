@@ -59,7 +59,7 @@ class AIInsightsService:
             prompt = self._build_comprehensive_prompt(transcript_text, metadata)
             
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -138,7 +138,7 @@ Be concise, accurate, and actionable. Use null for missing information."""
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -173,7 +173,7 @@ Be concise, accurate, and actionable. Use null for missing information."""
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -202,15 +202,35 @@ Be concise, accurate, and actionable. Use null for missing information."""
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
-                        "content": "Extract action items from meeting transcripts with assignee, task, and deadline."
+                        "content": """Extract ALL action items and tasks mentioned in meeting transcripts.
+
+EXTRACTION PHILOSOPHY:
+- Be GENEROUS in extraction - capture all potential tasks mentioned
+- Include work tasks, personal tasks, and commitments
+- Extract even if phrased conversationally (e.g., "I need to...", "I'm going to...")
+- Quality filtering happens in the next pipeline stage
+
+EXAMPLES of what to extract:
+- Business: "Send proposal to client", "Review Q4 budget", "Schedule team meeting"
+- Personal: "Buy groceries", "Clean office", "Call dentist"  
+- Conversational: "I need to prepare the report", "We should follow up with John"
+- Commitments: "Get cash from ATM", "Book train ticket", "Define handover tasks"
+
+Extract everything that represents a task, action, or commitment - err on the side of inclusion."""
                     },
                     {
                         "role": "user",
-                        "content": f"Extract action items:\n\n{transcript[:6000]}\n\nReturn as JSON: {{\"action_items\": [{{\"task\": \"text\", \"assignee\": \"person or null\", \"due_date\": \"date or null\", \"priority\": \"high/medium/low\"}}]}}"
+                        "content": f"""Extract ALL action items and tasks from this transcript. Be generous - include any task, commitment, or to-do item mentioned, whether business or personal.
+
+TRANSCRIPT:
+{transcript[:6000]}
+
+Return as JSON array with ALL tasks found:
+{{"action_items": [{{"task": "text", "assignee": "person or null", "due_date": "date or null", "priority": "high/medium/low"}}]}}"""
                     }
                 ],
                 temperature=0.2,
@@ -219,7 +239,11 @@ Be concise, accurate, and actionable. Use null for missing information."""
             )
             
             result = json.loads(response.choices[0].message.content)
-            return result.get('action_items', [])
+            action_items = result.get('action_items', [])
+            logger.info(f"[AI Extraction] Extracted {len(action_items)} raw action items before validation")
+            for i, item in enumerate(action_items):
+                logger.debug(f"  [{i+1}] {item.get('task', 'NO_TASK')[:80]}")
+            return action_items
         except Exception as e:
             logger.error(f"Failed to extract action items: {e}")
             return []
@@ -231,7 +255,7 @@ Be concise, accurate, and actionable. Use null for missing information."""
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -260,7 +284,7 @@ Be concise, accurate, and actionable. Use null for missing information."""
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -289,7 +313,7 @@ Be concise, accurate, and actionable. Use null for missing information."""
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -317,7 +341,7 @@ Be concise, accurate, and actionable. Use null for missing information."""
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -346,7 +370,7 @@ Be concise, accurate, and actionable. Use null for missing information."""
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",
@@ -378,7 +402,7 @@ Be concise, accurate, and actionable. Use null for missing information."""
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[
                     {
                         "role": "system",

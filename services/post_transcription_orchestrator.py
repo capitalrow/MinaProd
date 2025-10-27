@@ -37,6 +37,146 @@ from app import socketio
 logger = logging.getLogger(__name__)
 
 
+def _determine_priority(task_text: str, evidence_text: str, due_date: Optional[Any]) -> str:
+    """
+    Intelligent priority detection based on urgency keywords, deadline proximity, and sentiment analysis.
+    
+    Args:
+        task_text: The task text
+        evidence_text: Context/evidence quote
+        due_date: Parsed due date (if any)
+        
+    Returns:
+        Priority level: 'high', 'medium', or 'low'
+    """
+    from datetime import date, timedelta
+    import re
+    
+    combined_text = f"{task_text} {evidence_text}".lower()
+    
+    # HIGH priority indicators (explicit keywords)
+    high_keywords = [
+        r'\burgent\b', r'\basap\b', r'\bcritical\b', r'\bemergency\b',
+        r'\bimmediate(?:ly)?\b', r'\bpriority\b', r'\bcrisis\b',
+        r'\bblocking\b', r'\bblock(?:er)?\b', r'\bhigh[ -]priority\b'
+    ]
+    
+    for keyword in high_keywords:
+        if re.search(keyword, combined_text):
+            logger.debug(f"Priority HIGH: matched keyword '{keyword}' in task")
+            return 'high'
+    
+    # Deadline proximity (due today or tomorrow → high priority)
+    if due_date:
+        try:
+            if isinstance(due_date, str):
+                # Try to parse if it's a string
+                from datetime import datetime
+                due_date = datetime.fromisoformat(due_date).date()
+            
+            today = date.today()
+            days_until_due = (due_date - today).days
+            
+            if days_until_due <= 1:
+                logger.debug(f"Priority HIGH: due in {days_until_due} days")
+                return 'high'
+            elif days_until_due <= 7:
+                logger.debug(f"Priority MEDIUM: due in {days_until_due} days")
+                return 'medium'
+        except Exception as e:
+            logger.debug(f"Could not calculate deadline proximity: {e}")
+    
+    # Sentiment Analysis: Detect negative/urgent tonality
+    # Count sentiment indicators (negative = urgent, positive = relaxed)
+    negative_sentiment_patterns = [
+        r'\bmust\b', r'\bcannot\b', r'\bcan\'t\b', r'\bfail(?:ing|ed)?\b',
+        r'\bbroke(?:n)?\b', r'\bissue\b', r'\bproblem\b', r'\berror\b',
+        r'\bbug\b', r'\bfix\b', r'\bresolve\b', r'\bbefore\b(?:.{1,20}launch|release)',
+        r'\bprevent\b', r'\bavoid\b', r'\bstop\b', r'\bblock\b'
+    ]
+    
+    positive_sentiment_patterns = [
+        r'\bnice\b', r'\bwould\b', r'\bcould\b', r'\bmight\b',
+        r'\bmaybe\b', r'\bsomeday\b', r'\bwhen(?:ever)?\s+(?:time|possible)\b'
+    ]
+    
+    negative_count = sum(1 for pattern in negative_sentiment_patterns if re.search(pattern, combined_text))
+    positive_count = sum(1 for pattern in positive_sentiment_patterns if re.search(pattern, combined_text))
+    
+    sentiment_score = negative_count - positive_count
+    
+    if sentiment_score >= 2:
+        # Strong negative sentiment → urgent
+        logger.debug(f"Priority HIGH: negative sentiment detected (score: {sentiment_score})")
+        return 'high'
+    elif sentiment_score <= -1:
+        # Positive/relaxed sentiment → low priority
+        logger.debug(f"Priority LOW: relaxed sentiment detected (score: {sentiment_score})")
+        return 'low'
+    
+    # LOW priority indicators (explicit keywords)
+    low_keywords = [
+        r'\bwhenever\b', r'\beventually\b', r'\bnice[ -]to[ -]have\b',
+        r'\boptional\b', r'\bif\s+(?:time|possible)\b', r'\blow[ -]priority\b'
+    ]
+    
+    for keyword in low_keywords:
+        if re.search(keyword, combined_text):
+            logger.debug(f"Priority LOW: matched keyword '{keyword}' in task")
+            return 'low'
+    
+    # Default: medium
+    return 'medium'
+
+
+def _extract_assignee_from_context(evidence_text: str, speaker_name: Optional[str] = None) -> Optional[str]:
+    """
+    Extract assignee from context using NLP patterns.
+    
+    Patterns:
+    - "I will..." → speaker is assignee
+    - "John will..." → John is assignee
+    - "Sarah should..." → Sarah is assignee
+    
+    Args:
+        evidence_text: The evidence quote/context
+        speaker_name: Name of the speaker (if known)
+        
+    Returns:
+        Assignee name or None
+    """
+    import re
+    
+    if not evidence_text:
+        return None
+    
+    evidence_lower = evidence_text.lower()
+    
+    # Pattern 1: "I will..." → speaker is assignee
+    if re.search(r'\bi\s+(?:will|ll|should|need to|have to)\s+', evidence_lower):
+        if speaker_name:
+            logger.debug(f"Assignee: '{speaker_name}' (first-person commitment)")
+            return speaker_name
+    
+    # Pattern 2: "NAME will/should..." → NAME is assignee
+    name_pattern = r'([A-Z][a-z]+)\s+(?:will|should|needs? to|has to)\s+'
+    match = re.search(name_pattern, evidence_text)
+    if match:
+        assignee = match.group(1)
+        logger.debug(f"Assignee: '{assignee}' (third-person assignment)")
+        return assignee
+    
+    # Pattern 3: "assigned to NAME"
+    assigned_pattern = r'assign(?:ed)?\s+to\s+([A-Z][a-z]+)'
+    match = re.search(assigned_pattern, evidence_text)
+    if match:
+        assignee = match.group(1)
+        logger.debug(f"Assignee: '{assignee}' (explicit assignment)")
+        return assignee
+    
+    return None
+
+
 class PostTranscriptionOrchestrator:
     """
     Orchestrates post-transcription processing pipeline with event-driven architecture.
@@ -668,40 +808,16 @@ class PostTranscriptionOrchestrator:
                 if summary and summary.actions:
                     for idx, action in enumerate(summary.actions):
                         try:
-                            task_text = action.get('text', '').strip()
+                            # Step 1: Store original raw text from AI
+                            raw_task_text = action.get('text', '').strip()
                             evidence_quote = action.get('evidence_quote', '')
                             
-                            # Validate task quality using scoring rubric
-                            quality_score = validation_engine.score_task_quality(
-                                task_text=task_text,
-                                evidence_quote=evidence_quote,
-                                transcript=full_transcript
-                            )
-                            
-                            quality_scores.append(quality_score.total_score)
-                            
-                            # Reject low-quality tasks
-                            if quality_score.total_score < validation_engine.MIN_TASK_SCORE:
-                                rejected_count += 1
-                                logger.info(
-                                    f"[Validation] Rejected low-quality task (score: {quality_score.total_score:.2f}): "
-                                    f"{task_text[:50]}... "
-                                    f"(verb:{quality_score.has_action_verb}, subject:{quality_score.has_subject}, "
-                                    f"length:{quality_score.appropriate_length}, evidence:{quality_score.has_evidence})"
-                                )
-                                continue  # Skip this task
-                            
-                            # === ENHANCEMENT: Task Refinement & Metadata Extraction ===
-                            
-                            # Store original raw text before refinement
-                            raw_task_text = task_text
-                            
-                            # Step 1: Refine task text (conversational → professional)
+                            # Step 2: REFINE FIRST (conversational → professional)
                             from services.task_refinement_service import get_task_refinement_service
                             refinement_service = get_task_refinement_service()
                             
                             refinement_result = refinement_service.refine_task(
-                                raw_task=task_text,
+                                raw_task=raw_task_text,
                                 context={'evidence_quote': evidence_quote}
                             )
                             
@@ -709,21 +825,30 @@ class PostTranscriptionOrchestrator:
                                 task_text = refinement_result.refined_text
                                 logger.info(f"[Refinement] '{raw_task_text[:40]}...' → '{task_text}'")
                             else:
+                                task_text = raw_task_text
                                 logger.warning(f"[Refinement] Failed: {refinement_result.error}, using original")
                             
-                            # Step 2: Extract priority (map from AI response)
-                            priority_mapping = {
-                                'high': 'high',
-                                'urgent': 'high',
-                                'critical': 'high',
-                                'medium': 'medium',
-                                'normal': 'medium',
-                                'low': 'low'
-                            }
-                            raw_priority = action.get('priority', 'medium').lower().strip()
-                            priority = priority_mapping.get(raw_priority, 'medium')
+                            # Step 3: THEN VALIDATE the refined text
+                            quality_score = validation_engine.score_task_quality(
+                                task_text=task_text,  # Validate REFINED text, not raw
+                                evidence_quote=evidence_quote,
+                                transcript=full_transcript
+                            )
                             
-                            # Step 3: Parse due date (temporal reference → concrete date)
+                            quality_scores.append(quality_score.total_score)
+                            
+                            # Reject low-quality tasks (after refinement)
+                            if quality_score.total_score < validation_engine.MIN_TASK_SCORE:
+                                rejected_count += 1
+                                logger.info(
+                                    f"[Validation] Rejected refined task (score: {quality_score.total_score:.2f}): "
+                                    f"{task_text[:50]}... "
+                                    f"(verb:{quality_score.has_action_verb}, subject:{quality_score.has_subject}, "
+                                    f"length:{quality_score.appropriate_length}, evidence:{quality_score.has_evidence})"
+                                )
+                                continue  # Skip this task
+                            
+                            # Step 4: Parse due date (needed for priority intelligence)
                             from services.date_parser_service import get_date_parser_service
                             date_parser = get_date_parser_service()
                             
@@ -740,11 +865,35 @@ class PostTranscriptionOrchestrator:
                                 else:
                                     logger.debug(f"[Date Parsing] Could not parse: '{due_text}'")
                             
-                            # Step 4: Match user/owner (name → user_id or store name)
+                            # Step 5: Intelligent priority detection (keywords + deadline proximity)
+                            ai_suggested_priority = action.get('priority', 'medium').lower().strip()
+                            priority = _determine_priority(
+                                task_text=task_text,
+                                evidence_text=evidence_quote,
+                                due_date=due_date
+                            )
+                            # Use AI suggestion as fallback if it's more specific
+                            if ai_suggested_priority in ['high', 'urgent', 'critical']:
+                                priority = 'high'
+                            elif ai_suggested_priority == 'low' and priority == 'medium':
+                                priority = 'low'
+                            
+                            # Step 6: Extract assignee from context (NLP-based)
+                            # First try AI-suggested owner, then extract from evidence
+                            owner_name = action.get('owner', '').strip()
+                            if not owner_name or owner_name.lower() in ['not specified', 'none', 'unknown', '']:
+                                # Try to extract from evidence quote
+                                extracted_assignee = _extract_assignee_from_context(
+                                    evidence_text=evidence_quote,
+                                    speaker_name=None  # Could get from segment.speaker if available
+                                )
+                                if extracted_assignee:
+                                    owner_name = extracted_assignee
+                            
+                            # Step 7: Match user/owner (name → user_id or store name)
                             from services.user_matching_service import get_user_matching_service
                             user_matcher = get_user_matching_service()
                             
-                            owner_name = action.get('owner', '').strip()
                             assigned_to_id = None
                             assigned_to_name = None
                             
@@ -758,6 +907,22 @@ class PostTranscriptionOrchestrator:
                                     assigned_to_name = match_result.user_name
                                     logger.debug(f"[User Matching] '{owner_name}' stored as name (no user match)")
                             
+                            # Calculate intelligent confidence score based on refinement + quality
+                            # Base: quality_score.total_score (0.0-1.0)
+                            # Boost: +0.15 if successfully refined
+                            # Cap: 0.95 maximum
+                            base_confidence = quality_score.total_score
+                            if refinement_result.success and refinement_result.transformation_applied:
+                                # Successfully refined → boost confidence
+                                confidence_boost = 0.15
+                                final_confidence = min(0.95, base_confidence + confidence_boost)
+                            elif refinement_result.success and not refinement_result.transformation_applied:
+                                # Already well-formatted, no transformation needed
+                                final_confidence = min(0.95, base_confidence + 0.10)
+                            else:
+                                # Refinement failed, use base quality score (likely 0.6-0.7)
+                                final_confidence = base_confidence
+                            
                             # Create task only if quality is acceptable
                             task = Task(
                                 session_id=session.id,
@@ -768,7 +933,7 @@ class PostTranscriptionOrchestrator:
                                 due_date=due_date,  # Parsed due date
                                 assigned_to_id=assigned_to_id,  # Matched user ID
                                 extracted_by_ai=True,
-                                confidence_score=quality_score.total_score,
+                                confidence_score=final_confidence,
                                 extraction_context={
                                     'source': 'ai_insights',
                                     'raw_text': raw_task_text,  # PRESERVE ORIGINAL for validation
@@ -784,7 +949,7 @@ class PostTranscriptionOrchestrator:
                                         'has_evidence': quality_score.has_evidence
                                     },
                                     'metadata_extraction': {
-                                        'priority_raw': raw_priority,
+                                        'priority_raw': ai_suggested_priority,
                                         'priority_mapped': priority,
                                         'due_text': due_text,
                                         'due_date': due_date.isoformat() if due_date else None,
@@ -833,7 +998,64 @@ class PostTranscriptionOrchestrator:
                         except Exception as obs_error:
                             logger.warning(f"Failed to log validation metrics (non-blocking): {obs_error}")
                     
-                    # Commit AI-extracted tasks
+                    # CRITICAL: Semantic deduplication BEFORE database commit
+                    # Remove duplicate tasks (e.g., "Test transcription" + "Check transcription")
+                    if len(tasks_created) > 1:
+                        logger.info(f"[Deduplication] Starting semantic deduplication on {len(tasks_created)} tasks...")
+                        
+                        unique_tasks = []
+                        duplicate_count = 0
+                        
+                        for current_task in tasks_created:
+                            is_duplicate = False
+                            current_title = current_task.title
+                            
+                            for existing_task in unique_tasks:
+                                existing_title = existing_task.title
+                                
+                                # Calculate semantic similarity using ValidationEngine's method
+                                similarity = validation_engine._calculate_similarity(current_title, existing_title)
+                                
+                                if similarity >= validation_engine.DEDUP_SIMILARITY_THRESHOLD:
+                                    # Found duplicate - keep the higher confidence task
+                                    duplicate_count += 1
+                                    
+                                    logger.info(
+                                        f"[Deduplication] Found duplicate (similarity: {similarity:.2f}):\n"
+                                        f"  • Task 1: '{existing_title[:60]}...' (confidence: {existing_task.confidence_score:.2f})\n"
+                                        f"  • Task 2: '{current_title[:60]}...' (confidence: {current_task.confidence_score:.2f})"
+                                    )
+                                    
+                                    # Keep the higher confidence task
+                                    if current_task.confidence_score > existing_task.confidence_score:
+                                        logger.info(f"  → Keeping Task 2 (higher confidence)")
+                                        # Remove existing task from session and unique_tasks
+                                        db.session.expunge(existing_task)
+                                        unique_tasks.remove(existing_task)
+                                        # Add current task instead
+                                        unique_tasks.append(current_task)
+                                    else:
+                                        logger.info(f"  → Keeping Task 1 (higher confidence)")
+                                        # Remove current task from session
+                                        db.session.expunge(current_task)
+                                    
+                                    is_duplicate = True
+                                    break
+                            
+                            if not is_duplicate:
+                                unique_tasks.append(current_task)
+                        
+                        logger.info(
+                            f"[Deduplication] Completed: {len(tasks_created)} tasks → {len(unique_tasks)} unique "
+                            f"({duplicate_count} duplicates removed)"
+                        )
+                        
+                        # Update tasks_created to only include unique tasks
+                        tasks_created = unique_tasks
+                    else:
+                        logger.debug(f"[Deduplication] Skipped (only {len(tasks_created)} task)")
+                    
+                    # Commit AI-extracted tasks (after deduplication)
                     try:
                         db.session.commit()
                         logger.info(f"✅ [Database] Persisted {len(tasks_created)} AI-extracted tasks")
@@ -1060,36 +1282,122 @@ class PostTranscriptionOrchestrator:
                         logger.debug(f"[Pattern Matching] Skipped (too few words): '{task_text[:50]}...'")
                         continue
                     
-                    # Deduplication
-                    task_title = task_text[:100]  # Limit title length
-                    if task_title.lower() in seen_titles:
-                        logger.debug(f"[Pattern Matching] Skipped duplicate task: '{task_title[:50]}...'")
+                    # Deduplication - check full text before refinement
+                    if task_text.lower() in seen_titles:
+                        logger.debug(f"[Pattern Matching] Skipped duplicate task: '{task_text[:50]}...'")
                         continue
                         
-                    seen_titles.add(task_title.lower())
+                    seen_titles.add(task_text.lower())
                     
                     # Track pattern match for diagnostics
                     pattern_name = f"pattern_{idx}"
                     pattern_match_counts[pattern_name] = pattern_match_counts.get(pattern_name, 0) + 1
-                    logger.debug(f"[Pattern Matching] Pattern {idx} matched: '{task_title[:50]}...' in segment {segment_id}")
+                    logger.debug(f"[Pattern Matching] Pattern {idx} matched: '{task_text[:50]}...' in segment {segment_id}")
                     
-                    # Create task in database with segment linkage
+                    # ===== APPLY REFINEMENT TO PATTERN-MATCHED TASKS =====
+                    from services.task_refinement_service import get_task_refinement_service
+                    from services.date_parser_service import get_date_parser_service
+                    
+                    raw_task_text = task_text
+                    refinement_service = get_task_refinement_service()
+                    
+                    # Refine task text (conversational → professional)
+                    refinement_result = refinement_service.refine_task(
+                        raw_task=task_text,
+                        context={'evidence_quote': text[:200]}  # Use full segment text as context
+                    )
+                    
+                    if refinement_result.success:
+                        task_text = refinement_result.refined_text
+                        logger.info(f"[Pattern+Refinement] '{raw_task_text[:40]}...' → '{task_text[:60]}'")
+                    else:
+                        logger.warning(f"[Pattern+Refinement] Failed: {refinement_result.error}, using original")
+                    
+                    # ===== QUALITY VALIDATION: Reject meta-commentary and low-quality tasks =====
+                    from services.validation_engine import get_validation_engine
+                    
+                    validation_engine = get_validation_engine()
+                    quality_score = validation_engine.score_task_quality(
+                        task_text=task_text,
+                        evidence_quote=text[:200],
+                        transcript=text
+                    )
+                    
+                    # Reject if quality score below threshold (0.70)
+                    if quality_score.total_score < 0.70:
+                        logger.info(f"[Pattern+Validation] REJECTED (score={quality_score.total_score:.2f}): '{task_text[:60]}'")
+                        logger.debug(f"  Rejection reasons: {quality_score.deductions}")
+                        continue  # Skip this task
+                    else:
+                        logger.debug(f"[Pattern+Validation] PASSED (score={quality_score.total_score:.2f}): '{task_text[:60]}'")
+                    
+                    # Parse due date if present in text
+                    date_parser = get_date_parser_service()
+                    due_date = None
+                    due_interpretation = None
+                    
+                    # Look for temporal markers in the original segment text
+                    date_result = date_parser.parse_due_date(text)
+                    if date_result.success:
+                        due_date = date_result.date
+                        due_interpretation = date_result.interpretation
+                        logger.info(f"[Pattern+Date] Parsed due date: {due_interpretation}")
+                    
+                    # Intelligent priority detection
+                    priority = _determine_priority(
+                        task_text=task_text,
+                        evidence_text=text[:200],
+                        due_date=due_date
+                    )
+                    
+                    # Extract assignee from context
+                    extracted_assignee = _extract_assignee_from_context(
+                        evidence_text=text[:500],
+                        speaker_name=seg_data.get('speaker')
+                    )
+                    
+                    # Calculate intelligent confidence score for pattern-matched tasks
+                    # Pattern matching starts at 0.65 base, refinement boosts it
+                    base_pattern_confidence = 0.65
+                    if refinement_result.success and refinement_result.transformation_applied:
+                        # Successfully refined → 0.80-0.85 confidence
+                        pattern_confidence = 0.82
+                    elif refinement_result.success and not refinement_result.transformation_applied:
+                        # Already well-formatted → 0.75-0.80
+                        pattern_confidence = 0.78
+                    else:
+                        # Refinement failed → stay at base
+                        pattern_confidence = base_pattern_confidence
+                    
+                    # Create task in database with refinement metadata
                     try:
                         task = Task(
                             session_id=session_id,
-                            title=task_title,
-                            description=f"Extracted from transcript",
-                            priority="medium",
+                            title=task_text,  # Use FULL refined text (no truncation)
+                            description=f"Extracted from transcript via pattern matching",
+                            priority=priority,  # Intelligent priority detection
                             status="todo",
+                            due_date=due_date,  # Parsed due date
                             extracted_by_ai=False,  # Pattern-based extraction
-                            confidence_score=0.6,  # Lower confidence for pattern matching
+                            confidence_score=pattern_confidence,  # Intelligent confidence scoring
                             extraction_context={
                                 'source': 'pattern',
-                                'transcript_snippet': task_text[:500],
+                                'raw_text': raw_task_text,  # CRITICAL: Store original for transparency
+                                'transcript_snippet': text[:500],
                                 'source_segment_id': segment_id,  # Enable 'jump to context'
                                 'start_ms': seg_data.get('start_ms'),
                                 'end_ms': seg_data.get('end_ms'),
-                                'matched_pattern': pattern[:50]  # Store which pattern matched
+                                'matched_pattern': pattern[:50],  # Store which pattern matched
+                                'refinement': {
+                                    'transformation_applied': refinement_result.success,
+                                    'method': 'llm' if refinement_result.transformation_applied else 'passthrough',
+                                    'error': refinement_result.error if not refinement_result.success else None
+                                },
+                                'metadata_extraction': {
+                                    'due_date_parsed': due_interpretation,
+                                    'priority_detected': priority,
+                                    'owner_name': extracted_assignee
+                                }
                             }
                         )
                         db.session.add(task)
