@@ -59,16 +59,13 @@ def index():
         assigned_to_id=current_user.id
     ).filter(Task.status.in_(['todo', 'in_progress'])).limit(10).all()
     
-    # Get workspace statistics
+    # Get workspace statistics using new meeting lifecycle service
     if current_user.workspace_id:
-        total_meetings = db.session.query(Meeting).filter_by(workspace_id=current_user.workspace_id).count()
-        total_tasks = db.session.query(Task).join(Meeting).filter(
-            Meeting.workspace_id == current_user.workspace_id
-        ).count()
-        completed_tasks = db.session.query(Task).join(Meeting).filter(
-            Meeting.workspace_id == current_user.workspace_id,
-            Task.status == 'completed'
-        ).count()
+        from services.meeting_lifecycle_service import MeetingLifecycleService
+        stats = MeetingLifecycleService.get_meeting_statistics(current_user.workspace_id, days=365)
+        total_meetings = stats['total_meetings']
+        total_tasks = stats['total_tasks']
+        completed_tasks = stats['completed_tasks']
     else:
         total_meetings = 0
         total_tasks = 0

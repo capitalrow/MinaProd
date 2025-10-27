@@ -1514,10 +1514,14 @@ class PostTranscriptionOrchestrator:
     
     def _finalize_session(self, session: Session):
         """
-        Stage 7: Mark session as finalized.
+        Stage 7: Mark session as finalized and create Meeting record.
         Event: session_finalized
+        
+        This is the critical link that converts transcription sessions into meetings
+        for the dashboard, analytics, and meeting list pages.
         """
         event = None
+        meeting_id = None
         
         # Non-blocking event logging
         try:
@@ -1533,9 +1537,24 @@ class PostTranscriptionOrchestrator:
             event = None
         
         try:
+            # CRITICAL: Create Meeting from Session (fixes the broken pipeline)
+            # This ensures sessions appear in Dashboard, Meetings List, Analytics
+            try:
+                from services.meeting_lifecycle_service import MeetingLifecycleService
+                
+                meeting = MeetingLifecycleService.create_meeting_from_session(session.id)
+                if meeting:
+                    meeting_id = meeting.id
+                    logger.info(f"✅ Created Meeting {meeting_id} from Session {session.id}")
+                else:
+                    logger.warning(f"⚠️ Failed to create meeting from session {session.id}")
+            except Exception as meeting_error:
+                logger.error(f"Meeting creation failed (non-blocking): {meeting_error}", exc_info=True)
+            
             # CRITICAL: Always emit confirmation event
             socketio.emit('session_finalized', {
                 'session_id': session.external_id,
+                'meeting_id': meeting_id,
                 'status': 'completed',
                 'timestamp': datetime.utcnow().isoformat()
             })
@@ -1543,11 +1562,14 @@ class PostTranscriptionOrchestrator:
             # Non-blocking event completion
             if event:
                 try:
-                    self.event_service.complete_event(event, result={'status': 'finalized'})
+                    self.event_service.complete_event(event, result={
+                        'status': 'finalized',
+                        'meeting_id': meeting_id
+                    })
                 except Exception as log_error:
                     logger.warning(f"Event completion failed (non-blocking): {log_error}")
             
-            logger.info(f"✅ Session finalized: {session.external_id}")
+            logger.info(f"✅ Session finalized: {session.external_id} (meeting_id={meeting_id})")
             
         except Exception as e:
             logger.error(f"Failed to finalize session: {e}")
