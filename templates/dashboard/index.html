@@ -908,7 +908,7 @@
                  data-meeting-id="${meeting.id}" 
                  data-meeting-title="${escapeHtml(meeting.title || 'Untitled Meeting')}"
                  ${sessionId ? `data-session-id="${sessionId}"` : ''}
-                 style="animation: slideInFromTop 0.5s ease-out;">
+                 style="animation: bounceIn 0.6s ease-out;">
                 <div class="flex justify-between items-start">
                     <div class="flex-1">
                         <h3 class="meeting-title">${escapeHtml(meeting.title || 'Untitled Meeting')}</h3>
@@ -916,6 +916,7 @@
                         ${meeting.summary ? `<p class="meeting-summary">${escapeHtml(meeting.summary.substring(0, 150))}${meeting.summary.length > 150 ? '...' : ''}</p>` : ''}
                     </div>
                     <div class="flex items-center gap-3">
+                        <span class="badge badge-success" style="animation: pulseGlow 1.5s ease-in-out 3;">✨ New</span>
                         ${meeting.duration ? `<span class="badge badge-primary">${Math.round(meeting.duration / 60)} min</span>` : ''}
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.5;">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -937,10 +938,24 @@
             newCard.addEventListener('mouseenter', handleCardHover);
             newCard.style.cursor = 'pointer';
             
+            // Apply pulse glow animation to the entire card
+            newCard.style.animation += ', pulseGlow 2s ease-in-out 2';
+            
+            // Remove new badge after 5 seconds
+            setTimeout(() => {
+                const newBadge = newCard.querySelector('.badge-success');
+                if (newBadge) {
+                    newBadge.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    newBadge.style.opacity = '0';
+                    newBadge.style.transform = 'scale(0.8)';
+                    setTimeout(() => newBadge.remove(), 300);
+                }
+            }, 5000);
+            
             // Remove new-card class after animation
             setTimeout(() => {
                 newCard.classList.remove('new-card');
-            }, 500);
+            }, 600);
         }
     }
     
@@ -1126,6 +1141,39 @@
             }
         }
         
+        @keyframes pulseGlow {
+            0% {
+                box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 20px 8px rgba(139, 92, 246, 0.3);
+                transform: scale(1.02);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3) translateY(-50px);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+            70% {
+                transform: scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
         @keyframes shimmer {
             0% {
                 background-position: -200% center;
@@ -1146,6 +1194,46 @@
             background-size: 200% 100%;
             animation: shimmer 1s ease-in-out;
             pointer-events: none;
+        }
+        
+        /* Enhanced hover effects for meeting cards */
+        .meeting-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .meeting-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Smooth transitions for stat cards */
+        .stat-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Loading skeleton pulse */
+        @keyframes skeletonPulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .skeleton {
+            animation: skeletonPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            background: linear-gradient(90deg, 
+                var(--glass-bg) 0%, 
+                rgba(255, 255, 255, 0.1) 50%, 
+                var(--glass-bg) 100%
+            );
+            background-size: 200% 100%;
         }
     `;
     document.head.appendChild(style);
@@ -1354,4 +1442,6 @@
     
 })();
 </script>
+
+<script src="{{ url_for('static', filename='js/mobile-gestures.js') }}"></script>
 {% endblock %}
