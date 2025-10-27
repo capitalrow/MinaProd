@@ -12,8 +12,10 @@ from sqlalchemy import func, and_, or_, select
 import logging
 from app import db
 from models.summary import Summary
+from services.event_broadcaster import EventBroadcaster
 
 logger = logging.getLogger(__name__)
+event_broadcaster = EventBroadcaster()
 
 api_tasks_bp = Blueprint('api_tasks', __name__, url_prefix='/api/tasks')
 
@@ -190,6 +192,17 @@ def create_task():
         db.session.add(task)
         db.session.commit()
         
+        # Broadcast task_update event
+        task_dict = task.to_dict()
+        task_dict['action'] = 'created'
+        task_dict['meeting_title'] = meeting.title
+        event_broadcaster.broadcast_task_update(
+            task_id=task.id,
+            task_data=task_dict,
+            meeting_id=meeting.id,
+            workspace_id=current_user.workspace_id
+        )
+        
         return jsonify({
             'success': True,
             'message': 'Task created successfully',
@@ -264,6 +277,19 @@ def update_task(task_id):
         task.updated_at = datetime.now()
         db.session.commit()
         
+        # Broadcast task_update event
+        meeting = task.meeting
+        action = 'completed' if task.status == 'completed' and old_status != 'completed' else 'updated'
+        task_dict = task.to_dict()
+        task_dict['action'] = action
+        task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
+        event_broadcaster.broadcast_task_update(
+            task_id=task.id,
+            task_data=task_dict,
+            meeting_id=meeting.id if meeting else None,
+            workspace_id=current_user.workspace_id
+        )
+        
         return jsonify({
             'success': True,
             'message': 'Task updated successfully',
@@ -288,8 +314,26 @@ def delete_task(task_id):
         if not task:
             return jsonify({'success': False, 'message': 'Task not found'}), 404
         
+        # Store task info before deletion
+        task_id = task.id
+        task_dict = task.to_dict()
+        task_dict['action'] = 'deleted'
+        meeting = task.meeting
+        meeting_title = meeting.title if meeting else 'Unknown'
+        meeting_id = meeting.id if meeting else None
+        task_dict['meeting_title'] = meeting_title
+        workspace_id = current_user.workspace_id
+        
         db.session.delete(task)
         db.session.commit()
+        
+        # Broadcast task_update event
+        event_broadcaster.broadcast_task_update(
+            task_id=task_id,
+            task_data=task_dict,
+            meeting_id=meeting_id,
+            workspace_id=workspace_id
+        )
         
         return jsonify({
             'success': True,
@@ -333,6 +377,19 @@ def update_task_status(task_id):
         
         task.updated_at = datetime.now()
         db.session.commit()
+        
+        # Broadcast task_update event
+        meeting = task.meeting
+        action = 'completed' if new_status == 'completed' and old_status != 'completed' else 'updated'
+        task_dict = task.to_dict()
+        task_dict['action'] = action
+        task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
+        event_broadcaster.broadcast_task_update(
+            task_id=task.id,
+            task_data=task_dict,
+            meeting_id=meeting.id if meeting else None,
+            workspace_id=current_user.workspace_id
+        )
         
         return jsonify({
             'success': True,
