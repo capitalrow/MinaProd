@@ -173,8 +173,7 @@ class TaskExtractionE2ETest:
                 kind='final',
                 avg_confidence=0.95,
                 start_ms=seg_data["start_ms"],
-                end_ms=seg_data["end_ms"],
-                speaker_label=seg_data.get("speaker")
+                end_ms=seg_data["end_ms"]
             )
             db.session.add(segment)
         
