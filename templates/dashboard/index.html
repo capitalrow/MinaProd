@@ -1338,10 +1338,9 @@
         const meetingTitle = card.dataset.meetingTitle;
         const sessionId = card.dataset.sessionId;
         
-        // If no session ID, fallback to legacy meeting detail page without animation
+        // If no session ID, skip - meeting card shouldn't be clickable
         if (!sessionId) {
-            console.log('⚠️ No session ID, using legacy meeting detail view for meeting:', meetingId);
-            window.location.href = `/dashboard/meeting/${meetingId}`;
+            console.warn('⚠️ Meeting has no session ID, skipping navigation:', meetingId);
             return;
         }
         
