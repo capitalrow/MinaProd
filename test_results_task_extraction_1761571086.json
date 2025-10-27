@@ -1,0 +1,66 @@
+{
+  "tests": [
+    {
+      "test": "test_task_extraction_with_ai",
+      "passed": false,
+      "details": {
+        "error": "'speaker_label' is an invalid keyword argument for Segment",
+        "exception_type": "TypeError"
+      },
+      "timestamp": "2025-10-27T13:18:04.281575"
+    },
+    {
+      "test": "test_pattern_matching_fallback",
+      "passed": false,
+      "details": {
+        "error": "'speaker_label' is an invalid keyword argument for Segment",
+        "exception_type": "TypeError"
+      },
+      "timestamp": "2025-10-27T13:18:04.705439"
+    },
+    {
+      "test": "test_no_tasks_scenario",
+      "passed": false,
+      "details": {
+        "error": "'speaker_label' is an invalid keyword argument for Segment",
+        "exception_type": "TypeError"
+      },
+      "timestamp": "2025-10-27T13:18:05.125620"
+    },
+    {
+      "test": "test_task_persistence",
+      "passed": false,
+      "details": {
+        "error": "'speaker_label' is an invalid keyword argument for Segment",
+        "exception_type": "TypeError"
+      },
+      "timestamp": "2025-10-27T13:18:05.542040"
+    },
+    {
+      "test": "test_event_emission_accuracy",
+      "passed": false,
+      "details": {
+        "error": "'speaker_label' is an invalid keyword argument for Segment",
+        "exception_type": "TypeError"
+      },
+      "timestamp": "2025-10-27T13:18:05.965556"
+    },
+    {
+      "test": "test_performance",
+      "passed": false,
+      "details": {
+        "error": "'speaker_label' is an invalid keyword argument for Segment",
+        "exception_type": "TypeError"
+      },
+      "timestamp": "2025-10-27T13:18:06.392965"
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 0,
+    "failed": 6,
+    "duration_seconds": 2.78,
+    "success_rate": 0.0,
+    "grade": "F"
+  }
+}

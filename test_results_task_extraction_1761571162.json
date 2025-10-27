@@ -1,0 +1,85 @@
+{
+  "tests": [
+    {
+      "test": "test_task_extraction_with_ai",
+      "passed": false,
+      "details": {
+        "error": "Pipeline failed: ['insights_generate']",
+        "exception_type": "AssertionError"
+      },
+      "timestamp": "2025-10-27T13:18:52.630281"
+    },
+    {
+      "test": "False Positive Filtering",
+      "passed": true,
+      "details": {
+        "external_id": "test_meta_1761571132",
+        "pipeline_success": false,
+        "tasks_extracted": 1,
+        "expected_maximum": 1,
+        "tasks": [
+          {
+            "title": "need to review each segment for potential tasks",
+            "extracted_by_ai": false
+          }
+        ]
+      },
+      "timestamp": "2025-10-27T13:18:58.879334"
+    },
+    {
+      "test": "No Tasks Graceful Handling",
+      "passed": true,
+      "details": {
+        "external_id": "test_no_tasks_1761571139",
+        "pipeline_success": true,
+        "tasks_extracted": 0,
+        "expected": 0
+      },
+      "timestamp": "2025-10-27T13:19:04.922209"
+    },
+    {
+      "test": "Task Persistence",
+      "passed": true,
+      "details": {
+        "external_id": "test_persistence_1761571145",
+        "tasks_before_refresh": 4,
+        "tasks_after_refresh": 4,
+        "persistence_verified": true,
+        "all_linked_to_session": true
+      },
+      "timestamp": "2025-10-27T13:19:10.678528"
+    },
+    {
+      "test": "Event Emission Accuracy",
+      "passed": false,
+      "details": {
+        "external_id": "test_events_1761571150",
+        "database_task_count": 4,
+        "event_task_count": 0,
+        "counts_match": false,
+        "event_status": "EventStatus.COMPLETED"
+      },
+      "timestamp": "2025-10-27T13:19:16.119363"
+    },
+    {
+      "test": "Pipeline Performance",
+      "passed": false,
+      "details": {
+        "external_id": "test_perf_1761571156",
+        "total_duration_ms": 5594.52,
+        "target_ms": 30000,
+        "under_target": true,
+        "pipeline_success": false
+      },
+      "timestamp": "2025-10-27T13:19:22.204167"
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 3,
+    "failed": 3,
+    "duration_seconds": 36.32,
+    "success_rate": 50.0,
+    "grade": "F"
+  }
+}
