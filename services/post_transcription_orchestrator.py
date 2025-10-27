@@ -350,6 +350,11 @@ class PostTranscriptionOrchestrator:
         """
         Stage 3: Generate AI-powered insights (summary, actions, decisions, risks).
         Event: insights_generate
+        
+        Status tracking:
+        - 'processing': AI analysis in progress
+        - 'success': AI completed successfully (may have 0 results, that's still success)
+        - 'failed': AI analysis failed (JSON parsing errors, API errors, etc)
         """
         event = None
         
@@ -367,6 +372,10 @@ class PostTranscriptionOrchestrator:
             event = None
         
         try:
+            # Set status to 'processing' at start
+            session.post_transcription_status = 'processing'
+            db.session.commit()
+            
             # CRITICAL: Always emit progress event
             socketio.emit('insights_generate', {
                 'session_id': session.external_id,
@@ -388,6 +397,10 @@ class PostTranscriptionOrchestrator:
                 'risk_count': len(summary_data.get('risks', []))
             }
             
+            # Set status to 'success' even if 0 results (AI completed successfully)
+            session.post_transcription_status = 'success'
+            db.session.commit()
+            
             # CRITICAL: Always emit completion event
             socketio.emit('insights_generate', {
                 'session_id': session.external_id,
@@ -404,11 +417,19 @@ class PostTranscriptionOrchestrator:
                 except Exception as log_error:
                     logger.warning(f"Event completion failed (non-blocking): {log_error}")
             
-            logger.info(f"✅ Insights generated: {result['action_count']} actions, {result['decision_count']} decisions")
+            logger.info(f"✅ Insights generated: {result['action_count']} actions, {result['decision_count']} decisions, {result['risk_count']} risks")
             return result
             
         except Exception as e:
             logger.error(f"Failed to generate insights: {e}")
+            
+            # Set status to 'failed' on exception
+            try:
+                session.post_transcription_status = 'failed'
+                db.session.commit()
+            except Exception as db_error:
+                logger.error(f"Failed to update session status: {db_error}")
+            
             if event:
                 try:
                     self.event_service.fail_event(event, str(e))
@@ -446,8 +467,13 @@ class PostTranscriptionOrchestrator:
             event = None
         
         try:
-            # Calculate analytics
-            segments = db.session.query(Segment).filter_by(session_id=session.id).all()
+            # Calculate analytics - IMPORTANT: Use only 'final' segments for consistency with refined view
+            segments = db.session.query(Segment).filter_by(
+                session_id=session.id,
+                kind='final'
+            ).all()
+            
+            logger.info(f"[Analytics] Using {len(segments)} final segments for session {session.external_id}")
             
             total_duration = sum((s.end_ms or 0) - (s.start_ms or 0) for s in segments) / 1000.0
             avg_confidence = sum(s.avg_confidence or 0 for s in segments) / len(segments) if segments else 0

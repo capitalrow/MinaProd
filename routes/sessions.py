@@ -232,13 +232,17 @@ def get_session_refined(session_identifier):
     - Replay tab (audio sync)
     
     Automatically navigated to after post_transcription_reveal event.
+    
+    IMPORTANT: This view only loads 'final' segments to ensure all tabs
+    analyze the same refined transcript that the AI analyzed.
     """
     # Try external_id first (since redirect uses external_id), then database ID as fallback
-    session_detail = SessionService.get_session_detail_by_external(session_identifier)
+    # Load ONLY final segments for consistency across all tabs
+    session_detail = SessionService.get_session_detail_by_external(session_identifier, kind='final')
     
     # If not found by external_id and identifier is numeric, try database ID
     if not session_detail and session_identifier.isdigit():
-        session_detail = SessionService.get_session_detail(int(session_identifier))
+        session_detail = SessionService.get_session_detail(int(session_identifier), kind='final')
     
     if not session_detail:
         abort(404)
@@ -246,6 +250,9 @@ def get_session_refined(session_identifier):
     # Get additional data for tabs
     session_data = session_detail['session']
     segments = session_detail['segments']
+    
+    # Log what we're working with for debugging
+    logger.info(f"[Refined View] Session {session_identifier}: {len(segments)} final segments loaded")
     
     # Get summary/insights data
     summary_data = None

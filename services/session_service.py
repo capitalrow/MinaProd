@@ -140,12 +140,13 @@ class SessionService:
         return list(db.session.scalars(stmt).all())
     
     @staticmethod
-    def get_session_detail(session_id: int) -> Optional[Dict[str, Any]]:
+    def get_session_detail(session_id: int, kind: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
         Get detailed session information including segments.
         
         Args:
             session_id: Database session ID
+            kind: Optional filter for segment kind ('final', 'interim', or None for all)
             
         Returns:
             Dictionary with session and segments data, or None
@@ -155,7 +156,13 @@ class SessionService:
             return None
         
         # Get session segments using SQLAlchemy 2.0
-        segments_stmt = select(Segment).where(Segment.session_id == session_id).order_by(Segment.created_at)
+        segments_stmt = select(Segment).where(Segment.session_id == session_id)
+        
+        # Filter by kind if specified
+        if kind:
+            segments_stmt = segments_stmt.where(Segment.kind == kind)
+        
+        segments_stmt = segments_stmt.order_by(Segment.start_ms, Segment.created_at)
         segments = db.session.scalars(segments_stmt).all()
         
         return {
@@ -165,12 +172,13 @@ class SessionService:
         }
     
     @staticmethod
-    def get_session_detail_by_external(external_id: str) -> Optional[Dict[str, Any]]:
+    def get_session_detail_by_external(external_id: str, kind: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
         Get detailed session information including segments by external ID.
         
         Args:
             external_id: External session identifier
+            kind: Optional filter for segment kind ('final', 'interim', or None for all)
             
         Returns:
             Dictionary with session and segments data, or None
@@ -180,7 +188,13 @@ class SessionService:
             return None
         
         # Get session segments using SQLAlchemy 2.0
-        segments_stmt = select(Segment).where(Segment.session_id == session.id).order_by(Segment.created_at)
+        segments_stmt = select(Segment).where(Segment.session_id == session.id)
+        
+        # Filter by kind if specified
+        if kind:
+            segments_stmt = segments_stmt.where(Segment.kind == kind)
+        
+        segments_stmt = segments_stmt.order_by(Segment.start_ms, Segment.created_at)
         segments = db.session.scalars(segments_stmt).all()
         
         return {

@@ -615,7 +615,9 @@
   <!-- Highlights Tab -->
   <div id="highlights-tab" class="tab-content" role="tabpanel" aria-labelledby="highlights-button">
     <div class="tab-panel">
-      {% if summary %}
+      
+      {# State 1: AI succeeded and generated insights #}
+      {% if session.post_transcription_status == 'success' and summary %}
       <div class="highlights-grid">
         
         <!-- Summary -->
@@ -680,13 +682,39 @@
         </div>
         {% endif %}
         
+        {# Show message if AI succeeded but found no highlights #}
+        {% if not (summary.summary_md or summary.actions or summary.decisions or summary.risks) %}
+        <div class="empty-state">
+          <div class="empty-state-icon">⭐</div>
+          <div class="empty-state-text">No highlights found</div>
+          <p style="margin-top: var(--space-2); color: var(--color-text-secondary); max-width: 500px; margin-left: auto; margin-right: auto; font-size: var(--font-size-sm);">
+            The AI analyzed your meeting but didn't identify any key highlights. This can happen with very short conversations or casual chats.
+          </p>
+        </div>
+        {% endif %}
       </div>
+      
+      {# State 2: AI analysis failed #}
+      {% elif session.post_transcription_status == 'failed' %}
+      <div class="empty-state">
+        <div class="empty-state-icon">⚠️</div>
+        <div class="empty-state-text">Insights temporarily unavailable</div>
+        <p style="margin-top: var(--space-2); color: var(--color-text-secondary); max-width: 500px; margin-left: auto; margin-right: auto; font-size: var(--font-size-sm);">
+          AI analysis encountered an error. Your transcript is safely stored and you can review it in the Transcript tab.
+        </p>
+      </div>
+      
+      {# State 3: Processing or no status yet #}
       {% else %}
       <div class="empty-state">
-        <div class="empty-state-icon">⭐</div>
-        <div class="empty-state-text">Insights are still being generated...</div>
+        <div class="empty-state-icon">⏳</div>
+        <div class="empty-state-text">Analyzing meeting...</div>
+        <p style="margin-top: var(--space-2); color: var(--color-text-secondary); max-width: 500px; margin-left: auto; margin-right: auto; font-size: var(--font-size-sm);">
+          AI is generating highlights from your meeting. This usually takes just a few seconds.
+        </p>
       </div>
       {% endif %}
+      
     </div>
   </div>
   
@@ -730,7 +758,9 @@
   <div id="tasks-tab" class="tab-content" role="tabpanel" aria-labelledby="tasks-button">
     <div class="tab-panel">
       <h2 style="margin-bottom: var(--space-4); color: var(--color-primary);">Action Items</h2>
-      {% if summary and summary.actions %}
+      
+      {# State 1: AI succeeded and found tasks #}
+      {% if session.post_transcription_status == 'success' and summary and summary.actions %}
       <div class="task-list">
         {% for action in summary.actions %}
         <div class="task-item">
@@ -752,10 +782,35 @@
         </div>
         {% endfor %}
       </div>
-      {% else %}
+      
+      {# State 2: AI succeeded but found no tasks (this is normal, not an error) #}
+      {% elif session.post_transcription_status == 'success' %}
       <div class="empty-state">
         <div class="empty-state-icon">✅</div>
-        <div class="empty-state-text">No action items identified yet</div>
+        <div class="empty-state-text">No action items found</div>
+        <p style="margin-top: var(--space-2); color: var(--color-text-secondary); max-width: 500px; margin-left: auto; margin-right: auto; font-size: var(--font-size-sm);">
+          No explicit action items were mentioned in this meeting. If you discussed tasks, try stating them more clearly (e.g., "I need to..." or "Action: ...").
+        </p>
+      </div>
+      
+      {# State 3: AI analysis failed (show error message) #}
+      {% elif session.post_transcription_status == 'failed' %}
+      <div class="empty-state">
+        <div class="empty-state-icon">⚠️</div>
+        <div class="empty-state-text">Insights temporarily unavailable</div>
+        <p style="margin-top: var(--space-2); color: var(--color-text-secondary); max-width: 500px; margin-left: auto; margin-right: auto; font-size: var(--font-size-sm);">
+          AI analysis encountered an error. Your transcript is safely stored and you can review it in the Transcript tab.
+        </p>
+      </div>
+      
+      {# State 4: Processing or no status yet #}
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">⏳</div>
+        <div class="empty-state-text">Analyzing meeting...</div>
+        <p style="margin-top: var(--space-2); color: var(--color-text-secondary); max-width: 500px; margin-left: auto; margin-right: auto; font-size: var(--font-size-sm);">
+          AI is extracting action items from your meeting. This usually takes just a few seconds.
+        </p>
       </div>
       {% endif %}
     </div>

@@ -18,10 +18,13 @@ from models.session import Session
 from models.segment import Segment
 from models.summary import Summary, SummaryLevel, SummaryStyle
 from server.models.memory_store import MemoryStore
+from services.text_matcher import TextMatcher
+
 memory = MemoryStore()
 import inspect
 
 logger = logging.getLogger(__name__)
+text_matcher = TextMatcher()
 
 
 class AnalysisService:
@@ -45,14 +48,56 @@ class AnalysisService:
         """,
         
         "brief_action": """
-        You are a project manager. Extract only the most critical action items from this meeting (2-3 sentences summary).
-        Focus on urgent tasks and immediate next steps.
+        You are a strict meeting analyst. Extract ONLY explicitly stated action items from this transcript.
         
-        Return ONLY valid JSON:
+        CRITICAL RULES - YOU MUST FOLLOW THESE EXACTLY:
+        1. Only extract tasks that are EXPLICITLY STATED as commitments in the transcript
+        2. You MUST include the exact quote from the transcript for each task as evidence
+        3. If you cannot find a direct quote, DO NOT extract that task
+        4. Return an EMPTY array if there are NO clear action items
+        5. Do NOT infer, assume, create, or hallucinate tasks
+        6. Be extremely conservative - when in doubt, don't extract it
+        
+        EXAMPLES OF WHAT TO EXTRACT (with evidence):
+        ✓ Transcript says: "I need to review the report by Friday"
+          Extract: {"action": "Review the report", "evidence_quote": "I need to review the report by Friday", ...}
+        
+        ✓ Transcript says: "Action item: Let's schedule a follow-up meeting"
+          Extract: {"action": "Schedule a follow-up meeting", "evidence_quote": "Let's schedule a follow-up meeting", ...}
+        
+        EXAMPLES OF WHAT NOT TO EXTRACT:
+        ✗ Transcript says: "I'm testing the application"
+          DO NOT extract "Test the application" - this is describing current activity, not a future task
+        
+        ✗ Transcript says: "I will go check my car"
+          DO NOT extract - casual conversation, not a work task
+        
+        ✗ Transcript says: "We could consider improving performance"
+          DO NOT extract - just an idea, not a commitment
+        
+        ✗ Transcript says: "Testing the post-transcription pipeline"
+          DO NOT extract - describing what they're doing NOW, not a task for later
+        
+        REAL-WORLD NEGATIVE EXAMPLE (DO NOT EXTRACT FROM THIS):
+        "Testing the Lina application. I will go ahead and share the output from my screen recording, including the post-transcription pipeline with Chad GPT. It will help me refine how the pipeline will work after recording has stopped."
+        → This has NO action items. They're describing their current testing activity.
+        → CORRECT response: action_plan = []
+        
+        Return ONLY valid JSON with evidence quotes:
         {
-            "brief_summary": "2-3 sentence action-focused summary",
-            "action_plan": [{"action": "Critical task", "owner": "Person or unknown", "priority": "high/medium/low", "due": "Date or unknown"}]
+            "brief_summary": "2-3 sentence summary of what was discussed",
+            "action_plan": [
+                {
+                    "action": "Exact task as stated", 
+                    "evidence_quote": "REQUIRED: Exact quote from transcript showing this task was mentioned",
+                    "owner": "Person mentioned or 'Not specified'", 
+                    "priority": "high/medium/low if urgency mentioned",
+                    "due": "Date mentioned or 'Not specified'"
+                }
+            ]
         }
+        
+        If NO action items found, return: {"brief_summary": "This was a [casual conversation/test/discussion] with no specific action items mentioned.", "action_plan": []}
         
         Meeting transcript:
         {transcript}
@@ -60,16 +105,60 @@ class AnalysisService:
         
         # Standard Level Prompts
         "standard_executive": """
-        You are a professional meeting analyst. Create a standard executive summary (1-2 paragraphs) focusing on business outcomes.
-        Include key decisions, strategic direction, and business impact.
+        You are a professional meeting analyst. Analyze this transcript and extract information STRICTLY as stated.
         
-        Return ONLY valid JSON:
+        CRITICAL RULES - FOLLOW EXACTLY:
+        1. Only extract what is EXPLICITLY stated in the transcript
+        2. You MUST provide evidence_quote from transcript for each extracted item
+        3. Do NOT infer, assume, create, or hallucinate information
+        4. Return EMPTY arrays [] if nothing was explicitly mentioned
+        5. Be extremely conservative - accuracy over completeness
+        
+        For ACTIONS - Include evidence_quote for each:
+        ✓ Extract: "I need to...", "I'll...", "Action: ...", "We should...", "Let's..."
+        ✗ Skip: Casual mentions ("I'm going to check my car"), maybes ("I could..."), current activities ("I'm testing...")
+        ✗ Return [] if no clear action items
+        
+        For DECISIONS - Include evidence_quote for each:
+        ✓ Extract: "We decided...", "The decision is...", "We're going with...", "Approved..."
+        ✗ Skip: Opinions ("I think..."), ideas ("We could...", "maybe...")
+        ✗ Return [] if no decisions were made
+        
+        For RISKS - Include evidence_quote for each:
+        ✓ Extract: "The risk is...", "I'm concerned about...", "This could be a problem..."
+        ✗ Skip: General speculation
+        ✗ Return [] if no risks mentioned
+        
+        REAL-WORLD NEGATIVE EXAMPLE (DO NOT EXTRACT FROM THIS):
+        "Testing the Lina application. I will share the output including the post-transcription pipeline. It will help me refine how the pipeline works."
+        → This is someone describing their CURRENT testing activity
+        → CORRECT response: actions=[], decisions=[], risks=[]
+        
+        Return ONLY valid JSON with evidence quotes:
         {
-            "summary_md": "Standard executive summary in markdown format",
-            "actions": [{"text": "Action description", "owner": "Person or unknown", "due": "Date or unknown"}],
-            "decisions": [{"text": "Decision description", "impact": "Business impact"}],
-            "risks": [{"text": "Risk description", "mitigation": "Suggested mitigation or unknown"}],
-            "executive_insights": [{"insight": "Strategic point", "impact": "Business impact", "next_steps": "What needs to happen"}]
+            "summary_md": "Factual summary of what was discussed (2-3 paragraphs). State clearly if this was just a test/casual conversation.",
+            "actions": [
+                {
+                    "text": "Exact action as stated", 
+                    "evidence_quote": "REQUIRED: Quote from transcript",
+                    "owner": "Person name or 'Not specified'", 
+                    "due": "Exact date/time mentioned or 'Not specified'"
+                }
+            ],
+            "decisions": [
+                {
+                    "text": "Exact decision as stated",
+                    "evidence_quote": "REQUIRED: Quote from transcript",
+                    "impact": "Impact mentioned or 'Not specified'"
+                }
+            ],
+            "risks": [
+                {
+                    "text": "Exact risk/concern as stated",
+                    "evidence_quote": "REQUIRED: Quote from transcript",
+                    "mitigation": "Mitigation mentioned or 'Not specified'"
+                }
+            ]
         }
         
         Meeting transcript:
@@ -221,10 +310,15 @@ class AnalysisService:
         final_segments = db.session.execute(stmt).scalars().all()
         
         # Determine analysis engine from configuration
+        # Default to 'openai_gpt' to use real AI analysis (not mock)
         try:
-            engine = current_app.config.get('ANALYSIS_ENGINE', 'mock')
+            engine = current_app.config.get('ANALYSIS_ENGINE', 'openai_gpt')
         except RuntimeError:
-            engine = 'mock'
+            # If running outside Flask context, check if API key is available
+            import os
+            api_key = os.environ.get('OPENAI_API_KEY')
+            engine = 'openai_gpt' if api_key else 'mock'
+            logger.warning(f"Running outside Flask context, using engine: {engine}")
         
         # Initialize context variable for all code paths
         context = ""
@@ -242,7 +336,10 @@ class AnalysisService:
             # Build context string from segments
             context = AnalysisService._build_context(list(final_segments))
             
-            logger.info(f"Built context with {len(context)} characters for session {session_id}")
+            # Log what we're analyzing for debugging
+            word_count = len(context.split())
+            logger.info(f"[AI Analysis] Session {session_id}: {len(final_segments)} final segments, {word_count} words, {len(context)} chars")
+            logger.debug(f"[AI Analysis] Transcript preview: {context[:500]}...")
             
             # Combine transcript with any recalled memory context
             context_with_memory = f"{memory_context}{context}"
@@ -464,6 +561,7 @@ class AnalysisService:
     def _analyse_with_openai(context: str, level: SummaryLevel, style: SummaryStyle) -> Dict:
         """
         Analyse context using OpenAI GPT with specified level and style.
+        Implements exponential backoff retry (3 attempts: 0s, 2s, 5s).
         
         Args:
             context: Meeting transcript context
@@ -473,7 +571,66 @@ class AnalysisService:
         Returns:
             Analysis results dictionary
         """
+        import time
+        
+        # Retry configuration
+        MAX_RETRIES = 3
+        BACKOFF_DELAYS = [0, 2, 5]  # delay in seconds: attempt 0=0s, attempt 1=2s, attempt 2=5s
+        
+        last_error = None
+        
+        for attempt in range(MAX_RETRIES):
+            try:
+                if attempt > 0:
+                    delay = BACKOFF_DELAYS[attempt]  # Fixed: use attempt directly as index
+                    logger.info(f"[Retry {attempt}/{MAX_RETRIES-1}] Waiting {delay}s before retry...")
+                    time.sleep(delay)
+                    logger.info(f"[Retry {attempt}/{MAX_RETRIES-1}] Attempting OpenAI analysis again...")
+                
+                # Perform the actual OpenAI call
+                result = AnalysisService._perform_openai_analysis(context, level, style, attempt)
+                
+                # Success! Return immediately
+                if attempt > 0:
+                    logger.info(f"[Retry Success] Analysis succeeded on attempt {attempt + 1}")
+                return result
+                
+            except (json.JSONDecodeError, ValueError) as e:
+                last_error = e
+                logger.warning(f"[Attempt {attempt + 1}/{MAX_RETRIES}] Failed: {e}")
+                
+                # If this was the last attempt, raise
+                if attempt == MAX_RETRIES - 1:
+                    logger.error(f"[Retry Exhausted] All {MAX_RETRIES} attempts failed")
+                    raise ValueError(f"OpenAI analysis failed after {MAX_RETRIES} attempts: {e}") from e
+                
+                # Otherwise, continue to next retry
+                continue
+                
+            except Exception as e:
+                # For non-retryable errors (API key missing, etc), fail immediately
+                logger.error(f"Non-retryable error: {e}")
+                raise
+        
+        # Should never reach here, but just in case
+        raise ValueError(f"OpenAI analysis failed: {last_error}")
+    
+    @staticmethod
+    def _perform_openai_analysis(context: str, level: SummaryLevel, style: SummaryStyle, attempt: int = 0) -> Dict:
+        """
+        Perform a single OpenAI analysis attempt.
+        
+        Args:
+            context: Meeting transcript context
+            level: Summary detail level
+            style: Summary style type
+            attempt: Current retry attempt number (0-indexed)
+            
+        Returns:
+            Analysis results dictionary
+        """
         # Initialize variables before try block to avoid unbound errors
+        result_text = None
         client = None
         prompt = ""
         expected_keys: List[str] = []
@@ -484,8 +641,8 @@ class AnalysisService:
             import os
             api_key = os.environ.get('OPENAI_API_KEY')
             if not api_key:
-                logger.warning("OpenAI API key not found, falling back to mock analysis")
-                return AnalysisService._analyse_with_mock(context, [], level, style)
+                logger.error("OpenAI API key not found - CANNOT GENERATE INSIGHTS")
+                raise ValueError("OpenAI API key not configured")
             
             client = OpenAI(api_key=api_key)
             
@@ -510,7 +667,89 @@ class AnalysisService:
             result_text = response.choices[0].message.content
             if result_text is None:
                 raise ValueError("OpenAI returned empty response")
-            result = json.loads(result_text)
+            
+            # Log the FULL raw response for debugging
+            logger.debug(f"[OpenAI Raw Response] Length: {len(result_text)} chars")
+            logger.debug(f"[OpenAI Raw Response] FULL CONTENT:\n{result_text}")
+            
+            # Robust JSON extraction: handle markdown, whitespace, extra text
+            cleaned_json = AnalysisService._extract_json_from_response(result_text)
+            logger.debug(f"[JSON Extraction] Cleaned JSON: {cleaned_json[:500]}...")
+            
+            result = json.loads(cleaned_json)
+            
+            # Log what the AI extracted (before validation)
+            action_count_raw = len(result.get('actions', []))
+            decision_count_raw = len(result.get('decisions', []))
+            risk_count_raw = len(result.get('risks', []))
+            logger.info(f"[AI Extraction RAW] Actions: {action_count_raw}, Decisions: {decision_count_raw}, Risks: {risk_count_raw}")
+            
+            if action_count_raw > 0:
+                logger.debug(f"[AI Extraction RAW] Actions before validation: {result.get('actions')}")
+            
+            # CRITICAL: Validate extracted actions against transcript to prevent hallucination
+            if result.get('actions'):
+                logger.info(f"[Validation] Validating {len(result['actions'])} extracted actions against transcript...")
+                validated_actions = text_matcher.validate_task_list(result['actions'], context)
+                
+                # Replace with validated actions only
+                original_count = len(result['actions'])
+                result['actions'] = validated_actions
+                validated_count = len(validated_actions)
+                
+                logger.info(f"[Validation] Actions: {validated_count}/{original_count} passed validation")
+                
+                if validated_count < original_count:
+                    rejected_count = original_count - validated_count
+                    logger.warning(f"[Validation] ⚠️ REJECTED {rejected_count} hallucinated tasks that had no evidence in transcript")
+            
+            # Validate decisions (if present)
+            if result.get('decisions'):
+                logger.info(f"[Validation] Validating {len(result['decisions'])} extracted decisions...")
+                validated_decisions = []
+                for decision in result['decisions']:
+                    decision_text = decision.get('text', '')
+                    if decision_text:
+                        validation = text_matcher.validate_extraction(decision_text, context, 'decision')
+                        if validation['is_valid']:
+                            decision['validation'] = {
+                                'confidence_score': validation['confidence_score'],
+                                'evidence_quote': validation['evidence_quote']
+                            }
+                            validated_decisions.append(decision)
+                        else:
+                            logger.warning(f"[Validation] ❌ Rejected decision: {decision_text[:60]}...")
+                
+                original_count = len(result['decisions'])
+                result['decisions'] = validated_decisions
+                logger.info(f"[Validation] Decisions: {len(validated_decisions)}/{original_count} passed validation")
+            
+            # Validate risks (if present)
+            if result.get('risks'):
+                logger.info(f"[Validation] Validating {len(result['risks'])} extracted risks...")
+                validated_risks = []
+                for risk in result['risks']:
+                    risk_text = risk.get('text', '')
+                    if risk_text:
+                        validation = text_matcher.validate_extraction(risk_text, context, 'risk')
+                        if validation['is_valid']:
+                            risk['validation'] = {
+                                'confidence_score': validation['confidence_score'],
+                                'evidence_quote': validation['evidence_quote']
+                            }
+                            validated_risks.append(risk)
+                        else:
+                            logger.warning(f"[Validation] ❌ Rejected risk: {risk_text[:60]}...")
+                
+                original_count = len(result['risks'])
+                result['risks'] = validated_risks
+                logger.info(f"[Validation] Risks: {len(validated_risks)}/{original_count} passed validation")
+            
+            # Log final validated counts
+            action_count = len(result.get('actions', []))
+            decision_count = len(result.get('decisions', []))
+            risk_count = len(result.get('risks', []))
+            logger.info(f"[AI Extraction FINAL] Actions: {action_count}, Decisions: {decision_count}, Risks: {risk_count} (after validation)")
             
             # Validate required keys based on level/style
             missing_keys = [key for key in expected_keys if key not in result]
@@ -521,46 +760,69 @@ class AnalysisService:
             return result
             
         except json.JSONDecodeError as e:
-            logger.error(f"JSON parsing failed on first attempt: {e}")
-            
-            # Retry with stricter prompt
-            try:
-                if client is None:
-                    raise ValueError("OpenAI client not initialized")
-                    
-                retry_prompt = f"The previous response was invalid JSON. Respond with VALID JSON ONLY in the exact format requested:\n\n{prompt}"
-                
-                response = client.chat.completions.create(
-                    model="gpt-4",
-                    messages=[
-                        {"role": "system", "content": "Respond with valid JSON only. No additional text."},
-                        {"role": "user", "content": retry_prompt}
-                    ],
-                    response_format={"type": "json_object"},
-                    temperature=0.1  # Even more deterministic
-                )
-                
-                result_text = response.choices[0].message.content
-                if result_text is None:
-                    raise ValueError("OpenAI retry returned empty response")
-                result = json.loads(result_text)
-                
-                # Validate expected keys for this level/style
-                missing_keys = [key for key in expected_keys if key not in result]
-                if missing_keys:
-                    logger.warning(f"Missing expected keys in retry for {level.value} {style.value}: {missing_keys}")
-                
-                return result
-                
-            except Exception as retry_e:
-                logger.error(f"OpenAI analysis retry failed: {retry_e}")
-                # Fall back to mock analysis
-                return AnalysisService._analyse_with_mock(context, [], level, style)
+            # Log detailed JSON parsing error
+            result_text_snippet = result_text[max(0, e.pos-50):e.pos+50] if result_text else 'N/A'
+            logger.error(f"JSON parsing failed: {e}")
+            logger.error(f"[OpenAI JSON Error] Failed to parse at position {e.pos}")
+            logger.error(f"[OpenAI JSON Error] Problem text: {result_text_snippet}")
+            # Re-raise to trigger retry at higher level
+            raise
             
         except Exception as e:
             logger.error(f"OpenAI analysis failed: {e}")
-            # Fall back to mock analysis
-            return AnalysisService._analyse_with_mock(context, [], level, style)
+            logger.error(f"[CRITICAL] OpenAI analysis failed - CANNOT GENERATE INSIGHTS WITHOUT VALID API RESPONSE")
+            # Re-raise to trigger retry or fail
+            raise
+    
+    @staticmethod
+    def _extract_json_from_response(response_text: str) -> str:
+        """
+        Extract clean JSON from OpenAI response, handling:
+        - Markdown code blocks (```json ... ```)
+        - Extra whitespace/newlines
+        - Text before/after JSON
+        
+        Args:
+            response_text: Raw response from OpenAI
+            
+        Returns:
+            Clean JSON string ready for parsing
+        """
+        if not response_text:
+            raise ValueError("Empty response text")
+        
+        # Remove leading/trailing whitespace
+        cleaned = response_text.strip()
+        
+        # Handle markdown code blocks (```json ... ``` or ``` ... ```)
+        if cleaned.startswith('```'):
+            # Extract content between code fences
+            lines = cleaned.split('\n')
+            # Skip first line (```json or ```)
+            start_idx = 1
+            # Find end fence
+            end_idx = len(lines)
+            for i in range(1, len(lines)):
+                if lines[i].strip() == '```':
+                    end_idx = i
+                    break
+            cleaned = '\n'.join(lines[start_idx:end_idx])
+        
+        # Strip again after removing code blocks
+        cleaned = cleaned.strip()
+        
+        # Find JSON object boundaries
+        # Look for first { and last }
+        start_brace = cleaned.find('{')
+        end_brace = cleaned.rfind('}')
+        
+        if start_brace == -1 or end_brace == -1:
+            raise ValueError(f"No JSON object found in response: {cleaned[:200]}")
+        
+        # Extract just the JSON object
+        json_str = cleaned[start_brace:end_brace+1]
+        
+        return json_str
     
     @staticmethod
     def _get_expected_keys(level: SummaryLevel, style: SummaryStyle) -> List[str]:
@@ -695,11 +957,23 @@ Technical implementation details were reviewed, including architecture decisions
 ### Outcomes and Next Steps
 Multiple action items were identified with clear ownership and timelines. Follow-up meetings were scheduled to track progress."""
         
-        # Mock actions based on common patterns
-        mock_actions = [
+        # CRITICAL: Mock data must also pass validation to prevent hallucination
+        # Generate candidate mock actions
+        mock_actions_candidates = [
             {"text": "Follow up on discussed action items", "owner": "unknown", "due": "unknown"},
             {"text": "Prepare report based on meeting outcomes", "owner": "unknown", "due": "next week"}
         ] if word_count > 50 else []
+        
+        # Validate mock actions against transcript (ZERO TOLERANCE for hallucination)
+        text_matcher_instance = TextMatcher()
+        if mock_actions_candidates and context:
+            logger.warning("[MOCK DATA] Validating mock actions against transcript...")
+            mock_actions = text_matcher_instance.validate_task_list(mock_actions_candidates, context)
+            rejected = len(mock_actions_candidates) - len(mock_actions)
+            if rejected > 0:
+                logger.warning(f"[MOCK DATA] ⚠️ Rejected {rejected} hallucinated mock tasks")
+        else:
+            mock_actions = []
         
         # Mock decisions
         mock_decisions = [

@@ -110,7 +110,8 @@ class Session(Base):
             'locale': self.locale,
             'device_info': self.device_info,
             'meta': self.meta,
-            'segments_count': self.segments_count
+            'segments_count': self.segments_count,
+            'post_transcription_status': self.post_transcription_status
         }
     
     def complete(self):
