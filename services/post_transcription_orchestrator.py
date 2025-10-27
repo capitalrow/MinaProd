@@ -37,6 +37,118 @@ from app import socketio
 logger = logging.getLogger(__name__)
 
 
+def _determine_priority(task_text: str, evidence_text: str, due_date: Optional[Any]) -> str:
+    """
+    Intelligent priority detection based on urgency keywords, deadline proximity, and sentiment.
+    
+    Args:
+        task_text: The task text
+        evidence_text: Context/evidence quote
+        due_date: Parsed due date (if any)
+        
+    Returns:
+        Priority level: 'high', 'medium', or 'low'
+    """
+    from datetime import date, timedelta
+    import re
+    
+    combined_text = f"{task_text} {evidence_text}".lower()
+    
+    # HIGH priority indicators
+    high_keywords = [
+        r'\burgent\b', r'\basap\b', r'\bcritical\b', r'\bemergency\b',
+        r'\bimmediate(?:ly)?\b', r'\bpriority\b', r'\bcrisis\b',
+        r'\bblocking\b', r'\bblock(?:er)?\b', r'\bhigh[ -]priority\b'
+    ]
+    
+    for keyword in high_keywords:
+        if re.search(keyword, combined_text):
+            logger.debug(f"Priority HIGH: matched keyword '{keyword}' in task")
+            return 'high'
+    
+    # Deadline proximity (due today or tomorrow → high priority)
+    if due_date:
+        try:
+            if isinstance(due_date, str):
+                # Try to parse if it's a string
+                from datetime import datetime
+                due_date = datetime.fromisoformat(due_date).date()
+            
+            today = date.today()
+            days_until_due = (due_date - today).days
+            
+            if days_until_due <= 1:
+                logger.debug(f"Priority HIGH: due in {days_until_due} days")
+                return 'high'
+            elif days_until_due <= 7:
+                logger.debug(f"Priority MEDIUM: due in {days_until_due} days")
+                return 'medium'
+        except Exception as e:
+            logger.debug(f"Could not calculate deadline proximity: {e}")
+    
+    # LOW priority indicators
+    low_keywords = [
+        r'\bwhenever\b', r'\beventually\b', r'\bnice[ -]to[ -]have\b',
+        r'\boptional\b', r'\bif\s+(?:time|possible)\b', r'\blow[ -]priority\b'
+    ]
+    
+    for keyword in low_keywords:
+        if re.search(keyword, combined_text):
+            logger.debug(f"Priority LOW: matched keyword '{keyword}' in task")
+            return 'low'
+    
+    # Default: medium
+    return 'medium'
+
+
+def _extract_assignee_from_context(evidence_text: str, speaker_name: Optional[str] = None) -> Optional[str]:
+    """
+    Extract assignee from context using NLP patterns.
+    
+    Patterns:
+    - "I will..." → speaker is assignee
+    - "John will..." → John is assignee
+    - "Sarah should..." → Sarah is assignee
+    
+    Args:
+        evidence_text: The evidence quote/context
+        speaker_name: Name of the speaker (if known)
+        
+    Returns:
+        Assignee name or None
+    """
+    import re
+    
+    if not evidence_text:
+        return None
+    
+    evidence_lower = evidence_text.lower()
+    
+    # Pattern 1: "I will..." → speaker is assignee
+    if re.search(r'\bi\s+(?:will|ll|should|need to|have to)\s+', evidence_lower):
+        if speaker_name:
+            logger.debug(f"Assignee: '{speaker_name}' (first-person commitment)")
+            return speaker_name
+    
+    # Pattern 2: "NAME will/should..." → NAME is assignee
+    name_pattern = r'([A-Z][a-z]+)\s+(?:will|should|needs? to|has to)\s+'
+    match = re.search(name_pattern, evidence_text)
+    if match:
+        assignee = match.group(1)
+        logger.debug(f"Assignee: '{assignee}' (third-person assignment)")
+        return assignee
+    
+    # Pattern 3: "assigned to NAME"
+    assigned_pattern = r'assign(?:ed)?\s+to\s+([A-Z][a-z]+)'
+    match = re.search(assigned_pattern, evidence_text)
+    if match:
+        assignee = match.group(1)
+        logger.debug(f"Assignee: '{assignee}' (explicit assignment)")
+        return assignee
+    
+    return None
+
+
 class PostTranscriptionOrchestrator:
     """
     Orchestrates post-transcription processing pipeline with event-driven architecture.
@@ -711,19 +823,7 @@ class PostTranscriptionOrchestrator:
                             else:
                                 logger.warning(f"[Refinement] Failed: {refinement_result.error}, using original")
                             
-                            # Step 2: Extract priority (map from AI response)
-                            priority_mapping = {
-                                'high': 'high',
-                                'urgent': 'high',
-                                'critical': 'high',
-                                'medium': 'medium',
-                                'normal': 'medium',
-                                'low': 'low'
-                            }
-                            raw_priority = action.get('priority', 'medium').lower().strip()
-                            priority = priority_mapping.get(raw_priority, 'medium')
-                            
-                            # Step 3: Parse due date (temporal reference → concrete date)
+                            # Step 2: Parse due date FIRST (needed for priority intelligence)
                             from services.date_parser_service import get_date_parser_service
                             date_parser = get_date_parser_service()
                             
@@ -740,11 +840,35 @@ class PostTranscriptionOrchestrator:
                                 else:
                                     logger.debug(f"[Date Parsing] Could not parse: '{due_text}'")
                             
-                            # Step 4: Match user/owner (name → user_id or store name)
+                            # Step 3: Intelligent priority detection (keywords + deadline proximity)
+                            ai_suggested_priority = action.get('priority', 'medium').lower().strip()
+                            priority = _determine_priority(
+                                task_text=task_text,
+                                evidence_text=evidence_quote,
+                                due_date=due_date
+                            )
+                            # Use AI suggestion as fallback if it's more specific
+                            if ai_suggested_priority in ['high', 'urgent', 'critical']:
+                                priority = 'high'
+                            elif ai_suggested_priority == 'low' and priority == 'medium':
+                                priority = 'low'
+                            
+                            # Step 4: Extract assignee from context (NLP-based)
+                            # First try AI-suggested owner, then extract from evidence
+                            owner_name = action.get('owner', '').strip()
+                            if not owner_name or owner_name.lower() in ['not specified', 'none', 'unknown', '']:
+                                # Try to extract from evidence quote
+                                extracted_assignee = _extract_assignee_from_context(
+                                    evidence_text=evidence_quote,
+                                    speaker_name=None  # Could get from segment.speaker if available
+                                )
+                                if extracted_assignee:
+                                    owner_name = extracted_assignee
+                            
+                            # Step 5: Match user/owner (name → user_id or store name)
                             from services.user_matching_service import get_user_matching_service
                             user_matcher = get_user_matching_service()
                             
-                            owner_name = action.get('owner', '').strip()
                             assigned_to_id = None
                             assigned_to_name = None
                             
@@ -1119,6 +1243,19 @@ class PostTranscriptionOrchestrator:
                         due_interpretation = date_result.interpretation
                         logger.info(f"[Pattern+Date] Parsed due date: {due_interpretation}")
                     
+                    # Intelligent priority detection
+                    priority = _determine_priority(
+                        task_text=task_text,
+                        evidence_text=text[:200],
+                        due_date=due_date
+                    )
+                    
+                    # Extract assignee from context
+                    extracted_assignee = _extract_assignee_from_context(
+                        evidence_text=text[:500],
+                        speaker_name=seg_data.get('speaker')
+                    )
+                    
                     # Calculate intelligent confidence score for pattern-matched tasks
                     # Pattern matching starts at 0.65 base, refinement boosts it
                     base_pattern_confidence = 0.65
@@ -1138,7 +1275,7 @@ class PostTranscriptionOrchestrator:
                             session_id=session_id,
                             title=task_text,  # Use FULL refined text (no truncation)
                             description=f"Extracted from transcript via pattern matching",
-                            priority="medium",  # Default, could be enhanced with NLP sentiment analysis
+                            priority=priority,  # Intelligent priority detection
                             status="todo",
                             due_date=due_date,  # Parsed due date
                             extracted_by_ai=False,  # Pattern-based extraction
@@ -1157,7 +1294,9 @@ class PostTranscriptionOrchestrator:
                                     'error': refinement_result.error if not refinement_result.success else None
                                 },
                                 'metadata_extraction': {
-                                    'due_date_parsed': due_interpretation
+                                    'due_date_parsed': due_interpretation,
+                                    'priority_detected': priority,
+                                    'owner_name': extracted_assignee
                                 }
                             }
                         )
