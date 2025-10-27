@@ -128,6 +128,30 @@ class MeetingLifecycleService:
             
             logger.info(f"✅ Created Meeting {meeting.id} from Session {session_id}")
             
+            # Broadcast session_update:created event via WebSocket
+            try:
+                from services.event_broadcaster import event_broadcaster
+                
+                meeting_data = {
+                    'id': meeting.id,
+                    'title': meeting.title,
+                    'status': meeting.status,
+                    'actual_start': meeting.actual_start.isoformat() if meeting.actual_start else None,
+                    'actual_end': meeting.actual_end.isoformat() if meeting.actual_end else None,
+                    'workspace_id': meeting.workspace_id,
+                    'session_id': session_id
+                }
+                
+                event_broadcaster.broadcast_session_created(
+                    session_id=session_id,
+                    meeting_data=meeting_data,
+                    workspace_id=workspace_id
+                )
+                
+                logger.info(f"📡 Broadcast session_update:created for Meeting {meeting.id}")
+            except Exception as e:
+                logger.warning(f"Failed to broadcast session_created event: {e}")
+            
             # Trigger async task extraction using existing service
             try:
                 from app import socketio

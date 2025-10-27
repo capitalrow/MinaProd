@@ -23,7 +23,7 @@ class EventStatus(enum.Enum):
 
 
 class EventType(enum.Enum):
-    """CROWN+ Event Types - matches event sequencing spec"""
+    """CROWN⁴ Event Types - Complete event sequencing for living memory layer"""
     # Recording Phase
     RECORD_START = "record_start"
     AUDIO_CHUNK_SENT = "audio_chunk_sent"
@@ -51,6 +51,23 @@ class EventType(enum.Enum):
     # System Events
     ERROR_OCCURRED = "error_occurred"
     RECOVERY_ATTEMPTED = "recovery_attempted"
+    
+    # CROWN⁴ Real-time Synchronization Events (Phase 2)
+    DASHBOARD_BOOTSTRAP = "dashboard_bootstrap"  # Initial dashboard load with cache
+    SESSION_UPDATE_CREATED = "session_update:created"  # New session/meeting created
+    SESSION_PREFETCH = "session_prefetch"  # Prefetch meeting metadata on hover
+    TASK_UPDATE = "task_update"  # Task status changed
+    ANALYTICS_REFRESH = "analytics_refresh"  # Analytics data updated
+    DASHBOARD_IDLE_SYNC = "dashboard_idle_sync"  # Background sync every 30s
+    FILTER_APPLY = "filter_apply"  # Dashboard filter changed
+    SESSION_CARD_CLICK = "session_card_click"  # User clicked meeting card
+    SESSION_ARCHIVE = "session_archive"  # Meeting archived
+    ARCHIVE_REVEAL = "archive_reveal"  # Show archived meetings
+    INSIGHT_REMINDER = "insight_reminder"  # AI-generated reminder displayed
+    MEETING_UPDATE = "meeting_update"  # Meeting data changed
+    PARTICIPANT_UPDATE = "participant_update"  # Participant joined/left
+    WORKSPACE_SWITCH = "workspace_switch"  # User switched workspace
+    CACHE_INVALIDATE = "cache_invalidate"  # Force cache refresh
 
 
 class EventLedger(Base):
@@ -110,11 +127,18 @@ class EventLedger(Base):
     event_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     idempotency_key: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, index=True)
     
+    # CROWN⁴ Event Sequencing fields
+    sequence_num: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)  # Global event ordering
+    checksum: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)  # MD5 hash for data integrity
+    broadcast_status: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)  # pending|sent|failed
+    last_applied_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # Last processed event ID for idempotency
+    
     # Indexes for performance
     __table_args__ = (
         Index('ix_event_ledger_session_created', 'session_id', 'created_at'),
         Index('ix_event_ledger_type_status', 'event_type', 'status'),
         Index('ix_event_ledger_trace_created', 'trace_id', 'created_at'),
+        Index('ix_event_ledger_sequence', 'sequence_num'),
     )
     
     def __repr__(self):
@@ -137,7 +161,10 @@ class EventLedger(Base):
             'error_message': self.error_message,
             'trace_id': self.trace_id,
             'duration_ms': self.duration_ms,
-            'event_version': self.event_version
+            'event_version': self.event_version,
+            'sequence_num': self.sequence_num,
+            'checksum': self.checksum,
+            'broadcast_status': self.broadcast_status
         }
     
     @property
