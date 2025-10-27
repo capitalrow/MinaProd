@@ -14,6 +14,7 @@ Tests the complete task extraction flow:
 import logging
 import time
 import json
+import pytest
 from datetime import datetime
 from app import app, db
 from models.session import Session
@@ -30,6 +31,13 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+@pytest.fixture(autouse=True)
+def app_context():
+    """Fixture to provide Flask application context for all tests"""
+    with app.app_context():
+        yield
 
 # Test transcript with clear action items
 TEST_TRANSCRIPT_WITH_TASKS = [
@@ -122,36 +130,17 @@ TEST_TRANSCRIPT_NO_TASKS = [
 ]
 
 
-class TaskExtractionE2ETest:
+class TestTaskExtractionE2E:
     """End-to-end test for task extraction"""
-    
-    def __init__(self):
-        self.results = {
-            "tests": [],
-            "summary": {
-                "total": 0,
-                "passed": 0,
-                "failed": 0
-            }
-        }
     
     def log_test_result(self, test_name, passed, details):
         """Log test result"""
-        result = {
-            "test": test_name,
-            "passed": passed,
-            "details": details,
-            "timestamp": datetime.utcnow().isoformat()
-        }
-        self.results["tests"].append(result)
-        self.results["summary"]["total"] += 1
         if passed:
-            self.results["summary"]["passed"] += 1
             logger.info(f"✅ PASS: {test_name}")
         else:
-            self.results["summary"]["failed"] += 1
             logger.error(f"❌ FAIL: {test_name}")
             logger.error(f"   Details: {details}")
+            assert False, f"{test_name} failed: {details}"
     
     def create_test_session(self, external_id, transcript_data):
         """Create a test session with segments"""
