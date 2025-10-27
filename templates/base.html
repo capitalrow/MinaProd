@@ -159,7 +159,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha512-7eHRwcbYkK4d9g/6tD/mhkf++eoTHwpNM9woBxtPUBWm67zeAfFC+HrdoE2GanKeocly/VxeLvIqwvCdk7qScg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     
     <!-- Socket.IO Client for CROWN⁴ Real-time Synchronization -->
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="sha384-mZLF4UVrpi/QTWPA7BjNPEnkIfRFn4ZEO3Qt/HeMKS5o7tUnkM8y3W+rbU7KH+rw" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
     
     <!-- WebSocket Manager -->
     <script src="{{ url_for('static', filename='js/websocket-manager.js') }}"></script>
