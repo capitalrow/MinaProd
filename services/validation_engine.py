@@ -60,11 +60,20 @@ class ValidationEngine:
         r'make\s+sure\s+(?:that\s+)?(?:the\s+)?task',
         r'from\s+my\s+side',  # Common filler phrase
         r'here\s+(?:we\s+)?are',  # Narration
-        r'(?:this|that)\s+is\s+(?:the|a)\s+showstopper'  # Demo language
+        r'(?:this|that)\s+is\s+(?:the|a)\s+showstopper',  # Demo language
+        r'i\s+need\s+to\s+check',  # User describing checking
+        r'i\s+will\s+go\s+ahead',  # Narration
+        r'(?:take|taking)\s+from\s+here',  # Narration
+        r'(?:these|those)\s+are\s+the\s+following',  # Listing/narration
+        r'let\s+me\s+(?:check|verify|test)',  # User describing their actions
+        r'making\s+sure\s+that',  # Verification description
+        r'i\s+(?:want|need)\s+to\s+(?:ensure|verify|validate)',  # Testing intent
+        r'going\s+to\s+(?:check|test|verify)',  # Future testing
+        r'tabs?\s+are\s+relevantly\s+and\s+correctly'  # Specific broken pattern from user's session
     ]
     
     # Quality thresholds
-    MIN_TASK_SCORE = 0.65
+    MIN_TASK_SCORE = 0.70  # Raised from 0.65 for higher quality standards
     MIN_SUMMARY_SIMILARITY = 0.7
     MIN_TASK_LENGTH = 8
     MAX_TASK_LENGTH = 100
@@ -322,7 +331,7 @@ class ValidationEngine:
         - Length (0.2): Appropriate length (8-100 words)
         - Evidence (0.3): Has valid evidence quote
         
-        ENHANCED: Now includes sentence completeness check
+        ENHANCED: Now includes sentence completeness check, meta-commentary detection, and professional language scoring
         """
         task_lower = task_text.lower()
         words = task_text.split()
@@ -334,7 +343,71 @@ class ValidationEngine:
             logger.warning(f"Task rejected for incompleteness: {task_text[:50]}... - {completeness.reasons}")
             # Return very low score to trigger rejection
             return TaskQualityScore(
-                total_score=0.2,  # Well below 0.65 threshold
+                total_score=0.2,  # Well below 0.70 threshold
+                has_action_verb=False,
+                has_subject=False,
+                appropriate_length=False,
+                has_evidence=False,
+                verb_score=0.0,
+                subject_score=0.0,
+                length_score=0.0,
+                evidence_score=0.0
+            )
+        
+        # 0.1 Meta-commentary check (REJECT meta-testing descriptions)
+        for pattern in self.meta_patterns_compiled:
+            if pattern.search(task_lower):
+                logger.warning(f"Task rejected as meta-commentary: {task_text[:50]}... (matched pattern: {pattern.pattern})")
+                return TaskQualityScore(
+                    total_score=0.15,  # Well below threshold
+                    has_action_verb=False,
+                    has_subject=False,
+                    appropriate_length=False,
+                    has_evidence=False,
+                    verb_score=0.0,
+                    subject_score=0.0,
+                    length_score=0.0,
+                    evidence_score=0.0
+                )
+        
+        # 0.2 Professional language check (DEDUCT for conversational tone)
+        professional_penalty = 0.0
+        
+        # Check for first-person pronouns (unprofessional for tasks)
+        first_person_patterns = [
+            r'\bi\s+',  # "I will", "I need"
+            r'\bi\'ll\s+',  # "I'll"
+            r'\bi\'m\s+',  # "I'm"
+            r'\bwe\s+',  # "We will"
+            r'\bwe\'ll\s+',  # "We'll"
+            r'\blet\s+me\s+',  # "Let me"
+            r'\blet\'s\s+'  # "Let's"
+        ]
+        first_person_count = sum(1 for pattern in first_person_patterns if re.search(pattern, task_lower))
+        if first_person_count > 0:
+            professional_penalty += 0.15 * min(first_person_count, 3)  # Up to -0.45 penalty
+            logger.debug(f"Professional penalty: -{professional_penalty:.2f} for first-person language in '{task_text[:40]}'")
+        
+        # Check for conversational fillers
+        filler_patterns = [
+            r'\bjust\s+',
+            r'\bquickly\s+',
+            r'\btry\s+not\s+to\s+',
+            r'\bkind\s+of\s+',
+            r'\bsort\s+of\s+',
+            r'\bbasically\s+',
+            r'\bprobably\s+'
+        ]
+        filler_count = sum(1 for pattern in filler_patterns if re.search(pattern, task_lower))
+        if filler_count > 0:
+            professional_penalty += 0.1 * min(filler_count, 2)  # Up to -0.2 penalty
+            logger.debug(f"Professional penalty: -{professional_penalty:.2f} for conversational fillers in '{task_text[:40]}'")
+        
+        # If penalty is too high, reject immediately
+        if professional_penalty >= 0.3:
+            logger.warning(f"Task rejected for unprofessional language (penalty: {professional_penalty:.2f}): {task_text[:50]}...")
+            return TaskQualityScore(
+                total_score=0.25,  # Below threshold
                 has_action_verb=False,
                 has_subject=False,
                 appropriate_length=False,
@@ -372,7 +445,12 @@ class ValidationEngine:
             has_evidence = validation.is_valid
             evidence_score = 0.3 * validation.score
         
-        total_score = verb_score + subject_score + length_score + evidence_score
+        # Calculate total score and apply professional language penalty
+        base_score = verb_score + subject_score + length_score + evidence_score
+        total_score = max(0.0, base_score - professional_penalty)  # Apply penalty, floor at 0
+        
+        if professional_penalty > 0:
+            logger.debug(f"Task quality: base={base_score:.2f}, penalty={professional_penalty:.2f}, final={total_score:.2f}")
         
         return TaskQualityScore(
             total_score=total_score,
