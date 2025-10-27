@@ -172,7 +172,7 @@ class MeetingMetadataService:
         
         try:
             response = await self.client.chat.completions.acreate(
-                model="gpt-4",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": f"Transcript sample:\n{sample_text}"}
