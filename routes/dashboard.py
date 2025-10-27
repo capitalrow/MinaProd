@@ -8,6 +8,7 @@ from flask_login import login_required, current_user
 from models import db, Meeting, Task, Analytics, Session, Marker
 from sqlalchemy import desc, func, and_
 from datetime import datetime, timedelta, date
+from services.event_broadcaster import EventBroadcaster
 
 try:
     from services.uptime_monitoring import uptime_monitor
