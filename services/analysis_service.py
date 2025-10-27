@@ -581,8 +581,8 @@ class AnalysisService:
             import os
             api_key = os.environ.get('OPENAI_API_KEY')
             if not api_key:
-                logger.warning("OpenAI API key not found, falling back to mock analysis")
-                return AnalysisService._analyse_with_mock(context, [], level, style)
+                logger.error("OpenAI API key not found - CANNOT GENERATE INSIGHTS")
+                raise ValueError("OpenAI API key not configured")
             
             client = OpenAI(api_key=api_key)
             
@@ -607,6 +607,11 @@ class AnalysisService:
             result_text = response.choices[0].message.content
             if result_text is None:
                 raise ValueError("OpenAI returned empty response")
+            
+            # Log the raw response for debugging
+            logger.debug(f"[OpenAI Raw Response] Length: {len(result_text)} chars")
+            logger.debug(f"[OpenAI Raw Response] First 500 chars: {result_text[:500]}")
+            
             result = json.loads(result_text)
             
             # Log what the AI extracted (before validation)
@@ -691,7 +696,10 @@ class AnalysisService:
             return result
             
         except json.JSONDecodeError as e:
+            result_text_snippet = result_text[max(0, e.pos-50):e.pos+50] if result_text else 'N/A'
             logger.error(f"JSON parsing failed on first attempt: {e}")
+            logger.error(f"[OpenAI JSON Error] Failed to parse at position {e.pos}")
+            logger.error(f"[OpenAI JSON Error] Problem text: {result_text_snippet}")
             
             # Retry with stricter prompt
             try:
@@ -700,6 +708,7 @@ class AnalysisService:
                     
                 retry_prompt = f"The previous response was invalid JSON. Respond with VALID JSON ONLY in the exact format requested:\n\n{prompt}"
                 
+                logger.info("[OpenAI Retry] Attempting retry with stricter prompt...")
                 response = client.chat.completions.create(
                     model="gpt-4",
                     messages=[
@@ -713,7 +722,11 @@ class AnalysisService:
                 result_text = response.choices[0].message.content
                 if result_text is None:
                     raise ValueError("OpenAI retry returned empty response")
+                
+                logger.debug(f"[OpenAI Retry Response] First 500 chars: {result_text[:500]}")
                 result = json.loads(result_text)
+                
+                logger.info("[OpenAI Retry] ✅ Retry successful!")
                 
                 # Validate expected keys for this level/style
                 missing_keys = [key for key in expected_keys if key not in result]
@@ -724,13 +737,15 @@ class AnalysisService:
                 
             except Exception as retry_e:
                 logger.error(f"OpenAI analysis retry failed: {retry_e}")
-                # Fall back to mock analysis
-                return AnalysisService._analyse_with_mock(context, [], level, style)
+                logger.error(f"[CRITICAL] OpenAI analysis failed - CANNOT GENERATE INSIGHTS WITHOUT VALID API RESPONSE")
+                # ZERO TOLERANCE: Raise exception instead of falling back to mock
+                raise ValueError(f"OpenAI analysis failed after retry: {retry_e}") from retry_e
             
         except Exception as e:
             logger.error(f"OpenAI analysis failed: {e}")
-            # Fall back to mock analysis
-            return AnalysisService._analyse_with_mock(context, [], level, style)
+            logger.error(f"[CRITICAL] OpenAI analysis failed - CANNOT GENERATE INSIGHTS WITHOUT VALID API RESPONSE")
+            # ZERO TOLERANCE: Raise exception instead of falling back to mock
+            raise ValueError(f"OpenAI analysis failed: {e}") from e
     
     @staticmethod
     def _get_expected_keys(level: SummaryLevel, style: SummaryStyle) -> List[str]:
@@ -865,11 +880,23 @@ Technical implementation details were reviewed, including architecture decisions
 ### Outcomes and Next Steps
 Multiple action items were identified with clear ownership and timelines. Follow-up meetings were scheduled to track progress."""
         
-        # Mock actions based on common patterns
-        mock_actions = [
+        # CRITICAL: Mock data must also pass validation to prevent hallucination
+        # Generate candidate mock actions
+        mock_actions_candidates = [
             {"text": "Follow up on discussed action items", "owner": "unknown", "due": "unknown"},
             {"text": "Prepare report based on meeting outcomes", "owner": "unknown", "due": "next week"}
         ] if word_count > 50 else []
+        
+        # Validate mock actions against transcript (ZERO TOLERANCE for hallucination)
+        from services.text_matcher import validate_task_list
+        if mock_actions_candidates and context:
+            logger.warning("[MOCK DATA] Validating mock actions against transcript...")
+            mock_actions = validate_task_list(mock_actions_candidates, context)
+            rejected = len(mock_actions_candidates) - len(mock_actions)
+            if rejected > 0:
+                logger.warning(f"[MOCK DATA] ⚠️ Rejected {rejected} hallucinated mock tasks")
+        else:
+            mock_actions = []
         
         # Mock decisions
         mock_decisions = [
