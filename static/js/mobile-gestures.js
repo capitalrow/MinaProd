@@ -270,7 +270,10 @@
     function setupSwipeToArchive() {
         // Delegate event listeners to parent container
         const meetingsContainer = document.querySelector('.meetings-list');
-        if (!meetingsContainer) return;
+        if (!meetingsContainer) {
+            console.log('📱 Meetings list not found - swipe gestures disabled');
+            return;
+        }
         
         meetingsContainer.addEventListener('touchstart', handleSwipeStart, { passive: true });
         meetingsContainer.addEventListener('touchmove', handleSwipeMove, { passive: false });
@@ -413,7 +416,10 @@
      */
     function setupLongPress() {
         const meetingsContainer = document.querySelector('.meetings-list');
-        if (!meetingsContainer) return;
+        if (!meetingsContainer) {
+            console.log('📱 Meetings list not found - long-press gestures disabled');
+            return;
+        }
         
         meetingsContainer.addEventListener('touchstart', handleLongPressStart, { passive: true });
         meetingsContainer.addEventListener('touchmove', handleLongPressMove, { passive: true });
