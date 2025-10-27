@@ -239,7 +239,11 @@ Return as JSON array with ALL tasks found:
             )
             
             result = json.loads(response.choices[0].message.content)
-            return result.get('action_items', [])
+            action_items = result.get('action_items', [])
+            logger.info(f"[AI Extraction] Extracted {len(action_items)} raw action items before validation")
+            for i, item in enumerate(action_items):
+                logger.debug(f"  [{i+1}] {item.get('task', 'NO_TASK')[:80]}")
+            return action_items
         except Exception as e:
             logger.error(f"Failed to extract action items: {e}")
             return []
