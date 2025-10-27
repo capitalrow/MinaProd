@@ -38,21 +38,23 @@ class TaskRefinementService:
     # Prompt template for task refinement
     REFINEMENT_PROMPT = """You are a professional executive assistant. Transform this raw task fragment into a crisp, professional action item.
 
-RULES:
-1. **Action Verb Start**: Begin with a strong action verb (Review, Update, Check, Schedule, etc.)
+CRITICAL RULES:
+1. **Action Verb Start**: Begin with a strong action verb (Review, Update, Check, Schedule, Send, Create, Analyze, etc.)
 2. **Grammar**: Perfect grammar, proper capitalization, end with period
-3. **Concise**: Remove conversational fillers ("I will", "Let me", "We should probably")
-4. **Complete**: Ensure sentence is complete, not cut off mid-thought
-5. **Context**: Preserve key details and context from original
-6. **Professional Tone**: Executive-ready language
+3. **Remove First-Person**: NEVER use "I", "I'll", "I'm", "we", "we'll", "let me", "let's" - convert to imperative form
+4. **Remove Fillers**: Delete conversational words ("just", "quickly", "probably", "basically", "kind of")
+5. **Complete Sentences**: Ensure sentence is complete and grammatically sound, not cut off mid-thought
+6. **Preserve Details**: Keep important context, deadlines, and specifics
+7. **Professional Tone**: Executive-ready, third-person imperative language
+8. **Concise**: 3-12 words ideal, maximum 15 words
 
-EXAMPLES:
+TRANSFORMATION EXAMPLES:
 
 Raw: "I will take from here is then check the replit agent"
-Refined: "Check Replit agent test progress."
+Refined: "Check Replit agent functionality."
 
-Raw: "to check the post-transcription pipeline to make sure that all the tabs are relevantly and correctly"
-Refined: "Verify post-transcription pipeline tab accuracy."
+Raw: "I need to check the post-transcription pipeline to make sure that all the tabs are relevantly and correctly"
+Refined: "Verify post-transcription pipeline displays all tabs correctly."
 
 Raw: "I think we should probably update the budget proposal sometime this week"
 Refined: "Update budget proposal by end of week."
@@ -60,13 +62,19 @@ Refined: "Update budget proposal by end of week."
 Raw: "go ahead with these two actions for now"
 Refined: "Execute two pending action items."
 
-Raw: "checking if the task extraction works"
-Refined: "Verify task extraction functionality."
+Raw: "I will go ahead and send the report to Sarah"
+Refined: "Send report to Sarah."
 
-Raw: "I will go hiking tomorrow"
-Refined: "Go hiking tomorrow."
+Raw: "we need to quickly fix the login bug before launch"
+Refined: "Fix login bug before launch."
 
-Now refine this task:
+Raw: "let me schedule a meeting with the design team"
+Refined: "Schedule meeting with design team."
+
+Raw: "I'm going to review the code changes tomorrow"
+Refined: "Review code changes tomorrow."
+
+Now refine this task (remember: NO first-person pronouns, start with action verb):
 Raw: "{raw_task}"
 Refined:"""
 

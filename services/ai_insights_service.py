@@ -206,11 +206,27 @@ Be concise, accurate, and actionable. Use null for missing information."""
                 messages=[
                     {
                         "role": "system",
-                        "content": "Extract action items from meeting transcripts with assignee, task, and deadline."
+                        "content": """Extract ONLY genuine business action items from meeting transcripts.
+
+CRITICAL FILTERING RULES:
+1. ONLY extract actual work commitments and deliverables
+2. REJECT meta-commentary about testing/verifying the system itself
+3. REJECT descriptions of what the speaker is doing right now (e.g., "I'm checking...", "Let me verify...")
+4. REJECT narration about the meeting/demo process (e.g., "I will go ahead and...", "taking from here...")
+5. ONLY include tasks that represent real business work to be done
+
+VALID action items: "Send proposal to client", "Review Q4 budget", "Schedule team meeting"
+INVALID (reject these): "Check if task extraction works", "I need to verify the pipeline", "Making sure tabs are correct", "Testing the application"""
                     },
                     {
                         "role": "user",
-                        "content": f"Extract action items:\n\n{transcript[:6000]}\n\nReturn as JSON: {{\"action_items\": [{{\"task\": \"text\", \"assignee\": \"person or null\", \"due_date\": \"date or null\", \"priority\": \"high/medium/low\"}}]}}"
+                        "content": f"""Extract genuine business action items from this meeting transcript. Ignore any meta-commentary about testing systems or verifying functionality.
+
+TRANSCRIPT:
+{transcript[:6000]}
+
+Return as JSON with ONLY real actionable tasks:
+{{"action_items": [{{"task": "text", "assignee": "person or null", "due_date": "date or null", "priority": "high/medium/low"}}]}}"""
                     }
                 ],
                 temperature=0.2,

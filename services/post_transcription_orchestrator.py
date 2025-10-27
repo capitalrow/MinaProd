@@ -758,6 +758,22 @@ class PostTranscriptionOrchestrator:
                                     assigned_to_name = match_result.user_name
                                     logger.debug(f"[User Matching] '{owner_name}' stored as name (no user match)")
                             
+                            # Calculate intelligent confidence score based on refinement + quality
+                            # Base: quality_score.total_score (0.0-1.0)
+                            # Boost: +0.15 if successfully refined
+                            # Cap: 0.95 maximum
+                            base_confidence = quality_score.total_score
+                            if refinement_result.success and refinement_result.transformation_applied:
+                                # Successfully refined → boost confidence
+                                confidence_boost = 0.15
+                                final_confidence = min(0.95, base_confidence + confidence_boost)
+                            elif refinement_result.success and not refinement_result.transformation_applied:
+                                # Already well-formatted, no transformation needed
+                                final_confidence = min(0.95, base_confidence + 0.10)
+                            else:
+                                # Refinement failed, use base quality score (likely 0.6-0.7)
+                                final_confidence = base_confidence
+                            
                             # Create task only if quality is acceptable
                             task = Task(
                                 session_id=session.id,
@@ -768,7 +784,7 @@ class PostTranscriptionOrchestrator:
                                 due_date=due_date,  # Parsed due date
                                 assigned_to_id=assigned_to_id,  # Matched user ID
                                 extracted_by_ai=True,
-                                confidence_score=quality_score.total_score,
+                                confidence_score=final_confidence,
                                 extraction_context={
                                     'source': 'ai_insights',
                                     'raw_text': raw_task_text,  # PRESERVE ORIGINAL for validation
@@ -1103,6 +1119,19 @@ class PostTranscriptionOrchestrator:
                         due_interpretation = date_result.interpretation
                         logger.info(f"[Pattern+Date] Parsed due date: {due_interpretation}")
                     
+                    # Calculate intelligent confidence score for pattern-matched tasks
+                    # Pattern matching starts at 0.65 base, refinement boosts it
+                    base_pattern_confidence = 0.65
+                    if refinement_result.success and refinement_result.transformation_applied:
+                        # Successfully refined → 0.80-0.85 confidence
+                        pattern_confidence = 0.82
+                    elif refinement_result.success and not refinement_result.transformation_applied:
+                        # Already well-formatted → 0.75-0.80
+                        pattern_confidence = 0.78
+                    else:
+                        # Refinement failed → stay at base
+                        pattern_confidence = base_pattern_confidence
+                    
                     # Create task in database with refinement metadata
                     try:
                         task = Task(
@@ -1113,7 +1142,7 @@ class PostTranscriptionOrchestrator:
                             status="todo",
                             due_date=due_date,  # Parsed due date
                             extracted_by_ai=False,  # Pattern-based extraction
-                            confidence_score=0.75 if refinement_result.success else 0.6,  # Higher confidence if refined
+                            confidence_score=pattern_confidence,  # Intelligent confidence scoring
                             extraction_context={
                                 'source': 'pattern',
                                 'raw_text': raw_task_text,  # CRITICAL: Store original for transparency
