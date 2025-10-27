@@ -20,9 +20,9 @@ from queue import Queue, Empty
 
 logger = logging.getLogger(__name__)
 
-# Import Flask app for context management
+# Flask app will be imported lazily to avoid circular import
 # CRITICAL: This enables database operations in background threads
-from app import app as flask_app
+flask_app = None
 
 
 class TaskStatus:
@@ -79,8 +79,14 @@ class BackgroundTask:
         try:
             logger.info(f"Executing task {self.task_id} (attempt {self.attempts}/{self.max_retries})")
             
-            # 🔥 CRITICAL FIX: Wrap execution in Flask app context
-            # This enables database operations in background threads
+            # 🔥 CRITICAL FIX: Lazy import to avoid circular dependency
+            # Import Flask app only when needed
+            global flask_app
+            if flask_app is None:
+                from app import app as _flask_app
+                flask_app = _flask_app
+            
+            # Wrap execution in Flask app context for database operations
             with flask_app.app_context():
                 result = self.func(*self.args, **self.kwargs)
             
