@@ -1259,6 +1259,24 @@ class PostTranscriptionOrchestrator:
                     else:
                         logger.warning(f"[Pattern+Refinement] Failed: {refinement_result.error}, using original")
                     
+                    # ===== QUALITY VALIDATION: Reject meta-commentary and low-quality tasks =====
+                    from services.validation_engine import get_validation_engine
+                    
+                    validation_engine = get_validation_engine()
+                    quality_score = validation_engine.score_task_quality(
+                        task_text=task_text,
+                        evidence_quote=text[:200],
+                        transcript=text
+                    )
+                    
+                    # Reject if quality score below threshold (0.70)
+                    if quality_score.total_score < 0.70:
+                        logger.info(f"[Pattern+Validation] REJECTED (score={quality_score.total_score:.2f}): '{task_text[:60]}'")
+                        logger.debug(f"  Rejection reasons: {quality_score.deductions}")
+                        continue  # Skip this task
+                    else:
+                        logger.debug(f"[Pattern+Validation] PASSED (score={quality_score.total_score:.2f}): '{task_text[:60]}'")
+                    
                     # Parse due date if present in text
                     date_parser = get_date_parser_service()
                     due_date = None

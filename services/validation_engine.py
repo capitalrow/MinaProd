@@ -302,20 +302,20 @@ class ValidationEngine:
                 reasons=[f"Too short to be meaningful ({word_count} words)"]
             )
         
-        # Check 4: Missing verb (likely incomplete)
+        # Check 4: Missing verb (HARD-FAIL - all tasks must have action verbs)
         has_verb = any(verb in task_lower for verb in self.ACTION_VERBS)
-        if not has_verb and word_count < 6:
+        if not has_verb:
             return ValidationResult(
                 is_valid=False,
-                score=0.5,
-                reasons=["Short phrase with no action verb (likely fragment)"]
+                score=0.3,  # Hard fail - no action verb = not a valid task
+                reasons=["Missing action verb - not a valid task (fragments rejected)"]
             )
         
         # Sentence appears complete
         return ValidationResult(
             is_valid=True,
             score=1.0,
-            reasons=["Sentence appears grammatically complete"]
+            reasons=["Sentence appears grammatically complete with action verb"]
         )
     
     def score_task_quality(
