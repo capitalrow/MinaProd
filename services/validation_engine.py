@@ -46,7 +46,9 @@ class ValidationEngine:
         'follow', 'coordinate', 'organize', 'plan', 'define', 'document',
         'refactor', 'optimize', 'improve', 'fix', 'resolve', 'address',
         'discuss', 'meet', 'present', 'share', 'communicate', 'notify',
-        'charge', 'buy', 'purchase', 'order', 'write', 'call', 'email'
+        'charge', 'buy', 'purchase', 'order', 'write', 'call', 'email',
+        'withdraw', 'clean', 'book', 'get', 'take', 'collect', 'gather',
+        'obtain', 'pick', 'fetch', 'retrieve', 'arrange', 'reserve', 'cancel'
     }
     
     # Meta-testing keywords that indicate system testing/demo
@@ -76,7 +78,7 @@ class ValidationEngine:
     # Quality thresholds
     MIN_TASK_SCORE = 0.70  # Raised from 0.65 for higher quality standards
     MIN_SUMMARY_SIMILARITY = 0.7
-    MIN_TASK_LENGTH = 3  # Lowered from 8 to allow short imperatives like "Charge battery immediately"
+    MIN_TASK_LENGTH = 2  # Lowered from 3 to allow short imperatives like "Clean bedroom", "Buy milk"
     MAX_TASK_LENGTH = 100
     DEDUP_SIMILARITY_THRESHOLD = 0.7  # Lowered from 0.8 to catch more semantic duplicates
     

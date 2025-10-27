@@ -998,7 +998,64 @@ class PostTranscriptionOrchestrator:
                         except Exception as obs_error:
                             logger.warning(f"Failed to log validation metrics (non-blocking): {obs_error}")
                     
-                    # Commit AI-extracted tasks
+                    # CRITICAL: Semantic deduplication BEFORE database commit
+                    # Remove duplicate tasks (e.g., "Test transcription" + "Check transcription")
+                    if len(tasks_created) > 1:
+                        logger.info(f"[Deduplication] Starting semantic deduplication on {len(tasks_created)} tasks...")
+                        
+                        unique_tasks = []
+                        duplicate_count = 0
+                        
+                        for current_task in tasks_created:
+                            is_duplicate = False
+                            current_title = current_task.title
+                            
+                            for existing_task in unique_tasks:
+                                existing_title = existing_task.title
+                                
+                                # Calculate semantic similarity using ValidationEngine's method
+                                similarity = validation_engine._calculate_similarity(current_title, existing_title)
+                                
+                                if similarity >= validation_engine.DEDUP_SIMILARITY_THRESHOLD:
+                                    # Found duplicate - keep the higher confidence task
+                                    duplicate_count += 1
+                                    
+                                    logger.info(
+                                        f"[Deduplication] Found duplicate (similarity: {similarity:.2f}):\n"
+                                        f"  • Task 1: '{existing_title[:60]}...' (confidence: {existing_task.confidence_score:.2f})\n"
+                                        f"  • Task 2: '{current_title[:60]}...' (confidence: {current_task.confidence_score:.2f})"
+                                    )
+                                    
+                                    # Keep the higher confidence task
+                                    if current_task.confidence_score > existing_task.confidence_score:
+                                        logger.info(f"  → Keeping Task 2 (higher confidence)")
+                                        # Remove existing task from session and unique_tasks
+                                        db.session.expunge(existing_task)
+                                        unique_tasks.remove(existing_task)
+                                        # Add current task instead
+                                        unique_tasks.append(current_task)
+                                    else:
+                                        logger.info(f"  → Keeping Task 1 (higher confidence)")
+                                        # Remove current task from session
+                                        db.session.expunge(current_task)
+                                    
+                                    is_duplicate = True
+                                    break
+                            
+                            if not is_duplicate:
+                                unique_tasks.append(current_task)
+                        
+                        logger.info(
+                            f"[Deduplication] Completed: {len(tasks_created)} tasks → {len(unique_tasks)} unique "
+                            f"({duplicate_count} duplicates removed)"
+                        )
+                        
+                        # Update tasks_created to only include unique tasks
+                        tasks_created = unique_tasks
+                    else:
+                        logger.debug(f"[Deduplication] Skipped (only {len(tasks_created)} task)")
+                    
+                    # Commit AI-extracted tasks (after deduplication)
                     try:
                         db.session.commit()
                         logger.info(f"✅ [Database] Persisted {len(tasks_created)} AI-extracted tasks")
