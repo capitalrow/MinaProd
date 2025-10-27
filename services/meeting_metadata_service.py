@@ -171,15 +171,30 @@ class MeetingMetadataService:
         Only include names you're confident about. Use null for uncertain cases."""
         
         try:
-            response = await self.client.chat.completions.acreate(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Transcript sample:\n{sample_text}"}
-                ],
-                temperature=0.2,
-                max_tokens=500
+            # Use unified AI model manager with GPT-4.1 fallback (async version)
+            from services.ai_model_manager import AIModelManager
+            
+            async def make_api_call(model: str):
+                return await self.client.chat.completions.acreate(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Transcript sample:\n{sample_text}"}
+                    ],
+                    temperature=0.2,
+                    max_tokens=500
+                )
+            
+            # Use async version of AI model manager
+            result_obj = await AIModelManager.call_with_fallback_async(
+                make_api_call,
+                operation_name="speaker name identification"
             )
+            
+            if not result_obj.success:
+                raise Exception("All AI models failed")
+            
+            response = result_obj.response
             
             name_mapping = json.loads(response.choices[0].message.content)
             

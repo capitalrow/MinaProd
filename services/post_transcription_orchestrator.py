@@ -410,18 +410,102 @@ class PostTranscriptionOrchestrator:
                 'timestamp': datetime.utcnow().isoformat()
             })
             
+            # Check for model degradation and emit degradation event if needed
+            metadata = summary_data.get('_metadata', {})
+            if metadata.get('model_degraded'):
+                logger.warning(f"⚠️ Model degradation detected: {metadata.get('degradation_reason')}")
+                socketio.emit('insights_generate_degraded', {
+                    'session_id': session.external_id,
+                    'model_used': metadata.get('model_used'),
+                    'degradation_reason': metadata.get('degradation_reason'),
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'message': f"Using {metadata.get('model_used')} instead of primary model"
+                })
+                logger.info(f"📊 Degradation event emitted: {metadata.get('model_used')}")
+            
             # Non-blocking event completion
             if event:
                 try:
+                    # Include model info in event payload
+                    result['model_used'] = metadata.get('model_used', 'unknown')
+                    result['model_degraded'] = metadata.get('model_degraded', False)
                     self.event_service.complete_event(event, result=result)
                 except Exception as log_error:
                     logger.warning(f"Event completion failed (non-blocking): {log_error}")
             
-            logger.info(f"✅ Insights generated: {result['action_count']} actions, {result['decision_count']} decisions, {result['risk_count']} risks")
+            logger.info(f"✅ Insights generated: {result['action_count']} actions, {result['decision_count']} decisions, {result['risk_count']} risks (model: {metadata.get('model_used', 'unknown')})")
             return result
             
         except Exception as e:
-            logger.error(f"Failed to generate insights: {e}")
+            import traceback
+            error_traceback = traceback.format_exc()
+            error_type = type(e).__name__
+            error_message = str(e)
+            
+            # Detailed error logging with traceback
+            logger.error(f"❌ Insights generation failed: {error_type}: {error_message}")
+            logger.error(f"Traceback:\n{error_traceback}")
+            
+            # Check if this is a permission/access error (all models inaccessible)
+            is_permission_error = (
+                "403" in error_message or 
+                "does not have access" in error_message or
+                "model_not_found" in error_message or
+                "PermissionDeniedError" in error_type
+            )
+            
+            # If all models are inaccessible, SKIP this stage gracefully (pattern matching will handle tasks)
+            if is_permission_error:
+                logger.warning("⚠️ AI models not accessible - skipping insights generation, pattern matching will extract tasks")
+                
+                # Mark event as SKIPPED (not failed)
+                if event:
+                    try:
+                        self.event_service.skip_event(event, "AI models not accessible - using pattern matching fallback")
+                    except:
+                        pass
+                
+                # Return empty result (not None) to indicate success with 0 results
+                result = {
+                    'summary_id': None,
+                    'has_actions': False,
+                    'has_decisions': False,
+                    'has_risks': False,
+                    'action_count': 0,
+                    'decision_count': 0,
+                    'risk_count': 0,
+                    'skipped': True,
+                    'skip_reason': 'ai_unavailable'
+                }
+                
+                # Emit completion (not failure) - AI unavailable is not a pipeline failure
+                socketio.emit('insights_generate', {
+                    'session_id': session.external_id,
+                    'status': 'skipped',
+                    'message': 'AI unavailable - using pattern matching',
+                    'timestamp': datetime.utcnow().isoformat()
+                })
+                
+                logger.info("✅ Insights stage skipped gracefully (AI unavailable)")
+                return result
+            
+            # For other errors (timeouts, parsing, etc), mark as failed
+            # Classify error type for better user messaging
+            if "timeout" in error_message.lower() or "timed out" in error_message.lower():
+                error_category = "timeout"
+                user_message = "AI service timed out - please try again"
+            elif "json" in error_message.lower() or "parse" in error_message.lower():
+                error_category = "parse_error"
+                user_message = "AI response could not be processed"
+            elif "rate" in error_message.lower() or "429" in error_message:
+                error_category = "rate_limit"
+                user_message = "AI service is busy - please try again in a moment"
+            elif "api" in error_message.lower() or "key" in error_message.lower():
+                error_category = "api_error"
+                user_message = "AI service configuration issue"
+            else:
+                error_category = "unknown"
+                user_message = "Insights generation failed, transcript available"
             
             # Set status to 'failed' on exception
             try:
@@ -432,15 +516,18 @@ class PostTranscriptionOrchestrator:
             
             if event:
                 try:
-                    self.event_service.fail_event(event, str(e))
+                    self.event_service.fail_event(event, error_message)
                 except:
                     pass
             
-            # Emit error but continue pipeline (graceful degradation)
+            # Emit detailed error for debugging (graceful degradation)
             socketio.emit('insights_generate', {
                 'session_id': session.external_id,
                 'status': 'failed',
-                'error': 'Insights generation failed, transcript available',
+                'error': user_message,
+                'error_category': error_category,
+                'error_type': error_type,
+                'error_details': error_message,
                 'timestamp': datetime.utcnow().isoformat()
             })
             
@@ -526,9 +613,16 @@ class PostTranscriptionOrchestrator:
     
     def _generate_tasks(self, session: Session, insights_data: Optional[Dict]) -> Optional[Dict[str, Any]]:
         """
-        Stage 5: Extract and create action items from insights.
+        Stage 5: Extract and create action items independently from transcript.
         Event: tasks_generation
+        
+        This stage now works independently of insights success, using NLP-based
+        task extraction directly from transcript segments. Falls back to insights
+        if available, but continues even if insights failed.
         """
+        from models.task import Task
+        from sqlalchemy import select, func
+        
         event = None
         
         # Non-blocking event logging
@@ -545,51 +639,441 @@ class PostTranscriptionOrchestrator:
             event = None
         
         try:
-            if not insights_data or not insights_data.get('summary_id'):
-                logger.warning("No insights data for task generation")
-                if event:
-                    try:
-                        self.event_service.skip_event(event, "No insights available")
-                    except:
-                        pass
-                return None
+            # Strategy: Use AI-extracted tasks as primary source, pattern matching as supplement
+            # All tasks are persisted to Task model (single source of truth)
+            task_source = "none"
+            tasks_created = []
             
-            # Tasks are already created by AnalysisService in summary
-            # Just count and report them
-            action_count = insights_data.get('action_count', 0)
+            # Option 1: If AI succeeded and found tasks, convert them to Task objects
+            if insights_data and insights_data.get('action_count', 0) > 0:
+                logger.info(f"[Tasks] Converting {insights_data['action_count']} AI-extracted tasks to Task model")
+                
+                # Get the summary to access actions
+                from models.summary import Summary
+                from services.validation_engine import get_validation_engine
+                
+                summary = db.session.query(Summary).filter_by(session_id=session.id).first()
+                validation_engine = get_validation_engine()
+                
+                # Get transcript for validation
+                segments = db.session.query(Segment).filter_by(
+                    session_id=session.id,
+                    kind='final'
+                ).order_by(Segment.start_ms).all()
+                full_transcript = " ".join([seg.text for seg in segments if seg.text])
+                
+                rejected_count = 0
+                quality_scores = []
+                
+                if summary and summary.actions:
+                    for idx, action in enumerate(summary.actions):
+                        try:
+                            task_text = action.get('text', '').strip()
+                            evidence_quote = action.get('evidence_quote', '')
+                            
+                            # Validate task quality using scoring rubric
+                            quality_score = validation_engine.score_task_quality(
+                                task_text=task_text,
+                                evidence_quote=evidence_quote,
+                                transcript=full_transcript
+                            )
+                            
+                            quality_scores.append(quality_score.total_score)
+                            
+                            # Reject low-quality tasks
+                            if quality_score.total_score < validation_engine.MIN_TASK_SCORE:
+                                rejected_count += 1
+                                logger.info(
+                                    f"[Validation] Rejected low-quality task (score: {quality_score.total_score:.2f}): "
+                                    f"{task_text[:50]}... "
+                                    f"(verb:{quality_score.has_action_verb}, subject:{quality_score.has_subject}, "
+                                    f"length:{quality_score.appropriate_length}, evidence:{quality_score.has_evidence})"
+                                )
+                                continue  # Skip this task
+                            
+                            # Create task only if quality is acceptable
+                            task = Task(
+                                session_id=session.id,
+                                title=task_text[:100],  # Limit title length
+                                description=f"AI-extracted action item (quality score: {quality_score.total_score:.2f})",
+                                priority=action.get('priority', 'medium').lower(),
+                                status="todo",
+                                assigned_to=action.get('owner', '').strip() or None,
+                                extracted_by_ai=True,  # Mark as AI-extracted
+                                confidence_score=quality_score.total_score,  # Use quality score as confidence
+                                extraction_context={
+                                    'source': 'ai_insights',
+                                    'original_action': action,
+                                    'quality_score': quality_score.total_score,
+                                    'quality_breakdown': {
+                                        'has_action_verb': quality_score.has_action_verb,
+                                        'has_subject': quality_score.has_subject,
+                                        'appropriate_length': quality_score.appropriate_length,
+                                        'has_evidence': quality_score.has_evidence
+                                    }
+                                }
+                            )
+                            db.session.add(task)
+                            tasks_created.append(task)
+                            logger.info(f"[Validation] Accepted task (score: {quality_score.total_score:.2f}): {task_text[:50]}...")
+                            
+                        except Exception as e:
+                            logger.warning(f"Failed to create AI-extracted task: {e}")
+                            continue
+                    
+                    # Log validation summary
+                    if quality_scores:
+                        avg_score = sum(quality_scores) / len(quality_scores)
+                        logger.info(
+                            f"[Validation] Task quality summary: {len(tasks_created)} accepted, "
+                            f"{rejected_count} rejected, avg score: {avg_score:.2f}"
+                        )
+                        
+                        # Emit validation metrics to EventLedger for observability
+                        try:
+                            validation_event = self.event_service.log_event(
+                                event_type=EventType.TASKS_GENERATION,
+                                session_id=session.id,
+                                external_session_id=session.external_id,
+                                payload={
+                                    'validation_metrics': {
+                                        'tasks_accepted': len(tasks_created),
+                                        'tasks_rejected': rejected_count,
+                                        'avg_quality_score': round(avg_score, 2),
+                                        'min_score': round(min(quality_scores), 2) if quality_scores else 0,
+                                        'max_score': round(max(quality_scores), 2) if quality_scores else 0,
+                                        'quality_threshold': validation_engine.MIN_TASK_SCORE
+                                    }
+                                }
+                            )
+                            logger.debug(f"📊 [Observability] Validation metrics logged to EventLedger")
+                        except Exception as obs_error:
+                            logger.warning(f"Failed to log validation metrics (non-blocking): {obs_error}")
+                    
+                    # Commit AI-extracted tasks
+                    try:
+                        db.session.commit()
+                        logger.info(f"✅ [Database] Persisted {len(tasks_created)} AI-extracted tasks")
+                        task_source = "ai_insights"
+                    except Exception as e:
+                        import traceback
+                        logger.error(f"❌ [Database] Failed to commit AI-extracted tasks: {e}")
+                        logger.error(f"Traceback:\n{traceback.format_exc()}")
+                        db.session.rollback()
+                        tasks_created = []
+            
+            # Option 2: If AI failed or found no tasks, use pattern matching as fallback
+            if not tasks_created:
+                logger.info(f"[Tasks] AI tasks unavailable, using pattern matching as fallback")
+                task_source = "pattern_extraction"
+                
+                # Get transcript segments for NLP extraction
+                segments = db.session.query(Segment).filter_by(
+                    session_id=session.id,
+                    kind='final'
+                ).order_by(Segment.start_ms).all()
+                
+                if segments:
+                    # Build transcript text for pattern matching with segment tracking
+                    transcript_with_segments = []
+                    for seg in segments:
+                        text = seg.text.strip()
+                        if text:
+                            transcript_with_segments.append({
+                                'text': text,
+                                'segment_id': seg.id,
+                                'start_ms': seg.start_ms,
+                                'end_ms': seg.end_ms
+                            })
+                    
+                    # Use pattern-based extraction with segment linkage
+                    extracted_tasks = self._extract_tasks_with_patterns_and_segments(
+                        transcript_with_segments, session.id
+                    )
+                    
+                    logger.info(f"[Tasks] Pattern extraction attempted {len(extracted_tasks)} tasks")
+                else:
+                    logger.warning(f"[Tasks] No final segments found for session {session.id}")
+                    task_source = "no_segments"
+            
+            # CRITICAL: Query database to get ACTUAL persisted count (after commit)
+            persisted_task_count = db.session.scalar(
+                select(func.count()).select_from(Task).where(Task.session_id == session.id)
+            ) or 0
+            
+            logger.info(f"[Tasks] Database verification: {persisted_task_count} tasks persisted for session {session.id}")
             
             result = {
-                'tasks_created': action_count,
-                'summary_id': insights_data['summary_id']
+                'tasks_created': persisted_task_count,  # Use DB count, not in-memory count
+                'task_source': task_source,
+                'session_id': session.id
             }
             
-            # CRITICAL: Always emit WebSocket event
-            if action_count > 0:
-                socketio.emit('tasks_generation', {
-                    'session_id': session.external_id,
-                    'task_count': action_count,
-                    'message': f'{action_count} new action{"s" if action_count != 1 else ""} identified',
-                    'timestamp': datetime.utcnow().isoformat()
-                })
+            # CRITICAL: Emit WebSocket event AFTER database verification (use DB count)
+            socketio.emit('tasks_generation', {
+                'session_id': session.external_id,
+                'task_count': persisted_task_count,  # Use verified DB count
+                'message': f'{persisted_task_count} new action{"s" if persisted_task_count != 1 else ""} identified' if persisted_task_count > 0 else 'No action items found',
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+            # Check for model degradation in task extraction (from insights metadata)
+            if insights_data and task_source == "ai_insights":
+                # Get metadata from insights (passed down through the pipeline)
+                metadata = insights_data.get('_metadata', {})
+                if metadata and metadata.get('model_degraded'):
+                    logger.warning(f"⚠️ Task extraction degradation detected: {metadata.get('degradation_reason')}")
+                    socketio.emit('tasks_generation_degraded', {
+                        'session_id': session.external_id,
+                        'model_used': metadata.get('model_used'),
+                        'degradation_reason': metadata.get('degradation_reason'),
+                        'timestamp': datetime.utcnow().isoformat(),
+                        'message': f"Tasks extracted using {metadata.get('model_used')} instead of primary model"
+                    })
+                    logger.info(f"📊 Task degradation event emitted: {metadata.get('model_used')}")
             
             # Non-blocking event completion
             if event:
                 try:
+                    # Update payload with task count for event ledger
+                    from sqlalchemy.orm.attributes import flag_modified
+                    payload = event.payload or {}
+                    payload['task_count'] = persisted_task_count
+                    payload['task_source'] = task_source
+                    event.payload = payload
+                    flag_modified(event, 'payload')  # Tell SQLAlchemy that JSON field changed
+                    db.session.add(event)
+                    db.session.commit()
                     self.event_service.complete_event(event, result=result)
                 except Exception as log_error:
                     logger.warning(f"Event completion failed (non-blocking): {log_error}")
             
-            logger.info(f"✅ Tasks generated: {action_count} actions")
+            logger.info(f"✅ Tasks generated: {persisted_task_count} tasks from {task_source}")
             return result
             
         except Exception as e:
-            logger.error(f"Failed to generate tasks: {e}")
+            import traceback
+            logger.error(f"❌ Failed to generate tasks: {e}")
+            logger.error(f"Traceback:\n{traceback.format_exc()}")
+            
             if event:
                 try:
                     self.event_service.fail_event(event, str(e))
                 except:
                     pass
+            
+            # Emit event even on failure (0 tasks found)
+            socketio.emit('tasks_generation', {
+                'session_id': session.external_id,
+                'task_count': 0,
+                'message': 'Task extraction failed',
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
             return None
+    
+    def _extract_tasks_with_patterns_and_segments(self, transcript_segments: List[Dict], session_id: int) -> List:
+        """
+        Extract tasks using regex patterns with segment linkage for 'jump to context'.
+        Creates Task objects directly in database with source segment tracking.
+        
+        Args:
+            transcript_segments: List of dicts with 'text', 'segment_id', 'start_ms', 'end_ms'
+            session_id: Session ID to link tasks to
+            
+        Returns:
+            List of created Task objects
+        """
+        from models.task import Task
+        import re
+        
+        # Comprehensive task patterns to detect action items
+        # Each pattern captures the task description in group 1
+        task_patterns = [
+            # Explicit action markers
+            r"(?:action item|action|task|todo|to-do|to do|follow up|followup|next step)s?[:\-\s]+(.+?)(?:\.|$)",
+            
+            # Commitment patterns
+            r"(?:I|we|you|he|she|they)(?:'ll|\s+will|\s+need to|\s+should|\s+must|\s+have to|\s+got to|'ve got to)\s+(.+?)(?:\.|$)",
+            r"(?:I|we)'?(?:m| am|'re| are)\s+going to\s+(.+?)(?:\.|$)",
+            
+            # Suggestion to action
+            r"let['\s]*s\s+(.+?)(?:\.|$)",
+            
+            # Assignment patterns
+            r"(?:assign|delegate|give)\s+(.+?)\s+to\s+\w+",
+            
+            # TODO variations
+            r"\[?(?:TODO|Action|Task|Reminder)\]?[:\-\s]+(.+?)(?:\.|$)",
+            
+            # Deadline and time-based (explicit temporal markers only)
+            r"(?:deadline|due(?:\s+by)?)\s+(.+?)(?:\.|$)",
+            
+            # Numbered action lists (e.g., "1. Review the document")
+            r"\d+[\.\)]\s+(?:review|update|send|create|finish|complete|prepare|schedule|contact|call|email|write|fix|implement|test|deploy|check)\s+(.+?)(?:\.|$)",
+            
+            # Reminders
+            r"(?:reminder|remember to|don't forget to)[:\-\s]*(.+?)(?:\.|$)",
+        ]
+        
+        created_tasks = []
+        seen_titles = set()  # Deduplicate
+        pattern_match_counts = {}  # Track which patterns are matching (diagnostic logging)
+        
+        # Extract tasks from transcript segments
+        for seg_data in transcript_segments:
+            text = seg_data['text']
+            segment_id = seg_data['segment_id']
+            
+            for idx, pattern in enumerate(task_patterns):
+                matches = re.finditer(pattern, text, re.IGNORECASE)
+                for match in matches:
+                    task_text = match.group(1).strip()
+                    
+                    # Basic validation
+                    if len(task_text) < 5 or len(task_text) > 200:
+                        logger.debug(f"[Pattern Matching] Skipped task (length {len(task_text)}): '{task_text[:50]}...'")
+                        continue
+                    
+                    # Context-aware filtering to eliminate false positives
+                    task_lower = task_text.lower()
+                    
+                    # Filter 1: Reject meta-commentary about the application/testing
+                    meta_patterns = [
+                        'task extraction', 'should be able', 'the objective', 
+                        'testing the', 'i am testing', 'we are testing',
+                        'the feature', 'this feature', 'the application', 'this application',
+                        'the system', 'this system', 'the pipeline', 'this pipeline',
+                        'the goal is', 'the purpose is', 'the idea is',
+                        'i\'m recording', 'i am recording', 'screen recording'
+                    ]
+                    if any(meta in task_lower for meta in meta_patterns):
+                        logger.debug(f"[Pattern Matching] Skipped meta-commentary: '{task_text[:50]}...'")
+                        continue
+                    
+                    # Filter 2: Reject questions (not action items)
+                    if task_text.strip().endswith('?'):
+                        logger.debug(f"[Pattern Matching] Skipped question: '{task_text[:50]}...'")
+                        continue
+                    
+                    # Filter 3: Reject if doesn't contain action verbs (for commitment patterns)
+                    # Only apply to commitment patterns (patterns 1 and 2)
+                    if idx in [1, 2]:  # Commitment patterns that use "will", "should", etc.
+                        action_verbs = [
+                            'review', 'update', 'send', 'create', 'finish', 'complete',
+                            'prepare', 'schedule', 'contact', 'call', 'email', 'write',
+                            'fix', 'implement', 'test', 'deploy', 'check', 'submit',
+                            'approve', 'analyze', 'research', 'present', 'discuss',
+                            'follow up', 'followup', 'reach out', 'set up', 'setup'
+                        ]
+                        has_action_verb = any(verb in task_lower for verb in action_verbs)
+                        if not has_action_verb:
+                            logger.debug(f"[Pattern Matching] Skipped (no action verb): '{task_text[:50]}...'")
+                            continue
+                    
+                    # Filter 4: Minimum meaningful content (at least 3 words after filtering)
+                    word_count = len(task_text.split())
+                    if word_count < 3:
+                        logger.debug(f"[Pattern Matching] Skipped (too few words): '{task_text[:50]}...'")
+                        continue
+                    
+                    # Deduplication
+                    task_title = task_text[:100]  # Limit title length
+                    if task_title.lower() in seen_titles:
+                        logger.debug(f"[Pattern Matching] Skipped duplicate task: '{task_title[:50]}...'")
+                        continue
+                        
+                    seen_titles.add(task_title.lower())
+                    
+                    # Track pattern match for diagnostics
+                    pattern_name = f"pattern_{idx}"
+                    pattern_match_counts[pattern_name] = pattern_match_counts.get(pattern_name, 0) + 1
+                    logger.debug(f"[Pattern Matching] Pattern {idx} matched: '{task_title[:50]}...' in segment {segment_id}")
+                    
+                    # Create task in database with segment linkage
+                    try:
+                        task = Task(
+                            session_id=session_id,
+                            title=task_title,
+                            description=f"Extracted from transcript",
+                            priority="medium",
+                            status="todo",
+                            extracted_by_ai=False,  # Pattern-based extraction
+                            confidence_score=0.6,  # Lower confidence for pattern matching
+                            extraction_context={
+                                'source': 'pattern',
+                                'transcript_snippet': task_text[:500],
+                                'source_segment_id': segment_id,  # Enable 'jump to context'
+                                'start_ms': seg_data.get('start_ms'),
+                                'end_ms': seg_data.get('end_ms'),
+                                'matched_pattern': pattern[:50]  # Store which pattern matched
+                            }
+                        )
+                        db.session.add(task)
+                        created_tasks.append(task)
+                    except Exception as e:
+                        logger.warning(f"Failed to create pattern-extracted task: {e}")
+                        continue
+        
+        # Commit all tasks at once with comprehensive error handling
+        try:
+            if created_tasks:
+                # Log pre-commit state for debugging
+                logger.info(f"[Database] Attempting to commit {len(created_tasks)} tasks for session_id={session_id}")
+                
+                # Verify session exists before committing (FK constraint check)
+                from models.session import Session as SessionModel
+                session_exists = db.session.query(SessionModel).filter_by(id=session_id).first()
+                if not session_exists:
+                    logger.error(f"[Database] FK violation prevented: session_id={session_id} does not exist")
+                    db.session.rollback()
+                    return []
+                
+                # Commit to database
+                db.session.commit()
+                
+                # CRITICAL: Verify tasks were actually persisted by querying database
+                from sqlalchemy import select, func
+                persisted_count = db.session.scalar(
+                    select(func.count()).select_from(Task).where(Task.session_id == session_id)
+                )
+                
+                if persisted_count != len(created_tasks):
+                    logger.error(
+                        f"[Database] Task persistence mismatch! "
+                        f"Expected {len(created_tasks)} but found {persisted_count} in database "
+                        f"for session_id={session_id}"
+                    )
+                
+                logger.info(
+                    f"✅ [Database] Successfully persisted {persisted_count} tasks "
+                    f"(attempted {len(created_tasks)}) for session_id={session_id}"
+                )
+                
+                # Log diagnostic information about pattern matching
+                if pattern_match_counts:
+                    logger.info(f"[Pattern Matching] Match distribution: {pattern_match_counts}")
+            else:
+                logger.info(f"[Pattern Matching] No tasks extracted from {len(transcript_segments)} segments")
+        except Exception as e:
+            import traceback
+            error_traceback = traceback.format_exc()
+            error_type = type(e).__name__
+            
+            # Detailed error logging with full context
+            logger.error(f"❌ [Database] Failed to commit tasks: {error_type}: {e}")
+            logger.error(f"[Database] Error traceback:\n{error_traceback}")
+            logger.error(
+                f"[Database] Context: session_id={session_id}, "
+                f"attempted_tasks={len(created_tasks)}, "
+                f"task_titles={[t.title[:30] for t in created_tasks[:3]]}"
+            )
+            
+            # Rollback and return empty list
+            db.session.rollback()
+            return []
+        
+        return created_tasks
     
     def _emit_reveal(self, session: Session):
         """

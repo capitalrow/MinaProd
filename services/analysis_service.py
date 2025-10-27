@@ -38,66 +38,83 @@ class AnalysisService:
         Focus on strategic decisions, financial impact, and high-level outcomes only.
         
         Return ONLY valid JSON:
-        {
+        {{
             "brief_summary": "2-3 sentence executive summary",
-            "executive_insights": [{"insight": "Key strategic point", "impact": "Business impact"}]
-        }
+            "executive_insights": [{{"insight": "Key strategic point", "impact": "Business impact"}}]
+        }}
         
         Meeting transcript:
         {transcript}
         """,
         
         "brief_action": """
-        You are a strict meeting analyst. Extract ONLY explicitly stated action items from this transcript.
+        You are an insightful meeting analyst. Follow this analysis process step-by-step:
         
-        CRITICAL RULES - YOU MUST FOLLOW THESE EXACTLY:
-        1. Only extract tasks that are EXPLICITLY STATED as commitments in the transcript
-        2. You MUST include the exact quote from the transcript for each task as evidence
-        3. If you cannot find a direct quote, DO NOT extract that task
-        4. Return an EMPTY array if there are NO clear action items
-        5. Do NOT infer, assume, create, or hallucinate tasks
-        6. Be extremely conservative - when in doubt, don't extract it
+        STEP 1: ANALYZE TRANSCRIPT TYPE
+        First, determine if this is:
+        - A) Real business meeting with actionable content
+        - B) Meta-testing (someone testing the system itself)
+        - C) Casual conversation with no work tasks
+        - D) Demo/walkthrough/tutorial
         
-        EXAMPLES OF WHAT TO EXTRACT (with evidence):
-        ✓ Transcript says: "I need to review the report by Friday"
-          Extract: {"action": "Review the report", "evidence_quote": "I need to review the report by Friday", ...}
+        STEP 2: IF META-TESTING DETECTED
+        Keywords indicating meta-testing: "test the app", "check if task extraction works", "verify the pipeline", "from my side", "make sure tasks are extracted"
+        → Return brief_summary describing it's a system test, action_plan = []
         
-        ✓ Transcript says: "Action item: Let's schedule a follow-up meeting"
-          Extract: {"action": "Schedule a follow-up meeting", "evidence_quote": "Let's schedule a follow-up meeting", ...}
+        STEP 3: EXTRACT ONLY IF REAL MEETING
+        Extract actionable insights including:
+        - ✓ Commitments: "I will...", "I need to...", "We must..."
+        - ✓ Proposals: "We could...", "What about...", "I wonder if..."
+        - ✓ Questions needing answers: "How do we...", "What's the plan for..."
+        - ✓ Suggestions: "We should...", "Consider...", "Let's..."
         
-        EXAMPLES OF WHAT NOT TO EXTRACT:
-        ✗ Transcript says: "I'm testing the application"
-          DO NOT extract "Test the application" - this is describing current activity, not a future task
+        Filter out:
+        - ✗ Meta-testing: "testing the app", "checking if X works"
+        - ✗ Personal errands: "check my car", "grab coffee"
+        - ✗ Current activities: "I'm writing code now"
         
-        ✗ Transcript says: "I will go check my car"
-          DO NOT extract - casual conversation, not a work task
+        ANTI-HALLUCINATION RULE:
+        NEVER invent content. If summary mentions "budget proposals" or "Q4 planning", those exact phrases must appear in transcript.
         
-        ✗ Transcript says: "We could consider improving performance"
-          DO NOT extract - just an idea, not a commitment
+        FEW-SHOT EXAMPLES:
         
-        ✗ Transcript says: "Testing the post-transcription pipeline"
-          DO NOT extract - describing what they're doing NOW, not a task for later
-        
-        REAL-WORLD NEGATIVE EXAMPLE (DO NOT EXTRACT FROM THIS):
-        "Testing the Lina application. I will go ahead and share the output from my screen recording, including the post-transcription pipeline with Chad GPT. It will help me refine how the pipeline will work after recording has stopped."
-        → This has NO action items. They're describing their current testing activity.
-        → CORRECT response: action_plan = []
-        
-        Return ONLY valid JSON with evidence quotes:
-        {
-            "brief_summary": "2-3 sentence summary of what was discussed",
+        Example 1 - Real Meeting:
+        Transcript: "We need to update the budget proposal by Friday. Sarah will review the marketing strategy and send feedback by EOD Thursday."
+        Output: {{
+            "brief_summary": "Team discussed upcoming deadlines for budget proposal and marketing strategy review.",
             "action_plan": [
-                {
-                    "action": "Exact task as stated", 
-                    "evidence_quote": "REQUIRED: Exact quote from transcript showing this task was mentioned",
-                    "owner": "Person mentioned or 'Not specified'", 
-                    "priority": "high/medium/low if urgency mentioned",
-                    "due": "Date mentioned or 'Not specified'"
-                }
+                {{"action": "Update the budget proposal", "evidence_quote": "We need to update the budget proposal by Friday", "owner": "Not specified", "priority": "high", "due": "Friday"}},
+                {{"action": "Review marketing strategy and send feedback", "evidence_quote": "Sarah will review the marketing strategy and send feedback by EOD Thursday", "owner": "Sarah", "priority": "high", "due": "Thursday"}}
             ]
-        }
+        }}
         
-        If NO action items found, return: {"brief_summary": "This was a [casual conversation/test/discussion] with no specific action items mentioned.", "action_plan": []}
+        Example 2 - Meta-Testing (DETECT AND REJECT):
+        Transcript: "I'm testing the task extraction system. Let me check if the Tasks tab shows the extracted items correctly from my side."
+        Output: {{
+            "brief_summary": "This was a system testing session to verify task extraction functionality.",
+            "action_plan": []
+        }}
+        
+        Example 3 - Casual Conversation:
+        Transcript: "Hey, how was your weekend? I went hiking. The weather was great."
+        Output: {{
+            "brief_summary": "Casual conversation about weekend activities.",
+            "action_plan": []
+        }}
+        
+        Return ONLY valid JSON:
+        {{
+            "brief_summary": "2-3 sentence summary describing EXACTLY what was actually discussed (no invention)",
+            "action_plan": [
+                {{
+                    "action": "Clear, actionable task title", 
+                    "evidence_quote": "EXACT quote from transcript",
+                    "owner": "Person mentioned or 'Not specified'", 
+                    "priority": "high/medium/low",
+                    "due": "Date mentioned or 'Not specified'"
+                }}
+            ]
+        }}
         
         Meeting transcript:
         {transcript}
@@ -105,61 +122,91 @@ class AnalysisService:
         
         # Standard Level Prompts
         "standard_executive": """
-        You are a professional meeting analyst. Analyze this transcript and extract information STRICTLY as stated.
+        You are a professional meeting analyst. Follow this step-by-step analysis process:
         
-        CRITICAL RULES - FOLLOW EXACTLY:
-        1. Only extract what is EXPLICITLY stated in the transcript
-        2. You MUST provide evidence_quote from transcript for each extracted item
-        3. Do NOT infer, assume, create, or hallucinate information
-        4. Return EMPTY arrays [] if nothing was explicitly mentioned
-        5. Be extremely conservative - accuracy over completeness
+        STEP 1: ANALYZE TRANSCRIPT TYPE
+        Determine if this is:
+        - A) Real business meeting
+        - B) Meta-testing/system demo
+        - C) Casual conversation
+        
+        Keywords for meta-testing: "test", "check if", "verify", "from my side", "make sure"
+        
+        STEP 2: IF META-TESTING → Return accurate description, empty arrays
+        STEP 3: IF REAL MEETING → Extract with evidence
+        
+        ANTI-HALLUCINATION RULES:
+        1. NEVER invent content not in transcript
+        2. Every claim in summary_md must have evidence in transcript
+        3. If transcript says "pantry tour", don't write "Q4 planning meeting"
+        4. Empty arrays are better than fake data
+        
+        EXTRACTION GUIDELINES:
         
         For ACTIONS - Include evidence_quote for each:
-        ✓ Extract: "I need to...", "I'll...", "Action: ...", "We should...", "Let's..."
-        ✗ Skip: Casual mentions ("I'm going to check my car"), maybes ("I could..."), current activities ("I'm testing...")
-        ✗ Return [] if no clear action items
+        ✓ Commitments ("I need to...", "I'll..."), Proposals ("We could...", "What about..."), Suggestions ("We should...", "Consider...")
+        ✗ Meta-testing ("I'm testing the app"), Personal ("I'll check my car"), Current activity ("Writing code now"), Sentence fragments (<8 words)
         
         For DECISIONS - Include evidence_quote for each:
-        ✓ Extract: "We decided...", "The decision is...", "We're going with...", "Approved..."
-        ✗ Skip: Opinions ("I think..."), ideas ("We could...", "maybe...")
-        ✗ Return [] if no decisions were made
+        ✓ Explicit decisions ("We decided...", "Approved..."), Strong agreements ("We're going with...")
+        ✗ Opinions without decision ("I think X" without group agreement)
         
         For RISKS - Include evidence_quote for each:
-        ✓ Extract: "The risk is...", "I'm concerned about...", "This could be a problem..."
-        ✗ Skip: General speculation
-        ✗ Return [] if no risks mentioned
+        ✓ Concerns ("I'm concerned..."), Risk statements ("The risk is...")
+        ✗ Vague speculation without specific risk
         
-        REAL-WORLD NEGATIVE EXAMPLE (DO NOT EXTRACT FROM THIS):
-        "Testing the Lina application. I will share the output including the post-transcription pipeline. It will help me refine how the pipeline works."
-        → This is someone describing their CURRENT testing activity
-        → CORRECT response: actions=[], decisions=[], risks=[]
+        FEW-SHOT EXAMPLES:
         
-        Return ONLY valid JSON with evidence quotes:
-        {
-            "summary_md": "Factual summary of what was discussed (2-3 paragraphs). State clearly if this was just a test/casual conversation.",
+        Example 1 - Real Meeting:
+        Transcript: "We decided to move forward with the cloud migration. John will lead the infrastructure team and coordinate with vendors. This carries some risk around downtime during cutover."
+        Output: {{
+            "summary_md": "Team decided to proceed with cloud migration. John assigned as lead for infrastructure coordination. Potential downtime risk identified during cutover phase.",
             "actions": [
-                {
-                    "text": "Exact action as stated", 
-                    "evidence_quote": "REQUIRED: Quote from transcript",
-                    "owner": "Person name or 'Not specified'", 
-                    "due": "Exact date/time mentioned or 'Not specified'"
-                }
+                {{"text": "Lead infrastructure team and coordinate with vendors for cloud migration", "evidence_quote": "John will lead the infrastructure team and coordinate with vendors", "owner": "John", "due": "Not specified"}}
             ],
             "decisions": [
-                {
-                    "text": "Exact decision as stated",
-                    "evidence_quote": "REQUIRED: Quote from transcript",
-                    "impact": "Impact mentioned or 'Not specified'"
-                }
+                {{"text": "Proceed with cloud migration", "evidence_quote": "We decided to move forward with the cloud migration", "impact": "Not specified"}}
             ],
             "risks": [
-                {
-                    "text": "Exact risk/concern as stated",
-                    "evidence_quote": "REQUIRED: Quote from transcript",
-                    "mitigation": "Mitigation mentioned or 'Not specified'"
-                }
+                {{"text": "Potential downtime during cutover", "evidence_quote": "This carries some risk around downtime during cutover", "mitigation": "Not specified"}}
             ]
-        }
+        }}
+        
+        Example 2 - Meta-Testing (CORRECT HANDLING):
+        Transcript: "I'm testing the task extraction. Let me check if tasks appear in the Tasks tab from my side."
+        Output: {{
+            "summary_md": "This was a system testing session to verify task extraction and display functionality.",
+            "actions": [],
+            "decisions": [],
+            "risks": []
+        }}
+        
+        Return ONLY valid JSON with evidence quotes:
+        {{
+            "summary_md": "Factual summary of what was ACTUALLY discussed (2-3 paragraphs). No invention. State clearly if this was testing/casual conversation.",
+            "actions": [
+                {{
+                    "text": "Clear actionable task", 
+                    "evidence_quote": "REQUIRED: EXACT quote from transcript",
+                    "owner": "Person name or 'Not specified'", 
+                    "due": "Exact date/time mentioned or 'Not specified'"
+                }}
+            ],
+            "decisions": [
+                {{
+                    "text": "Decision made",
+                    "evidence_quote": "REQUIRED: EXACT quote from transcript",
+                    "impact": "Impact mentioned or 'Not specified'"
+                }}
+            ],
+            "risks": [
+                {{
+                    "text": "Risk or concern",
+                    "evidence_quote": "REQUIRED: EXACT quote from transcript",
+                    "mitigation": "Mitigation mentioned or 'Not specified'"
+                }}
+            ]
+        }}
         
         Meeting transcript:
         {transcript}
@@ -170,13 +217,13 @@ class AnalysisService:
         Include technical decisions, architecture choices, and development tasks.
         
         Return ONLY valid JSON:
-        {
+        {{
             "summary_md": "Standard technical summary in markdown format",
-            "actions": [{"text": "Technical task", "owner": "Person or unknown", "due": "Date or unknown", "complexity": "high/medium/low"}],
-            "decisions": [{"text": "Technical decision", "rationale": "Why this was chosen"}],
-            "risks": [{"text": "Technical risk", "mitigation": "Technical solution"}],
-            "technical_details": [{"area": "Technology/Architecture", "details": "Technical specifics", "impact": "Development impact"}]
-        }
+            "actions": [{{"text": "Technical task", "owner": "Person or unknown", "due": "Date or unknown", "complexity": "high/medium/low"}}],
+            "decisions": [{{"text": "Technical decision", "rationale": "Why this was chosen"}}],
+            "risks": [{{"text": "Technical risk", "mitigation": "Technical solution"}}],
+            "technical_details": [{{"area": "Technology/Architecture", "details": "Technical specifics", "impact": "Development impact"}}]
+        }}
         
         Meeting transcript:
         {transcript}
@@ -187,12 +234,12 @@ class AnalysisService:
         Focus on the chronological flow of discussions and how decisions evolved.
         
         Return ONLY valid JSON:
-        {
+        {{
             "summary_md": "Standard narrative summary in markdown format",
-            "actions": [{"text": "Action description", "owner": "Person or unknown", "due": "Date or unknown"}],
-            "decisions": [{"text": "Decision description", "context": "How this decision came about"}],
-            "risks": [{"text": "Risk description", "mitigation": "Suggested mitigation or unknown"}]
-        }
+            "actions": [{{"text": "Action description", "owner": "Person or unknown", "due": "Date or unknown"}}],
+            "decisions": [{{"text": "Decision description", "context": "How this decision came about"}}],
+            "risks": [{{"text": "Risk description", "mitigation": "Suggested mitigation or unknown"}}]
+        }}
         
         Meeting transcript:
         {transcript}
@@ -203,12 +250,12 @@ class AnalysisService:
         Focus on organized, scannable information.
         
         Return ONLY valid JSON:
-        {
+        {{
             "summary_md": "Standard bullet-point summary in markdown format with bullet points",
-            "actions": [{"text": "Action description", "owner": "Person or unknown", "due": "Date or unknown"}],
-            "decisions": [{"text": "Decision description"}],
-            "risks": [{"text": "Risk description", "mitigation": "Suggested mitigation or unknown"}]
-        }
+            "actions": [{{"text": "Action description", "owner": "Person or unknown", "due": "Date or unknown"}}],
+            "decisions": [{{"text": "Decision description"}}],
+            "risks": [{{"text": "Risk description", "mitigation": "Suggested mitigation or unknown"}}]
+        }}
         
         Meeting transcript:
         {transcript}
@@ -219,9 +266,9 @@ class AnalysisService:
         Focus on the main flow and outcome.
         
         Return ONLY valid JSON:
-        {
+        {{
             "brief_summary": "2-3 sentence narrative summary"
-        }
+        }}
         
         Meeting transcript:
         {transcript}
@@ -232,9 +279,9 @@ class AnalysisService:
         Focus on the most important outcomes in bullet format.
         
         Return ONLY valid JSON:
-        {
+        {{
             "brief_summary": "2-3 key bullet points summary"
-        }
+        }}
         
         Meeting transcript:
         {transcript}
@@ -246,22 +293,59 @@ class AnalysisService:
         Include all aspects: strategic, operational, technical, and actionable items.
         
         Return ONLY valid JSON:
-        {
+        {{
             "detailed_summary": "Comprehensive multi-section analysis in markdown format",
             "summary_md": "Overview paragraph",
             "brief_summary": "2-3 sentence executive summary",
-            "actions": [{"text": "Action item", "owner": "Person or unknown", "due": "Date or unknown", "priority": "high/medium/low", "category": "strategic/operational/technical"}],
-            "decisions": [{"text": "Decision made", "rationale": "Why this was decided", "impact": "Expected impact", "stakeholders": "Who is affected"}],
-            "risks": [{"text": "Risk identified", "mitigation": "Mitigation strategy", "severity": "high/medium/low", "timeline": "When this might occur"}],
-            "executive_insights": [{"insight": "Strategic insight", "impact": "Business impact", "timeline": "When this matters", "stakeholders": "Who should know"}],
-            "technical_details": [{"area": "Technical area", "details": "Specific details", "decisions": "Technical choices made", "next_steps": "What needs to happen"}],
-            "action_plan": [{"phase": "Implementation phase", "tasks": "What needs to be done", "owner": "Who leads this", "timeline": "When this happens"}]
-        }
+            "actions": [{{"text": "Action item", "owner": "Person or unknown", "due": "Date or unknown", "priority": "high/medium/low", "category": "strategic/operational/technical"}}],
+            "decisions": [{{"text": "Decision made", "rationale": "Why this was decided", "impact": "Expected impact", "stakeholders": "Who is affected"}}],
+            "risks": [{{"text": "Risk identified", "mitigation": "Mitigation strategy", "severity": "high/medium/low", "timeline": "When this might occur"}}],
+            "executive_insights": [{{"insight": "Strategic insight", "impact": "Business impact", "timeline": "When this matters", "stakeholders": "Who should know"}}],
+            "technical_details": [{{"area": "Technical area", "details": "Specific details", "decisions": "Technical choices made", "next_steps": "What needs to happen"}}],
+            "action_plan": [{{"phase": "Implementation phase", "tasks": "What needs to be done", "owner": "Who leads this", "timeline": "When this happens"}}]
+        }}
         
         Meeting transcript:
         {transcript}
         """
     }
+    
+    @classmethod
+    def validate_prompt_templates(cls) -> Dict[str, bool]:
+        """
+        Validate all prompt templates can be formatted correctly.
+        This should be called on service initialization to catch template errors early.
+        
+        Returns:
+            Dict mapping template keys to validation status (True = valid, False = invalid)
+        """
+        validation_results = {}
+        test_transcript = "This is a test meeting transcript to validate template formatting."
+        
+        for key, template in cls.PROMPT_TEMPLATES.items():
+            try:
+                # Test if template can be formatted with transcript placeholder
+                formatted = template.format(transcript=test_transcript)
+                validation_results[key] = True
+                logger.debug(f"✅ Template '{key}' validation passed")
+            except KeyError as e:
+                validation_results[key] = False
+                logger.error(f"❌ Template '{key}' validation failed: KeyError {e}")
+            except Exception as e:
+                validation_results[key] = False
+                logger.error(f"❌ Template '{key}' validation failed: {e}")
+        
+        # Log summary
+        total = len(validation_results)
+        valid = sum(validation_results.values())
+        if valid == total:
+            logger.info(f"✅ All {total} prompt templates validated successfully")
+        else:
+            invalid = total - valid
+            invalid_keys = [k for k, v in validation_results.items() if not v]
+            logger.error(f"❌ {invalid}/{total} prompt templates failed validation: {invalid_keys}")
+        
+        return validation_results
     
     @staticmethod
     def generate_summary(session_id: int, level: SummaryLevel = SummaryLevel.STANDARD, style: SummaryStyle = SummaryStyle.EXECUTIVE) -> Dict:
@@ -654,15 +738,46 @@ class AnalysisService:
             # Get expected keys for this level/style combination
             expected_keys = AnalysisService._get_expected_keys(level, style)
             
-            response = client.chat.completions.create(
-                model="gpt-4",  # Use proven model (gpt-5 may not exist)
-                messages=[
-                    {"role": "system", "content": "You are a professional meeting analyst. Respond with valid JSON only."},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.3  # Lower temperature for consistent structured output
+            # Use unified AI model manager with GPT-4.1 fallback chain
+            from services.ai_model_manager import AIModelManager
+            
+            def make_api_call(model: str):
+                """API call wrapper for model manager."""
+                return client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": "You are a professional meeting analyst. Respond with valid JSON only."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.2  # Lower temperature for consistency and reduced hallucination
+                )
+            
+            # Call with intelligent fallback and retry
+            result_obj = AIModelManager.call_with_fallback(
+                make_api_call,
+                operation_name="insights generation"
             )
+            
+            if not result_obj.success:
+                raise Exception(f"All AI models failed after {len(result_obj.attempts)} attempts")
+            
+            response = result_obj.response
+            
+            # Track degradation metadata for orchestrator
+            degradation_metadata = {}
+            if result_obj.degraded:
+                logger.warning(f"⚠️ Insights generation degraded: {result_obj.degradation_reason}")
+                degradation_metadata = {
+                    'model_degraded': True,
+                    'model_used': result_obj.model_used,
+                    'degradation_reason': result_obj.degradation_reason
+                }
+            else:
+                degradation_metadata = {
+                    'model_degraded': False,
+                    'model_used': result_obj.model_used
+                }
             
             result_text = response.choices[0].message.content
             if result_text is None:
@@ -756,6 +871,9 @@ class AnalysisService:
             if missing_keys:
                 logger.warning(f"Missing expected keys for {level.value} {style.value}: {missing_keys}")
                 # Don't fail for missing keys, just log the warning
+            
+            # Include degradation metadata in result
+            result['_metadata'] = degradation_metadata
             
             return result
             
@@ -1060,3 +1178,12 @@ Multiple action items were identified with clear ownership and timelines. Follow
         db.session.commit()
         
         return summary
+
+
+# Validate prompt templates at module import time to catch errors early
+try:
+    _validation_results = AnalysisService.validate_prompt_templates()
+    if not all(_validation_results.values()):
+        logger.warning("⚠️ Some prompt templates failed validation - check logs for details")
+except Exception as e:
+    logger.error(f"Failed to validate prompt templates at import: {e}")

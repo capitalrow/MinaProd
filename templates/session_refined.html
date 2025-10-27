@@ -567,8 +567,8 @@
         <span class="tab-button-icon">✅</span>
         <span class="tab-button-label">Tasks</span>
       </div>
-      {% if summary and summary.actions %}
-      <span class="tab-badge">{{ summary.actions|length }}</span>
+      {% if tasks and tasks|length > 0 %}
+      <span class="tab-badge">{{ tasks|length }}</span>
       {% endif %}
     </button>
     <button class="tab-button" data-tab="replay" role="tab" aria-selected="false" aria-controls="replay-tab">
@@ -759,23 +759,26 @@
     <div class="tab-panel">
       <h2 style="margin-bottom: var(--space-4); color: var(--color-primary);">Action Items</h2>
       
-      {# State 1: AI succeeded and found tasks #}
-      {% if session.post_transcription_status == 'success' and summary and summary.actions %}
+      {# State 1: Tasks found (Task model is single source of truth) #}
+      {% if tasks and tasks|length > 0 %}
       <div class="task-list">
-        {% for action in summary.actions %}
+        {% for task in tasks %}
         <div class="task-item">
-          <input type="checkbox" class="task-checkbox" data-task-id="{{ loop.index }}" aria-label="Mark task as complete">
+          <input type="checkbox" class="task-checkbox" 
+                 data-task-id="{{ task.id }}" 
+                 {% if task.status == 'done' %}checked{% endif %}
+                 aria-label="Mark task as complete">
           <div class="task-content">
-            <div class="task-text">{{ action.text }}</div>
+            <div class="task-text">{{ task.title }}</div>
             <div class="task-meta">
-              {% if action.owner %}
-              <span>👤 {{ action.owner }}</span>
+              {% if task.assigned_to %}
+              <span>👤 {{ task.assigned_to }}</span>
               {% endif %}
-              {% if action.due %}
-              <span>📅 {{ action.due }}</span>
+              {% if task.due_date %}
+              <span>📅 {{ task.due_date.strftime('%b %d') }}</span>
               {% endif %}
-              {% if action.priority %}
-              <span>⚡ {{ action.priority|capitalize }}</span>
+              {% if task.priority %}
+              <span>⚡ {{ task.priority|capitalize }}</span>
               {% endif %}
             </div>
           </div>
@@ -783,33 +786,23 @@
         {% endfor %}
       </div>
       
-      {# State 2: AI succeeded but found no tasks (this is normal, not an error) #}
-      {% elif session.post_transcription_status == 'success' %}
+      {# State 2: No tasks found (regardless of how we tried) #}
+      {% elif session.post_transcription_status == 'success' or session.post_transcription_status == 'failed' %}
       <div class="empty-state">
-        <div class="empty-state-icon">✅</div>
+        <div class="empty-state-icon">✓</div>
         <div class="empty-state-text">No action items found</div>
         <p style="margin-top: var(--space-2); color: var(--color-text-secondary); max-width: 500px; margin-left: auto; margin-right: auto; font-size: var(--font-size-sm);">
-          No explicit action items were mentioned in this meeting. If you discussed tasks, try stating them more clearly (e.g., "I need to..." or "Action: ...").
+          This was an informal discussion with no specific action items mentioned.
         </p>
       </div>
       
-      {# State 3: AI analysis failed (show error message) #}
-      {% elif session.post_transcription_status == 'failed' %}
-      <div class="empty-state">
-        <div class="empty-state-icon">⚠️</div>
-        <div class="empty-state-text">Insights temporarily unavailable</div>
-        <p style="margin-top: var(--space-2); color: var(--color-text-secondary); max-width: 500px; margin-left: auto; margin-right: auto; font-size: var(--font-size-sm);">
-          AI analysis encountered an error. Your transcript is safely stored and you can review it in the Transcript tab.
-        </p>
-      </div>
-      
-      {# State 4: Processing or no status yet #}
+      {# State 3: Processing #}
       {% else %}
       <div class="empty-state">
         <div class="empty-state-icon">⏳</div>
-        <div class="empty-state-text">Analyzing meeting...</div>
+        <div class="empty-state-text">Finding action items...</div>
         <p style="margin-top: var(--space-2); color: var(--color-text-secondary); max-width: 500px; margin-left: auto; margin-right: auto; font-size: var(--font-size-sm);">
-          AI is extracting action items from your meeting. This usually takes just a few seconds.
+          Extracting action items from your meeting. This usually takes just a few seconds.
         </p>
       </div>
       {% endif %}

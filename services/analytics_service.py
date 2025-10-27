@@ -569,23 +569,38 @@ class AnalyticsService:
         }
         
         try:
-            response = await self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": """Analyze this meeting data and provide insights and recommendations.
-                        Return a JSON object with:
+            # Use unified AI model manager with GPT-4.1 fallback (async version)
+            from services.ai_model_manager import AIModelManager
+            
+            async def make_api_call(model: str):
+                return await self.client.chat.completions.create(
+                    model=model,
+                    messages=[
                         {
-                          "insights": ["insight 1", "insight 2", ...],
-                          "recommendations": ["recommendation 1", "recommendation 2", ...]
-                        }"""
-                    },
-                    {"role": "user", "content": json.dumps(meeting_summary)}
-                ],
-                temperature=0.3,
-                max_tokens=500
+                            "role": "system",
+                            "content": """Analyze this meeting data and provide insights and recommendations.
+                            Return a JSON object with:
+                            {
+                              "insights": ["insight 1", "insight 2", ...],
+                              "recommendations": ["recommendation 1", "recommendation 2", ...]
+                            }"""
+                        },
+                        {"role": "user", "content": json.dumps(meeting_summary)}
+                    ],
+                    temperature=0.3,
+                    max_tokens=500
+                )
+            
+            # Use async version of AI model manager
+            result_obj = await AIModelManager.call_with_fallback_async(
+                make_api_call,
+                operation_name="analytics insights generation"
             )
+            
+            if not result_obj.success:
+                raise Exception(f"All AI models failed")
+            
+            response = result_obj.response
             
             result = json.loads(response.choices[0].message.content)
             analytics.insights_generated = result.get("insights", [])
