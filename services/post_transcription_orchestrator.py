@@ -685,37 +685,66 @@ class PostTranscriptionOrchestrator:
         from models.task import Task
         import re
         
-        # Simple task patterns to detect action items
+        # Comprehensive task patterns to detect action items
+        # Each pattern captures the task description in group 1
         task_patterns = [
-            r"(?:action item|task|todo|follow up|next step)s?[:\-\s]+(.+?)(?:\.|$)",
-            r"(?:I|we|you) (?:need to|should|must|will)\s+(.+?)(?:\.|$)",
+            # Explicit action markers
+            r"(?:action item|action|task|todo|to-do|to do|follow up|followup|next step)s?[:\-\s]+(.+?)(?:\.|$)",
+            
+            # Commitment patterns
+            r"(?:I|we|you|he|she|they)(?:'ll|\s+will|\s+need to|\s+should|\s+must|\s+have to|\s+got to|'ve got to)\s+(.+?)(?:\.|$)",
+            r"(?:I|we)'?(?:m| am|'re| are)\s+going to\s+(.+?)(?:\.|$)",
+            
+            # Suggestion to action
             r"let['\s]*s\s+(.+?)(?:\.|$)",
-            r"(?:assign|delegate)\s+(.+?)\s+to\s+(\w+)",
+            
+            # Assignment patterns
+            r"(?:assign|delegate|give)\s+(.+?)\s+to\s+\w+",
+            
+            # TODO variations
+            r"\[?(?:TODO|Action|Task|Reminder)\]?[:\-\s]+(.+?)(?:\.|$)",
+            
+            # Deadline and time-based (explicit temporal markers only)
+            r"(?:deadline|due(?:\s+by)?)\s+(.+?)(?:\.|$)",
+            
+            # Numbered action lists (e.g., "1. Review the document")
+            r"\d+[\.\)]\s+(?:review|update|send|create|finish|complete|prepare|schedule|contact|call|email|write|fix|implement|test|deploy|check)\s+(.+?)(?:\.|$)",
+            
+            # Reminders
+            r"(?:reminder|remember to|don't forget to)[:\-\s]*(.+?)(?:\.|$)",
         ]
         
         created_tasks = []
         seen_titles = set()  # Deduplicate
+        pattern_match_counts = {}  # Track which patterns are matching (diagnostic logging)
         
         # Extract tasks from transcript segments
         for seg_data in transcript_segments:
             text = seg_data['text']
             segment_id = seg_data['segment_id']
             
-            for pattern in task_patterns:
+            for idx, pattern in enumerate(task_patterns):
                 matches = re.finditer(pattern, text, re.IGNORECASE)
                 for match in matches:
                     task_text = match.group(1).strip()
                     
                     # Basic validation
                     if len(task_text) < 5 or len(task_text) > 200:
+                        logger.debug(f"[Pattern Matching] Skipped task (length {len(task_text)}): '{task_text[:50]}...'")
                         continue
                     
                     # Deduplication
                     task_title = task_text[:100]  # Limit title length
                     if task_title.lower() in seen_titles:
+                        logger.debug(f"[Pattern Matching] Skipped duplicate task: '{task_title[:50]}...'")
                         continue
                         
                     seen_titles.add(task_title.lower())
+                    
+                    # Track pattern match for diagnostics
+                    pattern_name = f"pattern_{idx}"
+                    pattern_match_counts[pattern_name] = pattern_match_counts.get(pattern_name, 0) + 1
+                    logger.debug(f"[Pattern Matching] Pattern {idx} matched: '{task_title[:50]}...' in segment {segment_id}")
                     
                     # Create task in database with segment linkage
                     try:
@@ -747,6 +776,11 @@ class PostTranscriptionOrchestrator:
             if created_tasks:
                 db.session.commit()
                 logger.info(f"Created {len(created_tasks)} pattern-extracted tasks with segment linkage")
+                # Log diagnostic information about pattern matching
+                if pattern_match_counts:
+                    logger.info(f"[Pattern Matching] Match distribution: {pattern_match_counts}")
+            else:
+                logger.info(f"[Pattern Matching] No tasks extracted from {len(transcript_segments)} segments")
         except Exception as e:
             db.session.rollback()
             logger.error(f"Failed to commit pattern-extracted tasks: {e}")

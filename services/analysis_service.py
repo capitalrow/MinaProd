@@ -38,10 +38,10 @@ class AnalysisService:
         Focus on strategic decisions, financial impact, and high-level outcomes only.
         
         Return ONLY valid JSON:
-        {
+        {{
             "brief_summary": "2-3 sentence executive summary",
-            "executive_insights": [{"insight": "Key strategic point", "impact": "Business impact"}]
-        }
+            "executive_insights": [{{"insight": "Key strategic point", "impact": "Business impact"}}]
+        }}
         
         Meeting transcript:
         {transcript}
@@ -84,20 +84,20 @@ class AnalysisService:
         → CORRECT response: action_plan = []
         
         Return ONLY valid JSON with evidence quotes:
-        {
+        {{
             "brief_summary": "2-3 sentence summary of what was discussed",
             "action_plan": [
-                {
+                {{
                     "action": "Exact task as stated", 
                     "evidence_quote": "REQUIRED: Exact quote from transcript showing this task was mentioned",
                     "owner": "Person mentioned or 'Not specified'", 
                     "priority": "high/medium/low if urgency mentioned",
                     "due": "Date mentioned or 'Not specified'"
-                }
+                }}
             ]
-        }
+        }}
         
-        If NO action items found, return: {"brief_summary": "This was a [casual conversation/test/discussion] with no specific action items mentioned.", "action_plan": []}
+        If NO action items found, return: {{"brief_summary": "This was a [casual conversation/test/discussion] with no specific action items mentioned.", "action_plan": []}}
         
         Meeting transcript:
         {transcript}
@@ -135,31 +135,31 @@ class AnalysisService:
         → CORRECT response: actions=[], decisions=[], risks=[]
         
         Return ONLY valid JSON with evidence quotes:
-        {
+        {{
             "summary_md": "Factual summary of what was discussed (2-3 paragraphs). State clearly if this was just a test/casual conversation.",
             "actions": [
-                {
+                {{
                     "text": "Exact action as stated", 
                     "evidence_quote": "REQUIRED: Quote from transcript",
                     "owner": "Person name or 'Not specified'", 
                     "due": "Exact date/time mentioned or 'Not specified'"
-                }
+                }}
             ],
             "decisions": [
-                {
+                {{
                     "text": "Exact decision as stated",
                     "evidence_quote": "REQUIRED: Quote from transcript",
                     "impact": "Impact mentioned or 'Not specified'"
-                }
+                }}
             ],
             "risks": [
-                {
+                {{
                     "text": "Exact risk/concern as stated",
                     "evidence_quote": "REQUIRED: Quote from transcript",
                     "mitigation": "Mitigation mentioned or 'Not specified'"
-                }
+                }}
             ]
-        }
+        }}
         
         Meeting transcript:
         {transcript}
@@ -170,13 +170,13 @@ class AnalysisService:
         Include technical decisions, architecture choices, and development tasks.
         
         Return ONLY valid JSON:
-        {
+        {{
             "summary_md": "Standard technical summary in markdown format",
-            "actions": [{"text": "Technical task", "owner": "Person or unknown", "due": "Date or unknown", "complexity": "high/medium/low"}],
-            "decisions": [{"text": "Technical decision", "rationale": "Why this was chosen"}],
-            "risks": [{"text": "Technical risk", "mitigation": "Technical solution"}],
-            "technical_details": [{"area": "Technology/Architecture", "details": "Technical specifics", "impact": "Development impact"}]
-        }
+            "actions": [{{"text": "Technical task", "owner": "Person or unknown", "due": "Date or unknown", "complexity": "high/medium/low"}}],
+            "decisions": [{{"text": "Technical decision", "rationale": "Why this was chosen"}}],
+            "risks": [{{"text": "Technical risk", "mitigation": "Technical solution"}}],
+            "technical_details": [{{"area": "Technology/Architecture", "details": "Technical specifics", "impact": "Development impact"}}]
+        }}
         
         Meeting transcript:
         {transcript}
@@ -187,12 +187,12 @@ class AnalysisService:
         Focus on the chronological flow of discussions and how decisions evolved.
         
         Return ONLY valid JSON:
-        {
+        {{
             "summary_md": "Standard narrative summary in markdown format",
-            "actions": [{"text": "Action description", "owner": "Person or unknown", "due": "Date or unknown"}],
-            "decisions": [{"text": "Decision description", "context": "How this decision came about"}],
-            "risks": [{"text": "Risk description", "mitigation": "Suggested mitigation or unknown"}]
-        }
+            "actions": [{{"text": "Action description", "owner": "Person or unknown", "due": "Date or unknown"}}],
+            "decisions": [{{"text": "Decision description", "context": "How this decision came about"}}],
+            "risks": [{{"text": "Risk description", "mitigation": "Suggested mitigation or unknown"}}]
+        }}
         
         Meeting transcript:
         {transcript}
@@ -203,12 +203,12 @@ class AnalysisService:
         Focus on organized, scannable information.
         
         Return ONLY valid JSON:
-        {
+        {{
             "summary_md": "Standard bullet-point summary in markdown format with bullet points",
-            "actions": [{"text": "Action description", "owner": "Person or unknown", "due": "Date or unknown"}],
-            "decisions": [{"text": "Decision description"}],
-            "risks": [{"text": "Risk description", "mitigation": "Suggested mitigation or unknown"}]
-        }
+            "actions": [{{"text": "Action description", "owner": "Person or unknown", "due": "Date or unknown"}}],
+            "decisions": [{{"text": "Decision description"}}],
+            "risks": [{{"text": "Risk description", "mitigation": "Suggested mitigation or unknown"}}]
+        }}
         
         Meeting transcript:
         {transcript}
@@ -219,9 +219,9 @@ class AnalysisService:
         Focus on the main flow and outcome.
         
         Return ONLY valid JSON:
-        {
+        {{
             "brief_summary": "2-3 sentence narrative summary"
-        }
+        }}
         
         Meeting transcript:
         {transcript}
@@ -232,9 +232,9 @@ class AnalysisService:
         Focus on the most important outcomes in bullet format.
         
         Return ONLY valid JSON:
-        {
+        {{
             "brief_summary": "2-3 key bullet points summary"
-        }
+        }}
         
         Meeting transcript:
         {transcript}
@@ -246,22 +246,59 @@ class AnalysisService:
         Include all aspects: strategic, operational, technical, and actionable items.
         
         Return ONLY valid JSON:
-        {
+        {{
             "detailed_summary": "Comprehensive multi-section analysis in markdown format",
             "summary_md": "Overview paragraph",
             "brief_summary": "2-3 sentence executive summary",
-            "actions": [{"text": "Action item", "owner": "Person or unknown", "due": "Date or unknown", "priority": "high/medium/low", "category": "strategic/operational/technical"}],
-            "decisions": [{"text": "Decision made", "rationale": "Why this was decided", "impact": "Expected impact", "stakeholders": "Who is affected"}],
-            "risks": [{"text": "Risk identified", "mitigation": "Mitigation strategy", "severity": "high/medium/low", "timeline": "When this might occur"}],
-            "executive_insights": [{"insight": "Strategic insight", "impact": "Business impact", "timeline": "When this matters", "stakeholders": "Who should know"}],
-            "technical_details": [{"area": "Technical area", "details": "Specific details", "decisions": "Technical choices made", "next_steps": "What needs to happen"}],
-            "action_plan": [{"phase": "Implementation phase", "tasks": "What needs to be done", "owner": "Who leads this", "timeline": "When this happens"}]
-        }
+            "actions": [{{"text": "Action item", "owner": "Person or unknown", "due": "Date or unknown", "priority": "high/medium/low", "category": "strategic/operational/technical"}}],
+            "decisions": [{{"text": "Decision made", "rationale": "Why this was decided", "impact": "Expected impact", "stakeholders": "Who is affected"}}],
+            "risks": [{{"text": "Risk identified", "mitigation": "Mitigation strategy", "severity": "high/medium/low", "timeline": "When this might occur"}}],
+            "executive_insights": [{{"insight": "Strategic insight", "impact": "Business impact", "timeline": "When this matters", "stakeholders": "Who should know"}}],
+            "technical_details": [{{"area": "Technical area", "details": "Specific details", "decisions": "Technical choices made", "next_steps": "What needs to happen"}}],
+            "action_plan": [{{"phase": "Implementation phase", "tasks": "What needs to be done", "owner": "Who leads this", "timeline": "When this happens"}}]
+        }}
         
         Meeting transcript:
         {transcript}
         """
     }
+    
+    @classmethod
+    def validate_prompt_templates(cls) -> Dict[str, bool]:
+        """
+        Validate all prompt templates can be formatted correctly.
+        This should be called on service initialization to catch template errors early.
+        
+        Returns:
+            Dict mapping template keys to validation status (True = valid, False = invalid)
+        """
+        validation_results = {}
+        test_transcript = "This is a test meeting transcript to validate template formatting."
+        
+        for key, template in cls.PROMPT_TEMPLATES.items():
+            try:
+                # Test if template can be formatted with transcript placeholder
+                formatted = template.format(transcript=test_transcript)
+                validation_results[key] = True
+                logger.debug(f"✅ Template '{key}' validation passed")
+            except KeyError as e:
+                validation_results[key] = False
+                logger.error(f"❌ Template '{key}' validation failed: KeyError {e}")
+            except Exception as e:
+                validation_results[key] = False
+                logger.error(f"❌ Template '{key}' validation failed: {e}")
+        
+        # Log summary
+        total = len(validation_results)
+        valid = sum(validation_results.values())
+        if valid == total:
+            logger.info(f"✅ All {total} prompt templates validated successfully")
+        else:
+            invalid = total - valid
+            invalid_keys = [k for k, v in validation_results.items() if not v]
+            logger.error(f"❌ {invalid}/{total} prompt templates failed validation: {invalid_keys}")
+        
+        return validation_results
     
     @staticmethod
     def generate_summary(session_id: int, level: SummaryLevel = SummaryLevel.STANDARD, style: SummaryStyle = SummaryStyle.EXECUTIVE) -> Dict:
@@ -1060,3 +1097,12 @@ Multiple action items were identified with clear ownership and timelines. Follow
         db.session.commit()
         
         return summary
+
+
+# Validate prompt templates at module import time to catch errors early
+try:
+    _validation_results = AnalysisService.validate_prompt_templates()
+    if not all(_validation_results.values()):
+        logger.warning("⚠️ Some prompt templates failed validation - check logs for details")
+except Exception as e:
+    logger.error(f"Failed to validate prompt templates at import: {e}")
