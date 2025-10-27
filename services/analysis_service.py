@@ -561,6 +561,7 @@ class AnalysisService:
     def _analyse_with_openai(context: str, level: SummaryLevel, style: SummaryStyle) -> Dict:
         """
         Analyse context using OpenAI GPT with specified level and style.
+        Implements exponential backoff retry (3 attempts: 0s, 2s, 5s).
         
         Args:
             context: Meeting transcript context
@@ -570,7 +571,66 @@ class AnalysisService:
         Returns:
             Analysis results dictionary
         """
+        import time
+        
+        # Retry configuration
+        MAX_RETRIES = 3
+        BACKOFF_DELAYS = [0, 2, 5]  # delay in seconds: attempt 0=0s, attempt 1=2s, attempt 2=5s
+        
+        last_error = None
+        
+        for attempt in range(MAX_RETRIES):
+            try:
+                if attempt > 0:
+                    delay = BACKOFF_DELAYS[attempt]  # Fixed: use attempt directly as index
+                    logger.info(f"[Retry {attempt}/{MAX_RETRIES-1}] Waiting {delay}s before retry...")
+                    time.sleep(delay)
+                    logger.info(f"[Retry {attempt}/{MAX_RETRIES-1}] Attempting OpenAI analysis again...")
+                
+                # Perform the actual OpenAI call
+                result = AnalysisService._perform_openai_analysis(context, level, style, attempt)
+                
+                # Success! Return immediately
+                if attempt > 0:
+                    logger.info(f"[Retry Success] Analysis succeeded on attempt {attempt + 1}")
+                return result
+                
+            except (json.JSONDecodeError, ValueError) as e:
+                last_error = e
+                logger.warning(f"[Attempt {attempt + 1}/{MAX_RETRIES}] Failed: {e}")
+                
+                # If this was the last attempt, raise
+                if attempt == MAX_RETRIES - 1:
+                    logger.error(f"[Retry Exhausted] All {MAX_RETRIES} attempts failed")
+                    raise ValueError(f"OpenAI analysis failed after {MAX_RETRIES} attempts: {e}") from e
+                
+                # Otherwise, continue to next retry
+                continue
+                
+            except Exception as e:
+                # For non-retryable errors (API key missing, etc), fail immediately
+                logger.error(f"Non-retryable error: {e}")
+                raise
+        
+        # Should never reach here, but just in case
+        raise ValueError(f"OpenAI analysis failed: {last_error}")
+    
+    @staticmethod
+    def _perform_openai_analysis(context: str, level: SummaryLevel, style: SummaryStyle, attempt: int = 0) -> Dict:
+        """
+        Perform a single OpenAI analysis attempt.
+        
+        Args:
+            context: Meeting transcript context
+            level: Summary detail level
+            style: Summary style type
+            attempt: Current retry attempt number (0-indexed)
+            
+        Returns:
+            Analysis results dictionary
+        """
         # Initialize variables before try block to avoid unbound errors
+        result_text = None
         client = None
         prompt = ""
         expected_keys: List[str] = []
@@ -608,11 +668,15 @@ class AnalysisService:
             if result_text is None:
                 raise ValueError("OpenAI returned empty response")
             
-            # Log the raw response for debugging
+            # Log the FULL raw response for debugging
             logger.debug(f"[OpenAI Raw Response] Length: {len(result_text)} chars")
-            logger.debug(f"[OpenAI Raw Response] First 500 chars: {result_text[:500]}")
+            logger.debug(f"[OpenAI Raw Response] FULL CONTENT:\n{result_text}")
             
-            result = json.loads(result_text)
+            # Robust JSON extraction: handle markdown, whitespace, extra text
+            cleaned_json = AnalysisService._extract_json_from_response(result_text)
+            logger.debug(f"[JSON Extraction] Cleaned JSON: {cleaned_json[:500]}...")
+            
+            result = json.loads(cleaned_json)
             
             # Log what the AI extracted (before validation)
             action_count_raw = len(result.get('actions', []))
@@ -696,56 +760,69 @@ class AnalysisService:
             return result
             
         except json.JSONDecodeError as e:
+            # Log detailed JSON parsing error
             result_text_snippet = result_text[max(0, e.pos-50):e.pos+50] if result_text else 'N/A'
-            logger.error(f"JSON parsing failed on first attempt: {e}")
+            logger.error(f"JSON parsing failed: {e}")
             logger.error(f"[OpenAI JSON Error] Failed to parse at position {e.pos}")
             logger.error(f"[OpenAI JSON Error] Problem text: {result_text_snippet}")
-            
-            # Retry with stricter prompt
-            try:
-                if client is None:
-                    raise ValueError("OpenAI client not initialized")
-                    
-                retry_prompt = f"The previous response was invalid JSON. Respond with VALID JSON ONLY in the exact format requested:\n\n{prompt}"
-                
-                logger.info("[OpenAI Retry] Attempting retry with stricter prompt...")
-                response = client.chat.completions.create(
-                    model="gpt-4",
-                    messages=[
-                        {"role": "system", "content": "Respond with valid JSON only. No additional text."},
-                        {"role": "user", "content": retry_prompt}
-                    ],
-                    response_format={"type": "json_object"},
-                    temperature=0.1  # Even more deterministic
-                )
-                
-                result_text = response.choices[0].message.content
-                if result_text is None:
-                    raise ValueError("OpenAI retry returned empty response")
-                
-                logger.debug(f"[OpenAI Retry Response] First 500 chars: {result_text[:500]}")
-                result = json.loads(result_text)
-                
-                logger.info("[OpenAI Retry] ✅ Retry successful!")
-                
-                # Validate expected keys for this level/style
-                missing_keys = [key for key in expected_keys if key not in result]
-                if missing_keys:
-                    logger.warning(f"Missing expected keys in retry for {level.value} {style.value}: {missing_keys}")
-                
-                return result
-                
-            except Exception as retry_e:
-                logger.error(f"OpenAI analysis retry failed: {retry_e}")
-                logger.error(f"[CRITICAL] OpenAI analysis failed - CANNOT GENERATE INSIGHTS WITHOUT VALID API RESPONSE")
-                # ZERO TOLERANCE: Raise exception instead of falling back to mock
-                raise ValueError(f"OpenAI analysis failed after retry: {retry_e}") from retry_e
+            # Re-raise to trigger retry at higher level
+            raise
             
         except Exception as e:
             logger.error(f"OpenAI analysis failed: {e}")
             logger.error(f"[CRITICAL] OpenAI analysis failed - CANNOT GENERATE INSIGHTS WITHOUT VALID API RESPONSE")
-            # ZERO TOLERANCE: Raise exception instead of falling back to mock
-            raise ValueError(f"OpenAI analysis failed: {e}") from e
+            # Re-raise to trigger retry or fail
+            raise
+    
+    @staticmethod
+    def _extract_json_from_response(response_text: str) -> str:
+        """
+        Extract clean JSON from OpenAI response, handling:
+        - Markdown code blocks (```json ... ```)
+        - Extra whitespace/newlines
+        - Text before/after JSON
+        
+        Args:
+            response_text: Raw response from OpenAI
+            
+        Returns:
+            Clean JSON string ready for parsing
+        """
+        if not response_text:
+            raise ValueError("Empty response text")
+        
+        # Remove leading/trailing whitespace
+        cleaned = response_text.strip()
+        
+        # Handle markdown code blocks (```json ... ``` or ``` ... ```)
+        if cleaned.startswith('```'):
+            # Extract content between code fences
+            lines = cleaned.split('\n')
+            # Skip first line (```json or ```)
+            start_idx = 1
+            # Find end fence
+            end_idx = len(lines)
+            for i in range(1, len(lines)):
+                if lines[i].strip() == '```':
+                    end_idx = i
+                    break
+            cleaned = '\n'.join(lines[start_idx:end_idx])
+        
+        # Strip again after removing code blocks
+        cleaned = cleaned.strip()
+        
+        # Find JSON object boundaries
+        # Look for first { and last }
+        start_brace = cleaned.find('{')
+        end_brace = cleaned.rfind('}')
+        
+        if start_brace == -1 or end_brace == -1:
+            raise ValueError(f"No JSON object found in response: {cleaned[:200]}")
+        
+        # Extract just the JSON object
+        json_str = cleaned[start_brace:end_brace+1]
+        
+        return json_str
     
     @staticmethod
     def _get_expected_keys(level: SummaryLevel, style: SummaryStyle) -> List[str]:
@@ -888,10 +965,10 @@ Multiple action items were identified with clear ownership and timelines. Follow
         ] if word_count > 50 else []
         
         # Validate mock actions against transcript (ZERO TOLERANCE for hallucination)
-        from services.text_matcher import validate_task_list
+        text_matcher_instance = TextMatcher()
         if mock_actions_candidates and context:
             logger.warning("[MOCK DATA] Validating mock actions against transcript...")
-            mock_actions = validate_task_list(mock_actions_candidates, context)
+            mock_actions = text_matcher_instance.validate_task_list(mock_actions_candidates, context)
             rejected = len(mock_actions_candidates) - len(mock_actions)
             if rejected > 0:
                 logger.warning(f"[MOCK DATA] ⚠️ Rejected {rejected} hallucinated mock tasks")
