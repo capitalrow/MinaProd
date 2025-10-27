@@ -632,9 +632,14 @@
         
         const meeting = meetingData.meeting || meetingData;
         
-        // Create meeting card HTML
+        // Create meeting card HTML (with session ID support for morph transitions)
+        const sessionId = meeting.session_id || meeting.external_id || null;
         const cardHTML = `
-            <div class="meeting-card new-card" onclick="window.location='{{ url_for('dashboard.meeting_detail', meeting_id='__ID__') }}'.replace('__ID__', '${meeting.id}')" style="animation: slideInFromTop 0.5s ease-out;">
+            <div class="meeting-card new-card" 
+                 data-meeting-id="${meeting.id}" 
+                 data-meeting-title="${escapeHtml(meeting.title || 'Untitled Meeting')}"
+                 ${sessionId ? `data-session-id="${sessionId}"` : ''}
+                 style="animation: slideInFromTop 0.5s ease-out;">
                 <div class="flex justify-between items-start">
                     <div class="flex-1">
                         <h3 class="meeting-title">${escapeHtml(meeting.title || 'Untitled Meeting')}</h3>
@@ -654,13 +659,20 @@
         // Insert at top of list
         meetingsListEl.insertAdjacentHTML('afterbegin', cardHTML);
         
-        // Remove new-card class after animation
-        setTimeout(() => {
-            const newCard = meetingsListEl.querySelector('.new-card');
-            if (newCard) {
+        // Get the newly inserted card and attach event listeners
+        const newCard = meetingsListEl.querySelector('.new-card');
+        if (newCard) {
+            // Attach click handler for morph transition
+            newCard.addEventListener('click', handleCardClick);
+            // Attach hover handler for prefetch
+            newCard.addEventListener('mouseenter', handleCardHover);
+            newCard.style.cursor = 'pointer';
+            
+            // Remove new-card class after animation
+            setTimeout(() => {
                 newCard.classList.remove('new-card');
-            }
-        }, 500);
+            }, 500);
+        }
     }
     
     /**
