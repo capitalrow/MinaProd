@@ -654,4 +654,382 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="/static/js/analytics.js" nonce="{{ g.csp_nonce }}"></script>
+
+<script nonce="{{ g.csp_nonce }}">
+/**
+ * Analytics Page - Real-time WebSocket Integration
+ * CROWN⁴ Event Handling for Live Analytics Updates
+ */
+
+(function() {
+    'use strict';
+    
+    // Get workspace ID from user context
+    const WORKSPACE_ID = {{ current_user.workspace_id }};
+    
+    // Cache KPI elements
+    const kpiElements = {
+        totalMeetings: document.querySelector('.kpi-card:nth-child(1) h3'),
+        totalHours: document.querySelector('.kpi-card:nth-child(2) h3'),
+        actionItems: document.querySelector('.kpi-card:nth-child(3) h3'),
+        avgDuration: document.querySelector('.kpi-card:nth-child(4) h3')
+    };
+    
+    // Store chart instances for updating
+    const chartInstances = {};
+    
+    /**
+     * Initialize WebSocket connection for analytics page
+     */
+    function initAnalyticsWebSocket() {
+        console.log('🚀 Initializing analytics WebSocket...');
+        
+        // Initialize WebSocket manager with analytics namespace
+        if (!window.wsManager) {
+            console.error('❌ WebSocket manager not found');
+            return;
+        }
+        
+        // Connect to analytics namespace
+        window.wsManager.connect('analytics');
+        
+        // Listen for analytics_refresh events
+        window.wsManager.on('analytics_refresh', handleAnalyticsRefresh);
+        
+        // Listen for session_update events (new meetings affect analytics)
+        window.wsManager.on('session_update:created', handleNewSession);
+        
+        console.log('📡 Analytics WebSocket listeners registered');
+    }
+    
+    /**
+     * Handle analytics refresh event
+     * @param {Object} data - Event data with updated analytics
+     */
+    function handleAnalyticsRefresh(data) {
+        console.log('📊 Analytics refresh event received:', data);
+        
+        const analyticsData = data.data || data;
+        
+        // Update KPIs with animation
+        if (analyticsData.kpis) {
+            updateKPIs(analyticsData.kpis);
+        }
+        
+        // Refresh charts if data provided
+        if (analyticsData.charts) {
+            refreshCharts(analyticsData.charts);
+        }
+        
+        // Show refresh indicator
+        showRefreshIndicator();
+    }
+    
+    /**
+     * Handle new session created event
+     * @param {Object} data - Event data with session info
+     */
+    function handleNewSession(data) {
+        console.log('📬 New session affects analytics:', data);
+        
+        // Increment total meetings KPI
+        const totalMeetingsEl = kpiElements.totalMeetings;
+        if (totalMeetingsEl) {
+            const currentValue = parseInt(totalMeetingsEl.textContent) || 0;
+            animateCounter(totalMeetingsEl, currentValue, currentValue + 1, 500);
+        }
+        
+        // Show subtle notification
+        showAnalyticsNotification('Analytics updated', 'New meeting data has been added');
+    }
+    
+    /**
+     * Update KPI values with animation
+     * @param {Object} kpis - KPI data object
+     */
+    function updateKPIs(kpis) {
+        // Total Meetings
+        if (kpis.total_meetings !== undefined && kpiElements.totalMeetings) {
+            const currentValue = parseInt(kpiElements.totalMeetings.textContent) || 0;
+            animateCounter(kpiElements.totalMeetings, currentValue, kpis.total_meetings, 500);
+            addShimmerEffect(kpiElements.totalMeetings.closest('.kpi-card'));
+        }
+        
+        // Total Hours
+        if (kpis.total_hours !== undefined && kpiElements.totalHours) {
+            const currentValue = parseFloat(kpiElements.totalHours.textContent) || 0;
+            animateCounter(kpiElements.totalHours, currentValue, kpis.total_hours, 500, true);
+            addShimmerEffect(kpiElements.totalHours.closest('.kpi-card'));
+        }
+        
+        // Action Items
+        if (kpis.action_items !== undefined && kpiElements.actionItems) {
+            const currentValue = parseInt(kpiElements.actionItems.textContent) || 0;
+            animateCounter(kpiElements.actionItems, currentValue, kpis.action_items, 500);
+            addShimmerEffect(kpiElements.actionItems.closest('.kpi-card'));
+        }
+        
+        // Average Duration
+        if (kpis.avg_duration !== undefined && kpiElements.avgDuration) {
+            const currentText = kpiElements.avgDuration.textContent;
+            kpiElements.avgDuration.textContent = kpis.avg_duration;
+            addShimmerEffect(kpiElements.avgDuration.closest('.kpi-card'));
+        }
+    }
+    
+    /**
+     * Refresh chart data
+     * @param {Object} chartsData - Chart data updates
+     */
+    function refreshCharts(chartsData) {
+        // This would integrate with the analytics.js chart instances
+        // For now, we'll trigger a page refresh if major changes
+        console.log('🔄 Chart data update:', chartsData);
+        
+        // Show visual feedback
+        document.querySelectorAll('.chart-card').forEach(card => {
+            addPulseEffect(card);
+        });
+        
+        // In a production implementation, you would update chart.js instances here
+        // Example: chartInstances.meetingsByDay.data = chartsData.meetingsByDay
+        //          chartInstances.meetingsByDay.update()
+    }
+    
+    /**
+     * Animate counter from current to new value
+     * @param {HTMLElement} element - Counter element
+     * @param {number} start - Start value
+     * @param {number} end - End value
+     * @param {number} duration - Animation duration in ms
+     * @param {boolean} isDecimal - Whether to show decimal places
+     */
+    function animateCounter(element, start, end, duration, isDecimal = false) {
+        const startTime = Date.now();
+        const difference = end - start;
+        
+        function update() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Easing function (ease-out cubic)
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = start + (difference * eased);
+            
+            if (isDecimal) {
+                element.textContent = current.toFixed(1);
+            } else {
+                element.textContent = Math.round(current);
+            }
+            
+            if (progress < 1) {
+                requestAnimationFrame(update);
+            }
+        }
+        
+        update();
+    }
+    
+    /**
+     * Add shimmer effect to element
+     * @param {HTMLElement} element - Element to shimmer
+     */
+    function addShimmerEffect(element) {
+        if (!element) return;
+        
+        element.classList.add('kpi-shimmer');
+        setTimeout(() => {
+            element.classList.remove('kpi-shimmer');
+        }, 1000);
+    }
+    
+    /**
+     * Add pulse effect to element
+     * @param {HTMLElement} element - Element to pulse
+     */
+    function addPulseEffect(element) {
+        if (!element) return;
+        
+        element.style.animation = 'chartPulse 0.5s ease-out';
+        setTimeout(() => {
+            element.style.animation = '';
+        }, 500);
+    }
+    
+    /**
+     * Show refresh indicator
+     */
+    function showRefreshIndicator() {
+        const indicator = document.createElement('div');
+        indicator.className = 'refresh-indicator';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 12px 20px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--backdrop-blur);
+            border: 1px solid var(--color-primary);
+            border-radius: var(--radius-xl);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
+            color: var(--color-primary);
+            font-weight: 600;
+            font-size: 14px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: slideInFromRight 0.3s ease-out;
+        `;
+        
+        indicator.innerHTML = `
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="animation: spin 1s linear infinite;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Analytics refreshing...
+        `;
+        
+        document.body.appendChild(indicator);
+        
+        // Auto-remove after 2 seconds
+        setTimeout(() => {
+            indicator.style.animation = 'slideOutToRight 0.3s ease-out';
+            setTimeout(() => indicator.remove(), 300);
+        }, 2000);
+    }
+    
+    /**
+     * Show analytics notification
+     * @param {string} title - Notification title
+     * @param {string} message - Notification message
+     */
+    function showAnalyticsNotification(title, message) {
+        const notification = document.createElement('div');
+        notification.className = 'analytics-notification';
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            max-width: 400px;
+            padding: 16px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--backdrop-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            animation: slideInFromRight 0.3s ease-out;
+        `;
+        
+        notification.innerHTML = `
+            <div style="display: flex; gap: 12px; align-items: start;">
+                <div style="flex-shrink: 0; width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <svg width="20" height="20" fill="white" viewBox="0 0 24 24">
+                        <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <div style="flex: 1;">
+                    <p style="font-weight: 600; margin-bottom: 4px; color: var(--color-text-primary);">${escapeHtml(title)}</p>
+                    <p style="font-size: 14px; color: var(--color-text-secondary);">${escapeHtml(message)}</p>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto-remove after 4 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOutToRight 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 4000);
+    }
+    
+    /**
+     * Escape HTML to prevent XSS
+     * @param {string} text - Text to escape
+     * @returns {string} Escaped text
+     */
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAnalyticsWebSocket);
+    } else {
+        initAnalyticsWebSocket();
+    }
+    
+    // Add CSS for animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInFromRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes slideOutToRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+        }
+        
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        @keyframes shimmer {
+            0% {
+                background-position: -200% center;
+            }
+            100% {
+                background-position: 200% center;
+            }
+        }
+        
+        @keyframes chartPulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.02);
+                box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+            }
+        }
+        
+        .kpi-shimmer::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1s ease-in-out;
+            pointer-events: none;
+        }
+    `;
+    document.head.appendChild(style);
+    
+})();
+</script>
 {% endblock %}
