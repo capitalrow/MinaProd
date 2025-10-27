@@ -206,26 +206,30 @@ Be concise, accurate, and actionable. Use null for missing information."""
                 messages=[
                     {
                         "role": "system",
-                        "content": """Extract ONLY genuine business action items from meeting transcripts.
+                        "content": """Extract ALL action items and tasks mentioned in meeting transcripts.
 
-CRITICAL FILTERING RULES:
-1. ONLY extract actual work commitments and deliverables
-2. REJECT meta-commentary about testing/verifying the system itself
-3. REJECT descriptions of what the speaker is doing right now (e.g., "I'm checking...", "Let me verify...")
-4. REJECT narration about the meeting/demo process (e.g., "I will go ahead and...", "taking from here...")
-5. ONLY include tasks that represent real business work to be done
+EXTRACTION PHILOSOPHY:
+- Be GENEROUS in extraction - capture all potential tasks mentioned
+- Include work tasks, personal tasks, and commitments
+- Extract even if phrased conversationally (e.g., "I need to...", "I'm going to...")
+- Quality filtering happens in the next pipeline stage
 
-VALID action items: "Send proposal to client", "Review Q4 budget", "Schedule team meeting"
-INVALID (reject these): "Check if task extraction works", "I need to verify the pipeline", "Making sure tabs are correct", "Testing the application"""
+EXAMPLES of what to extract:
+- Business: "Send proposal to client", "Review Q4 budget", "Schedule team meeting"
+- Personal: "Buy groceries", "Clean office", "Call dentist"  
+- Conversational: "I need to prepare the report", "We should follow up with John"
+- Commitments: "Get cash from ATM", "Book train ticket", "Define handover tasks"
+
+Extract everything that represents a task, action, or commitment - err on the side of inclusion."""
                     },
                     {
                         "role": "user",
-                        "content": f"""Extract genuine business action items from this meeting transcript. Ignore any meta-commentary about testing systems or verifying functionality.
+                        "content": f"""Extract ALL action items and tasks from this transcript. Be generous - include any task, commitment, or to-do item mentioned, whether business or personal.
 
 TRANSCRIPT:
 {transcript[:6000]}
 
-Return as JSON with ONLY real actionable tasks:
+Return as JSON array with ALL tasks found:
 {{"action_items": [{{"task": "text", "assignee": "person or null", "due_date": "date or null", "priority": "high/medium/low"}}]}}"""
                     }
                 ],
