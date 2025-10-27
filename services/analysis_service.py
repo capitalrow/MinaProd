@@ -691,15 +691,42 @@ class AnalysisService:
             # Get expected keys for this level/style combination
             expected_keys = AnalysisService._get_expected_keys(level, style)
             
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",  # Supports response_format, faster and cheaper than gpt-4
-                messages=[
-                    {"role": "system", "content": "You are a professional meeting analyst. Respond with valid JSON only."},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.3  # Lower temperature for consistent structured output
-            )
+            # Try models in order of preference with fallback
+            models_to_try = ["gpt-4o-mini", "gpt-3.5-turbo", "gpt-4o"]
+            last_error = None
+            response = None
+            
+            for model in models_to_try:
+                try:
+                    logger.info(f"Attempting OpenAI analysis with model: {model}")
+                    response = client.chat.completions.create(
+                        model=model,
+                        messages=[
+                            {"role": "system", "content": "You are a professional meeting analyst. Respond with valid JSON only."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        response_format={"type": "json_object"},
+                        temperature=0.3  # Lower temperature for consistent structured output
+                    )
+                    logger.info(f"✅ Successfully used model: {model}")
+                    break  # Success, exit the loop
+                except Exception as model_error:
+                    last_error = model_error
+                    error_msg = str(model_error)
+                    
+                    # Check if it's a permission/access error
+                    if "403" in error_msg or "model_not_found" in error_msg or "does not have access" in error_msg:
+                        logger.warning(f"Model {model} not accessible, trying next fallback: {error_msg}")
+                        continue  # Try next model
+                    else:
+                        # Different error type, re-raise
+                        logger.error(f"Non-permission error with model {model}: {error_msg}")
+                        raise
+            
+            # If we exhausted all models, raise the last error
+            if response is None:
+                logger.error(f"All models failed. Last error: {last_error}")
+                raise last_error
             
             result_text = response.choices[0].message.content
             if result_text is None:
