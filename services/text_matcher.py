@@ -75,15 +75,22 @@ class TextMatcher:
         evidence_quote = self._find_best_evidence(extracted_clean, transcript)
         quote_score = 40 if evidence_quote else 0
         
-        # Weighted confidence score
+        # Weighted confidence score (FIXED: More weight on fuzzy match)
+        # - Fuzzy match is primary signal (does similar text exist in transcript?)
+        # - Evidence quote is strong confirming signal
+        # - Keywords are just supporting signal
         confidence_score = (
-            fuzzy_score * 0.3 +      # 30% weight: fuzzy text similarity
-            keyword_score * 0.3 +     # 30% weight: keyword presence
-            quote_score * 0.4         # 40% weight: found evidence quote
+            fuzzy_score * 0.6 +      # 60% weight: fuzzy text similarity (PRIMARY)
+            quote_score * 0.3 +      # 30% weight: found evidence quote (STRONG)
+            keyword_score * 0.1      # 10% weight: keyword presence (SUPPORTING)
         )
         
-        # Validation threshold: 70/100
-        is_valid = confidence_score >= 70
+        # Validation threshold: 50/100 (FIXED: More realistic threshold)
+        # With new weighting:
+        # - Perfect fuzzy match (100) alone = 60 points
+        # - Good fuzzy (80) + evidence quote (40) = 48 + 12 = 60 points
+        # - Hallucination (fuzzy 20, no quote) = 12 points (REJECTED)
+        is_valid = confidence_score >= 50
         
         result = {
             'is_valid': is_valid,
@@ -165,20 +172,20 @@ class TextMatcher:
         # Count keywords in extracted text
         extracted_keywords = [kw for kw in keywords if kw in extracted]
         
-        # Count keywords in transcript near extracted content
-        transcript_keywords = [kw for kw in keywords if kw in transcript]
-        
         if not extracted_keywords:
-            return 0.0
+            # No action keywords in task - neutral score (not all tasks have keywords)
+            return 50.0
         
-        # Score based on keyword presence
-        # High score if keywords in extracted text also appear in transcript
+        # FIXED: Score based on percentage of EXTRACTED keywords found in transcript
+        # (Not percentage of entire keyword catalog)
         matching_keywords = [kw for kw in extracted_keywords if kw in transcript]
         
         if not matching_keywords:
+            # Extracted text has keywords but none appear in transcript - suspicious
             return 0.0
         
-        keyword_score = (len(matching_keywords) / len(keywords)) * 100
+        # Score = percentage of task's keywords that appear in transcript
+        keyword_score = (len(matching_keywords) / len(extracted_keywords)) * 100
         return min(keyword_score, 100.0)
     
     def _find_best_evidence(self, extracted: str, transcript: str) -> Optional[str]:
