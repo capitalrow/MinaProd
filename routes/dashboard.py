@@ -216,15 +216,13 @@ def meeting_detail(meeting_id):
     
     # Get meeting transcript segments (if available from session)
     from models import Session, Segment
-    session = None
+    session = meeting.session
     segments = []
     
-    if meeting.session_id:
-        session = db.session.query(Session).filter_by(external_id=meeting.session_id).first()
-        if session:
-            segments = db.session.query(Segment).filter_by(
-                session_id=session.id
-            ).order_by(Segment.start_ms.asc()).all()
+    if session:
+        segments = db.session.query(Segment).filter_by(
+            session_id=session.id
+        ).order_by(Segment.start_ms.asc()).all()
     
     # Get meeting tasks
     meeting_tasks = db.session.query(Task).filter_by(
@@ -233,9 +231,9 @@ def meeting_detail(meeting_id):
     
     # Get meeting markers
     meeting_markers = []
-    if meeting.session_id:
+    if session:
         meeting_markers = db.session.query(Marker).filter_by(
-            session_id=meeting.session_id
+            session_id=session.external_id
         ).order_by(Marker.timestamp.asc()).all()
     
     # Generate AI summary (placeholder - would be from actual AI service)
