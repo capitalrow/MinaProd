@@ -567,8 +567,8 @@
         <span class="tab-button-icon">✅</span>
         <span class="tab-button-label">Tasks</span>
       </div>
-      {% if summary and summary.actions %}
-      <span class="tab-badge">{{ summary.actions|length }}</span>
+      {% if tasks and tasks|length > 0 %}
+      <span class="tab-badge">{{ tasks|length }}</span>
       {% endif %}
     </button>
     <button class="tab-button" data-tab="replay" role="tab" aria-selected="false" aria-controls="replay-tab">

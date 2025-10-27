@@ -650,30 +650,84 @@ class PostTranscriptionOrchestrator:
                 
                 # Get the summary to access actions
                 from models.summary import Summary
+                from services.validation_engine import get_validation_engine
+                
                 summary = db.session.query(Summary).filter_by(session_id=session.id).first()
+                validation_engine = get_validation_engine()
+                
+                # Get transcript for validation
+                segments = db.session.query(Segment).filter_by(
+                    session_id=session.id,
+                    kind='final'
+                ).order_by(Segment.start_ms).all()
+                full_transcript = " ".join([seg.text for seg in segments if seg.text])
+                
+                rejected_count = 0
+                quality_scores = []
                 
                 if summary and summary.actions:
                     for idx, action in enumerate(summary.actions):
                         try:
+                            task_text = action.get('text', '').strip()
+                            evidence_quote = action.get('evidence_quote', '')
+                            
+                            # Validate task quality using scoring rubric
+                            quality_score = validation_engine.score_task_quality(
+                                task_text=task_text,
+                                evidence_quote=evidence_quote,
+                                transcript=full_transcript
+                            )
+                            
+                            quality_scores.append(quality_score.total_score)
+                            
+                            # Reject low-quality tasks
+                            if quality_score.total_score < validation_engine.MIN_TASK_SCORE:
+                                rejected_count += 1
+                                logger.info(
+                                    f"[Validation] Rejected low-quality task (score: {quality_score.total_score:.2f}): "
+                                    f"{task_text[:50]}... "
+                                    f"(verb:{quality_score.has_action_verb}, subject:{quality_score.has_subject}, "
+                                    f"length:{quality_score.appropriate_length}, evidence:{quality_score.has_evidence})"
+                                )
+                                continue  # Skip this task
+                            
+                            # Create task only if quality is acceptable
                             task = Task(
                                 session_id=session.id,
-                                title=action.get('text', '').strip()[:100],  # Limit title length
-                                description=f"AI-extracted action item",
+                                title=task_text[:100],  # Limit title length
+                                description=f"AI-extracted action item (quality score: {quality_score.total_score:.2f})",
                                 priority=action.get('priority', 'medium').lower(),
                                 status="todo",
                                 assigned_to=action.get('owner', '').strip() or None,
                                 extracted_by_ai=True,  # Mark as AI-extracted
-                                confidence_score=0.9,  # High confidence for AI extraction
+                                confidence_score=quality_score.total_score,  # Use quality score as confidence
                                 extraction_context={
                                     'source': 'ai_insights',
-                                    'original_action': action
+                                    'original_action': action,
+                                    'quality_score': quality_score.total_score,
+                                    'quality_breakdown': {
+                                        'has_action_verb': quality_score.has_action_verb,
+                                        'has_subject': quality_score.has_subject,
+                                        'appropriate_length': quality_score.appropriate_length,
+                                        'has_evidence': quality_score.has_evidence
+                                    }
                                 }
                             )
                             db.session.add(task)
                             tasks_created.append(task)
+                            logger.info(f"[Validation] Accepted task (score: {quality_score.total_score:.2f}): {task_text[:50]}...")
+                            
                         except Exception as e:
                             logger.warning(f"Failed to create AI-extracted task: {e}")
                             continue
+                    
+                    # Log validation summary
+                    if quality_scores:
+                        avg_score = sum(quality_scores) / len(quality_scores)
+                        logger.info(
+                            f"[Validation] Task quality summary: {len(tasks_created)} accepted, "
+                            f"{rejected_count} rejected, avg score: {avg_score:.2f}"
+                        )
                     
                     # Commit AI-extracted tasks
                     try:
