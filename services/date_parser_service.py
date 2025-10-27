@@ -226,6 +226,38 @@ class DateParserService:
                 interpretation=f"End of month ({result_date.strftime('%B %d')})"
             )
         
+        # Sprint references (assume 2-week sprints)
+        if 'next sprint' in text or 'sprint' in text:
+            result_date = today + timedelta(days=14)
+            return DateParseResult(
+                success=True,
+                date=result_date,
+                confidence=0.75,
+                original_text=text,
+                interpretation=f"Next sprint (~{result_date.strftime('%B %d')})"
+            )
+        
+        # Quarter references
+        quarter_match = re.search(r'(?:q|quarter)\s*([1-4])', text)
+        if quarter_match:
+            quarter = int(quarter_match.group(1))
+            # End of quarter: Q1=Mar 31, Q2=Jun 30, Q3=Sep 30, Q4=Dec 31
+            quarter_end_months = {1: 3, 2: 6, 3: 9, 4: 12}
+            quarter_end_month = quarter_end_months[quarter]
+            year = today.year
+            if quarter_end_month < today.month:
+                year += 1
+            result_date = date(year, quarter_end_month, 28)  # Approximate end
+            next_month = result_date.replace(day=28) + timedelta(days=4)
+            result_date = next_month - timedelta(days=next_month.day)
+            return DateParseResult(
+                success=True,
+                date=result_date,
+                confidence=0.75,
+                original_text=text,
+                interpretation=f"End of Q{quarter} ({result_date.strftime('%B %d, %Y')})"
+            )
+        
         return None
     
     def _parse_specific_date(self, text: str, today: date) -> Optional[DateParseResult]:
