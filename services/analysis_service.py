@@ -18,10 +18,13 @@ from models.session import Session
 from models.segment import Segment
 from models.summary import Summary, SummaryLevel, SummaryStyle
 from server.models.memory_store import MemoryStore
+from services.text_matcher import TextMatcher
+
 memory = MemoryStore()
 import inspect
 
 logger = logging.getLogger(__name__)
+text_matcher = TextMatcher()
 
 
 class AnalysisService:
@@ -47,29 +50,54 @@ class AnalysisService:
         "brief_action": """
         You are a strict meeting analyst. Extract ONLY explicitly stated action items from this transcript.
         
-        CRITICAL RULES - READ CAREFULLY:
-        - Only extract tasks that are clearly stated as commitments: "I need to...", "We should...", "Action: ...", "I'll...", "Let's..."
-        - If someone mentions an activity casually (e.g., "I'm going to check on my car" in passing), DO NOT extract it
-        - Return an EMPTY array if there are NO clear action items
-        - Do NOT infer, assume, or hallucinate tasks
-        - Do NOT extract general conversation as tasks
-        - Be conservative - when in doubt, don't extract it
+        CRITICAL RULES - YOU MUST FOLLOW THESE EXACTLY:
+        1. Only extract tasks that are EXPLICITLY STATED as commitments in the transcript
+        2. You MUST include the exact quote from the transcript for each task as evidence
+        3. If you cannot find a direct quote, DO NOT extract that task
+        4. Return an EMPTY array if there are NO clear action items
+        5. Do NOT infer, assume, create, or hallucinate tasks
+        6. Be extremely conservative - when in doubt, don't extract it
         
-        Return ONLY valid JSON:
-        {
-            "brief_summary": "2-3 sentence summary of what was discussed, or 'No action items were explicitly stated in this conversation' if none",
-            "action_plan": [{"action": "Exact task as stated in the transcript", "owner": "Person mentioned or 'Not specified'", "priority": "high/medium/low if urgency was mentioned", "due": "Specific date mentioned or 'Not specified'"}]
-        }
+        EXAMPLES OF WHAT TO EXTRACT (with evidence):
+        ✓ Transcript says: "I need to review the report by Friday"
+          Extract: {"action": "Review the report", "evidence_quote": "I need to review the report by Friday", ...}
         
-        EXAMPLES OF WHAT TO EXTRACT:
-        ✓ "I need to review the report by Friday"
-        ✓ "Let's schedule a follow-up meeting next week"
-        ✓ "Action item: update the database schema"
+        ✓ Transcript says: "Action item: Let's schedule a follow-up meeting"
+          Extract: {"action": "Schedule a follow-up meeting", "evidence_quote": "Let's schedule a follow-up meeting", ...}
         
         EXAMPLES OF WHAT NOT TO EXTRACT:
-        ✗ "I'm going to grab coffee" (casual, not a task)
-        ✗ "I might check on my car later" (maybe/casual)
-        ✗ "We could consider doing X" (just an idea, not committed)
+        ✗ Transcript says: "I'm testing the application"
+          DO NOT extract "Test the application" - this is describing current activity, not a future task
+        
+        ✗ Transcript says: "I will go check my car"
+          DO NOT extract - casual conversation, not a work task
+        
+        ✗ Transcript says: "We could consider improving performance"
+          DO NOT extract - just an idea, not a commitment
+        
+        ✗ Transcript says: "Testing the post-transcription pipeline"
+          DO NOT extract - describing what they're doing NOW, not a task for later
+        
+        REAL-WORLD NEGATIVE EXAMPLE (DO NOT EXTRACT FROM THIS):
+        "Testing the Lina application. I will go ahead and share the output from my screen recording, including the post-transcription pipeline with Chad GPT. It will help me refine how the pipeline will work after recording has stopped."
+        → This has NO action items. They're describing their current testing activity.
+        → CORRECT response: action_plan = []
+        
+        Return ONLY valid JSON with evidence quotes:
+        {
+            "brief_summary": "2-3 sentence summary of what was discussed",
+            "action_plan": [
+                {
+                    "action": "Exact task as stated", 
+                    "evidence_quote": "REQUIRED: Exact quote from transcript showing this task was mentioned",
+                    "owner": "Person mentioned or 'Not specified'", 
+                    "priority": "high/medium/low if urgency mentioned",
+                    "due": "Date mentioned or 'Not specified'"
+                }
+            ]
+        }
+        
+        If NO action items found, return: {"brief_summary": "This was a [casual conversation/test/discussion] with no specific action items mentioned.", "action_plan": []}
         
         Meeting transcript:
         {transcript}
@@ -79,34 +107,58 @@ class AnalysisService:
         "standard_executive": """
         You are a professional meeting analyst. Analyze this transcript and extract information STRICTLY as stated.
         
-        CRITICAL RULES:
-        - Only extract what is EXPLICITLY stated in the transcript
-        - Do NOT infer, assume, or hallucinate information
-        - Return EMPTY arrays [] if nothing was explicitly mentioned
-        - Be conservative and accurate - this is more important than being helpful
-        - Extract exact quotes when possible
+        CRITICAL RULES - FOLLOW EXACTLY:
+        1. Only extract what is EXPLICITLY stated in the transcript
+        2. You MUST provide evidence_quote from transcript for each extracted item
+        3. Do NOT infer, assume, create, or hallucinate information
+        4. Return EMPTY arrays [] if nothing was explicitly mentioned
+        5. Be extremely conservative - accuracy over completeness
         
-        For ACTIONS:
-        - Only extract clear commitments: "I need to...", "I'll...", "We should...", "Action: ..."
-        - Skip casual mentions: "I'm going to check on my car", "maybe I'll...", "I could..."
-        - Return [] if no clear action items
+        For ACTIONS - Include evidence_quote for each:
+        ✓ Extract: "I need to...", "I'll...", "Action: ...", "We should...", "Let's..."
+        ✗ Skip: Casual mentions ("I'm going to check my car"), maybes ("I could..."), current activities ("I'm testing...")
+        ✗ Return [] if no clear action items
         
-        For DECISIONS:
-        - Only extract explicit decisions: "We decided...", "The decision is...", "We're going with..."
-        - Skip opinions or ideas: "We could...", "maybe...", "I think..."
-        - Return [] if no decisions were made
+        For DECISIONS - Include evidence_quote for each:
+        ✓ Extract: "We decided...", "The decision is...", "We're going with...", "Approved..."
+        ✗ Skip: Opinions ("I think..."), ideas ("We could...", "maybe...")
+        ✗ Return [] if no decisions were made
         
-        For RISKS:
-        - Only extract explicitly mentioned concerns: "The risk is...", "I'm concerned about...", "This could be a problem..."
-        - Skip speculation
-        - Return [] if no risks mentioned
+        For RISKS - Include evidence_quote for each:
+        ✓ Extract: "The risk is...", "I'm concerned about...", "This could be a problem..."
+        ✗ Skip: General speculation
+        ✗ Return [] if no risks mentioned
         
-        Return ONLY valid JSON:
+        REAL-WORLD NEGATIVE EXAMPLE (DO NOT EXTRACT FROM THIS):
+        "Testing the Lina application. I will share the output including the post-transcription pipeline. It will help me refine how the pipeline works."
+        → This is someone describing their CURRENT testing activity
+        → CORRECT response: actions=[], decisions=[], risks=[]
+        
+        Return ONLY valid JSON with evidence quotes:
         {
-            "summary_md": "Neutral summary of what was discussed (2-3 paragraphs). If just casual conversation, say so.",
-            "actions": [{"text": "Exact action as stated", "owner": "Person name or 'Not specified'", "due": "Exact date/time mentioned or 'Not specified'"}],
-            "decisions": [{"text": "Exact decision as stated", "impact": "Impact mentioned or 'Not specified'"}],
-            "risks": [{"text": "Exact risk/concern as stated", "mitigation": "Mitigation mentioned or 'Not specified'"}]
+            "summary_md": "Factual summary of what was discussed (2-3 paragraphs). State clearly if this was just a test/casual conversation.",
+            "actions": [
+                {
+                    "text": "Exact action as stated", 
+                    "evidence_quote": "REQUIRED: Quote from transcript",
+                    "owner": "Person name or 'Not specified'", 
+                    "due": "Exact date/time mentioned or 'Not specified'"
+                }
+            ],
+            "decisions": [
+                {
+                    "text": "Exact decision as stated",
+                    "evidence_quote": "REQUIRED: Quote from transcript",
+                    "impact": "Impact mentioned or 'Not specified'"
+                }
+            ],
+            "risks": [
+                {
+                    "text": "Exact risk/concern as stated",
+                    "evidence_quote": "REQUIRED: Quote from transcript",
+                    "mitigation": "Mitigation mentioned or 'Not specified'"
+                }
+            ]
         }
         
         Meeting transcript:
@@ -552,16 +604,78 @@ class AnalysisService:
                 raise ValueError("OpenAI returned empty response")
             result = json.loads(result_text)
             
-            # Log what the AI extracted for debugging
+            # Log what the AI extracted (before validation)
+            action_count_raw = len(result.get('actions', []))
+            decision_count_raw = len(result.get('decisions', []))
+            risk_count_raw = len(result.get('risks', []))
+            logger.info(f"[AI Extraction RAW] Actions: {action_count_raw}, Decisions: {decision_count_raw}, Risks: {risk_count_raw}")
+            
+            if action_count_raw > 0:
+                logger.debug(f"[AI Extraction RAW] Actions before validation: {result.get('actions')}")
+            
+            # CRITICAL: Validate extracted actions against transcript to prevent hallucination
+            if result.get('actions'):
+                logger.info(f"[Validation] Validating {len(result['actions'])} extracted actions against transcript...")
+                validated_actions = text_matcher.validate_task_list(result['actions'], context)
+                
+                # Replace with validated actions only
+                original_count = len(result['actions'])
+                result['actions'] = validated_actions
+                validated_count = len(validated_actions)
+                
+                logger.info(f"[Validation] Actions: {validated_count}/{original_count} passed validation")
+                
+                if validated_count < original_count:
+                    rejected_count = original_count - validated_count
+                    logger.warning(f"[Validation] ⚠️ REJECTED {rejected_count} hallucinated tasks that had no evidence in transcript")
+            
+            # Validate decisions (if present)
+            if result.get('decisions'):
+                logger.info(f"[Validation] Validating {len(result['decisions'])} extracted decisions...")
+                validated_decisions = []
+                for decision in result['decisions']:
+                    decision_text = decision.get('text', '')
+                    if decision_text:
+                        validation = text_matcher.validate_extraction(decision_text, context, 'decision')
+                        if validation['is_valid']:
+                            decision['validation'] = {
+                                'confidence_score': validation['confidence_score'],
+                                'evidence_quote': validation['evidence_quote']
+                            }
+                            validated_decisions.append(decision)
+                        else:
+                            logger.warning(f"[Validation] ❌ Rejected decision: {decision_text[:60]}...")
+                
+                original_count = len(result['decisions'])
+                result['decisions'] = validated_decisions
+                logger.info(f"[Validation] Decisions: {len(validated_decisions)}/{original_count} passed validation")
+            
+            # Validate risks (if present)
+            if result.get('risks'):
+                logger.info(f"[Validation] Validating {len(result['risks'])} extracted risks...")
+                validated_risks = []
+                for risk in result['risks']:
+                    risk_text = risk.get('text', '')
+                    if risk_text:
+                        validation = text_matcher.validate_extraction(risk_text, context, 'risk')
+                        if validation['is_valid']:
+                            risk['validation'] = {
+                                'confidence_score': validation['confidence_score'],
+                                'evidence_quote': validation['evidence_quote']
+                            }
+                            validated_risks.append(risk)
+                        else:
+                            logger.warning(f"[Validation] ❌ Rejected risk: {risk_text[:60]}...")
+                
+                original_count = len(result['risks'])
+                result['risks'] = validated_risks
+                logger.info(f"[Validation] Risks: {len(validated_risks)}/{original_count} passed validation")
+            
+            # Log final validated counts
             action_count = len(result.get('actions', []))
             decision_count = len(result.get('decisions', []))
             risk_count = len(result.get('risks', []))
-            logger.info(f"[AI Extraction] Actions: {action_count}, Decisions: {decision_count}, Risks: {risk_count}")
-            
-            if action_count > 0:
-                logger.debug(f"[AI Extraction] Actions extracted: {result.get('actions')}")
-            else:
-                logger.info("[AI Extraction] No actions found (this is OK if none were explicitly stated)")
+            logger.info(f"[AI Extraction FINAL] Actions: {action_count}, Decisions: {decision_count}, Risks: {risk_count} (after validation)")
             
             # Validate required keys based on level/style
             missing_keys = [key for key in expected_keys if key not in result]
