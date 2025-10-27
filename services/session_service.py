@@ -91,12 +91,13 @@ class SessionService:
         return db.session.scalars(stmt).first()
     
     @staticmethod
-    def complete_session(session_id: int) -> bool:
+    def complete_session(session_id: int, create_meeting: bool = True) -> bool:
         """
-        Mark session as completed.
+        Mark session as completed and optionally create meeting.
         
         Args:
             session_id: Database session ID
+            create_meeting: Whether to create meeting from session (default True)
             
         Returns:
             True if session was updated, False if not found
@@ -105,6 +106,16 @@ class SessionService:
         if session:
             session.complete()
             db.session.commit()
+            
+            # Create meeting from session if requested
+            if create_meeting:
+                try:
+                    from services.meeting_lifecycle_service import MeetingLifecycleService
+                    result = MeetingLifecycleService.finalize_session_with_meeting(session_id)
+                    logger.info(f"Meeting creation result: {result}")
+                except Exception as e:
+                    logger.error(f"Failed to create meeting from session: {e}")
+            
             return True
         return False
     

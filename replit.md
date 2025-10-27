@@ -96,3 +96,52 @@ The application utilizes a layered architecture with Flask as the web framework 
 - Slack (for webhook integration)
 - Sentry (for error tracking)
 - BetterStack (for uptime monitoring)
+
+## Recent Changes
+
+### Phase 1.1: Data Pipeline Fix (October 27, 2025)
+
+**Problem Identified:**  
+Sessions were completing but not converting into Meeting records, causing dashboard to show 0 meetings despite 5+ completed transcription sessions existing in database.
+
+**Solution Implemented:**  
+Created `MeetingLifecycleService` that atomically converts completed Sessions into Meeting+Analytics+Task records:
+
+1. **New Service** (`services/meeting_lifecycle_service.py`):
+   - `create_meeting_from_session()`: Atomic conversion with proper error handling
+   - `finalize_session_with_meeting()`: Complete wrapper for session→meeting pipeline
+   - `get_meeting_statistics()`: Accurate statistics for dashboard display
+   - Default workspace assignment for sessions without workspace_id
+
+2. **Integration Points Updated:**
+   - `PostTranscriptionOrchestrator._finalize_session()`: Calls MeetingLifecycleService  
+   - `SessionService.complete_session()`: Optional meeting creation parameter
+   - `routes/sessions.py`: Finalization endpoint uses new service
+   - `routes/dashboard.py`: Statistics use new aggregation method
+
+3. **Data Flow:**
+   ```
+   Session (completed) → MeetingLifecycleService.create_meeting_from_session()
+   ├─→ Create Meeting record
+   ├─→ Create Analytics record
+   ├─→ Update Session.meeting_id (atomic link)
+   ├─→ Schedule background Task extraction
+   └─→ Emit WebSocket event (session_update:created)
+   ```
+
+**Test Results:**
+- ✅ Session 337 → Meeting 19 (verified in database)
+- ✅ Session 336 → Meeting 20 (verified in database)  
+- ✅ Default workspace (id=1) assigned when session.workspace_id is NULL
+- ✅ Architect review passed: atomic, error-handled, properly integrated
+
+**Impact:**
+- Fixes broken dashboard (meetings now visible)
+- Enables Meeting List page to show transcribed sessions
+- Populates Analytics with session data
+- Activates Task extraction for completed sessions
+
+**Next Steps (CROWN⁴ Implementation):**
+- Phase 2: Event Ledger + WebSocket synchronization (Days 4-8)
+- Phase 3: IndexedDB caching + reconciliation (Days 9-15)
+- Phase 4: Emotional UX + mobile gestures (Days 16-25)
