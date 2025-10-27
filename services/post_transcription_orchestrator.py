@@ -685,6 +685,10 @@ class PostTranscriptionOrchestrator:
             # Non-blocking event completion
             if event:
                 try:
+                    # Update payload with task count for event ledger
+                    event.payload = event.payload or {}
+                    event.payload['task_count'] = persisted_task_count
+                    event.payload['task_source'] = task_source
                     self.event_service.complete_event(event, result=result)
                 except Exception as log_error:
                     logger.warning(f"Event completion failed (non-blocking): {log_error}")
