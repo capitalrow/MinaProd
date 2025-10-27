@@ -430,6 +430,50 @@ class PostTranscriptionOrchestrator:
             logger.error(f"❌ Insights generation failed: {error_type}: {error_message}")
             logger.error(f"Traceback:\n{error_traceback}")
             
+            # Check if this is a permission/access error (all models inaccessible)
+            is_permission_error = (
+                "403" in error_message or 
+                "does not have access" in error_message or
+                "model_not_found" in error_message or
+                "PermissionDeniedError" in error_type
+            )
+            
+            # If all models are inaccessible, SKIP this stage gracefully (pattern matching will handle tasks)
+            if is_permission_error:
+                logger.warning("⚠️ AI models not accessible - skipping insights generation, pattern matching will extract tasks")
+                
+                # Mark event as SKIPPED (not failed)
+                if event:
+                    try:
+                        self.event_service.skip_event(event, "AI models not accessible - using pattern matching fallback")
+                    except:
+                        pass
+                
+                # Return empty result (not None) to indicate success with 0 results
+                result = {
+                    'summary_id': None,
+                    'has_actions': False,
+                    'has_decisions': False,
+                    'has_risks': False,
+                    'action_count': 0,
+                    'decision_count': 0,
+                    'risk_count': 0,
+                    'skipped': True,
+                    'skip_reason': 'ai_unavailable'
+                }
+                
+                # Emit completion (not failure) - AI unavailable is not a pipeline failure
+                socketio.emit('insights_generate', {
+                    'session_id': session.external_id,
+                    'status': 'skipped',
+                    'message': 'AI unavailable - using pattern matching',
+                    'timestamp': datetime.utcnow().isoformat()
+                })
+                
+                logger.info("✅ Insights stage skipped gracefully (AI unavailable)")
+                return result
+            
+            # For other errors (timeouts, parsing, etc), mark as failed
             # Classify error type for better user messaging
             if "timeout" in error_message.lower() or "timed out" in error_message.lower():
                 error_category = "timeout"
