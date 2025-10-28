@@ -133,11 +133,52 @@
     font-weight: var(--font-weight-semibold);
     margin-bottom: var(--space-2);
     color: var(--color-text-primary);
+    cursor: text;
+    border-radius: var(--radius-md);
+    padding: var(--space-1) var(--space-2);
+    margin: -2px -8px var(--space-2) -8px;
+    transition: all var(--transition-base);
+    position: relative;
+}
+
+.task-title:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.task-title:focus {
+    outline: none;
+    background: var(--color-surface);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.task-title.saving::after {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-left: 8px;
+    border: 2px solid var(--color-primary);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+.task-title.saved::after {
+    content: '✓';
+    display: inline-block;
+    margin-left: 8px;
+    color: var(--color-success);
+    font-weight: bold;
+    animation: fadeIn 0.3s ease-out;
 }
 
 .task-card.completed .task-title {
     text-decoration: line-through;
     color: var(--color-text-tertiary);
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 .task-meta {
@@ -292,7 +333,7 @@
             <div class="flex items-start gap-4">
                 <input type="checkbox" {% if task.completed %}checked{% endif %} class="task-checkbox" data-task-id="{{ task.id }}">
                 <div class="flex-1">
-                    <h3 class="task-title">{{ task.title or task.description }}</h3>
+                    <h3 class="task-title" contenteditable="true" data-original-title="{{ task.title or task.description }}">{{ task.title or task.description }}</h3>
                     <p class="task-meta">
                         <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -855,9 +896,13 @@
         const taskCard = document.querySelector(`[data-task-id="${task.id}"]`);
         
         if (taskCard) {
-            // Update task title
+            // Update task title (prefer title over description)
             const titleEl = taskCard.querySelector('.task-title');
-            if (titleEl) titleEl.textContent = task.description || 'Untitled Task';
+            if (titleEl) {
+                const newTitle = task.title || task.description || 'Untitled Task';
+                titleEl.textContent = newTitle;
+                titleEl.dataset.originalTitle = newTitle;
+            }
             
             // Update priority badge
             const priorityBadge = taskCard.querySelector('.priority-badge');
@@ -950,7 +995,7 @@
                 <div class="flex items-start gap-4">
                     <input type="checkbox" ${completed ? 'checked' : ''} class="task-checkbox" data-task-id="${task.id}">
                     <div class="flex-1">
-                        <h3 class="task-title">${escapeHtml(task.title || task.description || 'Untitled Task')}</h3>
+                        <h3 class="task-title" contenteditable="true" data-original-title="${escapeHtml(task.title || task.description || 'Untitled Task')}">${escapeHtml(task.title || task.description || 'Untitled Task')}</h3>
                         <p class="task-meta">
                             <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -1094,6 +1139,123 @@
                     showNotification('Update queued', 'Will sync when connection is restored');
                 }
             });
+        });
+        
+        // Attach inline editing listeners to task titles
+        attachInlineEditingListeners();
+    }
+    
+    /**
+     * Debounce utility function
+     * @param {Function} func - Function to debounce
+     * @param {number} wait - Milliseconds to wait
+     * @returns {Function} Debounced function
+     */
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    /**
+     * Attach inline editing listeners to task titles
+     */
+    function attachInlineEditingListeners() {
+        document.querySelectorAll('.task-title[contenteditable="true"]').forEach(titleEl => {
+            // Store original value on focus
+            titleEl.addEventListener('focus', function() {
+                this.dataset.originalTitle = this.textContent;
+            });
+            
+            // Handle Enter key to blur (save)
+            titleEl.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.blur();
+                }
+                // Handle Escape to cancel
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    this.textContent = this.dataset.originalTitle;
+                    this.blur();
+                }
+            });
+            
+            // Auto-save on blur with debounce
+            titleEl.addEventListener('blur', debounce(async function() {
+                const newTitle = this.textContent.trim();
+                const originalTitle = this.dataset.originalTitle;
+                
+                // Skip if unchanged or empty
+                if (!newTitle || newTitle === originalTitle) {
+                    if (!newTitle) {
+                        this.textContent = originalTitle;
+                    }
+                    return;
+                }
+                
+                const taskCard = this.closest('.task-card');
+                const taskId = taskCard.dataset.taskId;
+                
+                // Show saving indicator
+                this.classList.add('saving');
+                
+                try {
+                    const response = await fetch(`/api/tasks/${taskId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ 
+                            title: newTitle
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to update task title');
+                    }
+                    
+                    const result = await response.json();
+                    const updatedTask = result.task || result;
+                    
+                    // Update cache
+                    await tasksCache.saveTask(updatedTask);
+                    
+                    // Update original title
+                    this.dataset.originalTitle = newTitle;
+                    
+                    // Show saved indicator
+                    this.classList.remove('saving');
+                    this.classList.add('saved');
+                    
+                    setTimeout(() => {
+                        this.classList.remove('saved');
+                    }, 2000);
+                    
+                    console.log('✅ Task title updated:', taskId, newTitle);
+                    
+                } catch (error) {
+                    console.error('Failed to update task title:', error);
+                    
+                    // Rollback on error
+                    this.textContent = originalTitle;
+                    this.classList.remove('saving');
+                    
+                    // Queue for sync when back online
+                    await tasksCache.queueSync('update_task', {
+                        task_id: taskId,
+                        data: { title: newTitle }
+                    });
+                    
+                    showNotification('Update queued', 'Will sync when connection is restored');
+                }
+            }, 300));
         });
     }
     
