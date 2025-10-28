@@ -15,7 +15,7 @@
  */
 
 class WebSocketManager {
-    constructor() {
+    constructor(telemetry = null) {
         this.sockets = {};
         this.workspaceId = null;
         this.isConnected = false;
@@ -26,6 +26,7 @@ class WebSocketManager {
         this.eventHandlers = {};
         this.lastEventId = null;
         this.lastSequenceNum = {};
+        this.telemetry = telemetry; // CROWN⁴ telemetry for event propagation tracking
         
         // BroadcastChannel for cross-tab sync
         if ('BroadcastChannel' in window) {
@@ -221,6 +222,7 @@ class WebSocketManager {
      */
     handleSequencedEvent(eventName, data, namespace) {
         const { event_id, sequence_num, checksum, timestamp } = data;
+        const receivedTimestamp = Date.now();
         
         // Validate event sequencing
         if (sequence_num) {
@@ -232,9 +234,37 @@ class WebSocketManager {
                 return;
             }
             
+            // Detect sequence gaps (CROWN⁴ zero-desync requirement)
+            if (sequence_num > lastSeq + 1 && lastSeq > 0) {
+                const lag = sequence_num - lastSeq - 1;
+                console.warn(`⚠️ Sequence gap detected: expected ${lastSeq + 1}, got ${sequence_num} (gap: ${lag}) on /${namespace}`);
+                
+                // Track sequence lag in telemetry
+                if (this.telemetry) {
+                    this.telemetry.recordSequenceLag(lastSeq + 1, sequence_num);
+                }
+            }
+            
             // Update last sequence number for this namespace
             this.lastSequenceNum[namespace] = sequence_num;
             this.lastAppliedSequence = sequence_num;
+        }
+        
+        // Track event propagation latency (CROWN⁴ <300ms target)
+        if (this.telemetry && timestamp) {
+            // Normalize timestamp (could be ISO8601 string or milliseconds)
+            const sentTimestamp = typeof timestamp === 'number' ? timestamp : Date.parse(timestamp);
+            
+            // Only record if timestamp is valid
+            if (!isNaN(sentTimestamp)) {
+                this.telemetry.recordEventPropagation(
+                    event_id || `${eventName}_${sequence_num}`,
+                    sentTimestamp,
+                    receivedTimestamp
+                );
+            } else {
+                console.warn(`⚠️ Invalid timestamp for event ${eventName}, cannot track propagation`);
+            }
         }
         
         // Track last event ID for event replay
@@ -493,7 +523,8 @@ class WebSocketManager {
 }
 
 // Create global singleton instance
-window.wsManager = new WebSocketManager();
+// Telemetry will be injected by dashboard.js if available
+window.wsManager = new WebSocketManager(window.crownTelemetry || null);
 
 // Auto-cleanup on page unload
 window.addEventListener('beforeunload', () => {
