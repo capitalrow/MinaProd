@@ -478,101 +478,8 @@ prefetchController = new PrefetchController({
     cacheTimeout: 60000 // 1 minute
 });
 
-// Initialize cache and bootstrap dashboard - MUST wait for DOM
-async function bootstrapDashboardLegacy() {
-    const bootstrapStart = performance.now();
-    console.log('🚀 Dashboard bootstrap started (legacy)');
-    
-    try {
-        // Initialize IndexedDB cache
-        dashboardCache = new IndexedDBCache(WORKSPACE_ID);
-        await dashboardCache.init();
-        
-        // Get cached meetings
-        const cached = await dashboardCache.getCachedMeetings();
-        
-        if (cached.data && cached.data.length > 0) {
-            const cacheAge = cached.cached_at ? 
-                Math.round((new Date() - new Date(cached.cached_at)) / 1000) : 
-                'unknown';
-            
-            console.log(`📦 Cache hit: ${cached.count} meetings (age: ${cacheAge}s, checksum: ${cached.checksum?.substring(0, 8)}...)`);
-            
-            // Check if cache is stale (5 minutes)
-            const isStale = await dashboardCache.isCacheStale(300);
-            
-            if (!isStale) {
-                // Render cached meetings instantly (cache-first pattern)
-                renderCachedMeetings(cached.data);
-                console.log('✨ Instant render from cache (sub-200ms TTI)');
-            } else {
-                // Cache is stale - wait for background fetch to render
-                console.log('⚠️ Cache stale (age > 5min), waiting for validation...');
-            }
-        } else {
-            console.log('📭 Cache empty, first-time load');
-        }
-        
-        // Background fetch: Get fresh data and reconcile
-        fetch('/dashboard/api/meetings?format=json')
-            .then(res => res.json())
-            .then(async (freshData) => {
-                if (freshData.meetings && freshData.checksum) {
-                    const wasStale = await dashboardCache.isCacheStale(300);
-                    
-                    // Check for drift
-                    if (cached.checksum && cached.checksum !== freshData.checksum) {
-                        console.log('🔄 Cache drift detected, reconciling...');
-                        // Update cache with fresh data
-                        await dashboardCache.cacheMeetings(freshData.meetings, freshData.checksum);
-                        // Update local cached reference
-                        cached.checksum = freshData.checksum;
-                        cached.cached_at = new Date().toISOString();
-                        // Re-render UI with fresh data
-                        renderCachedMeetings(freshData.meetings);
-                        console.log('✅ Cache reconciled and UI updated');
-                    } else if (!cached.checksum) {
-                        // First-time cache population
-                        await dashboardCache.cacheMeetings(freshData.meetings, freshData.checksum);
-                        // Update local cached reference
-                        cached.checksum = freshData.checksum;
-                        cached.cached_at = new Date().toISOString();
-                        // Render fresh data (cold cache scenario)
-                        renderCachedMeetings(freshData.meetings);
-                        console.log('💾 Cache populated and UI rendered');
-                    } else if (wasStale) {
-                        // Cache was stale but checksum matches - refresh timestamp AND render
-                        await dashboardCache.cacheMeetings(freshData.meetings, freshData.checksum);
-                        // Update local cached reference
-                        cached.cached_at = new Date().toISOString();
-                        // Render validated data (stale cache scenario)
-                        renderCachedMeetings(freshData.meetings);
-                        console.log('✓ Cache refreshed and UI rendered (was stale but valid)');
-                    } else {
-                        console.log('✓ Cache valid and fresh, no action needed');
-                    }
-                }
-            })
-            .catch(err => {
-                console.warn('⚠️ Background fetch failed:', err);
-            });
-        
-        const bootstrapTime = Math.round(performance.now() - bootstrapStart);
-        console.log(`🎉 Dashboard bootstrap complete (${bootstrapTime}ms)`);
-        
-    } catch (error) {
-        console.error('❌ Cache bootstrap failed:', error);
-        // Graceful degradation: continue without cache
-    }
-}
-
-// Call legacy bootstrap after DOM ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bootstrapDashboardLegacy);
-} else {
-    // DOM already ready
-    bootstrapDashboardLegacy();
-}
+// REMOVED: Legacy bootstrap function - using initializeDashboard() instead
+// (This was causing duplicate initialization and race conditions)
 
 /**
  * Morph Transition Handlers - Defined globally FIRST
@@ -1605,25 +1512,7 @@ window.initMorphTransitions = function() {
         return div.innerHTML;
     }
     
-    // Initialize on DOM ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('📌 DOM ready, initializing dashboard...');
-            initDOMReferences(); // Initialize DOM references FIRST
-            await bootstrapDashboard();
-            initWebSocket();
-            startIdleSync();
-        });
-    } else {
-        // DOM already ready (script loaded late)
-        (async () => {
-            console.log('📌 DOM already ready, initializing dashboard...');
-            initDOMReferences(); // Initialize DOM references FIRST
-            await bootstrapDashboard();
-            initWebSocket();
-            startIdleSync();
-        })();
-    }
+    // REMOVED: Duplicate initialization - using initializeDashboard() below instead
     
     // Add CSS for new animations
     const style = document.createElement('style');
@@ -1776,6 +1665,9 @@ window.initMorphTransitions = function() {
     function initializeDashboard() {
         console.log('🌟 CROWN⁴ Dashboard Initialization Starting...');
         console.log('📋 Event Sequence: dashboard_bootstrap → session_prefetch → session_card_click');
+        
+        // Step 0: Initialize DOM references FIRST (prevent querySelector errors)
+        initDOMReferences();
         
         // Step 1: Bootstrap cache-first rendering
         bootstrapDashboard()
