@@ -486,6 +486,27 @@ window.handleCardHover = function(event) {
     
     console.log('🔮 Prefetching session:', sessionId);
     
+    // CROWN⁴ Event #6: Log session_prefetch event to EventLedger (non-blocking)
+    fetch('/dashboard/api/events/prefetch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            session_id: null,
+            external_session_id: sessionId,
+            meeting_id: card.dataset.meetingId
+        })
+    }).then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+    }).then(result => {
+        if (result) {
+            console.log(`🔮 Prefetch event logged (event_id=${result.event_id})`);
+        }
+    }).catch(err => {
+        console.warn('⚠️ Failed to log prefetch event:', err);
+    });
+    
     // Broadcast session_prefetch event
     try {
         if (window.wsManager) {
@@ -544,6 +565,27 @@ window.handleCardClick = function(event) {
     }
     
     console.log('🎬 Starting morph transition for session:', sessionId);
+    
+    // CROWN⁴ Event #7: Log session_card_click event (non-blocking)
+    fetch('/dashboard/api/events/card-click', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            session_id: null,
+            external_session_id: sessionId,
+            meeting_id: meetingId
+        })
+    }).then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+    }).then(result => {
+        if (result) {
+            console.log(`🖱️ Card click event logged (event_id=${result.event_id})`);
+        }
+    }).catch(err => {
+        console.warn('⚠️ Failed to log card click event:', err);
+    });
     
     // Create clone for animation
     const clone = card.cloneNode(true);

@@ -323,3 +323,64 @@
     {% endif %}
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+// CROWN⁴ Event #8: Track filter and search usage
+(function() {
+    const searchInput = document.querySelector('.filters-card input[type="search"]');
+    const timeSelect = document.querySelector('.filters-card select');
+    
+    // Debounce function to avoid logging too many events
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+    
+    // Log filter apply event
+    function logFilterEvent(filterType, filterValue) {
+        fetch('/dashboard/api/events/filter-apply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                filter_type: filterType,
+                filter_value: filterValue
+            })
+        }).then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+        }).then(result => {
+            if (result) {
+                console.log(`🔍 Filter event logged (event_id=${result.event_id}, type=${filterType})`);
+            }
+        }).catch(err => {
+            console.warn('⚠️ Failed to log filter event:', err);
+        });
+    }
+    
+    // Track search input (debounced to avoid spam)
+    if (searchInput) {
+        const debouncedSearch = debounce((value) => {
+            if (value.length > 0) {
+                logFilterEvent('search', value);
+            }
+        }, 500); // Wait 500ms after user stops typing
+        
+        searchInput.addEventListener('input', (e) => {
+            debouncedSearch(e.target.value);
+        });
+    }
+    
+    // Track time filter selection
+    if (timeSelect) {
+        timeSelect.addEventListener('change', (e) => {
+            logFilterEvent('time', e.target.value);
+        });
+    }
+})();
+</script>
+{% endblock %}
