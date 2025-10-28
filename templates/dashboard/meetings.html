@@ -370,7 +370,7 @@
         {% if meetings %}
         <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-4);">
             {% for meeting in meetings %}
-            <div class="meeting-card" data-meeting-id="{{ meeting.id }}" onclick="window.location='{{ url_for('dashboard.meeting_detail', meeting_id=meeting.id) }}'">
+            <div class="meeting-card" data-meeting-id="{{ meeting.id }}" onclick="window.location='{{ url_for('sessions.get_session_detail', session_identifier=meeting.id) }}'">
                 <div class="flex justify-between items-start gap-4">
                     <div class="flex gap-4 flex-1">
                         <div class="meeting-icon">
@@ -468,6 +468,7 @@
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/toast-notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/broadcast-sync.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ui-event-tracker.js') }}"></script>
 <script>
 // CROWN⁴ Phase 4 & 5: Archive + Error Handling
 let archivedMeetings = [];
@@ -689,7 +690,7 @@ function createArchivedMeetingCard(meeting, index) {
     
     card.innerHTML = `
         <div class="flex justify-between items-start gap-4">
-            <div class="flex gap-4 flex-1" onclick="window.location='/dashboard/meetings/${meeting.id}'">
+            <div class="flex gap-4 flex-1" onclick="window.location='/sessions/${meeting.id}'">
                 <div class="meeting-icon">
                     <svg width="28" height="28" fill="white" viewBox="0 0 24 24">
                         <path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
@@ -776,57 +777,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 
-// CROWN⁴ Event #3: Track filter and search usage
-(function() {
-    const searchInput = document.getElementById('search-input');
-    const timeSelect = document.getElementById('time-filter');
-    
-    function debounce(func, wait) {
-        let timeout;
-        return function(...args) {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), wait);
-        };
-    }
-    
-    function logFilterEvent(filterType, filterValue) {
-        fetch('/dashboard/api/events/filter-apply', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                filter_type: filterType,
-                filter_value: filterValue
-            })
-        }).then(response => {
-            if (response.ok) {
-                return response.json();
-            }
-        }).then(result => {
-            if (result) {
-                console.log(`🔍 Filter event logged (event_id=${result.event_id}, type=${filterType})`);
-            }
-        }).catch(err => {
-            console.warn('⚠️ Failed to log filter event:', err);
-        });
-    }
-    
-    if (searchInput) {
-        const debouncedSearch = debounce((value) => {
-            if (value.length > 0) {
-                logFilterEvent('search', value);
-            }
-        }, 500);
-        
-        searchInput.addEventListener('input', (e) => {
-            debouncedSearch(e.target.value);
-        });
-    }
-    
-    if (timeSelect) {
-        timeSelect.addEventListener('change', (e) => {
-            logFilterEvent('time', e.target.value);
-        });
-    }
-})();
+// CROWN⁴ Event tracking now handled by ui-event-tracker.js
+// Includes: search debouncing (1s), filter tracking, tab switches, event batching
 </script>
 {% endblock %}
