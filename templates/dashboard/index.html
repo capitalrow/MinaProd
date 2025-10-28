@@ -570,11 +570,14 @@ window.handleCardHover = function(event) {
 
 window.handleCardClick = function(event) {
     event.preventDefault();
+    event.stopPropagation();
     
     const card = event.currentTarget;
     const meetingId = card.dataset.meetingId;
     const meetingTitle = card.dataset.meetingTitle;
     const sessionId = card.dataset.sessionId;
+    
+    console.log('🖱️ Card clicked:', { meetingId, sessionId, meetingTitle });
     
     // If no session ID, show friendly message and skip
     if (!sessionId) {
@@ -584,6 +587,13 @@ window.handleCardClick = function(event) {
         if (window.showToast) {
             window.showToast('This meeting is still being processed. Please try again in a moment.', 'info');
         }
+        return;
+    }
+    
+    // CRITICAL: Navigate immediately if GSAP not available (fallback)
+    if (typeof gsap === 'undefined') {
+        console.log('🔄 GSAP not available, navigating directly');
+        window.location.href = `/sessions/${sessionId}/refined`;
         return;
     }
     
@@ -730,27 +740,32 @@ window.handleCardClick = function(event) {
     const targetLeft = (window.innerWidth - targetWidth) / 2;
     const targetTop = 64;
     
-    // Cinematic morph animation
-    const timeline = gsap.timeline({
-        onComplete: () => {
-            window.location.href = `/sessions/${sessionId}/refined`;
-        }
-    });
-    
-    timeline
-        .to(clone, {
-            top: targetTop,
-            left: targetLeft,
-            width: targetWidth,
-            height: targetHeight,
-            borderRadius: '24px',
-            duration: 0.6,
-            ease: 'power3.inOut'
-        })
-        .to(clone, {
-            opacity: 0,
-            duration: 0.2
-        }, '-=0.1');
+    // Cinematic morph animation with error handling
+    try {
+        const timeline = gsap.timeline({
+            onComplete: () => {
+                window.location.href = `/sessions/${sessionId}/refined`;
+            }
+        });
+        
+        timeline
+            .to(clone, {
+                top: targetTop,
+                left: targetLeft,
+                width: targetWidth,
+                height: targetHeight,
+                borderRadius: '24px',
+                duration: 0.6,
+                ease: 'power3.inOut'
+            })
+            .to(clone, {
+                opacity: 0,
+                duration: 0.2
+            }, '-=0.1');
+    } catch (animError) {
+        console.warn('⚠️ Animation failed, navigating directly:', animError);
+        window.location.href = `/sessions/${sessionId}/refined`;
+    }
     
     // Store transition data
     try {
@@ -1385,26 +1400,30 @@ window.initMorphTransitions = function() {
         }
         
         // Get the newly inserted card for additional styling
-        const newCard = meetingsListEl.querySelector('.new-card');
-        if (newCard) {
-            // Apply pulse glow animation to the entire card
-            newCard.style.animation += ', pulseGlow 2s ease-in-out 2';
-            
-            // Remove new badge after 5 seconds
-            setTimeout(() => {
-                const newBadge = newCard.querySelector('.badge-success');
-                if (newBadge) {
-                    newBadge.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                    newBadge.style.opacity = '0';
-                    newBadge.style.transform = 'scale(0.8)';
-                    setTimeout(() => newBadge.remove(), 300);
-                }
-            }, 5000);
-            
-            // Remove new-card class after animation
-            setTimeout(() => {
-                newCard.classList.remove('new-card');
-            }, 600);
+        try {
+            const newCard = meetingsListEl.querySelector('.new-card');
+            if (newCard) {
+                // Apply pulse glow animation to the entire card
+                newCard.style.animation += ', pulseGlow 2s ease-in-out 2';
+                
+                // Remove new badge after 5 seconds
+                setTimeout(() => {
+                    const newBadge = newCard.querySelector('.badge-success');
+                    if (newBadge) {
+                        newBadge.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        newBadge.style.opacity = '0';
+                        newBadge.style.transform = 'scale(0.8)';
+                        setTimeout(() => newBadge.remove(), 300);
+                    }
+                }, 5000);
+                
+                // Remove new-card class after animation
+                setTimeout(() => {
+                    newCard.classList.remove('new-card');
+                }, 600);
+            }
+        } catch (error) {
+            console.warn('⚠️ Failed to style new card:', error);
         }
     }
     
@@ -1412,14 +1431,18 @@ window.initMorphTransitions = function() {
      * Create meetings list if it doesn't exist
      */
     function createMeetingsList() {
-        const container = document.querySelector('.dashboard-container');
-        const sectionHeader = document.querySelector('.section-header');
-        
-        if (sectionHeader && !meetingsListEl) {
-            const listHTML = '<div class="meetings-list"></div>';
-            sectionHeader.insertAdjacentHTML('afterend', listHTML);
-            // Update reference
-            meetingsListEl = document.querySelector('.meetings-list');
+        try {
+            const container = document.querySelector('.dashboard-container');
+            const sectionHeader = document.querySelector('.section-header');
+            
+            if (sectionHeader && !meetingsListEl) {
+                const listHTML = '<div class="meetings-list"></div>';
+                sectionHeader.insertAdjacentHTML('afterend', listHTML);
+                // Update reference
+                meetingsListEl = document.querySelector('.meetings-list');
+            }
+        } catch (error) {
+            console.warn('⚠️ Failed to create meetings list:', error);
         }
     }
     
