@@ -22,7 +22,7 @@ window.IndexedDBCache = class IndexedDBCache {
     constructor(workspaceId) {
         this.workspaceId = workspaceId;
         this.dbName = `mina_cache_${workspaceId}`;
-        this.version = 1;
+        this.version = 2;
         this.db = null;
         
         // Store names
@@ -31,7 +31,8 @@ window.IndexedDBCache = class IndexedDBCache {
             ANALYTICS: 'analytics',
             TASKS: 'tasks',
             SESSIONS: 'sessions',
-            METADATA: 'metadata'
+            METADATA: 'metadata',
+            OFFLINE_QUEUE: 'offline_queue'
         };
     }
     
@@ -103,6 +104,18 @@ window.IndexedDBCache = class IndexedDBCache {
                         keyPath: 'key' 
                     });
                     console.log('🏷️  Created metadata store');
+                }
+                
+                // Create offline queue store (pending mutations when offline)
+                if (!db.objectStoreNames.contains(this.STORES.OFFLINE_QUEUE)) {
+                    const queueStore = db.createObjectStore(this.STORES.OFFLINE_QUEUE, { 
+                        keyPath: 'id',
+                        autoIncrement: true
+                    });
+                    queueStore.createIndex('timestamp', 'timestamp', { unique: false });
+                    queueStore.createIndex('event_type', 'event_type', { unique: false });
+                    queueStore.createIndex('status', 'status', { unique: false });
+                    console.log('📮 Created offline queue store');
                 }
                 
                 console.log('🎉 IndexedDB schema upgrade complete');
@@ -402,12 +415,13 @@ window.IndexedDBCache = class IndexedDBCache {
      * Get cache statistics
      */
     async getStats() {
-        const [meetings, analytics, tasks, sessions, metadata] = await Promise.all([
+        const [meetings, analytics, tasks, sessions, metadata, offlineQueue] = await Promise.all([
             this.getAll(this.STORES.MEETINGS),
             this.getAll(this.STORES.ANALYTICS),
             this.getAll(this.STORES.TASKS),
             this.getAll(this.STORES.SESSIONS),
-            this.getAll(this.STORES.METADATA)
+            this.getAll(this.STORES.METADATA),
+            this.getAll(this.STORES.OFFLINE_QUEUE)
         ]);
         
         return {
@@ -416,8 +430,112 @@ window.IndexedDBCache = class IndexedDBCache {
             tasks: tasks.length,
             sessions: sessions.length,
             metadata: metadata.length,
-            total: meetings.length + analytics.length + tasks.length + sessions.length + metadata.length
+            offline_queue: offlineQueue.length,
+            total: meetings.length + analytics.length + tasks.length + sessions.length + metadata.length + offlineQueue.length
         };
+    }
+    
+    /**
+     * CROWN⁴ Offline Queue Methods
+     */
+    
+    /**
+     * Enqueue a mutation for offline replay
+     * @param {string} eventType - Event type (e.g., 'task_update', 'session_archive')
+     * @param {object} payload - Event payload/data
+     * @param {object} metadata - Additional metadata (url, method, etc.)
+     */
+    async enqueueOfflineMutation(eventType, payload, metadata = {}) {
+        const mutation = {
+            event_type: eventType,
+            payload: payload,
+            metadata: metadata,
+            timestamp: new Date().toISOString(),
+            status: 'pending',
+            retry_count: 0,
+            max_retries: 3
+        };
+        
+        const id = await this.put(this.STORES.OFFLINE_QUEUE, mutation);
+        console.log(`📮 Queued offline mutation: ${eventType} (id=${id})`);
+        return id;
+    }
+    
+    /**
+     * Get all pending offline mutations
+     */
+    async getPendingMutations() {
+        return await this.queryByIndex(this.STORES.OFFLINE_QUEUE, 'status', 'pending');
+    }
+    
+    /**
+     * Mark mutation as completed
+     */
+    async completeMutation(mutationId) {
+        const mutation = await this.get(this.STORES.OFFLINE_QUEUE, mutationId);
+        if (mutation) {
+            mutation.status = 'completed';
+            mutation.completed_at = new Date().toISOString();
+            await this.put(this.STORES.OFFLINE_QUEUE, mutation);
+            console.log(`✅ Mutation completed: ${mutationId}`);
+        }
+    }
+    
+    /**
+     * Mark mutation as failed
+     */
+    async failMutation(mutationId, error) {
+        const mutation = await this.get(this.STORES.OFFLINE_QUEUE, mutationId);
+        if (mutation) {
+            mutation.retry_count = (mutation.retry_count || 0) + 1;
+            
+            if (mutation.retry_count >= mutation.max_retries) {
+                mutation.status = 'failed';
+                mutation.error = error;
+                mutation.failed_at = new Date().toISOString();
+                console.error(`❌ Mutation failed permanently: ${mutationId}`, error);
+            } else {
+                mutation.status = 'pending';
+                mutation.last_error = error;
+                console.warn(`⚠️  Mutation retry ${mutation.retry_count}/${mutation.max_retries}: ${mutationId}`);
+            }
+            
+            await this.put(this.STORES.OFFLINE_QUEUE, mutation);
+        }
+    }
+    
+    /**
+     * Clear completed mutations (cleanup)
+     */
+    async clearCompletedMutations() {
+        if (!this.db) await this.init();
+        
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([this.STORES.OFFLINE_QUEUE], 'readwrite');
+            const store = transaction.objectStore(this.STORES.OFFLINE_QUEUE);
+            const index = store.index('status');
+            const request = index.openCursor(IDBKeyRange.only('completed'));
+            
+            let deleteCount = 0;
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    cursor.delete();
+                    deleteCount++;
+                    cursor.continue();
+                }
+            };
+            
+            transaction.oncomplete = () => {
+                console.log(`🧹 Cleared ${deleteCount} completed mutations`);
+                resolve(deleteCount);
+            };
+            
+            transaction.onerror = () => {
+                console.error('❌ Failed to clear completed mutations:', transaction.error);
+                reject(transaction.error);
+            };
+        });
     }
     
     /**

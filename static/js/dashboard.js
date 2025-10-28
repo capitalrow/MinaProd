@@ -8,14 +8,89 @@ class MinaDashboard {
         this.apiBase = '/api';
         this.refreshInterval = 30000; // 30 seconds
         this.refreshTimers = new Map();
+        this.cache = null;
+        this.workspaceId = typeof WORKSPACE_ID !== 'undefined' ? WORKSPACE_ID : 1;
+        this.performanceMetrics = {
+            bootstrapStart: null,
+            cacheHydrationTime: null,
+            networkFetchTime: null,
+            totalBootstrapTime: null
+        };
         this.init();
     }
 
-    init() {
-        console.log('[Dashboard] Initializing Mina Dashboard');
-        this.loadDashboardData();
+    async init() {
+        console.log('[Dashboard] Initializing Mina Dashboard (CROWN⁴ Cache-First)');
+        this.performanceMetrics.bootstrapStart = performance.now();
+        
+        // Initialize IndexedDB cache
+        await this.initCache();
+        
+        // Cache-first bootstrap: Load from cache first, then network
+        await this.cacheFirstBootstrap();
+        
         this.setupEventListeners();
         this.startAutoRefresh();
+        
+        // Log performance metrics
+        this.performanceMetrics.totalBootstrapTime = performance.now() - this.performanceMetrics.bootstrapStart;
+        console.log(`⚡ Dashboard bootstrap: ${this.performanceMetrics.totalBootstrapTime.toFixed(0)}ms (target: <200ms)`);
+        console.log(`   ├─ Cache hydration: ${this.performanceMetrics.cacheHydrationTime?.toFixed(0) || 'N/A'}ms`);
+        console.log(`   └─ Network fetch: ${this.performanceMetrics.networkFetchTime?.toFixed(0) || 'N/A'}ms`);
+    }
+    
+    /**
+     * Initialize IndexedDB cache
+     */
+    async initCache() {
+        try {
+            if (typeof IndexedDBCache === 'undefined') {
+                console.warn('⚠️  IndexedDBCache not available, falling back to network-only');
+                return;
+            }
+            
+            this.cache = new IndexedDBCache(this.workspaceId);
+            await this.cache.init();
+            console.log('✅ IndexedDB cache initialized');
+        } catch (error) {
+            console.error('❌ Failed to initialize cache:', error);
+            this.cache = null;
+        }
+    }
+    
+    /**
+     * CROWN⁴ Cache-First Bootstrap Pattern
+     * Target: <200ms bootstrap from cache
+     */
+    async cacheFirstBootstrap() {
+        const cacheStart = performance.now();
+        
+        // Try cache first
+        if (this.cache) {
+            try {
+                const [cachedMeetings, cachedTasks, cachedAnalytics] = await Promise.all([
+                    this.cache.getCachedMeetings(),
+                    this.cache.getAll(this.cache.STORES.TASKS),
+                    this.cache.getAll(this.cache.STORES.ANALYTICS)
+                ]);
+                
+                // Hydrate UI from cache immediately
+                if (cachedMeetings.data && cachedMeetings.data.length > 0) {
+                    this.renderRecentMeetings(cachedMeetings.data.slice(0, 5));
+                    console.log(`📦 Cache hit: ${cachedMeetings.count} meetings (checksum: ${cachedMeetings.checksum?.substring(0, 8)}...)`);
+                }
+                
+                this.performanceMetrics.cacheHydrationTime = performance.now() - cacheStart;
+                console.log(`⚡ Cache hydration: ${this.performanceMetrics.cacheHydrationTime.toFixed(0)}ms`);
+            } catch (error) {
+                console.error('❌ Cache hydration failed:', error);
+            }
+        }
+        
+        // Fetch fresh data from network in background
+        const networkStart = performance.now();
+        await this.loadDashboardData();
+        this.performanceMetrics.networkFetchTime = performance.now() - networkStart;
     }
 
     /**
@@ -98,6 +173,15 @@ class MinaDashboard {
 
             if (data.success) {
                 this.renderRecentMeetings(data.meetings);
+                
+                // Cache meetings for next bootstrap
+                if (this.cache && data.meetings) {
+                    try {
+                        await this.cache.cacheMeetings(data.meetings, data.checksum || this.generateChecksum(data.meetings));
+                    } catch (error) {
+                        console.warn('⚠️  Failed to cache meetings:', error);
+                    }
+                }
             }
         } catch (error) {
             console.error('[Dashboard] Failed to load recent meetings:', error);
@@ -154,6 +238,18 @@ class MinaDashboard {
 
             if (data.success) {
                 this.renderMyTasks(data.tasks);
+                
+                // Cache tasks for next bootstrap
+                if (this.cache && data.tasks) {
+                    try {
+                        const allTasks = [...data.tasks.todo, ...data.tasks.in_progress, ...data.tasks.completed];
+                        if (allTasks.length > 0) {
+                            await this.cache.cacheTasks(allTasks);
+                        }
+                    } catch (error) {
+                        console.warn('⚠️  Failed to cache tasks:', error);
+                    }
+                }
             }
         } catch (error) {
             console.error('[Dashboard] Failed to load my tasks:', error);
@@ -516,6 +612,20 @@ class MinaDashboard {
      */
     showError(message) {
         this.showNotification(message, 'error');
+    }
+    
+    /**
+     * Generate simple checksum from data (for cache validation)
+     */
+    generateChecksum(data) {
+        const str = JSON.stringify(data);
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return Math.abs(hash).toString(16);
     }
 
     /**
