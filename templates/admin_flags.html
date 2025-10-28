@@ -1,30 +1,562 @@
 {% extends "base.html" %}
-{% block title %}Feature Flags – Mina{% endblock %}
+{% block title %}Feature Flags - Mina{% endblock %}
+
 {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/toast-notifications.css') }}">
 <style>
-.flags-workspace{width:clamp(960px,90vw,1440px);margin:0 auto;padding:var(--space-8)var(--space-6);}
-.flags-header{margin-bottom:var(--space-6);animation:fadeInUp .6s ease-out;}
-.flags-title{font-size:var(--font-size-4xl);font-weight:var(--font-weight-bold);
-background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.flags-table{width:100%;border-collapse:collapse;}
-.flags-table th,.flags-table td{padding:var(--space-3);border-bottom:1px solid var(--glass-border);}
-.flags-card{background:var(--glass-bg);backdrop-filter:var(--backdrop-blur);
-border:1px solid var(--glass-border);border-radius:var(--radius-xl);
-padding:var(--space-6);animation:fadeInUp .6s ease-out;}
+/* Container & Layout */
+.flags-container {
+    min-height: calc(100vh - var(--header-height));
+    padding: var(--space-8) 0;
+}
+
+.flags-header {
+    margin-bottom: var(--space-8);
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.flags-title {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--space-2);
+}
+
+.flags-subtitle {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-lg);
+}
+
+.flags-actions {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: var(--space-6);
+    animation: fadeInUp 0.6s ease-out 0.1s;
+    animation-fill-mode: both;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 300px;
+    position: relative;
+}
+
+.search-input {
+    width: 100%;
+    padding: var(--space-3) var(--space-4) var(--space-3) var(--space-12);
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-base);
+    transition: all var(--transition-base);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.search-icon {
+    position: absolute;
+    left: var(--space-4);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-tertiary);
+    pointer-events: none;
+}
+
+.btn-new-flag {
+    padding: var(--space-3) var(--space-6);
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-xl);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    transition: all var(--transition-base);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.btn-new-flag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+}
+
+/* Flag Cards Grid */
+.flags-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: var(--space-6);
+}
+
+.flag-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.flag-card:nth-child(1) { animation-delay: 0.2s; }
+.flag-card:nth-child(2) { animation-delay: 0.25s; }
+.flag-card:nth-child(3) { animation-delay: 0.3s; }
+.flag-card:nth-child(4) { animation-delay: 0.35s; }
+.flag-card:nth-child(5) { animation-delay: 0.4s; }
+.flag-card:nth-child(6) { animation-delay: 0.45s; }
+.flag-card:nth-child(n+7) { animation-delay: 0.5s; }
+
+.flag-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+}
+
+.flag-card.enabled::before {
+    opacity: 1;
+}
+
+.flag-card:hover {
+    transform: translateX(8px);
+    border-color: var(--color-primary);
+}
+
+.flag-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-4);
+}
+
+.flag-key {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    font-family: var(--font-mono, monospace);
+    flex: 1;
+}
+
+.flag-toggle-wrapper {
+    margin-left: var(--space-4);
+}
+
+/* Premium Toggle Switch */
+.toggle-switch {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    background: var(--color-surface);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    border: 2px solid var(--color-border);
+}
+
+.toggle-switch.enabled {
+    background: var(--gradient-primary);
+    border-color: transparent;
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: all var(--transition-base);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch.enabled .toggle-slider {
+    transform: translateX(24px);
+}
+
+.flag-note {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-4);
+    min-height: 20px;
+}
+
+.flag-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.flag-action-btn {
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.flag-action-btn:hover {
+    background: var(--color-surface-light);
+    color: var(--color-text-primary);
+    border-color: var(--color-primary);
+}
+
+.flag-action-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--color-error);
+    color: var(--color-error);
+}
+
+/* States */
+.state-container {
+    text-align: center;
+    padding: var(--space-12) var(--space-6);
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.state-icon {
+    font-size: 64px;
+    margin-bottom: var(--space-4);
+}
+
+.state-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.state-message {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--space-6);
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-2xl);
+    max-width: 500px;
+    width: 90%;
+    padding: var(--space-8);
+    animation: slideInUp 0.3s ease-out;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    margin-bottom: var(--space-6);
+}
+
+.modal-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+}
+
+.modal-body {
+    margin-bottom: var(--space-6);
+}
+
+.form-group {
+    margin-bottom: var(--space-4);
+}
+
+.form-label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+.form-input,
+.form-textarea {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-base);
+    transition: all var(--transition-base);
+}
+
+.form-input:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-error {
+    color: var(--color-error);
+    font-size: var(--font-size-xs);
+    margin-top: var(--space-1);
+}
+
+.modal-footer {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+}
+
+.btn {
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-lg);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    border: none;
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+    background: var(--color-surface-light);
+}
+
+.btn-danger {
+    background: var(--color-error);
+    color: white;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Loading Skeleton */
+.skeleton-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    animation: pulse 1.5s infinite;
+}
+
+.skeleton-line {
+    height: 20px;
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-3);
+}
+
+.skeleton-line.short {
+    width: 60%;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .flags-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .flags-actions {
+        flex-direction: column;
+    }
+    
+    .search-box {
+        width: 100%;
+    }
+    
+    .btn-new-flag {
+        width: 100%;
+        justify-content: center;
+    }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="flags-workspace">
-  <div class="flags-header">
-    <h1 class="flags-title">Feature Flags</h1>
-    <p class="text-secondary">Toggle experimental features safely.</p>
-  </div>
-  <div class="flags-card">
-    <table class="flags-table">
-      <thead><tr><th>Key</th><th>Enabled</th><th>Note</th></tr></thead>
-      <tbody id="flagsBody"><tr><td colspan="3" class="text-center text-secondary py-6">(loading...)</td></tr></tbody>
-    </table>
-  </div>
+<div class="container">
+    <div class="flags-container">
+        <!-- Header -->
+        <div class="flags-header">
+            <h1 class="flags-title">Feature Flags</h1>
+            <p class="flags-subtitle">Control experimental features safely across your platform</p>
+        </div>
+
+        <!-- Actions Bar -->
+        <div class="flags-actions">
+            <div class="search-box">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search flags by key or note...">
+            </div>
+            <button id="btnNewFlag" class="btn-new-flag">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                New Flag
+            </button>
+        </div>
+
+        <!-- Flags Grid -->
+        <div id="flagsContainer" class="flags-grid">
+            <!-- Loading State -->
+            <div class="skeleton-card">
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line short"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line short"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line short"></div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Create/Edit Modal -->
+<div id="flagModal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="modalTitle" class="modal-title">Create Feature Flag</h2>
+        </div>
+        <div class="modal-body">
+            <form id="flagForm">
+                <div class="form-group">
+                    <label class="form-label" for="flagKey">Flag Key *</label>
+                    <input type="text" id="flagKey" class="form-input" placeholder="e.g., ai_copilot_beta" required>
+                    <p class="form-error" id="keyError"></p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="flagNote">Description</label>
+                    <textarea id="flagNote" class="form-textarea" placeholder="Optional note about this flag..."></textarea>
+                    <p class="form-error" id="noteError"></p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="flagEnabled"> Enabled by default
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button id="btnCancelModal" class="btn btn-secondary">Cancel</button>
+            <button id="btnSaveFlag" class="btn btn-primary">Save Flag</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="confirmTitle" class="modal-title">Confirm Action</h2>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage" class="state-message"></p>
+        </div>
+        <div class="modal-footer">
+            <button id="btnCancelConfirm" class="btn btn-secondary">Cancel</button>
+            <button id="btnConfirmAction" class="btn btn-danger">Confirm</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/csrf.js') }}"></script>
+<script src="{{ url_for('static', filename='js/feature-flags-admin.js') }}"></script>
 {% endblock %}

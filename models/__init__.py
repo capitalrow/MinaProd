@@ -37,9 +37,12 @@ except ImportError:
     # Handle circular import gracefully
     Summary = None
 
+# Import Feature Flags models
+from .core_models import FeatureFlag, FlagAuditLog
+
 __all__ = [
     'db', 'Base', 'Session', 'Segment', 'Summary', 'SharedLink', 'TeamShare', 'ShareAnalytic',
     'ChunkMetric', 'SessionMetric', 'User', 'Workspace', 'Meeting', 
     'Participant', 'Task', 'CalendarEvent', 'Analytics', 'Marker', 'Comment', 'CopilotTemplate',
-    'CopilotConversation', 'EventLedger', 'EventType', 'EventStatus'
+    'CopilotConversation', 'EventLedger', 'EventType', 'EventStatus', 'FeatureFlag', 'FlagAuditLog'
 ]
