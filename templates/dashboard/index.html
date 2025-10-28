@@ -1341,6 +1341,12 @@ window.initMorphTransitions = function() {
         if (!meetingsListEl) {
             // If meetings list doesn't exist, create it
             createMeetingsList();
+            
+            // If still null after creation attempt, bail out
+            if (!meetingsListEl) {
+                console.warn('⚠️ Cannot insert meeting card: meetings list element not found');
+                return;
+            }
         }
         
         const meeting = meetingData.meeting || meetingData;
