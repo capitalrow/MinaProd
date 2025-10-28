@@ -648,8 +648,8 @@
 (function() {
     'use strict';
     
-    // Get workspace ID from user context
-    const WORKSPACE_ID = {{ current_user.workspace_id }};
+    // Get workspace ID from user context (safe null handling)
+    const WORKSPACE_ID = {{ current_user.workspace_id|tojson }};
     
     /**
      * Open task creation modal
