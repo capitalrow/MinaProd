@@ -16,12 +16,28 @@ class MinaDashboard {
             networkFetchTime: null,
             totalBootstrapTime: null
         };
+        this.telemetry = null;
         this.init();
     }
 
     async init() {
         console.log('[Dashboard] Initializing Mina Dashboard (CROWN⁴ Cache-First)');
         this.performanceMetrics.bootstrapStart = performance.now();
+        
+        // Initialize CROWN⁴ Telemetry
+        if (typeof CROWNTelemetry !== 'undefined') {
+            this.telemetry = new CROWNTelemetry(this.workspaceId);
+            await this.telemetry.init();
+            
+            // Make telemetry globally available for WebSocket manager
+            window.crownTelemetry = this.telemetry;
+            
+            // Inject telemetry into existing WebSocket manager if it exists
+            if (window.wsManager) {
+                window.wsManager.telemetry = this.telemetry;
+                console.log('📊 Telemetry injected into WebSocket manager');
+            }
+        }
         
         // Initialize IndexedDB cache
         await this.initCache();
@@ -37,6 +53,16 @@ class MinaDashboard {
         console.log(`⚡ Dashboard bootstrap: ${this.performanceMetrics.totalBootstrapTime.toFixed(0)}ms (target: <200ms)`);
         console.log(`   ├─ Cache hydration: ${this.performanceMetrics.cacheHydrationTime?.toFixed(0) || 'N/A'}ms`);
         console.log(`   └─ Network fetch: ${this.performanceMetrics.networkFetchTime?.toFixed(0) || 'N/A'}ms`);
+        
+        // Record bootstrap metrics in telemetry
+        if (this.telemetry) {
+            await this.telemetry.recordBootstrap(this.performanceMetrics);
+            
+            // Initialize performance monitor UI (Ctrl+Shift+P to toggle)
+            if (typeof CROWNPerformanceMonitor !== 'undefined') {
+                new CROWNPerformanceMonitor(this.telemetry);
+            }
+        }
     }
     
     /**
@@ -78,6 +104,16 @@ class MinaDashboard {
                 if (cachedMeetings.data && cachedMeetings.data.length > 0) {
                     this.renderRecentMeetings(cachedMeetings.data.slice(0, 5));
                     console.log(`📦 Cache hit: ${cachedMeetings.count} meetings (checksum: ${cachedMeetings.checksum?.substring(0, 8)}...)`);
+                    
+                    // Track cache hit
+                    if (this.telemetry) {
+                        this.telemetry.recordCacheAccess(true);
+                    }
+                } else {
+                    // Track cache miss
+                    if (this.telemetry) {
+                        this.telemetry.recordCacheAccess(false);
+                    }
                 }
                 
                 this.performanceMetrics.cacheHydrationTime = performance.now() - cacheStart;
