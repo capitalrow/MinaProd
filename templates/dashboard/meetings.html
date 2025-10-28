@@ -469,8 +469,47 @@
 <script src="{{ url_for('static', filename='js/toast-notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/broadcast-sync.js') }}"></script>
 <script>
-// CROWN⁴ Phase 4: Archive Functionality with Toast Undo
+// CROWN⁴ Phase 4 & 5: Archive + Error Handling
 let archivedMeetings = [];
+let errorHandler = null;
+let cache = null;
+let prefetchController = null;
+
+// Initialize error handler on page load
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize cache if available
+    if (typeof IndexedDBCache !== 'undefined') {
+        cache = new IndexedDBCache({{ current_user.workspace_id if current_user else 1 }});
+        cache.init().catch(err => console.warn('Cache init failed:', err));
+    }
+    
+    // Initialize prefetch controller
+    if (typeof PrefetchController !== 'undefined') {
+        prefetchController = new PrefetchController({
+            maxConcurrent: 3,
+            maxCacheSize: 50,
+            cacheTimeout: 60000
+        });
+    }
+    
+    // Initialize error handler
+    if (typeof DashboardErrorHandler !== 'undefined') {
+        errorHandler = new DashboardErrorHandler({
+            cache: cache,
+            prefetchController: prefetchController,
+            websocketManager: window.websocketManager
+        });
+        console.log('✅ Dashboard error handler initialized');
+        
+        // Run initial stale cache purge
+        errorHandler.purgeStaleCache({ force: true })
+            .then(result => {
+                if (result.success) {
+                    console.log('🧹 Initial cache purge complete:', result.results);
+                }
+            });
+    }
+});
 let archiveRevealLogged = false;
 
 // Archive a meeting
@@ -479,7 +518,14 @@ function archiveMeeting(meetingId) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (response.status === 404 && errorHandler) {
+            // Handle missing session with error handler
+            errorHandler.handleMissingSession(meetingId, new Error('Meeting not found'));
+            throw new Error('Meeting not found');
+        }
+        return response.json();
+    })
     .then(result => {
         if (result.success) {
             const meetingCard = document.querySelector(`.meeting-card[data-meeting-id="${meetingId}"]`);
@@ -527,7 +573,14 @@ function restoreMeeting(meetingId, isUndo = false) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (response.status === 404 && errorHandler) {
+            // Handle missing session with error handler
+            errorHandler.handleMissingSession(meetingId, new Error('Meeting not found'));
+            throw new Error('Meeting not found');
+        }
+        return response.json();
+    })
     .then(result => {
         if (result.success) {
             const meetingCard = document.querySelector(`.meeting-card[data-meeting-id="${meetingId}"]`);
@@ -579,9 +632,18 @@ function restoreMeeting(meetingId, isUndo = false) {
     });
 }
 
-// Load archived meetings
+// Load archived meetings  
 function loadArchivedMeetings() {
-    fetch('/dashboard/api/meetings?archived=true')
+    const abortController = new AbortController();
+    
+    // Track navigation with error handler
+    if (errorHandler) {
+        errorHandler.trackNavigation('/dashboard/api/meetings?archived=true', abortController);
+    }
+    
+    fetch('/dashboard/api/meetings?archived=true', {
+        signal: abortController.signal
+    })
         .then(response => response.json())
         .then(data => {
             const archiveList = document.getElementById('archive-list');
