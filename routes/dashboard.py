@@ -285,18 +285,23 @@ def meetings():
 @login_required
 def tasks():
     """Tasks overview page with kanban board."""
-    # Get all tasks for the workspace
-    all_tasks = db.session.query(Task).join(Meeting).filter(
-        Meeting.workspace_id == current_user.workspace_id
-    ).order_by(Task.created_at.desc()).all()
+    # Get tasks by status
+    todo_tasks = db.session.query(Task).join(Meeting).filter(
+        Meeting.workspace_id == current_user.workspace_id,
+        Task.status == 'todo'
+    ).order_by(Task.due_date.asc().nullslast(), Task.priority.desc()).all()
     
-    # Also get tasks by status for any status-specific displays
-    todo_tasks = [t for t in all_tasks if t.status == 'todo']
-    in_progress_tasks = [t for t in all_tasks if t.status == 'in_progress']
-    completed_tasks = [t for t in all_tasks if t.status == 'completed']
+    in_progress_tasks = db.session.query(Task).join(Meeting).filter(
+        Meeting.workspace_id == current_user.workspace_id,
+        Task.status == 'in_progress'
+    ).order_by(Task.due_date.asc().nullslast(), Task.priority.desc()).all()
+    
+    completed_tasks = db.session.query(Task).join(Meeting).filter(
+        Meeting.workspace_id == current_user.workspace_id,
+        Task.status == 'completed'
+    ).order_by(desc(Task.completed_at)).limit(10).all()
     
     return render_template('dashboard/tasks.html',
-                         tasks=all_tasks,
                          todo_tasks=todo_tasks,
                          in_progress_tasks=in_progress_tasks,
                          completed_tasks=completed_tasks)
