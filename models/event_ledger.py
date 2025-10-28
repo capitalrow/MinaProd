@@ -136,6 +136,10 @@ class EventLedger(Base):
     broadcast_status: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)  # pending|sent|failed
     last_applied_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # Last processed event ID for idempotency
     
+    # CROWN⁴.5: Vector clock for distributed conflict resolution
+    vector_clock: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)  # {client_id: timestamp, ...}
+    conflict_resolution_strategy: Mapped[str] = mapped_column(String(32), default="server_wins")  # server_wins, client_wins, merge, manual
+    
     # Indexes for performance
     __table_args__ = (
         Index('ix_event_ledger_session_created', 'session_id', 'created_at'),
@@ -167,7 +171,9 @@ class EventLedger(Base):
             'event_version': self.event_version,
             'sequence_num': self.sequence_num,
             'checksum': self.checksum,
-            'broadcast_status': self.broadcast_status
+            'broadcast_status': self.broadcast_status,
+            'vector_clock': self.vector_clock,
+            'conflict_resolution_strategy': self.conflict_resolution_strategy
         }
     
     @property
