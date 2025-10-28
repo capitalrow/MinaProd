@@ -329,10 +329,52 @@ class MinaDashboard {
     }
 
     /**
-     * Update task status
+     * Update task status with optimistic UI updates and server reconciliation (CROWN⁴ Task #11)
      */
     async updateTaskStatus(taskId, newStatus) {
+        // Find the task element
+        const taskElement = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+        if (!taskElement) {
+            console.warn('[Dashboard] Task element not found:', taskId);
+            return;
+        }
+        
+        // Store original HTML for rollback
+        const originalHTML = taskElement.innerHTML;
+        const originalStatus = taskElement.querySelector('.task-status')?.textContent?.trim()?.toLowerCase() || '';
+        
         try {
+            // OPTIMISTIC UPDATE: Immediately update UI before server responds
+            const statusSpan = taskElement.querySelector('.task-status');
+            const actionButton = taskElement.querySelector('.btn-icon');
+            
+            if (statusSpan) {
+                statusSpan.className = `task-status status-${newStatus}`;
+                statusSpan.textContent = this.capitalizeFirst(newStatus);
+            }
+            
+            // Update button icon
+            if (actionButton) {
+                const nextStatus = this.getNextStatus(newStatus);
+                actionButton.setAttribute('onclick', `dashboard.updateTaskStatus(${taskId}, '${nextStatus}')`);
+                actionButton.setAttribute('title', 'Update Status');
+                
+                const icon = actionButton.querySelector('i[data-feather]');
+                if (icon) {
+                    icon.setAttribute('data-feather', this.getStatusIcon(newStatus));
+                    if (typeof feather !== 'undefined') {
+                        feather.replace();
+                    }
+                }
+            }
+            
+            // Add visual feedback for optimistic update
+            taskElement.style.opacity = '0.7';
+            taskElement.style.transition = 'opacity 0.2s ease';
+            
+            console.log(`[Dashboard] Optimistic update: Task ${taskId} → ${newStatus}`);
+            
+            // SERVER RECONCILIATION: Send request to server
             const response = await fetch(`${this.apiBase}/tasks/${taskId}/status`, {
                 method: 'PUT',
                 headers: {
@@ -342,17 +384,60 @@ class MinaDashboard {
             });
 
             const data = await response.json();
+            
+            // Restore full opacity
+            taskElement.style.opacity = '1';
 
             if (data.success) {
+                // Server confirmed - keep optimistic update
                 this.showNotification('Task status updated', 'success');
-                this.loadMyTasks(); // Refresh tasks
-                this.loadStats(); // Refresh stats
+                
+                // Reconcile with server data if different
+                if (data.task && data.task.status !== newStatus) {
+                    console.log(`[Dashboard] Server reconciliation: ${newStatus} → ${data.task.status}`);
+                    
+                    // CRITICAL: Immediately revert optimistic changes before async reload
+                    // Prevents race condition where button handler points to wrong status
+                    taskElement.innerHTML = originalHTML;
+                    taskElement.style.opacity = '1';
+                    
+                    // Re-initialize feather icons
+                    if (typeof feather !== 'undefined') {
+                        feather.replace();
+                    }
+                    
+                    // Re-render with server data and refresh stats
+                    this.loadMyTasks();
+                    this.loadStats();
+                } else {
+                    // Refresh stats only (tasks already updated optimistically)
+                    this.loadStats();
+                }
             } else {
+                // ROLLBACK: Server rejected - restore original state
+                console.warn('[Dashboard] Server rejected update, rolling back:', data.message);
+                taskElement.innerHTML = originalHTML;
+                taskElement.style.opacity = '1';  // Reset opacity
+                
+                // Re-initialize feather icons after rollback
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+                
                 this.showError(data.message || 'Failed to update task');
             }
         } catch (error) {
-            console.error('[Dashboard] Failed to update task:', error);
-            this.showError('Failed to update task');
+            // ROLLBACK: Network error - restore original state
+            console.error('[Dashboard] Failed to update task, rolling back:', error);
+            taskElement.innerHTML = originalHTML;
+            taskElement.style.opacity = '1';  // Reset opacity
+            
+            // Re-initialize feather icons after rollback
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+            
+            this.showError('Failed to update task - network error');
         }
     }
 
