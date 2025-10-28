@@ -781,9 +781,20 @@ window.handleCardClick = function(event) {
 };
 
 window.initMorphTransitions = function() {
+    console.log('🔍 initMorphTransitions() called');
     const meetingCards = document.querySelectorAll('.meeting-card');
+    console.log(`🔍 Found ${meetingCards.length} meeting cards`);
     
-    meetingCards.forEach(card => {
+    if (meetingCards.length === 0) {
+        console.warn('⚠️ No meeting cards found to attach handlers!');
+        return;
+    }
+    
+    meetingCards.forEach((card, index) => {
+        const sessionId = card.dataset.sessionId;
+        const meetingId = card.dataset.meetingId;
+        console.log(`🔍 Card ${index}: meeting=${meetingId}, session=${sessionId}`);
+        
         // Remove existing listeners to prevent duplicates
         card.removeEventListener('click', window.handleCardClick);
         card.removeEventListener('mouseenter', window.handleCardHover);
@@ -794,7 +805,7 @@ window.initMorphTransitions = function() {
         card.style.cursor = 'pointer';
     });
     
-    console.log(`🎬 Initialized morph transitions for ${meetingCards.length} meeting cards`);
+    console.log(`✅ Initialized morph transitions for ${meetingCards.length} meeting cards`);
 };
 
 /**
