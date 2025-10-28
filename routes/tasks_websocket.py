@@ -225,4 +225,138 @@ def register_tasks_namespace(socketio):
         data['event_type'] = 'task_delete'
         return await handle_task_event(data)
     
+    @socketio.on('offline_queue:save', namespace='/tasks')
+    async def handle_offline_queue_save(data):
+        """
+        Save frontend's offline queue to server for backup.
+        Allows recovery if browser cache is cleared.
+        """
+        from app import db
+        from models.offline_queue import OfflineQueue
+        from datetime import datetime
+        
+        try:
+            if not current_user.is_authenticated:
+                await socketio.emit('error', {'message': 'Authentication required'}, namespace='/tasks')
+                return
+            
+            user_id = current_user.id
+            session_id = data.get('session_id')
+            queue_data = data.get('queue_data', [])
+            
+            existing = OfflineQueue.query.filter_by(
+                user_id=user_id,
+                session_id=session_id
+            ).first()
+            
+            if existing:
+                existing.queue_data = queue_data
+                existing.updated_at = datetime.utcnow()
+            else:
+                existing = OfflineQueue(
+                    user_id=user_id,
+                    session_id=session_id,
+                    queue_data=queue_data
+                )
+                db.session.add(existing)
+            
+            db.session.commit()
+            
+            await socketio.emit('offline_queue:saved', {
+                'success': True,
+                'queue_id': existing.id,
+                'updated_at': existing.updated_at.isoformat()
+            }, namespace='/tasks')
+            
+            logger.info(f"Offline queue saved for user {user_id}, session {session_id}")
+            
+        except Exception as e:
+            logger.error(f"Offline queue save failed: {e}", exc_info=True)
+            db.session.rollback()
+            await socketio.emit('error', {
+                'message': 'Failed to save offline queue',
+                'error': str(e)
+            }, namespace='/tasks')
+    
+    @socketio.on('offline_queue:retrieve', namespace='/tasks')
+    async def handle_offline_queue_retrieve(data):
+        """
+        Retrieve saved offline queue from server.
+        Used for recovery after browser cache loss.
+        """
+        from models.offline_queue import OfflineQueue
+        
+        try:
+            if not current_user.is_authenticated:
+                await socketio.emit('error', {'message': 'Authentication required'}, namespace='/tasks')
+                return
+            
+            user_id = current_user.id
+            session_id = data.get('session_id')
+            
+            queue = OfflineQueue.query.filter_by(
+                user_id=user_id,
+                session_id=session_id
+            ).first()
+            
+            if queue:
+                await socketio.emit('offline_queue:retrieved', {
+                    'success': True,
+                    'queue_data': queue.queue_data,
+                    'updated_at': queue.updated_at.isoformat()
+                }, namespace='/tasks')
+                logger.info(f"Offline queue retrieved for user {user_id}, session {session_id}")
+            else:
+                await socketio.emit('offline_queue:retrieved', {
+                    'success': True,
+                    'queue_data': [],
+                    'message': 'No saved queue found'
+                }, namespace='/tasks')
+                
+        except Exception as e:
+            logger.error(f"Offline queue retrieve failed: {e}", exc_info=True)
+            await socketio.emit('error', {
+                'message': 'Failed to retrieve offline queue',
+                'error': str(e)
+            }, namespace='/tasks')
+    
+    @socketio.on('offline_queue:clear', namespace='/tasks')
+    async def handle_offline_queue_clear(data):
+        """
+        Clear saved offline queue from server.
+        Called after successful replay to clean up.
+        """
+        from app import db
+        from models.offline_queue import OfflineQueue
+        
+        try:
+            if not current_user.is_authenticated:
+                await socketio.emit('error', {'message': 'Authentication required'}, namespace='/tasks')
+                return
+            
+            user_id = current_user.id
+            session_id = data.get('session_id')
+            
+            deleted = OfflineQueue.query.filter_by(
+                user_id=user_id,
+                session_id=session_id
+            ).delete()
+            
+            db.session.commit()
+            
+            await socketio.emit('offline_queue:cleared', {
+                'success': True,
+                'deleted_count': deleted
+            }, namespace='/tasks')
+            
+            logger.info(f"Offline queue cleared for user {user_id}, session {session_id}: {deleted} entries")
+            
+        except Exception as e:
+            logger.error(f"Offline queue clear failed: {e}", exc_info=True)
+            db.session.rollback()
+            await socketio.emit('error', {
+                'message': 'Failed to clear offline queue',
+                'error': str(e)
+            }, namespace='/tasks')
+    
     logger.info("✅ Tasks WebSocket namespace registered (/tasks)")
