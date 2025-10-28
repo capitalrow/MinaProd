@@ -171,6 +171,60 @@ def index():
                          })
 
 
+@dashboard_bp.route('/api/meetings')
+@login_required
+def api_meetings():
+    """
+    Get meetings in JSON format with checksum for cache validation.
+    CROWN⁴ cache bootstrap endpoint.
+    """
+    import hashlib
+    import json
+    
+    # Build query - use impossible condition if no workspace
+    if current_user.workspace_id:
+        query = db.select(Meeting).options(
+            joinedload(Meeting.session)
+        ).where(Meeting.workspace_id == current_user.workspace_id)
+    else:
+        query = db.select(Meeting).where(Meeting.id == -1)
+    
+    # Order by created_at descending
+    query = query.order_by(desc(Meeting.created_at))
+    
+    # Get all meetings (limit to 100 for performance)
+    meetings = db.session.execute(query.limit(100)).scalars().all()
+    
+    # Serialize meetings to dict
+    meetings_data = []
+    for meeting in meetings:
+        meeting_dict = {
+            'id': meeting.id,
+            'title': meeting.title,
+            'created_at': meeting.created_at.isoformat() if meeting.created_at else None,
+            'status': meeting.status,
+            'duration': meeting.duration,
+            'word_count': meeting.word_count,
+            'speaker_count': meeting.speaker_count,
+            'summary': meeting.summary,
+            'archived': getattr(meeting, 'archived', False),
+            'session_id': meeting.session.external_session_id if meeting.session else None,
+            'meeting_id': meeting.id
+        }
+        meetings_data.append(meeting_dict)
+    
+    # Generate checksum for cache validation
+    serialized = json.dumps(meetings_data, sort_keys=True, default=str)
+    checksum = hashlib.sha256(serialized.encode('utf-8')).hexdigest()
+    
+    return jsonify({
+        'meetings': meetings_data,
+        'checksum': checksum,
+        'count': len(meetings_data),
+        'timestamp': datetime.utcnow().isoformat()
+    })
+
+
 @dashboard_bp.route('/meetings')
 @login_required
 def meetings():
