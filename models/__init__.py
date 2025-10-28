@@ -22,6 +22,8 @@ from .workspace import Workspace
 from .meeting import Meeting
 from .participant import Participant
 from .task import Task
+from .task_view_state import TaskViewState
+from .task_counters import TaskCounters
 from .calendar_event import CalendarEvent
 from .analytics import Analytics
 from .marker import Marker
@@ -43,6 +45,6 @@ from .core_models import FeatureFlag, FlagAuditLog
 __all__ = [
     'db', 'Base', 'Session', 'Segment', 'Summary', 'SharedLink', 'TeamShare', 'ShareAnalytic',
     'ChunkMetric', 'SessionMetric', 'User', 'Workspace', 'Meeting', 
-    'Participant', 'Task', 'CalendarEvent', 'Analytics', 'Marker', 'Comment', 'CopilotTemplate',
+    'Participant', 'Task', 'TaskViewState', 'TaskCounters', 'CalendarEvent', 'Analytics', 'Marker', 'Comment', 'CopilotTemplate',
     'CopilotConversation', 'EventLedger', 'EventType', 'EventStatus', 'FeatureFlag', 'FlagAuditLog'
 ]
