@@ -495,6 +495,192 @@ def log_dashboard_bootstrap():
         }), 500
 
 
+@dashboard_bp.route('/api/events/filter-apply', methods=['POST'])
+@login_required
+def log_filter_apply():
+    """
+    Log filter_apply event to EventLedger.
+    CROWN⁴ Event #8: Tracks dashboard search and filter usage.
+    """
+    from services.event_ledger_service import EventLedgerService
+    from models.event_ledger import EventType
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        data = request.get_json() or {}
+        
+        # Extract filter data
+        filter_type = data.get('filter_type')  # 'search', 'time', 'status', etc.
+        filter_value = data.get('filter_value')
+        
+        if not filter_type:
+            return jsonify({
+                'success': False,
+                'error': 'filter_type required'
+            }), 400
+        
+        # Log event to EventLedger
+        event = EventLedgerService.log_event(
+            event_type=EventType.FILTER_APPLY,
+            session_id=None,
+            external_session_id=None,
+            payload={
+                'user_id': current_user.id,
+                'workspace_id': current_user.workspace_id,
+                'filter_type': filter_type,
+                'filter_value': filter_value,
+                'timestamp': datetime.utcnow().isoformat()
+            },
+            trace_id=f"filter_apply_{current_user.id}_{datetime.utcnow().timestamp()}"
+        )
+        
+        # Mark event as completed immediately
+        EventLedgerService.complete_event(event, result={
+            'status': 'success',
+            'filter_applied': True
+        }, duration_ms=0)
+        
+        logger.info(f"🔍 Filter event logged for user {current_user.id}: {filter_type}={filter_value}")
+        
+        return jsonify({
+            'success': True,
+            'event_id': event.id
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Failed to log filter_apply event: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@dashboard_bp.route('/api/events/prefetch', methods=['POST'])
+@login_required
+def log_session_prefetch():
+    """
+    Log session_prefetch event to EventLedger.
+    CROWN⁴ Event #6: Tracks when hover triggers session prefetch.
+    """
+    from services.event_ledger_service import EventLedgerService
+    from models.event_ledger import EventType
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        data = request.get_json() or {}
+        
+        # Extract event data
+        session_id = data.get('session_id')
+        external_session_id = data.get('external_session_id')
+        meeting_id = data.get('meeting_id')
+        
+        if not session_id and not external_session_id and not meeting_id:
+            return jsonify({
+                'success': False,
+                'error': 'session_id, external_session_id, or meeting_id required'
+            }), 400
+        
+        # Log event to EventLedger
+        event = EventLedgerService.log_event(
+            event_type=EventType.SESSION_PREFETCH,
+            session_id=session_id,
+            external_session_id=external_session_id,
+            payload={
+                'user_id': current_user.id,
+                'workspace_id': current_user.workspace_id,
+                'meeting_id': meeting_id,
+                'timestamp': datetime.utcnow().isoformat()
+            },
+            trace_id=f"prefetch_{meeting_id or session_id or external_session_id}_{datetime.utcnow().timestamp()}"
+        )
+        
+        # Mark event as completed immediately (prefetch is instant)
+        EventLedgerService.complete_event(event, result={
+            'status': 'success',
+            'prefetch_initiated': True
+        }, duration_ms=0)
+        
+        logger.info(f"🔮 Prefetch event logged for meeting {meeting_id or session_id or external_session_id}")
+        
+        return jsonify({
+            'success': True,
+            'event_id': event.id
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Failed to log session_prefetch event: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@dashboard_bp.route('/api/events/card-click', methods=['POST'])
+@login_required
+def log_session_card_click():
+    """
+    Log session_card_click event to EventLedger.
+    CROWN⁴ Event #7: Tracks when user clicks meeting card to navigate.
+    """
+    from services.event_ledger_service import EventLedgerService
+    from models.event_ledger import EventType
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        data = request.get_json() or {}
+        
+        # Extract event data
+        session_id = data.get('session_id')
+        external_session_id = data.get('external_session_id')
+        meeting_id = data.get('meeting_id')
+        
+        if not session_id and not external_session_id and not meeting_id:
+            return jsonify({
+                'success': False,
+                'error': 'session_id, external_session_id, or meeting_id required'
+            }), 400
+        
+        # Log event to EventLedger
+        event = EventLedgerService.log_event(
+            event_type=EventType.SESSION_CARD_CLICK,
+            session_id=session_id,
+            external_session_id=external_session_id,
+            payload={
+                'user_id': current_user.id,
+                'workspace_id': current_user.workspace_id,
+                'meeting_id': meeting_id,
+                'timestamp': datetime.utcnow().isoformat()
+            },
+            trace_id=f"card_click_{meeting_id or session_id or external_session_id}_{datetime.utcnow().timestamp()}"
+        )
+        
+        # Mark event as completed immediately (click is instant)
+        EventLedgerService.complete_event(event, result={
+            'status': 'success',
+            'navigation_initiated': True
+        }, duration_ms=0)
+        
+        logger.info(f"🖱️ Card click event logged for meeting {meeting_id or session_id or external_session_id}")
+        
+        return jsonify({
+            'success': True,
+            'event_id': event.id
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Failed to log session_card_click event: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @dashboard_bp.route('/ops/metrics')
 def ops_metrics():
     """Operational metrics dashboard endpoint."""
