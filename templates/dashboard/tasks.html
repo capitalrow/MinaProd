@@ -133,52 +133,11 @@
     font-weight: var(--font-weight-semibold);
     margin-bottom: var(--space-2);
     color: var(--color-text-primary);
-    cursor: text;
-    border-radius: var(--radius-md);
-    padding: var(--space-1) var(--space-2);
-    margin: -2px -8px var(--space-2) -8px;
-    transition: all var(--transition-base);
-    position: relative;
-}
-
-.task-title:hover {
-    background: rgba(99, 102, 241, 0.05);
-}
-
-.task-title:focus {
-    outline: none;
-    background: var(--color-surface);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-}
-
-.task-title.saving::after {
-    content: '';
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    margin-left: 8px;
-    border: 2px solid var(--color-primary);
-    border-top-color: transparent;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-}
-
-.task-title.saved::after {
-    content: '✓';
-    display: inline-block;
-    margin-left: 8px;
-    color: var(--color-success);
-    font-weight: bold;
-    animation: fadeIn 0.3s ease-out;
 }
 
 .task-card.completed .task-title {
     text-decoration: line-through;
     color: var(--color-text-tertiary);
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
 }
 
 .task-meta {
@@ -283,10 +242,6 @@
 </style>
 {% endblock %}
 
-{% block extra_js %}
-<script src="{{ url_for('static', filename='js/tasks-cache.js') }}" nonce="{{ g.csp_nonce }}"></script>
-{% endblock %}
-
 {% block content %}
 <div class="container tasks-container">
     <!-- Header -->
@@ -295,7 +250,7 @@
             <h1 class="tasks-title">Action Items</h1>
             <p class="tasks-subtitle">Track and manage tasks from your meetings</p>
         </div>
-        <button class="btn btn-primary" id="newTaskBtn">
+        <button class="btn btn-primary">
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -329,11 +284,11 @@
     {% if tasks and tasks|length > 0 %}
     <div style="display: flex; flex-direction: column; gap: var(--space-4);">
         {% for task in tasks %}
-        <div class="task-card{% if task.completed %} completed{% endif %}" data-status="{% if task.completed %}completed{% else %}pending{% endif %}" data-task-id="{{ task.id }}">
+        <div class="task-card{% if task.completed %} completed{% endif %}" data-status="{% if task.completed %}completed{% else %}pending{% endif %}">
             <div class="flex items-start gap-4">
-                <input type="checkbox" {% if task.completed %}checked{% endif %} class="task-checkbox" data-task-id="{{ task.id }}">
+                <input type="checkbox" {% if task.completed %}checked{% endif %} class="task-checkbox">
                 <div class="flex-1">
-                    <h3 class="task-title" contenteditable="true" data-original-title="{{ task.title or task.description }}">{{ task.title or task.description }}</h3>
+                    <h3 class="task-title">{{ task.description }}</h3>
                     <p class="task-meta">
                         <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -381,7 +336,7 @@
         </svg>
         <h3 class="text-xl font-semibold mb-2">No tasks yet</h3>
         <p class="text-secondary mb-6">Tasks from your meetings will appear here</p>
-        <button class="btn btn-primary" id="createFirstTaskBtn">
+        <button class="btn btn-primary">
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -390,254 +345,6 @@
     </div>
     {% endif %}
 </div>
-
-<!-- Task Creation Modal -->
-<div id="taskModal" class="modal-overlay" style="display: none;">
-    <div class="modal-container">
-        <div class="modal-header">
-            <h2 class="modal-title">Create New Task</h2>
-            <button class="modal-close" id="closeModalBtn">
-                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-        </div>
-        
-        <form id="taskForm" class="modal-body">
-            <div class="form-group">
-                <label for="taskTitle" class="form-label">
-                    Task Title <span class="text-red-500">*</span>
-                </label>
-                <input 
-                    type="text" 
-                    id="taskTitle" 
-                    name="title" 
-                    class="form-input" 
-                    placeholder="e.g., Review project proposal"
-                    required
-                    autocomplete="off"
-                >
-                <span class="form-error" id="titleError"></span>
-            </div>
-            
-            <div class="form-group">
-                <label for="taskDescription" class="form-label">Description</label>
-                <textarea 
-                    id="taskDescription" 
-                    name="description" 
-                    class="form-input" 
-                    rows="3"
-                    placeholder="Add more details about this task..."
-                ></textarea>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="taskPriority" class="form-label">Priority</label>
-                    <select id="taskPriority" name="priority" class="form-input">
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="low">Low</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="taskDueDate" class="form-label">Due Date</label>
-                    <input 
-                        type="date" 
-                        id="taskDueDate" 
-                        name="due_date" 
-                        class="form-input"
-                    >
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="taskAssignee" class="form-label">Assigned To</label>
-                <input 
-                    type="text" 
-                    id="taskAssignee" 
-                    name="assignee" 
-                    class="form-input" 
-                    placeholder="Enter name or email"
-                    autocomplete="off"
-                >
-            </div>
-            
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="cancelTaskBtn">
-                    Cancel
-                </button>
-                <button type="submit" class="btn btn-primary" id="createTaskBtn">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    Create Task
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<style nonce="{{ g.csp_nonce }}">
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.2s ease-out;
-}
-
-.modal-container {
-    background: var(--glass-bg);
-    backdrop-filter: var(--backdrop-blur);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-2xl);
-    max-width: 600px;
-    width: 90%;
-    max-height: 90vh;
-    overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: slideInFromBottom 0.3s ease-out;
-}
-
-.modal-header {
-    padding: var(--space-6);
-    border-bottom: 1px solid var(--glass-border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.modal-title {
-    font-size: var(--font-size-2xl);
-    font-weight: var(--font-weight-bold);
-    color: var(--color-text-primary);
-}
-
-.modal-close {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--color-border);
-    background: transparent;
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    transition: all var(--transition-base);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-close:hover {
-    background: var(--color-surface-hover);
-    color: var(--color-text-primary);
-}
-
-.modal-body {
-    padding: var(--space-6);
-    max-height: calc(90vh - 180px);
-    overflow-y: auto;
-}
-
-.modal-footer {
-    padding: var(--space-6);
-    border-top: 1px solid var(--glass-border);
-    display: flex;
-    gap: var(--space-3);
-    justify-content: flex-end;
-}
-
-.form-group {
-    margin-bottom: var(--space-5);
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-4);
-}
-
-.form-label {
-    display: block;
-    margin-bottom: var(--space-2);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
-    font-size: var(--font-size-sm);
-}
-
-.form-input {
-    width: 100%;
-    padding: var(--space-3);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    color: var(--color-text-primary);
-    font-size: var(--font-size-base);
-    transition: all var(--transition-base);
-}
-
-.form-input:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
-
-.form-input::placeholder {
-    color: var(--color-text-tertiary);
-}
-
-.form-error {
-    display: block;
-    margin-top: var(--space-1);
-    font-size: var(--font-size-sm);
-    color: #ef4444;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideInFromBottom {
-    from {
-        opacity: 0;
-        transform: translateY(30px) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-@keyframes slideOutToBottom {
-    from {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-    to {
-        opacity: 0;
-        transform: translateY(30px) scale(0.95);
-    }
-}
-
-@media (max-width: 768px) {
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-    
-    .modal-container {
-        width: 95%;
-    }
-}
-</style>
 
 <script nonce="{{ g.csp_nonce }}">
 /**
@@ -648,152 +355,8 @@
 (function() {
     'use strict';
     
-    // Get workspace ID from user context (safe null handling)
-    const WORKSPACE_ID = {{ current_user.workspace_id|tojson }};
-    
-    /**
-     * Open task creation modal
-     */
-    window.openTaskModal = function() {
-        console.log('🔓 openTaskModal called');
-        const modal = document.getElementById('taskModal');
-        const form = document.getElementById('taskForm');
-        
-        if (!modal || !form) {
-            console.error('❌ Modal or form not found', { modal: !!modal, form: !!form });
-            return;
-        }
-        
-        // Reset form
-        form.reset();
-        document.getElementById('titleError').textContent = '';
-        
-        // Show modal with animation
-        modal.style.display = 'flex';
-        console.log('✅ Modal opened');
-        
-        // Focus on title input
-        setTimeout(() => {
-            document.getElementById('taskTitle').focus();
-        }, 100);
-    };
-    
-    /**
-     * Close task creation modal
-     */
-    window.closeTaskModal = function() {
-        console.log('🔒 closeTaskModal called');
-        const modal = document.getElementById('taskModal');
-        if (!modal) {
-            console.error('❌ Modal not found');
-            return;
-        }
-        const container = modal.querySelector('.modal-container');
-        
-        // Fade out animation
-        container.style.animation = 'slideOutToBottom 0.3s ease-out';
-        
-        setTimeout(() => {
-            modal.style.display = 'none';
-            container.style.animation = '';
-            console.log('✅ Modal closed');
-        }, 300);
-    };
-    
-    /**
-     * Handle task form submission
-     */
-    async function handleTaskFormSubmit(event) {
-        event.preventDefault();
-        
-        const form = event.target;
-        const submitBtn = document.getElementById('createTaskBtn');
-        const titleInput = document.getElementById('taskTitle');
-        const titleError = document.getElementById('titleError');
-        
-        // Validate title
-        const title = titleInput.value.trim();
-        if (!title || title.length < 3) {
-            titleError.textContent = 'Title must be at least 3 characters';
-            titleInput.focus();
-            return;
-        }
-        
-        // Clear error
-        titleError.textContent = '';
-        
-        // Disable submit button
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = `
-            <svg class="animate-spin" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity="0.25"></circle>
-                <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Creating...
-        `;
-        
-        // Gather form data
-        const formData = {
-            title: title,
-            description: document.getElementById('taskDescription').value.trim() || null,
-            priority: document.getElementById('taskPriority').value,
-            due_date: document.getElementById('taskDueDate').value || null,
-            assigned_to_name: document.getElementById('taskAssignee').value.trim() || null,
-            status: 'todo',
-            extracted_by_ai: false
-        };
-        
-        try {
-            // Send to server
-            const response = await fetch('/api/tasks', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
-            });
-            
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Failed to create task');
-            }
-            
-            const newTask = await response.json();
-            
-            // Save to cache
-            await tasksCache.saveTask(newTask);
-            
-            // Close modal
-            window.closeTaskModal();
-            
-            // The WebSocket handler will add the task to the DOM
-            // But if WebSocket is slow, add it optimistically
-            setTimeout(() => {
-                const existingCard = document.querySelector(`[data-task-id="${newTask.id}"]`);
-                if (!existingCard) {
-                    handleTaskCreated({ task: newTask });
-                }
-            }, 500);
-            
-            // Show success notification
-            showNotification('Task created', `"${title}" has been added to your tasks`);
-            
-        } catch (error) {
-            console.error('Failed to create task:', error);
-            titleError.textContent = error.message || 'Failed to create task';
-            
-            showNotification('Error', error.message || 'Failed to create task');
-        } finally {
-            // Re-enable submit button
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = `
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                Create Task
-            `;
-        }
-    }
+    // Get workspace ID from user context
+    const WORKSPACE_ID = {{ current_user.workspace_id }};
     
     // Cache DOM elements
     const filterCounts = {
@@ -859,23 +422,8 @@
      * Handle new task created
      * @param {Object} taskData - Task data
      */
-    async function handleTaskCreated(taskData) {
+    function handleTaskCreated(taskData) {
         const task = taskData.task || taskData;
-        
-        // Save to cache
-        try {
-            await tasksCache.saveTask(task);
-            console.log('💾 Task saved to cache:', task.id);
-        } catch (error) {
-            console.error('Failed to save task to cache:', error);
-        }
-        
-        // Check if task already exists in DOM (avoid duplicates)
-        const existingCard = document.querySelector(`[data-task-id="${task.id}"]`);
-        if (existingCard) {
-            console.log('Task already exists in DOM, skipping:', task.id);
-            return;
-        }
         
         // Remove empty state if present
         if (emptyStateEl && emptyStateEl.style.display !== 'none') {
@@ -897,7 +445,7 @@
         }
         
         // Show notification
-        showNotification('New task created', task.title || task.description || 'A new task has been added');
+        showNotification('New task created', task.description || 'A new task has been added');
     }
     
     /**
@@ -909,13 +457,9 @@
         const taskCard = document.querySelector(`[data-task-id="${task.id}"]`);
         
         if (taskCard) {
-            // Update task title (prefer title over description)
+            // Update task title
             const titleEl = taskCard.querySelector('.task-title');
-            if (titleEl) {
-                const newTitle = task.title || task.description || 'Untitled Task';
-                titleEl.textContent = newTitle;
-                titleEl.dataset.originalTitle = newTitle;
-            }
+            if (titleEl) titleEl.textContent = task.description || 'Untitled Task';
             
             // Update priority badge
             const priorityBadge = taskCard.querySelector('.priority-badge');
@@ -997,7 +541,7 @@
      */
     function createTaskCardHTML(task) {
         const priority = task.priority || 'medium';
-        const completed = task.status === 'done' || task.completed || false;
+        const completed = task.completed || false;
         const status = completed ? 'completed' : 'pending';
         
         return `
@@ -1006,9 +550,9 @@
                  data-task-id="${task.id}"
                  style="animation: slideInFromTop 0.5s ease-out;">
                 <div class="flex items-start gap-4">
-                    <input type="checkbox" ${completed ? 'checked' : ''} class="task-checkbox" data-task-id="${task.id}">
+                    <input type="checkbox" ${completed ? 'checked' : ''} class="task-checkbox">
                     <div class="flex-1">
-                        <h3 class="task-title" contenteditable="true" data-original-title="${escapeHtml(task.title || task.description || 'Untitled Task')}">${escapeHtml(task.title || task.description || 'Untitled Task')}</h3>
+                        <h3 class="task-title">${escapeHtml(task.description || 'Untitled Task')}</h3>
                         <p class="task-meta">
                             <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -1087,18 +631,13 @@
             });
         });
         
-        // Reattach checkbox listeners with optimistic updates
+        // Reattach checkbox listeners
         document.querySelectorAll('.task-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', async function() {
+            checkbox.addEventListener('change', function() {
                 const taskCard = this.closest('.task-card');
-                const taskId = this.dataset.taskId || taskCard.dataset.taskId;
-                const completed = this.checked;
-                
-                // Optimistic UI update
-                if (completed) {
+                if (this.checked) {
                     taskCard.classList.add('completed');
                     taskCard.dataset.status = 'completed';
-                    taskCard.style.animation = 'taskComplete 0.5s ease-out';
                 } else {
                     taskCard.classList.remove('completed');
                     taskCard.dataset.status = 'pending';
@@ -1106,169 +645,7 @@
                 
                 // Update filter counts
                 updateFilterCounts();
-                
-                // Send update to server
-                try {
-                    const response = await fetch(`/api/tasks/${taskId}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ 
-                            status: completed ? 'done' : 'todo'
-                        })
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error('Failed to update task');
-                    }
-                    
-                    const updatedTask = await response.json();
-                    
-                    // Update cache
-                    await tasksCache.saveTask(updatedTask);
-                    
-                    console.log('✅ Task updated on server:', taskId);
-                } catch (error) {
-                    console.error('Failed to update task:', error);
-                    
-                    // Rollback UI on error
-                    this.checked = !completed;
-                    if (completed) {
-                        taskCard.classList.remove('completed');
-                        taskCard.dataset.status = 'pending';
-                    } else {
-                        taskCard.classList.add('completed');
-                        taskCard.dataset.status = 'completed';
-                    }
-                    updateFilterCounts();
-                    
-                    // Queue for sync when back online
-                    await tasksCache.queueSync('update_task', {
-                        task_id: taskId,
-                        data: { status: completed ? 'done' : 'todo' }
-                    });
-                    
-                    showNotification('Update queued', 'Will sync when connection is restored');
-                }
             });
-        });
-        
-        // Attach inline editing listeners to task titles
-        attachInlineEditingListeners();
-    }
-    
-    /**
-     * Debounce utility function
-     * @param {Function} func - Function to debounce
-     * @param {number} wait - Milliseconds to wait
-     * @returns {Function} Debounced function
-     */
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-    
-    /**
-     * Attach inline editing listeners to task titles
-     */
-    function attachInlineEditingListeners() {
-        document.querySelectorAll('.task-title[contenteditable="true"]').forEach(titleEl => {
-            // Store original value on focus
-            titleEl.addEventListener('focus', function() {
-                this.dataset.originalTitle = this.textContent;
-            });
-            
-            // Handle Enter key to blur (save)
-            titleEl.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    this.blur();
-                }
-                // Handle Escape to cancel
-                if (e.key === 'Escape') {
-                    e.preventDefault();
-                    this.textContent = this.dataset.originalTitle;
-                    this.blur();
-                }
-            });
-            
-            // Auto-save on blur with debounce
-            titleEl.addEventListener('blur', debounce(async function() {
-                const newTitle = this.textContent.trim();
-                const originalTitle = this.dataset.originalTitle;
-                
-                // Skip if unchanged or empty
-                if (!newTitle || newTitle === originalTitle) {
-                    if (!newTitle) {
-                        this.textContent = originalTitle;
-                    }
-                    return;
-                }
-                
-                const taskCard = this.closest('.task-card');
-                const taskId = taskCard.dataset.taskId;
-                
-                // Show saving indicator
-                this.classList.add('saving');
-                
-                try {
-                    const response = await fetch(`/api/tasks/${taskId}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ 
-                            title: newTitle
-                        })
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error('Failed to update task title');
-                    }
-                    
-                    const result = await response.json();
-                    const updatedTask = result.task || result;
-                    
-                    // Update cache
-                    await tasksCache.saveTask(updatedTask);
-                    
-                    // Update original title
-                    this.dataset.originalTitle = newTitle;
-                    
-                    // Show saved indicator
-                    this.classList.remove('saving');
-                    this.classList.add('saved');
-                    
-                    setTimeout(() => {
-                        this.classList.remove('saved');
-                    }, 2000);
-                    
-                    console.log('✅ Task title updated:', taskId, newTitle);
-                    
-                } catch (error) {
-                    console.error('Failed to update task title:', error);
-                    
-                    // Rollback on error
-                    this.textContent = originalTitle;
-                    this.classList.remove('saving');
-                    
-                    // Queue for sync when back online
-                    await tasksCache.queueSync('update_task', {
-                        task_id: taskId,
-                        data: { title: newTitle }
-                    });
-                    
-                    showNotification('Update queued', 'Will sync when connection is restored');
-                }
-            }, 300));
         });
     }
     
@@ -1334,126 +711,10 @@
         document.addEventListener('DOMContentLoaded', () => {
             initTasksWebSocket();
             attachTaskCardListeners();
-            
-            // Attach modal form submit handler
-            const taskForm = document.getElementById('taskForm');
-            if (taskForm) {
-                taskForm.addEventListener('submit', handleTaskFormSubmit);
-            }
-            
-            // Attach button click handlers
-            const newTaskBtn = document.getElementById('newTaskBtn');
-            const createFirstTaskBtn = document.getElementById('createFirstTaskBtn');
-            const closeModalBtn = document.getElementById('closeModalBtn');
-            const cancelTaskBtn = document.getElementById('cancelTaskBtn');
-            
-            console.log('🔍 Task modal buttons found:', {
-                newTaskBtn: !!newTaskBtn,
-                createFirstTaskBtn: !!createFirstTaskBtn,
-                closeModalBtn: !!closeModalBtn,
-                cancelTaskBtn: !!cancelTaskBtn,
-                openTaskModal: typeof window.openTaskModal,
-                closeTaskModal: typeof window.closeTaskModal
-            });
-            
-            if (newTaskBtn) {
-                newTaskBtn.addEventListener('click', window.openTaskModal);
-                console.log('✅ Event listener attached to newTaskBtn');
-            }
-            if (createFirstTaskBtn) {
-                createFirstTaskBtn.addEventListener('click', window.openTaskModal);
-                console.log('✅ Event listener attached to createFirstTaskBtn');
-            }
-            if (closeModalBtn) {
-                closeModalBtn.addEventListener('click', window.closeTaskModal);
-                console.log('✅ Event listener attached to closeModalBtn');
-            }
-            if (cancelTaskBtn) {
-                cancelTaskBtn.addEventListener('click', window.closeTaskModal);
-                console.log('✅ Event listener attached to cancelTaskBtn');
-            }
-            
-            // Close modal on Escape key
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    const modal = document.getElementById('taskModal');
-                    if (modal && modal.style.display !== 'none') {
-                        window.closeTaskModal();
-                    }
-                }
-            });
-            
-            // Close modal on overlay click
-            const modal = document.getElementById('taskModal');
-            if (modal) {
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        window.closeTaskModal();
-                    }
-                });
-            }
         });
     } else {
         initTasksWebSocket();
         attachTaskCardListeners();
-        
-        // Attach modal form submit handler
-        const taskForm = document.getElementById('taskForm');
-        if (taskForm) {
-            taskForm.addEventListener('submit', handleTaskFormSubmit);
-        }
-        
-        // Attach button click handlers
-        const newTaskBtn = document.getElementById('newTaskBtn');
-        const createFirstTaskBtn = document.getElementById('createFirstTaskBtn');
-        const closeModalBtn = document.getElementById('closeModalBtn');
-        const cancelTaskBtn = document.getElementById('cancelTaskBtn');
-        
-        console.log('🔍 Task modal buttons found (else block):', {
-            newTaskBtn: !!newTaskBtn,
-            createFirstTaskBtn: !!createFirstTaskBtn,
-            closeModalBtn: !!closeModalBtn,
-            cancelTaskBtn: !!cancelTaskBtn,
-            openTaskModal: typeof window.openTaskModal,
-            closeTaskModal: typeof window.closeTaskModal
-        });
-        
-        if (newTaskBtn) {
-            newTaskBtn.addEventListener('click', window.openTaskModal);
-            console.log('✅ Event listener attached to newTaskBtn (else block)');
-        }
-        if (createFirstTaskBtn) {
-            createFirstTaskBtn.addEventListener('click', window.openTaskModal);
-            console.log('✅ Event listener attached to createFirstTaskBtn (else block)');
-        }
-        if (closeModalBtn) {
-            closeModalBtn.addEventListener('click', window.closeTaskModal);
-            console.log('✅ Event listener attached to closeModalBtn (else block)');
-        }
-        if (cancelTaskBtn) {
-            cancelTaskBtn.addEventListener('click', window.closeTaskModal);
-            console.log('✅ Event listener attached to cancelTaskBtn (else block)');
-        }
-        
-        // Close modal on Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                const modal = document.getElementById('taskModal');
-                if (modal && modal.style.display !== 'none') {
-                    window.closeTaskModal();
-                }
-            }
-        });
-        
-        // Close modal on overlay click
-        const modal = document.getElementById('taskModal');
-        if (modal) {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    window.closeTaskModal();
-                }
-            });
-        }
     }
     
     // Add CSS for animations

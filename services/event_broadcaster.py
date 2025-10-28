@@ -167,7 +167,7 @@ class EventBroadcaster:
         self,
         task_id: int,
         task_data: Dict[str, Any],
-        meeting_id: Optional[int],
+        meeting_id: int,
         workspace_id: int
     ) -> Optional[EventLedger]:
         """
@@ -176,7 +176,7 @@ class EventBroadcaster:
         Args:
             task_id: Task ID
             task_data: Task information
-            meeting_id: Associated meeting ID (optional for manual tasks)
+            meeting_id: Associated meeting ID
             workspace_id: Workspace ID
             
         Returns:
@@ -189,13 +189,13 @@ class EventBroadcaster:
                 payload={
                     'task_id': task_id,
                     'task': task_data,
-                    'meeting_id': meeting_id,  # Can be None for manual tasks
+                    'meeting_id': meeting_id,
                     'workspace_id': workspace_id
                 },
                 trace_id=f"task_{task_id}"
             )
             
-            # Always broadcast to workspace-level rooms, regardless of meeting association
+            # Broadcast to both dashboard and tasks namespaces
             self.emit_event(event, namespace="/dashboard", room=f"workspace_{workspace_id}")
             self.emit_event(event, namespace="/tasks", room=f"workspace_{workspace_id}")
             
