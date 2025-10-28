@@ -180,15 +180,22 @@ def api_meetings():
     """
     Get meetings in JSON format with checksum for cache validation.
     CROWN⁴ cache bootstrap endpoint.
+    Supports ?archived=true to filter archived meetings.
     """
     import hashlib
     import json
+    
+    # Get archived filter parameter (CROWN⁴ Phase 4)
+    archived_filter = request.args.get('archived', 'false').lower() == 'true'
     
     # Build query - use impossible condition if no workspace
     if current_user.workspace_id:
         query = db.select(Meeting).options(
             joinedload(Meeting.session)
-        ).where(Meeting.workspace_id == current_user.workspace_id)
+        ).where(
+            Meeting.workspace_id == current_user.workspace_id,
+            Meeting.archived == archived_filter
+        )
     else:
         query = db.select(Meeting).where(Meeting.id == -1)
     
@@ -239,10 +246,14 @@ def meetings():
     
     # Build query - use impossible condition if no workspace
     # ✨ CROWN⁴: Eager load session relationship for card navigation
+    # ✨ CROWN⁴ Phase 4: Exclude archived meetings from active view
     if current_user.workspace_id:
         query = db.select(Meeting).options(
             joinedload(Meeting.session)
-        ).where(Meeting.workspace_id == current_user.workspace_id)
+        ).where(
+            Meeting.workspace_id == current_user.workspace_id,
+            Meeting.archived == False
+        )
     else:
         query = db.select(Meeting).where(Meeting.id == -1)
     
