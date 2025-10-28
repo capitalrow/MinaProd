@@ -41,6 +41,7 @@ class Task(Base):
     due_date: Mapped[Optional[date]] = mapped_column(Date)
     reminder_date: Mapped[Optional[datetime]] = mapped_column(DateTime)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    snoozed_until: Mapped[Optional[datetime]] = mapped_column(DateTime)  # CROWN⁴.5: Task snooze support
     
     # Relationships
     meeting_id: Mapped[Optional[int]] = mapped_column(ForeignKey("meetings.id"), nullable=True)
