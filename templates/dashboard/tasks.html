@@ -347,40 +347,436 @@
 </div>
 
 <script nonce="{{ g.csp_nonce }}">
-// Filter tabs
-document.querySelectorAll('.filter-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        const filter = tab.dataset.filter;
-        
-        // Update active tab
-        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        
-        // Filter tasks
-        document.querySelectorAll('.task-card').forEach(card => {
-            if (filter === 'all') {
-                card.style.display = 'block';
-            } else {
-                const status = card.dataset.status;
-                card.style.display = status === filter ? 'block' : 'none';
-            }
-        });
-    });
-});
+/**
+ * Tasks Page - Real-time WebSocket Integration
+ * CROWN⁴ Event Handling for Live Task Updates
+ */
 
-// Task checkbox toggle
-document.querySelectorAll('.task-checkbox').forEach(checkbox => {
-    checkbox.addEventListener('change', function() {
-        const taskCard = this.closest('.task-card');
-        if (this.checked) {
-            taskCard.classList.add('completed');
-            taskCard.dataset.status = 'completed';
-        } else {
-            taskCard.classList.remove('completed');
-            taskCard.dataset.status = 'pending';
+(function() {
+    'use strict';
+    
+    // Get workspace ID from user context
+    const WORKSPACE_ID = {{ current_user.workspace_id }};
+    
+    // Cache DOM elements
+    const filterCounts = {
+        all: document.querySelector('.filter-tab[data-filter="all"] .px-2'),
+        pending: document.querySelector('.filter-tab[data-filter="pending"] .px-2'),
+        completed: document.querySelector('.filter-tab[data-filter="completed"] .px-2')
+    };
+    
+    const tasksContainer = document.querySelector('.tasks-container > div:last-of-type');
+    const emptyStateEl = document.querySelector('.empty-state');
+    
+    /**
+     * Initialize WebSocket connection for tasks page
+     */
+    function initTasksWebSocket() {
+        console.log('🚀 Initializing tasks WebSocket...');
+        
+        // Initialize WebSocket manager with tasks namespace
+        if (!window.wsManager) {
+            console.error('❌ WebSocket manager not found');
+            return;
         }
-        // Here you would typically send an API request to update the task status
-    });
-});
+        
+        // Connect to tasks namespace
+        window.wsManager.connect('tasks');
+        
+        // Listen for task_update events
+        window.wsManager.on('task_update', handleTaskUpdate);
+        
+        console.log('📡 Tasks WebSocket listeners registered');
+    }
+    
+    /**
+     * Handle task update event
+     * @param {Object} data - Event data with task information
+     */
+    function handleTaskUpdate(data) {
+        console.log('✅ Task update event received:', data);
+        
+        const taskData = data.data || data;
+        const action = taskData.action; // 'created', 'updated', 'deleted', 'completed'
+        
+        switch (action) {
+            case 'created':
+                handleTaskCreated(taskData);
+                break;
+            case 'updated':
+                handleTaskUpdated(taskData);
+                break;
+            case 'deleted':
+                handleTaskDeleted(taskData);
+                break;
+            case 'completed':
+                handleTaskCompleted(taskData);
+                break;
+        }
+        
+        // Update filter counts
+        updateFilterCounts();
+    }
+    
+    /**
+     * Handle new task created
+     * @param {Object} taskData - Task data
+     */
+    function handleTaskCreated(taskData) {
+        const task = taskData.task || taskData;
+        
+        // Remove empty state if present
+        if (emptyStateEl && emptyStateEl.style.display !== 'none') {
+            emptyStateEl.style.opacity = '0';
+            setTimeout(() => {
+                emptyStateEl.style.display = 'none';
+            }, 300);
+        }
+        
+        // Create task card HTML
+        const cardHTML = createTaskCardHTML(task);
+        
+        // Insert at top of list
+        if (tasksContainer && !emptyStateEl.parentElement.contains(emptyStateEl)) {
+            tasksContainer.insertAdjacentHTML('afterbegin', cardHTML);
+            
+            // Attach event listeners to new card
+            attachTaskCardListeners();
+        }
+        
+        // Show notification
+        showNotification('New task created', task.description || 'A new task has been added');
+    }
+    
+    /**
+     * Handle task updated
+     * @param {Object} taskData - Task data
+     */
+    function handleTaskUpdated(taskData) {
+        const task = taskData.task || taskData;
+        const taskCard = document.querySelector(`[data-task-id="${task.id}"]`);
+        
+        if (taskCard) {
+            // Update task title
+            const titleEl = taskCard.querySelector('.task-title');
+            if (titleEl) titleEl.textContent = task.description || 'Untitled Task';
+            
+            // Update priority badge
+            const priorityBadge = taskCard.querySelector('.priority-badge');
+            if (priorityBadge && task.priority) {
+                priorityBadge.className = `priority-badge priority-${task.priority.toLowerCase()}`;
+                priorityBadge.textContent = task.priority;
+            }
+            
+            // Add update animation
+            taskCard.style.animation = 'taskUpdate 0.5s ease-out';
+            setTimeout(() => {
+                taskCard.style.animation = '';
+            }, 500);
+        }
+    }
+    
+    /**
+     * Handle task deleted
+     * @param {Object} taskData - Task data
+     */
+    function handleTaskDeleted(taskData) {
+        const task = taskData.task || taskData;
+        const taskCard = document.querySelector(`[data-task-id="${task.id}"]`);
+        
+        if (taskCard) {
+            // Fade out and remove
+            taskCard.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+            taskCard.style.opacity = '0';
+            taskCard.style.transform = 'translateX(-20px)';
+            
+            setTimeout(() => {
+                taskCard.remove();
+                
+                // Show empty state if no tasks left
+                const remainingTasks = document.querySelectorAll('.task-card').length;
+                if (remainingTasks === 0 && emptyStateEl) {
+                    emptyStateEl.style.display = 'block';
+                    emptyStateEl.style.opacity = '1';
+                }
+            }, 300);
+        }
+    }
+    
+    /**
+     * Handle task completed
+     * @param {Object} taskData - Task data
+     */
+    function handleTaskCompleted(taskData) {
+        const task = taskData.task || taskData;
+        const taskCard = document.querySelector(`[data-task-id="${task.id}"]`);
+        
+        if (taskCard) {
+            const checkbox = taskCard.querySelector('.task-checkbox');
+            
+            if (task.completed) {
+                taskCard.classList.add('completed');
+                taskCard.dataset.status = 'completed';
+                if (checkbox) checkbox.checked = true;
+            } else {
+                taskCard.classList.remove('completed');
+                taskCard.dataset.status = 'pending';
+                if (checkbox) checkbox.checked = false;
+            }
+            
+            // Add completion animation
+            if (task.completed) {
+                taskCard.style.animation = 'taskComplete 0.5s ease-out';
+                setTimeout(() => {
+                    taskCard.style.animation = '';
+                }, 500);
+            }
+        }
+    }
+    
+    /**
+     * Create task card HTML
+     * @param {Object} task - Task data
+     * @returns {string} HTML string
+     */
+    function createTaskCardHTML(task) {
+        const priority = task.priority || 'medium';
+        const completed = task.completed || false;
+        const status = completed ? 'completed' : 'pending';
+        
+        return `
+            <div class="task-card ${completed ? 'completed' : ''}" 
+                 data-status="${status}" 
+                 data-task-id="${task.id}"
+                 style="animation: slideInFromTop 0.5s ease-out;">
+                <div class="flex items-start gap-4">
+                    <input type="checkbox" ${completed ? 'checked' : ''} class="task-checkbox">
+                    <div class="flex-1">
+                        <h3 class="task-title">${escapeHtml(task.description || 'Untitled Task')}</h3>
+                        <p class="task-meta">
+                            <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            From: <span class="font-medium">${escapeHtml(task.meeting_title || 'Unknown meeting')}</span>
+                        </p>
+                        <div class="flex gap-2 flex-wrap">
+                            <span class="priority-badge priority-${priority.toLowerCase()}">
+                                ${priority}
+                            </span>
+                            ${task.due_date ? `
+                                <span class="due-date-badge">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    ${task.due_date}
+                                </span>
+                            ` : `
+                                <span class="due-date-badge">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    No due date
+                                </span>
+                            `}
+                            ${task.assignee ? `
+                                <span class="due-date-badge">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                    </svg>
+                                    ${escapeHtml(task.assignee)}
+                                </span>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Update filter counts
+     */
+    function updateFilterCounts() {
+        const allTasks = document.querySelectorAll('.task-card').length;
+        const pendingTasks = document.querySelectorAll('.task-card[data-status="pending"]').length;
+        const completedTasks = document.querySelectorAll('.task-card[data-status="completed"]').length;
+        
+        if (filterCounts.all) filterCounts.all.textContent = allTasks;
+        if (filterCounts.pending) filterCounts.pending.textContent = pendingTasks;
+        if (filterCounts.completed) filterCounts.completed.textContent = completedTasks;
+    }
+    
+    /**
+     * Attach event listeners to task cards
+     */
+    function attachTaskCardListeners() {
+        // Reattach filter tab listeners
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const filter = tab.dataset.filter;
+                
+                // Update active tab
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Filter tasks
+                document.querySelectorAll('.task-card').forEach(card => {
+                    if (filter === 'all') {
+                        card.style.display = 'block';
+                    } else {
+                        const status = card.dataset.status;
+                        card.style.display = status === filter ? 'block' : 'none';
+                    }
+                });
+            });
+        });
+        
+        // Reattach checkbox listeners
+        document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const taskCard = this.closest('.task-card');
+                if (this.checked) {
+                    taskCard.classList.add('completed');
+                    taskCard.dataset.status = 'completed';
+                } else {
+                    taskCard.classList.remove('completed');
+                    taskCard.dataset.status = 'pending';
+                }
+                
+                // Update filter counts
+                updateFilterCounts();
+            });
+        });
+    }
+    
+    /**
+     * Show notification toast
+     * @param {string} title - Notification title
+     * @param {string} message - Notification message
+     */
+    function showNotification(title, message) {
+        const notification = document.createElement('div');
+        notification.className = 'notification-toast';
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            max-width: 400px;
+            padding: 16px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--backdrop-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            animation: slideInFromRight 0.3s ease-out;
+        `;
+        
+        notification.innerHTML = `
+            <div style="display: flex; gap: 12px; align-items: start;">
+                <div style="flex-shrink: 0; width: 40px; height: 40px; background: var(--gradient-primary); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <svg width="20" height="20" fill="white" viewBox="0 0 24 24">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div style="flex: 1;">
+                    <p style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(title)}</p>
+                    <p style="font-size: 14px; color: var(--color-text-secondary);">${escapeHtml(message)}</p>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOutToRight 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
+    }
+    
+    /**
+     * Escape HTML to prevent XSS
+     * @param {string} text - Text to escape
+     * @returns {string} Escaped text
+     */
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            initTasksWebSocket();
+            attachTaskCardListeners();
+        });
+    } else {
+        initTasksWebSocket();
+        attachTaskCardListeners();
+    }
+    
+    // Add CSS for animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInFromTop {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideInFromRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes slideOutToRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+        }
+        
+        @keyframes taskUpdate {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.02);
+                box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+            }
+        }
+        
+        @keyframes taskComplete {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(0.98);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+    
+})();
 </script>
 {% endblock %}

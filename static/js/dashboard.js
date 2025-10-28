@@ -8,14 +8,125 @@ class MinaDashboard {
         this.apiBase = '/api';
         this.refreshInterval = 30000; // 30 seconds
         this.refreshTimers = new Map();
+        this.cache = null;
+        this.workspaceId = typeof WORKSPACE_ID !== 'undefined' ? WORKSPACE_ID : 1;
+        this.performanceMetrics = {
+            bootstrapStart: null,
+            cacheHydrationTime: null,
+            networkFetchTime: null,
+            totalBootstrapTime: null
+        };
+        this.telemetry = null;
         this.init();
     }
 
-    init() {
-        console.log('[Dashboard] Initializing Mina Dashboard');
-        this.loadDashboardData();
+    async init() {
+        console.log('[Dashboard] Initializing Mina Dashboard (CROWN⁴ Cache-First)');
+        this.performanceMetrics.bootstrapStart = performance.now();
+        
+        // Initialize CROWN⁴ Telemetry
+        if (typeof CROWNTelemetry !== 'undefined') {
+            this.telemetry = new CROWNTelemetry(this.workspaceId);
+            await this.telemetry.init();
+            
+            // Make telemetry globally available for WebSocket manager
+            window.crownTelemetry = this.telemetry;
+            
+            // Inject telemetry into existing WebSocket manager if it exists
+            if (window.wsManager) {
+                window.wsManager.telemetry = this.telemetry;
+                console.log('📊 Telemetry injected into WebSocket manager');
+            }
+        }
+        
+        // Initialize IndexedDB cache
+        await this.initCache();
+        
+        // Cache-first bootstrap: Load from cache first, then network
+        await this.cacheFirstBootstrap();
+        
         this.setupEventListeners();
         this.startAutoRefresh();
+        
+        // Log performance metrics
+        this.performanceMetrics.totalBootstrapTime = performance.now() - this.performanceMetrics.bootstrapStart;
+        console.log(`⚡ Dashboard bootstrap: ${this.performanceMetrics.totalBootstrapTime.toFixed(0)}ms (target: <200ms)`);
+        console.log(`   ├─ Cache hydration: ${this.performanceMetrics.cacheHydrationTime?.toFixed(0) || 'N/A'}ms`);
+        console.log(`   └─ Network fetch: ${this.performanceMetrics.networkFetchTime?.toFixed(0) || 'N/A'}ms`);
+        
+        // Record bootstrap metrics in telemetry
+        if (this.telemetry) {
+            await this.telemetry.recordBootstrap(this.performanceMetrics);
+            
+            // Initialize performance monitor UI (Ctrl+Shift+P to toggle)
+            if (typeof CROWNPerformanceMonitor !== 'undefined') {
+                new CROWNPerformanceMonitor(this.telemetry);
+            }
+        }
+    }
+    
+    /**
+     * Initialize IndexedDB cache
+     */
+    async initCache() {
+        try {
+            if (typeof IndexedDBCache === 'undefined') {
+                console.warn('⚠️  IndexedDBCache not available, falling back to network-only');
+                return;
+            }
+            
+            this.cache = new IndexedDBCache(this.workspaceId);
+            await this.cache.init();
+            console.log('✅ IndexedDB cache initialized');
+        } catch (error) {
+            console.error('❌ Failed to initialize cache:', error);
+            this.cache = null;
+        }
+    }
+    
+    /**
+     * CROWN⁴ Cache-First Bootstrap Pattern
+     * Target: <200ms bootstrap from cache
+     */
+    async cacheFirstBootstrap() {
+        const cacheStart = performance.now();
+        
+        // Try cache first
+        if (this.cache) {
+            try {
+                const [cachedMeetings, cachedTasks, cachedAnalytics] = await Promise.all([
+                    this.cache.getCachedMeetings(),
+                    this.cache.getAll(this.cache.STORES.TASKS),
+                    this.cache.getAll(this.cache.STORES.ANALYTICS)
+                ]);
+                
+                // Hydrate UI from cache immediately
+                if (cachedMeetings.data && cachedMeetings.data.length > 0) {
+                    this.renderRecentMeetings(cachedMeetings.data.slice(0, 5));
+                    console.log(`📦 Cache hit: ${cachedMeetings.count} meetings (checksum: ${cachedMeetings.checksum?.substring(0, 8)}...)`);
+                    
+                    // Track cache hit
+                    if (this.telemetry) {
+                        this.telemetry.recordCacheAccess(true);
+                    }
+                } else {
+                    // Track cache miss
+                    if (this.telemetry) {
+                        this.telemetry.recordCacheAccess(false);
+                    }
+                }
+                
+                this.performanceMetrics.cacheHydrationTime = performance.now() - cacheStart;
+                console.log(`⚡ Cache hydration: ${this.performanceMetrics.cacheHydrationTime.toFixed(0)}ms`);
+            } catch (error) {
+                console.error('❌ Cache hydration failed:', error);
+            }
+        }
+        
+        // Fetch fresh data from network in background
+        const networkStart = performance.now();
+        await this.loadDashboardData();
+        this.performanceMetrics.networkFetchTime = performance.now() - networkStart;
     }
 
     /**
@@ -98,6 +209,15 @@ class MinaDashboard {
 
             if (data.success) {
                 this.renderRecentMeetings(data.meetings);
+                
+                // Cache meetings for next bootstrap
+                if (this.cache && data.meetings) {
+                    try {
+                        await this.cache.cacheMeetings(data.meetings, data.checksum || this.generateChecksum(data.meetings));
+                    } catch (error) {
+                        console.warn('⚠️  Failed to cache meetings:', error);
+                    }
+                }
             }
         } catch (error) {
             console.error('[Dashboard] Failed to load recent meetings:', error);
@@ -154,6 +274,18 @@ class MinaDashboard {
 
             if (data.success) {
                 this.renderMyTasks(data.tasks);
+                
+                // Cache tasks for next bootstrap
+                if (this.cache && data.tasks) {
+                    try {
+                        const allTasks = [...data.tasks.todo, ...data.tasks.in_progress, ...data.tasks.completed];
+                        if (allTasks.length > 0) {
+                            await this.cache.cacheTasks(allTasks);
+                        }
+                    } catch (error) {
+                        console.warn('⚠️  Failed to cache tasks:', error);
+                    }
+                }
             }
         } catch (error) {
             console.error('[Dashboard] Failed to load my tasks:', error);
@@ -329,10 +461,52 @@ class MinaDashboard {
     }
 
     /**
-     * Update task status
+     * Update task status with optimistic UI updates and server reconciliation (CROWN⁴ Task #11)
      */
     async updateTaskStatus(taskId, newStatus) {
+        // Find the task element
+        const taskElement = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+        if (!taskElement) {
+            console.warn('[Dashboard] Task element not found:', taskId);
+            return;
+        }
+        
+        // Store original HTML for rollback
+        const originalHTML = taskElement.innerHTML;
+        const originalStatus = taskElement.querySelector('.task-status')?.textContent?.trim()?.toLowerCase() || '';
+        
         try {
+            // OPTIMISTIC UPDATE: Immediately update UI before server responds
+            const statusSpan = taskElement.querySelector('.task-status');
+            const actionButton = taskElement.querySelector('.btn-icon');
+            
+            if (statusSpan) {
+                statusSpan.className = `task-status status-${newStatus}`;
+                statusSpan.textContent = this.capitalizeFirst(newStatus);
+            }
+            
+            // Update button icon
+            if (actionButton) {
+                const nextStatus = this.getNextStatus(newStatus);
+                actionButton.setAttribute('onclick', `dashboard.updateTaskStatus(${taskId}, '${nextStatus}')`);
+                actionButton.setAttribute('title', 'Update Status');
+                
+                const icon = actionButton.querySelector('i[data-feather]');
+                if (icon) {
+                    icon.setAttribute('data-feather', this.getStatusIcon(newStatus));
+                    if (typeof feather !== 'undefined') {
+                        feather.replace();
+                    }
+                }
+            }
+            
+            // Add visual feedback for optimistic update
+            taskElement.style.opacity = '0.7';
+            taskElement.style.transition = 'opacity 0.2s ease';
+            
+            console.log(`[Dashboard] Optimistic update: Task ${taskId} → ${newStatus}`);
+            
+            // SERVER RECONCILIATION: Send request to server
             const response = await fetch(`${this.apiBase}/tasks/${taskId}/status`, {
                 method: 'PUT',
                 headers: {
@@ -342,17 +516,65 @@ class MinaDashboard {
             });
 
             const data = await response.json();
+            
+            // Restore full opacity
+            taskElement.style.opacity = '1';
 
             if (data.success) {
+                // Server confirmed - keep optimistic update
                 this.showNotification('Task status updated', 'success');
-                this.loadMyTasks(); // Refresh tasks
-                this.loadStats(); // Refresh stats
+                
+                // CROWN⁴ Task #12: Broadcast to other tabs
+                if (window.broadcastSync) {
+                    window.broadcastSync.broadcastTaskUpdate(taskId, { status: newStatus });
+                }
+                
+                // Reconcile with server data if different
+                if (data.task && data.task.status !== newStatus) {
+                    console.log(`[Dashboard] Server reconciliation: ${newStatus} → ${data.task.status}`);
+                    
+                    // CRITICAL: Immediately revert optimistic changes before async reload
+                    // Prevents race condition where button handler points to wrong status
+                    taskElement.innerHTML = originalHTML;
+                    taskElement.style.opacity = '1';
+                    
+                    // Re-initialize feather icons
+                    if (typeof feather !== 'undefined') {
+                        feather.replace();
+                    }
+                    
+                    // Re-render with server data and refresh stats
+                    this.loadMyTasks();
+                    this.loadStats();
+                } else {
+                    // Refresh stats only (tasks already updated optimistically)
+                    this.loadStats();
+                }
             } else {
+                // ROLLBACK: Server rejected - restore original state
+                console.warn('[Dashboard] Server rejected update, rolling back:', data.message);
+                taskElement.innerHTML = originalHTML;
+                taskElement.style.opacity = '1';  // Reset opacity
+                
+                // Re-initialize feather icons after rollback
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+                
                 this.showError(data.message || 'Failed to update task');
             }
         } catch (error) {
-            console.error('[Dashboard] Failed to update task:', error);
-            this.showError('Failed to update task');
+            // ROLLBACK: Network error - restore original state
+            console.error('[Dashboard] Failed to update task, rolling back:', error);
+            taskElement.innerHTML = originalHTML;
+            taskElement.style.opacity = '1';  // Reset opacity
+            
+            // Re-initialize feather icons after rollback
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+            
+            this.showError('Failed to update task - network error');
         }
     }
 
@@ -426,6 +648,20 @@ class MinaDashboard {
      */
     showError(message) {
         this.showNotification(message, 'error');
+    }
+    
+    /**
+     * Generate simple checksum from data (for cache validation)
+     */
+    generateChecksum(data) {
+        const str = JSON.stringify(data);
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return Math.abs(hash).toString(16);
     }
 
     /**

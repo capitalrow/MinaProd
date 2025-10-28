@@ -3,6 +3,7 @@
 {% block title %}Meetings - Mina{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/toast-notifications.css') }}">
 <style>
 .meetings-container {
     min-height: calc(100vh - var(--header-height));
@@ -27,6 +28,59 @@
 .meetings-subtitle {
     color: var(--color-text-secondary);
     font-size: var(--font-size-lg);
+}
+
+.meetings-tabs {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+    animation: fadeInUp 0.6s ease-out 0.05s;
+    animation-fill-mode: both;
+}
+
+.tab-btn {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3) var(--space-6);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.tab-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+}
+
+.tab-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-text-primary);
+}
+
+.tab-btn.active {
+    background: var(--gradient-primary);
+    border-color: transparent;
+    color: white;
+    font-weight: var(--font-weight-semibold);
+}
+
+.tab-btn .tab-count {
+    display: inline-block;
+    margin-left: var(--space-2);
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
 }
 
 .filters-card {
@@ -80,6 +134,62 @@
 
 .meeting-card:hover::before {
     opacity: 1;
+}
+
+.meeting-card.archived {
+    opacity: 0.6;
+    background: rgba(var(--color-bg-rgb), 0.3);
+}
+
+.meeting-card.archived::before {
+    background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+}
+
+.meeting-card.archived:hover {
+    opacity: 0.8;
+}
+
+.meeting-card.archived .meeting-title {
+    color: var(--color-text-secondary);
+}
+
+.meeting-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.btn-archive,
+.btn-restore {
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.btn-archive:hover,
+.btn-restore:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: translateY(-1px);
+}
+
+.btn-restore {
+    border-color: var(--color-success);
+    color: var(--color-success);
+}
+
+.btn-restore:hover {
+    background: var(--color-success);
+    color: white;
 }
 
 .meeting-icon {
@@ -218,11 +328,22 @@
         </div>
     </div>
 
+    <div class="meetings-tabs">
+        <button class="tab-btn active" data-tab="active">
+            Active
+            <span class="tab-count" id="active-count">{{ meetings|length if meetings else 0 }}</span>
+        </button>
+        <button class="tab-btn" data-tab="archive">
+            Archive
+            <span class="tab-count" id="archive-count">0</span>
+        </button>
+    </div>
+
     <div class="filters-card">
         <div style="display: grid; grid-template-columns: 1fr auto; gap: var(--space-4); align-items: center;">
             <div class="flex gap-3 flex-wrap">
-                <input type="search" class="input" placeholder="Search meetings..." style="max-width: 400px;">
-                <select class="input" style="max-width: 200px;">
+                <input type="search" class="input" id="search-input" placeholder="Search meetings..." style="max-width: 400px;">
+                <select class="input" id="time-filter" style="max-width: 200px;">
                     <option>All Time</option>
                     <option>This Week</option>
                     <option>This Month</option>
@@ -244,82 +365,418 @@
         </div>
     </div>
 
-    {% if meetings %}
-    <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-4);">
-        {% for meeting in meetings %}
-        <div class="meeting-card" onclick="window.location='{{ url_for('dashboard.meeting_detail', meeting_id=meeting.id) }}'">
-            <div class="flex justify-between items-start gap-4">
-                <div class="flex gap-4 flex-1">
-                    <div class="meeting-icon">
-                        <svg width="28" height="28" fill="white" viewBox="0 0 24 24">
-                            <path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+    <!-- Active Meetings Tab Content -->
+    <div id="active-meetings" class="tab-content">
+        {% if meetings %}
+        <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-4);">
+            {% for meeting in meetings %}
+            <div class="meeting-card" data-meeting-id="{{ meeting.id }}" onclick="window.location='{{ url_for('sessions.get_session_detail', session_identifier=meeting.id) }}'">
+                <div class="flex justify-between items-start gap-4">
+                    <div class="flex gap-4 flex-1">
+                        <div class="meeting-icon">
+                            <svg width="28" height="28" fill="white" viewBox="0 0 24 24">
+                                <path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="meeting-title">{{ meeting.title or 'Untitled Meeting' }}</h3>
+                            <p class="meeting-date">{{ meeting.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                            {% if meeting.summary %}
+                            <p class="meeting-summary">{{ meeting.summary[:200] }}{% if meeting.summary|length > 200 %}...{% endif %}</p>
+                            {% endif %}
+                            <div class="meeting-meta">
+                                {% if meeting.duration %}
+                                <span class="meta-item">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    {{ (meeting.duration / 60)|round|int }} min
+                                </span>
+                                {% endif %}
+                                {% if meeting.word_count %}
+                                <span class="meta-item">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                    {{ meeting.word_count }} words
+                                </span>
+                                {% endif %}
+                                {% if meeting.speaker_count %}
+                                <span class="meta-item">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                    </svg>
+                                    {{ meeting.speaker_count }} speakers
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="meeting-actions">
+                        <button class="btn-archive" onclick="event.stopPropagation(); archiveMeeting({{ meeting.id }});" aria-label="Archive meeting" title="Archive meeting">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                            </svg>
+                            Archive
+                        </button>
+                        <button class="btn-icon" onclick="event.stopPropagation();" aria-label="Share meeting">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                            </svg>
+                        </button>
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.5;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                         </svg>
                     </div>
-                    <div class="flex-1">
-                        <h3 class="meeting-title">{{ meeting.title or 'Untitled Meeting' }}</h3>
-                        <p class="meeting-date">{{ meeting.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
-                        {% if meeting.summary %}
-                        <p class="meeting-summary">{{ meeting.summary[:200] }}{% if meeting.summary|length > 200 %}...{% endif %}</p>
-                        {% endif %}
-                        <div class="meeting-meta">
-                            {% if meeting.duration %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.5;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            <h2 class="empty-state-title">No meetings yet</h2>
+            <p class="empty-state-description">Start recording your first meeting to transform it into actionable insights</p>
+            <a href="{{ url_for('pages.live') }}" class="btn btn-primary btn-lg">Start Your First Recording</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Archive Tab Content -->
+    <div id="archive-meetings" class="tab-content" style="display: none;">
+        <div id="archive-list" style="display: grid; grid-template-columns: 1fr; gap: var(--space-4);">
+            <!-- Archived meetings will be loaded here dynamically -->
+        </div>
+        <div id="archive-empty" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">
+                <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.5;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                </svg>
+            </div>
+            <h2 class="empty-state-title">No archived meetings</h2>
+            <p class="empty-state-description">Archived meetings will appear here. Archive meetings you want to hide from your active list.</p>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/toast-notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ui-event-tracker.js') }}"></script>
+<script>
+// CROWN⁴ Phase 4 & 5: Archive + Error Handling
+let archivedMeetings = [];
+let errorHandler = null;
+let cache = null;
+let prefetchController = null;
+
+// Initialize error handler on page load
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize cache if available
+    if (typeof IndexedDBCache !== 'undefined') {
+        cache = new IndexedDBCache({{ current_user.workspace_id if current_user else 1 }});
+        cache.init().catch(err => console.warn('Cache init failed:', err));
+    }
+    
+    // Initialize prefetch controller
+    if (typeof PrefetchController !== 'undefined') {
+        prefetchController = new PrefetchController({
+            maxConcurrent: 3,
+            maxCacheSize: 50,
+            cacheTimeout: 60000
+        });
+    }
+    
+    // Initialize error handler
+    if (typeof DashboardErrorHandler !== 'undefined') {
+        errorHandler = new DashboardErrorHandler({
+            cache: cache,
+            prefetchController: prefetchController,
+            websocketManager: window.websocketManager
+        });
+        console.log('✅ Dashboard error handler initialized');
+        
+        // Run initial stale cache purge
+        errorHandler.purgeStaleCache({ force: true })
+            .then(result => {
+                if (result.success) {
+                    console.log('🧹 Initial cache purge complete:', result.results);
+                }
+            });
+    }
+});
+let archiveRevealLogged = false;
+
+// Archive a meeting
+function archiveMeeting(meetingId) {
+    fetch(`/dashboard/api/meetings/${meetingId}/archive`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => {
+        if (response.status === 404 && errorHandler) {
+            // Handle missing session with error handler
+            errorHandler.handleMissingSession(meetingId, new Error('Meeting not found'));
+            throw new Error('Meeting not found');
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            const meetingCard = document.querySelector(`.meeting-card[data-meeting-id="${meetingId}"]`);
+            const meetingTitle = meetingCard ? meetingCard.querySelector('.meeting-title').textContent : 'Meeting';
+            
+            // Remove from active list with animation
+            if (meetingCard) {
+                meetingCard.style.transition = 'all 0.3s ease';
+                meetingCard.style.opacity = '0';
+                meetingCard.style.transform = 'translateX(-20px)';
+                
+                setTimeout(() => {
+                    meetingCard.remove();
+                    updateCounts();
+                }, 300);
+            }
+            
+            // Show toast with undo option
+            window.toast.success(`"${meetingTitle}" archived`, 5000, {
+                undoCallback: () => {
+                    restoreMeeting(meetingId, true);
+                },
+                undoText: 'Undo'
+            });
+            
+            // CROWN⁴ Task #12: Broadcast to other tabs
+            if (window.broadcastSync) {
+                window.broadcastSync.broadcastMeetingArchive(meetingId);
+            }
+            
+            console.log(`📦 Meeting ${meetingId} archived successfully`);
+        } else {
+            window.toast.error(`Failed to archive: ${result.error}`, 5000);
+        }
+    })
+    .catch(err => {
+        console.error('Archive error:', err);
+        window.toast.error('Failed to archive meeting', 5000);
+    });
+}
+
+// Restore a meeting
+function restoreMeeting(meetingId, isUndo = false) {
+    fetch(`/dashboard/api/meetings/${meetingId}/restore`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => {
+        if (response.status === 404 && errorHandler) {
+            // Handle missing session with error handler
+            errorHandler.handleMissingSession(meetingId, new Error('Meeting not found'));
+            throw new Error('Meeting not found');
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            const meetingCard = document.querySelector(`.meeting-card[data-meeting-id="${meetingId}"]`);
+            const meetingTitle = meetingCard ? meetingCard.querySelector('.meeting-title').textContent : 'Meeting';
+            
+            // Remove from archive list with animation
+            if (meetingCard) {
+                meetingCard.style.transition = 'all 0.3s ease';
+                meetingCard.style.opacity = '0';
+                meetingCard.style.transform = 'translateX(20px)';
+                
+                setTimeout(() => {
+                    meetingCard.remove();
+                    updateCounts();
+                    
+                    // Check if archive is now empty
+                    const archiveList = document.getElementById('archive-list');
+                    const archiveEmpty = document.getElementById('archive-empty');
+                    if (archiveList && archiveList.children.length === 0) {
+                        archiveEmpty.style.display = 'block';
+                    }
+                }, 300);
+            }
+            
+            // Show toast
+            if (!isUndo) {
+                window.toast.success(`"${meetingTitle}" restored to active meetings`, 3000);
+            }
+            
+            // CROWN⁴ Task #12: Broadcast to other tabs
+            if (window.broadcastSync) {
+                window.broadcastSync.broadcastMeetingRestore(meetingId);
+            }
+            
+            console.log(`📥 Meeting ${meetingId} restored successfully`);
+            
+            // Reload page if on active tab to show restored meeting
+            const activeTab = document.querySelector('.tab-btn.active');
+            if (activeTab && activeTab.dataset.tab === 'active') {
+                setTimeout(() => window.location.reload(), 500);
+            }
+        } else {
+            window.toast.error(`Failed to restore: ${result.error}`, 5000);
+        }
+    })
+    .catch(err => {
+        console.error('Restore error:', err);
+        window.toast.error('Failed to restore meeting', 5000);
+    });
+}
+
+// Load archived meetings  
+function loadArchivedMeetings() {
+    const abortController = new AbortController();
+    
+    // Track navigation with error handler
+    if (errorHandler) {
+        errorHandler.trackNavigation('/dashboard/api/meetings?archived=true', abortController);
+    }
+    
+    fetch('/dashboard/api/meetings?archived=true', {
+        signal: abortController.signal
+    })
+        .then(response => response.json())
+        .then(data => {
+            const archiveList = document.getElementById('archive-list');
+            const archiveEmpty = document.getElementById('archive-empty');
+            
+            if (data.meetings && data.meetings.length > 0) {
+                archiveList.innerHTML = '';
+                archiveEmpty.style.display = 'none';
+                
+                data.meetings.forEach((meeting, index) => {
+                    const card = createArchivedMeetingCard(meeting, index);
+                    archiveList.appendChild(card);
+                });
+                
+                // Update archive count
+                document.getElementById('archive-count').textContent = data.meetings.length;
+            } else {
+                archiveList.innerHTML = '';
+                archiveEmpty.style.display = 'block';
+                document.getElementById('archive-count').textContent = '0';
+            }
+        })
+        .catch(err => {
+            console.error('Failed to load archived meetings:', err);
+            window.toast.error('Failed to load archived meetings', 3000);
+        });
+}
+
+// Create archived meeting card HTML
+function createArchivedMeetingCard(meeting, index) {
+    const card = document.createElement('div');
+    card.className = 'meeting-card archived';
+    card.dataset.meetingId = meeting.id;
+    card.style.animationDelay = `${index * 0.1}s`;
+    
+    const formattedDate = new Date(meeting.created_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+    });
+    
+    card.innerHTML = `
+        <div class="flex justify-between items-start gap-4">
+            <div class="flex gap-4 flex-1" onclick="window.location='/sessions/${meeting.id}'">
+                <div class="meeting-icon">
+                    <svg width="28" height="28" fill="white" viewBox="0 0 24 24">
+                        <path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="meeting-title">${meeting.title || 'Untitled Meeting'}</h3>
+                    <p class="meeting-date">${formattedDate}</p>
+                    ${meeting.summary ? `<p class="meeting-summary">${meeting.summary.substring(0, 200)}${meeting.summary.length > 200 ? '...' : ''}</p>` : ''}
+                    <div class="meeting-meta">
+                        ${meeting.duration ? `
                             <span class="meta-item">
                                 <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
-                                {{ (meeting.duration / 60)|round|int }} min
+                                ${Math.round(meeting.duration / 60)} min
                             </span>
-                            {% endif %}
-                            {% if meeting.word_count %}
+                        ` : ''}
+                        ${meeting.word_count ? `
                             <span class="meta-item">
                                 <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                 </svg>
-                                {{ meeting.word_count }} words
+                                ${meeting.word_count} words
                             </span>
-                            {% endif %}
-                            {% if meeting.speaker_count %}
-                            <span class="meta-item">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                </svg>
-                                {{ meeting.speaker_count }} speakers
-                            </span>
-                            {% endif %}
-                        </div>
+                        ` : ''}
                     </div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <button class="btn-icon" onclick="event.stopPropagation();" aria-label="Share meeting">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
-                        </svg>
-                    </button>
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.5;">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </div>
+            <div class="meeting-actions">
+                <button class="btn-restore" onclick="event.stopPropagation(); restoreMeeting(${meeting.id});" title="Restore meeting">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
-                </div>
+                    Restore
+                </button>
             </div>
         </div>
-        {% endfor %}
-    </div>
+    `;
+    
+    return card;
+}
 
-    {% if has_more %}
-    <div class="text-center" style="margin-top: var(--space-8);">
-        <button class="btn btn-secondary">Load More</button>
-    </div>
-    {% endif %}
-    {% else %}
-    <div class="empty-state">
-        <div class="empty-state-icon">
-            <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.5;">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
-        </div>
-        <h2 class="empty-state-title">No meetings yet</h2>
-        <p class="empty-state-description">Start recording your first meeting to transform it into actionable insights</p>
-        <a href="{{ url_for('pages.live') }}" class="btn btn-primary btn-lg">Start Your First Recording</a>
-    </div>
-    {% endif %}
-</div>
+// Update meeting counts
+function updateCounts() {
+    const activeCards = document.querySelectorAll('#active-meetings .meeting-card').length;
+    document.getElementById('active-count').textContent = activeCards;
+}
+
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        
+        // Update active state
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Show/hide content
+        document.getElementById('active-meetings').style.display = tab === 'active' ? 'block' : 'none';
+        document.getElementById('archive-meetings').style.display = tab === 'archive' ? 'block' : 'none';
+        
+        // CROWN⁴ Event #9: Log ARCHIVE_REVEAL when archive tab accessed
+        if (tab === 'archive' && !archiveRevealLogged) {
+            fetch('/dashboard/api/events/archive-reveal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+            }).then(result => {
+                if (result) {
+                    console.log(`🗄️ Archive reveal event logged (event_id=${result.event_id})`);
+                    archiveRevealLogged = true;
+                }
+            }).catch(err => {
+                console.warn('⚠️ Failed to log archive reveal event:', err);
+            });
+            
+            // Load archived meetings
+            loadArchivedMeetings();
+        }
+    });
+});
+
+// CROWN⁴ Event tracking now handled by ui-event-tracker.js
+// Includes: search debouncing (1s), filter tracking, tab switches, event batching
+</script>
 {% endblock %}

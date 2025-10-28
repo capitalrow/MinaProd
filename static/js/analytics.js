@@ -1329,6 +1329,16 @@ class AnalyticsDashboard {
 
 // Initialize when DOM is ready and Chart.js is loaded
 window.addEventListener('load', function() {
+    // Only initialize if we're on an analytics page (check for analytics-specific elements)
+    const analyticsContainer = document.querySelector('.analytics-dashboard') || 
+                               document.querySelector('.date-range-select') ||
+                               document.getElementById('meetingActivityChart');
+    
+    if (!analyticsContainer) {
+        console.log('📊 Analytics UI not found - skipping initialization');
+        return;
+    }
+    
     if (typeof Chart !== 'undefined') {
         // Set Chart.js defaults
         Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--color-text-primary').trim();

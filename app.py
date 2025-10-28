@@ -505,6 +505,27 @@ def create_app() -> Flask:
         app.logger.info("✅ Live transcription Socket.IO handlers registered")
     except Exception as e:
         app.logger.warning(f"Failed to register live Socket.IO handlers: {e}")
+    
+    # Register CROWN⁴ WebSocket namespaces for real-time synchronization
+    try:
+        from routes.dashboard_websocket import register_dashboard_namespace
+        from routes.tasks_websocket import register_tasks_namespace
+        from routes.analytics_websocket import register_analytics_namespace
+        from routes.meetings_websocket import register_meetings_namespace
+        from services.event_broadcaster import event_broadcaster
+        
+        # Initialize event broadcaster with socketio instance
+        event_broadcaster.set_socketio(socketio)
+        
+        # Register namespace handlers
+        register_dashboard_namespace(socketio)
+        register_tasks_namespace(socketio)
+        register_analytics_namespace(socketio)
+        register_meetings_namespace(socketio)
+        
+        app.logger.info("✅ CROWN⁴ WebSocket namespaces registered: /dashboard, /tasks, /analytics, /meetings")
+    except Exception as e:
+        app.logger.warning(f"Failed to register CROWN⁴ WebSocket namespaces: {e}")
 
     # Register transcription APIs
     # FIXED: Only register the working unified transcription API to avoid route conflicts
@@ -833,6 +854,11 @@ def create_app() -> Flask:
 
     @app.errorhandler(404)
     def not_found(e):
+        # Return HTML page for browser requests, JSON for API requests
+        if request.accept_mimetypes.accept_html and \
+           not request.path.startswith('/api/'):
+            return render_template('errors/404.html'), 404
+        
         return jsonify({
             'error': 'not_found',
             'message': 'The requested resource was not found',

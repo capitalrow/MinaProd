@@ -1000,6 +1000,56 @@
 <script>
   // Pass session ID to tabs.js via data attribute
   document.body.setAttribute('data-session-id', '{{ session.external_id }}');
+  
+  // CROWN⁴ Event #5: Track session_refined_load performance
+  (function() {
+    // Wait for page load to complete before capturing metrics
+    if (document.readyState === 'complete') {
+      logSessionRefinedLoad();
+    } else {
+      window.addEventListener('load', logSessionRefinedLoad);
+    }
+    
+    async function logSessionRefinedLoad() {
+      // Use Navigation Timing API for accurate page load metrics
+      const perfData = performance.getEntriesByType('navigation')[0];
+      
+      let totalLoadTime;
+      if (perfData) {
+        // Calculate total load time from navigation start to DOM complete
+        totalLoadTime = Math.round(perfData.loadEventEnd - perfData.fetchStart);
+      } else {
+        // Fallback for older browsers
+        totalLoadTime = Math.round(performance.now());
+      }
+      
+      // Log event to EventLedger (non-blocking)
+      try {
+        const response = await fetch('/sessions/api/events/refined-load', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            session_id: {{ session.id|default('null') }},
+            external_session_id: '{{ session.external_id }}',
+            total_load_time: totalLoadTime,
+            cache_hit: false  // TODO: Implement cache tracking for session pages
+          })
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log(`📄 session_refined_load event logged (event_id=${result.event_id}, ${totalLoadTime}ms, sub_300ms=${result.sub_300ms})`);
+        } else {
+          console.warn('⚠️ Failed to log session_refined_load event:', response.status);
+        }
+      } catch (error) {
+        console.warn('⚠️ Failed to log session_refined_load event:', error);
+        // Non-blocking - continue even if event logging fails
+      }
+    }
+  })();
 </script>
 <script src="{{ url_for('static', filename='js/tabs.js') }}"></script>
 {% endblock %}
