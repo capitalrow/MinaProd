@@ -778,6 +778,33 @@ window.initMorphTransitions = function() {
                 console.log('⏳ No cache available, using server-rendered data');
             }
             
+            // Log dashboard_bootstrap event to EventLedger (CROWN⁴ Event #1)
+            try {
+                const totalBootstrapTime = Math.round(performance.now() - bootstrapStart);
+                const response = await fetch('/dashboard/api/events/bootstrap', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        cache_load_time: cacheLoadTime,
+                        server_load_time: serverLoadTime,
+                        total_time: totalBootstrapTime,
+                        cache_hit: cacheHit
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log(`📊 dashboard_bootstrap event logged (event_id=${result.event_id}, sub_200ms=${result.sub_200ms})`);
+                } else {
+                    console.warn('⚠️ Failed to log dashboard_bootstrap event:', response.status);
+                }
+            } catch (error) {
+                console.warn('⚠️ Failed to log dashboard_bootstrap event:', error);
+                // Non-blocking - continue even if event logging fails
+            }
+            
             // Always sync with server in background (validate even if fresh)
             syncWithServer();
             
