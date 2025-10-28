@@ -11,7 +11,14 @@
  * CROWN⁴ cache-first bootstrap pattern with drift detection.
  */
 
-class IndexedDBCache {
+// Prevent redeclaration using window check
+(function() {
+    if (window.IndexedDBCache) {
+        console.log('📦 IndexedDBCache already loaded, skipping redeclaration');
+        return;
+    }
+    
+window.IndexedDBCache = class IndexedDBCache {
     constructor(workspaceId) {
         this.workspaceId = workspaceId;
         this.dbName = `mina_cache_${workspaceId}`;
@@ -423,9 +430,10 @@ class IndexedDBCache {
             console.log('🔌 IndexedDB connection closed');
         }
     }
-}
+};
 
 // Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = IndexedDBCache;
+    module.exports = window.IndexedDBCache;
 }
+})(); // End IIFE

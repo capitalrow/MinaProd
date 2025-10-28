@@ -24,6 +24,13 @@
     final: $("#finalText"),
     sess: $("#sess"),
   };
+  
+  // Exit early if recording UI elements don't exist on this page
+  if (!ui.start || !ui.stop) {
+    console.log('📻 Recording UI not found - skipping initialization');
+    return;
+  }
+  
   if (ui.sess) ui.sess.textContent = SESSION_ID;
 
   // ---- Socket.IO (polling only is fine on Replit)

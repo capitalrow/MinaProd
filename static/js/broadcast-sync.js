@@ -13,7 +13,14 @@
  * CROWN⁴ Phase 4 Task #12: Multi-tab sync with zero-desync architecture
  */
 
-class BroadcastSync {
+// Prevent redeclaration using window check
+(function() {
+    if (window.BroadcastSync) {
+        console.log('📡 BroadcastSync already loaded, skipping redeclaration');
+        return;
+    }
+    
+window.BroadcastSync = class BroadcastSync {
     constructor(workspaceId = 'default') {
         this.workspaceId = workspaceId;
         this.channelName = `mina_sync_${workspaceId}`;
@@ -446,10 +453,10 @@ class BroadcastSync {
         
         console.log('🔌 BroadcastSync destroyed');
     }
-}
+};
 
-// Export singleton instance
-window.broadcastSync = new BroadcastSync();
+// Export singleton instance  
+window.broadcastSync = new window.BroadcastSync();
 
 // Auto-initialize on page load
 if (document.readyState === 'loading') {
@@ -466,3 +473,4 @@ window.addEventListener('beforeunload', () => {
         window.broadcastSync.destroy();
     }
 });
+})(); // End IIFE
