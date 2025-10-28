@@ -5,6 +5,7 @@ Run this script while the application is running to validate key functionality
 import requests
 import json
 import time
+import re
 from typing import Dict, List
 
 BASE_URL = "http://localhost:5000"
@@ -14,7 +15,59 @@ class TasksValidator:
         self.session = requests.Session()
         self.test_results = []
         self.created_task_ids = []
+        self.authenticated = False
+        self.csrf_token = None
         
+    def login(self, username: str = "testuser", password: str = "testpassword123") -> bool:
+        """Authenticate with the application"""
+        print(f"\n=== Authenticating as {username} ===")
+        
+        try:
+            # First, get the login page to extract CSRF token
+            login_page = self.session.get(f'{BASE_URL}/auth/login')
+            
+            # Extract CSRF token from the login form
+            csrf_match = re.search(r'name="csrf_token"[^>]*value="([^"]+)"', login_page.text)
+            if csrf_match:
+                csrf_token = csrf_match.group(1)
+            else:
+                print("⚠️  Could not find CSRF token on login page")
+                csrf_token = ""
+            
+            # Attempt login
+            login_data = {
+                'username': username,
+                'password': password,
+                'csrf_token': csrf_token
+            }
+            
+            response = self.session.post(
+                f'{BASE_URL}/auth/login',
+                data=login_data,
+                allow_redirects=False
+            )
+            
+            # Check if login was successful (should redirect to dashboard)
+            if response.status_code in [302, 303] and '/dashboard' in response.headers.get('Location', ''):
+                self.authenticated = True
+                print("✓ Authentication successful")
+                
+                # Get a page to extract CSRF token for API calls
+                dashboard = self.session.get(f'{BASE_URL}/dashboard/tasks')
+                csrf_match = re.search(r'name="csrf_token"[^>]*value="([^"]+)"', dashboard.text)
+                if csrf_match:
+                    self.csrf_token = csrf_match.group(1)
+                    print(f"✓ CSRF token acquired")
+                
+                return True
+            else:
+                print(f"✗ Authentication failed (status: {response.status_code})")
+                return False
+                
+        except Exception as e:
+            print(f"✗ Authentication error: {str(e)}")
+            return False
+    
     def log_result(self, test_name: str, passed: bool, message: str = ""):
         """Log a test result"""
         status = "✓ PASS" if passed else "✗ FAIL"
@@ -31,6 +84,10 @@ class TasksValidator:
         """Test creating a task without meeting association"""
         print("\n=== Testing Manual Task Creation ===")
         
+        if not self.authenticated:
+            self.log_result("Create Manual Task", False, "Not authenticated")
+            return False
+        
         task_data = {
             'title': f'Manual Test Task {int(time.time())}',
             'description': 'Created by validation script',
@@ -38,11 +95,15 @@ class TasksValidator:
             'status': 'todo'
         }
         
+        headers = {'Content-Type': 'application/json'}
+        if self.csrf_token:
+            headers['X-CSRFToken'] = self.csrf_token
+        
         try:
             response = self.session.post(
                 f'{BASE_URL}/api/tasks',
                 json=task_data,
-                headers={'Content-Type': 'application/json'}
+                headers=headers
             )
             
             if response.status_code == 201:
@@ -123,6 +184,10 @@ class TasksValidator:
         """Test updating a task (inline edit simulation)"""
         print("\n=== Testing Task Update ===")
         
+        if not self.authenticated:
+            self.log_result("Update Task", False, "Not authenticated")
+            return False
+        
         if not self.created_task_ids:
             self.log_result(
                 "Update Task",
@@ -137,11 +202,15 @@ class TasksValidator:
             'priority': 'urgent'
         }
         
+        headers = {'Content-Type': 'application/json'}
+        if self.csrf_token:
+            headers['X-CSRFToken'] = self.csrf_token
+        
         try:
             response = self.session.put(
                 f'{BASE_URL}/api/tasks/{task_id}',
                 json=update_data,
-                headers={'Content-Type': 'application/json'}
+                headers=headers
             )
             
             if response.status_code == 200:
@@ -173,6 +242,10 @@ class TasksValidator:
         """Test marking task as complete"""
         print("\n=== Testing Task Completion Toggle ===")
         
+        if not self.authenticated:
+            self.log_result("Toggle Completion", False, "Not authenticated")
+            return False
+        
         if not self.created_task_ids:
             self.log_result(
                 "Toggle Completion",
@@ -183,12 +256,16 @@ class TasksValidator:
         
         task_id = self.created_task_ids[0]
         
+        headers = {'Content-Type': 'application/json'}
+        if self.csrf_token:
+            headers['X-CSRFToken'] = self.csrf_token
+        
         try:
             # Mark as complete
             response = self.session.put(
                 f'{BASE_URL}/api/tasks/{task_id}',
                 json={'status': 'completed'},
-                headers={'Content-Type': 'application/json'}
+                headers=headers
             )
             
             if response.status_code == 200:
@@ -220,6 +297,10 @@ class TasksValidator:
         """Test deleting a task"""
         print("\n=== Testing Task Deletion ===")
         
+        if not self.authenticated:
+            self.log_result("Delete Task", False, "Not authenticated")
+            return False
+        
         if not self.created_task_ids:
             self.log_result(
                 "Delete Task",
@@ -230,8 +311,15 @@ class TasksValidator:
         
         task_id = self.created_task_ids.pop()
         
+        headers = {}
+        if self.csrf_token:
+            headers['X-CSRFToken'] = self.csrf_token
+        
         try:
-            response = self.session.delete(f'{BASE_URL}/api/tasks/{task_id}')
+            response = self.session.delete(
+                f'{BASE_URL}/api/tasks/{task_id}',
+                headers=headers
+            )
             
             if response.status_code == 200:
                 self.log_result(
@@ -342,10 +430,19 @@ def main():
     print("="*60)
     print("\nℹ️  Make sure:")
     print("  1. The application is running at http://localhost:5000")
-    print("  2. You are logged in (or tests will fail with 401)")
+    print("  2. Test user 'testuser' exists with password 'testpassword123'")
+    print("     (or modify login credentials in the script)")
     print("\n" + "-"*60)
     
     validator = TasksValidator()
+    
+    # Authenticate first
+    if not validator.login():
+        print("\n❌ Authentication failed. Cannot proceed with tests.")
+        print("Please ensure:")
+        print("  - The application is running")
+        print("  - The test user exists (testuser/testpassword123)")
+        return
     
     # Run tests in sequence
     validator.test_api_endpoints()
