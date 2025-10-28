@@ -19,11 +19,13 @@ class WebSocketManager {
         this.sockets = {};
         this.workspaceId = null;
         this.isConnected = false;
-        this.reconnectAttempts = 0;
+        this.reconnectAttempts = {};
         this.maxReconnectAttempts = 5;
-        this.reconnectDelay = 1000; // Start with 1 second
+        this.baseReconnectDelay = 1000; // Start with 1 second
+        this.maxReconnectDelay = 30000; // Max 30 seconds
         this.eventHandlers = {};
         this.lastEventId = null;
+        this.lastSequenceNum = {};
         
         // BroadcastChannel for cross-tab sync
         if ('BroadcastChannel' in window) {
@@ -34,6 +36,10 @@ class WebSocketManager {
         // Store for event sequencing
         this.eventSequence = [];
         this.lastAppliedSequence = 0;
+        
+        // AbortController for cleanup on reconnect
+        this.abortControllers = {};
+        this.pendingRequests = new Map();
     }
     
     /**
@@ -64,24 +70,40 @@ class WebSocketManager {
             return;
         }
         
-        // Create Socket.IO connection
+        // Initialize reconnect attempts counter for this namespace
+        if (!this.reconnectAttempts[namespace]) {
+            this.reconnectAttempts[namespace] = 0;
+        }
+        
+        // Calculate exponential backoff delay
+        const delay = this.calculateBackoffDelay(namespace);
+        
+        // Create Socket.IO connection with exponential backoff
         const socket = io(`/${namespace}`, {
             transports: ['websocket', 'polling'],
             reconnection: true,
-            reconnectionDelay: this.reconnectDelay,
-            reconnectionAttempts: this.maxReconnectAttempts
+            reconnectionDelay: delay,
+            reconnectionDelayMax: this.maxReconnectDelay,
+            reconnectionAttempts: this.maxReconnectAttempts,
+            randomizationFactor: 0.5 // Add jitter to prevent thundering herd
         });
         
         // Connection event handlers
         socket.on('connect', () => {
             console.log(`✅ Connected to /${namespace} namespace`);
             this.isConnected = true;
-            this.reconnectAttempts = 0;
+            this.reconnectAttempts[namespace] = 0;
+            
+            // Abort any pending requests from before reconnection
+            this.abortPendingRequests(namespace);
             
             // Join workspace room
             if (this.workspaceId) {
                 socket.emit('join_workspace', { workspace_id: this.workspaceId });
             }
+            
+            // Request event ledger replay to catch up on missed events
+            this.requestEventReplay(namespace);
             
             // Emit connection status
             this.emit('connection_status', { namespace, connected: true });
@@ -95,10 +117,15 @@ class WebSocketManager {
         
         socket.on('connect_error', (error) => {
             console.error(`❌ Connection error on /${namespace}:`, error);
-            this.reconnectAttempts++;
+            this.reconnectAttempts[namespace]++;
             
-            if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-                this.emit('connection_failed', { namespace, error });
+            const delay = this.calculateBackoffDelay(namespace);
+            console.log(`🔄 Will retry /${namespace} in ${delay}ms (attempt ${this.reconnectAttempts[namespace]}/${this.maxReconnectAttempts})`);
+            
+            if (this.reconnectAttempts[namespace] >= this.maxReconnectAttempts) {
+                console.error(`❌ Max reconnection attempts reached for /${namespace}`);
+                this.abortPendingRequests(namespace);
+                this.emit('connection_failed', { namespace, error, attempts: this.reconnectAttempts[namespace] });
             }
         });
         
@@ -176,12 +203,22 @@ class WebSocketManager {
         
         // Validate event sequencing
         if (sequence_num) {
-            if (sequence_num < this.lastAppliedSequence) {
-                console.warn(`⚠️ Out-of-order event ignored: ${eventName} (seq ${sequence_num} < ${this.lastAppliedSequence})`);
+            // Track last sequence number per namespace for event replay
+            const lastSeq = this.lastSequenceNum[namespace] || 0;
+            
+            if (sequence_num < lastSeq) {
+                console.warn(`⚠️ Out-of-order event ignored: ${eventName} (seq ${sequence_num} < ${lastSeq}) on /${namespace}`);
                 return;
             }
             
+            // Update last sequence number for this namespace
+            this.lastSequenceNum[namespace] = sequence_num;
             this.lastAppliedSequence = sequence_num;
+        }
+        
+        // Track last event ID for event replay
+        if (event_id) {
+            this.lastEventId = event_id;
         }
         
         // Store event
@@ -254,6 +291,94 @@ class WebSocketManager {
                 // Re-emit event in this tab
                 this.emit(eventName, data);
             }
+        });
+    }
+    
+    /**
+     * Calculate exponential backoff delay for reconnection
+     * Formula: min(baseDelay * 2^attempts, maxDelay)
+     * @param {string} namespace - Namespace
+     * @returns {number} Delay in milliseconds
+     */
+    calculateBackoffDelay(namespace) {
+        const attempts = this.reconnectAttempts[namespace] || 0;
+        const exponentialDelay = this.baseReconnectDelay * Math.pow(2, attempts);
+        const cappedDelay = Math.min(exponentialDelay, this.maxReconnectDelay);
+        
+        // Add jitter (±20%) to prevent thundering herd
+        const jitter = cappedDelay * 0.2 * (Math.random() - 0.5);
+        const finalDelay = Math.round(cappedDelay + jitter);
+        
+        return finalDelay;
+    }
+    
+    /**
+     * Abort all pending requests for a namespace
+     * Called on reconnection to clean up stale requests
+     * @param {string} namespace - Namespace
+     */
+    abortPendingRequests(namespace) {
+        // Abort controller for this namespace
+        if (this.abortControllers[namespace]) {
+            console.log(`🛑 Aborting ${this.pendingRequests.size} pending requests for /${namespace}`);
+            this.abortControllers[namespace].abort();
+            delete this.abortControllers[namespace];
+        }
+        
+        // Clear pending requests map entries for this namespace
+        for (const [key, value] of this.pendingRequests.entries()) {
+            if (value.namespace === namespace) {
+                this.pendingRequests.delete(key);
+            }
+        }
+        
+        // Create new abort controller for future requests
+        this.abortControllers[namespace] = new AbortController();
+        
+        console.log(`✅ Pending requests cleaned up for /${namespace}`);
+    }
+    
+    /**
+     * Request event ledger replay from server
+     * Fetches missed events since last received event
+     * Always requests replay to ensure zero-data-loss, even on first connection
+     * @param {string} namespace - Namespace
+     */
+    requestEventReplay(namespace) {
+        const lastSeq = this.lastSequenceNum[namespace] || 0;
+        
+        console.log(`📼 Requesting event replay for /${namespace} from sequence ${lastSeq}${lastSeq === 0 ? ' (initial sync)' : ''}`);
+        
+        // CRITICAL: Register listener BEFORE emitting request to avoid race condition
+        // If we emit first, server might respond before listener is registered
+        const socket = this.sockets[namespace];
+        if (socket) {
+            socket.once('event_replay', (data) => {
+                const eventCount = data.events?.length || 0;
+                console.log(`📼 Received ${eventCount} replayed events for /${namespace}${lastSeq === 0 ? ' (initial sync)' : ''}`);
+                
+                // Process replayed events in order
+                if (data.events && Array.isArray(data.events)) {
+                    data.events.forEach(event => {
+                        this.handleSequencedEvent(event.event_name, event, namespace);
+                    });
+                    
+                    console.log(`✅ Event replay completed for /${namespace} (${eventCount} events processed)`);
+                } else {
+                    console.log(`ℹ️ No events to replay for /${namespace}`);
+                }
+            });
+        }
+        
+        // Now emit the request - listener is already registered
+        // Server will handle both cases:
+        // - lastSeq = 0: Send recent events or full initial state
+        // - lastSeq > 0: Send events since that sequence number
+        this.send(namespace, 'request_event_replay', {
+            workspace_id: this.workspaceId,
+            last_sequence_num: lastSeq,
+            namespace: namespace,
+            is_initial_sync: lastSeq === 0
         });
     }
     
