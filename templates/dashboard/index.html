@@ -1256,6 +1256,16 @@ window.initMorphTransitions = function() {
     function handleNewSession(data) {
         console.log('📬 New session created event received:', data);
         
+        // Safety check: Ensure DOM is ready before accessing elements
+        if (!statElements) {
+            console.warn('⚠️ statElements not initialized yet, deferring handleNewSession');
+            // Defer execution until DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => handleNewSession(data), { once: true });
+            }
+            return;
+        }
+        
         const sessionData = data.data || data;
         
         // Update total meetings counter with animation
@@ -1282,6 +1292,16 @@ window.initMorphTransitions = function() {
      */
     async function handleDashboardRefresh(data) {
         console.log('🔄 Dashboard refresh event received:', data);
+        
+        // Safety check: Ensure DOM is ready before accessing elements
+        if (!statElements) {
+            console.warn('⚠️ statElements not initialized yet, deferring handleDashboardRefresh');
+            // Defer execution until DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => handleDashboardRefresh(data), { once: true });
+            }
+            return;
+        }
         
         const stats = data.data || data;
         
@@ -1312,6 +1332,16 @@ window.initMorphTransitions = function() {
     function handleTaskUpdate(data) {
         console.log('✅ Task update event received:', data);
         
+        // Safety check: Ensure DOM is ready before accessing elements
+        if (!statElements) {
+            console.warn('⚠️ statElements not initialized yet, deferring handleTaskUpdate');
+            // Defer execution until DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => handleTaskUpdate(data), { once: true });
+            }
+            return;
+        }
+        
         const taskData = data.data || data;
         
         // Update action items counter based on task action
@@ -1329,7 +1359,10 @@ window.initMorphTransitions = function() {
      * @param {string} mode - 'set', 'increment', or 'decrement'
      */
     function updateCounter(element, value, mode = 'set') {
-        if (!element) return;
+        if (!element) {
+            console.warn('⚠️ updateCounter called with null element, skipping');
+            return;
+        }
         
         const currentValue = parseInt(element.textContent) || 0;
         let newValue;
