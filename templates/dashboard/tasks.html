@@ -224,6 +224,32 @@
 .task-card:nth-child(5) { animation-delay: 0.4s; }
 .task-card:nth-child(6) { animation-delay: 0.45s; }
 
+/* Task Delete Button */
+.task-delete-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    padding: var(--space-2);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-base);
+    opacity: 0;
+}
+
+.task-card:hover .task-delete-btn {
+    opacity: 1;
+}
+
+.task-delete-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: rgb(239, 68, 68);
+    transform: scale(1.1);
+}
+
+.task-delete-btn:active {
+    transform: scale(0.95);
+}
+
 /* Task Creation Modal - Crown+ Glassmorphism */
 .task-modal-overlay {
     position: fixed;
@@ -500,6 +526,11 @@
                             {% endif %}
                         </div>
                     </div>
+                    <button class="task-delete-btn" title="Delete task">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
             {% endfor %}
@@ -1205,6 +1236,55 @@
             `;
         }
     });
+    
+    // Wire up task checkboxes for status toggle (using event delegation)
+    const tasksListContainer = document.getElementById('tasks-list-container');
+    if (tasksListContainer) {
+        tasksListContainer.addEventListener('change', async (e) => {
+            if (e.target.classList.contains('task-checkbox')) {
+                const taskCard = e.target.closest('.task-card');
+                const taskId = taskCard.dataset.taskId;
+                const isCompleted = e.target.checked;
+                
+                console.log(`📝 Toggling task ${taskId} to ${isCompleted ? 'completed' : 'pending'}`);
+                
+                try {
+                    await window.optimisticUI.updateTask(taskId, {
+                        completed: isCompleted,
+                        status: isCompleted ? 'done' : 'todo'
+                    });
+                    console.log('✅ Task status updated');
+                } catch (error) {
+                    console.error('❌ Failed to update task:', error);
+                    // Revert checkbox on error
+                    e.target.checked = !isCompleted;
+                    alert('Failed to update task. Please try again.');
+                }
+            }
+        });
+        
+        // Wire up delete buttons (using event delegation)
+        tasksListContainer.addEventListener('click', async (e) => {
+            const deleteBtn = e.target.closest('.task-delete-btn');
+            if (deleteBtn) {
+                const taskCard = deleteBtn.closest('.task-card');
+                const taskId = taskCard.dataset.taskId;
+                const taskTitle = taskCard.querySelector('.task-title').textContent;
+                
+                if (confirm(`Are you sure you want to delete "${taskTitle}"?`)) {
+                    console.log(`🗑️ Deleting task ${taskId}`);
+                    
+                    try {
+                        await window.optimisticUI.deleteTask(taskId);
+                        console.log('✅ Task deleted');
+                    } catch (error) {
+                        console.error('❌ Failed to delete task:', error);
+                        alert('Failed to delete task. Please try again.');
+                    }
+                }
+            }
+        });
+    }
     
     // Monitor online/offline status
     window.addEventListener('online', () => {
