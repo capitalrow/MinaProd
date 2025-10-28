@@ -165,6 +165,12 @@
     animation-fill-mode: both;
 }
 
+.meeting-card-processing {
+    opacity: 0.7;
+    cursor: not-allowed;
+    border-style: dashed;
+}
+
 .meeting-card:nth-child(1) { animation-delay: 0.5s; }
 .meeting-card:nth-child(2) { animation-delay: 0.6s; }
 .meeting-card:nth-child(3) { animation-delay: 0.7s; }
@@ -365,7 +371,7 @@
     {% if recent_meetings and recent_meetings|length > 0 %}
     <div class="meetings-list">
         {% for meeting in recent_meetings %}
-        <div class="meeting-card" 
+        <div class="meeting-card {% if not meeting.session or not meeting.session.external_id %}meeting-card-processing{% endif %}" 
              data-meeting-id="{{ meeting.id }}" 
              data-meeting-title="{{ meeting.title or 'Untitled Meeting' }}"
              {% if meeting.session and meeting.session.external_id %}data-session-id="{{ meeting.session.external_id }}"{% endif %}>
@@ -375,6 +381,10 @@
                     <p class="meeting-date">{{ meeting.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
                     {% if meeting.summary %}
                     <p class="meeting-summary">{{ meeting.summary[:150] }}{% if meeting.summary|length > 150 %}...{% endif %}</p>
+                    {% elif not meeting.session or not meeting.session.external_id %}
+                    <p class="meeting-summary" style="color: var(--color-text-secondary); font-style: italic;">
+                        Transcription being processed... Insights will appear shortly.
+                    </p>
                     {% endif %}
                 </div>
                 <div class="flex items-center gap-3">
@@ -389,10 +399,10 @@
                         {% if meeting.duration %}
                         <span class="badge badge-primary">{{ (meeting.duration / 60)|round|int }} min</span>
                         {% endif %}
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.5;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
                     {% endif %}
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="opacity: 0.5;">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
                 </div>
             </div>
         </div>
@@ -522,9 +532,14 @@ window.handleCardClick = function(event) {
     const meetingTitle = card.dataset.meetingTitle;
     const sessionId = card.dataset.sessionId;
     
-    // If no session ID, skip
+    // If no session ID, show friendly message and skip
     if (!sessionId) {
         console.warn('⚠️ Meeting has no session ID, skipping navigation:', meetingId);
+        
+        // Show toast notification (if toast system exists)
+        if (window.showToast) {
+            window.showToast('This meeting is still being processed. Please try again in a moment.', 'info');
+        }
         return;
     }
     
