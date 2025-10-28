@@ -74,3 +74,28 @@ class Subscription(db.Model):
     stripe_subscription_id = db.Column(db.String(64), unique=True, nullable=False)
     status = db.Column(db.String(32), default="active")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class FlagAuditLog(db.Model):
+    __tablename__ = "flag_audit_logs"
+    id = db.Column(db.Integer, primary_key=True)
+    flag_key = db.Column(db.String(80), nullable=False, index=True)
+    action = db.Column(db.String(16), nullable=False)  # "create", "update", "delete", "toggle"
+    user_id = db.Column(db.String(64), nullable=False, index=True)
+    old_value = db.Column(JSONB)  # {"enabled": false, "note": "..."}
+    new_value = db.Column(JSONB)  # {"enabled": true, "note": "..."}
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True, nullable=False)
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "flag_key": self.flag_key,
+            "action": self.action,
+            "user_id": self.user_id,
+            "old_value": self.old_value,
+            "new_value": self.new_value,
+            "ip_address": self.ip_address,
+            "user_agent": self.user_agent,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
