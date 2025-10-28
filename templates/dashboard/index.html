@@ -813,6 +813,7 @@ window.initMorphTransitions = function() {
      * CRITICAL: Must be called after DOMContentLoaded to prevent null querySelector errors
      */
     function initDOMReferences() {
+        // Safely query elements - may not exist on all dashboard states
         statElements = {
             totalMeetings: document.querySelector('.stat-card:nth-child(1) .stat-value'),
             actionItems: document.querySelector('.stat-card:nth-child(2) .stat-value'),
@@ -829,6 +830,15 @@ window.initMorphTransitions = function() {
             meetingsListEl: !!meetingsListEl,
             emptyStateEl: !!emptyStateEl
         });
+        
+        // CRITICAL: Initialize meeting card click handlers immediately
+        // This ensures cards are clickable even if stats don't exist
+        if (window.initMorphTransitions) {
+            window.initMorphTransitions();
+            console.log('✅ Meeting card click handlers initialized');
+        } else {
+            console.warn('⚠️ initMorphTransitions not available');
+        }
     }
     
     /**
