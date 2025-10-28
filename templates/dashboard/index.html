@@ -460,13 +460,22 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/indexeddb-cache.js') }}"></script>
+<script src="{{ url_for('static', filename='js/prefetch-controller.js') }}"></script>
 <script>
 /**
  * CROWN⁴ Cache Bootstrap - Load cached data instantly before server fetch
  * Achieves sub-200ms TTI with cache-first pattern + background reconciliation
  */
 let dashboardCache = null;
+let prefetchController = null;
 const WORKSPACE_ID = {{ current_user.workspace_id if current_user.workspace_id else 1 }};
+
+// Initialize PrefetchController
+prefetchController = new PrefetchController({
+    maxConcurrent: 3,
+    maxCacheSize: 50,
+    cacheTimeout: 60000 // 1 minute
+});
 
 // Initialize cache and bootstrap dashboard
 (async function bootstrapDashboard() {
@@ -616,29 +625,31 @@ window.handleCardHover = function(event) {
         console.warn('Failed to broadcast session_prefetch:', e);
     }
     
-    // Prefetch session data via fetch
-    fetch(`/sessions/${sessionId}?format=json`)
-        .then(response => {
-            if (response.ok) {
-                console.log('✅ Session data prefetched:', sessionId);
-                return response.json();
-            }
-        })
-        .then(data => {
-            if (data) {
-                try {
-                    sessionStorage.setItem(`session_${sessionId}`, JSON.stringify({
-                        data,
-                        timestamp: Date.now()
-                    }));
-                } catch (e) {
-                    console.warn('Failed to cache session data:', e);
+    // Prefetch session data via PrefetchController
+    if (prefetchController) {
+        prefetchController.prefetch(sessionId, { priority: 1 })
+            .then(data => {
+                if (data) {
+                    try {
+                        // Also cache in sessionStorage for compatibility
+                        sessionStorage.setItem(`session_${sessionId}`, JSON.stringify({
+                            data,
+                            timestamp: Date.now()
+                        }));
+                        console.log('✅ Session data prefetched and cached:', sessionId);
+                    } catch (e) {
+                        console.warn('Failed to cache session data:', e);
+                    }
                 }
-            }
-        })
-        .catch(err => {
-            console.warn('Failed to prefetch session:', err);
-        });
+            })
+            .catch(err => {
+                if (err.name !== 'AbortError') {
+                    console.warn('Failed to prefetch session:', err);
+                }
+            });
+    } else {
+        console.warn('⚠️ PrefetchController not initialized');
+    }
 };
 
 window.handleCardClick = function(event) {
@@ -658,6 +669,19 @@ window.handleCardClick = function(event) {
             window.showToast('This meeting is still being processed. Please try again in a moment.', 'info');
         }
         return;
+    }
+    
+    // CROWN⁴ Optimization: Abort stale prefetches (user navigating to specific session)
+    if (prefetchController) {
+        // Get active requests and abort any that aren't for this session
+        const stats = prefetchController.getStats();
+        if (stats.activeRequests > 0) {
+            // Abort all prefetches - user intent is clear now
+            const aborted = prefetchController.abortAll();
+            if (aborted > 0) {
+                console.log(`🛑 Aborted ${aborted} stale prefetches (user navigating to ${sessionId})`);
+            }
+        }
     }
     
     console.log('🎬 Starting morph transition for session:', sessionId);
