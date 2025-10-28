@@ -34,12 +34,9 @@ def list_tasks():
         search = request.args.get('search', None)
         due_date_filter = request.args.get('due_date', None)  # today, overdue, this_week
         
-        # Base query - tasks from meetings in user's workspace OR tasks created by user
-        stmt = select(Task).outerjoin(Meeting).where(
-            or_(
-                Meeting.workspace_id == current_user.workspace_id,
-                and_(Task.meeting_id.is_(None), Task.created_by_id == current_user.id)
-            )
+        # Base query - tasks from meetings in user's workspace
+        stmt = select(Task).join(Meeting).where(
+            Meeting.workspace_id == current_user.workspace_id
         )
         
         # Apply filters
@@ -121,12 +118,9 @@ def list_tasks():
 def get_task(task_id):
     """Get detailed task information."""
     try:
-        task = db.session.query(Task).outerjoin(Meeting).filter(
+        task = db.session.query(Task).join(Meeting).filter(
             Task.id == task_id,
-            or_(
-                Meeting.workspace_id == current_user.workspace_id,
-                and_(Task.meeting_id.is_(None), Task.created_by_id == current_user.id)
-            )
+            Meeting.workspace_id == current_user.workspace_id
         ).first()
         
         if not task:
@@ -152,17 +146,17 @@ def create_task():
         if not data.get('title'):
             return jsonify({'success': False, 'message': 'Title is required'}), 400
         
-        # Verify meeting exists and belongs to user's workspace (optional)
-        meeting = None
-        meeting_id = data.get('meeting_id')
-        if meeting_id:
-            meeting = db.session.query(Meeting).filter_by(
-                id=meeting_id,
-                workspace_id=current_user.workspace_id
-            ).first()
-            
-            if not meeting:
-                return jsonify({'success': False, 'message': 'Invalid meeting ID'}), 400
+        if not data.get('meeting_id'):
+            return jsonify({'success': False, 'message': 'Meeting ID is required'}), 400
+        
+        # Verify meeting exists and belongs to user's workspace
+        meeting = db.session.query(Meeting).filter_by(
+            id=data['meeting_id'],
+            workspace_id=current_user.workspace_id
+        ).first()
+        
+        if not meeting:
+            return jsonify({'success': False, 'message': 'Invalid meeting ID'}), 400
         
         # Parse due date if provided
         due_date = None
@@ -185,7 +179,7 @@ def create_task():
         task = Task(
             title=data['title'].strip(),
             description=data.get('description', '').strip() or None,
-            meeting_id=meeting.id if meeting else None,
+            meeting_id=data['meeting_id'],
             priority=data.get('priority', 'medium'),
             category=data.get('category', '').strip() or None,
             due_date=due_date,
@@ -198,14 +192,14 @@ def create_task():
         db.session.add(task)
         db.session.commit()
         
-        # Broadcast task_update event (always broadcast, even without meeting)
+        # Broadcast task_update event
         task_dict = task.to_dict()
         task_dict['action'] = 'created'
-        task_dict['meeting_title'] = meeting.title if meeting else None
+        task_dict['meeting_title'] = meeting.title
         event_broadcaster.broadcast_task_update(
             task_id=task.id,
             task_data=task_dict,
-            meeting_id=meeting.id if meeting else None,
+            meeting_id=meeting.id,
             workspace_id=current_user.workspace_id
         )
         
@@ -225,12 +219,9 @@ def create_task():
 def update_task(task_id):
     """Update task information."""
     try:
-        task = db.session.query(Task).outerjoin(Meeting).filter(
+        task = db.session.query(Task).join(Meeting).filter(
             Task.id == task_id,
-            or_(
-                Meeting.workspace_id == current_user.workspace_id,
-                and_(Task.meeting_id.is_(None), Task.created_by_id == current_user.id)
-            )
+            Meeting.workspace_id == current_user.workspace_id
         ).first()
         
         if not task:
@@ -286,13 +277,12 @@ def update_task(task_id):
         task.updated_at = datetime.now()
         db.session.commit()
         
-        # Broadcast task_update event (always broadcast, even without meeting)
+        # Broadcast task_update event
         meeting = task.meeting
         action = 'completed' if task.status == 'completed' and old_status != 'completed' else 'updated'
         task_dict = task.to_dict()
         task_dict['action'] = action
-        task_dict['meeting_title'] = meeting.title if meeting else None
-        
+        task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
         event_broadcaster.broadcast_task_update(
             task_id=task.id,
             task_data=task_dict,
@@ -316,12 +306,9 @@ def update_task(task_id):
 def delete_task(task_id):
     """Delete a task."""
     try:
-        task = db.session.query(Task).outerjoin(Meeting).filter(
+        task = db.session.query(Task).join(Meeting).filter(
             Task.id == task_id,
-            or_(
-                Meeting.workspace_id == current_user.workspace_id,
-                and_(Task.meeting_id.is_(None), Task.created_by_id == current_user.id)
-            )
+            Meeting.workspace_id == current_user.workspace_id
         ).first()
         
         if not task:
@@ -340,7 +327,7 @@ def delete_task(task_id):
         db.session.delete(task)
         db.session.commit()
         
-        # Broadcast task_update event (always broadcast, even without meeting)
+        # Broadcast task_update event
         event_broadcaster.broadcast_task_update(
             task_id=task_id,
             task_data=task_dict,
@@ -362,12 +349,9 @@ def delete_task(task_id):
 def update_task_status(task_id):
     """Update only the status of a task (for quick status changes)."""
     try:
-        task = db.session.query(Task).outerjoin(Meeting).filter(
+        task = db.session.query(Task).join(Meeting).filter(
             Task.id == task_id,
-            or_(
-                Meeting.workspace_id == current_user.workspace_id,
-                and_(Task.meeting_id.is_(None), Task.created_by_id == current_user.id)
-            )
+            Meeting.workspace_id == current_user.workspace_id
         ).first()
         
         if not task:
@@ -394,13 +378,12 @@ def update_task_status(task_id):
         task.updated_at = datetime.now()
         db.session.commit()
         
-        # Broadcast task_update event (always broadcast, even without meeting)
+        # Broadcast task_update event
         meeting = task.meeting
         action = 'completed' if new_status == 'completed' and old_status != 'completed' else 'updated'
         task_dict = task.to_dict()
         task_dict['action'] = action
-        task_dict['meeting_title'] = meeting.title if meeting else None
-        
+        task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
         event_broadcaster.broadcast_task_update(
             task_id=task.id,
             task_data=task_dict,
@@ -431,12 +414,9 @@ def bulk_update_tasks():
             return jsonify({'success': False, 'message': 'Task IDs are required'}), 400
         
         # Get tasks that belong to user's workspace
-        tasks = db.session.query(Task).outerjoin(Meeting).filter(
+        tasks = db.session.query(Task).join(Meeting).filter(
             Task.id.in_(task_ids),
-            or_(
-                Meeting.workspace_id == current_user.workspace_id,
-                and_(Task.meeting_id.is_(None), Task.created_by_id == current_user.id)
-            )
+            Meeting.workspace_id == current_user.workspace_id
         ).all()
         
         updated_count = 0
@@ -480,12 +460,9 @@ def get_my_tasks():
     try:
         status = request.args.get('status', None)
         
-        query = db.session.query(Task).outerjoin(Meeting).filter(
+        query = db.session.query(Task).join(Meeting).filter(
             Task.assigned_to_id == current_user.id,
-            or_(
-                Meeting.workspace_id == current_user.workspace_id,
-                and_(Task.meeting_id.is_(None), Task.created_by_id == current_user.id)
-            )
+            Meeting.workspace_id == current_user.workspace_id
         )
         
         if status:
@@ -525,28 +502,23 @@ def get_task_stats():
         workspace_id = current_user.workspace_id
         
         # Basic counts
-        workspace_filter = or_(
-            Meeting.workspace_id == workspace_id,
-            and_(Task.meeting_id.is_(None), Task.created_by_id == current_user.id)
-        )
-        
-        total_tasks = db.session.query(Task).outerjoin(Meeting).filter(
-            workspace_filter
+        total_tasks = db.session.query(Task).join(Meeting).filter(
+            Meeting.workspace_id == workspace_id
         ).count()
         
-        completed_tasks = db.session.query(Task).outerjoin(Meeting).filter(
-            workspace_filter,
+        completed_tasks = db.session.query(Task).join(Meeting).filter(
+            Meeting.workspace_id == workspace_id,
             Task.status == 'completed'
         ).count()
         
-        overdue_tasks = db.session.query(Task).outerjoin(Meeting).filter(
-            workspace_filter,
+        overdue_tasks = db.session.query(Task).join(Meeting).filter(
+            Meeting.workspace_id == workspace_id,
             Task.due_date < date.today(),
             Task.status.in_(['todo', 'in_progress'])
         ).count()
         
-        my_tasks = db.session.query(Task).outerjoin(Meeting).filter(
-            workspace_filter,
+        my_tasks = db.session.query(Task).join(Meeting).filter(
+            Meeting.workspace_id == workspace_id,
             Task.assigned_to_id == current_user.id,
             Task.status.in_(['todo', 'in_progress'])
         ).count()
@@ -555,8 +527,8 @@ def get_task_stats():
         status_counts = db.session.query(
             Task.status,
             func.count(Task.id).label('count')
-        ).outerjoin(Meeting).filter(
-            workspace_filter
+        ).join(Meeting).filter(
+            Meeting.workspace_id == workspace_id
         ).group_by(Task.status).all()
         
         status_distribution = {status: count for status, count in status_counts}
@@ -565,8 +537,8 @@ def get_task_stats():
         priority_counts = db.session.query(
             Task.priority,
             func.count(Task.id).label('count')
-        ).outerjoin(Meeting).filter(
-            workspace_filter
+        ).join(Meeting).filter(
+            Meeting.workspace_id == workspace_id
         ).group_by(Task.priority).all()
         
         priority_distribution = {priority: count for priority, count in priority_counts}
@@ -592,11 +564,8 @@ def get_task_stats():
 def get_overdue_tasks():
     """Get overdue tasks for current workspace."""
     try:
-        overdue_tasks = db.session.query(Task).outerjoin(Meeting).filter(
-            or_(
-                Meeting.workspace_id == current_user.workspace_id,
-                and_(Task.meeting_id.is_(None), Task.created_by_id == current_user.id)
-            ),
+        overdue_tasks = db.session.query(Task).join(Meeting).filter(
+            Meeting.workspace_id == current_user.workspace_id,
             Task.due_date < date.today(),
             Task.status.in_(['todo', 'in_progress'])
         ).order_by(Task.due_date.asc()).all()
