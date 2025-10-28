@@ -31,6 +31,7 @@ from .comment import Comment
 from .copilot_template import CopilotTemplate
 from .copilot_conversation import CopilotConversation
 from .event_ledger import EventLedger, EventType, EventStatus
+from .compaction_summary import CompactionSummary
 
 # Import Summary last to avoid circular imports
 try:
@@ -46,5 +47,5 @@ __all__ = [
     'db', 'Base', 'Session', 'Segment', 'Summary', 'SharedLink', 'TeamShare', 'ShareAnalytic',
     'ChunkMetric', 'SessionMetric', 'User', 'Workspace', 'Meeting', 
     'Participant', 'Task', 'TaskViewState', 'TaskCounters', 'CalendarEvent', 'Analytics', 'Marker', 'Comment', 'CopilotTemplate',
-    'CopilotConversation', 'EventLedger', 'EventType', 'EventStatus', 'FeatureFlag', 'FlagAuditLog'
+    'CopilotConversation', 'EventLedger', 'EventType', 'EventStatus', 'CompactionSummary', 'FeatureFlag', 'FlagAuditLog'
 ]
