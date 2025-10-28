@@ -61,7 +61,7 @@ class User(UserMixin, Base):
     
     # Relationships
     sessions: Mapped[list["Session"]] = relationship(back_populates="user", foreign_keys="Session.user_id")
-    meetings: Mapped[list["Meeting"]] = relationship(back_populates="organizer")
+    meetings: Mapped[list["Meeting"]] = relationship(back_populates="organizer", foreign_keys="Meeting.organizer_id")
     assigned_tasks: Mapped[list["Task"]] = relationship(back_populates="assigned_to", foreign_keys="Task.assigned_to_id")
     markers: Mapped[list["Marker"]] = relationship(back_populates="user")
     comments: Mapped[list["Comment"]] = relationship(back_populates="user")

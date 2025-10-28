@@ -126,7 +126,7 @@ def get_session_detail(session_identifier):
         return jsonify(session_detail)
     
     # Return HTML template for browser requests  
-    return render_template('dashboard/meeting_detail.html',
+    return render_template('session_refined.html',
                          meeting=session_detail['session'],
                          segments=session_detail['segments'])
 
