@@ -224,6 +224,174 @@
 .task-card:nth-child(5) { animation-delay: 0.4s; }
 .task-card:nth-child(6) { animation-delay: 0.45s; }
 
+/* Task Creation Modal - Crown+ Glassmorphism */
+.task-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.task-modal-overlay.active {
+    display: flex;
+}
+
+.task-modal {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-6);
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.task-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-6);
+}
+
+.task-modal-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.task-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: var(--space-2);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-base);
+}
+
+.task-modal-close:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+}
+
+.task-form-group {
+    margin-bottom: var(--space-5);
+}
+
+.task-form-label {
+    display: block;
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--space-2);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+}
+
+.task-form-label.required::after {
+    content: '*';
+    color: rgb(239, 68, 68);
+    margin-left: 4px;
+}
+
+.task-form-input,
+.task-form-textarea,
+.task-form-select {
+    width: 100%;
+    padding: var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-base);
+    transition: all var(--transition-base);
+}
+
+.task-form-input:focus,
+.task-form-textarea:focus,
+.task-form-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.task-form-textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+.task-form-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+    margin-top: var(--space-6);
+}
+
+.task-form-btn {
+    padding: var(--space-3) var(--space-5);
+    border-radius: var(--radius-lg);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    border: none;
+}
+
+.task-form-btn-cancel {
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+}
+
+.task-form-btn-cancel:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+}
+
+.task-form-btn-create {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.task-form-btn-create:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.task-form-btn-create:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
 @media (max-width: 768px) {
     .tasks-title {
         font-size: var(--font-size-3xl);
@@ -237,6 +405,11 @@
         flex-direction: column;
         align-items: flex-start !important;
         gap: var(--space-4);
+    }
+    
+    .task-modal {
+        width: 95%;
+        padding: var(--space-5);
     }
 }
 </style>
@@ -346,6 +519,91 @@
             </svg>
             Create your first task
         </button>
+    </div>
+</div>
+
+<!-- Task Creation Modal (Crown+ Glassmorphism) -->
+<div id="task-modal-overlay" class="task-modal-overlay">
+    <div class="task-modal">
+        <div class="task-modal-header">
+            <h2 class="task-modal-title">Create New Task</h2>
+            <button class="task-modal-close" id="task-modal-close">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        
+        <form id="task-create-form">
+            <!-- Title (Required) -->
+            <div class="task-form-group">
+                <label class="task-form-label required" for="task-title">Task Title</label>
+                <input 
+                    type="text" 
+                    id="task-title" 
+                    class="task-form-input" 
+                    placeholder="What needs to be done?"
+                    required
+                    autocomplete="off"
+                >
+            </div>
+            
+            <!-- Description (Optional) -->
+            <div class="task-form-group">
+                <label class="task-form-label" for="task-description">Description</label>
+                <textarea 
+                    id="task-description" 
+                    class="task-form-textarea" 
+                    placeholder="Add more details..."
+                ></textarea>
+            </div>
+            
+            <!-- Priority -->
+            <div class="task-form-group">
+                <label class="task-form-label" for="task-priority">Priority</label>
+                <select id="task-priority" class="task-form-select">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+            </div>
+            
+            <!-- Due Date (Optional) -->
+            <div class="task-form-group">
+                <label class="task-form-label" for="task-due-date">Due Date</label>
+                <input 
+                    type="date" 
+                    id="task-due-date" 
+                    class="task-form-input"
+                >
+            </div>
+            
+            <!-- Assignee (Optional) -->
+            <div class="task-form-group">
+                <label class="task-form-label" for="task-assignee">Assignee</label>
+                <input 
+                    type="text" 
+                    id="task-assignee" 
+                    class="task-form-input" 
+                    placeholder="Who's responsible?"
+                    autocomplete="off"
+                >
+            </div>
+            
+            <!-- Actions -->
+            <div class="task-form-actions">
+                <button type="button" class="task-form-btn task-form-btn-cancel" id="task-form-cancel">
+                    Cancel
+                </button>
+                <button type="submit" class="task-form-btn task-form-btn-create" id="task-form-submit">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: inline-block; margin-right: 8px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Create Task
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -839,27 +1097,112 @@
         console.error('❌ Bootstrap failed:', error);
     }
     
-    // Setup task creation button
+    // Modal elements
+    const modalOverlay = document.getElementById('task-modal-overlay');
+    const modalClose = document.getElementById('task-modal-close');
+    const modalCancel = document.getElementById('task-form-cancel');
+    const taskForm = document.getElementById('task-create-form');
+    
+    // Open modal function
+    function openTaskModal() {
+        modalOverlay.classList.add('active');
+        document.getElementById('task-title').focus();
+        // Reset form
+        taskForm.reset();
+    }
+    
+    // Close modal function
+    function closeTaskModal() {
+        modalOverlay.classList.remove('active');
+    }
+    
+    // Setup task creation buttons
     const createButtons = document.querySelectorAll('.btn-primary');
     createButtons.forEach(btn => {
         if (btn.textContent.includes('New Task') || btn.textContent.includes('Create')) {
-            btn.addEventListener('click', async () => {
-                // Show quick create dialog
-                const title = prompt('Task title:');
-                if (title && title.trim()) {
-                    try {
-                        await window.optimisticUI.createTask({
-                            title: title.trim(),
-                            status: 'todo',
-                            priority: 'medium'
-                        });
-                        console.log('✅ Task created');
-                    } catch (error) {
-                        console.error('❌ Failed to create task:', error);
-                        alert('Failed to create task. Please try again.');
-                    }
-                }
+            btn.addEventListener('click', () => {
+                openTaskModal();
             });
+        }
+    });
+    
+    // Empty state create button
+    const emptyStateBtn = document.getElementById('empty-state-create-btn');
+    if (emptyStateBtn) {
+        emptyStateBtn.addEventListener('click', () => {
+            openTaskModal();
+        });
+    }
+    
+    // Close modal handlers
+    modalClose.addEventListener('click', closeTaskModal);
+    modalCancel.addEventListener('click', closeTaskModal);
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            closeTaskModal();
+        }
+    });
+    
+    // Keyboard shortcut - ESC to close
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+            closeTaskModal();
+        }
+    });
+    
+    // Handle form submission
+    taskForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const title = document.getElementById('task-title').value.trim();
+        const description = document.getElementById('task-description').value.trim();
+        const priority = document.getElementById('task-priority').value;
+        const dueDate = document.getElementById('task-due-date').value;
+        const assignee = document.getElementById('task-assignee').value.trim();
+        
+        if (!title) {
+            alert('Please enter a task title');
+            return;
+        }
+        
+        try {
+            const submitBtn = document.getElementById('task-form-submit');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating...';
+            
+            await window.optimisticUI.createTask({
+                title: title,
+                description: description || null,
+                status: 'todo',
+                priority: priority,
+                due_date: dueDate || null,
+                assignee: assignee || null
+            });
+            
+            console.log('✅ Task created');
+            closeTaskModal();
+            
+            // Reset button
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: inline-block; margin-right: 8px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Create Task
+            `;
+        } catch (error) {
+            console.error('❌ Failed to create task:', error);
+            alert('Failed to create task. Please try again.');
+            
+            // Reset button
+            const submitBtn = document.getElementById('task-form-submit');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: inline-block; margin-right: 8px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Create Task
+            `;
         }
     });
     
