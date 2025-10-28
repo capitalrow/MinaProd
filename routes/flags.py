@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify, abort, current_app
 from flask_login import login_required, current_user
 from services.feature_flags import flags
 from models.core_models import FeatureFlag, FlagAuditLog
-from extensions import db
+from models import db
 import re
 
 flags_bp = Blueprint("flags", __name__, url_prefix="/flags")
