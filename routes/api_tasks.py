@@ -146,17 +146,17 @@ def create_task():
         if not data.get('title'):
             return jsonify({'success': False, 'message': 'Title is required'}), 400
         
-        if not data.get('meeting_id'):
-            return jsonify({'success': False, 'message': 'Meeting ID is required'}), 400
-        
-        # Verify meeting exists and belongs to user's workspace
-        meeting = db.session.query(Meeting).filter_by(
-            id=data['meeting_id'],
-            workspace_id=current_user.workspace_id
-        ).first()
-        
-        if not meeting:
-            return jsonify({'success': False, 'message': 'Invalid meeting ID'}), 400
+        # Verify meeting exists and belongs to user's workspace (optional)
+        meeting = None
+        meeting_id = data.get('meeting_id')
+        if meeting_id:
+            meeting = db.session.query(Meeting).filter_by(
+                id=meeting_id,
+                workspace_id=current_user.workspace_id
+            ).first()
+            
+            if not meeting:
+                return jsonify({'success': False, 'message': 'Invalid meeting ID'}), 400
         
         # Parse due date if provided
         due_date = None
@@ -179,7 +179,7 @@ def create_task():
         task = Task(
             title=data['title'].strip(),
             description=data.get('description', '').strip() or None,
-            meeting_id=data['meeting_id'],
+            meeting_id=meeting.id if meeting else None,
             priority=data.get('priority', 'medium'),
             category=data.get('category', '').strip() or None,
             due_date=due_date,
@@ -192,14 +192,14 @@ def create_task():
         db.session.add(task)
         db.session.commit()
         
-        # Broadcast task_update event
+        # Broadcast task_update event (always broadcast, even without meeting)
         task_dict = task.to_dict()
         task_dict['action'] = 'created'
-        task_dict['meeting_title'] = meeting.title
+        task_dict['meeting_title'] = meeting.title if meeting else None
         event_broadcaster.broadcast_task_update(
             task_id=task.id,
             task_data=task_dict,
-            meeting_id=meeting.id,
+            meeting_id=meeting.id if meeting else None,
             workspace_id=current_user.workspace_id
         )
         
@@ -277,12 +277,13 @@ def update_task(task_id):
         task.updated_at = datetime.now()
         db.session.commit()
         
-        # Broadcast task_update event
+        # Broadcast task_update event (always broadcast, even without meeting)
         meeting = task.meeting
         action = 'completed' if task.status == 'completed' and old_status != 'completed' else 'updated'
         task_dict = task.to_dict()
         task_dict['action'] = action
-        task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
+        task_dict['meeting_title'] = meeting.title if meeting else None
+        
         event_broadcaster.broadcast_task_update(
             task_id=task.id,
             task_data=task_dict,
@@ -327,7 +328,7 @@ def delete_task(task_id):
         db.session.delete(task)
         db.session.commit()
         
-        # Broadcast task_update event
+        # Broadcast task_update event (always broadcast, even without meeting)
         event_broadcaster.broadcast_task_update(
             task_id=task_id,
             task_data=task_dict,
@@ -378,12 +379,13 @@ def update_task_status(task_id):
         task.updated_at = datetime.now()
         db.session.commit()
         
-        # Broadcast task_update event
+        # Broadcast task_update event (always broadcast, even without meeting)
         meeting = task.meeting
         action = 'completed' if new_status == 'completed' and old_status != 'completed' else 'updated'
         task_dict = task.to_dict()
         task_dict['action'] = action
-        task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
+        task_dict['meeting_title'] = meeting.title if meeting else None
+        
         event_broadcaster.broadcast_task_update(
             task_id=task.id,
             task_data=task_dict,

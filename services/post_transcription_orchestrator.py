@@ -1060,6 +1060,37 @@ class PostTranscriptionOrchestrator:
                         db.session.commit()
                         logger.info(f"✅ [Database] Persisted {len(tasks_created)} AI-extracted tasks")
                         task_source = "ai_insights"
+                        
+                        # Broadcast individual task_update events to tasks page
+                        from services.event_broadcaster import event_broadcaster
+                        for task in tasks_created:
+                            try:
+                                # Get meeting info if available
+                                meeting = None
+                                meeting_title = "Unknown"
+                                workspace_id = 1  # Default workspace
+                                
+                                if session.meetings:
+                                    meeting = session.meetings[0]
+                                    meeting_title = meeting.title
+                                    workspace_id = meeting.workspace_id if meeting.workspace_id else 1
+                                
+                                task_dict = task.to_dict()
+                                task_dict['action'] = 'created'
+                                task_dict['meeting_title'] = meeting_title
+                                
+                                # Broadcast to tasks namespace
+                                if meeting:
+                                    event_broadcaster.broadcast_task_update(
+                                        task_id=task.id,
+                                        task_data=task_dict,
+                                        meeting_id=meeting.id,
+                                        workspace_id=workspace_id
+                                    )
+                                logger.debug(f"📡 Broadcast task_update for task {task.id}")
+                            except Exception as broadcast_error:
+                                logger.warning(f"Failed to broadcast task {task.id}: {broadcast_error}")
+                                
                     except Exception as e:
                         import traceback
                         logger.error(f"❌ [Database] Failed to commit AI-extracted tasks: {e}")
@@ -1440,6 +1471,40 @@ class PostTranscriptionOrchestrator:
                     f"✅ [Database] Successfully persisted {persisted_count} tasks "
                     f"(attempted {len(created_tasks)}) for session_id={session_id}"
                 )
+                
+                # Broadcast individual task_update events to tasks page
+                from services.event_broadcaster import event_broadcaster
+                from models.session import Session as SessionModel
+                session_obj = db.session.query(SessionModel).filter_by(id=session_id).first()
+                
+                if session_obj:
+                    for task in created_tasks:
+                        try:
+                            # Get meeting info if available
+                            meeting = None
+                            meeting_title = "Unknown"
+                            workspace_id = 1  # Default workspace
+                            
+                            if session_obj.meetings:
+                                meeting = session_obj.meetings[0]
+                                meeting_title = meeting.title
+                                workspace_id = meeting.workspace_id if meeting.workspace_id else 1
+                            
+                            task_dict = task.to_dict()
+                            task_dict['action'] = 'created'
+                            task_dict['meeting_title'] = meeting_title
+                            
+                            # Broadcast to tasks namespace
+                            if meeting:
+                                event_broadcaster.broadcast_task_update(
+                                    task_id=task.id,
+                                    task_data=task_dict,
+                                    meeting_id=meeting.id,
+                                    workspace_id=workspace_id
+                                )
+                            logger.debug(f"📡 Broadcast task_update for pattern task {task.id}")
+                        except Exception as broadcast_error:
+                            logger.warning(f"Failed to broadcast pattern task {task.id}: {broadcast_error}")
                 
                 # Log diagnostic information about pattern matching
                 if pattern_match_counts:
