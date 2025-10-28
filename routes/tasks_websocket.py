@@ -32,7 +32,7 @@ def register_tasks_namespace(socketio):
     def handle_tasks_connect():
         """Handle client connection to tasks namespace."""
         try:
-            client_id = request.sid
+            client_id = request.sid  # type: ignore[attr-defined]
             logger.info(f"Tasks client connected: {client_id}")
             
             emit('connected', {
@@ -48,7 +48,7 @@ def register_tasks_namespace(socketio):
     def handle_tasks_disconnect():
         """Handle client disconnection from tasks namespace."""
         try:
-            client_id = request.sid
+            client_id = request.sid  # type: ignore[attr-defined]
             logger.info(f"Tasks client disconnected: {client_id}")
             
         except Exception as e:
@@ -71,7 +71,7 @@ def register_tasks_namespace(socketio):
             room = f"workspace_{workspace_id}"
             join_room(room)
             
-            logger.info(f"Client {request.sid} joined tasks room: {room}")
+            logger.info(f"Client {request.sid} joined tasks room: {room}")  # type: ignore[attr-defined]
             
             emit('joined_workspace', {
                 'workspace_id': workspace_id,
@@ -99,7 +99,7 @@ def register_tasks_namespace(socketio):
             room = f"meeting_{meeting_id}"
             join_room(room)
             
-            logger.info(f"Client {request.sid} subscribed to meeting {meeting_id} tasks")
+            logger.info(f"Client {request.sid} subscribed to meeting {meeting_id} tasks")  # type: ignore[attr-defined]
             
             emit('subscribed_meeting', {
                 'meeting_id': meeting_id,
