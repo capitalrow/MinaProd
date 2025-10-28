@@ -61,6 +61,7 @@ class EventType(enum.Enum):
     DASHBOARD_IDLE_SYNC = "dashboard_idle_sync"  # Background sync every 30s
     FILTER_APPLY = "filter_apply"  # Dashboard filter changed
     SESSION_CARD_CLICK = "session_card_click"  # User clicked meeting card
+    SESSION_REFINED_LOAD = "session_refined_load"  # Detailed session page loaded
     SESSION_ARCHIVE = "session_archive"  # Meeting archived
     ARCHIVE_REVEAL = "archive_reveal"  # Show archived meetings
     INSIGHT_REMINDER = "insight_reminder"  # AI-generated reminder displayed

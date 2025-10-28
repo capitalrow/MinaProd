@@ -324,6 +324,67 @@ def get_session_refined(session_identifier):
     )
 
 
+@sessions_bp.route('/api/events/refined-load', methods=['POST'])
+def log_session_refined_load():
+    """
+    Log session_refined_load event to EventLedger.
+    CROWN⁴ Event #5: Tracks detailed session page access with performance metrics.
+    """
+    from services.event_ledger_service import EventLedgerService
+    from models.event_ledger import EventType
+    from datetime import datetime
+    
+    try:
+        data = request.get_json() or {}
+        
+        # Extract metrics from request
+        session_id = data.get('session_id')
+        external_session_id = data.get('external_session_id')
+        total_load_time = data.get('total_load_time', 0)
+        cache_hit = data.get('cache_hit', False)
+        
+        if not session_id and not external_session_id:
+            return jsonify({
+                'success': False,
+                'error': 'session_id or external_session_id required'
+            }), 400
+        
+        # Log event to EventLedger
+        event = EventLedgerService.log_event(
+            event_type=EventType.SESSION_REFINED_LOAD,
+            session_id=session_id,
+            external_session_id=external_session_id,
+            payload={
+                'total_load_time_ms': total_load_time,
+                'cache_hit': cache_hit,
+                'timestamp': datetime.utcnow().isoformat()
+            },
+            trace_id=f"session_refined_load_{session_id or external_session_id}_{datetime.utcnow().timestamp()}"
+        )
+        
+        # Mark event as completed
+        EventLedgerService.complete_event(event, result={
+            'status': 'success',
+            'sub_300ms': total_load_time < 300
+        }, duration_ms=total_load_time)
+        
+        logger.info(f"📄 Session refined load event logged for session {session_id or external_session_id} ({total_load_time}ms)")
+        
+        return jsonify({
+            'success': True,
+            'event_id': event.id,
+            'total_time': total_load_time,
+            'sub_300ms': total_load_time < 300
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Failed to log session_refined_load event: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @sessions_bp.route('/<int:session_id>/export.md', methods=['GET'])
 def export_session_markdown(session_id):
     """
