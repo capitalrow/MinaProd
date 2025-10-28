@@ -45,10 +45,10 @@
      * Initialize mobile gestures
      */
     function init() {
-        // Only initialize on dashboard page
-        const isDashboard = document.querySelector('.dashboard-container');
+        // Only initialize on dashboard or meetings page
+        const isDashboard = document.querySelector('.dashboard-container, .meetings-container');
         if (!isDashboard) {
-            return; // Not on dashboard, skip initialization
+            return; // Not on dashboard/meetings page, skip initialization
         }
         
         if (!isMobileDevice()) {
@@ -90,7 +90,7 @@
      * Setup pull-to-refresh gesture
      */
     function setupPullToRefresh() {
-        const container = document.querySelector('.dashboard-container') || document.body;
+        const container = document.querySelector('.dashboard-container, .meetings-container') || document.body;
         
         // Create pull indicator
         pullIndicator = document.createElement('div');
@@ -289,7 +289,7 @@
      */
     function setupSwipeToArchive() {
         // Delegate event listeners to parent container
-        const meetingsContainer = document.querySelector('.meetings-list');
+        const meetingsContainer = document.querySelector('.meetings-list, #active-meetings, #archive-meetings');
         if (!meetingsContainer) {
             console.log('📱 Meetings list not found - swipe gestures disabled');
             return;
@@ -435,7 +435,7 @@
      * Setup long-press for selection mode
      */
     function setupLongPress() {
-        const meetingsContainer = document.querySelector('.meetings-list');
+        const meetingsContainer = document.querySelector('.meetings-list, #active-meetings, #archive-meetings');
         if (!meetingsContainer) {
             console.log('📱 Meetings list not found - long-press gestures disabled');
             return;
