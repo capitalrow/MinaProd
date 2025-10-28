@@ -295,7 +295,7 @@
             <h1 class="tasks-title">Action Items</h1>
             <p class="tasks-subtitle">Track and manage tasks from your meetings</p>
         </div>
-        <button class="btn btn-primary" onclick="openTaskModal()">
+        <button class="btn btn-primary" id="newTaskBtn">
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -381,7 +381,7 @@
         </svg>
         <h3 class="text-xl font-semibold mb-2">No tasks yet</h3>
         <p class="text-secondary mb-6">Tasks from your meetings will appear here</p>
-        <button class="btn btn-primary" onclick="openTaskModal()">
+        <button class="btn btn-primary" id="createFirstTaskBtn">
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -396,7 +396,7 @@
     <div class="modal-container">
         <div class="modal-header">
             <h2 class="modal-title">Create New Task</h2>
-            <button class="modal-close" onclick="closeTaskModal()">
+            <button class="modal-close" id="closeModalBtn">
                 <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -465,7 +465,7 @@
             </div>
             
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">
+                <button type="button" class="btn btn-secondary" id="cancelTaskBtn">
                     Cancel
                 </button>
                 <button type="submit" class="btn btn-primary" id="createTaskBtn">
@@ -1328,6 +1328,25 @@
                 taskForm.addEventListener('submit', handleTaskFormSubmit);
             }
             
+            // Attach button click handlers
+            const newTaskBtn = document.getElementById('newTaskBtn');
+            const createFirstTaskBtn = document.getElementById('createFirstTaskBtn');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const cancelTaskBtn = document.getElementById('cancelTaskBtn');
+            
+            if (newTaskBtn) {
+                newTaskBtn.addEventListener('click', window.openTaskModal);
+            }
+            if (createFirstTaskBtn) {
+                createFirstTaskBtn.addEventListener('click', window.openTaskModal);
+            }
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', window.closeTaskModal);
+            }
+            if (cancelTaskBtn) {
+                cancelTaskBtn.addEventListener('click', window.closeTaskModal);
+            }
+            
             // Close modal on Escape key
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
@@ -1356,6 +1375,25 @@
         const taskForm = document.getElementById('taskForm');
         if (taskForm) {
             taskForm.addEventListener('submit', handleTaskFormSubmit);
+        }
+        
+        // Attach button click handlers
+        const newTaskBtn = document.getElementById('newTaskBtn');
+        const createFirstTaskBtn = document.getElementById('createFirstTaskBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cancelTaskBtn = document.getElementById('cancelTaskBtn');
+        
+        if (newTaskBtn) {
+            newTaskBtn.addEventListener('click', window.openTaskModal);
+        }
+        if (createFirstTaskBtn) {
+            createFirstTaskBtn.addEventListener('click', window.openTaskModal);
+        }
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', window.closeTaskModal);
+        }
+        if (cancelTaskBtn) {
+            cancelTaskBtn.addEventListener('click', window.closeTaskModal);
         }
         
         // Close modal on Escape key
