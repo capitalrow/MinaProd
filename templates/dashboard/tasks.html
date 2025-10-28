@@ -779,4 +779,113 @@
     
 })();
 </script>
+
+<!-- CROWN⁴.5 Frontend Modules -->
+<script src="{{ url_for('static', filename='js/task-cache.js') }}" nonce="{{ g.csp_nonce }}"></script>
+<script src="{{ url_for('static', filename='js/task-bootstrap.js') }}" nonce="{{ g.csp_nonce }}"></script>
+<script src="{{ url_for('static', filename='js/task-optimistic-ui.js') }}" nonce="{{ g.csp_nonce }}"></script>
+<script src="{{ url_for('static', filename='js/task-offline-queue.js') }}" nonce="{{ g.csp_nonce }}"></script>
+<script src="{{ url_for('static', filename='js/task-multi-tab-sync.js') }}" nonce="{{ g.csp_nonce }}"></script>
+<script src="{{ url_for('static', filename='js/task-websocket-handlers.js') }}" nonce="{{ g.csp_nonce }}"></script>
+<script src="{{ url_for('static', filename='js/task-virtual-list.js') }}" nonce="{{ g.csp_nonce }}"></script>
+<script src="{{ url_for('static', filename='js/task-keyboard-shortcuts.js') }}" nonce="{{ g.csp_nonce }}"></script>
+
+<script nonce="{{ g.csp_nonce }}">
+/**
+ * CROWN⁴.5 Tasks Page Initialization
+ * Integrates all frontend modules for enterprise-grade task management
+ */
+(async function() {
+    'use strict';
+    
+    console.log('🚀 Initializing CROWN⁴.5 Tasks Page...');
+    
+    // Wait for all modules to load
+    const waitForModules = () => {
+        return new Promise((resolve) => {
+            const check = () => {
+                if (window.taskCache && window.taskBootstrap && window.optimisticUI && 
+                    window.offlineQueue && window.multiTabSync && window.tasksWS && 
+                    window.taskVirtualList && window.taskShortcuts) {
+                    resolve();
+                } else {
+                    setTimeout(check, 50);
+                }
+            };
+            check();
+        });
+    };
+    
+    await waitForModules();
+    console.log('✅ All CROWN⁴.5 modules loaded');
+    
+    // Initialize cache-first bootstrap
+    try {
+        const startTime = performance.now();
+        await window.taskBootstrap.bootstrap();
+        const bootstrapTime = performance.now() - startTime;
+        console.log(`⚡ Bootstrap completed in ${bootstrapTime.toFixed(2)}ms`);
+        
+        // Log performance metrics
+        if (bootstrapTime < 200) {
+            console.log('🎯 CROWN⁴.5 Target Met: <200ms first paint');
+        } else {
+            console.warn(`⚠️ Bootstrap slower than target: ${bootstrapTime.toFixed(2)}ms > 200ms`);
+        }
+    } catch (error) {
+        console.error('❌ Bootstrap failed:', error);
+    }
+    
+    // Setup task creation button
+    const createButtons = document.querySelectorAll('.btn-primary');
+    createButtons.forEach(btn => {
+        if (btn.textContent.includes('New Task') || btn.textContent.includes('Create')) {
+            btn.addEventListener('click', async () => {
+                // Show quick create dialog
+                const title = prompt('Task title:');
+                if (title && title.trim()) {
+                    try {
+                        await window.optimisticUI.createTask({
+                            title: title.trim(),
+                            status: 'todo',
+                            priority: 'medium'
+                        });
+                        console.log('✅ Task created');
+                    } catch (error) {
+                        console.error('❌ Failed to create task:', error);
+                        alert('Failed to create task. Please try again.');
+                    }
+                }
+            });
+        }
+    });
+    
+    // Monitor online/offline status
+    window.addEventListener('online', () => {
+        console.log('🌐 Back online - triggering sync');
+        if (window.showToast) {
+            window.showToast('Connection restored', 'info');
+        }
+    });
+    
+    window.addEventListener('offline', () => {
+        console.log('📵 Offline - operations will be queued');
+        if (window.showToast) {
+            window.showToast('Offline mode - changes will sync when online', 'warning');
+        }
+    });
+    
+    // Log system stats every 30 seconds
+    setInterval(() => {
+        const stats = {
+            cache: window.taskCache.getStats(),
+            virtualList: window.taskVirtualList.getStats(),
+            online: navigator.onLine
+        };
+        console.log('📊 CROWN⁴.5 Stats:', stats);
+    }, 30000);
+    
+    console.log('✨ CROWN⁴.5 Tasks Page Ready');
+})();
+</script>
 {% endblock %}
