@@ -51,7 +51,7 @@ class Meeting(Base):
     
     # Relationships
     organizer_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    organizer: Mapped["User"] = relationship(back_populates="meetings")
+    organizer: Mapped["User"] = relationship(back_populates="meetings", foreign_keys=[organizer_id])
     
     workspace_id: Mapped[int] = mapped_column(ForeignKey("workspaces.id"), nullable=False)
     workspace: Mapped["Workspace"] = relationship(back_populates="meetings")
