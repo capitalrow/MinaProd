@@ -35,6 +35,16 @@ from flask_login import current_user
 from services.event_broadcaster import event_broadcaster
 from services.task_event_handler import task_event_handler
 
+
+def run_async(coro):
+    """Helper to run async functions in sync context."""
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop.run_until_complete(coro)
+
 logger = logging.getLogger(__name__)
 
 
@@ -135,7 +145,7 @@ def register_tasks_namespace(socketio):
     # CROWN⁴.5 Event Matrix Handlers
     
     @socketio.on('task_event', namespace='/tasks')
-    async def handle_task_event(data):
+    def handle_task_event(data):
         """
         Universal handler for all 20 CROWN⁴.5 task events.
         
@@ -152,7 +162,7 @@ def register_tasks_namespace(socketio):
             payload = data.get('payload', {})
             
             if not event_type:
-                await socketio.emit('error', {'message': 'event_type required'}, namespace='/tasks')
+                emit('error', {'message': 'event_type required'})
                 return
             
             # Get user ID (from authenticated session)
@@ -160,73 +170,73 @@ def register_tasks_namespace(socketio):
             session_id = payload.get('session_id')
             
             if not user_id:
-                await socketio.emit('error', {'message': 'user_id required'}, namespace='/tasks')
+                emit('error', {'message': 'user_id required'})
                 return
             
             # Add vector clock to payload if provided
             if 'vector_clock' in data:
                 payload['vector_clock'] = data['vector_clock']
             
-            # Process event (now properly awaited in async context)
-            result = await task_event_handler.handle_event(
+            # Process event (run async handler in sync context)
+            result = run_async(task_event_handler.handle_event(
                 event_type=event_type,
                 payload=payload,
                 user_id=user_id,
                 session_id=session_id
-            )
+            ))
             
-            # Emit result back to client (async)
-            await socketio.emit('task_event_result', {
+            # Emit result back to client
+            emit('task_event_result', {
                 'event_type': event_type,
                 'result': result,
                 'trace_id': data.get('trace_id')
-            }, namespace='/tasks')
+            })
             
             # Broadcast to workspace room if successful
             if result.get('success'):
                 workspace_id = payload.get('workspace_id')
                 if workspace_id:
-                    await socketio.emit('task_updated', {
+                    emit('task_updated', {
                         'event_type': event_type,
                         'data': result
-                    }, room=f"workspace_{workspace_id}", namespace='/tasks')
+                    }, room=f"workspace_{workspace_id}")
             
         except Exception as e:
             logger.error(f"Task event error: {e}", exc_info=True)
-            await socketio.emit('error', {
+            emit('error', {
                 'message': 'Failed to process task event',
                 'error': str(e)
-            }, namespace='/tasks')
+            })
     
     # Individual event handlers for backward compatibility
     
     @socketio.on('tasks_bootstrap', namespace='/tasks')
-    async def handle_tasks_bootstrap(data):
+    def handle_tasks_bootstrap(data):
         """Bootstrap handler - loads initial tasks."""
         data['event_type'] = 'tasks_bootstrap'
-        return await handle_task_event(data)
+        return handle_task_event(data)
     
     @socketio.on('task_create', namespace='/tasks')
-    async def handle_task_create(data):
+    def handle_task_create(data):
         """Task creation handler."""
         data['event_type'] = 'task_create:manual'
-        return await handle_task_event(data)
+        return handle_task_event(data)
     
     @socketio.on('task_update', namespace='/tasks')
-    async def handle_task_update(data):
+    def handle_task_update(data):
         """Task update handler - routes to specific update type."""
         update_type = data.get('update_type', 'title')
         data['event_type'] = f'task_update:{update_type}'
-        return await handle_task_event(data)
+        return handle_task_event(data)
     
     @socketio.on('task_delete', namespace='/tasks')
-    async def handle_task_delete(data):
+    def handle_task_delete(data):
         """Task deletion handler."""
         data['event_type'] = 'task_delete'
-        return await handle_task_event(data)
+        return handle_task_event(data)
     
     @socketio.on('offline_queue:save', namespace='/tasks')
-    async def handle_offline_queue_save(data):
+    def handle_offline_queue_save(data):
         """
         Save frontend's offline queue to server for backup.
         Allows recovery if browser cache is cleared.
@@ -237,7 +247,7 @@ def register_tasks_namespace(socketio):
         
         try:
             if not current_user.is_authenticated:
-                await socketio.emit('error', {'message': 'Authentication required'}, namespace='/tasks')
+                emit('error', {'message': 'Authentication required'})
                 return
             
             user_id = current_user.id
@@ -262,24 +272,24 @@ def register_tasks_namespace(socketio):
             
             db.session.commit()
             
-            await socketio.emit('offline_queue:saved', {
+            emit('offline_queue:saved', {
                 'success': True,
                 'queue_id': existing.id,
                 'updated_at': existing.updated_at.isoformat()
-            }, namespace='/tasks')
+            })
             
             logger.info(f"Offline queue saved for user {user_id}, session {session_id}")
             
         except Exception as e:
             logger.error(f"Offline queue save failed: {e}", exc_info=True)
             db.session.rollback()
-            await socketio.emit('error', {
+            emit('error', {
                 'message': 'Failed to save offline queue',
                 'error': str(e)
-            }, namespace='/tasks')
+            })
     
     @socketio.on('offline_queue:retrieve', namespace='/tasks')
-    async def handle_offline_queue_retrieve(data):
+    def handle_offline_queue_retrieve(data):
         """
         Retrieve saved offline queue from server.
         Used for recovery after browser cache loss.
@@ -288,7 +298,7 @@ def register_tasks_namespace(socketio):
         
         try:
             if not current_user.is_authenticated:
-                await socketio.emit('error', {'message': 'Authentication required'}, namespace='/tasks')
+                emit('error', {'message': 'Authentication required'})
                 return
             
             user_id = current_user.id
@@ -300,28 +310,28 @@ def register_tasks_namespace(socketio):
             ).first()
             
             if queue:
-                await socketio.emit('offline_queue:retrieved', {
+                emit('offline_queue:retrieved', {
                     'success': True,
                     'queue_data': queue.queue_data,
                     'updated_at': queue.updated_at.isoformat()
-                }, namespace='/tasks')
+                })
                 logger.info(f"Offline queue retrieved for user {user_id}, session {session_id}")
             else:
-                await socketio.emit('offline_queue:retrieved', {
+                emit('offline_queue:retrieved', {
                     'success': True,
                     'queue_data': [],
                     'message': 'No saved queue found'
-                }, namespace='/tasks')
+                })
                 
         except Exception as e:
             logger.error(f"Offline queue retrieve failed: {e}", exc_info=True)
-            await socketio.emit('error', {
+            emit('error', {
                 'message': 'Failed to retrieve offline queue',
                 'error': str(e)
-            }, namespace='/tasks')
+            })
     
     @socketio.on('offline_queue:clear', namespace='/tasks')
-    async def handle_offline_queue_clear(data):
+    def handle_offline_queue_clear(data):
         """
         Clear saved offline queue from server.
         Called after successful replay to clean up.
@@ -331,7 +341,7 @@ def register_tasks_namespace(socketio):
         
         try:
             if not current_user.is_authenticated:
-                await socketio.emit('error', {'message': 'Authentication required'}, namespace='/tasks')
+                emit('error', {'message': 'Authentication required'})
                 return
             
             user_id = current_user.id
@@ -344,19 +354,19 @@ def register_tasks_namespace(socketio):
             
             db.session.commit()
             
-            await socketio.emit('offline_queue:cleared', {
+            emit('offline_queue:cleared', {
                 'success': True,
                 'deleted_count': deleted
-            }, namespace='/tasks')
+            })
             
             logger.info(f"Offline queue cleared for user {user_id}, session {session_id}: {deleted} entries")
             
         except Exception as e:
             logger.error(f"Offline queue clear failed: {e}", exc_info=True)
             db.session.rollback()
-            await socketio.emit('error', {
+            emit('error', {
                 'message': 'Failed to clear offline queue',
                 'error': str(e)
-            }, namespace='/tasks')
+            })
     
     logger.info("✅ Tasks WebSocket namespace registered (/tasks)")
