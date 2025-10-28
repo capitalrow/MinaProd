@@ -27,6 +27,7 @@ class NudgeType(Enum):
     ACTION_REVIEW = "action_review"
     DECISION_CONFIRMATION = "decision_confirmation"
     COLLABORATION_REMINDER = "collaboration_reminder"
+    INSIGHT_REMINDER = "insight_reminder"  # AI-generated predictive reminder
 
 
 class Priority(Enum):
@@ -120,6 +121,8 @@ class SmartNudgesService:
         self.nudges_cache: Dict[int, List[SmartNudge]] = defaultdict(list)
         self.user_patterns: Dict[int, UserBehaviorPattern] = {}
         self.follow_up_suggestions: Dict[int, List[FollowUpSuggestion]] = defaultdict(list)
+        # 24-hour throttling: track last reminder time per user
+        self.last_insight_reminder: Dict[int, datetime] = {}
     
     def generate_nudges(self, user_id: int) -> List[SmartNudge]:
         """
@@ -507,6 +510,186 @@ class SmartNudgesService:
             nudges.append(nudge)
         
         return nudges
+    
+    def generate_insight_reminder(self, user_id: int, workspace_id: int) -> Optional[SmartNudge]:
+        """
+        Generate AI-powered insight reminder with 24-hour throttling.
+        Uses predictive AI to identify the most valuable reminder based on user patterns.
+        
+        Args:
+            user_id: User ID
+            workspace_id: Workspace ID
+            
+        Returns:
+            SmartNudge with insight reminder or None if throttled/no insight
+        """
+        try:
+            # Check 24-hour throttling
+            now = datetime.now()
+            last_reminder = self.last_insight_reminder.get(user_id)
+            
+            if last_reminder and (now - last_reminder) < timedelta(hours=24):
+                hours_remaining = 24 - (now - last_reminder).total_seconds() / 3600
+                logger.info(f"Insight reminder throttled for user {user_id} ({hours_remaining:.1f}h remaining)")
+                return None
+            
+            # Get user data for analysis
+            user_data = self._get_user_data(user_id)
+            if not user_data:
+                return None
+            
+            # Use AI to analyze patterns and generate insight
+            insight = self._generate_ai_insight(user_data)
+            if not insight:
+                # Fallback to rule-based insights when AI fails
+                logger.info(f"AI insight failed for user {user_id}, using rule-based fallback")
+                insight = self._generate_fallback_insight(user_data)
+                if not insight:
+                    return None
+            
+            # Create insight reminder nudge
+            nudge = SmartNudge(
+                id=f"insight_reminder_{user_id}_{int(now.timestamp())}",
+                type=NudgeType.INSIGHT_REMINDER,
+                priority=Priority.MEDIUM,
+                title=insight.get('title', 'Meeting Insight'),
+                message=insight.get('message', 'Check your recent meetings for important updates'),
+                action_text=insight.get('action_text', 'View Details'),
+                action_url=insight.get('action_url', '/dashboard'),
+                context={
+                    'insight_type': insight.get('type', 'general'),
+                    'confidence': insight.get('confidence', 0.7),
+                    'workspace_id': workspace_id
+                },
+                related_entities=insight.get('related_entities', []),
+                suggested_channels=[NudgeChannel.IN_APP, NudgeChannel.PUSH],
+                created_at=now
+            )
+            
+            # Update throttle timestamp
+            self.last_insight_reminder[user_id] = now
+            
+            logger.info(f"Generated insight reminder for user {user_id}: {nudge.title}")
+            return nudge
+            
+        except Exception as e:
+            logger.error(f"Error generating insight reminder for user {user_id}: {e}")
+            return None
+    
+    def _generate_ai_insight(self, user_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        Use AI to generate intelligent insights from user's recent activities.
+        
+        Args:
+            user_data: Comprehensive user data (sessions, tasks, summaries)
+            
+        Returns:
+            Dictionary with insight data or None
+        """
+        try:
+            from services.ai_insights_service import AIInsightsService
+            
+            ai_service = AIInsightsService()
+            if not ai_service.is_available():
+                return self._generate_fallback_insight(user_data)
+            
+            # Analyze recent meetings and tasks
+            sessions = user_data.get('sessions', [])[:5]  # Last 5 meetings
+            tasks = user_data.get('tasks', [])
+            
+            # Build context for AI
+            incomplete_tasks = [t for t in tasks if t.status != 'completed']
+            overdue_tasks = [
+                t for t in incomplete_tasks 
+                if t.due_date and t.due_date < datetime.now()
+            ]
+            
+            recent_meetings_summary = []
+            for session in sessions:
+                recent_meetings_summary.append(f"- {session.title} ({session.created_at.strftime('%Y-%m-%d')})")
+            
+            # Construct AI prompt
+            prompt = f"""Analyze these meeting patterns and tasks to generate ONE actionable insight reminder:
+
+RECENT MEETINGS ({len(sessions)}):
+{chr(10).join(recent_meetings_summary[:5])}
+
+TASKS STATUS:
+- Total tasks: {len(tasks)}
+- Incomplete: {len(incomplete_tasks)}
+- Overdue: {len(overdue_tasks)}
+
+Generate a single, specific, actionable insight in JSON format:
+{{
+    "title": "Brief, attention-grabbing title (max 50 chars)",
+    "message": "Specific, actionable message (max 150 chars)",
+    "action_text": "Clear action button text",
+    "action_url": "/dashboard or /tasks or /sessions/{{id}}",
+    "type": "pattern|overdue|follow_up|decision",
+    "confidence": 0.0-1.0,
+    "related_entities": ["task_id" or "session_id"]
+}}
+
+Focus on: overdue tasks, missing follow-ups, recurring patterns, or important decisions needing attention."""
+
+            # Call AI service
+            response = ai_service.client.chat.completions.create(
+                model="gpt-4o-mini-2024-07-18",
+                messages=[
+                    {"role": "system", "content": "You are a productivity assistant. Generate concise, actionable insights."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=300,
+                response_format={"type": "json_object"}
+            )
+            
+            insight = json.loads(response.choices[0].message.content)
+            return insight
+            
+        except Exception as e:
+            logger.error(f"Error generating AI insight: {e}")
+            return self._generate_fallback_insight(user_data)
+    
+    def _generate_fallback_insight(self, user_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Generate rule-based insight when AI is unavailable."""
+        tasks = user_data.get('tasks', [])
+        sessions = user_data.get('sessions', [])
+        
+        # Find most urgent item
+        incomplete_tasks = [t for t in tasks if t.status != 'completed']
+        overdue_tasks = [
+            t for t in incomplete_tasks 
+            if t.due_date and t.due_date < datetime.now()
+        ]
+        
+        if overdue_tasks:
+            task = overdue_tasks[0]
+            days_overdue = (datetime.now() - task.due_date).days
+            return {
+                'title': f"Overdue: {task.text[:40]}...",
+                'message': f"{days_overdue} days overdue. Time to take action!",
+                'action_text': "View Task",
+                'action_url': f"/tasks",
+                'type': "overdue",
+                'confidence': 0.9,
+                'related_entities': [str(task.id)]
+            }
+        
+        elif sessions and not any(t.session_id == sessions[0].id for t in tasks):
+            # Recent meeting with no follow-up tasks
+            session = sessions[0]
+            return {
+                'title': f"Missing Follow-up: {session.title[:40]}...",
+                'message': "No tasks created from this meeting. Review for action items?",
+                'action_text': "Review Meeting",
+                'action_url': f"/sessions/{session.id}",
+                'type': "follow_up",
+                'confidence': 0.7,
+                'related_entities': [str(session.id)]
+            }
+        
+        return None
     
     def _personalize_nudges(self, user_id: int, nudges: List[SmartNudge]) -> List[SmartNudge]:
         """Personalize nudges based on user patterns."""
