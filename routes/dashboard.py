@@ -433,6 +433,68 @@ def api_stats():
     })
 
 
+@dashboard_bp.route('/api/events/bootstrap', methods=['POST'])
+@login_required
+def log_dashboard_bootstrap():
+    """
+    Log dashboard_bootstrap event to EventLedger.
+    CROWN⁴ Event #1: Tracks dashboard initialization with cache performance.
+    """
+    from services.event_ledger_service import EventLedgerService
+    from models.event_ledger import EventType
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        data = request.get_json() or {}
+        
+        # Extract performance metrics from request
+        cache_load_time = data.get('cache_load_time', 0)
+        server_load_time = data.get('server_load_time', 0)
+        total_time = data.get('total_time', 0)
+        cache_hit = data.get('cache_hit', False)
+        
+        # Log event to EventLedger
+        event = EventLedgerService.log_event(
+            event_type=EventType.DASHBOARD_BOOTSTRAP,
+            session_id=None,
+            external_session_id=None,
+            payload={
+                'user_id': current_user.id,
+                'workspace_id': current_user.workspace_id,
+                'cache_load_time_ms': cache_load_time,
+                'server_load_time_ms': server_load_time,
+                'total_bootstrap_time_ms': total_time,
+                'cache_hit': cache_hit,
+                'timestamp': datetime.utcnow().isoformat()
+            },
+            trace_id=f"dashboard_bootstrap_{current_user.id}_{datetime.utcnow().timestamp()}"
+        )
+        
+        # Mark event as completed immediately
+        EventLedgerService.complete_event(event, result={
+            'status': 'success',
+            'sub_200ms': total_time < 200
+        }, duration_ms=total_time)
+        
+        logger.info(f"📊 Dashboard bootstrap event logged for user {current_user.id} ({total_time}ms)")
+        
+        return jsonify({
+            'success': True,
+            'event_id': event.id,
+            'total_time': total_time,
+            'sub_200ms': total_time < 200
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Failed to log dashboard_bootstrap event: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @dashboard_bp.route('/ops/metrics')
 def ops_metrics():
     """Operational metrics dashboard endpoint."""
