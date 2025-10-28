@@ -478,10 +478,10 @@ prefetchController = new PrefetchController({
     cacheTimeout: 60000 // 1 minute
 });
 
-// Initialize cache and bootstrap dashboard
-(async function bootstrapDashboard() {
+// Initialize cache and bootstrap dashboard - MUST wait for DOM
+async function bootstrapDashboardLegacy() {
     const bootstrapStart = performance.now();
-    console.log('🚀 Dashboard bootstrap started');
+    console.log('🚀 Dashboard bootstrap started (legacy)');
     
     try {
         // Initialize IndexedDB cache
@@ -564,7 +564,15 @@ prefetchController = new PrefetchController({
         console.error('❌ Cache bootstrap failed:', error);
         // Graceful degradation: continue without cache
     }
-})();
+}
+
+// Call legacy bootstrap after DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrapDashboardLegacy);
+} else {
+    // DOM already ready
+    bootstrapDashboardLegacy();
+}
 
 /**
  * Morph Transition Handlers - Defined globally FIRST
@@ -878,20 +886,43 @@ window.initMorphTransitions = function() {
     // Get workspace ID from user context
     const WORKSPACE_ID = {{ current_user.workspace_id }};
     
-    // Cache DOM elements
-    const statElements = {
-        totalMeetings: document.querySelector('.stat-card:nth-child(1) .stat-value'),
-        actionItems: document.querySelector('.stat-card:nth-child(2) .stat-value'),
-        hoursSaved: document.querySelector('.stat-card:nth-child(3) .stat-value')
+    // DOM elements - will be initialized after DOM ready
+    let statElements = {
+        totalMeetings: null,
+        actionItems: null,
+        hoursSaved: null
     };
     
-    const meetingsListEl = document.querySelector('.meetings-list');
-    const emptyStateEl = document.querySelector('.empty-state');
+    let meetingsListEl = null;
+    let emptyStateEl = null;
     
     // Track bootstrap performance
     const bootstrapStart = performance.now();
     let cacheLoadTime = 0;
     let serverLoadTime = 0;
+    
+    /**
+     * Initialize DOM references after DOM is ready
+     * CRITICAL: Must be called after DOMContentLoaded to prevent null querySelector errors
+     */
+    function initDOMReferences() {
+        statElements = {
+            totalMeetings: document.querySelector('.stat-card:nth-child(1) .stat-value'),
+            actionItems: document.querySelector('.stat-card:nth-child(2) .stat-value'),
+            hoursSaved: document.querySelector('.stat-card:nth-child(3) .stat-value')
+        };
+        
+        meetingsListEl = document.querySelector('.meetings-list');
+        emptyStateEl = document.querySelector('.empty-state');
+        
+        console.log('📍 DOM references initialized:', {
+            totalMeetings: !!statElements.totalMeetings,
+            actionItems: !!statElements.actionItems,
+            hoursSaved: !!statElements.hoursSaved,
+            meetingsListEl: !!meetingsListEl,
+            emptyStateEl: !!emptyStateEl
+        });
+    }
     
     /**
      * Bootstrap dashboard with cache-first strategy
@@ -1544,12 +1575,17 @@ window.initMorphTransitions = function() {
     // Initialize on DOM ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log('📌 DOM ready, initializing dashboard...');
+            initDOMReferences(); // Initialize DOM references FIRST
             await bootstrapDashboard();
             initWebSocket();
             startIdleSync();
         });
     } else {
+        // DOM already ready (script loaded late)
         (async () => {
+            console.log('📌 DOM already ready, initializing dashboard...');
+            initDOMReferences(); // Initialize DOM references FIRST
             await bootstrapDashboard();
             initWebSocket();
             startIdleSync();
