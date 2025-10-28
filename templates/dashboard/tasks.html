@@ -655,8 +655,14 @@
      * Open task creation modal
      */
     window.openTaskModal = function() {
+        console.log('🔓 openTaskModal called');
         const modal = document.getElementById('taskModal');
         const form = document.getElementById('taskForm');
+        
+        if (!modal || !form) {
+            console.error('❌ Modal or form not found', { modal: !!modal, form: !!form });
+            return;
+        }
         
         // Reset form
         form.reset();
@@ -664,6 +670,7 @@
         
         // Show modal with animation
         modal.style.display = 'flex';
+        console.log('✅ Modal opened');
         
         // Focus on title input
         setTimeout(() => {
@@ -675,7 +682,12 @@
      * Close task creation modal
      */
     window.closeTaskModal = function() {
+        console.log('🔒 closeTaskModal called');
         const modal = document.getElementById('taskModal');
+        if (!modal) {
+            console.error('❌ Modal not found');
+            return;
+        }
         const container = modal.querySelector('.modal-container');
         
         // Fade out animation
@@ -684,6 +696,7 @@
         setTimeout(() => {
             modal.style.display = 'none';
             container.style.animation = '';
+            console.log('✅ Modal closed');
         }, 300);
     };
     
@@ -1334,17 +1347,30 @@
             const closeModalBtn = document.getElementById('closeModalBtn');
             const cancelTaskBtn = document.getElementById('cancelTaskBtn');
             
+            console.log('🔍 Task modal buttons found:', {
+                newTaskBtn: !!newTaskBtn,
+                createFirstTaskBtn: !!createFirstTaskBtn,
+                closeModalBtn: !!closeModalBtn,
+                cancelTaskBtn: !!cancelTaskBtn,
+                openTaskModal: typeof window.openTaskModal,
+                closeTaskModal: typeof window.closeTaskModal
+            });
+            
             if (newTaskBtn) {
                 newTaskBtn.addEventListener('click', window.openTaskModal);
+                console.log('✅ Event listener attached to newTaskBtn');
             }
             if (createFirstTaskBtn) {
                 createFirstTaskBtn.addEventListener('click', window.openTaskModal);
+                console.log('✅ Event listener attached to createFirstTaskBtn');
             }
             if (closeModalBtn) {
                 closeModalBtn.addEventListener('click', window.closeTaskModal);
+                console.log('✅ Event listener attached to closeModalBtn');
             }
             if (cancelTaskBtn) {
                 cancelTaskBtn.addEventListener('click', window.closeTaskModal);
+                console.log('✅ Event listener attached to cancelTaskBtn');
             }
             
             // Close modal on Escape key
@@ -1383,17 +1409,30 @@
         const closeModalBtn = document.getElementById('closeModalBtn');
         const cancelTaskBtn = document.getElementById('cancelTaskBtn');
         
+        console.log('🔍 Task modal buttons found (else block):', {
+            newTaskBtn: !!newTaskBtn,
+            createFirstTaskBtn: !!createFirstTaskBtn,
+            closeModalBtn: !!closeModalBtn,
+            cancelTaskBtn: !!cancelTaskBtn,
+            openTaskModal: typeof window.openTaskModal,
+            closeTaskModal: typeof window.closeTaskModal
+        });
+        
         if (newTaskBtn) {
             newTaskBtn.addEventListener('click', window.openTaskModal);
+            console.log('✅ Event listener attached to newTaskBtn (else block)');
         }
         if (createFirstTaskBtn) {
             createFirstTaskBtn.addEventListener('click', window.openTaskModal);
+            console.log('✅ Event listener attached to createFirstTaskBtn (else block)');
         }
         if (closeModalBtn) {
             closeModalBtn.addEventListener('click', window.closeTaskModal);
+            console.log('✅ Event listener attached to closeModalBtn (else block)');
         }
         if (cancelTaskBtn) {
             cancelTaskBtn.addEventListener('click', window.closeTaskModal);
+            console.log('✅ Event listener attached to cancelTaskBtn (else block)');
         }
         
         // Close modal on Escape key
