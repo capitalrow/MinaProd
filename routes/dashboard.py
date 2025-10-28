@@ -9,7 +9,7 @@ from models import db, Meeting, Task, Analytics, Session, Marker
 from sqlalchemy import desc, func, and_
 from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta, date
-from services.event_broadcaster import EventBroadcaster
+from services.event_broadcaster import event_broadcaster
 
 try:
     from services.uptime_monitoring import uptime_monitor
@@ -50,11 +50,13 @@ def index():
     
     # Get recent meetings (handle None workspace)
     # ✨ CROWN⁴: Eager load session relationship for card navigation
+    # ✨ CROWN⁴ Phase 4: Exclude archived meetings from main view
     if current_user.workspace_id:
         recent_meetings = db.session.query(Meeting).options(
             joinedload(Meeting.session)
         ).filter_by(
-            workspace_id=current_user.workspace_id
+            workspace_id=current_user.workspace_id,
+            archived=False
         ).order_by(desc(Meeting.created_at)).limit(5).all()
     else:
         recent_meetings = []
@@ -97,7 +99,8 @@ def index():
         todays_meetings = db.session.query(Meeting).options(
             joinedload(Meeting.session)
         ).filter_by(
-            workspace_id=current_user.workspace_id
+            workspace_id=current_user.workspace_id,
+            archived=False
         ).filter(
             and_(
                 Meeting.created_at >= today_start,
@@ -729,6 +732,175 @@ def log_session_card_click():
         
     except Exception as e:
         logger.error(f"Failed to log session_card_click event: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@dashboard_bp.route('/api/meetings/<int:meeting_id>/archive', methods=['POST'])
+@login_required
+def archive_meeting(meeting_id):
+    """
+    Archive a meeting (CROWN⁴ Phase 4).
+    Logs SESSION_ARCHIVE event to EventLedger.
+    """
+    from services.event_ledger_service import EventLedgerService
+    from models.event_ledger import EventType
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Get the meeting
+        meeting = db.session.query(Meeting).filter_by(
+            id=meeting_id,
+            workspace_id=current_user.workspace_id
+        ).first()
+        
+        if not meeting:
+            return jsonify({'success': False, 'error': 'Meeting not found'}), 404
+        
+        if meeting.archived:
+            return jsonify({'success': False, 'error': 'Meeting already archived'}), 400
+        
+        # Archive the meeting (don't commit yet - transactional safety)
+        meeting.archive(current_user.id)
+        
+        # Log SESSION_ARCHIVE event to EventLedger
+        event = EventLedgerService.log_event(
+            event_type=EventType.SESSION_ARCHIVE,
+            session_id=meeting.session.id if meeting.session else None,
+            external_session_id=meeting.session.external_id if meeting.session else None,
+            payload={
+                'user_id': current_user.id,
+                'workspace_id': current_user.workspace_id,
+                'meeting_id': meeting_id,
+                'meeting_title': meeting.title,
+                'timestamp': datetime.utcnow().isoformat()
+            },
+            trace_id=f"archive_{meeting_id}_{datetime.utcnow().timestamp()}"
+        )
+        
+        # Mark event as completed
+        EventLedgerService.complete_event(event, result={
+            'status': 'success',
+            'archived': True
+        }, duration_ms=0)
+        
+        # Commit all changes together (meeting + event) - transactional safety
+        db.session.commit()
+        
+        # Broadcast to WebSocket clients (after successful commit)
+        event_broadcaster.broadcast_meeting_archived(
+            workspace_id=current_user.workspace_id,
+            meeting_id=meeting_id
+        )
+        
+        logger.info(f"📦 Meeting {meeting_id} archived by user {current_user.id}")
+        
+        return jsonify({
+            'success': True,
+            'event_id': event.id,
+            'meeting': meeting.to_dict()
+        }), 200
+        
+    except Exception as e:
+        # Ensure rollback on any error (transactional safety)
+        db.session.rollback()
+        logger.error(f"Failed to archive meeting {meeting_id}: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@dashboard_bp.route('/api/meetings/<int:meeting_id>/restore', methods=['POST'])
+@login_required
+def restore_meeting(meeting_id):
+    """
+    Restore an archived meeting (CROWN⁴ Phase 4).
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Get the meeting
+        meeting = db.session.query(Meeting).filter_by(
+            id=meeting_id,
+            workspace_id=current_user.workspace_id
+        ).first()
+        
+        if not meeting:
+            return jsonify({'success': False, 'error': 'Meeting not found'}), 404
+        
+        if not meeting.archived:
+            return jsonify({'success': False, 'error': 'Meeting is not archived'}), 400
+        
+        # Restore the meeting (don't commit yet - transactional safety)
+        meeting.restore()
+        
+        # Commit the restore
+        db.session.commit()
+        
+        # Broadcast to WebSocket clients (after successful commit)
+        event_broadcaster.broadcast_meeting_restored(
+            workspace_id=current_user.workspace_id,
+            meeting_id=meeting_id
+        )
+        
+        logger.info(f"📥 Meeting {meeting_id} restored by user {current_user.id}")
+        
+        return jsonify({
+            'success': True,
+            'meeting': meeting.to_dict()
+        }), 200
+        
+    except Exception as e:
+        # Ensure rollback on any error (transactional safety)
+        db.session.rollback()
+        logger.error(f"Failed to restore meeting {meeting_id}: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@dashboard_bp.route('/api/events/archive-reveal', methods=['POST'])
+@login_required
+def log_archive_reveal():
+    """
+    Log ARCHIVE_REVEAL event to EventLedger.
+    CROWN⁴ Event #9: Tracks when user accesses the archive tab.
+    """
+    from services.event_ledger_service import EventLedgerService
+    from models.event_ledger import EventType
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Log event to EventLedger
+        event = EventLedgerService.log_event(
+            event_type=EventType.ARCHIVE_REVEAL,
+            session_id=None,
+            payload={
+                'user_id': current_user.id,
+                'workspace_id': current_user.workspace_id,
+                'timestamp': datetime.utcnow().isoformat()
+            },
+            trace_id=f"archive_reveal_{current_user.id}_{datetime.utcnow().timestamp()}"
+        )
+        
+        # Mark event as completed immediately
+        EventLedgerService.complete_event(event, result={
+            'status': 'success',
+            'archive_revealed': True
+        }, duration_ms=0)
+        
+        logger.info(f"🗂️ Archive reveal event logged for user {current_user.id}")
+        
+        return jsonify({
+            'success': True,
+            'event_id': event.id
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Failed to log archive_reveal event: {e}", exc_info=True)
         return jsonify({
             'success': False,
             'error': str(e)

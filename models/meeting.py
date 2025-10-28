@@ -81,6 +81,11 @@ class Meeting(Base):
     is_private: Mapped[bool] = mapped_column(Boolean, default=False)
     sharing_settings: Mapped[Optional[dict]] = mapped_column(JSON)
     
+    # Archive functionality (CROWN⁴ Phase 4)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    archived_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    archived_by_user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"))
+    
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -157,6 +162,18 @@ class Meeting(Base):
         self.participants.append(participant)
         return participant
 
+    def archive(self, user_id: int):
+        """Archive this meeting (CROWN⁴ Phase 4)."""
+        self.archived = True
+        self.archived_at = datetime.utcnow()
+        self.archived_by_user_id = user_id
+
+    def restore(self):
+        """Restore this meeting from archive (CROWN⁴ Phase 4)."""
+        self.archived = False
+        self.archived_at = None
+        self.archived_by_user_id = None
+
     def to_dict(self, include_participants=False, include_tasks=False):
         """Convert meeting to dictionary for JSON serialization."""
         data = {
@@ -185,6 +202,8 @@ class Meeting(Base):
             'transcription_enabled': self.transcription_enabled,
             'ai_insights_enabled': self.ai_insights_enabled,
             'is_private': self.is_private,
+            'archived': self.archived,
+            'archived_at': self.archived_at.isoformat() if self.archived_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
