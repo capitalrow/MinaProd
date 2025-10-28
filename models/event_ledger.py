@@ -65,6 +65,8 @@ class EventType(enum.Enum):
     SESSION_ARCHIVE = "session_archive"  # Meeting archived
     ARCHIVE_REVEAL = "archive_reveal"  # Show archived meetings
     INSIGHT_REMINDER = "insight_reminder"  # AI-generated reminder displayed
+    SEARCH_QUERY = "search_query"  # User performed search query
+    UI_STATE_SYNC = "ui_state_sync"  # UI state synchronized across tabs
     MEETING_UPDATE = "meeting_update"  # Meeting data changed
     PARTICIPANT_UPDATE = "participant_update"  # Participant joined/left
     WORKSPACE_SWITCH = "workspace_switch"  # User switched workspace

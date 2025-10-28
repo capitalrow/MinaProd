@@ -30,15 +30,32 @@ window.BroadcastSync = class BroadcastSync {
         this.messageQueue = [];
         this.isInitialized = false;
         
-        // Event types
+        // Event types - Complete CROWN⁴ 15-event pipeline
         this.EVENTS = {
+            // Existing events
             CACHE_INVALIDATE: 'cache_invalidate',
             MEETING_UPDATE: 'meeting_update',
             MEETING_ARCHIVE: 'meeting_archive',
             MEETING_RESTORE: 'meeting_restore',
             TASK_UPDATE: 'task_update',
             STATS_UPDATE: 'stats_update',
-            FULL_SYNC: 'full_sync'
+            FULL_SYNC: 'full_sync',
+            
+            // CROWN⁴ Complete Event Set
+            DASHBOARD_BOOTSTRAP: 'dashboard_bootstrap',
+            SESSION_UPDATE_CREATED: 'session_update:created',
+            SESSION_PREFETCH: 'session_prefetch',
+            SESSION_CARD_CLICK: 'session_card_click',
+            SESSION_REFINED_LOAD: 'session_refined_load',
+            ANALYTICS_REFRESH: 'analytics_refresh',
+            DASHBOARD_REFRESH: 'dashboard_refresh',
+            FILTER_APPLY: 'filter_apply',
+            SEARCH_QUERY: 'search_query',
+            SESSION_ARCHIVE: 'session_archive',
+            ARCHIVE_REVEAL: 'archive_reveal',
+            DASHBOARD_IDLE_SYNC: 'dashboard_idle_sync',
+            UI_STATE_SYNC: 'ui_state_sync',
+            INSIGHT_REMINDER: 'insight_reminder'
         };
     }
     
@@ -282,6 +299,40 @@ window.BroadcastSync = class BroadcastSync {
                 case this.EVENTS.FULL_SYNC:
                     console.log(`👋 Tab connected: ${payload.tabId}`);
                     break;
+                
+                // CROWN⁴ Complete Event Handlers
+                case this.EVENTS.SESSION_UPDATE_CREATED:
+                    await this._handleSessionCreated(payload);
+                    break;
+                    
+                case this.EVENTS.ANALYTICS_REFRESH:
+                case this.EVENTS.DASHBOARD_REFRESH:
+                    await this._handleDashboardRefresh(payload);
+                    break;
+                    
+                case this.EVENTS.FILTER_APPLY:
+                    await this._handleFilterApply(payload);
+                    break;
+                    
+                case this.EVENTS.SEARCH_QUERY:
+                    await this._handleSearchQuery(payload);
+                    break;
+                    
+                case this.EVENTS.ARCHIVE_REVEAL:
+                    await this._handleArchiveReveal(payload);
+                    break;
+                    
+                case this.EVENTS.DASHBOARD_IDLE_SYNC:
+                    await this._handleIdleSync(payload);
+                    break;
+                    
+                case this.EVENTS.UI_STATE_SYNC:
+                    await this._handleUIStateSync(payload);
+                    break;
+                    
+                case this.EVENTS.INSIGHT_REMINDER:
+                    console.log('💡 Insight reminder received:', payload);
+                    break;
             }
         } catch (error) {
             console.error(`[BroadcastSync] Handler error for ${type}:`, error);
@@ -403,6 +454,120 @@ window.BroadcastSync = class BroadcastSync {
         // Refresh stats
         if (window.dashboard) {
             await window.dashboard.loadStats();
+        }
+    }
+    
+    /**
+     * Handle new session created (CROWN⁴)
+     * @private
+     */
+    async _handleSessionCreated(payload) {
+        console.log('📝 New session created:', payload);
+        
+        if (window.dashboard) {
+            await window.dashboard.loadRecentMeetings();
+            await window.dashboard.loadStats();
+        }
+    }
+    
+    /**
+     * Handle dashboard refresh (CROWN⁴)
+     * @private
+     */
+    async _handleDashboardRefresh(payload) {
+        console.log('🔄 Dashboard refresh triggered');
+        
+        if (window.dashboard) {
+            await window.dashboard.loadDashboardData();
+        }
+    }
+    
+    /**
+     * Handle filter apply (CROWN⁴)
+     * @private
+     */
+    async _handleFilterApply(payload) {
+        const { filters } = payload;
+        console.log('🔍 Filter applied:', filters);
+        
+        // Apply filters to dashboard view
+        if (window.dashboard && window.dashboard.applyFilters) {
+            window.dashboard.applyFilters(filters);
+        }
+    }
+    
+    /**
+     * Handle search query (CROWN⁴)
+     * @private
+     */
+    async _handleSearchQuery(payload) {
+        const { query } = payload;
+        console.log('🔎 Search query:', query);
+        
+        // Apply search to dashboard
+        if (window.dashboard && window.dashboard.performSearch) {
+            window.dashboard.performSearch(query);
+        }
+    }
+    
+    /**
+     * Handle archive reveal (CROWN⁴)
+     * @private
+     */
+    async _handleArchiveReveal(payload) {
+        const { showArchived } = payload;
+        console.log(`📂 Archive reveal: ${showArchived ? 'shown' : 'hidden'}`);
+        
+        // Toggle archived meetings visibility
+        if (window.dashboard && window.dashboard.toggleArchived) {
+            window.dashboard.toggleArchived(showArchived);
+        }
+    }
+    
+    /**
+     * Handle idle sync (CROWN⁴)
+     * @private
+     */
+    async _handleIdleSync(payload) {
+        const { checksums } = payload;
+        console.log('⏱️  Idle sync - validating checksums');
+        
+        // Validate cache checksums and re-sync if needed
+        if (window.cache && checksums) {
+            const localChecksums = await window.cache.getMetadata('meetings_checksum');
+            if (localChecksums?.value !== checksums.meetings) {
+                console.log('🔄 Cache drift detected, refreshing...');
+                if (window.dashboard) {
+                    await window.dashboard.loadDashboardData();
+                }
+            }
+        }
+    }
+    
+    /**
+     * Handle UI state sync (CROWN⁴)
+     * @private
+     */
+    async _handleUIStateSync(payload) {
+        const { state } = payload;
+        console.log('🎨 UI state sync:', state);
+        
+        // Sync UI state (filters, sorting, view mode, etc.)
+        if (state) {
+            // Apply scroll position
+            if (state.scrollPosition && window.scrollTo) {
+                window.scrollTo({ top: state.scrollPosition, behavior: 'smooth' });
+            }
+            
+            // Apply view mode
+            if (state.viewMode && window.dashboard && window.dashboard.setViewMode) {
+                window.dashboard.setViewMode(state.viewMode);
+            }
+            
+            // Apply sort order
+            if (state.sortBy && window.dashboard && window.dashboard.setSortOrder) {
+                window.dashboard.setSortOrder(state.sortBy);
+            }
         }
     }
     

@@ -65,12 +65,13 @@ class EventBroadcaster:
             return False
         
         try:
-            # Prepare event payload
+            # Prepare event payload with CROWN⁴ sequencing tokens
             payload = {
                 'event_id': event.id,
                 'event_type': event.event_type.value,
                 'event_name': event.event_name,
                 'sequence_num': event.sequence_num,
+                'last_applied': event.last_applied_id,  # CROWN⁴: Idempotency token
                 'timestamp': event.created_at.isoformat() if event.created_at else None,
                 'data': event.payload or {},
                 'checksum': event.checksum
