@@ -392,6 +392,11 @@ class MinaDashboard {
                 // Server confirmed - keep optimistic update
                 this.showNotification('Task status updated', 'success');
                 
+                // CROWN⁴ Task #12: Broadcast to other tabs
+                if (window.broadcastSync) {
+                    window.broadcastSync.broadcastTaskUpdate(taskId, { status: newStatus });
+                }
+                
                 // Reconcile with server data if different
                 if (data.task && data.task.status !== newStatus) {
                     console.log(`[Dashboard] Server reconciliation: ${newStatus} → ${data.task.status}`);

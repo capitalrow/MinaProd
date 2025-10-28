@@ -467,6 +467,7 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/toast-notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/broadcast-sync.js') }}"></script>
 <script>
 // CROWN⁴ Phase 4: Archive Functionality with Toast Undo
 let archivedMeetings = [];
@@ -503,6 +504,11 @@ function archiveMeeting(meetingId) {
                 },
                 undoText: 'Undo'
             });
+            
+            // CROWN⁴ Task #12: Broadcast to other tabs
+            if (window.broadcastSync) {
+                window.broadcastSync.broadcastMeetingArchive(meetingId);
+            }
             
             console.log(`📦 Meeting ${meetingId} archived successfully`);
         } else {
@@ -549,6 +555,11 @@ function restoreMeeting(meetingId, isUndo = false) {
             // Show toast
             if (!isUndo) {
                 window.toast.success(`"${meetingTitle}" restored to active meetings`, 3000);
+            }
+            
+            // CROWN⁴ Task #12: Broadcast to other tabs
+            if (window.broadcastSync) {
+                window.broadcastSync.broadcastMeetingRestore(meetingId);
             }
             
             console.log(`📥 Meeting ${meetingId} restored successfully`);
