@@ -557,5 +557,6 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/csrf.js') }}"></script>
 <script src="{{ url_for('static', filename='js/feature-flags-admin.js') }}"></script>
 {% endblock %}

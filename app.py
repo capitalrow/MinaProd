@@ -721,7 +721,6 @@ def create_app() -> Flask:
     try:
         from routes.flags import flags_bp
         app.register_blueprint(flags_bp)
-        csrf.exempt(flags_bp)  # API routes; already protected by @login_required
         app.logger.info("Blueprint registered: flags_bp")
     except Exception as e:
         app.logger.warning(f"Failed to register flags_bp: {e}")

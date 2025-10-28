@@ -12,7 +12,7 @@ flags_bp = Blueprint("flags", __name__, url_prefix="/flags")
 def is_admin_user():
     if not current_user.is_authenticated:
         return False
-    return True
+    return current_user.is_admin
 
 def create_audit_log(flag_key: str, action: str, old_value: Optional[dict] = None, new_value: Optional[dict] = None):
     audit_log = FlagAuditLog(
