@@ -11,7 +11,14 @@
  * CROWN⁴ prefetch optimization for sub-300ms navigation
  */
 
-class PrefetchController {
+// Prevent redeclaration using window check
+(function() {
+    if (window.PrefetchController) {
+        console.log('🎯 PrefetchController already loaded, skipping redeclaration');
+        return;
+    }
+    
+window.PrefetchController = class PrefetchController {
     constructor(options = {}) {
         // Configuration
         this.maxConcurrent = options.maxConcurrent || 3;
@@ -373,9 +380,10 @@ class PrefetchController {
         console.log('📊 PrefetchController Stats:', stats);
         return stats;
     }
-}
+};
 
 // Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = PrefetchController;
+    module.exports = window.PrefetchController;
 }
+})(); // End IIFE
