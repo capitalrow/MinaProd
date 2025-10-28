@@ -429,6 +429,47 @@ class EventBroadcaster:
             logger.error(f"Failed to broadcast dashboard_refresh: {e}")
             return None
     
+    def broadcast_insight_reminder(
+        self,
+        user_id: int,
+        workspace_id: int,
+        reminder_data: Dict[str, Any]
+    ) -> Optional[EventLedger]:
+        """
+        Broadcast insight_reminder event with AI-generated reminder (CROWN⁴ Phase 5).
+        Uses predictive AI with 24-hour throttling to provide intelligent reminders.
+        
+        Args:
+            user_id: User ID receiving the reminder
+            workspace_id: Workspace ID
+            reminder_data: Reminder information (title, message, action_url, type, confidence)
+            
+        Returns:
+            Created EventLedger instance or None
+        """
+        try:
+            event = event_sequencer.create_event(
+                event_type=EventType.INSIGHT_REMINDER,
+                event_name="AI Insight Reminder",
+                payload={
+                    'user_id': user_id,
+                    'workspace_id': workspace_id,
+                    'reminder': reminder_data,
+                    'timestamp': datetime.utcnow().isoformat()
+                },
+                trace_id=f"insight_reminder_{user_id}_{int(datetime.utcnow().timestamp())}"
+            )
+            
+            # Broadcast to dashboard namespace for this workspace
+            self.emit_event(event, namespace="/dashboard", room=f"workspace_{workspace_id}")
+            
+            logger.info(f"Broadcast insight reminder for user {user_id}: {reminder_data.get('title', 'N/A')}")
+            return event
+            
+        except Exception as e:
+            logger.error(f"Failed to broadcast insight_reminder: {e}")
+            return None
+    
     def join_workspace_room(self, workspace_id: int, namespace: str = "/dashboard"):
         """
         Have client join workspace room for isolated broadcasts.

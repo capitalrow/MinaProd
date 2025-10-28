@@ -190,6 +190,27 @@ class WebSocketManager {
             console.log('⏱️ Background sync:', data);
             this.handleSequencedEvent('dashboard_idle_sync', data, namespace);
         });
+        
+        // Event 14: insight_reminder (CROWN⁴ Phase 5)
+        socket.on('insight_reminder', (data) => {
+            console.log('💡 Insight reminder received:', data);
+            this.handleSequencedEvent('insight_reminder', data, namespace);
+            
+            // Display toast notification with reminder
+            if (data.data && data.data.reminder && window.toast) {
+                const reminder = data.data.reminder;
+                window.toast.info(
+                    `${reminder.title}: ${reminder.message}`,
+                    6000,  // 6 second duration
+                    {
+                        actionCallback: reminder.action_url ? () => {
+                            window.location.href = reminder.action_url;
+                        } : null,
+                        actionText: reminder.action_text || 'View'
+                    }
+                );
+            }
+        });
     }
     
     /**
