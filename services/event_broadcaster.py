@@ -318,6 +318,81 @@ class EventBroadcaster:
             logger.error(f"Failed to broadcast meeting_update: {e}")
             return None
     
+    def broadcast_meeting_archived(
+        self,
+        workspace_id: int,
+        meeting_id: int
+    ) -> Optional[EventLedger]:
+        """
+        Broadcast meeting_archived event (CROWN⁴ Phase 4).
+        
+        Args:
+            workspace_id: Workspace ID
+            meeting_id: Meeting ID that was archived
+            
+        Returns:
+            Created EventLedger instance or None
+        """
+        try:
+            event = event_sequencer.create_event(
+                event_type=EventType.SESSION_ARCHIVE,
+                event_name="Meeting Archived",
+                payload={
+                    'workspace_id': workspace_id,
+                    'meeting_id': meeting_id,
+                    'timestamp': datetime.utcnow().isoformat()
+                },
+                trace_id=f"archived_{meeting_id}_{int(datetime.utcnow().timestamp())}"
+            )
+            
+            # Broadcast to meetings and dashboard namespaces
+            self.emit_event(event, namespace="/meetings", room=f"workspace_{workspace_id}")
+            self.emit_event(event, namespace="/dashboard", room=f"workspace_{workspace_id}")
+            
+            return event
+            
+        except Exception as e:
+            logger.error(f"Failed to broadcast meeting_archived: {e}")
+            return None
+    
+    def broadcast_meeting_restored(
+        self,
+        workspace_id: int,
+        meeting_id: int
+    ) -> Optional[EventLedger]:
+        """
+        Broadcast meeting_restored event (CROWN⁴ Phase 4).
+        
+        Args:
+            workspace_id: Workspace ID
+            meeting_id: Meeting ID that was restored
+            
+        Returns:
+            Created EventLedger instance or None
+        """
+        try:
+            event = event_sequencer.create_event(
+                event_type=EventType.MEETING_UPDATE,
+                event_name="Meeting Restored",
+                payload={
+                    'workspace_id': workspace_id,
+                    'meeting_id': meeting_id,
+                    'restored': True,
+                    'timestamp': datetime.utcnow().isoformat()
+                },
+                trace_id=f"restored_{meeting_id}_{int(datetime.utcnow().timestamp())}"
+            )
+            
+            # Broadcast to meetings and dashboard namespaces
+            self.emit_event(event, namespace="/meetings", room=f"workspace_{workspace_id}")
+            self.emit_event(event, namespace="/dashboard", room=f"workspace_{workspace_id}")
+            
+            return event
+            
+        except Exception as e:
+            logger.error(f"Failed to broadcast meeting_restored: {e}")
+            return None
+    
     def broadcast_dashboard_refresh(
         self,
         workspace_id: int,

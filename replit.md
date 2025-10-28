@@ -33,6 +33,8 @@ The application utilizes a layered architecture with Flask as the web framework 
 - **Task Extraction**: Premium two-stage extraction with AI-powered refinement, metadata enrichment, quality gates (sentence completeness, grammar, deduplication), and pattern matching fallback.
 - **Event Ledger & WebSocket Synchronization**: Enhanced EventLedger model, EventSequencer for event ordering and validation, EventBroadcaster with event emitters for all CROWN⁴ events, and 4 WebSocket namespaces for real-time updates with workspace isolation.
 - **IndexedDB Caching + Reconciliation**: IndexedDB schema with 5 stores, CacheValidator service with SHA-256 checksums and field-level delta comparison, cache-first bootstrap pattern, and 30-second idle sync with drift detection and auto-reconciliation.
+- **PrefetchController**: Intelligent background loading with AbortController (cancels stale requests), deduplication, queue management (max 3 concurrent), LRU cache eviction, always-Promise pattern for error-free hover interactions.
+- **Archive Functionality (CROWN⁴ Phase 4 - In Progress)**: Meeting archival with metadata tracking (archived_at, archived_by_user_id), SESSION_ARCHIVE and ARCHIVE_REVEAL event logging, WebSocket broadcasts for real-time updates, toast notification system with undo functionality, restore capability with full audit trail.
 
 **System Design Choices:**
 - **Backend**: Flask with Flask-SocketIO.
