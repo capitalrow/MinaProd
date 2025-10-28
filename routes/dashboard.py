@@ -7,6 +7,7 @@ from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required, current_user
 from models import db, Meeting, Task, Analytics, Session, Marker
 from sqlalchemy import desc, func, and_
+from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta, date
 from services.event_broadcaster import EventBroadcaster
 
@@ -48,8 +49,11 @@ def index():
             # Continue with None workspace - show empty dashboard
     
     # Get recent meetings (handle None workspace)
+    # ✨ CROWN⁴: Eager load session relationship for card navigation
     if current_user.workspace_id:
-        recent_meetings = db.session.query(Meeting).filter_by(
+        recent_meetings = db.session.query(Meeting).options(
+            joinedload(Meeting.session)
+        ).filter_by(
             workspace_id=current_user.workspace_id
         ).order_by(desc(Meeting.created_at)).limit(5).all()
     else:
@@ -85,11 +89,14 @@ def index():
         this_week_meetings = 0
     
     # Get today's meetings (meetings created today or scheduled for today)
+    # ✨ CROWN⁴: Eager load session relationship for card navigation
     today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     today_end = today_start + timedelta(days=1)
     
     if current_user.workspace_id:
-        todays_meetings = db.session.query(Meeting).filter_by(
+        todays_meetings = db.session.query(Meeting).options(
+            joinedload(Meeting.session)
+        ).filter_by(
             workspace_id=current_user.workspace_id
         ).filter(
             and_(
@@ -174,8 +181,11 @@ def meetings():
     search_query = request.args.get('search', '')
     
     # Build query - use impossible condition if no workspace
+    # ✨ CROWN⁴: Eager load session relationship for card navigation
     if current_user.workspace_id:
-        query = db.select(Meeting).filter_by(workspace_id=current_user.workspace_id)
+        query = db.select(Meeting).options(
+            joinedload(Meeting.session)
+        ).where(Meeting.workspace_id == current_user.workspace_id)
     else:
         query = db.select(Meeting).where(Meeting.id == -1)
     
@@ -331,7 +341,10 @@ def analytics():
 def api_recent_activity():
     """API endpoint for recent activity feed."""
     # Get recent meetings
-    recent_meetings = db.session.query(Meeting).filter_by(
+    # ✨ CROWN⁴: Eager load session relationship
+    recent_meetings = db.session.query(Meeting).options(
+        joinedload(Meeting.session)
+    ).filter_by(
         workspace_id=current_user.workspace_id
     ).order_by(desc(Meeting.created_at)).limit(5).all()
     
