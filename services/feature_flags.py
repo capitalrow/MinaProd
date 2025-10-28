@@ -3,7 +3,7 @@ from functools import wraps
 from typing import Optional
 from flask import request, abort
 from models.core_models import FeatureFlag
-from extensions import db
+from models import db
 
 class _Flags:
     _cache = None
