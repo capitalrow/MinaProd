@@ -236,6 +236,73 @@
     color: var(--color-primary);
 }
 
+.ai-proposal {
+    border: 2px solid var(--color-primary);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
+}
+
+.ai-proposal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: white;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    margin-right: var(--space-3);
+}
+
+.ai-proposal-actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.btn-accept-proposal,
+.btn-reject-proposal {
+    padding: var(--space-2) var(--space-4);
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.btn-accept-proposal {
+    background: var(--color-success);
+    color: white;
+}
+
+.btn-accept-proposal:hover {
+    background: var(--color-success-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.btn-reject-proposal {
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+}
+
+.btn-reject-proposal:hover {
+    background: var(--color-error);
+    color: white;
+    border-color: var(--color-error);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-accept-proposal:disabled,
+.btn-reject-proposal:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .inline-edit-select,
 .inline-edit-input {
     padding: var(--space-1) var(--space-2);
@@ -1608,6 +1675,7 @@
 <script src="{{ url_for('static', filename='js/task-multi-tab-sync.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-websocket-handlers.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-virtual-list.js') }}" nonce="{{ g.csp_nonce }}"></script>
+<script src="{{ url_for('static', filename='js/task-proposal-ui.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-keyboard-shortcuts.js') }}" nonce="{{ g.csp_nonce }}"></script>
 
 <script nonce="{{ g.csp_nonce }}">
@@ -1655,6 +1723,9 @@
     
     window.taskInlineEditing = new window.TaskInlineEditing(window.optimisticUI);
     console.log('✏️ Inline editing initialized');
+    
+    window.taskProposalUI = new window.TaskProposalUI(window.optimisticUI);
+    console.log('✨ AI proposal UI initialized');
     
     // Initialize cache-first bootstrap
     try {
