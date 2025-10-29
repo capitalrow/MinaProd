@@ -266,7 +266,16 @@ class OptimisticUI {
             completed_at: newStatus === 'completed' ? new Date().toISOString() : null
         };
 
-        return this.updateTask(taskId, updates);
+        const result = await this.updateTask(taskId, updates);
+
+        if (newStatus === 'completed' && window.emotionalAnimations) {
+            const card = document.querySelector(`[data-task-id="${taskId}"]`);
+            if (card) {
+                window.emotionalAnimations.celebrate(card, ['burst', 'shimmer']);
+            }
+        }
+
+        return result;
     }
 
     /**
@@ -288,7 +297,18 @@ class OptimisticUI {
      * @returns {Promise<Object>}
      */
     async updatePriority(taskId, priority) {
-        return this.updateTask(taskId, { priority });
+        const result = await this.updateTask(taskId, { priority });
+
+        if (window.emotionalAnimations) {
+            const card = document.querySelector(`[data-task-id="${taskId}"]`);
+            if (card) {
+                window.emotionalAnimations.shimmer(card, {
+                    emotion_cue: 'priority_change'
+                });
+            }
+        }
+
+        return result;
     }
 
     /**
