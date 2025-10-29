@@ -135,28 +135,46 @@ class VirtualList {
         const priority = task.priority || 'medium';
         const status = task.status || 'todo';
         const isCompleted = status === 'completed';
+        const isPendingSuggest = task.emotional_state === 'pending_suggest';
         const topPosition = isVirtual ? index * this.itemHeight : 'auto';
 
         return `
-            <div class="task-card" 
+            <div class="task-card ${isPendingSuggest ? 'ai-proposal' : ''}" 
                  data-task-id="${task.id}"
                  data-index="${index}"
                  data-status="${status}"
                  data-priority="${priority}"
+                 data-emotional-state="${task.emotional_state || ''}"
                  style="${isVirtual ? `position: absolute; top: ${topPosition}px; left: 0; right: 0;` : ''}">
                 <div class="task-card-header">
-                    <div class="task-checkbox-wrapper">
-                        <input type="checkbox" 
-                               class="task-checkbox" 
-                               ${isCompleted ? 'checked' : ''}
-                               data-task-id="${task.id}">
-                    </div>
+                    ${isPendingSuggest ? `
+                        <div class="ai-proposal-badge">
+                            ✨ AI Suggested
+                        </div>
+                    ` : `
+                        <div class="task-checkbox-wrapper">
+                            <input type="checkbox" 
+                                   class="task-checkbox" 
+                                   ${isCompleted ? 'checked' : ''}
+                                   data-task-id="${task.id}">
+                        </div>
+                    `}
                     <div class="task-content">
                         <h3 class="task-title ${isCompleted ? 'completed' : ''}">
                             ${this._escapeHtml(task.title || 'Untitled Task')}
                         </h3>
                         ${task.description ? `
                             <p class="task-description">${this._escapeHtml(task.description)}</p>
+                        ` : ''}
+                        ${isPendingSuggest ? `
+                            <div class="ai-proposal-actions">
+                                <button class="btn-accept-proposal" data-task-id="${task.id}">
+                                    ✓ Accept
+                                </button>
+                                <button class="btn-reject-proposal" data-task-id="${task.id}">
+                                    ✗ Reject
+                                </button>
+                            </div>
                         ` : ''}
                         <div class="task-meta">
                             <span class="priority-badge priority-${priority.toLowerCase()}">

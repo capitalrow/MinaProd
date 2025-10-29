@@ -395,6 +395,95 @@ def delete_task(task_id):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
+@api_tasks_bp.route('/<int:task_id>/accept', methods=['POST'])
+@login_required
+def accept_task_proposal(task_id):
+    """Accept an AI-proposed task (change emotional_state from pending_suggest to accepted)."""
+    try:
+        task = db.session.query(Task).join(Meeting).filter(
+            Task.id == task_id,
+            Meeting.workspace_id == current_user.workspace_id
+        ).first()
+        
+        if not task:
+            return jsonify({'success': False, 'message': 'Task not found'}), 404
+        
+        if task.emotional_state != 'pending_suggest':
+            return jsonify({'success': False, 'message': 'Task is not in pending_suggest state'}), 400
+        
+        task.emotional_state = 'accepted'
+        task.status = 'todo'
+        task.updated_at = datetime.now()
+        db.session.commit()
+        
+        meeting = task.meeting
+        task_dict = task.to_dict()
+        task_dict['action'] = 'accepted'
+        task_dict['event_type'] = 'task_proposal:accepted'
+        task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
+        
+        event_broadcaster.broadcast_task_update(
+            task_id=task.id,
+            task_data=task_dict,
+            meeting_id=meeting.id if meeting else None,
+            workspace_id=current_user.workspace_id
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Task accepted successfully',
+            'task': task.to_dict()
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@api_tasks_bp.route('/<int:task_id>/reject', methods=['POST'])
+@login_required
+def reject_task_proposal(task_id):
+    """Reject an AI-proposed task (delete it)."""
+    try:
+        task = db.session.query(Task).join(Meeting).filter(
+            Task.id == task_id,
+            Meeting.workspace_id == current_user.workspace_id
+        ).first()
+        
+        if not task:
+            return jsonify({'success': False, 'message': 'Task not found'}), 404
+        
+        if task.emotional_state != 'pending_suggest':
+            return jsonify({'success': False, 'message': 'Task is not in pending_suggest state'}), 400
+        
+        task_dict = task.to_dict()
+        task_dict['action'] = 'rejected'
+        task_dict['event_type'] = 'task_proposal:rejected'
+        meeting = task.meeting
+        task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
+        meeting_id = meeting.id if meeting else None
+        workspace_id = current_user.workspace_id
+        
+        db.session.delete(task)
+        db.session.commit()
+        
+        event_broadcaster.broadcast_task_update(
+            task_id=task_id,
+            task_data=task_dict,
+            meeting_id=meeting_id,
+            workspace_id=workspace_id
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Task rejected successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @api_tasks_bp.route('/<int:task_id>/merge', methods=['POST'])
 @login_required
 def merge_tasks(task_id):
