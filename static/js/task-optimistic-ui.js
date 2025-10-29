@@ -9,6 +9,56 @@ class OptimisticUI {
         this.cache = window.taskCache;
         this.pendingOperations = new Map();
         this.operationCounter = 0;
+        this._setupReconnectHandler();
+    }
+
+    /**
+     * Setup WebSocket reconnect handler to retry pending operations
+     */
+    _setupReconnectHandler() {
+        if (!window.wsManager) {
+            console.warn('⚠️ WebSocketManager not available for reconnect handling');
+            return;
+        }
+
+        // Listen for connection status changes
+        window.wsManager.on('connection_status', (data) => {
+            if (data.namespace === '/tasks' && data.connected) {
+                console.log('🔄 WebSocket reconnected, retrying pending operations...');
+                this._retryPendingOperations();
+            }
+        });
+    }
+
+    /**
+     * Retry pending operations after WebSocket reconnect
+     */
+    async _retryPendingOperations() {
+        if (this.pendingOperations.size === 0) {
+            console.log('✅ No pending operations to retry');
+            return;
+        }
+
+        console.log(`🔄 Retrying ${this.pendingOperations.size} pending operations...`);
+        const operations = Array.from(this.pendingOperations.entries());
+
+        for (const [opId, operation] of operations) {
+            try {
+                console.log(`🔄 Retrying operation ${opId} (${operation.type})`);
+                
+                if (operation.type === 'create') {
+                    // Use clean original data, not optimistic version
+                    await this._syncToServer(opId, 'create', operation.data, operation.tempId);
+                } else if (operation.type === 'update') {
+                    // Use clean updates data
+                    await this._syncToServer(opId, 'update', operation.data, operation.taskId);
+                } else if (operation.type === 'delete') {
+                    await this._syncToServer(opId, 'delete', {}, operation.taskId);
+                }
+            } catch (error) {
+                console.error(`❌ Retry failed for operation ${opId}:`, error);
+            }
+        }
     }
 
     /**
@@ -47,17 +97,26 @@ class OptimisticUI {
             });
 
             // Use OfflineQueueManager for proper session tracking and replay
+            let queueId = null;
             if (window.offlineQueue) {
-                await window.offlineQueue.queueOperation({
+                queueId = await window.offlineQueue.queueOperation({
                     type: 'task_create',
                     temp_id: tempId,
                     data: taskData,
-                    priority: 10
+                    priority: 10,
+                    operation_id: opId  // Link queue entry to operation
                 });
             }
 
             // Step 4: Sync to server
-            this.pendingOperations.set(opId, { type: 'create', tempId, task: optimisticTask });
+            // Store ORIGINAL clean data (not optimistic version) for retry
+            this.pendingOperations.set(opId, { 
+                type: 'create', 
+                tempId, 
+                task: optimisticTask,  // Keep for rollback
+                data: taskData,  // Original clean data for retry
+                queueId  // Store queue ID to remove on success
+            });
             this._syncToServer(opId, 'create', taskData, tempId);
 
             return optimisticTask;
@@ -108,17 +167,27 @@ class OptimisticUI {
             });
 
             // Use OfflineQueueManager for proper session tracking and replay
+            let queueId = null;
             if (window.offlineQueue) {
-                await window.offlineQueue.queueOperation({
+                queueId = await window.offlineQueue.queueOperation({
                     type: 'task_update',
                     task_id: taskId,
                     data: updates,
-                    priority: 5
+                    priority: 5,
+                    operation_id: opId  // Link queue entry to operation
                 });
             }
 
             // Step 4: Sync to server
-            this.pendingOperations.set(opId, { type: 'update', taskId, previous: currentTask, updates });
+            // Store clean updates data for retry
+            this.pendingOperations.set(opId, { 
+                type: 'update', 
+                taskId, 
+                previous: currentTask,  // Keep for rollback
+                updates,  // Clean updates data for retry
+                data: updates,  // Explicit clean data reference
+                queueId  // Store queue ID to remove on success
+            });
             this._syncToServer(opId, 'update', updates, taskId);
 
             return optimisticTask;
@@ -157,16 +226,23 @@ class OptimisticUI {
             });
 
             // Use OfflineQueueManager for proper session tracking and replay
+            let queueId = null;
             if (window.offlineQueue) {
-                await window.offlineQueue.queueOperation({
+                queueId = await window.offlineQueue.queueOperation({
                     type: 'task_delete',
                     task_id: taskId,
-                    priority: 8
+                    priority: 8,
+                    operation_id: opId  // Link queue entry to operation
                 });
             }
 
             // Step 4: Sync to server
-            this.pendingOperations.set(opId, { type: 'delete', taskId, task });
+            this.pendingOperations.set(opId, { 
+                type: 'delete', 
+                taskId, 
+                task,  // Keep for rollback
+                queueId  // Store queue ID to remove on success
+            });
             this._syncToServer(opId, 'delete', null, taskId);
 
         } catch (error) {
@@ -388,6 +464,7 @@ class OptimisticUI {
 
     /**
      * Sync operation to server via WebSocket
+     * Gracefully defers to OfflineQueueManager if socket is disconnected/reconnecting
      * @param {string} opId
      * @param {string} type
      * @param {Object} data
@@ -397,8 +474,29 @@ class OptimisticUI {
         const startTime = performance.now();
 
         try {
-            if (!window.wsManager || !window.wsManager.isConnected('/tasks')) {
-                throw new Error('WebSocket not connected');
+            // Check WebSocket connection (wsManager.sockets.tasks is the socket object)
+            const isConnected = window.wsManager && 
+                               window.wsManager.sockets.tasks && 
+                               window.wsManager.sockets.tasks.connected;
+            
+            if (!isConnected) {
+                // Socket is disconnected or reconnecting - defer to OfflineQueueManager
+                console.log(`⏸️ WebSocket not connected, operation queued for replay (${type})`);
+                
+                // Emit telemetry for deferred operations
+                if (window.CROWNTelemetry) {
+                    window.CROWNTelemetry.recordEvent('task_sync_deferred', {
+                        type,
+                        reason: 'socket_disconnected'
+                    });
+                }
+                
+                // KEEP pendingOperations for reconciliation when OfflineQueueManager replays
+                // The pending operation will reconcile when the server eventually responds
+                console.log(`💾 Keeping pending operation ${opId} for later reconciliation`);
+                
+                // Don't throw - OfflineQueueManager will replay when reconnected
+                return;
             }
 
             // Get user and session context
@@ -521,6 +619,16 @@ class OptimisticUI {
     async _reconcileSuccess(opId, type, serverData, taskId) {
         const operation = this.pendingOperations.get(opId);
         if (!operation) return;
+
+        // Remove from OfflineQueue since WebSocket sync succeeded
+        if (operation.queueId && this.cache) {
+            try {
+                await this.cache.removeFromQueue(operation.queueId);
+                console.log(`🗑️ Removed queue entry ${operation.queueId} after successful WebSocket sync`);
+            } catch (error) {
+                console.warn(`⚠️ Failed to remove queue entry ${operation.queueId}:`, error);
+            }
+        }
 
         if (type === 'create') {
             // Replace temp ID with real ID
