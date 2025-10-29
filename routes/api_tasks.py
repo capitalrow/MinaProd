@@ -230,6 +230,7 @@ def update_task(task_id):
         data = request.get_json()
         old_status = task.status
         old_labels = task.labels
+        old_snoozed_until = task.snoozed_until
         
         # Update fields
         if 'title' in data:
@@ -282,6 +283,17 @@ def update_task(task_id):
             else:
                 task.labels = []
         
+        if 'snoozed_until' in data:
+            if data['snoozed_until']:
+                try:
+                    # Parse and convert to naive UTC datetime
+                    dt = datetime.fromisoformat(data['snoozed_until'].replace('Z', '+00:00'))
+                    task.snoozed_until = dt.replace(tzinfo=None)
+                except (ValueError, AttributeError):
+                    return jsonify({'success': False, 'message': 'Invalid snoozed_until format'}), 400
+            else:
+                task.snoozed_until = None
+        
         task.updated_at = datetime.now()
         db.session.commit()
         
@@ -292,6 +304,9 @@ def update_task(task_id):
         if task.status == 'completed' and old_status != 'completed':
             action = 'completed'
             event_type = 'task_update:completed'
+        elif 'snoozed_until' in data and task.snoozed_until != old_snoozed_until:
+            action = 'updated'
+            event_type = 'task_snooze'
         elif 'labels' in data and task.labels != old_labels:
             action = 'updated'
             event_type = 'task_update:labels'
@@ -304,11 +319,17 @@ def update_task(task_id):
         task_dict['event_type'] = event_type
         task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
         
-        # Add label diff metadata for labels events
+        # Add diff metadata for specific events
         if event_type == 'task_update:labels':
             task_dict['label_diff'] = {
                 'old': old_labels or [],
                 'new': task.labels or []
+            }
+        
+        if event_type == 'task_snooze':
+            task_dict['snooze_diff'] = {
+                'old': old_snoozed_until.isoformat() if old_snoozed_until else None,
+                'new': task.snoozed_until.isoformat() if task.snoozed_until else None
             }
         
         event_broadcaster.broadcast_task_update(

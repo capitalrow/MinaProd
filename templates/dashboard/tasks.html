@@ -224,8 +224,14 @@
 .task-card:nth-child(5) { animation-delay: 0.4s; }
 .task-card:nth-child(6) { animation-delay: 0.45s; }
 
-/* Task Delete Button */
-.task-delete-btn {
+/* Task Action Buttons */
+.task-actions {
+    display: flex;
+    gap: var(--space-1);
+    align-items: center;
+}
+
+.task-action-btn {
     background: transparent;
     border: none;
     color: var(--color-text-tertiary);
@@ -234,20 +240,29 @@
     border-radius: var(--radius-lg);
     transition: all var(--transition-base);
     opacity: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.task-card:hover .task-delete-btn {
+.task-card:hover .task-action-btn {
     opacity: 1;
+}
+
+.task-action-btn:active {
+    transform: scale(0.95);
+}
+
+.task-snooze-btn:hover {
+    background: rgba(99, 102, 241, 0.1);
+    color: rgb(99, 102, 241);
+    transform: scale(1.1);
 }
 
 .task-delete-btn:hover {
     background: rgba(239, 68, 68, 0.1);
     color: rgb(239, 68, 68);
     transform: scale(1.1);
-}
-
-.task-delete-btn:active {
-    transform: scale(0.95);
 }
 
 /* Label Management */
@@ -353,6 +368,54 @@
         opacity: 0;
         transform: scale(0.8);
     }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+}
+
+/* Snooze Modal */
+.snooze-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+}
+
+.snooze-option-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.snooze-option-btn:hover {
+    background: rgba(99, 102, 241, 0.05);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.snooze-option-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.snooze-option-btn svg {
+    color: var(--color-primary);
 }
 
 /* Task Creation Modal - Crown+ Glassmorphism */
@@ -631,11 +694,18 @@
                             {% endif %}
                         </div>
                     </div>
-                    <button class="task-delete-btn" title="Delete task">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                        </svg>
-                    </button>
+                    <div class="task-actions">
+                        <button class="task-action-btn task-snooze-btn" title="Snooze task">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </button>
+                        <button class="task-action-btn task-delete-btn" title="Delete task">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
             {% endfor %}
@@ -740,6 +810,51 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Snooze Duration Picker Modal -->
+<div id="snooze-modal-overlay" class="task-modal-overlay" style="display: none;">
+    <div class="task-modal" style="max-width: 400px;">
+        <div class="task-modal-header">
+            <h2 class="task-modal-title">Snooze Task</h2>
+            <button class="task-modal-close" id="snooze-modal-close">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div style="padding: var(--space-6); padding-top: 0;">
+            <p class="text-secondary mb-4" id="snooze-task-title">Snooze this task until...</p>
+            
+            <div class="snooze-options">
+                <button class="snooze-option-btn" data-duration="1h">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>1 Hour</span>
+                </button>
+                <button class="snooze-option-btn" data-duration="4h">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>4 Hours</span>
+                </button>
+                <button class="snooze-option-btn" data-duration="tomorrow">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <span>Tomorrow</span>
+                </button>
+                <button class="snooze-option-btn" data-duration="1w">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <span>1 Week</span>
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1430,6 +1545,98 @@
                 }
                 return;
             }
+            
+            // Wire up snooze buttons (using event delegation)
+            const snoozeBtn = e.target.closest('.task-snooze-btn');
+            if (snoozeBtn) {
+                e.stopPropagation();
+                const taskCard = snoozeBtn.closest('.task-card');
+                const taskId = taskCard.dataset.taskId;
+                const taskTitle = taskCard.querySelector('.task-title').textContent;
+                
+                // Store task ID for snooze modal
+                window._snoozeTaskId = taskId;
+                
+                // Update modal title
+                const snoozeTitle = document.getElementById('snooze-task-title');
+                if (snoozeTitle) {
+                    snoozeTitle.textContent = `Snooze "${taskTitle}" until...`;
+                }
+                
+                // Show snooze modal
+                const snoozeModal = document.getElementById('snooze-modal-overlay');
+                if (snoozeModal) {
+                    snoozeModal.style.display = 'flex';
+                }
+                return;
+            }
+        });
+    }
+    
+    // Snooze modal handlers
+    const snoozeModalOverlay = document.getElementById('snooze-modal-overlay');
+    const snoozeModalClose = document.getElementById('snooze-modal-close');
+    
+    if (snoozeModalClose) {
+        snoozeModalClose.addEventListener('click', () => {
+            snoozeModalOverlay.style.display = 'none';
+        });
+    }
+    
+    if (snoozeModalOverlay) {
+        snoozeModalOverlay.addEventListener('click', (e) => {
+            if (e.target === snoozeModalOverlay) {
+                snoozeModalOverlay.style.display = 'none';
+            }
+        });
+        
+        // Wire up snooze duration buttons
+        const snoozeOptions = document.querySelectorAll('.snooze-option-btn');
+        snoozeOptions.forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const duration = btn.dataset.duration;
+                const taskId = window._snoozeTaskId;
+                
+                if (!taskId) return;
+                
+                // Calculate snoozed_until timestamp
+                const now = new Date();
+                let snoozedUntil;
+                
+                switch (duration) {
+                    case '1h':
+                        snoozedUntil = new Date(now.getTime() + 60 * 60 * 1000);
+                        break;
+                    case '4h':
+                        snoozedUntil = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+                        break;
+                    case 'tomorrow':
+                        snoozedUntil = new Date(now);
+                        snoozedUntil.setDate(snoozedUntil.getDate() + 1);
+                        snoozedUntil.setHours(9, 0, 0, 0);
+                        break;
+                    case '1w':
+                        snoozedUntil = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                        break;
+                    default:
+                        return;
+                }
+                
+                console.log(`⏰ Snoozing task ${taskId} until ${snoozedUntil}`);
+                
+                try {
+                    await window.optimisticUI.snoozeTask(taskId, snoozedUntil);
+                    console.log('✅ Task snoozed');
+                    snoozeModalOverlay.style.display = 'none';
+                    
+                    if (window.showToast) {
+                        window.showToast('Task snoozed successfully', 'success');
+                    }
+                } catch (error) {
+                    console.error('❌ Failed to snooze task:', error);
+                    alert('Failed to snooze task. Please try again.');
+                }
+            });
         });
     }
     
