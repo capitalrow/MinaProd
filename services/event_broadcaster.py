@@ -167,7 +167,7 @@ class EventBroadcaster:
         self,
         task_id: int,
         task_data: Dict[str, Any],
-        meeting_id: int,
+        meeting_id: Optional[int],
         workspace_id: int
     ) -> Optional[EventLedger]:
         """
@@ -176,7 +176,7 @@ class EventBroadcaster:
         Args:
             task_id: Task ID
             task_data: Task information
-            meeting_id: Associated meeting ID
+            meeting_id: Associated meeting ID (None if no meeting)
             workspace_id: Workspace ID
             
         Returns:
