@@ -446,6 +446,44 @@ class WebSocketManager {
             console.warn(`Socket /${namespace} not connected`);
         }
     }
+
+    /**
+     * Send event to server and wait for acknowledgment
+     * @param {string} eventName - Event name
+     * @param {Object} data - Event data
+     * @param {string} namespace - Namespace (e.g., '/tasks')
+     * @returns {Promise<Object>} Server response
+     */
+    async emitWithAck(eventName, data, namespace = 'dashboard') {
+        // Remove leading slash if present
+        const ns = namespace.startsWith('/') ? namespace.substring(1) : namespace;
+        
+        const socket = this.sockets[ns];
+        if (!socket) {
+            throw new Error(`Socket /${ns} not connected`);
+        }
+        
+        if (!socket.connected) {
+            throw new Error(`Socket /${ns} is not currently connected`);
+        }
+        
+        return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error(`Timeout waiting for ${eventName} acknowledgment on /${ns}`));
+            }, 10000); // 10 second timeout
+            
+            socket.emit(eventName, data, (response) => {
+                clearTimeout(timeout);
+                
+                // Check if server returned an error
+                if (response && response.success === false) {
+                    reject(new Error(response.error || 'Server request failed'));
+                } else {
+                    resolve(response);
+                }
+            });
+        });
+    }
     
     /**
      * Request dashboard sync

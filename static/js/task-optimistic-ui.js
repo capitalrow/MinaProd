@@ -571,11 +571,11 @@ class OptimisticUI {
 
             console.log(`📤 Sending ${eventName} event:`, payload);
 
-            // Emit via WebSocket and wait for response
-            const result = await window.wsManager.emit(eventName, payload, '/tasks');
+            // Emit via WebSocket and wait for server acknowledgment
+            const result = await window.wsManager.emitWithAck(eventName, payload, '/tasks');
 
             const reconcileTime = performance.now() - startTime;
-            console.log(`✅ Optimistic ${type} reconciled in ${reconcileTime.toFixed(2)}ms`);
+            console.log(`✅ Server acknowledged ${type} in ${reconcileTime.toFixed(2)}ms, response:`, result);
 
             // Reconcile with server data
             await this._reconcileSuccess(opId, type, result, taskId);
