@@ -162,16 +162,18 @@ def register_tasks_namespace(socketio):
             payload = data.get('payload', {})
             
             if not event_type:
-                emit('error', {'message': 'event_type required'})
-                return
+                error_response = {'success': False, 'message': 'event_type required'}
+                emit('error', error_response)
+                return error_response
             
             # Get user ID (from authenticated session)
-            user_id = payload.get('user_id') or (current_user.id if current_user.is_authenticated else None)
+            user_id = payload.get('user_id') or (current_user.is_authenticated and current_user.id)
             session_id = payload.get('session_id')
             
             if not user_id:
-                emit('error', {'message': 'user_id required'})
-                return
+                error_response = {'success': False, 'message': 'user_id required'}
+                emit('error', error_response)
+                return error_response
             
             # Add vector clock to payload if provided
             if 'vector_clock' in data:
@@ -201,12 +203,18 @@ def register_tasks_namespace(socketio):
                         'data': result
                     }, room=f"workspace_{workspace_id}")
             
+            # Return result for Socket.IO acknowledgment callback
+            return result
+            
         except Exception as e:
             logger.error(f"Task event error: {e}", exc_info=True)
-            emit('error', {
+            error_response = {
+                'success': False,
                 'message': 'Failed to process task event',
                 'error': str(e)
-            })
+            }
+            emit('error', error_response)
+            return error_response
     
     # Individual event handlers for backward compatibility
     
