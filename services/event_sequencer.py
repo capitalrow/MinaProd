@@ -85,10 +85,12 @@ class EventSequencer:
         session_id: Optional[int] = None,
         external_session_id: Optional[str] = None,
         trace_id: Optional[str] = None,
-        idempotency_key: Optional[str] = None
+        idempotency_key: Optional[str] = None,
+        client_id: Optional[str] = None,
+        previous_clock: Optional[Dict[str, int]] = None
     ) -> EventLedger:
         """
-        Create a new event with proper sequencing and checksum.
+        Create a new event with proper sequencing, checksum, and vector clock (CROWN⁴.5).
         
         Args:
             event_type: Type of event from EventType enum
@@ -98,9 +100,11 @@ class EventSequencer:
             external_session_id: External session identifier
             trace_id: Distributed tracing ID
             idempotency_key: Key for idempotent processing
+            client_id: Client identifier for vector clock generation (user_id, device_id, etc.)
+            previous_clock: Previous vector clock from client for incrementing
             
         Returns:
-            Created EventLedger instance
+            Created EventLedger instance with vector clock if client_id provided
         """
         try:
             # Generate sequence number
@@ -108,6 +112,12 @@ class EventSequencer:
             
             # Generate checksum if payload provided
             checksum = EventSequencer.generate_checksum(payload) if payload else None
+            
+            # Generate vector clock for deterministic ordering (CROWN⁴.5)
+            vector_clock = None
+            if client_id:
+                vector_clock = EventSequencer.generate_vector_clock(client_id, previous_clock)
+                logger.debug(f"Generated vector clock for client {client_id}: {vector_clock}")
             
             # Create event record
             event = EventLedger(
@@ -121,6 +131,7 @@ class EventSequencer:
                 idempotency_key=idempotency_key,
                 sequence_num=sequence_num,
                 checksum=checksum,
+                vector_clock=vector_clock,
                 broadcast_status="pending",
                 created_at=datetime.utcnow()
             )
@@ -140,7 +151,11 @@ class EventSequencer:
     @staticmethod
     def validate_sequence(event_id: int, expected_last_id: Optional[int] = None) -> bool:
         """
-        Validate that an event can be processed based on sequence ordering.
+        Validate that an event can be processed based on sequence ordering and vector clocks (CROWN⁴.5).
+        
+        Uses both sequence numbers and vector clocks for deterministic ordering:
+        - Sequence numbers: Linear ordering within single session
+        - Vector clocks: Causal ordering across distributed clients
         
         Args:
             event_id: Event ID to validate
@@ -164,7 +179,43 @@ class EventSequencer:
                 logger.info(f"Event {event_id} already applied (last_applied={event.last_applied_id})")
                 return False
             
-            # Validate sequence ordering
+            # Vector clock validation (CROWN⁴.5: Distributed ordering)
+            if event.vector_clock:
+                # Get recent completed events with vector clocks for conflict detection
+                recent_events = db.session.scalars(
+                    select(EventLedger)
+                    .where(EventLedger.status == EventStatus.COMPLETED)
+                    .where(EventLedger.vector_clock.isnot(None))
+                    .where(EventLedger.id != event_id)
+                    .order_by(EventLedger.created_at.desc())
+                    .limit(100)
+                ).all()
+                
+                # Check for concurrent events (potential conflicts)
+                for other_event in recent_events:
+                    if not other_event.vector_clock:
+                        continue
+                    
+                    relation = EventSequencer.compare_vector_clocks(
+                        event.vector_clock,
+                        other_event.vector_clock
+                    )
+                    
+                    if relation == "concurrent":
+                        logger.warning(
+                            f"Concurrent event detected: event {event_id} is concurrent with {other_event.id}"
+                        )
+                        # Allow processing but flag for conflict resolution
+                        # The conflict will be resolved using the configured strategy
+                    elif relation == "before":
+                        # This event happened before an already-processed event
+                        # This is an out-of-order event
+                        logger.warning(
+                            f"Out-of-order event: event {event_id} happened before already-processed event {other_event.id}"
+                        )
+                        return False
+            
+            # Validate sequence ordering (fallback for non-vector-clock events)
             if event.sequence_num is not None:
                 # Get the last processed event sequence
                 last_processed_seq = db.session.scalar(
