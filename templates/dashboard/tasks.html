@@ -709,9 +709,6 @@
                 handleTaskCompleted(taskData);
                 break;
         }
-        
-        // Update filter counts
-        updateFilterCounts();
     }
     
     /**
@@ -735,9 +732,6 @@
         // Insert at top of list
         if (tasksContainer && !emptyStateEl.parentElement.contains(emptyStateEl)) {
             tasksContainer.insertAdjacentHTML('afterbegin', cardHTML);
-            
-            // Attach event listeners to new card
-            attachTaskCardListeners();
         }
         
         // Show notification
@@ -890,57 +884,44 @@
     }
     
     /**
-     * Update filter counts
+     * Setup filter tab handlers (CROWN⁴.5 Architecture)
+     * Proper implementation: Update viewState → Fetch filtered tasks → Re-render
      */
-    function updateFilterCounts() {
-        const allTasks = document.querySelectorAll('.task-card').length;
-        const pendingTasks = document.querySelectorAll('.task-card[data-status="pending"]').length;
-        const completedTasks = document.querySelectorAll('.task-card[data-status="completed"]').length;
-        
-        if (filterCounts.all) filterCounts.all.textContent = allTasks;
-        if (filterCounts.pending) filterCounts.pending.textContent = pendingTasks;
-        if (filterCounts.completed) filterCounts.completed.textContent = completedTasks;
-    }
-    
-    /**
-     * Attach event listeners to task cards
-     */
-    function attachTaskCardListeners() {
-        // Reattach filter tab listeners
+    function setupFilterTabs() {
         document.querySelectorAll('.filter-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
+            tab.addEventListener('click', async () => {
                 const filter = tab.dataset.filter;
                 
-                // Update active tab
+                console.log(`🔍 Filter changed to: ${filter}`);
+                
+                // Update active tab visual state
                 document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
                 
-                // Filter tasks
-                document.querySelectorAll('.task-card').forEach(card => {
-                    if (filter === 'all') {
-                        card.style.display = 'block';
-                    } else {
-                        const status = card.dataset.status;
-                        card.style.display = status === filter ? 'block' : 'none';
-                    }
-                });
-            });
-        });
-        
-        // Reattach checkbox listeners
-        document.querySelectorAll('.task-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const taskCard = this.closest('.task-card');
-                if (this.checked) {
-                    taskCard.classList.add('completed');
-                    taskCard.dataset.status = 'completed';
-                } else {
-                    taskCard.classList.remove('completed');
-                    taskCard.dataset.status = 'pending';
+                // Update viewState in cache (persist filter preference)
+                if (window.taskCache) {
+                    await window.taskCache.setViewState({ activeFilter: filter });
                 }
                 
-                // Update filter counts
-                updateFilterCounts();
+                // Fetch filtered tasks from cache
+                const allTasks = await window.taskCache.getAllTasks();
+                let filteredTasks = allTasks;
+                
+                if (filter === 'pending') {
+                    filteredTasks = allTasks.filter(t => t.status === 'todo' || t.status === 'in_progress');
+                } else if (filter === 'completed') {
+                    filteredTasks = allTasks.filter(t => t.status === 'completed' || t.status === 'done');
+                }
+                
+                console.log(`📊 Rendering ${filteredTasks.length} of ${allTasks.length} tasks (filter: ${filter})`);
+                
+                // Re-render with filtered tasks using TaskBootstrap
+                if (window.taskBootstrap) {
+                    await window.taskBootstrap.renderTasks(filteredTasks);
+                    
+                    // Update counters (always uses ALL tasks from cache)
+                    await window.taskBootstrap.updateCounters(filteredTasks);
+                }
             });
         });
     }
@@ -1006,11 +987,11 @@
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             initTasksWebSocket();
-            attachTaskCardListeners();
+            setupFilterTabs();
         });
     } else {
         initTasksWebSocket();
-        attachTaskCardListeners();
+        setupFilterTabs();
     }
     
     // Add CSS for animations
