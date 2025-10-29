@@ -1080,12 +1080,13 @@
     
     // Initialize CROWN Telemetry FIRST (before other modules)
     if (window.CROWNTelemetry) {
+        const CROWNTelemetryClass = window.CROWNTelemetry;
         const workspaceId = window.WORKSPACE_ID || 1;
-        window.crownTelemetry = new window.CROWNTelemetry(workspaceId);
+        window.crownTelemetry = new CROWNTelemetryClass(workspaceId);
         await window.crownTelemetry.init();
         console.log('📊 CROWN Telemetry initialized');
         
-        // Also expose as CROWNTelemetry for backwards compatibility
+        // Replace class with instance for backwards compatibility
         window.CROWNTelemetry = window.crownTelemetry;
     } else {
         console.warn('⚠️ CROWNTelemetry class not found');
