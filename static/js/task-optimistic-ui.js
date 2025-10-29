@@ -326,6 +326,34 @@ class OptimisticUI {
     }
 
     /**
+     * Snooze task optimistically
+     * @param {number|string} taskId
+     * @param {Date} snoozedUntil - When to unsnooze the task
+     * @returns {Promise<Object>}
+     */
+    async snoozeTask(taskId, snoozedUntil) {
+        const task = await this.cache.getTask(taskId);
+        if (!task) return;
+
+        // Update task with snooze timestamp
+        const result = await this.updateTask(taskId, { 
+            snoozed_until: snoozedUntil.toISOString()
+        });
+
+        // Hide snoozed task from view with animation
+        const card = document.querySelector(`[data-task-id="${taskId}"]`);
+        if (card) {
+            card.style.animation = 'fadeOut 0.3s ease-out';
+            setTimeout(() => {
+                card.style.display = 'none';
+                this._updateCounters();
+            }, 300);
+        }
+
+        return result;
+    }
+
+    /**
      * Generate unique operation ID
      * @returns {string}
      */
