@@ -340,9 +340,22 @@ class OptimisticUI {
             snoozed_until: snoozedUntil.toISOString()
         });
 
-        // Hide snoozed task from view with animation
+        // Hide snoozed task from view with animation (CROWN⁴.5 QuietStateManager)
         const card = document.querySelector(`[data-task-id="${taskId}"]`);
-        if (card) {
+        if (card && window.quietStateManager) {
+            window.quietStateManager.queueAnimation((setCancelHandler) => {
+                card.style.animation = 'fadeOut 0.3s ease-out';
+                const timeoutId = setTimeout(() => {
+                    card.style.display = 'none';
+                    this._updateCounters();
+                }, 300);
+                
+                setCancelHandler(() => {
+                    clearTimeout(timeoutId);
+                    card.style.animation = '';
+                });
+            }, { duration: 300, priority: 6, metadata: { type: 'task_snooze', task_id: taskId } });
+        } else if (card) {
             card.style.animation = 'fadeOut 0.3s ease-out';
             setTimeout(() => {
                 card.style.display = 'none';
@@ -371,9 +384,19 @@ class OptimisticUI {
         const originalTargetTask = { ...targetTask };
 
         try {
-            // Step 1: Hide source task with animation
+            // Step 1: Hide source task with animation (CROWN⁴.5 QuietStateManager)
             const sourceCard = document.querySelector(`[data-task-id="${sourceTaskId}"]`);
-            if (sourceCard) {
+            if (sourceCard && window.quietStateManager) {
+                window.quietStateManager.queueAnimation((setCancelHandler) => {
+                    sourceCard.style.animation = 'fadeOut 0.3s ease-out';
+                    const timeoutId = setTimeout(() => sourceCard.style.display = 'none', 300);
+                    
+                    setCancelHandler(() => {
+                        clearTimeout(timeoutId);
+                        sourceCard.style.animation = '';
+                    });
+                }, { duration: 300, priority: 8, metadata: { type: 'task_merge', task_id: sourceTaskId } });
+            } else if (sourceCard) {
                 sourceCard.style.animation = 'fadeOut 0.3s ease-out';
                 setTimeout(() => sourceCard.style.display = 'none', 300);
             }
@@ -433,9 +456,18 @@ class OptimisticUI {
         } catch (error) {
             console.error('❌ Merge failed - rolling back:', error);
             
-            // Rollback: restore source task card
+            // Rollback: restore source task card (CROWN⁴.5 QuietStateManager)
             const sourceCard = document.querySelector(`[data-task-id="${sourceTaskId}"]`);
-            if (sourceCard) {
+            if (sourceCard && window.quietStateManager) {
+                window.quietStateManager.queueAnimation((setCancelHandler) => {
+                    sourceCard.style.display = '';
+                    sourceCard.style.animation = 'slideInFromTop 0.3s ease-out';
+                    
+                    setCancelHandler(() => {
+                        sourceCard.style.animation = '';
+                    });
+                }, { duration: 300, priority: 9, metadata: { type: 'task_merge_rollback', task_id: sourceTaskId } });
+            } else if (sourceCard) {
                 sourceCard.style.display = '';
                 sourceCard.style.animation = 'slideInFromTop 0.3s ease-out';
             }
@@ -468,9 +500,19 @@ class OptimisticUI {
         const taskHTML = window.taskBootstrap.renderTaskCard(task, 0);
         container.insertAdjacentHTML('afterbegin', taskHTML);
 
-        // Add animation
+        // Add animation (CROWN⁴.5 QuietStateManager)
         const card = container.querySelector(`[data-task-id="${task.id}"]`);
-        if (card) {
+        if (card && window.quietStateManager) {
+            window.quietStateManager.queueAnimation((setCancelHandler) => {
+                card.classList.add('optimistic-create');
+                card.style.animation = 'slideInFromTop 0.3s ease-out';
+                
+                setCancelHandler(() => {
+                    card.classList.remove('optimistic-create');
+                    card.style.animation = '';
+                });
+            }, { duration: 300, priority: 7, metadata: { type: 'task_create', task_id: task.id } });
+        } else if (card) {
             card.classList.add('optimistic-create');
             card.style.animation = 'slideInFromTop 0.3s ease-out';
         }
@@ -540,9 +582,21 @@ class OptimisticUI {
             }
         }
 
-        // Add optimistic indicator
-        card.classList.add('optimistic-update');
-        setTimeout(() => card.classList.remove('optimistic-update'), 300);
+        // Add optimistic indicator (CROWN⁴.5 QuietStateManager)
+        if (window.quietStateManager) {
+            window.quietStateManager.queueAnimation((setCancelHandler) => {
+                card.classList.add('optimistic-update');
+                const timeoutId = setTimeout(() => card.classList.remove('optimistic-update'), 300);
+                
+                setCancelHandler(() => {
+                    clearTimeout(timeoutId);
+                    card.classList.remove('optimistic-update');
+                });
+            }, { duration: 300, priority: 6, metadata: { type: 'task_update', task_id: taskId } });
+        } else {
+            card.classList.add('optimistic-update');
+            setTimeout(() => card.classList.remove('optimistic-update'), 300);
+        }
 
         this._updateCounters();
     }
@@ -555,23 +609,47 @@ class OptimisticUI {
         const card = document.querySelector(`[data-task-id="${taskId}"]`);
         if (!card) return;
 
-        card.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
-        card.style.opacity = '0';
-        card.style.transform = 'translateX(-20px)';
-
-        setTimeout(() => {
-            card.remove();
-            this._updateCounters();
-
-            // Show empty state if no tasks left
-            const remaining = document.querySelectorAll('.task-card').length;
-            if (remaining === 0) {
-                const emptyState = document.getElementById('tasks-empty-state');
-                if (emptyState) {
-                    emptyState.style.display = 'block';
+        // Use QuietStateManager for fade-out animation (CROWN⁴.5)
+        if (window.quietStateManager) {
+            window.quietStateManager.queueAnimation((setCancelHandler) => {
+                card.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(-20px)';
+                
+                const timeoutId = setTimeout(() => {
+                    card.remove();
+                    this._updateCounters();
+                    
+                    const remaining = document.querySelectorAll('.task-card').length;
+                    if (remaining === 0) {
+                        const emptyState = document.getElementById('tasks-empty-state');
+                        if (emptyState) emptyState.style.display = 'block';
+                    }
+                }, 300);
+                
+                setCancelHandler(() => {
+                    clearTimeout(timeoutId);
+                    card.style.transition = '';
+                    card.style.opacity = '';
+                    card.style.transform = '';
+                });
+            }, { duration: 300, priority: 5, metadata: { type: 'task_remove', task_id: taskId } });
+        } else {
+            card.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+            card.style.opacity = '0';
+            card.style.transform = 'translateX(-20px)';
+            
+            setTimeout(() => {
+                card.remove();
+                this._updateCounters();
+                
+                const remaining = document.querySelectorAll('.task-card').length;
+                if (remaining === 0) {
+                    const emptyState = document.getElementById('tasks-empty-state');
+                    if (emptyState) emptyState.style.display = 'block';
                 }
-            }
-        }, 300);
+            }, 300);
+        }
     }
 
     /**
