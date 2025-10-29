@@ -652,6 +652,9 @@
     window.WORKSPACE_ID = {{ current_user.workspace_id if current_user.workspace_id else 'null' }};
     window.CURRENT_SESSION_ID = null; // Will be set dynamically when session is active
     
+    // CROWN⁴.5 SSR Hydration: Server-rendered tasks for cache-first bootstrap
+    window.__INITIAL_TASKS__ = {{ tasks_json|safe }};
+    
     const WORKSPACE_ID = window.WORKSPACE_ID;
     
     // Cache DOM elements
