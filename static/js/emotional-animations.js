@@ -146,8 +146,8 @@ class EmotionalAnimations {
                 element.classList.remove('emotion-burst');
             });
 
-            if (window.CROWNTelemetry) {
-                window.CROWNTelemetry.recordMetric('emotion_cue', 1, { cue: emotion_cue });
+            if (window.CROWNTelemetry && window.CROWNTelemetry.recordEmotionCue) {
+                window.CROWNTelemetry.recordEmotionCue(emotion_cue);
             }
         }, { duration, priority: 8, metadata: { type: 'emotion_burst', emotion_cue } });
     }
@@ -180,8 +180,8 @@ class EmotionalAnimations {
                 element.classList.remove('emotion-shimmer');
             });
 
-            if (window.CROWNTelemetry) {
-                window.CROWNTelemetry.recordMetric('emotion_cue', 1, { cue: emotion_cue });
+            if (window.CROWNTelemetry && window.CROWNTelemetry.recordEmotionCue) {
+                window.CROWNTelemetry.recordEmotionCue(emotion_cue);
             }
         }, { duration, priority: 6, metadata: { type: 'emotion_shimmer', emotion_cue } });
     }
@@ -214,8 +214,8 @@ class EmotionalAnimations {
                 element.classList.remove('emotion-morph');
             });
 
-            if (window.CROWNTelemetry) {
-                window.CROWNTelemetry.recordMetric('emotion_cue', 1, { cue: emotion_cue });
+            if (window.CROWNTelemetry && window.CROWNTelemetry.recordEmotionCue) {
+                window.CROWNTelemetry.recordEmotionCue(emotion_cue);
             }
         }, { duration, priority: 7, metadata: { type: 'emotion_morph', emotion_cue } });
     }
@@ -248,8 +248,8 @@ class EmotionalAnimations {
                 element.classList.remove('emotion-slide');
             });
 
-            if (window.CROWNTelemetry) {
-                window.CROWNTelemetry.recordMetric('emotion_cue', 1, { cue: emotion_cue });
+            if (window.CROWNTelemetry && window.CROWNTelemetry.recordEmotionCue) {
+                window.CROWNTelemetry.recordEmotionCue(emotion_cue);
             }
         }, { duration, priority: 7, metadata: { type: 'emotion_slide', emotion_cue } });
     }
