@@ -354,6 +354,102 @@ class OptimisticUI {
     }
 
     /**
+     * Merge two tasks optimistically
+     * @param {number|string} sourceTaskId - Task to merge from (will be deleted)
+     * @param {number|string} targetTaskId - Task to merge into (will be kept)
+     * @returns {Promise<Object>}
+     */
+    async mergeTasks(sourceTaskId, targetTaskId) {
+        const sourceTask = await this.cache.getTask(sourceTaskId);
+        const targetTask = await this.cache.getTask(targetTaskId);
+        
+        if (!sourceTask || !targetTask) return;
+
+        const opId = this._generateOperationId();
+        
+        // Save original target task state for rollback
+        const originalTargetTask = { ...targetTask };
+
+        try {
+            // Step 1: Hide source task with animation
+            const sourceCard = document.querySelector(`[data-task-id="${sourceTaskId}"]`);
+            if (sourceCard) {
+                sourceCard.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => sourceCard.style.display = 'none', 300);
+            }
+
+            // Step 2: Merge data - combine labels, keep higher priority, combine descriptions
+            const mergedLabels = [...new Set([...(targetTask.labels || []), ...(sourceTask.labels || [])])];
+            const priorityRank = { urgent: 4, high: 3, medium: 2, low: 1 };
+            const mergedPriority = (priorityRank[sourceTask.priority] > priorityRank[targetTask.priority]) 
+                ? sourceTask.priority : targetTask.priority;
+            
+            let mergedDescription = targetTask.description || '';
+            if (sourceTask.description && !mergedDescription.includes(sourceTask.description)) {
+                mergedDescription = mergedDescription 
+                    ? `${mergedDescription}\n\n[Merged from another task]\n${sourceTask.description}`
+                    : sourceTask.description;
+            }
+
+            // Step 3: Update cache
+            const updatedTask = {
+                ...targetTask,
+                labels: mergedLabels,
+                priority: mergedPriority,
+                description: mergedDescription,
+                updated_at: new Date().toISOString(),
+                _optimistic: true,
+                _operation_id: opId
+            };
+            await this.cache.setTask(targetTaskId, updatedTask);
+
+            // Step 4: Update target task DOM
+            this._updateTaskInDOM(targetTaskId, updatedTask);
+
+            // Step 5: Sync to server
+            const response = await fetch(`/api/tasks/${targetTaskId}/merge`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ source_task_id: sourceTaskId })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Merge failed: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            
+            // Step 6: Reconcile with server truth
+            await this.cache.setTask(targetTaskId, data.task);
+            this._updateTaskInDOM(targetTaskId, data.task);
+            
+            // Remove source task from cache
+            await this.cache.deleteTask(sourceTaskId);
+            
+            this._updateCounters();
+            this.pendingOperations.delete(opId);
+            
+            return data.task;
+        } catch (error) {
+            console.error('❌ Merge failed - rolling back:', error);
+            
+            // Rollback: restore source task card
+            const sourceCard = document.querySelector(`[data-task-id="${sourceTaskId}"]`);
+            if (sourceCard) {
+                sourceCard.style.display = '';
+                sourceCard.style.animation = 'slideInFromTop 0.3s ease-out';
+            }
+            
+            // Rollback: restore original target task in cache and DOM
+            await this.cache.setTask(targetTaskId, originalTargetTask);
+            this._updateTaskInDOM(targetTaskId, originalTargetTask);
+            
+            this.pendingOperations.delete(opId);
+            throw error;
+        }
+    }
+
+    /**
      * Generate unique operation ID
      * @returns {string}
      */
