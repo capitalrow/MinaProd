@@ -244,6 +244,7 @@ def register_tasks_namespace(socketio):
         from app import db
         from models.offline_queue import OfflineQueue
         from datetime import datetime
+        from sqlalchemy import select
         
         try:
             if not current_user.is_authenticated:
@@ -254,10 +255,12 @@ def register_tasks_namespace(socketio):
             session_id = data.get('session_id')
             queue_data = data.get('queue_data', [])
             
-            existing = OfflineQueue.query.filter_by(
+            # Flask-SQLAlchemy 3.x syntax
+            stmt = select(OfflineQueue).filter_by(
                 user_id=user_id,
                 session_id=session_id
-            ).first()
+            )
+            existing = db.session.execute(stmt).scalar_one_or_none()
             
             if existing:
                 existing.queue_data = queue_data
@@ -294,7 +297,9 @@ def register_tasks_namespace(socketio):
         Retrieve saved offline queue from server.
         Used for recovery after browser cache loss.
         """
+        from app import db
         from models.offline_queue import OfflineQueue
+        from sqlalchemy import select
         
         try:
             if not current_user.is_authenticated:
@@ -304,10 +309,12 @@ def register_tasks_namespace(socketio):
             user_id = current_user.id
             session_id = data.get('session_id')
             
-            queue = OfflineQueue.query.filter_by(
+            # Flask-SQLAlchemy 3.x syntax
+            stmt = select(OfflineQueue).filter_by(
                 user_id=user_id,
                 session_id=session_id
-            ).first()
+            )
+            queue = db.session.execute(stmt).scalar_one_or_none()
             
             if queue:
                 emit('offline_queue:retrieved', {
@@ -338,6 +345,7 @@ def register_tasks_namespace(socketio):
         """
         from app import db
         from models.offline_queue import OfflineQueue
+        from sqlalchemy import delete
         
         try:
             if not current_user.is_authenticated:
@@ -347,10 +355,13 @@ def register_tasks_namespace(socketio):
             user_id = current_user.id
             session_id = data.get('session_id')
             
-            deleted = OfflineQueue.query.filter_by(
+            # Flask-SQLAlchemy 3.x syntax
+            stmt = delete(OfflineQueue).filter_by(
                 user_id=user_id,
                 session_id=session_id
-            ).delete()
+            )
+            result = db.session.execute(stmt)
+            deleted = result.rowcount
             
             db.session.commit()
             
