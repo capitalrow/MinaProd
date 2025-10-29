@@ -163,10 +163,23 @@ class VirtualList {
                                 ${priority}
                             </span>
                             ${task.due_date ? `
-                                <span class="due-date-badge">
+                                <span class="due-date-badge" data-iso-date="${task.due_date}">
                                     ${this._formatDueDate(task.due_date)}
                                 </span>
-                            ` : ''}
+                            ` : `
+                                <span class="due-date-badge due-date-add">
+                                    + Add due date
+                                </span>
+                            `}
+                            ${task.assigned_to ? `
+                                <span class="assignee-badge" data-user-id="${task.assigned_to.id}">
+                                    👤 ${this._escapeHtml(task.assigned_to.username || task.assigned_to.email)}
+                                </span>
+                            ` : `
+                                <span class="assignee-badge assignee-add">
+                                    + Assign
+                                </span>
+                            `}
                             ${task.labels && task.labels.length > 0 ? `
                                 <div class="task-labels">
                                     ${task.labels.slice(0, 3).map(label => `
