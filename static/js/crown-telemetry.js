@@ -439,5 +439,19 @@ class CROWNTelemetry {
     }
 }
 
-// Make globally available
-window.CROWNTelemetry = CROWNTelemetry;
+// Auto-initialize telemetry instance
+(async function() {
+    // Get workspace ID from page context (or use 'default')
+    const workspaceId = window.WORKSPACE_ID || 'default';
+    
+    // Create instance
+    const telemetryInstance = new CROWNTelemetry(workspaceId);
+    
+    // Initialize database
+    await telemetryInstance.init();
+    
+    // Make instance globally available
+    window.CROWNTelemetry = telemetryInstance;
+    
+    console.log('✅ CROWNTelemetry initialized and ready');
+})();
