@@ -23,11 +23,47 @@ class OptimisticUI {
 
         // Listen for connection status changes
         window.wsManager.on('connection_status', (data) => {
-            if (data.namespace === '/tasks' && data.connected) {
-                console.log('🔄 WebSocket reconnected, retrying pending operations...');
-                this._retryPendingOperations();
+            if (data.namespace === '/tasks') {
+                if (data.connected) {
+                    console.log('🔄 WebSocket reconnected, retrying pending operations...');
+                    this._showConnectionBanner('online', 'Connected', 2000);
+                    this._retryPendingOperations();
+                } else {
+                    this._showConnectionBanner('offline', 'Offline - changes will sync when reconnected');
+                }
             }
         });
+        
+        window.wsManager.on('reconnecting', (data) => {
+            if (data.namespace === '/tasks') {
+                this._showConnectionBanner('reconnecting', 'Reconnecting...');
+            }
+        });
+    }
+    
+    _showConnectionBanner(status, message, autohideDuration = 0) {
+        const banner = document.getElementById('connection-banner');
+        if (!banner) return;
+        
+        banner.className = `connection-banner ${status}`;
+        banner.querySelector('.connection-message').textContent = message;
+        
+        const pendingCount = this.pendingOperations.size;
+        const pendingEl = banner.querySelector('.pending-count');
+        if (pendingCount > 0) {
+            pendingEl.textContent = `(${pendingCount} pending)`;
+            pendingEl.style.display = 'inline';
+        } else {
+            pendingEl.style.display = 'none';
+        }
+        
+        banner.style.display = 'flex';
+        
+        if (autohideDuration > 0) {
+            setTimeout(() => {
+                banner.style.display = 'none';
+            }, autohideDuration);
+        }
     }
 
     /**
@@ -58,6 +94,35 @@ class OptimisticUI {
             } catch (error) {
                 console.error(`❌ Retry failed for operation ${opId}:`, error);
             }
+        }
+    }
+
+    /**
+     * Retry a single operation
+     */
+    async _retryOperation(opId) {
+        const operation = this.pendingOperations.get(opId);
+        if (!operation) {
+            console.warn(`⚠️ Operation ${opId} not found for retry`);
+            return;
+        }
+
+        console.log(`🔄 Retrying operation ${opId} (${operation.type})`);
+        
+        try {
+            if (operation.type === 'create') {
+                await this._syncToServer(opId, 'create', operation.data, operation.tempId);
+            } else if (operation.type === 'update') {
+                await this._syncToServer(opId, 'update', operation.data, operation.taskId);
+            } else if (operation.type === 'delete') {
+                await this._syncToServer(opId, 'delete', {}, operation.taskId);
+            }
+            
+            if (window.toast) {
+                window.toast.success('Changes saved successfully');
+            }
+        } catch (error) {
+            console.error(`❌ Retry failed for operation ${opId}:`, error);
         }
     }
 
@@ -833,13 +898,36 @@ class OptimisticUI {
                 stack: error.stack
             });
             
+            const is409Conflict = error.message && (
+                error.message.includes('409') || 
+                error.message.includes('conflict') ||
+                error.message.includes('version mismatch')
+            );
+            
+            if (is409Conflict) {
+                if (window.toast) {
+                    window.toast.warning('Changes conflict detected - reloading latest version', 5000, {
+                        undoText: 'Retry',
+                        undoCallback: () => this._retryOperation(opId)
+                    });
+                }
+            } else {
+                if (window.toast) {
+                    window.toast.error(`Save failed - ${error.message}`, 6000, {
+                        undoText: 'Retry',
+                        undoCallback: () => this._retryOperation(opId)
+                    });
+                }
+            }
+            
             // Emit telemetry for failures
             if (window.CROWNTelemetry) {
                 window.CROWNTelemetry.recordMetric('optimistic_failure_ms', syncTime);
                 window.CROWNTelemetry.recordEvent('task_sync_failure', {
                     type,
                     error: error.message,
-                    duration_ms: syncTime
+                    duration_ms: syncTime,
+                    is_conflict: is409Conflict
                 });
             }
             
