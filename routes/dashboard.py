@@ -285,8 +285,6 @@ def meetings():
 @login_required
 def tasks():
     """Tasks overview page with kanban board."""
-    import json
-    
     # Get tasks by status
     todo_tasks = db.session.query(Task).join(Meeting).filter(
         Meeting.workspace_id == current_user.workspace_id,
@@ -303,15 +301,10 @@ def tasks():
         Task.status == 'completed'
     ).order_by(desc(Task.completed_at)).limit(10).all()
     
-    # Combine all tasks and serialize for client-side hydration
-    all_tasks = todo_tasks + in_progress_tasks + completed_tasks
-    tasks_json = json.dumps([task.to_dict() for task in all_tasks])
-    
     return render_template('dashboard/tasks.html',
                          todo_tasks=todo_tasks,
                          in_progress_tasks=in_progress_tasks,
-                         completed_tasks=completed_tasks,
-                         tasks_json=tasks_json)
+                         completed_tasks=completed_tasks)
 
 
 @dashboard_bp.route('/analytics')

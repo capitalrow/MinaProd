@@ -652,9 +652,6 @@
     window.WORKSPACE_ID = {{ current_user.workspace_id if current_user.workspace_id else 'null' }};
     window.CURRENT_SESSION_ID = null; // Will be set dynamically when session is active
     
-    // CROWN⁴.5 SSR Hydration: Server-rendered tasks for cache-first bootstrap
-    window.__INITIAL_TASKS__ = {{ tasks_json|safe }};
-    
     const WORKSPACE_ID = window.WORKSPACE_ID;
     
     // Cache DOM elements
@@ -1061,7 +1058,6 @@
 </script>
 
 <!-- CROWN⁴.5 Frontend Modules -->
-<script src="{{ url_for('static', filename='js/crown-telemetry.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-cache.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-bootstrap.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-optimistic-ui.js') }}" nonce="{{ g.csp_nonce }}"></script>
@@ -1080,10 +1076,6 @@
     'use strict';
     
     console.log('🚀 Initializing CROWN⁴.5 Tasks Page...');
-    
-    // Initialize telemetry system first
-    window.CROWNTelemetry = new CROWNTelemetry(WORKSPACE_ID);
-    await window.CROWNTelemetry.init();
     
     // Wait for all modules to load
     const waitForModules = () => {
