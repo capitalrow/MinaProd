@@ -387,7 +387,7 @@ class OptimisticUI {
     }
 
     /**
-     * Sync operation to server
+     * Sync operation to server via WebSocket
      * @param {string} opId
      * @param {string} type
      * @param {Object} data
@@ -397,45 +397,39 @@ class OptimisticUI {
         const startTime = performance.now();
 
         try {
-            let response;
+            if (!window.wsManager || !window.wsManager.isConnected('/tasks')) {
+                throw new Error('WebSocket not connected');
+            }
+
+            // Map operation types to WebSocket event names
+            let eventName, payload;
 
             if (type === 'create') {
-                response = await fetch('/api/tasks/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify(data)
-                });
+                eventName = 'task_create:manual';
+                payload = {
+                    ...data,
+                    temp_id: taskId,  // Send temp ID for reconciliation
+                    operation_id: opId
+                };
             } else if (type === 'update') {
-                response = await fetch(`/api/tasks/${taskId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify(data)
-                });
+                eventName = 'task_update';
+                payload = {
+                    task_id: taskId,
+                    updates: data,
+                    operation_id: opId
+                };
             } else if (type === 'delete') {
-                response = await fetch(`/api/tasks/${taskId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    credentials: 'same-origin'
-                });
+                eventName = 'task_delete';
+                payload = {
+                    task_id: taskId,
+                    operation_id: opId
+                };
             }
 
-            if (!response.ok) {
-                throw new Error(`Server returned ${response.status}`);
-            }
+            // Emit via WebSocket and wait for response
+            const result = await window.wsManager.emit(eventName, payload, '/tasks');
 
-            const result = await response.json();
             const reconcileTime = performance.now() - startTime;
-
             console.log(`✅ Optimistic ${type} reconciled in ${reconcileTime.toFixed(2)}ms`);
 
             // Reconcile with server data
