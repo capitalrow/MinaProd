@@ -200,7 +200,8 @@ def create_task():
             task_id=task.id,
             task_data=task_dict,
             meeting_id=meeting.id,
-            workspace_id=current_user.workspace_id
+            workspace_id=current_user.workspace_id,
+            user_id=current_user.id
         )
         
         return jsonify({
@@ -554,7 +555,8 @@ def bulk_complete_tasks():
                 'count': len(task_ids)
             },
             meeting_id=None,
-            workspace_id=current_user.workspace_id
+            workspace_id=current_user.workspace_id,
+            user_id=current_user.id
         )
         
         return jsonify({
@@ -612,7 +614,8 @@ def bulk_delete_tasks():
                 'count': len(task_ids)
             },
             meeting_id=None,
-            workspace_id=current_user.workspace_id
+            workspace_id=current_user.workspace_id,
+            user_id=current_user.id
         )
         
         return jsonify({
@@ -679,7 +682,8 @@ def bulk_add_label():
                 'count': len(task_ids)
             },
             meeting_id=None,
-            workspace_id=current_user.workspace_id
+            workspace_id=current_user.workspace_id,
+            user_id=current_user.id
         )
         
         return jsonify({

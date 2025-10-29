@@ -65,13 +65,14 @@ class EventBroadcaster:
             return False
         
         try:
-            # Prepare event payload with CROWN⁴ sequencing tokens
+            # Prepare event payload with CROWN⁴.5 sequencing tokens
             payload = {
                 'event_id': event.id,
                 'event_type': event.event_type.value,
                 'event_name': event.event_name,
                 'sequence_num': event.sequence_num,
                 'last_applied': event.last_applied_id,  # CROWN⁴: Idempotency token
+                'vector_clock': event.vector_clock,  # CROWN⁴.5: Distributed ordering
                 'timestamp': event.created_at.isoformat() if event.created_at else None,
                 'data': event.payload or {},
                 'checksum': event.checksum
@@ -168,21 +169,39 @@ class EventBroadcaster:
         task_id: int,
         task_data: Dict[str, Any],
         meeting_id: Optional[int],
-        workspace_id: int
+        workspace_id: int,
+        user_id: Optional[int] = None,
+        previous_clock: Optional[Dict[str, int]] = None
     ) -> Optional[EventLedger]:
         """
-        Broadcast task_update event when task status changes.
+        Broadcast task_update event when task status changes (CROWN⁴.5).
         
         Args:
             task_id: Task ID
             task_data: Task information
             meeting_id: Associated meeting ID (None if no meeting)
             workspace_id: Workspace ID
+            user_id: Client user ID for vector clock generation (enables distributed ordering)
+            previous_clock: Previous vector clock from client (enables causality tracking)
             
         Returns:
             Created EventLedger instance or None
         """
         try:
+            # If no previous_clock provided, retrieve from last event by this user in this workspace (CROWN⁴.5)
+            if user_id and not previous_clock:
+                from sqlalchemy import select, desc
+                from models import db
+                last_event = db.session.scalar(
+                    select(EventLedger)
+                    .where(EventLedger.payload['user_id'].astext == str(user_id))
+                    .where(EventLedger.payload['workspace_id'].astext == str(workspace_id))
+                    .where(EventLedger.vector_clock.isnot(None))
+                    .order_by(desc(EventLedger.created_at))
+                    .limit(1)
+                )
+                previous_clock = last_event.vector_clock if last_event else None
+            
             event = event_sequencer.create_event(
                 event_type=EventType.TASK_UPDATE,
                 event_name="Task Updated",
@@ -190,9 +209,12 @@ class EventBroadcaster:
                     'task_id': task_id,
                     'task': task_data,
                     'meeting_id': meeting_id,
-                    'workspace_id': workspace_id
+                    'workspace_id': workspace_id,
+                    'user_id': user_id
                 },
-                trace_id=f"task_{task_id}"
+                trace_id=f"task_{task_id}",
+                client_id=f"user_{user_id}" if user_id else f"server_{workspace_id}",  # CROWN⁴.5: Real client ID
+                previous_clock=previous_clock
             )
             
             # Broadcast to both dashboard and tasks namespaces
