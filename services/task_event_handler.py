@@ -363,19 +363,36 @@ class TaskEventHandler:
                     'existing_task': duplicate.to_dict()
                 }
             
+            # Parse due_date if provided
+            due_date_str = payload.get('due_date')
+            due_date = None
+            if due_date_str:
+                try:
+                    # Try parsing ISO format date (YYYY-MM-DD)
+                    due_date = datetime.fromisoformat(due_date_str).date()
+                except (ValueError, AttributeError):
+                    logger.warning(f"Invalid due_date format: {due_date_str}")
+            
             # Create task
             task = Task(
                 title=title,
                 description=description,
                 created_by_id=user_id,
                 session_id=session_id,
-                status=TASK_STATUS_TODO,
+                status=payload.get('status', TASK_STATUS_TODO),
                 priority=payload.get('priority', TASK_PRIORITY_MEDIUM),
-                due_date=datetime.fromisoformat(payload['due_date']) if payload.get('due_date') else None,
+                due_date=due_date,
                 origin_hash=origin_hash,
                 source='manual',
                 created_at=datetime.utcnow()
             )
+            
+            # Set assignee if provided (can be string name for now, will be converted to user_id later)
+            assignee = payload.get('assignee')
+            if assignee:
+                # Store assignee as string in extraction_context for now
+                # In production, this would be resolved to a user_id
+                task.extraction_context = {'assignee_name': assignee}
             
             db.session.add(task)
             db.session.flush()
