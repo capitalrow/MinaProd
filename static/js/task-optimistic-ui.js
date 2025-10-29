@@ -401,30 +401,77 @@ class OptimisticUI {
                 throw new Error('WebSocket not connected');
             }
 
-            // Map operation types to WebSocket event names
+            // Get user and session context
+            const userId = window.CURRENT_USER_ID || null;
+            const sessionId = window.CURRENT_SESSION_ID || null;
+            const workspaceId = window.WORKSPACE_ID || null;
+
+            if (!userId) {
+                console.error('❌ User ID not found in page context');
+                throw new Error('User not authenticated');
+            }
+
+            // Map operation types to WebSocket event names (server expects simple event names)
             let eventName, payload;
 
             if (type === 'create') {
-                eventName = 'task_create:manual';
+                // Server listens for 'task_create' (not 'task_create:manual')
+                eventName = 'task_create';
                 payload = {
-                    ...data,
-                    temp_id: taskId,  // Send temp ID for reconciliation
-                    operation_id: opId
+                    payload: {
+                        ...data,
+                        temp_id: taskId,
+                        operation_id: opId,
+                        user_id: userId,
+                        session_id: sessionId,
+                        workspace_id: workspaceId
+                    }
                 };
             } else if (type === 'update') {
+                // Server expects 'update_type' field for routing
+                // Map to exact server event names (from routes/tasks_websocket.py:6-18)
                 eventName = 'task_update';
+                let updateType = 'title'; // default
+                
+                if (data.status !== undefined) {
+                    updateType = 'status_toggle';
+                } else if (data.priority !== undefined) {
+                    updateType = 'priority';
+                } else if (data.due_date !== undefined || data.due !== undefined) {
+                    updateType = 'due';
+                } else if (data.assignee !== undefined || data.assigned_to !== undefined) {
+                    updateType = 'assign';
+                } else if (data.labels !== undefined) {
+                    updateType = 'labels';
+                } else if (data.title !== undefined) {
+                    updateType = 'title';
+                }
+                
                 payload = {
-                    task_id: taskId,
-                    updates: data,
-                    operation_id: opId
+                    payload: {
+                        task_id: taskId,
+                        ...data,
+                        operation_id: opId,
+                        user_id: userId,
+                        session_id: sessionId,
+                        workspace_id: workspaceId
+                    },
+                    update_type: updateType
                 };
             } else if (type === 'delete') {
                 eventName = 'task_delete';
                 payload = {
-                    task_id: taskId,
-                    operation_id: opId
+                    payload: {
+                        task_id: taskId,
+                        operation_id: opId,
+                        user_id: userId,
+                        session_id: sessionId,
+                        workspace_id: workspaceId
+                    }
                 };
             }
+
+            console.log(`📤 Sending ${eventName} event:`, payload);
 
             // Emit via WebSocket and wait for response
             const result = await window.wsManager.emit(eventName, payload, '/tasks');
@@ -441,8 +488,26 @@ class OptimisticUI {
             }
 
         } catch (error) {
-            console.error(`❌ Server sync failed for ${type}:`, error);
-            await this._reconcileFailure(opId, type, taskId);
+            const syncTime = performance.now() - startTime;
+            console.error(`❌ Server sync failed for ${type} after ${syncTime.toFixed(2)}ms:`, {
+                error: error.message,
+                opId,
+                taskId,
+                type,
+                stack: error.stack
+            });
+            
+            // Emit telemetry for failures
+            if (window.CROWNTelemetry) {
+                window.CROWNTelemetry.recordMetric('optimistic_failure_ms', syncTime);
+                window.CROWNTelemetry.recordEvent('task_sync_failure', {
+                    type,
+                    error: error.message,
+                    duration_ms: syncTime
+                });
+            }
+            
+            await this._reconcileFailure(opId, type, taskId, error);
         }
     }
 
@@ -496,14 +561,20 @@ class OptimisticUI {
      * @param {string} opId
      * @param {string} type
      * @param {number|string} taskId
+     * @param {Error} error
      */
-    async _reconcileFailure(opId, type, taskId) {
+    async _reconcileFailure(opId, type, taskId, error) {
         const operation = this.pendingOperations.get(opId);
-        if (!operation) return;
+        if (!operation) {
+            console.warn(`⚠️ No pending operation found for ${opId}`);
+            return;
+        }
+
+        console.log(`🔄 Rolling back ${type} operation:`, { opId, taskId });
 
         if (type === 'create') {
             // Rollback create
-            this._rollbackCreate(operation.tempId);
+            await this._rollbackCreate(operation.tempId);
         } else if (type === 'update') {
             // Rollback to previous state
             await this.cache.saveTask(operation.previous);
@@ -516,8 +587,11 @@ class OptimisticUI {
 
         this.pendingOperations.delete(opId);
 
-        // Show error notification
-        this._showErrorNotification(`Failed to ${type} task. Changes rolled back.`);
+        // Show detailed error notification
+        const errorMsg = error.message || 'Unknown error';
+        this._showErrorNotification(`Failed to ${type} task. Changes rolled back.`, errorMsg);
+        
+        console.log(`✅ Rollback complete for operation ${opId}`);
     }
 
     /**
@@ -532,8 +606,11 @@ class OptimisticUI {
     /**
      * Show error notification
      * @param {string} message
+     * @param {string} detail - Optional detailed error message
      */
-    _showErrorNotification(message) {
+    _showErrorNotification(message, detail = null) {
+        console.error(`🚨 Error notification: ${message}`, detail ? `(${detail})` : '');
+        
         if (window.showToast) {
             window.showToast(message, 'error');
         } else {
