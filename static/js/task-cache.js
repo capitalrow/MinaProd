@@ -216,6 +216,21 @@ class TaskCache {
     }
 
     /**
+     * Sanitize task for server sync by removing cache-internal fields (CROWN⁴.5)
+     * @param {Object} task - Task object
+     * @returns {Object} - Sanitized copy without internal fields
+     */
+    static sanitizeForSync(task) {
+        // Handle falsy inputs (e.g., task_delete has no data payload)
+        if (!task) {
+            return task;
+        }
+        
+        const { _checksum, _cached_at, _reconciled_at, _reconciliation_strategy, ...sanitized } = task;
+        return sanitized;
+    }
+
+    /**
      * Get all tasks from cache (cache-first)
      * @returns {Promise<Array>}
      */
@@ -322,19 +337,55 @@ class TaskCache {
      */
     async saveTask(task) {
         await this.init();
+        
+        // Ensure timestamps
+        const now = new Date().toISOString();
+        if (!task.created_at) task.created_at = now;
+        task.updated_at = now;
+        
+        // Generate checksum for cache validation (CROWN⁴.5)
+        let checksum = null;
+        if (window.cacheValidator) {
+            try {
+                checksum = await window.cacheValidator.generateChecksum(task);
+                task._checksum = checksum;
+                task._cached_at = now;
+            } catch (error) {
+                console.warn('Failed to generate task checksum:', error);
+            }
+        }
+        
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['tasks'], 'readwrite');
-            const store = transaction.objectStore('tasks');
+            const transaction = this.db.transaction(['tasks', 'metadata'], 'readwrite');
+            const taskStore = transaction.objectStore('tasks');
+            const metaStore = transaction.objectStore('metadata');
             
-            // Ensure timestamps
-            const now = new Date().toISOString();
-            if (!task.created_at) task.created_at = now;
-            task.updated_at = now;
+            const request = taskStore.put(task);
+            
+            // Store checksum in metadata ONLY after task write succeeds (CROWN⁴.5)
+            request.onsuccess = () => {
+                if (checksum) {
+                    metaStore.put({
+                        key: `task_checksum_${task.id}`,
+                        checksum: checksum,
+                        algorithm: 'SHA-256',
+                        task_id: task.id,
+                        updated_at: now
+                    });
+                }
+            };
+            
+            request.onerror = () => {
+                console.error(`❌ Failed to save task ${task.id}, checksum not persisted`);
+            };
 
-            const request = store.put(task);
-
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
+            transaction.oncomplete = () => {
+                if (checksum) {
+                    console.log(`✅ Task ${task.id} saved with checksum: ${checksum.substring(0, 8)}...`);
+                }
+                resolve();
+            };
+            transaction.onerror = () => reject(transaction.error);
         });
     }
 
