@@ -269,13 +269,34 @@ class TaskBootstrap {
                             ${task.labels && task.labels.length > 0 ? `
                                 <div class="task-labels">
                                     ${task.labels.slice(0, 3).map(label => `
-                                        <span class="label-badge">${this.escapeHtml(label)}</span>
+                                        <span class="label-badge" data-label="${this.escapeHtml(label)}">
+                                            ${this.escapeHtml(label)}
+                                            <button class="label-remove-btn" data-task-id="${task.id}" data-label="${this.escapeHtml(label)}" title="Remove label">
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                                </svg>
+                                            </button>
+                                        </span>
                                     `).join('')}
                                     ${task.labels.length > 3 ? `
-                                        <span class="label-badge">+${task.labels.length - 3}</span>
+                                        <span class="label-badge label-count" title="${task.labels.slice(3).join(', ')}">+${task.labels.length - 3}</span>
                                     ` : ''}
+                                    <button class="label-add-btn" data-task-id="${task.id}" title="Add label">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M12 5v14m-7-7h14"/>
+                                        </svg>
+                                    </button>
                                 </div>
-                            ` : ''}
+                            ` : `
+                                <div class="task-labels">
+                                    <button class="label-add-btn label-add-btn-empty" data-task-id="${task.id}" title="Add label">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                        </svg>
+                                        Add label
+                                    </button>
+                                </div>
+                            `}
                         </div>
                     </div>
                 </div>
