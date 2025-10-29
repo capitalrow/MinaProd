@@ -290,6 +290,7 @@ class TaskBootstrap {
     updateCounters(tasks) {
         const counters = {
             all: tasks.length,
+            pending: tasks.filter(t => t.status === 'todo' || t.status === 'in_progress').length,
             todo: tasks.filter(t => t.status === 'todo').length,
             in_progress: tasks.filter(t => t.status === 'in_progress').length,
             completed: tasks.filter(t => t.status === 'completed').length,
