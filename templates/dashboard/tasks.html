@@ -250,6 +250,111 @@
     transform: scale(0.95);
 }
 
+/* Label Management */
+.task-labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.label-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    animation: labelSlideIn 0.3s ease-out;
+}
+
+.label-badge.label-count {
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    cursor: help;
+}
+
+.label-remove-btn {
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 50%;
+    transition: all var(--transition-base);
+    opacity: 0.6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.label-remove-btn:hover {
+    opacity: 1;
+    background: rgba(239, 68, 68, 0.2);
+    color: rgb(239, 68, 68);
+    transform: scale(1.2);
+}
+
+.label-remove-btn:active {
+    transform: scale(0.9);
+}
+
+.label-add-btn {
+    background: transparent;
+    border: 1px dashed var(--color-border);
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    transition: all var(--transition-base);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.label-add-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: rgba(99, 102, 241, 0.05);
+    transform: translateY(-1px);
+}
+
+.label-add-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.label-add-btn-empty {
+    padding: var(--space-2) var(--space-4);
+    border-style: solid;
+}
+
+@keyframes labelSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes labelSlideOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+}
+
 /* Task Creation Modal - Crown+ Glassmorphism */
 .task-modal-overlay {
     position: fixed;
@@ -1282,6 +1387,48 @@
                         alert('Failed to delete task. Please try again.');
                     }
                 }
+                return;
+            }
+            
+            // Wire up label remove buttons (using event delegation)
+            const labelRemoveBtn = e.target.closest('.label-remove-btn');
+            if (labelRemoveBtn) {
+                e.stopPropagation();
+                const taskId = labelRemoveBtn.dataset.taskId;
+                const label = labelRemoveBtn.dataset.label;
+                
+                console.log(`🏷️ Removing label "${label}" from task ${taskId}`);
+                
+                try {
+                    await window.optimisticUI.removeLabel(taskId, label);
+                    console.log('✅ Label removed');
+                } catch (error) {
+                    console.error('❌ Failed to remove label:', error);
+                    alert('Failed to remove label. Please try again.');
+                }
+                return;
+            }
+            
+            // Wire up label add buttons (using event delegation)
+            const labelAddBtn = e.target.closest('.label-add-btn');
+            if (labelAddBtn) {
+                e.stopPropagation();
+                const taskId = labelAddBtn.dataset.taskId;
+                
+                const label = prompt('Enter label name:');
+                if (label && label.trim()) {
+                    const trimmedLabel = label.trim();
+                    console.log(`🏷️ Adding label "${trimmedLabel}" to task ${taskId}`);
+                    
+                    try {
+                        await window.optimisticUI.addLabel(taskId, trimmedLabel);
+                        console.log('✅ Label added');
+                    } catch (error) {
+                        console.error('❌ Failed to add label:', error);
+                        alert('Failed to add label. Please try again.');
+                    }
+                }
+                return;
             }
         });
     }

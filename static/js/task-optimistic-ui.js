@@ -310,6 +310,22 @@ class OptimisticUI {
     }
 
     /**
+     * Remove label from task optimistically
+     * @param {number|string} taskId
+     * @param {string} label
+     * @returns {Promise<Object>}
+     */
+    async removeLabel(taskId, label) {
+        const task = await this.cache.getTask(taskId);
+        if (!task) return;
+
+        const labels = task.labels || [];
+        const updatedLabels = labels.filter(l => l !== label);
+
+        return this.updateTask(taskId, { labels: updatedLabels });
+    }
+
+    /**
      * Generate unique operation ID
      * @returns {string}
      */

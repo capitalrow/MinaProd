@@ -229,6 +229,7 @@ def update_task(task_id):
         
         data = request.get_json()
         old_status = task.status
+        old_labels = task.labels
         
         # Update fields
         if 'title' in data:
@@ -274,15 +275,42 @@ def update_task(task_id):
                     return jsonify({'success': False, 'message': 'Invalid assignee'}), 400
             task.assigned_to_id = assigned_to_id
         
+        if 'labels' in data:
+            labels = data['labels']
+            if isinstance(labels, list):
+                task.labels = labels
+            else:
+                task.labels = []
+        
         task.updated_at = datetime.now()
         db.session.commit()
         
-        # Broadcast task_update event
+        # Broadcast task_update event with specific event type
         meeting = task.meeting
-        action = 'completed' if task.status == 'completed' and old_status != 'completed' else 'updated'
+        
+        # Determine event type based on what changed
+        if task.status == 'completed' and old_status != 'completed':
+            action = 'completed'
+            event_type = 'task_update:completed'
+        elif 'labels' in data and task.labels != old_labels:
+            action = 'updated'
+            event_type = 'task_update:labels'
+        else:
+            action = 'updated'
+            event_type = 'task_update'
+        
         task_dict = task.to_dict()
         task_dict['action'] = action
+        task_dict['event_type'] = event_type
         task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
+        
+        # Add label diff metadata for labels events
+        if event_type == 'task_update:labels':
+            task_dict['label_diff'] = {
+                'old': old_labels or [],
+                'new': task.labels or []
+            }
+        
         event_broadcaster.broadcast_task_update(
             task_id=task.id,
             task_data=task_dict,
