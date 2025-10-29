@@ -508,6 +508,42 @@ def merge_tasks(task_id):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
+@api_tasks_bp.route('/<int:task_id>/track-transcript-jump', methods=['POST'])
+@login_required
+def track_transcript_jump(task_id):
+    """Track when user jumps to transcript from task."""
+    try:
+        task = db.session.query(Task).join(Meeting).filter(
+            Task.id == task_id,
+            Meeting.workspace_id == current_user.workspace_id
+        ).first()
+        
+        if not task:
+            return jsonify({'success': False, 'message': 'Task not found'}), 404
+        
+        # Broadcast task_link:jump_to_span event
+        meeting = task.meeting
+        task_dict = task.to_dict()
+        task_dict['action'] = 'transcript_jump'
+        task_dict['event_type'] = 'task_link:jump_to_span'
+        task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
+        
+        event_broadcaster.broadcast_task_update(
+            task_id=task.id,
+            task_data=task_dict,
+            meeting_id=meeting.id if meeting else None,
+            workspace_id=current_user.workspace_id
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Transcript jump tracked'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @api_tasks_bp.route('/<int:task_id>/status', methods=['PUT'])
 @login_required
 def update_task_status(task_id):

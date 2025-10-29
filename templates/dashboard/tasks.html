@@ -187,6 +187,33 @@
     color: var(--color-text-tertiary);
 }
 
+.transcript-link-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.1));
+    border: 1px solid rgba(34, 197, 94, 0.4);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: rgb(34, 197, 94);
+    text-decoration: none;
+    transition: all var(--transition-base);
+    cursor: pointer;
+}
+
+.transcript-link-badge:hover {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.2));
+    border-color: rgb(34, 197, 94);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+.transcript-link-badge:active {
+    transform: translateY(0);
+}
+
 .empty-state {
     background: var(--glass-bg);
     backdrop-filter: var(--backdrop-blur);
@@ -741,6 +768,17 @@
                                 </svg>
                                 {{ task.assignee }}
                             </span>
+                            {% endif %}
+                            {% if task.transcript_span %}
+                            <a href="/transcript?meeting_id={{ task.meeting_id }}&start_ms={{ task.transcript_span.start_ms }}&end_ms={{ task.transcript_span.end_ms }}" 
+                               class="transcript-link-badge" 
+                               data-task-id="{{ task.id }}"
+                               title="Jump to transcript">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                                </svg>
+                                Jump to transcript
+                            </a>
                             {% endif %}
                         </div>
                     </div>
@@ -1624,6 +1662,27 @@
                         alert('Failed to add label. Please try again.');
                     }
                 }
+                return;
+            }
+            
+            // Wire up transcript link tracking (using event delegation)
+            const transcriptLink = e.target.closest('.transcript-link-badge');
+            if (transcriptLink) {
+                const taskId = transcriptLink.dataset.taskId;
+                
+                // Track the jump-to-transcript event
+                console.log(`🔗 Jumping to transcript from task ${taskId}`);
+                
+                // Send event to server for tracking (non-blocking)
+                fetch(`/api/tasks/${taskId}/track-transcript-jump`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin'
+                }).catch(error => {
+                    console.warn('Failed to track transcript jump:', error);
+                });
+                
+                // Let the link navigate naturally (don't preventDefault)
                 return;
             }
             
