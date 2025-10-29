@@ -340,6 +340,48 @@ class CROWNTelemetry {
             request.onerror = () => reject(request.error);
         });
     }
+    
+    /**
+     * Record a generic metric (key-value pair)
+     * @param {string} metricName - Name of the metric
+     * @param {number} value - Metric value
+     */
+    recordMetric(metricName, value) {
+        // Store in session metrics
+        if (!this.sessionMetrics.customMetrics) {
+            this.sessionMetrics.customMetrics = {};
+        }
+        this.sessionMetrics.customMetrics[metricName] = value;
+        
+        // Optionally persist to IndexedDB
+        this.saveMetric({
+            type: 'custom',
+            name: metricName,
+            value: value,
+            timestamp: Date.now()
+        }).catch(err => console.warn('Failed to save custom metric:', err));
+    }
+    
+    /**
+     * Record a generic event
+     * @param {string} eventName - Name of the event
+     * @param {Object} data - Event data
+     */
+    recordEvent(eventName, data) {
+        const event = {
+            eventId: `${eventName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            type: eventName,
+            data: data,
+            timestamp: Date.now()
+        };
+        
+        // Persist to IndexedDB events store
+        if (this.db) {
+            const transaction = this.db.transaction(['events'], 'readwrite');
+            const store = transaction.objectStore('events');
+            store.add(event).catch(err => console.warn('Failed to save event:', err));
+        }
+    }
 }
 
 // Make globally available
