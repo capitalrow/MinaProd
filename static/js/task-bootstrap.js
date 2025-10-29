@@ -63,6 +63,7 @@ class TaskBootstrap {
             };
         } catch (error) {
             console.error('❌ Bootstrap failed:', error);
+            console.error('❌ Error details:', error.message, error.stack);
             
             // Fallback: Load from server directly
             return this.fallbackToServer();
@@ -173,13 +174,20 @@ class TaskBootstrap {
         }
 
         // Show empty state or task list
-        if (tasks.length === 0) {
-            if (emptyState) {
-                emptyState.style.display = 'block';
-                emptyState.classList.add('fade-in');
-            }
-            if (container) {
-                container.innerHTML = '';
+        if (!tasks || tasks.length === 0) {
+            // SAFETY: Only clear if we have NO server-rendered content
+            const hasServerContent = container.querySelectorAll('.task-card').length > 0;
+            
+            if (!hasServerContent) {
+                if (emptyState) {
+                    emptyState.style.display = 'block';
+                    emptyState.classList.add('fade-in');
+                }
+                if (container) {
+                    container.innerHTML = '';
+                }
+            } else {
+                console.warn('⚠️ Keeping server-rendered content (fallback protection)');
             }
             return;
         }
@@ -189,9 +197,15 @@ class TaskBootstrap {
             emptyState.style.display = 'none';
         }
 
-        // Render tasks
-        const tasksHTML = tasks.map((task, index) => this.renderTaskCard(task, index)).join('');
-        container.innerHTML = tasksHTML;
+        // Render tasks with error protection
+        try {
+            const tasksHTML = tasks.map((task, index) => this.renderTaskCard(task, index)).join('');
+            container.innerHTML = tasksHTML;
+        } catch (renderError) {
+            console.error('❌ renderTaskCard failed:', renderError);
+            // Keep existing content on render error
+            throw renderError;
+        }
 
         // Add stagger animation
         const cards = container.querySelectorAll('.task-card');
