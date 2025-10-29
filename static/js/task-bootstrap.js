@@ -20,29 +20,6 @@ class TaskBootstrap {
     }
 
     /**
-     * Hydrate IndexedDB cache from server-rendered tasks
-     * CRITICAL: This prevents bootstrap from clearing SSR tasks on first load
-     * @returns {Promise<Array>} Hydrated tasks
-     */
-    async hydrateFromServerRender() {
-        if (!window.__INITIAL_TASKS__ || !Array.isArray(window.__INITIAL_TASKS__)) {
-            console.log('📭 No server-rendered tasks to hydrate');
-            return [];
-        }
-
-        const tasks = window.__INITIAL_TASKS__;
-        console.log(`💧 Hydrating cache with ${tasks.length} server-rendered tasks`);
-
-        // Write each task to IndexedDB
-        for (const task of tasks) {
-            await this.cache.upsertTask(task);
-        }
-
-        console.log(`✅ Cache hydrated with ${tasks.length} tasks`);
-        return tasks;
-    }
-
-    /**
      * Bootstrap tasks page with cache-first loading
      * Target: <200ms first paint
      * @returns {Promise<Object>} Bootstrap results
@@ -53,14 +30,7 @@ class TaskBootstrap {
 
         try {
             // Step 1: Load from cache immediately (target: <50ms)
-            let cachedTasks = await this.loadFromCache();
-            
-            // CRITICAL: On first load, hydrate from server-rendered tasks
-            if (cachedTasks.length === 0 && !this.initialized) {
-                console.log('🔄 First load detected, hydrating from SSR...');
-                cachedTasks = await this.hydrateFromServerRender();
-            }
-            
+            const cachedTasks = await this.loadFromCache();
             this.perf.cache_load_end = performance.now();
             
             const cacheLoadTime = this.perf.cache_load_end - this.perf.cache_load_start;
