@@ -1061,6 +1061,7 @@
 </script>
 
 <!-- CROWN⁴.5 Frontend Modules -->
+<script src="{{ url_for('static', filename='js/crown-telemetry.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-cache.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-bootstrap.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-optimistic-ui.js') }}" nonce="{{ g.csp_nonce }}"></script>
@@ -1079,6 +1080,10 @@
     'use strict';
     
     console.log('🚀 Initializing CROWN⁴.5 Tasks Page...');
+    
+    // Initialize telemetry system first
+    window.CROWNTelemetry = new CROWNTelemetry(WORKSPACE_ID);
+    await window.CROWNTelemetry.init();
     
     // Wait for all modules to load
     const waitForModules = () => {
