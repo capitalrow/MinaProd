@@ -647,8 +647,12 @@
 (function() {
     'use strict';
     
-    // Get workspace ID from user context
-    const WORKSPACE_ID = {{ current_user.workspace_id }};
+    // Get user context for WebSocket authentication
+    window.CURRENT_USER_ID = {{ current_user.id if current_user.is_authenticated else 'null' }};
+    window.WORKSPACE_ID = {{ current_user.workspace_id if current_user.workspace_id else 'null' }};
+    window.CURRENT_SESSION_ID = null; // Will be set dynamically when session is active
+    
+    const WORKSPACE_ID = window.WORKSPACE_ID;
     
     // Cache DOM elements
     const filterCounts = {
