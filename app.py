@@ -817,6 +817,43 @@ def create_app() -> Flask:
         except Exception:
             pass
 
+    # ---------- Enterprise-grade URL Redirects ----------
+    # CANONICAL URLS: All primary routes use /dashboard/* namespace
+    # SHORTCUTS: Common paths redirect to canonical URLs for user convenience
+    # LOGGING: Track redirect usage to understand user behavior
+    
+    from flask import redirect, url_for
+    
+    @app.route("/tasks")
+    def redirect_tasks():
+        """Redirect /tasks → /dashboard/tasks (301 Permanent)"""
+        app.logger.info("URL redirect: /tasks → /dashboard/tasks", extra={
+            "redirect_type": "shortcut_to_canonical",
+            "from_path": "/tasks",
+            "to_path": "/dashboard/tasks"
+        })
+        return redirect(url_for('dashboard.tasks'), code=301)
+    
+    @app.route("/meetings")
+    def redirect_meetings():
+        """Redirect /meetings → /dashboard/meetings (301 Permanent)"""
+        app.logger.info("URL redirect: /meetings → /dashboard/meetings", extra={
+            "redirect_type": "shortcut_to_canonical",
+            "from_path": "/meetings",
+            "to_path": "/dashboard/meetings"
+        })
+        return redirect(url_for('dashboard.meetings'), code=301)
+    
+    @app.route("/analytics")
+    def redirect_analytics():
+        """Redirect /analytics → /dashboard/analytics (301 Permanent)"""
+        app.logger.info("URL redirect: /analytics → /dashboard/analytics", extra={
+            "redirect_type": "shortcut_to_canonical",
+            "from_path": "/analytics",
+            "to_path": "/dashboard/analytics"
+        })
+        return redirect(url_for('dashboard.analytics'), code=301)
+    
     # basic /healthz if health blueprint absent
     @app.get("/healthz")
     def healthz():
