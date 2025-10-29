@@ -214,6 +214,102 @@
     transform: translateY(0);
 }
 
+.bulk-action-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4) var(--space-6);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: var(--radius-lg);
+    animation: slideDown 0.3s ease-out;
+    margin-bottom: var(--space-4);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.bulk-action-info {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+#bulk-selected-count {
+    font-weight: var(--font-weight-bold);
+    color: rgb(99, 102, 241);
+}
+
+.bulk-action-buttons {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.bulk-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.bulk-action-btn:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+    border-color: rgb(99, 102, 241);
+    transform: translateY(-1px);
+}
+
+.bulk-action-btn-cancel {
+    background: var(--color-surface);
+    color: var(--color-text-tertiary);
+}
+
+.bulk-action-btn-cancel:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: rgb(239, 68, 68);
+    border-color: rgb(239, 68, 68);
+}
+
+.bulk-select-checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--color-border);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    flex-shrink: 0;
+}
+
+.bulk-select-checkbox:checked {
+    background: rgb(99, 102, 241);
+    border-color: rgb(99, 102, 241);
+}
+
+.bulk-select-checkbox:hover {
+    border-color: rgb(99, 102, 241);
+}
+
+.task-card.bulk-selected {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(168, 85, 247, 0.05));
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
 .empty-state {
     background: var(--glass-bg);
     backdrop-filter: var(--backdrop-blur);
@@ -724,6 +820,36 @@
         </button>
     </div>
 
+    <!-- Bulk Action Toolbar (appears when tasks selected) -->
+    <div id="bulk-action-toolbar" class="bulk-action-toolbar" style="display: none;">
+        <div class="bulk-action-info">
+            <span id="bulk-selected-count">0</span> tasks selected
+        </div>
+        <div class="bulk-action-buttons">
+            <button class="bulk-action-btn" id="bulk-complete-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Complete
+            </button>
+            <button class="bulk-action-btn" id="bulk-delete-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                Delete
+            </button>
+            <button class="bulk-action-btn" id="bulk-label-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                </svg>
+                Add Label
+            </button>
+            <button class="bulk-action-btn bulk-action-btn-cancel" id="bulk-cancel-btn">
+                Cancel
+            </button>
+        </div>
+    </div>
+
     <!-- Task List Container (CROWN⁴.5 Required Structure) -->
     <div id="tasks-list-container" style="display: flex; flex-direction: column; gap: var(--space-4);">
         {% if tasks and tasks|length > 0 %}
@@ -733,6 +859,7 @@
                  data-status="{% if task.completed %}completed{% else %}pending{% endif %}"
                  data-priority="{{ task.priority|default('medium')|lower }}">
                 <div class="flex items-start gap-4">
+                    <input type="checkbox" class="bulk-select-checkbox" data-task-id="{{ task.id }}">
                     <input type="checkbox" {% if task.completed %}checked{% endif %} class="task-checkbox">
                     <div class="flex-1">
                         <h3 class="task-title">{{ task.description }}</h3>
@@ -1897,6 +2024,272 @@
             window.showToast('Offline mode - changes will sync when online', 'warning');
         }
     });
+    
+    // Bulk Selection State
+    const bulkSelection = new Set();
+    const bulkToolbar = document.getElementById('bulk-action-toolbar');
+    const bulkSelectedCount = document.getElementById('bulk-selected-count');
+    
+    function updateBulkToolbar() {
+        const count = bulkSelection.size;
+        if (count > 0) {
+            bulkToolbar.style.display = 'flex';
+            bulkSelectedCount.textContent = count;
+        } else {
+            bulkToolbar.style.display = 'none';
+        }
+    }
+    
+    // Bulk selection checkbox handler (using event delegation)
+    document.addEventListener('change', (e) => {
+        if (e.target.classList.contains('bulk-select-checkbox')) {
+            const taskId = e.target.dataset.taskId;
+            const taskCard = e.target.closest('.task-card');
+            
+            if (e.target.checked) {
+                bulkSelection.add(taskId);
+                taskCard.classList.add('bulk-selected');
+            } else {
+                bulkSelection.delete(taskId);
+                taskCard.classList.remove('bulk-selected');
+            }
+            
+            updateBulkToolbar();
+            console.log(`📦 Bulk selection: ${bulkSelection.size} tasks selected`);
+        }
+    });
+    
+    // Bulk cancel button
+    const bulkCancelBtn = document.getElementById('bulk-cancel-btn');
+    if (bulkCancelBtn) {
+        bulkCancelBtn.addEventListener('click', () => {
+            // Uncheck all bulk selection checkboxes
+            document.querySelectorAll('.bulk-select-checkbox:checked').forEach(checkbox => {
+                checkbox.checked = false;
+                const taskCard = checkbox.closest('.task-card');
+                if (taskCard) {
+                    taskCard.classList.remove('bulk-selected');
+                }
+            });
+            bulkSelection.clear();
+            updateBulkToolbar();
+        });
+    }
+    
+    // Bulk complete button
+    const bulkCompleteBtn = document.getElementById('bulk-complete-btn');
+    if (bulkCompleteBtn) {
+        bulkCompleteBtn.addEventListener('click', async () => {
+            const taskIds = Array.from(bulkSelection);
+            if (taskIds.length === 0) return;
+            
+            console.log(`✅ Bulk completing ${taskIds.length} tasks`);
+            
+            try {
+                // Optimistic UI: mark all as completed
+                taskIds.forEach(taskId => {
+                    const taskCard = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+                    if (taskCard) {
+                        taskCard.classList.add('completed');
+                        const checkbox = taskCard.querySelector('.task-checkbox');
+                        if (checkbox) checkbox.checked = true;
+                    }
+                });
+                
+                // Send bulk update to server
+                const response = await fetch('/api/tasks/bulk/complete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ task_ids: taskIds })
+                });
+                
+                if (!response.ok) throw new Error('Bulk complete failed');
+                
+                const result = await response.json();
+                console.log('✅ Bulk complete successful:', result);
+                
+                // Clear selection
+                document.querySelectorAll('.bulk-select-checkbox:checked').forEach(checkbox => {
+                    checkbox.checked = false;
+                    const taskCard = checkbox.closest('.task-card');
+                    if (taskCard) {
+                        taskCard.classList.remove('bulk-selected');
+                    }
+                });
+                bulkSelection.clear();
+                updateBulkToolbar();
+                
+                if (window.showToast) {
+                    window.showToast(`${taskIds.length} tasks completed`, 'success');
+                }
+                
+            } catch (error) {
+                console.error('❌ Bulk complete failed:', error);
+                
+                // Rollback optimistic UI
+                taskIds.forEach(taskId => {
+                    const taskCard = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+                    if (taskCard) {
+                        taskCard.classList.remove('completed');
+                        const checkbox = taskCard.querySelector('.task-checkbox');
+                        if (checkbox) checkbox.checked = false;
+                    }
+                });
+                
+                alert('Failed to complete tasks. Please try again.');
+            }
+        });
+    }
+    
+    // Bulk delete button
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener('click', async () => {
+            const taskIds = Array.from(bulkSelection);
+            if (taskIds.length === 0) return;
+            
+            if (!confirm(`Are you sure you want to delete ${taskIds.length} tasks? This cannot be undone.`)) {
+                return;
+            }
+            
+            console.log(`🗑️ Bulk deleting ${taskIds.length} tasks`);
+            
+            // Save original cards for rollback
+            const savedCards = new Map();
+            
+            try {
+                // Optimistic UI: remove all cards
+                taskIds.forEach(taskId => {
+                    const taskCard = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+                    if (taskCard) {
+                        savedCards.set(taskId, taskCard.cloneNode(true));
+                        taskCard.style.animation = 'fadeOut 0.3s ease-out';
+                        setTimeout(() => taskCard.remove(), 300);
+                    }
+                });
+                
+                // Send bulk delete to server
+                const response = await fetch('/api/tasks/bulk/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ task_ids: taskIds })
+                });
+                
+                if (!response.ok) throw new Error('Bulk delete failed');
+                
+                const result = await response.json();
+                console.log('✅ Bulk delete successful:', result);
+                
+                // Clear selection
+                bulkSelection.clear();
+                updateBulkToolbar();
+                
+                if (window.showToast) {
+                    window.showToast(`${taskIds.length} tasks deleted`, 'success');
+                }
+                
+            } catch (error) {
+                console.error('❌ Bulk delete failed:', error);
+                
+                // Rollback: restore cards
+                const container = document.getElementById('tasks-list-container');
+                savedCards.forEach((card, taskId) => {
+                    container.appendChild(card);
+                });
+                
+                alert('Failed to delete tasks. Please try again.');
+            }
+        });
+    }
+    
+    // Bulk label button
+    const bulkLabelBtn = document.getElementById('bulk-label-btn');
+    if (bulkLabelBtn) {
+        bulkLabelBtn.addEventListener('click', async () => {
+            const taskIds = Array.from(bulkSelection);
+            if (taskIds.length === 0) return;
+            
+            const label = prompt('Enter label to add to selected tasks:');
+            if (!label || label.trim() === '') return;
+            
+            console.log(`🏷️ Bulk adding label "${label}" to ${taskIds.length} tasks`);
+            
+            try {
+                // Optimistic UI: add label to all cards
+                taskIds.forEach(taskId => {
+                    const taskCard = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+                    if (taskCard) {
+                        const labelsContainer = taskCard.querySelector('.task-labels');
+                        if (labelsContainer) {
+                            const labelBadge = document.createElement('span');
+                            labelBadge.className = 'label-badge';
+                            labelBadge.innerHTML = `
+                                ${label.trim()}
+                                <button class="label-remove-btn" data-task-id="${taskId}" data-label="${label.trim()}">×</button>
+                            `;
+                            labelsContainer.appendChild(labelBadge);
+                        }
+                    }
+                });
+                
+                // Send bulk label update to server
+                const response = await fetch('/api/tasks/bulk/label', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ 
+                        task_ids: taskIds,
+                        label: label.trim()
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Bulk label failed');
+                
+                const result = await response.json();
+                console.log('✅ Bulk label successful:', result);
+                
+                // Clear selection
+                document.querySelectorAll('.bulk-select-checkbox:checked').forEach(checkbox => {
+                    checkbox.checked = false;
+                    const taskCard = checkbox.closest('.task-card');
+                    if (taskCard) {
+                        taskCard.classList.remove('bulk-selected');
+                    }
+                });
+                bulkSelection.clear();
+                updateBulkToolbar();
+                
+                if (window.showToast) {
+                    window.showToast(`Label "${label}" added to ${taskIds.length} tasks`, 'success');
+                }
+                
+            } catch (error) {
+                console.error('❌ Bulk label failed:', error);
+                
+                // Rollback: remove added labels
+                taskIds.forEach(taskId => {
+                    const taskCard = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+                    if (taskCard) {
+                        const labelsContainer = taskCard.querySelector('.task-labels');
+                        if (labelsContainer) {
+                            const addedLabel = labelsContainer.querySelector(`.label-badge:last-child`);
+                            if (addedLabel) addedLabel.remove();
+                        }
+                    }
+                });
+                
+                alert('Failed to add labels. Please try again.');
+            }
+        });
+    }
     
     // Log system stats every 30 seconds
     setInterval(() => {
