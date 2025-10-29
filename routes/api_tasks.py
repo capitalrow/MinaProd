@@ -393,6 +393,121 @@ def delete_task(task_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
 
+
+@api_tasks_bp.route('/<int:task_id>/merge', methods=['POST'])
+@login_required
+def merge_tasks(task_id):
+    """Merge source task into target task."""
+    try:
+        # Get target task (the one being merged into)
+        target_task = db.session.query(Task).join(Meeting).filter(
+            Task.id == task_id,
+            Meeting.workspace_id == current_user.workspace_id
+        ).first()
+        
+        if not target_task:
+            return jsonify({'success': False, 'message': 'Target task not found'}), 404
+        
+        # Guard against malformed/empty JSON - silent=True returns None instead of raising BadRequest
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({'success': False, 'message': 'Request body must be a JSON object'}), 400
+        
+        source_task_id = data.get('source_task_id')
+        
+        if not source_task_id:
+            return jsonify({'success': False, 'message': 'source_task_id is required'}), 400
+        
+        # Convert source_task_id to int for comparison
+        try:
+            source_task_id = int(source_task_id)
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'message': 'Invalid source_task_id format'}), 400
+        
+        # Prevent merging a task into itself
+        if source_task_id == task_id:
+            return jsonify({'success': False, 'message': 'Cannot merge a task into itself'}), 400
+        
+        # Get source task (the one being merged from and deleted) - BEFORE any mutations
+        source_task = db.session.query(Task).join(Meeting).filter(
+            Task.id == source_task_id,
+            Meeting.workspace_id == current_user.workspace_id
+        ).first()
+        
+        if not source_task:
+            return jsonify({'success': False, 'message': 'Source task not found'}), 404
+        
+        # ALL VALIDATION PASSED - Now perform merge data operations
+        # Combine labels (unique)
+        target_labels = set(target_task.labels or [])
+        source_labels = set(source_task.labels or [])
+        merged_labels = list(target_labels | source_labels)
+        
+        # Keep higher priority
+        priority_rank = {'urgent': 4, 'high': 3, 'medium': 2, 'low': 1}
+        target_priority_rank = priority_rank.get(target_task.priority, 2)
+        source_priority_rank = priority_rank.get(source_task.priority, 2)
+        merged_priority = target_task.priority if target_priority_rank >= source_priority_rank else source_task.priority
+        
+        # Combine descriptions
+        merged_description = target_task.description or ''
+        if source_task.description and source_task.description not in merged_description:
+            if merged_description:
+                merged_description = f"{merged_description}\n\n[Merged from another task]\n{source_task.description}"
+            else:
+                merged_description = source_task.description
+        
+        # Store old values for merge_diff
+        old_labels = target_task.labels
+        old_priority = target_task.priority
+        old_description = target_task.description
+        
+        # Update target task
+        target_task.labels = merged_labels
+        target_task.priority = merged_priority
+        target_task.description = merged_description
+        target_task.updated_at = datetime.now()
+        
+        # Store source task info before deletion
+        source_task_dict = source_task.to_dict()
+        
+        # Delete source task
+        db.session.delete(source_task)
+        db.session.commit()
+        
+        # Broadcast task_merge event
+        meeting = target_task.meeting
+        task_dict = target_task.to_dict()
+        task_dict['action'] = 'updated'
+        task_dict['event_type'] = 'task_merge'
+        task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
+        task_dict['merge_diff'] = {
+            'source_task_id': source_task_id,
+            'source_task_title': source_task_dict.get('title'),
+            'old_labels': old_labels or [],
+            'new_labels': merged_labels,
+            'old_priority': old_priority,
+            'new_priority': merged_priority
+        }
+        
+        event_broadcaster.broadcast_task_update(
+            task_id=target_task.id,
+            task_data=task_dict,
+            meeting_id=meeting.id if meeting else None,
+            workspace_id=current_user.workspace_id
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Tasks merged successfully',
+            'task': target_task.to_dict()
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @api_tasks_bp.route('/<int:task_id>/status', methods=['PUT'])
 @login_required
 def update_task_status(task_id):

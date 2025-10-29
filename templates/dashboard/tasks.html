@@ -253,6 +253,12 @@
     transform: scale(0.95);
 }
 
+.task-merge-btn:hover {
+    background: rgba(168, 85, 247, 0.1);
+    color: rgb(168, 85, 247);
+    transform: scale(1.1);
+}
+
 .task-snooze-btn:hover {
     background: rgba(99, 102, 241, 0.1);
     color: rgb(99, 102, 241);
@@ -416,6 +422,50 @@
 
 .snooze-option-btn svg {
     color: var(--color-primary);
+}
+
+/* Merge Modal */
+.merge-task-list {
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.merge-task-option {
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.merge-task-option:hover {
+    background: rgba(168, 85, 247, 0.05);
+    border-color: rgb(168, 85, 247);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
+}
+
+.merge-task-option:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.merge-task-option-title {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.merge-task-option-meta {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-tertiary);
+    display: flex;
+    gap: var(--space-4);
 }
 
 /* Task Creation Modal - Crown+ Glassmorphism */
@@ -695,6 +745,11 @@
                         </div>
                     </div>
                     <div class="task-actions">
+                        <button class="task-action-btn task-merge-btn" title="Merge with another task">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                            </svg>
+                        </button>
                         <button class="task-action-btn task-snooze-btn" title="Snooze task">
                             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -853,6 +908,32 @@
                     </svg>
                     <span>1 Week</span>
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Merge Task Selector Modal -->
+<div id="merge-modal-overlay" class="task-modal-overlay" style="display: none;">
+    <div class="task-modal" style="max-width: 600px;">
+        <div class="task-modal-header">
+            <h2 class="task-modal-title">Merge Tasks</h2>
+            <button class="task-modal-close" id="merge-modal-close">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div style="padding: var(--space-6); padding-top: 0;">
+            <p class="text-secondary mb-4" id="merge-task-title">Select a task to merge with:</p>
+            
+            <div id="merge-task-list" class="merge-task-list">
+                <!-- Task options will be populated dynamically -->
+            </div>
+            
+            <div class="mt-6 text-sm text-secondary">
+                <p><strong>Note:</strong> The selected task will be merged into the current task. All labels, dates, and metadata will be combined.</p>
             </div>
         </div>
     </div>
@@ -1546,6 +1627,63 @@
                 return;
             }
             
+            // Wire up merge buttons (using event delegation)
+            const mergeBtn = e.target.closest('.task-merge-btn');
+            if (mergeBtn) {
+                e.stopPropagation();
+                const taskCard = mergeBtn.closest('.task-card');
+                const taskId = taskCard.dataset.taskId;
+                const taskTitle = taskCard.querySelector('.task-title').textContent;
+                
+                // Store task ID for merge modal
+                window._mergeTargetTaskId = taskId;
+                
+                // Update modal title
+                const mergeTitle = document.getElementById('merge-task-title');
+                if (mergeTitle) {
+                    mergeTitle.textContent = `Select a task to merge into "${taskTitle}":`;
+                }
+                
+                // Populate merge task list with all other tasks
+                const mergeTaskList = document.getElementById('merge-task-list');
+                if (mergeTaskList) {
+                    mergeTaskList.innerHTML = '';
+                    
+                    // Get all task cards except the current one
+                    const allTaskCards = document.querySelectorAll('.task-card');
+                    const otherTasks = Array.from(allTaskCards).filter(card => card.dataset.taskId !== taskId);
+                    
+                    if (otherTasks.length === 0) {
+                        mergeTaskList.innerHTML = '<p class="text-secondary">No other tasks available to merge with.</p>';
+                    } else {
+                        otherTasks.forEach(card => {
+                            const otherTaskId = card.dataset.taskId;
+                            const otherTaskTitle = card.querySelector('.task-title').textContent;
+                            const otherTaskPriority = card.dataset.priority || 'medium';
+                            const otherTaskStatus = card.dataset.status || 'pending';
+                            
+                            const optionHTML = `
+                                <div class="merge-task-option" data-task-id="${otherTaskId}">
+                                    <div class="merge-task-option-title">${otherTaskTitle}</div>
+                                    <div class="merge-task-option-meta">
+                                        <span>Priority: ${otherTaskPriority}</span>
+                                        <span>Status: ${otherTaskStatus}</span>
+                                    </div>
+                                </div>
+                            `;
+                            mergeTaskList.insertAdjacentHTML('beforeend', optionHTML);
+                        });
+                    }
+                }
+                
+                // Show merge modal
+                const mergeModal = document.getElementById('merge-modal-overlay');
+                if (mergeModal) {
+                    mergeModal.style.display = 'flex';
+                }
+                return;
+            }
+            
             // Wire up snooze buttons (using event delegation)
             const snoozeBtn = e.target.closest('.task-snooze-btn');
             if (snoozeBtn) {
@@ -1637,6 +1775,52 @@
                     alert('Failed to snooze task. Please try again.');
                 }
             });
+        });
+    }
+    
+    // Merge modal handlers
+    const mergeModalOverlay = document.getElementById('merge-modal-overlay');
+    const mergeModalClose = document.getElementById('merge-modal-close');
+    
+    if (mergeModalClose) {
+        mergeModalClose.addEventListener('click', () => {
+            mergeModalOverlay.style.display = 'none';
+        });
+    }
+    
+    if (mergeModalOverlay) {
+        mergeModalOverlay.addEventListener('click', (e) => {
+            if (e.target === mergeModalOverlay) {
+                mergeModalOverlay.style.display = 'none';
+            }
+        });
+        
+        // Wire up merge task option clicks (using event delegation)
+        mergeModalOverlay.addEventListener('click', async (e) => {
+            const mergeOption = e.target.closest('.merge-task-option');
+            if (mergeOption) {
+                const sourceTaskId = mergeOption.dataset.taskId;
+                const targetTaskId = window._mergeTargetTaskId;
+                
+                if (!sourceTaskId || !targetTaskId) return;
+                
+                if (confirm('Are you sure you want to merge these tasks? This cannot be undone.')) {
+                    console.log(`🔀 Merging task ${sourceTaskId} into ${targetTaskId}`);
+                    
+                    try {
+                        await window.optimisticUI.mergeTasks(sourceTaskId, targetTaskId);
+                        console.log('✅ Tasks merged');
+                        mergeModalOverlay.style.display = 'none';
+                        
+                        if (window.showToast) {
+                            window.showToast('Tasks merged successfully', 'success');
+                        }
+                    } catch (error) {
+                        console.error('❌ Failed to merge tasks:', error);
+                        alert('Failed to merge tasks. Please try again.');
+                    }
+                }
+            }
         });
     }
     
