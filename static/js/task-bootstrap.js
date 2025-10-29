@@ -285,16 +285,21 @@ class TaskBootstrap {
 
     /**
      * Update task counters in UI
-     * @param {Array} tasks
+     * CRITICAL: This must ALWAYS calculate counts from ALL tasks, not filtered subset
+     * @param {Array} tasks - Currently displayed tasks (may be filtered)
      */
-    updateCounters(tasks) {
+    async updateCounters(tasks) {
+        // Fetch ALL tasks from cache to get correct totals
+        // The 'tasks' parameter might be filtered, which would give wrong counts
+        const allTasks = await this.cache.getAllTasks();
+        
         const counters = {
-            all: tasks.length,
-            pending: tasks.filter(t => t.status === 'todo' || t.status === 'in_progress').length,
-            todo: tasks.filter(t => t.status === 'todo').length,
-            in_progress: tasks.filter(t => t.status === 'in_progress').length,
-            completed: tasks.filter(t => t.status === 'completed').length,
-            overdue: tasks.filter(t => this.isDueDateOverdue(t.due_date) && t.status !== 'completed').length
+            all: allTasks.length,
+            pending: allTasks.filter(t => t.status === 'todo' || t.status === 'in_progress').length,
+            todo: allTasks.filter(t => t.status === 'todo').length,
+            in_progress: allTasks.filter(t => t.status === 'in_progress').length,
+            completed: allTasks.filter(t => t.status === 'completed').length,
+            overdue: allTasks.filter(t => this.isDueDateOverdue(t.due_date) && t.status !== 'completed').length
         };
 
         // Update counter badges
@@ -302,6 +307,11 @@ class TaskBootstrap {
             const badge = document.querySelector(`[data-counter="${key}"]`);
             if (badge) {
                 badge.textContent = count;
+                
+                // Add pulse animation on counter change
+                badge.classList.remove('counter-pulse');
+                void badge.offsetWidth; // Trigger reflow
+                badge.classList.add('counter-pulse');
             }
         });
     }
