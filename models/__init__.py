@@ -22,6 +22,9 @@ from .workspace import Workspace
 from .meeting import Meeting
 from .participant import Participant
 from .task import Task
+from .task_view_state import TaskViewState
+from .task_counters import TaskCounters
+from .offline_queue import OfflineQueue
 from .calendar_event import CalendarEvent
 from .analytics import Analytics
 from .marker import Marker
@@ -29,6 +32,7 @@ from .comment import Comment
 from .copilot_template import CopilotTemplate
 from .copilot_conversation import CopilotConversation
 from .event_ledger import EventLedger, EventType, EventStatus
+from .compaction_summary import CompactionSummary
 
 # Import Summary last to avoid circular imports
 try:
@@ -43,6 +47,6 @@ from .core_models import FeatureFlag, FlagAuditLog
 __all__ = [
     'db', 'Base', 'Session', 'Segment', 'Summary', 'SharedLink', 'TeamShare', 'ShareAnalytic',
     'ChunkMetric', 'SessionMetric', 'User', 'Workspace', 'Meeting', 
-    'Participant', 'Task', 'CalendarEvent', 'Analytics', 'Marker', 'Comment', 'CopilotTemplate',
-    'CopilotConversation', 'EventLedger', 'EventType', 'EventStatus', 'FeatureFlag', 'FlagAuditLog'
+    'Participant', 'Task', 'TaskViewState', 'TaskCounters', 'OfflineQueue', 'CalendarEvent', 'Analytics', 'Marker', 'Comment', 'CopilotTemplate',
+    'CopilotConversation', 'EventLedger', 'EventType', 'EventStatus', 'CompactionSummary', 'FeatureFlag', 'FlagAuditLog'
 ]

@@ -41,6 +41,7 @@ class Task(Base):
     due_date: Mapped[Optional[date]] = mapped_column(Date)
     reminder_date: Mapped[Optional[datetime]] = mapped_column(DateTime)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    snoozed_until: Mapped[Optional[datetime]] = mapped_column(DateTime)  # CROWN⁴.5: Task snooze support
     
     # Relationships
     meeting_id: Mapped[Optional[int]] = mapped_column(ForeignKey("meetings.id"), nullable=True)
@@ -60,10 +61,25 @@ class Task(Base):
     confidence_score: Mapped[Optional[float]] = mapped_column(Float)  # AI confidence (0-1)
     extraction_context: Mapped[Optional[dict]] = mapped_column(JSON)  # Context from transcript
     
+    # CROWN⁴.5: Deduplication and origin tracking
+    origin_hash: Mapped[Optional[str]] = mapped_column(String(64), index=True)  # SHA-256 hash for deduplication
+    source: Mapped[str] = mapped_column(String(32), default="manual")  # manual, ai_extraction, import, voice, email
+    
+    # CROWN⁴.5: Event sequencing and conflict resolution
+    vector_clock_token: Mapped[Optional[dict]] = mapped_column(JSON)  # Vector clock for distributed ordering
+    reconciliation_status: Mapped[str] = mapped_column(String(32), default="synced")  # synced, pending, conflict, reconciled
+    
+    # CROWN⁴.5: Transcript linking
+    transcript_span: Mapped[Optional[dict]] = mapped_column(JSON)  # {start_ms: int, end_ms: int, segment_ids: []}
+    
+    # CROWN⁴.5: Emotional architecture
+    emotional_state: Mapped[Optional[str]] = mapped_column(String(32))  # pending_suggest, accepted, editing, completed
+    
     # Task details
     estimated_hours: Mapped[Optional[float]] = mapped_column(Float)
     actual_hours: Mapped[Optional[float]] = mapped_column(Float)
-    tags: Mapped[Optional[list]] = mapped_column(JSON)  # Task tags
+    tags: Mapped[Optional[list]] = mapped_column(JSON)  # Task tags (legacy)
+    labels: Mapped[Optional[list]] = mapped_column(JSON)  # CROWN⁴.5: Task labels for organization
     
     # Dependencies and relationships
     depends_on_task_id: Mapped[Optional[int]] = mapped_column(ForeignKey("tasks.id"), nullable=True)
@@ -86,6 +102,10 @@ class Task(Base):
         # Single column indexes for filtering
         Index('ix_tasks_created_by', 'created_by_id'),
         Index('ix_tasks_depends_on', 'depends_on_task_id'),
+        # CROWN⁴.5: Index for reconciliation queries
+        Index('ix_tasks_reconciliation', 'reconciliation_status'),
+        # CROWN⁴.5: Index for source filtering
+        Index('ix_tasks_source', 'source'),
     )
 
     def __repr__(self):
@@ -187,6 +207,7 @@ class Task(Base):
             'estimated_hours': self.estimated_hours,
             'actual_hours': self.actual_hours,
             'tags': self.tags,
+            'labels': self.labels,
             'depends_on_task_id': self.depends_on_task_id,
             'is_collaborative': self.is_collaborative,
             'watchers': self.watchers,
@@ -196,7 +217,13 @@ class Task(Base):
             'is_in_progress': self.is_in_progress,
             'days_until_due': self.days_until_due,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'origin_hash': self.origin_hash,
+            'source': self.source,
+            'vector_clock_token': self.vector_clock_token,
+            'reconciliation_status': self.reconciliation_status,
+            'transcript_span': self.transcript_span,
+            'emotional_state': self.emotional_state,
         }
         
         if include_relationships:

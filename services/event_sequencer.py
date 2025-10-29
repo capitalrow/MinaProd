@@ -14,7 +14,8 @@ Key Features:
 import logging
 import hashlib
 import json
-from typing import Optional, Dict, Any, List
+import time
+from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime
 from sqlalchemy import select, func
 from models import db
@@ -25,13 +26,15 @@ logger = logging.getLogger(__name__)
 
 class EventSequencer:
     """
-    Service for managing event sequencing and validation in CROWN⁴ architecture.
+    Service for managing event sequencing and validation in CROWN⁴.5 architecture.
     
     Responsibilities:
     - Assign sequence numbers to events
     - Validate event ordering before processing
     - Generate checksums for payload integrity
     - Track broadcast status for WebSocket synchronization
+    - Generate and compare vector clocks for distributed conflict resolution
+    - Implement conflict resolution strategies
     """
     
     @staticmethod
@@ -341,6 +344,200 @@ class EventSequencer:
         except Exception as e:
             logger.error(f"Failed to verify checksum for event {event.id}: {e}")
             return False
+    
+    @staticmethod
+    def generate_vector_clock(client_id: str, previous_clock: Optional[Dict[str, int]] = None) -> Dict[str, int]:
+        """
+        Generate a vector clock for distributed event ordering (CROWN⁴.5).
+        
+        Vector clocks enable detection of concurrent events and causality tracking
+        in distributed systems with offline support. Uses logical counters, not timestamps.
+        
+        Args:
+            client_id: Unique identifier for the client (e.g., user_id, device_id)
+            previous_clock: Previous vector clock to increment from
+            
+        Returns:
+            Vector clock dictionary {client_id: counter} where counter is monotonically increasing
+        """
+        try:
+            # Start with previous clock or empty
+            clock = previous_clock.copy() if previous_clock else {}
+            
+            # Increment the counter for this client (logical counter, not timestamp)
+            previous_count = clock.get(client_id, 0)
+            clock[client_id] = previous_count + 1
+            
+            return clock
+        except Exception as e:
+            logger.error(f"Failed to generate vector clock: {e}")
+            return {client_id: 1}
+    
+    @staticmethod
+    def compare_vector_clocks(clock_a: Dict[str, int], clock_b: Dict[str, int]) -> str:
+        """
+        Compare two vector clocks to determine causal ordering using standard dominance rules.
+        
+        Clock A dominates B (A happened after B) if:
+        - All counters in A >= corresponding counters in B
+        - At least one counter in A > corresponding counter in B
+        
+        Args:
+            clock_a: First vector clock
+            clock_b: Second vector clock
+            
+        Returns:
+            "before" if clock_a happened before clock_b (B dominates A)
+            "after" if clock_a happened after clock_b (A dominates B)
+            "concurrent" if events are concurrent (conflict)
+            "equal" if clocks are identical
+        """
+        try:
+            if not clock_a and not clock_b:
+                return "equal"
+            if not clock_a:
+                return "before"
+            if not clock_b:
+                return "after"
+            
+            # Check if clocks are identical
+            if clock_a == clock_b:
+                return "equal"
+            
+            # Check for dominance: A dominates B if all A[i] >= B[i] and at least one A[i] > B[i]
+            a_dominates_b = True  # Assume A >= B initially
+            b_dominates_a = True  # Assume B >= A initially
+            
+            all_clients = set(clock_a.keys()) | set(clock_b.keys())
+            
+            for client in all_clients:
+                counter_a = clock_a.get(client, 0)
+                counter_b = clock_b.get(client, 0)
+                
+                if counter_a < counter_b:
+                    a_dominates_b = False  # A does not dominate B
+                if counter_b < counter_a:
+                    b_dominates_a = False  # B does not dominate A
+            
+            # Determine relationship
+            if a_dominates_b and not b_dominates_a:
+                return "after"  # A happened after B (A dominates B)
+            elif b_dominates_a and not a_dominates_b:
+                return "before"  # A happened before B (B dominates A)
+            else:
+                return "concurrent"  # Neither dominates = concurrent events
+                
+        except Exception as e:
+            logger.error(f"Failed to compare vector clocks: {e}")
+            return "concurrent"  # Assume conflict on error
+    
+    @staticmethod
+    def resolve_conflict(
+        event_a: EventLedger,
+        event_b: EventLedger,
+        strategy: str = "server_wins"
+    ) -> Optional[EventLedger]:
+        """
+        Resolve conflict between two concurrent events using specified strategy.
+        
+        Args:
+            event_a: First conflicting event
+            event_b: Second conflicting event
+            strategy: Conflict resolution strategy
+                - "server_wins": Server event takes precedence
+                - "client_wins": Client event takes precedence
+                - "last_write_wins": Most recent timestamp wins
+                - "merge": Attempt to merge payloads (field-level)
+                - "manual": Flag for manual review (returns None)
+                
+        Returns:
+            Winning event, or None if manual review required
+        """
+        try:
+            if strategy == "server_wins":
+                # Assume event with lower ID is server-generated
+                return event_a if event_a.id < event_b.id else event_b
+            
+            elif strategy == "client_wins":
+                # Assume event with higher ID is client-generated
+                return event_a if event_a.id > event_b.id else event_b
+            
+            elif strategy == "last_write_wins":
+                # Use created_at timestamp
+                return event_a if event_a.created_at > event_b.created_at else event_b
+            
+            elif strategy == "merge":
+                # For merge strategy, prefer newer event but flag for manual review
+                logger.warning(
+                    f"Merge strategy requested for events {event_a.id} and {event_b.id}, "
+                    "using last_write_wins temporarily"
+                )
+                return event_a if event_a.created_at > event_b.created_at else event_b
+            
+            elif strategy == "manual":
+                # Flag conflict for manual review
+                logger.warning(
+                    f"Manual conflict resolution required for events {event_a.id} and {event_b.id}"
+                )
+                # Update both events to flag for manual review
+                event_a.conflict_resolution_strategy = "manual"
+                event_b.conflict_resolution_strategy = "manual"
+                event_a.error_message = f"Manual review required: conflict with event {event_b.id}"
+                event_b.error_message = f"Manual review required: conflict with event {event_a.id}"
+                return None  # Requires manual resolution
+            
+            else:
+                logger.warning(f"Unknown conflict resolution strategy: {strategy}, using server_wins")
+                return event_a if event_a.id < event_b.id else event_b
+                
+        except Exception as e:
+            logger.error(f"Failed to resolve conflict: {e}")
+            return event_a  # Default to first event
+    
+    @staticmethod
+    def detect_conflicts(
+        events: List[EventLedger],
+        resource_id: Optional[int] = None
+    ) -> List[Tuple[EventLedger, EventLedger]]:
+        """
+        Detect concurrent events that may cause conflicts.
+        
+        Args:
+            events: List of events to check for conflicts
+            resource_id: Optional resource ID to filter events
+            
+        Returns:
+            List of conflicting event pairs
+        """
+        try:
+            conflicts = []
+            
+            # Filter events by resource if specified
+            if resource_id:
+                events = [e for e in events if e.session_id == resource_id]
+            
+            # Check each pair of events for concurrency
+            for i, event_a in enumerate(events):
+                for event_b in events[i+1:]:
+                    if not event_a.vector_clock or not event_b.vector_clock:
+                        continue
+                    
+                    relation = EventSequencer.compare_vector_clocks(
+                        event_a.vector_clock,
+                        event_b.vector_clock
+                    )
+                    
+                    if relation == "concurrent":
+                        conflicts.append((event_a, event_b))
+                        logger.warning(
+                            f"Conflict detected between events {event_a.id} and {event_b.id}"
+                        )
+            
+            return conflicts
+            
+        except Exception as e:
+            logger.error(f"Failed to detect conflicts: {e}")
+            return []
 
 
 # Singleton instance

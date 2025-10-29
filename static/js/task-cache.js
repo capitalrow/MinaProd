@@ -1,0 +1,770 @@
+/**
+ * CROWN⁴.5 Task Cache Layer - IndexedDB Implementation
+ * Provides cache-first architecture with <200ms first paint, offline queue,
+ * vector clock ordering, and deterministic event replay.
+ */
+
+class VectorClock {
+    /**
+     * Create normalized vector clock for deterministic ordering
+     * @param {Object} clocks - { nodeId: counter }
+     */
+    constructor(clocks = {}) {
+        this.clocks = clocks;
+    }
+
+    /**
+     * Increment local node counter
+     * @param {string} nodeId
+     */
+    increment(nodeId) {
+        this.clocks[nodeId] = (this.clocks[nodeId] || 0) + 1;
+        return this;
+    }
+
+    /**
+     * Merge with another vector clock (take max of each counter)
+     * @param {VectorClock} other
+     * @returns {VectorClock} New merged clock
+     */
+    merge(other) {
+        const merged = { ...this.clocks };
+        for (const [node, counter] of Object.entries(other.clocks)) {
+            merged[node] = Math.max(merged[node] || 0, counter);
+        }
+        return new VectorClock(merged);
+    }
+
+    /**
+     * Compare with another vector clock for deterministic ordering
+     * @param {VectorClock} other
+     * @returns {number} -1 if this < other, 0 if concurrent, 1 if this > other
+     */
+    compare(other) {
+        const allNodes = new Set([
+            ...Object.keys(this.clocks),
+            ...Object.keys(other.clocks)
+        ]);
+
+        let thisGreater = false;
+        let otherGreater = false;
+
+        for (const node of allNodes) {
+            const thisCount = this.clocks[node] || 0;
+            const otherCount = other.clocks[node] || 0;
+
+            if (thisCount > otherCount) thisGreater = true;
+            if (otherCount > thisCount) otherGreater = true;
+        }
+
+        if (thisGreater && !otherGreater) return 1;  // this dominates
+        if (otherGreater && !thisGreater) return -1; // other dominates
+        return 0; // concurrent
+    }
+
+    /**
+     * Check if this clock dominates (is greater than) another
+     * @param {VectorClock} other
+     * @returns {boolean}
+     */
+    dominates(other) {
+        return this.compare(other) === 1;
+    }
+
+    /**
+     * Serialize to normalized tuple for storage
+     * @returns {Array<[string, number]>}
+     */
+    toTuple() {
+        return Object.entries(this.clocks).sort((a, b) => a[0].localeCompare(b[0]));
+    }
+
+    /**
+     * Create from stored tuple
+     * @param {Array<[string, number]>} tuple
+     * @returns {VectorClock}
+     */
+    static fromTuple(tuple) {
+        const clocks = {};
+        for (const [node, counter] of tuple) {
+            clocks[node] = counter;
+        }
+        return new VectorClock(clocks);
+    }
+
+    /**
+     * Clone this vector clock
+     * @returns {VectorClock}
+     */
+    clone() {
+        return new VectorClock({ ...this.clocks });
+    }
+
+    toString() {
+        return JSON.stringify(this.toTuple());
+    }
+}
+
+class TaskCache {
+    constructor() {
+        this.db = null;
+        this.dbName = 'MinaTasksDB';
+        this.version = 2; // Incremented for schema changes
+        this.ready = false;
+        this.initPromise = null;
+        this.nodeId = this._getOrCreateNodeId();
+    }
+
+    /**
+     * Get or create unique node ID for this client
+     * @returns {string}
+     */
+    _getOrCreateNodeId() {
+        let nodeId = localStorage.getItem('mina_node_id');
+        if (!nodeId) {
+            nodeId = `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            localStorage.setItem('mina_node_id', nodeId);
+        }
+        return nodeId;
+    }
+
+    /**
+     * Initialize IndexedDB database with CROWN⁴.5 schema
+     * @returns {Promise<IDBDatabase>}
+     */
+    async init() {
+        if (this.ready) return this.db;
+        if (this.initPromise) return this.initPromise;
+
+        this.initPromise = new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, this.version);
+
+            request.onerror = () => {
+                console.error('❌ IndexedDB failed to open:', request.error);
+                reject(request.error);
+            };
+
+            request.onsuccess = () => {
+                this.db = request.result;
+                this.ready = true;
+                console.log('✅ TaskCache IndexedDB initialized');
+                resolve(this.db);
+            };
+
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                console.log('🔧 Creating IndexedDB schema for CROWN⁴.5...');
+
+                // Store 1: Tasks - Main task data with CROWN⁴.5 fields
+                if (!db.objectStoreNames.contains('tasks')) {
+                    const taskStore = db.createObjectStore('tasks', { keyPath: 'id' });
+                    taskStore.createIndex('status', 'status', { unique: false });
+                    taskStore.createIndex('priority', 'priority', { unique: false });
+                    taskStore.createIndex('created_at', 'created_at', { unique: false });
+                    taskStore.createIndex('updated_at', 'updated_at', { unique: false });
+                    taskStore.createIndex('reconciliation_status', 'reconciliation_status', { unique: false });
+                    taskStore.createIndex('snoozed_until', 'snoozed_until', { unique: false });
+                    taskStore.createIndex('due_date', 'due_date', { unique: false });
+                    console.log('  ✓ Created "tasks" store');
+                }
+
+                // Store 2: Event Ledger - Stores all events with vector clocks
+                if (!db.objectStoreNames.contains('events')) {
+                    const eventStore = db.createObjectStore('events', { keyPath: 'id', autoIncrement: true });
+                    eventStore.createIndex('event_type', 'event_type', { unique: false });
+                    eventStore.createIndex('task_id', 'task_id', { unique: false });
+                    eventStore.createIndex('timestamp', 'timestamp', { unique: false });
+                    eventStore.createIndex('vector_clock', 'vector_clock', { unique: false });
+                    eventStore.createIndex('sync_status', 'sync_status', { unique: false }); // pending, synced, failed
+                    console.log('  ✓ Created "events" store');
+                }
+
+                // Store 3: Offline Queue - Pending operations when offline
+                if (!db.objectStoreNames.contains('offline_queue')) {
+                    const queueStore = db.createObjectStore('offline_queue', { keyPath: 'id', autoIncrement: true });
+                    queueStore.createIndex('timestamp', 'timestamp', { unique: false });
+                    queueStore.createIndex('vector_clock', 'vector_clock', { unique: false });
+                    queueStore.createIndex('priority', 'priority', { unique: false });
+                    console.log('  ✓ Created "offline_queue" store');
+                }
+
+                // Store 4: Compaction/Archival - Pruned old events to prevent unbounded growth
+                if (!db.objectStoreNames.contains('compaction')) {
+                    const compactionStore = db.createObjectStore('compaction', { keyPath: 'id', autoIncrement: true });
+                    compactionStore.createIndex('compaction_date', 'compaction_date', { unique: false });
+                    compactionStore.createIndex('event_count', 'event_count', { unique: false });
+                    console.log('  ✓ Created "compaction" store');
+                }
+
+                // Store 5: Metadata - Cache metadata, sync state, vector clocks
+                if (!db.objectStoreNames.contains('metadata')) {
+                    db.createObjectStore('metadata', { keyPath: 'key' });
+                    console.log('  ✓ Created "metadata" store');
+                }
+
+                // Store 6: View State - Filters, sort, scroll position, toast state
+                if (!db.objectStoreNames.contains('view_state')) {
+                    db.createObjectStore('view_state', { keyPath: 'key' });
+                    console.log('  ✓ Created "view_state" store');
+                }
+
+                console.log('✅ IndexedDB schema created successfully');
+            };
+        });
+
+        return this.initPromise;
+    }
+
+    /**
+     * Get all tasks from cache (cache-first)
+     * @returns {Promise<Array>}
+     */
+    async getAllTasks() {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['tasks'], 'readonly');
+            const store = transaction.objectStore('tasks');
+            const request = store.getAll();
+
+            request.onsuccess = () => resolve(request.result || []);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Get tasks with filtering (status, priority, search)
+     * @param {Object} filters - Filter criteria
+     * @returns {Promise<Array>}
+     */
+    async getFilteredTasks(filters = {}) {
+        await this.init();
+        const allTasks = await this.getAllTasks();
+
+        return allTasks.filter(task => {
+            // Status filter
+            if (filters.status && task.status !== filters.status) {
+                return false;
+            }
+
+            // Priority filter
+            if (filters.priority && task.priority !== filters.priority) {
+                return false;
+            }
+
+            // Search filter
+            if (filters.search) {
+                const searchLower = filters.search.toLowerCase();
+                const titleMatch = task.title?.toLowerCase().includes(searchLower);
+                const descMatch = task.description?.toLowerCase().includes(searchLower);
+                if (!titleMatch && !descMatch) return false;
+            }
+
+            // Labels filter
+            if (filters.labels && filters.labels.length > 0) {
+                if (!task.labels || !filters.labels.some(label => task.labels.includes(label))) {
+                    return false;
+                }
+            }
+
+            // Snoozed filter
+            if (filters.show_snoozed === false) {
+                if (task.snoozed_until && new Date(task.snoozed_until) > new Date()) {
+                    return false;
+                }
+            }
+
+            // Due date filters
+            if (filters.due_date) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const taskDue = task.due_date ? new Date(task.due_date) : null;
+
+                if (filters.due_date === 'today' && (!taskDue || taskDue.getTime() !== today.getTime())) {
+                    return false;
+                }
+                if (filters.due_date === 'overdue' && (!taskDue || taskDue >= today)) {
+                    return false;
+                }
+                if (filters.due_date === 'this_week') {
+                    const weekEnd = new Date(today);
+                    weekEnd.setDate(today.getDate() + 7);
+                    if (!taskDue || taskDue < today || taskDue > weekEnd) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        });
+    }
+
+    /**
+     * Get single task by ID
+     * @param {number} taskId
+     * @returns {Promise<Object|null>}
+     */
+    async getTask(taskId) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['tasks'], 'readonly');
+            const store = transaction.objectStore('tasks');
+            const request = store.get(taskId);
+
+            request.onsuccess = () => resolve(request.result || null);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Save or update task in cache (optimistic update)
+     * @param {Object} task - Task data
+     * @returns {Promise<void>}
+     */
+    async saveTask(task) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['tasks'], 'readwrite');
+            const store = transaction.objectStore('tasks');
+            
+            // Ensure timestamps
+            const now = new Date().toISOString();
+            if (!task.created_at) task.created_at = now;
+            task.updated_at = now;
+
+            const request = store.put(task);
+
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Save multiple tasks (bulk operation)
+     * @param {Array} tasks - Array of task objects
+     * @returns {Promise<void>}
+     */
+    async saveTasks(tasks) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['tasks'], 'readwrite');
+            const store = transaction.objectStore('tasks');
+
+            const now = new Date().toISOString();
+            tasks.forEach(task => {
+                if (!task.created_at) task.created_at = now;
+                task.updated_at = now;
+                store.put(task);
+            });
+
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+        });
+    }
+
+    /**
+     * Delete task from cache
+     * @param {number} taskId
+     * @returns {Promise<void>}
+     */
+    async deleteTask(taskId) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['tasks'], 'readwrite');
+            const store = transaction.objectStore('tasks');
+            const request = store.delete(taskId);
+
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Add event to ledger (for event sourcing and replay)
+     * @param {Object} event - Event data with vector clock
+     * @returns {Promise<number>} Event ID
+     */
+    async addEvent(event) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['events'], 'readwrite');
+            const store = transaction.objectStore('events');
+
+            // Create or increment vector clock
+            let vectorClock;
+            if (event.vector_clock) {
+                vectorClock = VectorClock.fromTuple(event.vector_clock);
+            } else {
+                vectorClock = new VectorClock();
+            }
+            vectorClock.increment(this.nodeId);
+
+            const eventRecord = {
+                ...event,
+                timestamp: event.timestamp || Date.now(),
+                sync_status: event.sync_status || 'pending',
+                vector_clock: vectorClock.toTuple() // Store as normalized tuple
+            };
+
+            const request = store.add(eventRecord);
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Get all pending events (not yet synced)
+     * @returns {Promise<Array>}
+     */
+    async getPendingEvents() {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['events'], 'readonly');
+            const store = transaction.objectStore('events');
+            const index = store.index('sync_status');
+            const request = index.getAll('pending');
+
+            request.onsuccess = () => resolve(request.result || []);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Mark event as synced
+     * @param {number} eventId
+     * @returns {Promise<void>}
+     */
+    async markEventSynced(eventId) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['events'], 'readwrite');
+            const store = transaction.objectStore('events');
+            const getRequest = store.get(eventId);
+
+            getRequest.onsuccess = () => {
+                const event = getRequest.result;
+                if (event) {
+                    event.sync_status = 'synced';
+                    event.synced_at = Date.now();
+                    store.put(event);
+                }
+                resolve();
+            };
+
+            getRequest.onerror = () => reject(getRequest.error);
+        });
+    }
+
+    /**
+     * Add operation to offline queue
+     * @param {Object} operation - Operation data with vector clock
+     * @returns {Promise<number>} Queue ID
+     */
+    async queueOfflineOperation(operation) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['offline_queue'], 'readwrite');
+            const store = transaction.objectStore('offline_queue');
+
+            // Create or increment vector clock
+            let vectorClock;
+            if (operation.vector_clock) {
+                vectorClock = VectorClock.fromTuple(operation.vector_clock);
+            } else {
+                vectorClock = new VectorClock();
+            }
+            vectorClock.increment(this.nodeId);
+
+            const queueItem = {
+                ...operation,
+                timestamp: Date.now(),
+                priority: operation.priority || 0,
+                vector_clock: vectorClock.toTuple() // Store as normalized tuple
+            };
+
+            const request = store.add(queueItem);
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Get all offline queue items (ordered by CROWN⁴.5 priority rules)
+     * @returns {Promise<Array>}
+     */
+    async getOfflineQueue() {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['offline_queue'], 'readonly');
+            const store = transaction.objectStore('offline_queue');
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const queue = request.result || [];
+                
+                // Sort by CROWN⁴.5 priority rules:
+                // 1. Higher priority operations first
+                // 2. Vector clock comparison for causal ordering
+                // 3. Timestamp as deterministic tie-breaker
+                queue.sort((a, b) => {
+                    // Rule 1: Priority (higher first)
+                    if (a.priority !== b.priority) {
+                        return b.priority - a.priority;
+                    }
+
+                    // Rule 2: Vector clock comparison
+                    const aVC = VectorClock.fromTuple(a.vector_clock);
+                    const bVC = VectorClock.fromTuple(b.vector_clock);
+                    const comparison = aVC.compare(bVC);
+                    
+                    if (comparison !== 0) {
+                        return comparison;
+                    }
+
+                    // Rule 3: Timestamp tie-breaker (earlier first)
+                    return a.timestamp - b.timestamp;
+                });
+                
+                resolve(queue);
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Clear offline queue after successful sync
+     * @returns {Promise<void>}
+     */
+    async clearOfflineQueue() {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['offline_queue'], 'readwrite');
+            const store = transaction.objectStore('offline_queue');
+            const request = store.clear();
+
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Remove specific item from offline queue
+     * @param {number} queueId
+     * @returns {Promise<void>}
+     */
+    async removeFromQueue(queueId) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['offline_queue'], 'readwrite');
+            const store = transaction.objectStore('offline_queue');
+            const request = store.delete(queueId);
+
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Get metadata value
+     * @param {string} key
+     * @returns {Promise<any>}
+     */
+    async getMetadata(key) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['metadata'], 'readonly');
+            const store = transaction.objectStore('metadata');
+            const request = store.get(key);
+
+            request.onsuccess = () => resolve(request.result?.value);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Set metadata value
+     * @param {string} key
+     * @param {any} value
+     * @returns {Promise<void>}
+     */
+    async setMetadata(key, value) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['metadata'], 'readwrite');
+            const store = transaction.objectStore('metadata');
+            const request = store.put({ key, value, updated_at: Date.now() });
+
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Get view state (filters, sort, scroll position)
+     * @param {string} key
+     * @returns {Promise<any>}
+     */
+    async getViewState(key) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['view_state'], 'readonly');
+            const store = transaction.objectStore('view_state');
+            const request = store.get(key);
+
+            request.onsuccess = () => resolve(request.result?.value);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Set view state
+     * @param {string} key
+     * @param {any} value
+     * @returns {Promise<void>}
+     */
+    async setViewState(key, value) {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['view_state'], 'readwrite');
+            const store = transaction.objectStore('view_state');
+            const request = store.put({ key, value, updated_at: Date.now() });
+
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Compact old events to prevent unbounded growth (CROWN⁴.5 requirement)
+     * Archives events older than retention period
+     * @param {number} retentionDays - Keep events from last N days (default: 30)
+     * @returns {Promise<Object>} Compaction summary
+     */
+    async compactEvents(retentionDays = 30) {
+        await this.init();
+        
+        const cutoffTimestamp = Date.now() - (retentionDays * 24 * 60 * 60 * 1000);
+        
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['events', 'compaction'], 'readwrite');
+            const eventStore = transaction.objectStore('events');
+            const compactionStore = transaction.objectStore('compaction');
+            const timestampIndex = eventStore.index('timestamp');
+            
+            const request = timestampIndex.openCursor(IDBKeyRange.upperBound(cutoffTimestamp));
+            const eventsToArchive = [];
+            const eventIdsToDelete = [];
+
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                
+                if (cursor) {
+                    // Only compact synced events
+                    if (cursor.value.sync_status === 'synced') {
+                        eventsToArchive.push(cursor.value);
+                        eventIdsToDelete.push(cursor.value.id);
+                    }
+                    cursor.continue();
+                } else {
+                    // Archive completed, create compaction summary
+                    if (eventsToArchive.length > 0) {
+                        const summary = {
+                            compaction_date: Date.now(),
+                            event_count: eventsToArchive.length,
+                            oldest_event: Math.min(...eventsToArchive.map(e => e.timestamp)),
+                            newest_event: Math.max(...eventsToArchive.map(e => e.timestamp)),
+                            event_types: eventsToArchive.reduce((acc, e) => {
+                                acc[e.event_type] = (acc[e.event_type] || 0) + 1;
+                                return acc;
+                            }, {})
+                        };
+
+                        compactionStore.add(summary);
+
+                        // Delete archived events
+                        eventIdsToDelete.forEach(id => eventStore.delete(id));
+
+                        console.log(`✅ Compacted ${eventsToArchive.length} old events`);
+                    }
+
+                    resolve({
+                        compacted: eventsToArchive.length,
+                        cutoff_timestamp: cutoffTimestamp,
+                        retention_days: retentionDays
+                    });
+                }
+            };
+
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Clear all caches (used for reset/logout)
+     * @returns {Promise<void>}
+     */
+    async clearAll() {
+        await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(
+                ['tasks', 'events', 'offline_queue', 'compaction', 'metadata', 'view_state'],
+                'readwrite'
+            );
+
+            transaction.objectStore('tasks').clear();
+            transaction.objectStore('events').clear();
+            transaction.objectStore('offline_queue').clear();
+            transaction.objectStore('compaction').clear();
+            transaction.objectStore('metadata').clear();
+            transaction.objectStore('view_state').clear();
+
+            transaction.oncomplete = () => {
+                console.log('✅ All caches cleared');
+                resolve();
+            };
+            transaction.onerror = () => reject(transaction.error);
+        });
+    }
+
+    /**
+     * Get cache statistics for debugging
+     * @returns {Promise<Object>}
+     */
+    async getStats() {
+        await this.init();
+        
+        const taskCount = await this.getAllTasks().then(t => t.length);
+        const pendingEvents = await this.getPendingEvents().then(e => e.length);
+        const queuedOps = await this.getOfflineQueue().then(q => q.length);
+        const lastSync = await this.getMetadata('last_sync_timestamp');
+        const lastCompaction = await this.getMetadata('last_compaction_timestamp');
+
+        // Get total event count
+        const totalEvents = await new Promise((resolve) => {
+            const tx = this.db.transaction(['events'], 'readonly');
+            const request = tx.objectStore('events').count();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => resolve(0);
+        });
+
+        return {
+            tasks: taskCount,
+            total_events: totalEvents,
+            pending_events: pendingEvents,
+            queued_operations: queuedOps,
+            last_sync: lastSync,
+            last_compaction: lastCompaction,
+            node_id: this.nodeId,
+            cache_ready: this.ready
+        };
+    }
+}
+
+// Export VectorClock class for external use
+window.VectorClock = VectorClock;
+
+// Export singleton instance
+window.taskCache = new TaskCache();
+
+console.log('📦 CROWN⁴.5 TaskCache with VectorClock loaded');
