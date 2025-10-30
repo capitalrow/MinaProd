@@ -63,6 +63,7 @@ class TaskBootstrap {
             };
         } catch (error) {
             console.error('❌ Bootstrap failed:', error);
+            console.error('❌ Error details:', error.message, error.stack);
             
             // Fallback: Load from server directly
             return this.fallbackToServer();
@@ -71,10 +72,21 @@ class TaskBootstrap {
 
     /**
      * Load tasks from IndexedDB cache
+     * ENTERPRISE-GRADE: Cleans corrupted temp IDs before loading
      * @returns {Promise<Array>} Cached tasks
      */
     async loadFromCache() {
         await this.cache.init();
+
+        // ENTERPRISE-GRADE: Clean only orphaned temp tasks (preserves legitimate offline tasks)
+        try {
+            const removedCount = await this.cache.cleanOrphanedTempTasks();
+            if (removedCount > 0) {
+                console.log(`🧹 Cache hygiene: Removed ${removedCount} orphaned temp tasks`);
+            }
+        } catch (cleanupError) {
+            console.warn('⚠️ Cache cleanup failed (non-fatal):', cleanupError);
+        }
 
         // Load view state (filters, sort, scroll position)
         const viewState = await this.cache.getViewState('tasks_page') || {
@@ -173,13 +185,20 @@ class TaskBootstrap {
         }
 
         // Show empty state or task list
-        if (tasks.length === 0) {
-            if (emptyState) {
-                emptyState.style.display = 'block';
-                emptyState.classList.add('fade-in');
-            }
-            if (container) {
-                container.innerHTML = '';
+        if (!tasks || tasks.length === 0) {
+            // SAFETY: Only clear if we have NO server-rendered content
+            const hasServerContent = container.querySelectorAll('.task-card').length > 0;
+            
+            if (!hasServerContent) {
+                if (emptyState) {
+                    emptyState.style.display = 'block';
+                    emptyState.classList.add('fade-in');
+                }
+                if (container) {
+                    container.innerHTML = '';
+                }
+            } else {
+                console.warn('⚠️ Keeping server-rendered content (fallback protection)');
             }
             return;
         }
@@ -189,9 +208,15 @@ class TaskBootstrap {
             emptyState.style.display = 'none';
         }
 
-        // Render tasks
-        const tasksHTML = tasks.map((task, index) => this.renderTaskCard(task, index)).join('');
-        container.innerHTML = tasksHTML;
+        // Render tasks with error protection
+        try {
+            const tasksHTML = tasks.map((task, index) => this.renderTaskCard(task, index)).join('');
+            container.innerHTML = tasksHTML;
+        } catch (renderError) {
+            console.error('❌ renderTaskCard failed:', renderError);
+            // Keep existing content on render error
+            throw renderError;
+        }
 
         // Add stagger animation
         const cards = container.querySelectorAll('.task-card');
@@ -225,9 +250,10 @@ class TaskBootstrap {
         const status = task.status || 'todo';
         const isCompleted = status === 'completed';
         const isSnoozed = task.snoozed_until && new Date(task.snoozed_until) > new Date();
+        const isSyncing = task._is_syncing || (task.id && typeof task.id === 'string' && task.id.startsWith('temp_'));
 
         return `
-            <div class="task-card" 
+            <div class="task-card ${isSyncing ? 'task-syncing' : ''}" 
                  data-task-id="${task.id}"
                  data-status="${status}"
                  data-priority="${priority}"
@@ -237,6 +263,7 @@ class TaskBootstrap {
                         <input type="checkbox" 
                                class="task-checkbox" 
                                ${isCompleted ? 'checked' : ''}
+                               ${isSyncing ? 'disabled title="Task is syncing with server..."' : ''}
                                data-task-id="${task.id}">
                     </div>
                     <div class="task-content">
@@ -247,6 +274,14 @@ class TaskBootstrap {
                             <p class="task-description">${this.escapeHtml(task.description)}</p>
                         ` : ''}
                         <div class="task-meta">
+                            ${isSyncing ? `
+                                <span class="syncing-badge">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="spin-animation">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                    </svg>
+                                    Syncing...
+                                </span>
+                            ` : ''}
                             <span class="priority-badge priority-${priority.toLowerCase()}">
                                 ${priority}
                             </span>
@@ -269,13 +304,34 @@ class TaskBootstrap {
                             ${task.labels && task.labels.length > 0 ? `
                                 <div class="task-labels">
                                     ${task.labels.slice(0, 3).map(label => `
-                                        <span class="label-badge">${this.escapeHtml(label)}</span>
+                                        <span class="label-badge" data-label="${this.escapeHtml(label)}">
+                                            ${this.escapeHtml(label)}
+                                            <button class="label-remove-btn" data-task-id="${task.id}" data-label="${this.escapeHtml(label)}" title="Remove label">
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                                </svg>
+                                            </button>
+                                        </span>
                                     `).join('')}
                                     ${task.labels.length > 3 ? `
-                                        <span class="label-badge">+${task.labels.length - 3}</span>
+                                        <span class="label-badge label-count" title="${task.labels.slice(3).join(', ')}">+${task.labels.length - 3}</span>
                                     ` : ''}
+                                    <button class="label-add-btn" data-task-id="${task.id}" title="Add label">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M12 5v14m-7-7h14"/>
+                                        </svg>
+                                    </button>
                                 </div>
-                            ` : ''}
+                            ` : `
+                                <div class="task-labels">
+                                    <button class="label-add-btn label-add-btn-empty" data-task-id="${task.id}" title="Add label">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                        </svg>
+                                        Add label
+                                    </button>
+                                </div>
+                            `}
                         </div>
                     </div>
                 </div>
@@ -285,15 +341,21 @@ class TaskBootstrap {
 
     /**
      * Update task counters in UI
-     * @param {Array} tasks
+     * CRITICAL: This must ALWAYS calculate counts from ALL tasks, not filtered subset
+     * @param {Array} tasks - Currently displayed tasks (may be filtered)
      */
-    updateCounters(tasks) {
+    async updateCounters(tasks) {
+        // Fetch ALL tasks from cache to get correct totals
+        // The 'tasks' parameter might be filtered, which would give wrong counts
+        const allTasks = await this.cache.getAllTasks();
+        
         const counters = {
-            all: tasks.length,
-            todo: tasks.filter(t => t.status === 'todo').length,
-            in_progress: tasks.filter(t => t.status === 'in_progress').length,
-            completed: tasks.filter(t => t.status === 'completed').length,
-            overdue: tasks.filter(t => this.isDueDateOverdue(t.due_date) && t.status !== 'completed').length
+            all: allTasks.length,
+            pending: allTasks.filter(t => t.status === 'todo' || t.status === 'in_progress').length,
+            todo: allTasks.filter(t => t.status === 'todo').length,
+            in_progress: allTasks.filter(t => t.status === 'in_progress').length,
+            completed: allTasks.filter(t => t.status === 'completed').length,
+            overdue: allTasks.filter(t => this.isDueDateOverdue(t.due_date) && t.status !== 'completed').length
         };
 
         // Update counter badges
@@ -301,6 +363,11 @@ class TaskBootstrap {
             const badge = document.querySelector(`[data-counter="${key}"]`);
             if (badge) {
                 badge.textContent = count;
+                
+                // Add pulse animation on counter change
+                badge.classList.remove('counter-pulse');
+                void badge.offsetWidth; // Trigger reflow
+                badge.classList.add('counter-pulse');
             }
         });
     }

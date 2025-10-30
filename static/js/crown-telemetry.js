@@ -15,6 +15,10 @@ class CROWNTelemetry {
         this.dbName = `crown_telemetry_ws${workspaceId}`;
         this.db = null;
         
+        // CROWN⁴.5: Session trace ID for request tracing
+        this.sessionTraceId = this.generateTraceId();
+        this.lastEmotionTime = null;
+        
         // In-memory metrics for current session
         this.sessionMetrics = {
             bootstrapTime: null,
@@ -24,7 +28,9 @@ class CROWNTelemetry {
             cacheMisses: 0,
             eventPropagations: [],
             sequenceLags: [],
-            offlineQueueDepth: 0
+            offlineQueueDepth: 0,
+            emotionCues: {},
+            calmScore: 100
         };
         
         // Performance targets (CROWN⁴ specification)
@@ -32,10 +38,23 @@ class CROWNTelemetry {
             bootstrap: 200,        // ms
             propagation: 300,      // ms
             cacheHitRatio: 0.80,   // 80%
-            sequenceLag: 0         // zero desync
+            sequenceLag: 0,        // zero desync
+            quietWindow: 5000      // ms between animations for calm UI
         };
         
         // Don't auto-init - let caller control initialization timing
+    }
+    
+    generateTraceId() {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        return `trace_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+    
+    createTraceChildId(parentId = null) {
+        const parent = parentId || this.sessionTraceId;
+        return `${parent}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
     }
     
     /**
@@ -206,6 +225,40 @@ class CROWNTelemetry {
     }
     
     /**
+     * Record emotion cue (CROWN⁴.5 Telemetry 2.0)
+     */
+    async recordEmotionCue(cue, context = {}) {
+        const now = Date.now();
+        
+        if (!this.sessionMetrics.emotionCues[cue]) {
+            this.sessionMetrics.emotionCues[cue] = { count: 0, lastTimestamp: null };
+        }
+        
+        this.sessionMetrics.emotionCues[cue].count++;
+        this.sessionMetrics.emotionCues[cue].lastTimestamp = now;
+        
+        if (this.lastEmotionTime) {
+            const timeSinceLastEmotion = now - this.lastEmotionTime;
+            this.sessionMetrics.calmScore = Math.min(100, Math.max(0, 
+                (timeSinceLastEmotion / this.targets.quietWindow) * 100
+            ));
+        }
+        
+        this.lastEmotionTime = now;
+        
+        await this.saveMetric({
+            type: 'emotion_cue',
+            timestamp: now,
+            data: {
+                cue,
+                count: this.sessionMetrics.emotionCues[cue].count,
+                calm_score: this.sessionMetrics.calmScore,
+                context
+            }
+        });
+    }
+    
+    /**
      * Get average event propagation latency
      */
     getAveragePropagationLatency() {
@@ -308,6 +361,8 @@ class CROWNTelemetry {
     async saveMetric(metric) {
         if (!this.db) return;
         
+        metric.trace_id = this.sessionTraceId;
+        
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['metrics'], 'readwrite');
             const store = transaction.objectStore('metrics');
@@ -340,7 +395,63 @@ class CROWNTelemetry {
             request.onerror = () => reject(request.error);
         });
     }
+    
+    /**
+     * Record a generic metric (key-value pair)
+     * @param {string} metricName - Name of the metric
+     * @param {number} value - Metric value
+     */
+    recordMetric(metricName, value) {
+        // Store in session metrics
+        if (!this.sessionMetrics.customMetrics) {
+            this.sessionMetrics.customMetrics = {};
+        }
+        this.sessionMetrics.customMetrics[metricName] = value;
+        
+        // Optionally persist to IndexedDB
+        this.saveMetric({
+            type: 'custom',
+            name: metricName,
+            value: value,
+            timestamp: Date.now()
+        }).catch(err => console.warn('Failed to save custom metric:', err));
+    }
+    
+    /**
+     * Record a generic event
+     * @param {string} eventName - Name of the event
+     * @param {Object} data - Event data
+     */
+    recordEvent(eventName, data) {
+        const event = {
+            eventId: `${eventName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            type: eventName,
+            data: data,
+            timestamp: Date.now()
+        };
+        
+        // Persist to IndexedDB events store
+        if (this.db) {
+            const transaction = this.db.transaction(['events'], 'readwrite');
+            const store = transaction.objectStore('events');
+            store.add(event).catch(err => console.warn('Failed to save event:', err));
+        }
+    }
 }
 
-// Make globally available
-window.CROWNTelemetry = CROWNTelemetry;
+// Auto-initialize telemetry instance
+(async function() {
+    // Get workspace ID from page context (or use 'default')
+    const workspaceId = window.WORKSPACE_ID || 'default';
+    
+    // Create instance
+    const telemetryInstance = new CROWNTelemetry(workspaceId);
+    
+    // Initialize database
+    await telemetryInstance.init();
+    
+    // Make instance globally available
+    window.CROWNTelemetry = telemetryInstance;
+    
+    console.log('✅ CROWNTelemetry initialized and ready');
+})();

@@ -135,22 +135,30 @@ class VirtualList {
         const priority = task.priority || 'medium';
         const status = task.status || 'todo';
         const isCompleted = status === 'completed';
+        const isPendingSuggest = task.emotional_state === 'pending_suggest';
         const topPosition = isVirtual ? index * this.itemHeight : 'auto';
 
         return `
-            <div class="task-card" 
+            <div class="task-card ${isPendingSuggest ? 'ai-proposal' : ''}" 
                  data-task-id="${task.id}"
                  data-index="${index}"
                  data-status="${status}"
                  data-priority="${priority}"
+                 data-emotional-state="${task.emotional_state || ''}"
                  style="${isVirtual ? `position: absolute; top: ${topPosition}px; left: 0; right: 0;` : ''}">
                 <div class="task-card-header">
-                    <div class="task-checkbox-wrapper">
-                        <input type="checkbox" 
-                               class="task-checkbox" 
-                               ${isCompleted ? 'checked' : ''}
-                               data-task-id="${task.id}">
-                    </div>
+                    ${isPendingSuggest ? `
+                        <div class="ai-proposal-badge">
+                            ✨ AI Suggested
+                        </div>
+                    ` : `
+                        <div class="task-checkbox-wrapper">
+                            <input type="checkbox" 
+                                   class="task-checkbox" 
+                                   ${isCompleted ? 'checked' : ''}
+                                   data-task-id="${task.id}">
+                        </div>
+                    `}
                     <div class="task-content">
                         <h3 class="task-title ${isCompleted ? 'completed' : ''}">
                             ${this._escapeHtml(task.title || 'Untitled Task')}
@@ -158,15 +166,38 @@ class VirtualList {
                         ${task.description ? `
                             <p class="task-description">${this._escapeHtml(task.description)}</p>
                         ` : ''}
+                        ${isPendingSuggest ? `
+                            <div class="ai-proposal-actions">
+                                <button class="btn-accept-proposal" data-task-id="${task.id}">
+                                    ✓ Accept
+                                </button>
+                                <button class="btn-reject-proposal" data-task-id="${task.id}">
+                                    ✗ Reject
+                                </button>
+                            </div>
+                        ` : ''}
                         <div class="task-meta">
                             <span class="priority-badge priority-${priority.toLowerCase()}">
                                 ${priority}
                             </span>
                             ${task.due_date ? `
-                                <span class="due-date-badge">
+                                <span class="due-date-badge" data-iso-date="${task.due_date}">
                                     ${this._formatDueDate(task.due_date)}
                                 </span>
-                            ` : ''}
+                            ` : `
+                                <span class="due-date-badge due-date-add">
+                                    + Add due date
+                                </span>
+                            `}
+                            ${task.assigned_to ? `
+                                <span class="assignee-badge" data-user-id="${task.assigned_to.id}">
+                                    👤 ${this._escapeHtml(task.assigned_to.username || task.assigned_to.email)}
+                                </span>
+                            ` : `
+                                <span class="assignee-badge assignee-add">
+                                    + Assign
+                                </span>
+                            `}
                             ${task.labels && task.labels.length > 0 ? `
                                 <div class="task-labels">
                                     ${task.labels.slice(0, 3).map(label => `

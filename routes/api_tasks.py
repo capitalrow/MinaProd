@@ -200,7 +200,8 @@ def create_task():
             task_id=task.id,
             task_data=task_dict,
             meeting_id=meeting.id,
-            workspace_id=current_user.workspace_id
+            workspace_id=current_user.workspace_id,
+            user_id=current_user.id
         )
         
         return jsonify({
@@ -229,6 +230,8 @@ def update_task(task_id):
         
         data = request.get_json()
         old_status = task.status
+        old_labels = task.labels
+        old_snoozed_until = task.snoozed_until
         
         # Update fields
         if 'title' in data:
@@ -274,15 +277,62 @@ def update_task(task_id):
                     return jsonify({'success': False, 'message': 'Invalid assignee'}), 400
             task.assigned_to_id = assigned_to_id
         
+        if 'labels' in data:
+            labels = data['labels']
+            if isinstance(labels, list):
+                task.labels = labels
+            else:
+                task.labels = []
+        
+        if 'snoozed_until' in data:
+            if data['snoozed_until']:
+                try:
+                    # Parse and convert to naive UTC datetime
+                    dt = datetime.fromisoformat(data['snoozed_until'].replace('Z', '+00:00'))
+                    task.snoozed_until = dt.replace(tzinfo=None)
+                except (ValueError, AttributeError):
+                    return jsonify({'success': False, 'message': 'Invalid snoozed_until format'}), 400
+            else:
+                task.snoozed_until = None
+        
         task.updated_at = datetime.now()
         db.session.commit()
         
-        # Broadcast task_update event
+        # Broadcast task_update event with specific event type
         meeting = task.meeting
-        action = 'completed' if task.status == 'completed' and old_status != 'completed' else 'updated'
+        
+        # Determine event type based on what changed
+        if task.status == 'completed' and old_status != 'completed':
+            action = 'completed'
+            event_type = 'task_update:completed'
+        elif 'snoozed_until' in data and task.snoozed_until != old_snoozed_until:
+            action = 'updated'
+            event_type = 'task_snooze'
+        elif 'labels' in data and task.labels != old_labels:
+            action = 'updated'
+            event_type = 'task_update:labels'
+        else:
+            action = 'updated'
+            event_type = 'task_update'
+        
         task_dict = task.to_dict()
         task_dict['action'] = action
+        task_dict['event_type'] = event_type
         task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
+        
+        # Add diff metadata for specific events
+        if event_type == 'task_update:labels':
+            task_dict['label_diff'] = {
+                'old': old_labels or [],
+                'new': task.labels or []
+            }
+        
+        if event_type == 'task_snooze':
+            task_dict['snooze_diff'] = {
+                'old': old_snoozed_until.isoformat() if old_snoozed_until else None,
+                'new': task.snoozed_until.isoformat() if task.snoozed_until else None
+            }
+        
         event_broadcaster.broadcast_task_update(
             task_id=task.id,
             task_data=task_dict,
@@ -343,6 +393,435 @@ def delete_task(task_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@api_tasks_bp.route('/<int:task_id>/accept', methods=['POST'])
+@login_required
+def accept_task_proposal(task_id):
+    """Accept an AI-proposed task (change emotional_state from pending_suggest to accepted)."""
+    try:
+        task = db.session.query(Task).join(Meeting).filter(
+            Task.id == task_id,
+            Meeting.workspace_id == current_user.workspace_id
+        ).first()
+        
+        if not task:
+            return jsonify({'success': False, 'message': 'Task not found'}), 404
+        
+        if task.emotional_state != 'pending_suggest':
+            return jsonify({'success': False, 'message': 'Task is not in pending_suggest state'}), 400
+        
+        task.emotional_state = 'accepted'
+        task.status = 'todo'
+        task.updated_at = datetime.now()
+        db.session.commit()
+        
+        meeting = task.meeting
+        task_dict = task.to_dict()
+        task_dict['action'] = 'accepted'
+        task_dict['event_type'] = 'task_proposal:accepted'
+        task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
+        
+        event_broadcaster.broadcast_task_update(
+            task_id=task.id,
+            task_data=task_dict,
+            meeting_id=meeting.id if meeting else None,
+            workspace_id=current_user.workspace_id
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Task accepted successfully',
+            'task': task.to_dict()
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@api_tasks_bp.route('/<int:task_id>/reject', methods=['POST'])
+@login_required
+def reject_task_proposal(task_id):
+    """Reject an AI-proposed task (delete it)."""
+    try:
+        task = db.session.query(Task).join(Meeting).filter(
+            Task.id == task_id,
+            Meeting.workspace_id == current_user.workspace_id
+        ).first()
+        
+        if not task:
+            return jsonify({'success': False, 'message': 'Task not found'}), 404
+        
+        if task.emotional_state != 'pending_suggest':
+            return jsonify({'success': False, 'message': 'Task is not in pending_suggest state'}), 400
+        
+        task_dict = task.to_dict()
+        task_dict['action'] = 'rejected'
+        task_dict['event_type'] = 'task_proposal:rejected'
+        meeting = task.meeting
+        task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
+        meeting_id = meeting.id if meeting else None
+        workspace_id = current_user.workspace_id
+        
+        db.session.delete(task)
+        db.session.commit()
+        
+        event_broadcaster.broadcast_task_update(
+            task_id=task_id,
+            task_data=task_dict,
+            meeting_id=meeting_id,
+            workspace_id=workspace_id
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Task rejected successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@api_tasks_bp.route('/<int:task_id>/merge', methods=['POST'])
+@login_required
+def merge_tasks(task_id):
+    """Merge source task into target task."""
+    try:
+        # Get target task (the one being merged into)
+        target_task = db.session.query(Task).join(Meeting).filter(
+            Task.id == task_id,
+            Meeting.workspace_id == current_user.workspace_id
+        ).first()
+        
+        if not target_task:
+            return jsonify({'success': False, 'message': 'Target task not found'}), 404
+        
+        # Guard against malformed/empty JSON - silent=True returns None instead of raising BadRequest
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({'success': False, 'message': 'Request body must be a JSON object'}), 400
+        
+        source_task_id = data.get('source_task_id')
+        
+        if not source_task_id:
+            return jsonify({'success': False, 'message': 'source_task_id is required'}), 400
+        
+        # Convert source_task_id to int for comparison
+        try:
+            source_task_id = int(source_task_id)
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'message': 'Invalid source_task_id format'}), 400
+        
+        # Prevent merging a task into itself
+        if source_task_id == task_id:
+            return jsonify({'success': False, 'message': 'Cannot merge a task into itself'}), 400
+        
+        # Get source task (the one being merged from and deleted) - BEFORE any mutations
+        source_task = db.session.query(Task).join(Meeting).filter(
+            Task.id == source_task_id,
+            Meeting.workspace_id == current_user.workspace_id
+        ).first()
+        
+        if not source_task:
+            return jsonify({'success': False, 'message': 'Source task not found'}), 404
+        
+        # ALL VALIDATION PASSED - Now perform merge data operations
+        # Combine labels (unique)
+        target_labels = set(target_task.labels or [])
+        source_labels = set(source_task.labels or [])
+        merged_labels = list(target_labels | source_labels)
+        
+        # Keep higher priority
+        priority_rank = {'urgent': 4, 'high': 3, 'medium': 2, 'low': 1}
+        target_priority_rank = priority_rank.get(target_task.priority, 2)
+        source_priority_rank = priority_rank.get(source_task.priority, 2)
+        merged_priority = target_task.priority if target_priority_rank >= source_priority_rank else source_task.priority
+        
+        # Combine descriptions
+        merged_description = target_task.description or ''
+        if source_task.description and source_task.description not in merged_description:
+            if merged_description:
+                merged_description = f"{merged_description}\n\n[Merged from another task]\n{source_task.description}"
+            else:
+                merged_description = source_task.description
+        
+        # Store old values for merge_diff
+        old_labels = target_task.labels
+        old_priority = target_task.priority
+        old_description = target_task.description
+        
+        # Update target task
+        target_task.labels = merged_labels
+        target_task.priority = merged_priority
+        target_task.description = merged_description
+        target_task.updated_at = datetime.now()
+        
+        # Store source task info before deletion
+        source_task_dict = source_task.to_dict()
+        
+        # Delete source task
+        db.session.delete(source_task)
+        db.session.commit()
+        
+        # Broadcast task_merge event
+        meeting = target_task.meeting
+        task_dict = target_task.to_dict()
+        task_dict['action'] = 'updated'
+        task_dict['event_type'] = 'task_merge'
+        task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
+        task_dict['merge_diff'] = {
+            'source_task_id': source_task_id,
+            'source_task_title': source_task_dict.get('title'),
+            'old_labels': old_labels or [],
+            'new_labels': merged_labels,
+            'old_priority': old_priority,
+            'new_priority': merged_priority
+        }
+        
+        event_broadcaster.broadcast_task_update(
+            task_id=target_task.id,
+            task_data=task_dict,
+            meeting_id=meeting.id if meeting else None,
+            workspace_id=current_user.workspace_id
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Tasks merged successfully',
+            'task': target_task.to_dict()
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@api_tasks_bp.route('/bulk/complete', methods=['POST'])
+@login_required
+def bulk_complete_tasks():
+    """Bulk complete multiple tasks."""
+    try:
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({'success': False, 'message': 'Invalid request format'}), 400
+        
+        task_ids = data.get('task_ids', [])
+        if not isinstance(task_ids, list) or len(task_ids) == 0:
+            return jsonify({'success': False, 'message': 'task_ids is required'}), 400
+        
+        # Convert to integers
+        try:
+            task_ids = [int(tid) for tid in task_ids]
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'message': 'Invalid task IDs'}), 400
+        
+        # Fetch all tasks and verify ownership
+        tasks = db.session.query(Task).join(Meeting).filter(
+            Task.id.in_(task_ids),
+            Meeting.workspace_id == current_user.workspace_id
+        ).all()
+        
+        if len(tasks) != len(task_ids):
+            return jsonify({'success': False, 'message': 'Some tasks not found'}), 404
+        
+        # Mark all as completed
+        from datetime import datetime
+        for task in tasks:
+            task.status = 'completed'
+            task.completed_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        # Broadcast bulk operation event
+        event_broadcaster.broadcast_task_update(
+            task_id=None,
+            task_data={
+                'event_type': 'task_multiselect:bulk',
+                'action': 'bulk_complete',
+                'task_ids': task_ids,
+                'count': len(task_ids)
+            },
+            meeting_id=None,
+            workspace_id=current_user.workspace_id,
+            user_id=current_user.id
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': f'{len(tasks)} tasks completed',
+            'count': len(tasks)
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@api_tasks_bp.route('/bulk/delete', methods=['POST'])
+@login_required
+def bulk_delete_tasks():
+    """Bulk delete multiple tasks."""
+    try:
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({'success': False, 'message': 'Invalid request format'}), 400
+        
+        task_ids = data.get('task_ids', [])
+        if not isinstance(task_ids, list) or len(task_ids) == 0:
+            return jsonify({'success': False, 'message': 'task_ids is required'}), 400
+        
+        # Convert to integers
+        try:
+            task_ids = [int(tid) for tid in task_ids]
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'message': 'Invalid task IDs'}), 400
+        
+        # Fetch all tasks and verify ownership
+        tasks = db.session.query(Task).join(Meeting).filter(
+            Task.id.in_(task_ids),
+            Meeting.workspace_id == current_user.workspace_id
+        ).all()
+        
+        if len(tasks) != len(task_ids):
+            return jsonify({'success': False, 'message': 'Some tasks not found'}), 404
+        
+        # Delete all tasks
+        for task in tasks:
+            db.session.delete(task)
+        
+        db.session.commit()
+        
+        # Broadcast bulk operation event
+        event_broadcaster.broadcast_task_update(
+            task_id=None,
+            task_data={
+                'event_type': 'task_multiselect:bulk',
+                'action': 'bulk_delete',
+                'task_ids': task_ids,
+                'count': len(task_ids)
+            },
+            meeting_id=None,
+            workspace_id=current_user.workspace_id,
+            user_id=current_user.id
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': f'{len(tasks)} tasks deleted',
+            'count': len(tasks)
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@api_tasks_bp.route('/bulk/label', methods=['POST'])
+@login_required
+def bulk_add_label():
+    """Bulk add label to multiple tasks."""
+    try:
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({'success': False, 'message': 'Invalid request format'}), 400
+        
+        task_ids = data.get('task_ids', [])
+        label = data.get('label', '').strip()
+        
+        if not isinstance(task_ids, list) or len(task_ids) == 0:
+            return jsonify({'success': False, 'message': 'task_ids is required'}), 400
+        
+        if not label:
+            return jsonify({'success': False, 'message': 'label is required'}), 400
+        
+        # Convert to integers
+        try:
+            task_ids = [int(tid) for tid in task_ids]
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'message': 'Invalid task IDs'}), 400
+        
+        # Fetch all tasks and verify ownership
+        tasks = db.session.query(Task).join(Meeting).filter(
+            Task.id.in_(task_ids),
+            Meeting.workspace_id == current_user.workspace_id
+        ).all()
+        
+        if len(tasks) != len(task_ids):
+            return jsonify({'success': False, 'message': 'Some tasks not found'}), 404
+        
+        # Add label to all tasks
+        for task in tasks:
+            if task.labels is None:
+                task.labels = []
+            if label not in task.labels:
+                task.labels.append(label)
+        
+        db.session.commit()
+        
+        # Broadcast bulk operation event
+        event_broadcaster.broadcast_task_update(
+            task_id=None,
+            task_data={
+                'event_type': 'task_multiselect:bulk',
+                'action': 'bulk_label',
+                'task_ids': task_ids,
+                'label': label,
+                'count': len(task_ids)
+            },
+            meeting_id=None,
+            workspace_id=current_user.workspace_id,
+            user_id=current_user.id
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': f'Label "{label}" added to {len(tasks)} tasks',
+            'count': len(tasks),
+            'label': label
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@api_tasks_bp.route('/<int:task_id>/track-transcript-jump', methods=['POST'])
+@login_required
+def track_transcript_jump(task_id):
+    """Track when user jumps to transcript from task."""
+    try:
+        task = db.session.query(Task).join(Meeting).filter(
+            Task.id == task_id,
+            Meeting.workspace_id == current_user.workspace_id
+        ).first()
+        
+        if not task:
+            return jsonify({'success': False, 'message': 'Task not found'}), 404
+        
+        # Broadcast task_link:jump_to_span event
+        meeting = task.meeting
+        task_dict = task.to_dict()
+        task_dict['action'] = 'transcript_jump'
+        task_dict['event_type'] = 'task_link:jump_to_span'
+        task_dict['meeting_title'] = meeting.title if meeting else 'Unknown'
+        
+        event_broadcaster.broadcast_task_update(
+            task_id=task.id,
+            task_data=task_dict,
+            meeting_id=meeting.id if meeting else None,
+            workspace_id=current_user.workspace_id
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Transcript jump tracked'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 
 @api_tasks_bp.route('/<int:task_id>/status', methods=['PUT'])
 @login_required

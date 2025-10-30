@@ -9,6 +9,121 @@ class OptimisticUI {
         this.cache = window.taskCache;
         this.pendingOperations = new Map();
         this.operationCounter = 0;
+        this._setupReconnectHandler();
+    }
+
+    /**
+     * Setup WebSocket reconnect handler to retry pending operations
+     */
+    _setupReconnectHandler() {
+        if (!window.wsManager) {
+            console.warn('⚠️ WebSocketManager not available for reconnect handling');
+            return;
+        }
+
+        // Listen for connection status changes
+        window.wsManager.on('connection_status', (data) => {
+            if (data.namespace === '/tasks') {
+                if (data.connected) {
+                    console.log('🔄 WebSocket reconnected, retrying pending operations...');
+                    this._showConnectionBanner('online', 'Connected', 2000);
+                    this._retryPendingOperations();
+                } else {
+                    this._showConnectionBanner('offline', 'Offline - changes will sync when reconnected');
+                }
+            }
+        });
+        
+        window.wsManager.on('reconnecting', (data) => {
+            if (data.namespace === '/tasks') {
+                this._showConnectionBanner('reconnecting', 'Reconnecting...');
+            }
+        });
+    }
+    
+    _showConnectionBanner(status, message, autohideDuration = 0) {
+        const banner = document.getElementById('connection-banner');
+        if (!banner) return;
+        
+        banner.className = `connection-banner ${status}`;
+        banner.querySelector('.connection-message').textContent = message;
+        
+        const pendingCount = this.pendingOperations.size;
+        const pendingEl = banner.querySelector('.pending-count');
+        if (pendingCount > 0) {
+            pendingEl.textContent = `(${pendingCount} pending)`;
+            pendingEl.style.display = 'inline';
+        } else {
+            pendingEl.style.display = 'none';
+        }
+        
+        banner.style.display = 'flex';
+        
+        if (autohideDuration > 0) {
+            setTimeout(() => {
+                banner.style.display = 'none';
+            }, autohideDuration);
+        }
+    }
+
+    /**
+     * Retry pending operations after WebSocket reconnect
+     */
+    async _retryPendingOperations() {
+        if (this.pendingOperations.size === 0) {
+            console.log('✅ No pending operations to retry');
+            return;
+        }
+
+        console.log(`🔄 Retrying ${this.pendingOperations.size} pending operations...`);
+        const operations = Array.from(this.pendingOperations.entries());
+
+        for (const [opId, operation] of operations) {
+            try {
+                console.log(`🔄 Retrying operation ${opId} (${operation.type})`);
+                
+                if (operation.type === 'create') {
+                    // Use clean original data, not optimistic version
+                    await this._syncToServer(opId, 'create', operation.data, operation.tempId);
+                } else if (operation.type === 'update') {
+                    // Use clean updates data
+                    await this._syncToServer(opId, 'update', operation.data, operation.taskId);
+                } else if (operation.type === 'delete') {
+                    await this._syncToServer(opId, 'delete', {}, operation.taskId);
+                }
+            } catch (error) {
+                console.error(`❌ Retry failed for operation ${opId}:`, error);
+            }
+        }
+    }
+
+    /**
+     * Retry a single operation
+     */
+    async _retryOperation(opId) {
+        const operation = this.pendingOperations.get(opId);
+        if (!operation) {
+            console.warn(`⚠️ Operation ${opId} not found for retry`);
+            return;
+        }
+
+        console.log(`🔄 Retrying operation ${opId} (${operation.type})`);
+        
+        try {
+            if (operation.type === 'create') {
+                await this._syncToServer(opId, 'create', operation.data, operation.tempId);
+            } else if (operation.type === 'update') {
+                await this._syncToServer(opId, 'update', operation.data, operation.taskId);
+            } else if (operation.type === 'delete') {
+                await this._syncToServer(opId, 'delete', {}, operation.taskId);
+            }
+            
+            if (window.toast) {
+                window.toast.success('Changes saved successfully');
+            }
+        } catch (error) {
+            console.error(`❌ Retry failed for operation ${opId}:`, error);
+        }
     }
 
     /**
@@ -47,17 +162,26 @@ class OptimisticUI {
             });
 
             // Use OfflineQueueManager for proper session tracking and replay
+            let queueId = null;
             if (window.offlineQueue) {
-                await window.offlineQueue.queueOperation({
+                queueId = await window.offlineQueue.queueOperation({
                     type: 'task_create',
                     temp_id: tempId,
                     data: taskData,
-                    priority: 10
+                    priority: 10,
+                    operation_id: opId  // Link queue entry to operation
                 });
             }
 
             // Step 4: Sync to server
-            this.pendingOperations.set(opId, { type: 'create', tempId, task: optimisticTask });
+            // Store ORIGINAL clean data (not optimistic version) for retry
+            this.pendingOperations.set(opId, { 
+                type: 'create', 
+                tempId, 
+                task: optimisticTask,  // Keep for rollback
+                data: taskData,  // Original clean data for retry
+                queueId  // Store queue ID to remove on success
+            });
             this._syncToServer(opId, 'create', taskData, tempId);
 
             return optimisticTask;
@@ -108,17 +232,27 @@ class OptimisticUI {
             });
 
             // Use OfflineQueueManager for proper session tracking and replay
+            let queueId = null;
             if (window.offlineQueue) {
-                await window.offlineQueue.queueOperation({
+                queueId = await window.offlineQueue.queueOperation({
                     type: 'task_update',
                     task_id: taskId,
                     data: updates,
-                    priority: 5
+                    priority: 5,
+                    operation_id: opId  // Link queue entry to operation
                 });
             }
 
             // Step 4: Sync to server
-            this.pendingOperations.set(opId, { type: 'update', taskId, previous: currentTask, updates });
+            // Store clean updates data for retry
+            this.pendingOperations.set(opId, { 
+                type: 'update', 
+                taskId, 
+                previous: currentTask,  // Keep for rollback
+                updates,  // Clean updates data for retry
+                data: updates,  // Explicit clean data reference
+                queueId  // Store queue ID to remove on success
+            });
             this._syncToServer(opId, 'update', updates, taskId);
 
             return optimisticTask;
@@ -157,16 +291,23 @@ class OptimisticUI {
             });
 
             // Use OfflineQueueManager for proper session tracking and replay
+            let queueId = null;
             if (window.offlineQueue) {
-                await window.offlineQueue.queueOperation({
+                queueId = await window.offlineQueue.queueOperation({
                     type: 'task_delete',
                     task_id: taskId,
-                    priority: 8
+                    priority: 8,
+                    operation_id: opId  // Link queue entry to operation
                 });
             }
 
             // Step 4: Sync to server
-            this.pendingOperations.set(opId, { type: 'delete', taskId, task });
+            this.pendingOperations.set(opId, { 
+                type: 'delete', 
+                taskId, 
+                task,  // Keep for rollback
+                queueId  // Store queue ID to remove on success
+            });
             this._syncToServer(opId, 'delete', null, taskId);
 
         } catch (error) {
@@ -190,7 +331,16 @@ class OptimisticUI {
             completed_at: newStatus === 'completed' ? new Date().toISOString() : null
         };
 
-        return this.updateTask(taskId, updates);
+        const result = await this.updateTask(taskId, updates);
+
+        if (newStatus === 'completed' && window.emotionalAnimations) {
+            const card = document.querySelector(`[data-task-id="${taskId}"]`);
+            if (card) {
+                window.emotionalAnimations.celebrate(card, ['burst', 'shimmer']);
+            }
+        }
+
+        return result;
     }
 
     /**
@@ -212,7 +362,18 @@ class OptimisticUI {
      * @returns {Promise<Object>}
      */
     async updatePriority(taskId, priority) {
-        return this.updateTask(taskId, { priority });
+        const result = await this.updateTask(taskId, { priority });
+
+        if (window.emotionalAnimations) {
+            const card = document.querySelector(`[data-task-id="${taskId}"]`);
+            if (card) {
+                window.emotionalAnimations.shimmer(card, {
+                    emotion_cue: 'priority_change'
+                });
+            }
+        }
+
+        return result;
     }
 
     /**
@@ -234,6 +395,178 @@ class OptimisticUI {
     }
 
     /**
+     * Remove label from task optimistically
+     * @param {number|string} taskId
+     * @param {string} label
+     * @returns {Promise<Object>}
+     */
+    async removeLabel(taskId, label) {
+        const task = await this.cache.getTask(taskId);
+        if (!task) return;
+
+        const labels = task.labels || [];
+        const updatedLabels = labels.filter(l => l !== label);
+
+        return this.updateTask(taskId, { labels: updatedLabels });
+    }
+
+    /**
+     * Snooze task optimistically
+     * @param {number|string} taskId
+     * @param {Date} snoozedUntil - When to unsnooze the task
+     * @returns {Promise<Object>}
+     */
+    async snoozeTask(taskId, snoozedUntil) {
+        const task = await this.cache.getTask(taskId);
+        if (!task) return;
+
+        // Update task with snooze timestamp
+        const result = await this.updateTask(taskId, { 
+            snoozed_until: snoozedUntil.toISOString()
+        });
+
+        // Hide snoozed task from view with animation (CROWN⁴.5 QuietStateManager)
+        const card = document.querySelector(`[data-task-id="${taskId}"]`);
+        if (card && window.quietStateManager) {
+            window.quietStateManager.queueAnimation((setCancelHandler) => {
+                card.style.animation = 'fadeOut 0.3s ease-out';
+                const timeoutId = setTimeout(() => {
+                    card.style.display = 'none';
+                    this._updateCounters();
+                }, 300);
+                
+                setCancelHandler(() => {
+                    clearTimeout(timeoutId);
+                    card.style.animation = '';
+                });
+            }, { duration: 300, priority: 6, metadata: { type: 'task_snooze', task_id: taskId } });
+        } else if (card) {
+            card.style.animation = 'fadeOut 0.3s ease-out';
+            setTimeout(() => {
+                card.style.display = 'none';
+                this._updateCounters();
+            }, 300);
+        }
+
+        return result;
+    }
+
+    /**
+     * Merge two tasks optimistically
+     * @param {number|string} sourceTaskId - Task to merge from (will be deleted)
+     * @param {number|string} targetTaskId - Task to merge into (will be kept)
+     * @returns {Promise<Object>}
+     */
+    async mergeTasks(sourceTaskId, targetTaskId) {
+        const sourceTask = await this.cache.getTask(sourceTaskId);
+        const targetTask = await this.cache.getTask(targetTaskId);
+        
+        if (!sourceTask || !targetTask) return;
+
+        const opId = this._generateOperationId();
+        
+        // Save original target task state for rollback
+        const originalTargetTask = { ...targetTask };
+
+        try {
+            // Step 1: Hide source task with animation (CROWN⁴.5 QuietStateManager)
+            const sourceCard = document.querySelector(`[data-task-id="${sourceTaskId}"]`);
+            if (sourceCard && window.quietStateManager) {
+                window.quietStateManager.queueAnimation((setCancelHandler) => {
+                    sourceCard.style.animation = 'fadeOut 0.3s ease-out';
+                    const timeoutId = setTimeout(() => sourceCard.style.display = 'none', 300);
+                    
+                    setCancelHandler(() => {
+                        clearTimeout(timeoutId);
+                        sourceCard.style.animation = '';
+                    });
+                }, { duration: 300, priority: 8, metadata: { type: 'task_merge', task_id: sourceTaskId } });
+            } else if (sourceCard) {
+                sourceCard.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => sourceCard.style.display = 'none', 300);
+            }
+
+            // Step 2: Merge data - combine labels, keep higher priority, combine descriptions
+            const mergedLabels = [...new Set([...(targetTask.labels || []), ...(sourceTask.labels || [])])];
+            const priorityRank = { urgent: 4, high: 3, medium: 2, low: 1 };
+            const mergedPriority = (priorityRank[sourceTask.priority] > priorityRank[targetTask.priority]) 
+                ? sourceTask.priority : targetTask.priority;
+            
+            let mergedDescription = targetTask.description || '';
+            if (sourceTask.description && !mergedDescription.includes(sourceTask.description)) {
+                mergedDescription = mergedDescription 
+                    ? `${mergedDescription}\n\n[Merged from another task]\n${sourceTask.description}`
+                    : sourceTask.description;
+            }
+
+            // Step 3: Update cache
+            const updatedTask = {
+                ...targetTask,
+                labels: mergedLabels,
+                priority: mergedPriority,
+                description: mergedDescription,
+                updated_at: new Date().toISOString(),
+                _optimistic: true,
+                _operation_id: opId
+            };
+            await this.cache.setTask(targetTaskId, updatedTask);
+
+            // Step 4: Update target task DOM
+            this._updateTaskInDOM(targetTaskId, updatedTask);
+
+            // Step 5: Sync to server
+            const response = await fetch(`/api/tasks/${targetTaskId}/merge`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ source_task_id: sourceTaskId })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Merge failed: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            
+            // Step 6: Reconcile with server truth
+            await this.cache.setTask(targetTaskId, data.task);
+            this._updateTaskInDOM(targetTaskId, data.task);
+            
+            // Remove source task from cache
+            await this.cache.deleteTask(sourceTaskId);
+            
+            this._updateCounters();
+            this.pendingOperations.delete(opId);
+            
+            return data.task;
+        } catch (error) {
+            console.error('❌ Merge failed - rolling back:', error);
+            
+            // Rollback: restore source task card (CROWN⁴.5 QuietStateManager)
+            const sourceCard = document.querySelector(`[data-task-id="${sourceTaskId}"]`);
+            if (sourceCard && window.quietStateManager) {
+                window.quietStateManager.queueAnimation((setCancelHandler) => {
+                    sourceCard.style.display = '';
+                    sourceCard.style.animation = 'slideInFromTop 0.3s ease-out';
+                    
+                    setCancelHandler(() => {
+                        sourceCard.style.animation = '';
+                    });
+                }, { duration: 300, priority: 9, metadata: { type: 'task_merge_rollback', task_id: sourceTaskId } });
+            } else if (sourceCard) {
+                sourceCard.style.display = '';
+                sourceCard.style.animation = 'slideInFromTop 0.3s ease-out';
+            }
+            
+            // Rollback: restore original target task in cache and DOM
+            await this.cache.setTask(targetTaskId, originalTargetTask);
+            this._updateTaskInDOM(targetTaskId, originalTargetTask);
+            
+            this.pendingOperations.delete(opId);
+            throw error;
+        }
+    }
+
+    /**
      * Generate unique operation ID
      * @returns {string}
      */
@@ -252,9 +585,19 @@ class OptimisticUI {
         const taskHTML = window.taskBootstrap.renderTaskCard(task, 0);
         container.insertAdjacentHTML('afterbegin', taskHTML);
 
-        // Add animation
+        // Add animation (CROWN⁴.5 QuietStateManager)
         const card = container.querySelector(`[data-task-id="${task.id}"]`);
-        if (card) {
+        if (card && window.quietStateManager) {
+            window.quietStateManager.queueAnimation((setCancelHandler) => {
+                card.classList.add('optimistic-create');
+                card.style.animation = 'slideInFromTop 0.3s ease-out';
+                
+                setCancelHandler(() => {
+                    card.classList.remove('optimistic-create');
+                    card.style.animation = '';
+                });
+            }, { duration: 300, priority: 7, metadata: { type: 'task_create', task_id: task.id } });
+        } else if (card) {
             card.classList.add('optimistic-create');
             card.style.animation = 'slideInFromTop 0.3s ease-out';
         }
@@ -324,9 +667,21 @@ class OptimisticUI {
             }
         }
 
-        // Add optimistic indicator
-        card.classList.add('optimistic-update');
-        setTimeout(() => card.classList.remove('optimistic-update'), 300);
+        // Add optimistic indicator (CROWN⁴.5 QuietStateManager)
+        if (window.quietStateManager) {
+            window.quietStateManager.queueAnimation((setCancelHandler) => {
+                card.classList.add('optimistic-update');
+                const timeoutId = setTimeout(() => card.classList.remove('optimistic-update'), 300);
+                
+                setCancelHandler(() => {
+                    clearTimeout(timeoutId);
+                    card.classList.remove('optimistic-update');
+                });
+            }, { duration: 300, priority: 6, metadata: { type: 'task_update', task_id: taskId } });
+        } else {
+            card.classList.add('optimistic-update');
+            setTimeout(() => card.classList.remove('optimistic-update'), 300);
+        }
 
         this._updateCounters();
     }
@@ -339,23 +694,47 @@ class OptimisticUI {
         const card = document.querySelector(`[data-task-id="${taskId}"]`);
         if (!card) return;
 
-        card.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
-        card.style.opacity = '0';
-        card.style.transform = 'translateX(-20px)';
-
-        setTimeout(() => {
-            card.remove();
-            this._updateCounters();
-
-            // Show empty state if no tasks left
-            const remaining = document.querySelectorAll('.task-card').length;
-            if (remaining === 0) {
-                const emptyState = document.getElementById('tasks-empty-state');
-                if (emptyState) {
-                    emptyState.style.display = 'block';
+        // Use QuietStateManager for fade-out animation (CROWN⁴.5)
+        if (window.quietStateManager) {
+            window.quietStateManager.queueAnimation((setCancelHandler) => {
+                card.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(-20px)';
+                
+                const timeoutId = setTimeout(() => {
+                    card.remove();
+                    this._updateCounters();
+                    
+                    const remaining = document.querySelectorAll('.task-card').length;
+                    if (remaining === 0) {
+                        const emptyState = document.getElementById('tasks-empty-state');
+                        if (emptyState) emptyState.style.display = 'block';
+                    }
+                }, 300);
+                
+                setCancelHandler(() => {
+                    clearTimeout(timeoutId);
+                    card.style.transition = '';
+                    card.style.opacity = '';
+                    card.style.transform = '';
+                });
+            }, { duration: 300, priority: 5, metadata: { type: 'task_remove', task_id: taskId } });
+        } else {
+            card.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+            card.style.opacity = '0';
+            card.style.transform = 'translateX(-20px)';
+            
+            setTimeout(() => {
+                card.remove();
+                this._updateCounters();
+                
+                const remaining = document.querySelectorAll('.task-card').length;
+                if (remaining === 0) {
+                    const emptyState = document.getElementById('tasks-empty-state');
+                    if (emptyState) emptyState.style.display = 'block';
                 }
-            }
-        }, 300);
+            }, 300);
+        }
     }
 
     /**
@@ -387,7 +766,8 @@ class OptimisticUI {
     }
 
     /**
-     * Sync operation to server
+     * Sync operation to server via WebSocket
+     * Gracefully defers to OfflineQueueManager if socket is disconnected/reconnecting
      * @param {string} opId
      * @param {string} type
      * @param {Object} data
@@ -397,46 +777,108 @@ class OptimisticUI {
         const startTime = performance.now();
 
         try {
-            let response;
+            // Check WebSocket connection (wsManager.sockets.tasks is the socket object)
+            const isConnected = window.wsManager && 
+                               window.wsManager.sockets.tasks && 
+                               window.wsManager.sockets.tasks.connected;
+            
+            if (!isConnected) {
+                // Socket is disconnected or reconnecting - defer to OfflineQueueManager
+                console.log(`⏸️ WebSocket not connected, operation queued for replay (${type})`);
+                
+                // Emit telemetry for deferred operations
+                if (window.CROWNTelemetry) {
+                    window.CROWNTelemetry.recordEvent('task_sync_deferred', {
+                        type,
+                        reason: 'socket_disconnected'
+                    });
+                }
+                
+                // KEEP pendingOperations for reconciliation when OfflineQueueManager replays
+                // The pending operation will reconcile when the server eventually responds
+                console.log(`💾 Keeping pending operation ${opId} for later reconciliation`);
+                
+                // Don't throw - OfflineQueueManager will replay when reconnected
+                return;
+            }
+
+            // Get user and session context
+            const userId = window.CURRENT_USER_ID || null;
+            const sessionId = window.CURRENT_SESSION_ID || null;
+            const workspaceId = window.WORKSPACE_ID || null;
+
+            if (!userId) {
+                console.error('❌ User ID not found in page context');
+                throw new Error('User not authenticated');
+            }
+
+            // Map operation types to WebSocket event names (server expects simple event names)
+            let eventName, payload;
 
             if (type === 'create') {
-                response = await fetch('/api/tasks/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify(data)
-                });
+                // Server listens for 'task_create' (not 'task_create:manual')
+                eventName = 'task_create';
+                payload = {
+                    payload: {
+                        ...data,
+                        temp_id: taskId,
+                        operation_id: opId,
+                        user_id: userId,
+                        session_id: sessionId,
+                        workspace_id: workspaceId
+                    }
+                };
             } else if (type === 'update') {
-                response = await fetch(`/api/tasks/${taskId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
+                // Server expects 'update_type' field for routing
+                // Map to exact server event names (from routes/tasks_websocket.py:6-18)
+                eventName = 'task_update';
+                let updateType = 'title'; // default
+                
+                if (data.status !== undefined) {
+                    updateType = 'status_toggle';
+                } else if (data.priority !== undefined) {
+                    updateType = 'priority';
+                } else if (data.due_date !== undefined || data.due !== undefined) {
+                    updateType = 'due';
+                } else if (data.assignee !== undefined || data.assigned_to !== undefined) {
+                    updateType = 'assign';
+                } else if (data.labels !== undefined) {
+                    updateType = 'labels';
+                } else if (data.title !== undefined) {
+                    updateType = 'title';
+                }
+                
+                payload = {
+                    payload: {
+                        task_id: taskId,
+                        ...data,
+                        operation_id: opId,
+                        user_id: userId,
+                        session_id: sessionId,
+                        workspace_id: workspaceId
                     },
-                    credentials: 'same-origin',
-                    body: JSON.stringify(data)
-                });
+                    update_type: updateType
+                };
             } else if (type === 'delete') {
-                response = await fetch(`/api/tasks/${taskId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    credentials: 'same-origin'
-                });
+                eventName = 'task_delete';
+                payload = {
+                    payload: {
+                        task_id: taskId,
+                        operation_id: opId,
+                        user_id: userId,
+                        session_id: sessionId,
+                        workspace_id: workspaceId
+                    }
+                };
             }
 
-            if (!response.ok) {
-                throw new Error(`Server returned ${response.status}`);
-            }
+            console.log(`📤 Sending ${eventName} event:`, payload);
 
-            const result = await response.json();
+            // Emit via WebSocket and wait for server acknowledgment
+            const result = await window.wsManager.emitWithAck(eventName, payload, '/tasks');
+
             const reconcileTime = performance.now() - startTime;
-
-            console.log(`✅ Optimistic ${type} reconciled in ${reconcileTime.toFixed(2)}ms`);
+            console.log(`✅ Server acknowledged ${type} in ${reconcileTime.toFixed(2)}ms, response:`, result);
 
             // Reconcile with server data
             await this._reconcileSuccess(opId, type, result, taskId);
@@ -447,8 +889,65 @@ class OptimisticUI {
             }
 
         } catch (error) {
-            console.error(`❌ Server sync failed for ${type}:`, error);
-            await this._reconcileFailure(opId, type, taskId);
+            const syncTime = performance.now() - startTime;
+            console.error(`❌ Server sync failed for ${type} after ${syncTime.toFixed(2)}ms:`, {
+                error: error.message,
+                opId,
+                taskId,
+                type,
+                stack: error.stack
+            });
+            
+            const is409Conflict = error.message && (
+                error.message.includes('409') || 
+                error.message.includes('conflict') ||
+                error.message.includes('version mismatch')
+            );
+            
+            // ENTERPRISE-GRADE: Special handling for temp ID validation errors
+            const isTempIdError = error.message && (
+                error.message.includes('temporary ID') ||
+                error.message.includes('TEMP_ID_NOT_RECONCILED') ||
+                error.message.includes('temp_')
+            );
+            
+            if (isTempIdError) {
+                // Temp ID error - this task needs reconciliation with server
+                if (window.toast) {
+                    window.toast.warning('This task is still syncing with the server. Please wait a moment and try again.', 5000, {
+                        undoText: 'Refresh',
+                        undoCallback: () => window.location.reload()
+                    });
+                }
+            } else if (is409Conflict) {
+                if (window.toast) {
+                    window.toast.warning('Changes conflict detected - reloading latest version', 5000, {
+                        undoText: 'Retry',
+                        undoCallback: () => this._retryOperation(opId)
+                    });
+                }
+            } else {
+                if (window.toast) {
+                    window.toast.error(`Save failed - ${error.message}`, 6000, {
+                        undoText: 'Retry',
+                        undoCallback: () => this._retryOperation(opId)
+                    });
+                }
+            }
+            
+            // Emit telemetry for failures
+            if (window.CROWNTelemetry) {
+                window.CROWNTelemetry.recordMetric('optimistic_failure_ms', syncTime);
+                window.CROWNTelemetry.recordEvent('task_sync_failure', {
+                    type,
+                    error: error.message,
+                    duration_ms: syncTime,
+                    is_conflict: is409Conflict,
+                    is_temp_id_error: isTempIdError
+                });
+            }
+            
+            await this._reconcileFailure(opId, type, taskId, error);
         }
     }
 
@@ -462,6 +961,16 @@ class OptimisticUI {
     async _reconcileSuccess(opId, type, serverData, taskId) {
         const operation = this.pendingOperations.get(opId);
         if (!operation) return;
+
+        // Remove from OfflineQueue since WebSocket sync succeeded
+        if (operation.queueId && this.cache) {
+            try {
+                await this.cache.removeFromQueue(operation.queueId);
+                console.log(`🗑️ Removed queue entry ${operation.queueId} after successful WebSocket sync`);
+            } catch (error) {
+                console.warn(`⚠️ Failed to remove queue entry ${operation.queueId}:`, error);
+            }
+        }
 
         if (type === 'create') {
             // Replace temp ID with real ID
@@ -502,14 +1011,20 @@ class OptimisticUI {
      * @param {string} opId
      * @param {string} type
      * @param {number|string} taskId
+     * @param {Error} error
      */
-    async _reconcileFailure(opId, type, taskId) {
+    async _reconcileFailure(opId, type, taskId, error) {
         const operation = this.pendingOperations.get(opId);
-        if (!operation) return;
+        if (!operation) {
+            console.warn(`⚠️ No pending operation found for ${opId}`);
+            return;
+        }
+
+        console.log(`🔄 Rolling back ${type} operation:`, { opId, taskId });
 
         if (type === 'create') {
             // Rollback create
-            this._rollbackCreate(operation.tempId);
+            await this._rollbackCreate(operation.tempId);
         } else if (type === 'update') {
             // Rollback to previous state
             await this.cache.saveTask(operation.previous);
@@ -522,8 +1037,11 @@ class OptimisticUI {
 
         this.pendingOperations.delete(opId);
 
-        // Show error notification
-        this._showErrorNotification(`Failed to ${type} task. Changes rolled back.`);
+        // Show detailed error notification
+        const errorMsg = error.message || 'Unknown error';
+        this._showErrorNotification(`Failed to ${type} task. Changes rolled back.`, errorMsg);
+        
+        console.log(`✅ Rollback complete for operation ${opId}`);
     }
 
     /**
@@ -538,8 +1056,11 @@ class OptimisticUI {
     /**
      * Show error notification
      * @param {string} message
+     * @param {string} detail - Optional detailed error message
      */
-    _showErrorNotification(message) {
+    _showErrorNotification(message, detail = null) {
+        console.error(`🚨 Error notification: ${message}`, detail ? `(${detail})` : '');
+        
         if (window.showToast) {
             window.showToast(message, 'error');
         } else {

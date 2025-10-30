@@ -149,6 +149,9 @@ class OfflineQueueManager {
         const { type, data, task_id, temp_id } = item;
 
         try {
+            // Sanitize data to remove cache-internal fields before server sync (CROWN⁴.5)
+            const sanitizedData = window.TaskCache?.sanitizeForSync(data) || data;
+            
             let response;
 
             switch (type) {
@@ -157,7 +160,7 @@ class OfflineQueueManager {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'same-origin',
-                        body: JSON.stringify(data)
+                        body: JSON.stringify(sanitizedData)
                     });
                     break;
 
@@ -166,7 +169,7 @@ class OfflineQueueManager {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'same-origin',
-                        body: JSON.stringify(data)
+                        body: JSON.stringify(sanitizedData)
                     });
                     break;
 
@@ -185,7 +188,7 @@ class OfflineQueueManager {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'same-origin',
-                        body: JSON.stringify(data)
+                        body: JSON.stringify(sanitizedData)
                     });
                     break;
 

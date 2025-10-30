@@ -30,6 +30,43 @@
     font-size: var(--font-size-lg);
 }
 
+.connection-banner {
+    padding: var(--space-3) var(--space-4);
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--font-size-sm);
+    transition: all var(--transition-base);
+}
+
+.connection-banner.offline {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #ef4444;
+}
+
+.connection-banner.reconnecting {
+    background: rgba(249, 115, 22, 0.1);
+    border-color: rgba(249, 115, 22, 0.5);
+    color: #f97316;
+}
+
+.connection-banner.online {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: rgba(34, 197, 94, 0.5);
+    color: #22c55e;
+}
+
+.connection-status-icon::before {
+    content: '●';
+    margin-right: var(--space-2);
+}
+
 .task-filters {
     display: flex;
     gap: var(--space-3);
@@ -185,6 +222,313 @@
     border-radius: var(--radius-full);
     font-size: var(--font-size-xs);
     color: var(--color-text-tertiary);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.due-date-badge:hover,
+.priority-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.due-date-add {
+    border-style: dashed;
+    opacity: 0.7;
+}
+
+.due-date-add:hover {
+    opacity: 1;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.syncing-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    color: rgb(59, 130, 246);
+    font-weight: var(--font-weight-medium);
+}
+
+.task-syncing {
+    opacity: 0.8;
+    position: relative;
+}
+
+.task-syncing::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+    animation: shimmer 2s infinite;
+    pointer-events: none;
+}
+
+.spin-animation {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.assignee-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.assignee-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.assignee-add {
+    border-style: dashed;
+    opacity: 0.7;
+}
+
+.assignee-add:hover {
+    opacity: 1;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.ai-proposal {
+    border: 2px solid var(--color-primary);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
+}
+
+.ai-proposal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: white;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    margin-right: var(--space-3);
+}
+
+.ai-proposal-actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.btn-accept-proposal,
+.btn-reject-proposal {
+    padding: var(--space-2) var(--space-4);
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.btn-accept-proposal {
+    background: var(--color-success);
+    color: white;
+}
+
+.btn-accept-proposal:hover {
+    background: var(--color-success-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.btn-reject-proposal {
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+}
+
+.btn-reject-proposal:hover {
+    background: var(--color-error);
+    color: white;
+    border-color: var(--color-error);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-accept-proposal:disabled,
+.btn-reject-proposal:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.inline-edit-select,
+.inline-edit-input {
+    padding: var(--space-1) var(--space-2);
+    border: 2px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    outline: none;
+    transition: all var(--transition-base);
+}
+
+.inline-edit-select:focus,
+.inline-edit-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.priority-select {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.transcript-link-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.1));
+    border: 1px solid rgba(34, 197, 94, 0.4);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: rgb(34, 197, 94);
+    text-decoration: none;
+    transition: all var(--transition-base);
+    cursor: pointer;
+}
+
+.transcript-link-badge:hover {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.2));
+    border-color: rgb(34, 197, 94);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+.transcript-link-badge:active {
+    transform: translateY(0);
+}
+
+.bulk-action-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4) var(--space-6);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: var(--radius-lg);
+    animation: slideDown 0.3s ease-out;
+    margin-bottom: var(--space-4);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.bulk-action-info {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+#bulk-selected-count {
+    font-weight: var(--font-weight-bold);
+    color: rgb(99, 102, 241);
+}
+
+.bulk-action-buttons {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.bulk-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.bulk-action-btn:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+    border-color: rgb(99, 102, 241);
+    transform: translateY(-1px);
+}
+
+.bulk-action-btn-cancel {
+    background: var(--color-surface);
+    color: var(--color-text-tertiary);
+}
+
+.bulk-action-btn-cancel:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: rgb(239, 68, 68);
+    border-color: rgb(239, 68, 68);
+}
+
+.bulk-select-checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--color-border);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    flex-shrink: 0;
+}
+
+.bulk-select-checkbox:checked {
+    background: rgb(99, 102, 241);
+    border-color: rgb(99, 102, 241);
+}
+
+.bulk-select-checkbox:hover {
+    border-color: rgb(99, 102, 241);
+}
+
+.task-card.bulk-selected {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(168, 85, 247, 0.05));
+    border-color: rgba(99, 102, 241, 0.4);
 }
 
 .empty-state {
@@ -224,8 +568,14 @@
 .task-card:nth-child(5) { animation-delay: 0.4s; }
 .task-card:nth-child(6) { animation-delay: 0.45s; }
 
-/* Task Delete Button */
-.task-delete-btn {
+/* Task Action Buttons */
+.task-actions {
+    display: flex;
+    gap: var(--space-1);
+    align-items: center;
+}
+
+.task-action-btn {
     background: transparent;
     border: none;
     color: var(--color-text-tertiary);
@@ -234,10 +584,29 @@
     border-radius: var(--radius-lg);
     transition: all var(--transition-base);
     opacity: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.task-card:hover .task-delete-btn {
+.task-card:hover .task-action-btn {
     opacity: 1;
+}
+
+.task-action-btn:active {
+    transform: scale(0.95);
+}
+
+.task-merge-btn:hover {
+    background: rgba(168, 85, 247, 0.1);
+    color: rgb(168, 85, 247);
+    transform: scale(1.1);
+}
+
+.task-snooze-btn:hover {
+    background: rgba(99, 102, 241, 0.1);
+    color: rgb(99, 102, 241);
+    transform: scale(1.1);
 }
 
 .task-delete-btn:hover {
@@ -246,8 +615,201 @@
     transform: scale(1.1);
 }
 
-.task-delete-btn:active {
-    transform: scale(0.95);
+/* Label Management */
+.task-labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.label-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    animation: labelSlideIn 0.3s ease-out;
+}
+
+.label-badge.label-count {
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    cursor: help;
+}
+
+.label-remove-btn {
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 50%;
+    transition: all var(--transition-base);
+    opacity: 0.6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.label-remove-btn:hover {
+    opacity: 1;
+    background: rgba(239, 68, 68, 0.2);
+    color: rgb(239, 68, 68);
+    transform: scale(1.2);
+}
+
+.label-remove-btn:active {
+    transform: scale(0.9);
+}
+
+.label-add-btn {
+    background: transparent;
+    border: 1px dashed var(--color-border);
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    transition: all var(--transition-base);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.label-add-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: rgba(99, 102, 241, 0.05);
+    transform: translateY(-1px);
+}
+
+.label-add-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.label-add-btn-empty {
+    padding: var(--space-2) var(--space-4);
+    border-style: solid;
+}
+
+@keyframes labelSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes labelSlideOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+}
+
+/* Snooze Modal */
+.snooze-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+}
+
+.snooze-option-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.snooze-option-btn:hover {
+    background: rgba(99, 102, 241, 0.05);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.snooze-option-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.snooze-option-btn svg {
+    color: var(--color-primary);
+}
+
+/* Merge Modal */
+.merge-task-list {
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.merge-task-option {
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.merge-task-option:hover {
+    background: rgba(168, 85, 247, 0.05);
+    border-color: rgb(168, 85, 247);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
+}
+
+.merge-task-option:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.merge-task-option-title {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.merge-task-option-meta {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-tertiary);
+    display: flex;
+    gap: var(--space-4);
 }
 
 /* Task Creation Modal - Crown+ Glassmorphism */
@@ -457,6 +1019,13 @@
         </button>
     </div>
 
+    <!-- Offline/Status Banner -->
+    <div id="connection-banner" class="connection-banner" style="display: none;">
+        <span class="connection-status-icon"></span>
+        <span class="connection-message"></span>
+        <span class="pending-count"></span>
+    </div>
+
     <!-- Filters -->
     <div class="task-filters">
         <button class="filter-tab active" data-filter="all">
@@ -479,6 +1048,36 @@
         </button>
     </div>
 
+    <!-- Bulk Action Toolbar (appears when tasks selected) -->
+    <div id="bulk-action-toolbar" class="bulk-action-toolbar" style="display: none;">
+        <div class="bulk-action-info">
+            <span id="bulk-selected-count">0</span> tasks selected
+        </div>
+        <div class="bulk-action-buttons">
+            <button class="bulk-action-btn" id="bulk-complete-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Complete
+            </button>
+            <button class="bulk-action-btn" id="bulk-delete-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                Delete
+            </button>
+            <button class="bulk-action-btn" id="bulk-label-btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                </svg>
+                Add Label
+            </button>
+            <button class="bulk-action-btn bulk-action-btn-cancel" id="bulk-cancel-btn">
+                Cancel
+            </button>
+        </div>
+    </div>
+
     <!-- Task List Container (CROWN⁴.5 Required Structure) -->
     <div id="tasks-list-container" style="display: flex; flex-direction: column; gap: var(--space-4);">
         {% if tasks and tasks|length > 0 %}
@@ -488,6 +1087,7 @@
                  data-status="{% if task.completed %}completed{% else %}pending{% endif %}"
                  data-priority="{{ task.priority|default('medium')|lower }}">
                 <div class="flex items-start gap-4">
+                    <input type="checkbox" class="bulk-select-checkbox" data-task-id="{{ task.id }}">
                     <input type="checkbox" {% if task.completed %}checked{% endif %} class="task-checkbox">
                     <div class="flex-1">
                         <h3 class="task-title">{{ task.description }}</h3>
@@ -524,13 +1124,36 @@
                                 {{ task.assignee }}
                             </span>
                             {% endif %}
+                            {% if task.transcript_span %}
+                            <a href="/transcript?meeting_id={{ task.meeting_id }}&start_ms={{ task.transcript_span.start_ms }}&end_ms={{ task.transcript_span.end_ms }}" 
+                               class="transcript-link-badge" 
+                               data-task-id="{{ task.id }}"
+                               title="Jump to transcript">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                                </svg>
+                                Jump to transcript
+                            </a>
+                            {% endif %}
                         </div>
                     </div>
-                    <button class="task-delete-btn" title="Delete task">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                        </svg>
-                    </button>
+                    <div class="task-actions">
+                        <button class="task-action-btn task-merge-btn" title="Merge with another task">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                            </svg>
+                        </button>
+                        <button class="task-action-btn task-snooze-btn" title="Snooze task">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </button>
+                        <button class="task-action-btn task-delete-btn" title="Delete task">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
             {% endfor %}
@@ -638,6 +1261,77 @@
     </div>
 </div>
 
+<!-- Snooze Duration Picker Modal -->
+<div id="snooze-modal-overlay" class="task-modal-overlay" style="display: none;">
+    <div class="task-modal" style="max-width: 400px;">
+        <div class="task-modal-header">
+            <h2 class="task-modal-title">Snooze Task</h2>
+            <button class="task-modal-close" id="snooze-modal-close">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div style="padding: var(--space-6); padding-top: 0;">
+            <p class="text-secondary mb-4" id="snooze-task-title">Snooze this task until...</p>
+            
+            <div class="snooze-options">
+                <button class="snooze-option-btn" data-duration="1h">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>1 Hour</span>
+                </button>
+                <button class="snooze-option-btn" data-duration="4h">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>4 Hours</span>
+                </button>
+                <button class="snooze-option-btn" data-duration="tomorrow">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <span>Tomorrow</span>
+                </button>
+                <button class="snooze-option-btn" data-duration="1w">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <span>1 Week</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Merge Task Selector Modal -->
+<div id="merge-modal-overlay" class="task-modal-overlay" style="display: none;">
+    <div class="task-modal" style="max-width: 600px;">
+        <div class="task-modal-header">
+            <h2 class="task-modal-title">Merge Tasks</h2>
+            <button class="task-modal-close" id="merge-modal-close">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div style="padding: var(--space-6); padding-top: 0;">
+            <p class="text-secondary mb-4" id="merge-task-title">Select a task to merge with:</p>
+            
+            <div id="merge-task-list" class="merge-task-list">
+                <!-- Task options will be populated dynamically -->
+            </div>
+            
+            <div class="mt-6 text-sm text-secondary">
+                <p><strong>Note:</strong> The selected task will be merged into the current task. All labels, dates, and metadata will be combined.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script nonce="{{ g.csp_nonce }}">
 /**
  * Tasks Page - Real-time WebSocket Integration
@@ -647,8 +1341,12 @@
 (function() {
     'use strict';
     
-    // Get workspace ID from user context
-    const WORKSPACE_ID = {{ current_user.workspace_id }};
+    // Get user context for WebSocket authentication
+    window.CURRENT_USER_ID = {{ current_user.id if current_user.is_authenticated else 'null' }};
+    window.WORKSPACE_ID = {{ current_user.workspace_id if current_user.workspace_id else 'null' }};
+    window.CURRENT_SESSION_ID = null; // Will be set dynamically when session is active
+    
+    const WORKSPACE_ID = window.WORKSPACE_ID;
     
     // Cache DOM elements
     const filterCounts = {
@@ -705,9 +1403,6 @@
                 handleTaskCompleted(taskData);
                 break;
         }
-        
-        // Update filter counts
-        updateFilterCounts();
     }
     
     /**
@@ -731,9 +1426,6 @@
         // Insert at top of list
         if (tasksContainer && !emptyStateEl.parentElement.contains(emptyStateEl)) {
             tasksContainer.insertAdjacentHTML('afterbegin', cardHTML);
-            
-            // Attach event listeners to new card
-            attachTaskCardListeners();
         }
         
         // Show notification
@@ -886,57 +1578,44 @@
     }
     
     /**
-     * Update filter counts
+     * Setup filter tab handlers (CROWN⁴.5 Architecture)
+     * Proper implementation: Update viewState → Fetch filtered tasks → Re-render
      */
-    function updateFilterCounts() {
-        const allTasks = document.querySelectorAll('.task-card').length;
-        const pendingTasks = document.querySelectorAll('.task-card[data-status="pending"]').length;
-        const completedTasks = document.querySelectorAll('.task-card[data-status="completed"]').length;
-        
-        if (filterCounts.all) filterCounts.all.textContent = allTasks;
-        if (filterCounts.pending) filterCounts.pending.textContent = pendingTasks;
-        if (filterCounts.completed) filterCounts.completed.textContent = completedTasks;
-    }
-    
-    /**
-     * Attach event listeners to task cards
-     */
-    function attachTaskCardListeners() {
-        // Reattach filter tab listeners
+    function setupFilterTabs() {
         document.querySelectorAll('.filter-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
+            tab.addEventListener('click', async () => {
                 const filter = tab.dataset.filter;
                 
-                // Update active tab
+                console.log(`🔍 Filter changed to: ${filter}`);
+                
+                // Update active tab visual state
                 document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
                 
-                // Filter tasks
-                document.querySelectorAll('.task-card').forEach(card => {
-                    if (filter === 'all') {
-                        card.style.display = 'block';
-                    } else {
-                        const status = card.dataset.status;
-                        card.style.display = status === filter ? 'block' : 'none';
-                    }
-                });
-            });
-        });
-        
-        // Reattach checkbox listeners
-        document.querySelectorAll('.task-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const taskCard = this.closest('.task-card');
-                if (this.checked) {
-                    taskCard.classList.add('completed');
-                    taskCard.dataset.status = 'completed';
-                } else {
-                    taskCard.classList.remove('completed');
-                    taskCard.dataset.status = 'pending';
+                // Update viewState in cache (persist filter preference)
+                if (window.taskCache) {
+                    await window.taskCache.setViewState({ activeFilter: filter });
                 }
                 
-                // Update filter counts
-                updateFilterCounts();
+                // Fetch filtered tasks from cache
+                const allTasks = await window.taskCache.getAllTasks();
+                let filteredTasks = allTasks;
+                
+                if (filter === 'pending') {
+                    filteredTasks = allTasks.filter(t => t.status === 'todo' || t.status === 'in_progress');
+                } else if (filter === 'completed') {
+                    filteredTasks = allTasks.filter(t => t.status === 'completed' || t.status === 'done');
+                }
+                
+                console.log(`📊 Rendering ${filteredTasks.length} of ${allTasks.length} tasks (filter: ${filter})`);
+                
+                // Re-render with filtered tasks using TaskBootstrap
+                if (window.taskBootstrap) {
+                    await window.taskBootstrap.renderTasks(filteredTasks);
+                    
+                    // Update counters (always uses ALL tasks from cache)
+                    await window.taskBootstrap.updateCounters(filteredTasks);
+                }
             });
         });
     }
@@ -1002,11 +1681,11 @@
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             initTasksWebSocket();
-            attachTaskCardListeners();
+            setupFilterTabs();
         });
     } else {
         initTasksWebSocket();
-        attachTaskCardListeners();
+        setupFilterTabs();
     }
     
     // Add CSS for animations
@@ -1072,14 +1751,18 @@
 })();
 </script>
 
-<!-- CROWN⁴.5 Frontend Modules -->
+<!-- CROWN⁴.5 Frontend Modules (crown-telemetry loaded in base.html) -->
+<script src="{{ url_for('static', filename='js/quiet-state-manager.js') }}" nonce="{{ g.csp_nonce }}"></script>
+<script src="{{ url_for('static', filename='js/emotional-animations.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-cache.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-bootstrap.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-optimistic-ui.js') }}" nonce="{{ g.csp_nonce }}"></script>
+<script src="{{ url_for('static', filename='js/task-inline-editing.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-offline-queue.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-multi-tab-sync.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-websocket-handlers.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-virtual-list.js') }}" nonce="{{ g.csp_nonce }}"></script>
+<script src="{{ url_for('static', filename='js/task-proposal-ui.js') }}" nonce="{{ g.csp_nonce }}"></script>
 <script src="{{ url_for('static', filename='js/task-keyboard-shortcuts.js') }}" nonce="{{ g.csp_nonce }}"></script>
 
 <script nonce="{{ g.csp_nonce }}">
@@ -1092,13 +1775,27 @@
     
     console.log('🚀 Initializing CROWN⁴.5 Tasks Page...');
     
+    // Initialize CROWN Telemetry FIRST (before other modules)
+    if (window.CROWNTelemetry) {
+        const CROWNTelemetryClass = window.CROWNTelemetry;
+        const workspaceId = window.WORKSPACE_ID || 1;
+        window.crownTelemetry = new CROWNTelemetryClass(workspaceId);
+        await window.crownTelemetry.init();
+        console.log('📊 CROWN Telemetry initialized');
+        
+        // Replace class with instance for backwards compatibility
+        window.CROWNTelemetry = window.crownTelemetry;
+    } else {
+        console.warn('⚠️ CROWNTelemetry class not found');
+    }
+    
     // Wait for all modules to load
     const waitForModules = () => {
         return new Promise((resolve) => {
             const check = () => {
                 if (window.taskCache && window.taskBootstrap && window.optimisticUI && 
                     window.offlineQueue && window.multiTabSync && window.tasksWS && 
-                    window.taskVirtualList && window.taskShortcuts) {
+                    window.taskVirtualList && window.taskShortcuts && window.TaskInlineEditing) {
                     resolve();
                 } else {
                     setTimeout(check, 50);
@@ -1110,6 +1807,12 @@
     
     await waitForModules();
     console.log('✅ All CROWN⁴.5 modules loaded');
+    
+    window.taskInlineEditing = new window.TaskInlineEditing(window.optimisticUI);
+    console.log('✏️ Inline editing initialized');
+    
+    window.taskProposalUI = new window.TaskProposalUI(window.optimisticUI);
+    console.log('✨ AI proposal UI initialized');
     
     // Initialize cache-first bootstrap
     try {
@@ -1246,13 +1949,11 @@
                 const taskId = taskCard.dataset.taskId;
                 const isCompleted = e.target.checked;
                 
-                console.log(`📝 Toggling task ${taskId} to ${isCompleted ? 'completed' : 'pending'}`);
+                console.log(`📝 Toggling task ${taskId} to ${isCompleted ? 'completed' : 'todo'}`);
                 
                 try {
-                    await window.optimisticUI.updateTask(taskId, {
-                        completed: isCompleted,
-                        status: isCompleted ? 'done' : 'todo'
-                    });
+                    // Use toggleTaskStatus for proper status toggle
+                    await window.optimisticUI.toggleTaskStatus(taskId);
                     console.log('✅ Task status updated');
                 } catch (error) {
                     console.error('❌ Failed to update task:', error);
@@ -1282,6 +1983,264 @@
                         alert('Failed to delete task. Please try again.');
                     }
                 }
+                return;
+            }
+            
+            // Wire up label remove buttons (using event delegation)
+            const labelRemoveBtn = e.target.closest('.label-remove-btn');
+            if (labelRemoveBtn) {
+                e.stopPropagation();
+                const taskId = labelRemoveBtn.dataset.taskId;
+                const label = labelRemoveBtn.dataset.label;
+                
+                console.log(`🏷️ Removing label "${label}" from task ${taskId}`);
+                
+                try {
+                    await window.optimisticUI.removeLabel(taskId, label);
+                    console.log('✅ Label removed');
+                } catch (error) {
+                    console.error('❌ Failed to remove label:', error);
+                    alert('Failed to remove label. Please try again.');
+                }
+                return;
+            }
+            
+            // Wire up label add buttons (using event delegation)
+            const labelAddBtn = e.target.closest('.label-add-btn');
+            if (labelAddBtn) {
+                e.stopPropagation();
+                const taskId = labelAddBtn.dataset.taskId;
+                
+                const label = prompt('Enter label name:');
+                if (label && label.trim()) {
+                    const trimmedLabel = label.trim();
+                    console.log(`🏷️ Adding label "${trimmedLabel}" to task ${taskId}`);
+                    
+                    try {
+                        await window.optimisticUI.addLabel(taskId, trimmedLabel);
+                        console.log('✅ Label added');
+                    } catch (error) {
+                        console.error('❌ Failed to add label:', error);
+                        alert('Failed to add label. Please try again.');
+                    }
+                }
+                return;
+            }
+            
+            // Wire up transcript link tracking (using event delegation)
+            const transcriptLink = e.target.closest('.transcript-link-badge');
+            if (transcriptLink) {
+                const taskId = transcriptLink.dataset.taskId;
+                
+                // Track the jump-to-transcript event
+                console.log(`🔗 Jumping to transcript from task ${taskId}`);
+                
+                // Send event to server for tracking (non-blocking)
+                fetch(`/api/tasks/${taskId}/track-transcript-jump`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin'
+                }).catch(error => {
+                    console.warn('Failed to track transcript jump:', error);
+                });
+                
+                // Let the link navigate naturally (don't preventDefault)
+                return;
+            }
+            
+            // Wire up merge buttons (using event delegation)
+            const mergeBtn = e.target.closest('.task-merge-btn');
+            if (mergeBtn) {
+                e.stopPropagation();
+                const taskCard = mergeBtn.closest('.task-card');
+                const taskId = taskCard.dataset.taskId;
+                const taskTitle = taskCard.querySelector('.task-title').textContent;
+                
+                // Store task ID for merge modal
+                window._mergeTargetTaskId = taskId;
+                
+                // Update modal title
+                const mergeTitle = document.getElementById('merge-task-title');
+                if (mergeTitle) {
+                    mergeTitle.textContent = `Select a task to merge into "${taskTitle}":`;
+                }
+                
+                // Populate merge task list with all other tasks
+                const mergeTaskList = document.getElementById('merge-task-list');
+                if (mergeTaskList) {
+                    mergeTaskList.innerHTML = '';
+                    
+                    // Get all task cards except the current one
+                    const allTaskCards = document.querySelectorAll('.task-card');
+                    const otherTasks = Array.from(allTaskCards).filter(card => card.dataset.taskId !== taskId);
+                    
+                    if (otherTasks.length === 0) {
+                        mergeTaskList.innerHTML = '<p class="text-secondary">No other tasks available to merge with.</p>';
+                    } else {
+                        otherTasks.forEach(card => {
+                            const otherTaskId = card.dataset.taskId;
+                            const otherTaskTitle = card.querySelector('.task-title').textContent;
+                            const otherTaskPriority = card.dataset.priority || 'medium';
+                            const otherTaskStatus = card.dataset.status || 'pending';
+                            
+                            const optionHTML = `
+                                <div class="merge-task-option" data-task-id="${otherTaskId}">
+                                    <div class="merge-task-option-title">${otherTaskTitle}</div>
+                                    <div class="merge-task-option-meta">
+                                        <span>Priority: ${otherTaskPriority}</span>
+                                        <span>Status: ${otherTaskStatus}</span>
+                                    </div>
+                                </div>
+                            `;
+                            mergeTaskList.insertAdjacentHTML('beforeend', optionHTML);
+                        });
+                    }
+                }
+                
+                // Show merge modal
+                const mergeModal = document.getElementById('merge-modal-overlay');
+                if (mergeModal) {
+                    mergeModal.style.display = 'flex';
+                }
+                return;
+            }
+            
+            // Wire up snooze buttons (using event delegation)
+            const snoozeBtn = e.target.closest('.task-snooze-btn');
+            if (snoozeBtn) {
+                e.stopPropagation();
+                const taskCard = snoozeBtn.closest('.task-card');
+                const taskId = taskCard.dataset.taskId;
+                const taskTitle = taskCard.querySelector('.task-title').textContent;
+                
+                // Store task ID for snooze modal
+                window._snoozeTaskId = taskId;
+                
+                // Update modal title
+                const snoozeTitle = document.getElementById('snooze-task-title');
+                if (snoozeTitle) {
+                    snoozeTitle.textContent = `Snooze "${taskTitle}" until...`;
+                }
+                
+                // Show snooze modal
+                const snoozeModal = document.getElementById('snooze-modal-overlay');
+                if (snoozeModal) {
+                    snoozeModal.style.display = 'flex';
+                }
+                return;
+            }
+        });
+    }
+    
+    // Snooze modal handlers
+    const snoozeModalOverlay = document.getElementById('snooze-modal-overlay');
+    const snoozeModalClose = document.getElementById('snooze-modal-close');
+    
+    if (snoozeModalClose) {
+        snoozeModalClose.addEventListener('click', () => {
+            snoozeModalOverlay.style.display = 'none';
+        });
+    }
+    
+    if (snoozeModalOverlay) {
+        snoozeModalOverlay.addEventListener('click', (e) => {
+            if (e.target === snoozeModalOverlay) {
+                snoozeModalOverlay.style.display = 'none';
+            }
+        });
+        
+        // Wire up snooze duration buttons
+        const snoozeOptions = document.querySelectorAll('.snooze-option-btn');
+        snoozeOptions.forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const duration = btn.dataset.duration;
+                const taskId = window._snoozeTaskId;
+                
+                if (!taskId) return;
+                
+                // Calculate snoozed_until timestamp
+                const now = new Date();
+                let snoozedUntil;
+                
+                switch (duration) {
+                    case '1h':
+                        snoozedUntil = new Date(now.getTime() + 60 * 60 * 1000);
+                        break;
+                    case '4h':
+                        snoozedUntil = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+                        break;
+                    case 'tomorrow':
+                        snoozedUntil = new Date(now);
+                        snoozedUntil.setDate(snoozedUntil.getDate() + 1);
+                        snoozedUntil.setHours(9, 0, 0, 0);
+                        break;
+                    case '1w':
+                        snoozedUntil = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                        break;
+                    default:
+                        return;
+                }
+                
+                console.log(`⏰ Snoozing task ${taskId} until ${snoozedUntil}`);
+                
+                try {
+                    await window.optimisticUI.snoozeTask(taskId, snoozedUntil);
+                    console.log('✅ Task snoozed');
+                    snoozeModalOverlay.style.display = 'none';
+                    
+                    if (window.showToast) {
+                        window.showToast('Task snoozed successfully', 'success');
+                    }
+                } catch (error) {
+                    console.error('❌ Failed to snooze task:', error);
+                    alert('Failed to snooze task. Please try again.');
+                }
+            });
+        });
+    }
+    
+    // Merge modal handlers
+    const mergeModalOverlay = document.getElementById('merge-modal-overlay');
+    const mergeModalClose = document.getElementById('merge-modal-close');
+    
+    if (mergeModalClose) {
+        mergeModalClose.addEventListener('click', () => {
+            mergeModalOverlay.style.display = 'none';
+        });
+    }
+    
+    if (mergeModalOverlay) {
+        mergeModalOverlay.addEventListener('click', (e) => {
+            if (e.target === mergeModalOverlay) {
+                mergeModalOverlay.style.display = 'none';
+            }
+        });
+        
+        // Wire up merge task option clicks (using event delegation)
+        mergeModalOverlay.addEventListener('click', async (e) => {
+            const mergeOption = e.target.closest('.merge-task-option');
+            if (mergeOption) {
+                const sourceTaskId = mergeOption.dataset.taskId;
+                const targetTaskId = window._mergeTargetTaskId;
+                
+                if (!sourceTaskId || !targetTaskId) return;
+                
+                if (confirm('Are you sure you want to merge these tasks? This cannot be undone.')) {
+                    console.log(`🔀 Merging task ${sourceTaskId} into ${targetTaskId}`);
+                    
+                    try {
+                        await window.optimisticUI.mergeTasks(sourceTaskId, targetTaskId);
+                        console.log('✅ Tasks merged');
+                        mergeModalOverlay.style.display = 'none';
+                        
+                        if (window.showToast) {
+                            window.showToast('Tasks merged successfully', 'success');
+                        }
+                    } catch (error) {
+                        console.error('❌ Failed to merge tasks:', error);
+                        alert('Failed to merge tasks. Please try again.');
+                    }
+                }
             }
         });
     }
@@ -1300,6 +2259,272 @@
             window.showToast('Offline mode - changes will sync when online', 'warning');
         }
     });
+    
+    // Bulk Selection State
+    const bulkSelection = new Set();
+    const bulkToolbar = document.getElementById('bulk-action-toolbar');
+    const bulkSelectedCount = document.getElementById('bulk-selected-count');
+    
+    function updateBulkToolbar() {
+        const count = bulkSelection.size;
+        if (count > 0) {
+            bulkToolbar.style.display = 'flex';
+            bulkSelectedCount.textContent = count;
+        } else {
+            bulkToolbar.style.display = 'none';
+        }
+    }
+    
+    // Bulk selection checkbox handler (using event delegation)
+    document.addEventListener('change', (e) => {
+        if (e.target.classList.contains('bulk-select-checkbox')) {
+            const taskId = e.target.dataset.taskId;
+            const taskCard = e.target.closest('.task-card');
+            
+            if (e.target.checked) {
+                bulkSelection.add(taskId);
+                taskCard.classList.add('bulk-selected');
+            } else {
+                bulkSelection.delete(taskId);
+                taskCard.classList.remove('bulk-selected');
+            }
+            
+            updateBulkToolbar();
+            console.log(`📦 Bulk selection: ${bulkSelection.size} tasks selected`);
+        }
+    });
+    
+    // Bulk cancel button
+    const bulkCancelBtn = document.getElementById('bulk-cancel-btn');
+    if (bulkCancelBtn) {
+        bulkCancelBtn.addEventListener('click', () => {
+            // Uncheck all bulk selection checkboxes
+            document.querySelectorAll('.bulk-select-checkbox:checked').forEach(checkbox => {
+                checkbox.checked = false;
+                const taskCard = checkbox.closest('.task-card');
+                if (taskCard) {
+                    taskCard.classList.remove('bulk-selected');
+                }
+            });
+            bulkSelection.clear();
+            updateBulkToolbar();
+        });
+    }
+    
+    // Bulk complete button
+    const bulkCompleteBtn = document.getElementById('bulk-complete-btn');
+    if (bulkCompleteBtn) {
+        bulkCompleteBtn.addEventListener('click', async () => {
+            const taskIds = Array.from(bulkSelection);
+            if (taskIds.length === 0) return;
+            
+            console.log(`✅ Bulk completing ${taskIds.length} tasks`);
+            
+            try {
+                // Optimistic UI: mark all as completed
+                taskIds.forEach(taskId => {
+                    const taskCard = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+                    if (taskCard) {
+                        taskCard.classList.add('completed');
+                        const checkbox = taskCard.querySelector('.task-checkbox');
+                        if (checkbox) checkbox.checked = true;
+                    }
+                });
+                
+                // Send bulk update to server
+                const response = await fetch('/api/tasks/bulk/complete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ task_ids: taskIds })
+                });
+                
+                if (!response.ok) throw new Error('Bulk complete failed');
+                
+                const result = await response.json();
+                console.log('✅ Bulk complete successful:', result);
+                
+                // Clear selection
+                document.querySelectorAll('.bulk-select-checkbox:checked').forEach(checkbox => {
+                    checkbox.checked = false;
+                    const taskCard = checkbox.closest('.task-card');
+                    if (taskCard) {
+                        taskCard.classList.remove('bulk-selected');
+                    }
+                });
+                bulkSelection.clear();
+                updateBulkToolbar();
+                
+                if (window.showToast) {
+                    window.showToast(`${taskIds.length} tasks completed`, 'success');
+                }
+                
+            } catch (error) {
+                console.error('❌ Bulk complete failed:', error);
+                
+                // Rollback optimistic UI
+                taskIds.forEach(taskId => {
+                    const taskCard = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+                    if (taskCard) {
+                        taskCard.classList.remove('completed');
+                        const checkbox = taskCard.querySelector('.task-checkbox');
+                        if (checkbox) checkbox.checked = false;
+                    }
+                });
+                
+                alert('Failed to complete tasks. Please try again.');
+            }
+        });
+    }
+    
+    // Bulk delete button
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener('click', async () => {
+            const taskIds = Array.from(bulkSelection);
+            if (taskIds.length === 0) return;
+            
+            if (!confirm(`Are you sure you want to delete ${taskIds.length} tasks? This cannot be undone.`)) {
+                return;
+            }
+            
+            console.log(`🗑️ Bulk deleting ${taskIds.length} tasks`);
+            
+            // Save original cards for rollback
+            const savedCards = new Map();
+            
+            try {
+                // Optimistic UI: remove all cards
+                taskIds.forEach(taskId => {
+                    const taskCard = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+                    if (taskCard) {
+                        savedCards.set(taskId, taskCard.cloneNode(true));
+                        taskCard.style.animation = 'fadeOut 0.3s ease-out';
+                        setTimeout(() => taskCard.remove(), 300);
+                    }
+                });
+                
+                // Send bulk delete to server
+                const response = await fetch('/api/tasks/bulk/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ task_ids: taskIds })
+                });
+                
+                if (!response.ok) throw new Error('Bulk delete failed');
+                
+                const result = await response.json();
+                console.log('✅ Bulk delete successful:', result);
+                
+                // Clear selection
+                bulkSelection.clear();
+                updateBulkToolbar();
+                
+                if (window.showToast) {
+                    window.showToast(`${taskIds.length} tasks deleted`, 'success');
+                }
+                
+            } catch (error) {
+                console.error('❌ Bulk delete failed:', error);
+                
+                // Rollback: restore cards
+                const container = document.getElementById('tasks-list-container');
+                savedCards.forEach((card, taskId) => {
+                    container.appendChild(card);
+                });
+                
+                alert('Failed to delete tasks. Please try again.');
+            }
+        });
+    }
+    
+    // Bulk label button
+    const bulkLabelBtn = document.getElementById('bulk-label-btn');
+    if (bulkLabelBtn) {
+        bulkLabelBtn.addEventListener('click', async () => {
+            const taskIds = Array.from(bulkSelection);
+            if (taskIds.length === 0) return;
+            
+            const label = prompt('Enter label to add to selected tasks:');
+            if (!label || label.trim() === '') return;
+            
+            console.log(`🏷️ Bulk adding label "${label}" to ${taskIds.length} tasks`);
+            
+            try {
+                // Optimistic UI: add label to all cards
+                taskIds.forEach(taskId => {
+                    const taskCard = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+                    if (taskCard) {
+                        const labelsContainer = taskCard.querySelector('.task-labels');
+                        if (labelsContainer) {
+                            const labelBadge = document.createElement('span');
+                            labelBadge.className = 'label-badge';
+                            labelBadge.innerHTML = `
+                                ${label.trim()}
+                                <button class="label-remove-btn" data-task-id="${taskId}" data-label="${label.trim()}">×</button>
+                            `;
+                            labelsContainer.appendChild(labelBadge);
+                        }
+                    }
+                });
+                
+                // Send bulk label update to server
+                const response = await fetch('/api/tasks/bulk/label', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ 
+                        task_ids: taskIds,
+                        label: label.trim()
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Bulk label failed');
+                
+                const result = await response.json();
+                console.log('✅ Bulk label successful:', result);
+                
+                // Clear selection
+                document.querySelectorAll('.bulk-select-checkbox:checked').forEach(checkbox => {
+                    checkbox.checked = false;
+                    const taskCard = checkbox.closest('.task-card');
+                    if (taskCard) {
+                        taskCard.classList.remove('bulk-selected');
+                    }
+                });
+                bulkSelection.clear();
+                updateBulkToolbar();
+                
+                if (window.showToast) {
+                    window.showToast(`Label "${label}" added to ${taskIds.length} tasks`, 'success');
+                }
+                
+            } catch (error) {
+                console.error('❌ Bulk label failed:', error);
+                
+                // Rollback: remove added labels
+                taskIds.forEach(taskId => {
+                    const taskCard = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+                    if (taskCard) {
+                        const labelsContainer = taskCard.querySelector('.task-labels');
+                        if (labelsContainer) {
+                            const addedLabel = labelsContainer.querySelector(`.label-badge:last-child`);
+                            if (addedLabel) addedLabel.remove();
+                        }
+                    }
+                });
+                
+                alert('Failed to add labels. Please try again.');
+            }
+        });
+    }
     
     // Log system stats every 30 seconds
     setInterval(() => {
