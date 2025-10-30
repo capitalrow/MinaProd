@@ -216,6 +216,148 @@ class TaskCache {
     }
 
     /**
+     * ENTERPRISE-GRADE: Clean orphaned temp tasks (safe, prevents data loss)
+     * Only removes temp IDs that are:
+     * 1. NOT in the offline queue (already synced/failed)
+     * 2. Older than 10 minutes (safe threshold for failed operations)
+     * This preserves legitimate offline tasks that are still pending sync.
+     * @returns {Promise<number>} Number of tasks removed
+     */
+    async cleanOrphanedTempTasks() {
+        await this.init();
+        
+        return new Promise(async (resolve, reject) => {
+            try {
+                // Get all tasks with temp IDs
+                const transaction = this.db.transaction(['tasks', 'offline_queue'], 'readonly');
+                const taskStore = transaction.objectStore('tasks');
+                const queueStore = transaction.objectStore('offline_queue');
+                
+                const tasksRequest = taskStore.getAll();
+                const queueRequest = queueStore.getAll();
+                
+                await Promise.all([
+                    new Promise(res => tasksRequest.onsuccess = res),
+                    new Promise(res => queueRequest.onsuccess = res)
+                ]);
+                
+                const allTasks = tasksRequest.result || [];
+                const queuedOps = queueRequest.result || [];
+                
+                // Build set of temp IDs that are in the offline queue (should NOT be deleted)
+                const queuedTempIds = new Set();
+                queuedOps.forEach(op => {
+                    if (op.temp_id) queuedTempIds.add(op.temp_id);
+                    if (op.data && op.data.temp_id) queuedTempIds.add(op.data.temp_id);
+                });
+                
+                // Find orphaned temp tasks (NOT in queue, older than 10 minutes)
+                const now = Date.now();
+                const SAFE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
+                const orphanedTempIds = [];
+                
+                allTasks.forEach(task => {
+                    if (task.id && typeof task.id === 'string' && task.id.startsWith('temp_')) {
+                        // Skip if in offline queue (legitimate pending task)
+                        if (queuedTempIds.has(task.id)) {
+                            console.log(`✅ Preserving queued temp task: ${task.id}`);
+                            return;
+                        }
+                        
+                        // CRITICAL: Validate created_at timestamp (preserve if invalid to be safe)
+                        // Reject: null, undefined, 0, empty string, non-ISO strings
+                        if (!task.created_at || task.created_at === 0 || task.created_at === '0') {
+                            console.log(`✅ Preserving temp task with missing/invalid created_at: ${task.id}`);
+                            return;
+                        }
+                        
+                        // Parse timestamp and validate
+                        const createdTimestamp = new Date(task.created_at).getTime();
+                        
+                        // CRITICAL: Skip if timestamp is NaN or epoch/negative
+                        if (Number.isNaN(createdTimestamp) || createdTimestamp <= 0) {
+                            console.log(`✅ Preserving temp task with invalid timestamp: ${task.id}`);
+                            return;
+                        }
+                        
+                        // Calculate age from valid timestamp
+                        const taskAge = now - createdTimestamp;
+                        
+                        // CRITICAL: Sanity check - if age is negative or unreasonably large (>1 year), preserve
+                        const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+                        if (taskAge < 0 || taskAge > ONE_YEAR_MS) {
+                            console.log(`✅ Preserving temp task with suspicious age: ${task.id} (age: ${taskAge}ms)`);
+                            return;
+                        }
+                        
+                        if (taskAge < SAFE_THRESHOLD_MS) {
+                            console.log(`⏳ Preserving recent temp task: ${task.id} (age: ${Math.round(taskAge/1000)}s)`);
+                            return;
+                        }
+                        
+                        // This is a confirmed orphaned temp task - safe to remove
+                        console.log(`🗑️ Orphaned temp task confirmed for deletion: ${task.id} (age: ${Math.round(taskAge/1000)}s, not in queue)`);
+                        orphanedTempIds.push(task.id);
+                    }
+                });
+                
+                // Delete orphaned temp tasks
+                if (orphanedTempIds.length > 0) {
+                    const deleteTransaction = this.db.transaction(['tasks'], 'readwrite');
+                    const deleteStore = deleteTransaction.objectStore('tasks');
+                    
+                    orphanedTempIds.forEach(tempId => {
+                        deleteStore.delete(tempId);
+                        console.log(`🧹 Removing orphaned temp task: ${tempId}`);
+                    });
+                    
+                    deleteTransaction.oncomplete = () => {
+                        console.log(`✅ Cache hygiene: Removed ${orphanedTempIds.length} orphaned temp tasks`);
+                        resolve(orphanedTempIds.length);
+                    };
+                    deleteTransaction.onerror = () => reject(deleteTransaction.error);
+                } else {
+                    console.log('✅ No orphaned temp tasks found');
+                    resolve(0);
+                }
+                
+            } catch (error) {
+                console.error('❌ Failed to clean orphaned temp tasks:', error);
+                reject(error);
+            }
+        });
+    }
+
+    /**
+     * Validate task ID before operations (ENTERPRISE-GRADE)
+     * Prevents temp IDs from causing database errors
+     * @param {any} taskId
+     * @returns {boolean}
+     */
+    static isValidTaskId(taskId) {
+        // Valid IDs are integers (from database) or null (for new tasks)
+        if (taskId === null || taskId === undefined) return true;
+        
+        // Numeric IDs are valid
+        if (typeof taskId === 'number' && Number.isInteger(taskId) && taskId > 0) {
+            return true;
+        }
+        
+        // String representation of numbers are valid
+        if (typeof taskId === 'string' && /^\d+$/.test(taskId)) {
+            return true;
+        }
+        
+        // Temp IDs are NOT valid for server operations (flagged for reconciliation)
+        if (typeof taskId === 'string' && taskId.startsWith('temp_')) {
+            console.warn(`⚠️ Temp ID detected: ${taskId} - needs reconciliation`);
+            return false;
+        }
+        
+        return false;
+    }
+
+    /**
      * Sanitize task for server sync by removing cache-internal fields (CROWN⁴.5)
      * @param {Object} task - Task object
      * @returns {Object} - Sanitized copy without internal fields
@@ -232,6 +374,7 @@ class TaskCache {
 
     /**
      * Get all tasks from cache (cache-first)
+     * ENTERPRISE-GRADE: Returns ALL tasks including temp IDs (they'll be marked as "syncing" in UI)
      * @returns {Promise<Array>}
      */
     async getAllTasks() {
@@ -241,7 +384,19 @@ class TaskCache {
             const store = transaction.objectStore('tasks');
             const request = store.getAll();
 
-            request.onsuccess = () => resolve(request.result || []);
+            request.onsuccess = () => {
+                const allTasks = request.result || [];
+                
+                // Mark temp tasks with syncing flag for UI rendering
+                allTasks.forEach(task => {
+                    if (task.id && typeof task.id === 'string' && task.id.startsWith('temp_')) {
+                        task._is_syncing = true;
+                        task._sync_status = 'pending';
+                    }
+                });
+                
+                resolve(allTasks);
+            };
             request.onerror = () => reject(request.error);
         });
     }
