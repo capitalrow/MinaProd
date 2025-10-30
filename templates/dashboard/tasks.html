@@ -1949,13 +1949,11 @@
                 const taskId = taskCard.dataset.taskId;
                 const isCompleted = e.target.checked;
                 
-                console.log(`📝 Toggling task ${taskId} to ${isCompleted ? 'completed' : 'pending'}`);
+                console.log(`📝 Toggling task ${taskId} to ${isCompleted ? 'completed' : 'todo'}`);
                 
                 try {
-                    await window.optimisticUI.updateTask(taskId, {
-                        completed: isCompleted,
-                        status: isCompleted ? 'done' : 'todo'
-                    });
+                    // Use toggleTaskStatus for proper status toggle
+                    await window.optimisticUI.toggleTaskStatus(taskId);
                     console.log('✅ Task status updated');
                 } catch (error) {
                     console.error('❌ Failed to update task:', error);
