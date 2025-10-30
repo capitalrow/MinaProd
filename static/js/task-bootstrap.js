@@ -72,10 +72,21 @@ class TaskBootstrap {
 
     /**
      * Load tasks from IndexedDB cache
+     * ENTERPRISE-GRADE: Cleans corrupted temp IDs before loading
      * @returns {Promise<Array>} Cached tasks
      */
     async loadFromCache() {
         await this.cache.init();
+
+        // ENTERPRISE-GRADE: Clean only orphaned temp tasks (preserves legitimate offline tasks)
+        try {
+            const removedCount = await this.cache.cleanOrphanedTempTasks();
+            if (removedCount > 0) {
+                console.log(`🧹 Cache hygiene: Removed ${removedCount} orphaned temp tasks`);
+            }
+        } catch (cleanupError) {
+            console.warn('⚠️ Cache cleanup failed (non-fatal):', cleanupError);
+        }
 
         // Load view state (filters, sort, scroll position)
         const viewState = await this.cache.getViewState('tasks_page') || {
@@ -239,9 +250,10 @@ class TaskBootstrap {
         const status = task.status || 'todo';
         const isCompleted = status === 'completed';
         const isSnoozed = task.snoozed_until && new Date(task.snoozed_until) > new Date();
+        const isSyncing = task._is_syncing || (task.id && typeof task.id === 'string' && task.id.startsWith('temp_'));
 
         return `
-            <div class="task-card" 
+            <div class="task-card ${isSyncing ? 'task-syncing' : ''}" 
                  data-task-id="${task.id}"
                  data-status="${status}"
                  data-priority="${priority}"
@@ -251,6 +263,7 @@ class TaskBootstrap {
                         <input type="checkbox" 
                                class="task-checkbox" 
                                ${isCompleted ? 'checked' : ''}
+                               ${isSyncing ? 'disabled title="Task is syncing with server..."' : ''}
                                data-task-id="${task.id}">
                     </div>
                     <div class="task-content">
@@ -261,6 +274,14 @@ class TaskBootstrap {
                             <p class="task-description">${this.escapeHtml(task.description)}</p>
                         ` : ''}
                         <div class="task-meta">
+                            ${isSyncing ? `
+                                <span class="syncing-badge">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="spin-animation">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                    </svg>
+                                    Syncing...
+                                </span>
+                            ` : ''}
                             <span class="priority-badge priority-${priority.toLowerCase()}">
                                 ${priority}
                             </span>

@@ -79,6 +79,51 @@ class TaskEventHandler:
             'conflicts_resolved': 0
         }
     
+    @staticmethod
+    def validate_task_id(task_id: Any) -> Dict[str, Any]:
+        """
+        ENTERPRISE-GRADE: Validate task ID before database operations.
+        Prevents temp_ IDs from causing psycopg2.errors.InvalidTextRepresentation
+        
+        Args:
+            task_id: Task ID to validate
+            
+        Returns:
+            Validation result with success flag and error message
+        """
+        # Null/undefined IDs are invalid for updates
+        if task_id is None or task_id == '':
+            return {
+                'valid': False,
+                'error': 'Task ID is required',
+                'error_code': 'MISSING_TASK_ID'
+            }
+        
+        # Temp IDs indicate unreconciled optimistic operations
+        if isinstance(task_id, str) and task_id.startswith('temp_'):
+            logger.warning(f"⚠️ Rejecting operation on temp ID: {task_id}")
+            return {
+                'valid': False,
+                'error': f'Cannot update task with temporary ID: {task_id}. This task was created offline and has not been synchronized with the server yet. Please wait for sync to complete.',
+                'error_code': 'TEMP_ID_NOT_RECONCILED',
+                'needs_reconciliation': True
+            }
+        
+        # Valid integer IDs
+        if isinstance(task_id, int) and task_id > 0:
+            return {'valid': True}
+        
+        # String representation of integers
+        if isinstance(task_id, str) and task_id.isdigit() and int(task_id) > 0:
+            return {'valid': True, 'normalized_id': int(task_id)}
+        
+        # Invalid format
+        return {
+            'valid': False,
+            'error': f'Invalid task ID format: {task_id}. Expected integer, got {type(task_id).__name__}',
+            'error_code': 'INVALID_TASK_ID_FORMAT'
+        }
+    
     async def handle_event(
         self,
         event_type: str,
@@ -477,9 +522,25 @@ class TaskEventHandler:
         """
         Event #7: task_update:status_toggle
         Toggle task completion status.
+        ENTERPRISE-GRADE: Validates task ID before database operations.
         """
         try:
             task_id = payload.get('task_id')
+            
+            # ENTERPRISE-GRADE: Validate task ID before database operation
+            validation = self.validate_task_id(task_id)
+            if not validation.get('valid'):
+                logger.warning(f"❌ Invalid task ID in status toggle: {task_id}")
+                return {
+                    'success': False,
+                    'error': validation.get('error'),
+                    'error_code': validation.get('error_code'),
+                    'needs_reconciliation': validation.get('needs_reconciliation', False)
+                }
+            
+            # Normalize ID if needed (string -> int)
+            if 'normalized_id' in validation:
+                task_id = validation['normalized_id']
             
             task = db.session.get(Task, task_id)
             if not task or task.created_by_id != user_id:

@@ -904,7 +904,22 @@ class OptimisticUI {
                 error.message.includes('version mismatch')
             );
             
-            if (is409Conflict) {
+            // ENTERPRISE-GRADE: Special handling for temp ID validation errors
+            const isTempIdError = error.message && (
+                error.message.includes('temporary ID') ||
+                error.message.includes('TEMP_ID_NOT_RECONCILED') ||
+                error.message.includes('temp_')
+            );
+            
+            if (isTempIdError) {
+                // Temp ID error - this task needs reconciliation with server
+                if (window.toast) {
+                    window.toast.warning('This task is still syncing with the server. Please wait a moment and try again.', 5000, {
+                        undoText: 'Refresh',
+                        undoCallback: () => window.location.reload()
+                    });
+                }
+            } else if (is409Conflict) {
                 if (window.toast) {
                     window.toast.warning('Changes conflict detected - reloading latest version', 5000, {
                         undoText: 'Retry',
@@ -927,7 +942,8 @@ class OptimisticUI {
                     type,
                     error: error.message,
                     duration_ms: syncTime,
-                    is_conflict: is409Conflict
+                    is_conflict: is409Conflict,
+                    is_temp_id_error: isTempIdError
                 });
             }
             
